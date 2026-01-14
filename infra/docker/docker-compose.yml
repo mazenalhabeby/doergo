@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  # ==================== INFRASTRUCTURE ====================
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: doergo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-doergo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-doergo_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-doergo}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doergo} -d ${POSTGRES_DB:-doergo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - doergo-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: doergo-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - doergo-network
+
+  # ==================== BACKEND SERVICES ====================
+  api-gateway:
+    build:
+      context: ../../
+      dockerfile: apps/api/gateway/Dockerfile
+    container_name: doergo-api-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CORS_ORIGINS=http://localhost:3001,http://localhost:3002
+    depends_on:
+      - redis
+      - auth-service
+      - task-service
+      - notification-service
+      - tracking-service
+    networks:
+      - doergo-network
+
+  auth-service:
+    build:
+      context: ../../
+      dockerfile: apps/api/auth-service/Dockerfile
+    container_name: doergo-auth-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - doergo-network
+
+  task-service:
+    build:
+      context: ../../
+      dockerfile: apps/api/task-service/Dockerfile
+    container_name: doergo-task-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - doergo-network
+
+  notification-service:
+    build:
+      context: ../../
+      dockerfile: apps/api/notification-service/Dockerfile
+    container_name: doergo-notification-service
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    depends_on:
+      - redis
+    networks:
+      - doergo-network
+
+  tracking-service:
+    build:
+      context: ../../
+      dockerfile: apps/api/tracking-service/Dockerfile
+    container_name: doergo-tracking-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - doergo-network
+
+volumes:
+  postgres_data:
+    name: doergo-postgres-data
+  redis_data:
+    name: doergo-redis-data
+
+networks:
+  doergo-network:
+    name: doergo-network
+    driver: bridge

@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  PARTNER
+  OFFICE
+  WORKER
+}
+
+enum TaskStatus {
+  DRAFT
+  NEW
+  ASSIGNED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELED
+  CLOSED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskEventType {
+  CREATED
+  UPDATED
+  ASSIGNED
+  UNASSIGNED
+  STATUS_CHANGED
+  COMMENT_ADDED
+  ATTACHMENT_ADDED
+  ATTACHMENT_REMOVED
+}
+
+enum AttachmentType {
+  IMAGE
+  DOCUMENT
+  OTHER
+}
+
+// Models
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+  tasks Task[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  role           Role
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Security: Account lockout fields
+  failedLoginAttempts Int      @default(0)
+  lockedUntil         DateTime?
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  createdTasks   Task[]       @relation("TaskCreator")
+  assignedTasks  Task[]       @relation("TaskAssignee")
+  comments       Comment[]
+  attachments    Attachment[]
+  taskEvents     TaskEvent[]
+  lastLocation   WorkerLastLocation?
+  refreshTokens  RefreshToken[]
+
+  @@index([organizationId])
+  @@index([role])
+  @@index([email])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique  // Store SHA-256 hash, not plain token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(NEW)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+
+  locationLat     Float?
+  locationLng     Float?
+  locationAddress String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  assignedToId String?
+  assignedTo   User?   @relation("TaskAssignee", fields: [assignedToId], references: [id])
+
+  comments    Comment[]
+  attachments Attachment[]
+  events      TaskEvent[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdById])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Attachment {
+  id        String         @id @default(cuid())
+  fileName  String
+  fileUrl   String
+  fileType  AttachmentType
+  fileSize  Int
+  createdAt DateTime       @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  @@index([taskId])
+  @@map("attachments")
+}
+
+model TaskEvent {
+  id        String        @id @default(cuid())
+  eventType TaskEventType
+  metadata  Json?
+  createdAt DateTime      @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("task_events")
+}
+
+model WorkerLastLocation {
+  id        String   @id @default(cuid())
+  lat       Float
+  lng       Float
+  accuracy  Float?
+  updatedAt DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("worker_last_locations")
+}

@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Doergo",
+    "slug": "doergo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "doergo",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.doergo.mobile",
+      "config": {
+        "googleMapsApiKey": ""
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Doergo needs your location to track task progress",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Doergo needs your location to track task progress even when the app is in the background",
+        "NSCameraUsageDescription": "Doergo needs camera access to take photos for task documentation",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.doergo.mobile",
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-location",
+      "expo-camera",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2563eb"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

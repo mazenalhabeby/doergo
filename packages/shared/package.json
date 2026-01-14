@@ -1,0 +1,39 @@
+{
+  "name": "@doergo/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.js"
+    },
+    "./design": {
+      "types": "./dist/design/index.d.ts",
+      "import": "./dist/design/index.js",
+      "require": "./dist/design/index.js"
+    },
+    "./design/tailwind-preset": {
+      "types": "./dist/design/tailwind-preset.d.ts",
+      "import": "./dist/design/tailwind-preset.js",
+      "require": "./dist/design/tailwind-preset.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.7.0"
+  }
+}

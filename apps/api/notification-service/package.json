@@ -1,0 +1,33 @@
+{
+  "name": "@doergo/notification-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "nest start",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,test}/**/*.ts\" --fix"
+  },
+  "dependencies": {
+    "@doergo/shared": "workspace:*",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/microservices": "^11.0.0",
+    "@nestjs/platform-socket.io": "^11.0.0",
+    "@nestjs/websockets": "^11.0.0",
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.4.2",
+    "nodemailer": "^6.9.16",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@types/nodemailer": "^6.4.17",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

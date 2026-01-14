@@ -1,0 +1,126 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Inject,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  HttpException,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { firstValueFrom } from 'rxjs';
+import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
+import { Public } from '../../common/decorators';
+import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
+
+@ApiTags('auth')
+@Controller('auth')
+export class AuthController {
+  constructor(
+    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+  ) {}
+
+  @Public()
+  @Post('register')
+  // Stricter rate limit for registration: 5 attempts per minute
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Register a new partner account' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async register(@Body() registerDto: RegisterDto) {
+    // SECURITY: Always set role to PARTNER - never trust client input for role
+    const securePayload = {
+      ...registerDto,
+      role: 'PARTNER',
+    };
+
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'register' }, securePayload),
+    );
+
+    // Check if the result is an error response
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return result;
+  }
+
+  @Public()
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  // Stricter rate limit for login: 5 attempts per minute to prevent brute force
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Login user' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 429, description: 'Too many requests - account temporarily locked' })
+  async login(@Body() loginDto: LoginDto) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'login' }, loginDto),
+    );
+
+    // Check if the result is an error response
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    return result;
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'refresh' }, refreshTokenDto),
+    );
+
+    // Check if the result is an error response
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return result;
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  async logout(@Body() refreshTokenDto: RefreshTokenDto) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'logout' }, refreshTokenDto),
+    );
+  }
+
+  @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'Current user profile' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async me(@CurrentUser() user: CurrentUserData) {
+    return {
+      success: true,
+      data: user,
+    };
+  }
+}

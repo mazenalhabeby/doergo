@@ -1,0 +1,45 @@
+{
+  "name": "doergo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Doergo - 3-role task management and field execution platform (Microservices)",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.0.0",
+      "@types/react-dom": "^19.0.0"
+    }
+  },
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:api": "pnpm --filter \"@doergo/*-service\" --filter @doergo/api-gateway run --parallel dev",
+    "dev:gateway": "pnpm --filter @doergo/api-gateway dev",
+    "dev:auth": "pnpm --filter @doergo/auth-service dev",
+    "dev:task": "pnpm --filter @doergo/task-service dev",
+    "dev:notification": "pnpm --filter @doergo/notification-service dev",
+    "dev:tracking": "pnpm --filter @doergo/tracking-service dev",
+    "dev:web": "pnpm --filter \"@doergo/web-*\" run --parallel dev",
+    "dev:web-partner": "pnpm --filter @doergo/web-partner dev",
+    "dev:web-office": "pnpm --filter @doergo/web-office dev",
+    "dev:mobile": "pnpm --filter @doergo/mobile start",
+    "build": "pnpm run --parallel build",
+    "build:api": "pnpm --filter \"@doergo/*-service\" --filter @doergo/api-gateway run --parallel build",
+    "build:web": "pnpm --filter \"@doergo/web-*\" run --parallel build",
+    "lint": "pnpm run --parallel lint",
+    "test": "pnpm run --parallel test",
+    "db:generate": "pnpm --filter @doergo/auth-service prisma:generate",
+    "db:migrate": "pnpm --filter @doergo/auth-service prisma:migrate",
+    "db:seed": "pnpm --filter @doergo/auth-service prisma:seed",
+    "db:studio": "pnpm --filter @doergo/auth-service prisma:studio",
+    "docker:dev": "docker-compose -f infra/docker/docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker-compose -f infra/docker/docker-compose.dev.yml down",
+    "docker:up": "docker-compose -f infra/docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f infra/docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f infra/docker/docker-compose.yml logs -f",
+    "clean": "rm -rf node_modules apps/*/node_modules apps/api/*/node_modules packages/*/node_modules"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
