@@ -1,7 +1,9 @@
 # DOERGO - Implementation Checklist
 
 > **Usage**: Check off items as completed. Use `[x]` for done, `[ ]` for pending, `[~]` for in progress.
-> **Last Updated**: 2026-01-14
+> **Last Updated**: 2026-01-14 (Phase 2 Complete)
+>
+> **IMPORTANT**: All code MUST follow **SOLID** and **DRY** principles. See CLAUDE.md Section 13.
 
 ---
 
@@ -34,17 +36,20 @@
 
 ---
 
-## PHASE 2: Authentication ✅ (Backend Complete)
+## PHASE 2: Authentication ✅ COMPLETE
 
 ### Backend - Auth Service
 - [x] `POST /auth/login` - Validate credentials, return tokens
 - [x] `POST /auth/refresh` - Refresh access token with rotation
 - [x] `POST /auth/logout` - Invalidate refresh token
 - [x] `GET /auth/me` - Return current user profile
-- [x] Password hashing with bcrypt
+- [x] `POST /auth/register` - User registration (Partner role)
+- [x] Password hashing with bcrypt (cost factor 12)
 - [x] JWT generation (access: 15m, refresh: 7d)
-- [x] Refresh token storage in database
+- [x] Refresh token storage in database (SHA-256 hashed)
 - [x] Token rotation (invalidate old refresh token)
+- [x] Account lockout (5 failed attempts = 15 min)
+- [x] Data normalization (lowercase email, names)
 
 ### Backend - Gateway
 - [x] Proxy `/auth/*` routes to auth-service
@@ -53,16 +58,27 @@
 - [x] `@Roles()` decorator
 - [x] `@CurrentUser()` decorator
 - [x] `@Public()` decorator
+- [x] Rate limiting (`@nestjs/throttler`)
+- [x] Security headers (Helmet.js)
+- [x] Input validation (class-validator DTOs)
+- [x] Role injection prevention (hardcoded PARTNER)
+- [x] Swagger disabled in production
 - [ ] Global exception filter (nice to have)
 
 ### Web - Partner Portal
-- [ ] Login page (`/login`)
-- [ ] Auth context/provider
-- [ ] Protected route wrapper
-- [ ] Token storage (httpOnly cookie or localStorage)
-- [ ] Auto-refresh on token expiry
-- [ ] Logout functionality
-- [ ] Redirect to `/tasks` after login
+- [x] Login page (`/login`) with sliding animation
+- [x] Registration form with validation
+- [x] Auth context/provider
+- [x] Protected route wrapper (withAuth HOC)
+- [x] Token storage (localStorage/sessionStorage)
+- [x] "Keep me signed in" functionality
+- [x] Auto-refresh on token expiry
+- [x] Logout functionality
+- [x] Redirect to `/dashboard` after login
+- [x] Toast notifications (Sonner)
+- [x] Zod validation matching backend DTOs
+- [x] Shared Spinner components
+- [x] Shared validation schemas (`lib/validation.ts`)
 
 ### Web - Office Portal
 - [ ] Login page (`/login`)
@@ -296,7 +312,7 @@
 | Phase | Status | Progress |
 |-------|--------|----------|
 | 1. Foundation | ✅ Complete | 100% |
-| 2. Authentication | 🔲 Pending | 0% |
+| 2. Authentication | ✅ Complete | 95% (Mobile pending) |
 | 3. Task Management | 🔲 Pending | 0% |
 | 4. Comments & Attachments | 🔲 Pending | 0% |
 | 5. Real-time Updates | 🔲 Pending | 0% |
@@ -304,7 +320,20 @@
 | 7. Notifications | 🔲 Pending | 0% |
 | 8. Polish & Production | 🔲 Pending | 0% |
 
-**Overall Progress**: ~12%
+**Overall Progress**: ~25%
+
+---
+
+## CODE QUALITY CHECKLIST
+
+Before completing any task, verify:
+
+- [ ] **DRY**: No duplicated code - use `@doergo/shared` utilities
+- [ ] **SOLID**: Single responsibility, proper abstraction
+- [ ] **Types**: All functions/methods have proper TypeScript types
+- [ ] **Validation**: Input validated on both frontend (Zod) and backend (class-validator)
+- [ ] **Security**: No hardcoded secrets, proper auth checks
+- [ ] **Tests**: Unit tests for critical business logic (when applicable)
 
 ---
 
@@ -313,7 +342,27 @@
 | Date | Session Focus | Completed |
 |------|---------------|-----------|
 | 2026-01-14 | Initial setup | Phase 1 complete |
-| | | |
+| 2026-01-14 | Authentication backend | Auth service + Gateway complete |
+| 2026-01-14 | Security hardening | Rate limiting, account lockout, Helmet, validation |
+| 2026-01-14 | Web Partner login | Login page, registration, auth context |
+| 2026-01-14 | Code organization | DRY/SOLID refactor, shared modules |
+
+---
+
+## SHARED MODULES REFERENCE
+
+**Import from `@doergo/shared`:**
+
+```typescript
+// Microservices
+import { SERVICE_NAMES, createMicroserviceOptions, createClientOptions } from '@doergo/shared';
+
+// API Responses
+import { success, error, paginated, ErrorCodes } from '@doergo/shared';
+
+// Types
+import { Role, TaskStatus, TaskPriority, ApiResponse } from '@doergo/shared';
+```
 
 ---
 

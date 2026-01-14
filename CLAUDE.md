@@ -1,6 +1,6 @@
 # DOERGO - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-01-14
+> **Last Updated**: 2026-01-14 (Phase 2 Auth + Security Complete)
 
 ---
 
@@ -80,8 +80,13 @@ doergo/
 │   └── mobile/                # Worker app (Expo)
 │       └── src/
 ├── packages/
-│   └── shared/                # Shared types, enums, constants
-│       └── src/types/index.ts
+│   └── shared/                # Shared types, modules, utilities
+│       └── src/
+│           ├── types/         # Enums, interfaces, API types
+│           ├── prisma/        # Shared PrismaService & PrismaModule
+│           ├── microservices/ # Redis config factories, service names
+│           ├── api/           # Response helpers, error codes
+│           └── design/        # Design tokens, Tailwind preset
 ├── infra/
 │   └── docker/
 │       └── docker-compose.dev.yml
@@ -288,15 +293,19 @@ pnpm build            # Build all packages
 - [x] Mobile app scaffold
 - [x] Shared types package
 
-### Phase 2: Authentication 🔲 PENDING
-- [ ] Auth service: login, refresh, logout endpoints
-- [ ] JWT access/refresh token generation
-- [ ] Refresh token rotation (DB storage)
-- [ ] Password hashing (bcrypt)
-- [ ] RolesGuard decorator
-- [ ] Gateway auth proxy to auth-service
-- [ ] Web: login page + auth context
-- [ ] Mobile: login screen + secure storage
+### Phase 2: Authentication ✅ COMPLETE
+- [x] Auth service: login, refresh, logout endpoints
+- [x] JWT access/refresh token generation
+- [x] Refresh token rotation (DB storage with SHA-256 hashing)
+- [x] Password hashing (bcrypt, cost factor 12)
+- [x] RolesGuard + JwtAuthGuard decorators
+- [x] Gateway auth proxy to auth-service
+- [x] Web Partner: login page + auth context + registration
+- [x] Account lockout (5 failed attempts = 15 min lockout)
+- [x] Rate limiting (Throttler: 3/sec, 20/10sec, 100/min)
+- [x] Security headers (Helmet.js)
+- [x] Input validation (class-validator + Zod frontend)
+- [ ] Mobile: login screen + secure storage (pending)
 
 ### Phase 3: Task Management 🔲 PENDING
 - [ ] Task CRUD endpoints (task-service)
@@ -329,7 +338,57 @@ pnpm build            # Build all packages
 
 ---
 
-## 13. CODING CONVENTIONS
+## 13. SOLID & DRY PRINCIPLES
+
+> **IMPORTANT**: All code in this project MUST follow SOLID and DRY principles.
+
+### DRY (Don't Repeat Yourself)
+
+**Use shared modules from `@doergo/shared`:**
+
+```typescript
+// ❌ BAD - Duplicating Redis config in each service
+{
+  transport: Transport.REDIS,
+  options: { host: 'localhost', port: 6379 }
+}
+
+// ✅ GOOD - Use shared factory
+import { createMicroserviceOptions } from '@doergo/shared';
+NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
+```
+
+**Available shared utilities:**
+| Import | Purpose |
+|--------|---------|
+| `SERVICE_NAMES` | Type-safe service name constants |
+| `createMicroserviceOptions()` | Redis microservice bootstrap config |
+| `createClientOptions(SERVICE_NAMES.X)` | ClientsModule registration |
+| `success()`, `error()`, `paginated()` | Standardized API responses |
+| `ErrorCodes` | Common error code constants |
+| `PrismaModule`, `PrismaService` | Shared database access |
+
+### SOLID Principles
+
+| Principle | Application |
+|-----------|-------------|
+| **S**ingle Responsibility | Each service handles one domain (auth, tasks, tracking) |
+| **O**pen/Closed | Use decorators (`@Roles`, `@Public`) to extend behavior |
+| **L**iskov Substitution | All services implement consistent interfaces |
+| **I**nterface Segregation | DTOs are specific to each operation |
+| **D**ependency Inversion | Inject services via constructor, use interfaces |
+
+### Before Adding New Code
+
+1. **Check `@doergo/shared`** - Does a utility already exist?
+2. **Check existing services** - Is there similar code to extract?
+3. **Consider reusability** - Will this be used more than once?
+
+If duplicating code, **STOP** and create a shared utility instead.
+
+---
+
+## 14. CODING CONVENTIONS
 
 ### NestJS Services
 ```typescript
@@ -372,7 +431,7 @@ export class TasksController {
 
 ---
 
-## 14. COMMON TASKS QUICK GUIDE
+## 15. COMMON TASKS QUICK GUIDE
 
 ### Add new API endpoint
 1. Add DTO in `src/modules/{module}/dto/`
@@ -395,7 +454,7 @@ export class TasksController {
 
 ---
 
-## 15. TROUBLESHOOTING
+## 16. TROUBLESHOOTING
 
 | Issue | Solution |
 |-------|----------|
@@ -408,27 +467,43 @@ export class TasksController {
 
 ---
 
-## 16. NEXT IMMEDIATE TASKS
+## 17. NEXT IMMEDIATE TASKS
 
-**Current Sprint**: Phase 2 - Authentication
+**Current Sprint**: Phase 3 - Task Management
 
-1. **auth-service**: Implement login endpoint
-   - File: `apps/api/auth-service/src/modules/auth/auth.service.ts`
-   - Validate credentials, generate JWT pair
+1. **task-service**: Implement CRUD endpoints
+   - File: `apps/api/task-service/src/modules/tasks/tasks.service.ts`
+   - GET /tasks (list with filters), POST /tasks, GET /tasks/:id, PATCH, DELETE
 
-2. **auth-service**: Implement refresh endpoint
-   - Store refresh tokens in DB
-   - Implement rotation (invalidate old on refresh)
+2. **task-service**: Implement status transitions
+   - State machine for valid status changes
+   - Create TaskEvent on every change
 
-3. **gateway**: Proxy auth routes
-   - File: `apps/api/gateway/src/modules/auth/auth.controller.ts`
+3. **gateway**: Proxy task routes
+   - File: `apps/api/gateway/src/modules/tasks/tasks.controller.ts`
 
-4. **gateway**: Add JwtAuthGuard
-   - Verify access token on protected routes
+4. **web-partner**: Tasks list page
+   - File: `apps/web-partner/src/app/(dashboard)/tasks/page.tsx`
+   - Table view with status filters
 
-5. **web-partner**: Login page
-   - File: `apps/web-partner/src/app/login/page.tsx`
+5. **web-partner**: Create task form
+   - File: `apps/web-partner/src/app/(dashboard)/tasks/new/page.tsx`
 
 ---
 
-*This document should be read at the start of every session. Update section 12 (Implementation Status) and section 16 (Next Tasks) as work progresses.*
+## 18. SECURITY FEATURES IMPLEMENTED
+
+| Feature | Implementation |
+|---------|---------------|
+| Rate Limiting | `@nestjs/throttler` - 3/sec, 20/10sec, 100/min |
+| Account Lockout | 5 failed attempts = 15 min lockout |
+| Password Hashing | bcrypt with cost factor 12 |
+| Token Security | SHA-256 hashed refresh tokens in DB |
+| Security Headers | Helmet.js middleware |
+| Input Validation | class-validator (backend) + Zod (frontend) |
+| Role Injection | Blocked - role always set server-side |
+| Swagger | Disabled in production |
+
+---
+
+*This document should be read at the start of every session. Update section 12 (Implementation Status) and section 17 (Next Tasks) as work progresses.*
