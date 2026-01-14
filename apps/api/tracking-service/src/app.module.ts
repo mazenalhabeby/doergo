@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule } from '@nestjs/config';
+import { ClientsModule } from '@nestjs/microservices';
+import { SERVICE_NAMES, createClientOptions } from '@doergo/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { LocationModule } from './modules/location/location.module';
 
@@ -11,18 +12,7 @@ import { LocationModule } from './modules/location/location.module';
       envFilePath: '.env',
     }),
     ClientsModule.registerAsync([
-      {
-        name: 'NOTIFICATION_SERVICE',
-        imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.REDIS,
-          options: {
-            host: configService.get('REDIS_HOST', 'localhost'),
-            port: configService.get('REDIS_PORT', 6379),
-          },
-        }),
-        inject: [ConfigService],
-      },
+      createClientOptions(SERVICE_NAMES.NOTIFICATION),
     ]),
     PrismaModule,
     LocationModule,

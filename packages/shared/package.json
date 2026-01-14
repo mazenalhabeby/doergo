@@ -24,6 +24,21 @@
       "types": "./dist/design/tailwind-preset.d.ts",
       "import": "./dist/design/tailwind-preset.js",
       "require": "./dist/design/tailwind-preset.js"
+    },
+    "./prisma": {
+      "types": "./dist/prisma/index.d.ts",
+      "import": "./dist/prisma/index.js",
+      "require": "./dist/prisma/index.js"
+    },
+    "./microservices": {
+      "types": "./dist/microservices/index.d.ts",
+      "import": "./dist/microservices/index.js",
+      "require": "./dist/microservices/index.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js",
+      "require": "./dist/api/index.js"
     }
   },
   "scripts": {
@@ -31,6 +46,18 @@
     "dev": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/microservices": "^11.0.0",
+    "@prisma/client": "^6.3.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/microservices": "^11.0.0",
+    "@prisma/client": "^6.3.0"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.0",

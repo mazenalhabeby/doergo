@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authApi, hasTokens, clearTokens } from '@/lib/api';
+import { Spinner } from '@/components/ui';
 
 // User type
 export interface User {
@@ -134,7 +135,7 @@ export function withAuth<P extends object>(
     if (isLoading) {
       return (
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <Spinner size="lg" />
         </div>
       );
     }

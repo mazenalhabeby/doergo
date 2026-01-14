@@ -1,92 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import {
-  Eye, EyeOff, Loader2, Mail, Lock, User, Building2,
+  Eye, EyeOff, Mail, Lock, User, Building2,
   Check, Sparkles
 } from 'lucide-react';
-import { Button, Input, Label, Checkbox } from '@/components/ui';
+import { Button, Input, Label, Checkbox, Spinner } from '@/components/ui';
 import { TeamCollaborationIllustration, DashboardAnalyticsIllustration } from '@/components/illustrations';
 import { useAuth } from '@/contexts/auth-context';
 import { authApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-
-// ============================================================================
-// Validation Schemas (matching backend DTOs)
-// ============================================================================
-
-// Name validation: only letters, spaces, hyphens, and apostrophes
-const NAME_REGEX = /^[a-zA-Z\s\-']+$/;
-// Company name: letters, numbers, spaces, and common punctuation
-const COMPANY_REGEX = /^[a-zA-Z0-9\s\-'&.,]+$/;
-
-const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address')
-    .max(255, 'Email must not exceed 255 characters')
-    .transform((val) => val.trim().toLowerCase()),
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password must not exceed 128 characters'),
-});
-
-const registerSchema = z.object({
-  firstName: z
-    .string()
-    .min(1, 'First name is required')
-    .min(2, 'First name must be at least 2 characters')
-    .max(50, 'First name must not exceed 50 characters')
-    .regex(NAME_REGEX, 'First name can only contain letters, spaces, hyphens, and apostrophes')
-    .transform((val) => val.trim().toLowerCase()),
-  lastName: z
-    .string()
-    .min(1, 'Last name is required')
-    .min(2, 'Last name must be at least 2 characters')
-    .max(50, 'Last name must not exceed 50 characters')
-    .regex(NAME_REGEX, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
-    .transform((val) => val.trim().toLowerCase()),
-  companyName: z
-    .string()
-    .min(1, 'Company name is required')
-    .min(2, 'Company name must be at least 2 characters')
-    .max(100, 'Company name must not exceed 100 characters')
-    .regex(COMPANY_REGEX, 'Company name contains invalid characters')
-    .transform((val) => val.trim().toLowerCase()),
-  email: z
-    .string()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address')
-    .max(255, 'Email must not exceed 255 characters')
-    .transform((val) => val.trim().toLowerCase()),
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password must not exceed 128 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
-  acceptTerms: z.boolean().refine((val) => val === true, 'You must accept the terms'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
-
-const passwordRequirements = [
-  { label: '8+ chars', test: (p: string) => p.length >= 8 },
-  { label: 'Upper', test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'Lower', test: (p: string) => /[a-z]/.test(p) },
-  { label: 'Number', test: (p: string) => /[0-9]/.test(p) },
-];
+import {
+  loginSchema,
+  registerSchema,
+  passwordRequirements,
+  type LoginFormData,
+  type RegisterFormData,
+} from '@/lib/validation';
 
 // ============================================================================
 // Floating Particles Component
@@ -184,7 +117,7 @@ function MobileHeader() {
 // Main Component
 // ============================================================================
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -219,7 +152,7 @@ export default function AuthPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -389,6 +322,21 @@ export default function AuthPage() {
         <Link href="/privacy" className="text-slate-700 hover:text-brand-600 transition-colors">Privacy Policy</Link>
       </p>
     </div>
+  );
+}
+
+/**
+ * Auth Page with Suspense boundary for useSearchParams
+ */
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    }>
+      <AuthPageContent />
+    </Suspense>
   );
 }
 
@@ -581,7 +529,7 @@ function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
             )}
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Spinner size="sm" />
             ) : (
               'Sign in to Dashboard'
             )}
@@ -639,7 +587,6 @@ function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
 // Register Form Component
 // ============================================================================
 
-type RegisterFormData = z.infer<typeof registerSchema>;
 type RegisterValidationErrors = Partial<Record<keyof RegisterFormData, string>>;
 
 function RegisterForm({ isActive, isMobile = false }: { isActive: boolean; isMobile?: boolean }) {
@@ -958,7 +905,7 @@ function RegisterForm({ isActive, isMobile = false }: { isActive: boolean; isMob
             )}
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Spinner size="sm" />
             ) : (
               'Get Started Free'
             )}

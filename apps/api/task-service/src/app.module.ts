@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule } from '@nestjs/config';
+import { ClientsModule } from '@nestjs/microservices';
+import { SERVICE_NAMES, createClientOptions } from '@doergo/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { CommentsModule } from './modules/comments/comments.module';
@@ -14,18 +15,7 @@ import { AttachmentsModule } from './modules/attachments/attachments.module';
     }),
     // Client for notification service (to emit events)
     ClientsModule.registerAsync([
-      {
-        name: 'NOTIFICATION_SERVICE',
-        imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.REDIS,
-          options: {
-            host: configService.get('REDIS_HOST', 'localhost'),
-            port: configService.get('REDIS_PORT', 6379),
-          },
-        }),
-        inject: [ConfigService],
-      },
+      createClientOptions(SERVICE_NAMES.NOTIFICATION),
     ]),
     PrismaModule,
     TasksModule,
