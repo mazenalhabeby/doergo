@@ -23,13 +23,21 @@
         "NSLocationWhenInUseUsageDescription": "Doergo needs your location to track task progress",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Doergo needs your location to track task progress even when the app is in the background",
         "NSCameraUsageDescription": "Doergo needs camera access to take photos for task documentation",
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "navigationBar": {
+        "visible": "sticky",
+        "backgroundColor": "#f1f5f9",
+        "barStyle": "dark-content"
       },
       "package": "com.doergo.mobile",
       "config": {
@@ -56,7 +64,9 @@
           "icon": "./assets/notification-icon.png",
           "color": "#2563eb"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

@@ -5,6 +5,8 @@
   "description": "Doergo - 3-role task management and field execution platform (Microservices)",
   "pnpm": {
     "overrides": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0",
       "@types/react": "^19.0.0",
       "@types/react-dom": "^19.0.0"
     }
@@ -17,9 +19,8 @@
     "dev:task": "pnpm --filter @doergo/task-service dev",
     "dev:notification": "pnpm --filter @doergo/notification-service dev",
     "dev:tracking": "pnpm --filter @doergo/tracking-service dev",
-    "dev:web": "pnpm --filter \"@doergo/web-*\" run --parallel dev",
-    "dev:web-partner": "pnpm --filter @doergo/web-partner dev",
-    "dev:web-office": "pnpm --filter @doergo/web-office dev",
+    "dev:web": "pnpm --filter @doergo/web-app dev",
+    "dev:web-app": "pnpm --filter @doergo/web-app dev",
     "dev:mobile": "pnpm --filter @doergo/mobile start",
     "build": "pnpm run --parallel build",
     "build:api": "pnpm --filter \"@doergo/*-service\" --filter @doergo/api-gateway run --parallel build",

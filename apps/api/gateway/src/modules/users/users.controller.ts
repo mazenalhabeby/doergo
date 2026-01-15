@@ -1,11 +1,26 @@
-import { Controller, Get, Param, Query, Inject } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Inject,
+  UseGuards,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
+import { Role } from '@doergo/shared';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
@@ -13,33 +28,83 @@ export class UsersController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile() {
-    // TODO: Get user ID from JWT token
+  async getProfile(@CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'get_profile' }, {}),
+      this.authClient.send({ cmd: 'get_profile' }, { userId: user.id }),
     );
   }
 
   @Get('workers')
-  @ApiOperation({ summary: 'Get all workers (Office only)' })
+  @ApiOperation({ summary: 'Get all technicians (Dispatcher only)' })
   @ApiQuery({ name: 'organizationId', required: false })
-  async getWorkers(@Query() query: Record<string, any>) {
+  @Roles(Role.DISPATCHER)
+  async getWorkers(
+    @CurrentUser() user: CurrentUserData,
+    @Query() query: Record<string, any>,
+  ) {
+    // Office can only see workers in their organization
     return firstValueFrom(
-      this.authClient.send({ cmd: 'get_workers' }, query),
+      this.authClient.send({ cmd: 'get_workers' }, {
+        ...query,
+        organizationId: user.organizationId,
+      }),
     );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  async findOne(@Param('id') id: string) {
-    return firstValueFrom(
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    // Users can only access their own data, or DISPATCHER can access users in their org
+    if (user.id !== id && user.role !== Role.DISPATCHER) {
+      throw new ForbiddenException('You can only access your own profile');
+    }
+
+    const result = await firstValueFrom(
       this.authClient.send({ cmd: 'find_user' }, { id }),
     );
+
+    if (!result?.data) {
+      throw new NotFoundException('User not found');
+    }
+
+    // DISPATCHER can only access users in their organization
+    if (user.role === Role.DISPATCHER && result.data.organizationId !== user.organizationId) {
+      throw new ForbiddenException('You can only access users in your organization');
+    }
+
+    return result;
   }
 
   @Get(':id/tasks')
-  @ApiOperation({ summary: 'Get tasks assigned to a worker' })
-  async getWorkerTasks(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Get tasks assigned to a technician' })
+  @Roles(Role.DISPATCHER, Role.TECHNICIAN)
+  async getWorkerTasks(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    // Technicians can only see their own tasks, DISPATCHER can see any technician's tasks in their org
+    if (user.role === Role.TECHNICIAN && user.id !== id) {
+      throw new ForbiddenException('You can only access your own tasks');
+    }
+
+    // For DISPATCHER, verify the technician is in their organization
+    if (user.role === Role.DISPATCHER) {
+      const workerResult = await firstValueFrom(
+        this.authClient.send({ cmd: 'find_user' }, { id }),
+      );
+
+      if (!workerResult?.data) {
+        throw new NotFoundException('Worker not found');
+      }
+
+      if (workerResult.data.organizationId !== user.organizationId) {
+        throw new ForbiddenException('You can only access workers in your organization');
+      }
+    }
+
     return firstValueFrom(
       this.authClient.send({ cmd: 'get_worker_tasks' }, { workerId: id }),
     );

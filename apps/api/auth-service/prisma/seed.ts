@@ -7,71 +7,71 @@ async function main() {
   console.log('Seeding database...');
 
   // Create organizations
-  const partnerOrg = await prisma.organization.create({
+  const clientOrg = await prisma.organization.create({
     data: {
-      name: 'Partner Company A',
+      name: 'Client Company A',
     },
   });
 
-  const officeOrg = await prisma.organization.create({
+  const dispatcherOrg = await prisma.organization.create({
     data: {
       name: 'Doergo Operations',
     },
   });
 
-  console.log('Created organizations:', partnerOrg.name, officeOrg.name);
+  console.log('Created organizations:', clientOrg.name, dispatcherOrg.name);
 
   // Hash password for all users
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  // Create Partner user
-  const partnerUser = await prisma.user.create({
+  // Create Client user
+  const clientUser = await prisma.user.create({
     data: {
-      email: 'partner@example.com',
+      email: 'client@example.com',
       passwordHash,
       firstName: 'John',
-      lastName: 'Partner',
-      role: Role.PARTNER,
-      organizationId: partnerOrg.id,
+      lastName: 'Client',
+      role: Role.CLIENT,
+      organizationId: clientOrg.id,
     },
   });
 
-  // Create Office user
-  const officeUser = await prisma.user.create({
+  // Create Dispatcher user
+  const dispatcherUser = await prisma.user.create({
     data: {
-      email: 'office@example.com',
+      email: 'dispatcher@example.com',
       passwordHash,
       firstName: 'Jane',
-      lastName: 'Office',
-      role: Role.OFFICE,
-      organizationId: officeOrg.id,
+      lastName: 'Dispatcher',
+      role: Role.DISPATCHER,
+      organizationId: dispatcherOrg.id,
     },
   });
 
-  // Create Worker users
-  const worker1 = await prisma.user.create({
+  // Create Technician users
+  const technician1 = await prisma.user.create({
     data: {
-      email: 'worker1@example.com',
+      email: 'technician1@example.com',
       passwordHash,
       firstName: 'Mike',
-      lastName: 'Worker',
-      role: Role.WORKER,
-      organizationId: officeOrg.id,
+      lastName: 'Technician',
+      role: Role.TECHNICIAN,
+      organizationId: dispatcherOrg.id,
     },
   });
 
-  const worker2 = await prisma.user.create({
+  const technician2 = await prisma.user.create({
     data: {
-      email: 'worker2@example.com',
+      email: 'technician2@example.com',
       passwordHash,
       firstName: 'Sarah',
-      lastName: 'Worker',
-      role: Role.WORKER,
-      organizationId: officeOrg.id,
+      lastName: 'Technician',
+      role: Role.TECHNICIAN,
+      organizationId: dispatcherOrg.id,
     },
   });
 
-  console.log('Created users:', partnerUser.email, officeUser.email, worker1.email, worker2.email);
+  console.log('Created users:', clientUser.email, dispatcherUser.email, technician1.email, technician2.email);
 
   // Create sample tasks
   const tasks = await Promise.all([
@@ -81,8 +81,8 @@ async function main() {
         description: 'Urgent delivery of documents to the main office building',
         status: TaskStatus.NEW,
         priority: TaskPriority.HIGH,
-        organizationId: partnerOrg.id,
-        createdById: partnerUser.id,
+        organizationId: clientOrg.id,
+        createdById: clientUser.id,
         locationLat: 40.7128,
         locationLng: -74.006,
         locationAddress: '123 Main St, New York, NY 10001',
@@ -95,9 +95,9 @@ async function main() {
         description: 'Install new equipment at client site',
         status: TaskStatus.ASSIGNED,
         priority: TaskPriority.MEDIUM,
-        organizationId: partnerOrg.id,
-        createdById: partnerUser.id,
-        assignedToId: worker1.id,
+        organizationId: clientOrg.id,
+        createdById: clientUser.id,
+        assignedToId: technician1.id,
         locationLat: 40.7589,
         locationLng: -73.9851,
         locationAddress: '456 Broadway, New York, NY 10013',
@@ -110,9 +110,9 @@ async function main() {
         description: 'Perform routine site inspection and report findings',
         status: TaskStatus.IN_PROGRESS,
         priority: TaskPriority.LOW,
-        organizationId: partnerOrg.id,
-        createdById: partnerUser.id,
-        assignedToId: worker2.id,
+        organizationId: clientOrg.id,
+        createdById: clientUser.id,
+        assignedToId: technician2.id,
         locationLat: 40.7484,
         locationLng: -73.9857,
         locationAddress: '789 Park Ave, New York, NY 10021',
@@ -125,8 +125,8 @@ async function main() {
         description: 'Perform scheduled maintenance check on equipment',
         status: TaskStatus.DRAFT,
         priority: TaskPriority.MEDIUM,
-        organizationId: partnerOrg.id,
-        createdById: partnerUser.id,
+        organizationId: clientOrg.id,
+        createdById: clientUser.id,
         locationLat: 40.7614,
         locationLng: -73.9776,
         locationAddress: '321 5th Ave, New York, NY 10016',
@@ -141,12 +141,12 @@ async function main() {
     data: [
       {
         taskId: tasks[1].id,
-        userId: officeUser.id,
-        content: 'Worker has been dispatched to the location.',
+        userId: dispatcherUser.id,
+        content: 'Technician has been dispatched to the location.',
       },
       {
         taskId: tasks[2].id,
-        userId: worker2.id,
+        userId: technician2.id,
         content: 'On site, beginning inspection now.',
       },
     ],
@@ -159,19 +159,19 @@ async function main() {
     data: [
       {
         taskId: tasks[0].id,
-        userId: partnerUser.id,
+        userId: clientUser.id,
         eventType: TaskEventType.CREATED,
         metadata: { title: tasks[0].title },
       },
       {
         taskId: tasks[1].id,
-        userId: officeUser.id,
+        userId: dispatcherUser.id,
         eventType: TaskEventType.ASSIGNED,
-        metadata: { assignedToId: worker1.id },
+        metadata: { assignedToId: technician1.id },
       },
       {
         taskId: tasks[2].id,
-        userId: worker2.id,
+        userId: technician2.id,
         eventType: TaskEventType.STATUS_CHANGED,
         metadata: { from: TaskStatus.ASSIGNED, to: TaskStatus.IN_PROGRESS },
       },
@@ -182,10 +182,10 @@ async function main() {
 
   console.log('\nSeed completed successfully!');
   console.log('\nTest credentials:');
-  console.log('  Partner: partner@example.com / password123');
-  console.log('  Office:  office@example.com / password123');
-  console.log('  Worker1: worker1@example.com / password123');
-  console.log('  Worker2: worker2@example.com / password123');
+  console.log('  Client:      client@example.com / password123');
+  console.log('  Dispatcher:  dispatcher@example.com / password123');
+  console.log('  Technician1: technician1@example.com / password123');
+  console.log('  Technician2: technician2@example.com / password123');
 }
 
 main()

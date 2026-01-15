@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -40,6 +41,9 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global exception filter for consistent error responses
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Swagger documentation - ONLY in development
   if (!isProduction) {

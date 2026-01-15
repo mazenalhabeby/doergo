@@ -6,6 +6,8 @@ import {
   MaxLength,
   Matches,
   IsNotEmpty,
+  IsBoolean,
+  IsOptional,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -34,6 +36,11 @@ export class LoginDto {
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
   password: string;
+
+  @ApiProperty({ example: false, description: 'Keep user signed in for 30 days', required: false })
+  @IsBoolean()
+  @IsOptional()
+  rememberMe?: boolean;
 }
 
 export class RegisterDto {
@@ -89,4 +96,30 @@ export class RefreshTokenDto {
   @IsString()
   @IsNotEmpty({ message: 'Refresh token is required' })
   refreshToken: string;
+}
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@example.com', description: 'Email address for password reset' })
+  @IsEmail({}, { message: 'Please enter a valid email address' })
+  @IsNotEmpty({ message: 'Email is required' })
+  @MaxLength(255, { message: 'Email must not exceed 255 characters' })
+  @Transform(({ value }) => toLowercase(value))
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ description: 'Password reset token from email' })
+  @IsString()
+  @IsNotEmpty({ message: 'Reset token is required' })
+  token: string;
+
+  @ApiProperty({ example: 'NewPassword123', description: 'New password (min 8 chars, must include uppercase, lowercase, and number)' })
+  @IsString()
+  @IsNotEmpty({ message: 'New password is required' })
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
+  @Matches(PASSWORD_REGEX, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+  })
+  newPassword: string;
 }

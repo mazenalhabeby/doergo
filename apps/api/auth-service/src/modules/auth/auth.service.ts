@@ -9,6 +9,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 const MAX_SESSIONS_PER_USER = 5;
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
+const PASSWORD_RESET_EXPIRATION_HOURS = 1;
 
 // Hash a token using SHA-256 for secure storage
 function hashToken(token: string): string {
@@ -39,8 +40,8 @@ export class AuthService {
       const firstName = data.firstName.trim().toLowerCase();
       const lastName = data.lastName.trim().toLowerCase();
       const companyName = data.companyName?.trim().toLowerCase();
-      // SECURITY: Force role to PARTNER regardless of input
-      const role = 'PARTNER';
+      // SECURITY: Force role to CLIENT regardless of input
+      const role = 'CLIENT';
 
       const existingUser = await this.prisma.user.findUnique({
         where: { email },
@@ -57,10 +58,10 @@ export class AuthService {
       // Use higher bcrypt cost factor (12) for better security
       const passwordHash = await bcrypt.hash(data.password, 12);
 
-      // If role is PARTNER and companyName is provided, create a new organization
+      // If role is CLIENT and companyName is provided, create a new organization
       let organizationId: string | null = null;
 
-      if (role === 'PARTNER' && companyName) {
+      if (role === 'CLIENT' && companyName) {
         const organization = await this.prisma.organization.create({
           data: {
             name: companyName,
@@ -109,7 +110,7 @@ export class AuthService {
     }
   }
 
-  async login(data: { email: string; password: string }) {
+  async login(data: { email: string; password: string; rememberMe?: boolean }) {
     try {
       // Normalize email to lowercase for lookup
       const email = data.email.trim().toLowerCase();
@@ -207,7 +208,8 @@ export class AuthService {
         });
       }
 
-      const tokens = await this.generateTokens(user.id, user.email, user.role);
+      const rememberMe = data.rememberMe ?? false;
+      const tokens = await this.generateTokens(user.id, user.email, user.role, rememberMe);
 
       return {
         success: true,
@@ -311,6 +313,154 @@ export class AuthService {
     }
   }
 
+  async forgotPassword(data: { email: string }) {
+    try {
+      // Normalize email
+      const email = data.email.trim().toLowerCase();
+
+      // Find user - but don't reveal if email exists (security best practice)
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: { id: true, email: true, firstName: true },
+      });
+
+      // SECURITY: Always return success to prevent email enumeration attacks
+      const successResponse = {
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      };
+
+      if (!user) {
+        // Log attempt but return success to prevent enumeration
+        this.logger.log(`Password reset requested for non-existent email: ${email}`);
+        return successResponse;
+      }
+
+      // Delete any existing unused tokens for this user
+      await this.prisma.passwordResetToken.deleteMany({
+        where: {
+          userId: user.id,
+          used: false,
+        },
+      });
+
+      // Generate a secure random token
+      const resetToken = randomUUID() + randomUUID(); // Extra entropy
+      const tokenHash = hashToken(resetToken);
+      const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRATION_HOURS * 60 * 60 * 1000);
+
+      // Store the hashed token
+      await this.prisma.passwordResetToken.create({
+        data: {
+          tokenHash,
+          userId: user.id,
+          expiresAt,
+        },
+      });
+
+      // TODO: Send email with reset link when email service is configured
+      // For now, log the token (DEVELOPMENT ONLY - remove in production)
+      this.logger.log(`Password reset token generated for ${email}: ${resetToken}`);
+
+      return successResponse;
+    } catch (error) {
+      this.logger.error('Forgot password error:', error);
+      return {
+        success: false,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to process password reset request. Please try again.',
+      };
+    }
+  }
+
+  async resetPassword(data: { token: string; newPassword: string }) {
+    try {
+      // Hash the incoming token to find in database
+      const tokenHash = hashToken(data.token);
+
+      // Find the token
+      const resetToken = await this.prisma.passwordResetToken.findUnique({
+        where: { tokenHash },
+        include: { user: true },
+      });
+
+      if (!resetToken) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Invalid or expired password reset link.',
+        };
+      }
+
+      // Check if token is expired
+      if (resetToken.expiresAt < new Date()) {
+        // Clean up expired token
+        await this.prisma.passwordResetToken.delete({ where: { id: resetToken.id } });
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Password reset link has expired. Please request a new one.',
+        };
+      }
+
+      // Check if token was already used
+      if (resetToken.used) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'This password reset link has already been used.',
+        };
+      }
+
+      // Validate new password length
+      if (data.newPassword.length < 8) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Password must be at least 8 characters long.',
+        };
+      }
+
+      // Hash new password with high cost factor
+      const newPasswordHash = await bcrypt.hash(data.newPassword, 12);
+
+      // Update user's password and reset failed attempts
+      await this.prisma.user.update({
+        where: { id: resetToken.user.id },
+        data: {
+          passwordHash: newPasswordHash,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
+      });
+
+      // Mark token as used
+      await this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true },
+      });
+
+      // SECURITY: Invalidate all refresh tokens for this user (force re-login everywhere)
+      await this.prisma.refreshToken.deleteMany({
+        where: { userId: resetToken.user.id },
+      });
+
+      this.logger.log(`Password reset successful for user: ${resetToken.user.email}`);
+
+      return {
+        success: true,
+        message: 'Password has been reset successfully. Please login with your new password.',
+      };
+    } catch (error) {
+      this.logger.error('Reset password error:', error);
+      return {
+        success: false,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to reset password. Please try again.',
+      };
+    }
+  }
+
   /**
    * Clean up all expired refresh tokens from the database.
    * Runs daily at midnight automatically.
@@ -353,9 +503,14 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, role: string) {
+  private async generateTokens(userId: string, email: string, role: string, rememberMe = false) {
     const basePayload = { sub: userId, email, role };
-    const refreshExpiration = this.configService.get('JWT_REFRESH_EXPIRATION', '7d');
+
+    // Use different refresh token expiration based on rememberMe
+    // rememberMe=true: 30 days, rememberMe=false: 24 hours
+    const refreshExpiration = rememberMe
+      ? this.configService.get('JWT_REFRESH_EXPIRATION_REMEMBER', '30d')
+      : this.configService.get('JWT_REFRESH_EXPIRATION', '24h');
 
     const accessToken = this.jwtService.sign(
       { ...basePayload, jti: randomUUID() },

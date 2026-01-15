@@ -26,6 +26,16 @@ export class AuthController {
     return this.authService.logout(data.refreshToken);
   }
 
+  @MessagePattern({ cmd: 'forgot_password' })
+  async forgotPassword(@Payload() data: any) {
+    return this.authService.forgotPassword(data);
+  }
+
+  @MessagePattern({ cmd: 'reset_password' })
+  async resetPassword(@Payload() data: any) {
+    return this.authService.resetPassword(data);
+  }
+
   @MessagePattern({ cmd: 'validate_token' })
   async validateToken(@Payload() data: any) {
     return this.authService.validateToken(data.token);

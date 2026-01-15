@@ -29,7 +29,7 @@ export class LocationService {
   async getActiveWorkers(organizationId?: string) {
     const where: any = {
       user: {
-        role: 'WORKER',
+        role: 'TECHNICIAN',
         isActive: true,
       },
     };

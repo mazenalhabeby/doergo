@@ -77,7 +77,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   emitWorkerLocationUpdated(workerId: string, location: any) {
-    // Emit to office users only
-    this.server.to('role:OFFICE').emit(SocketEvents.WORKER_LOCATION_UPDATED, { workerId, location });
+    // Emit to dispatcher users only
+    this.server.to('role:DISPATCHER').emit(SocketEvents.WORKER_LOCATION_UPDATED, { workerId, location });
   }
 }

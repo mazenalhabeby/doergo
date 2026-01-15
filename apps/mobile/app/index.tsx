@@ -1,28 +1,15 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
-export default function HomeScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Doergo</Text>
-      <Text style={styles.subtitle}>Worker Mobile App</Text>
-    </View>
-  );
+// This screen is shown very briefly while auth state is being determined
+// The animated splash covers most of the loading time
+// Using a matching background color for seamless transition
+export default function IndexScreen() {
+  return <View style={styles.container} />;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
+    backgroundColor: '#0a0f1a', // Matches splash background for seamless transition
   },
 });

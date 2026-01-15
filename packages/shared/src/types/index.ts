@@ -1,8 +1,24 @@
-// User Roles
+// User Roles (Field Service Industry Standard)
 export enum Role {
-  PARTNER = 'PARTNER',
-  OFFICE = 'OFFICE',
-  WORKER = 'WORKER',
+  CLIENT = 'CLIENT',           // Was: PARTNER - Creates tasks (external customer)
+  DISPATCHER = 'DISPATCHER',   // Was: OFFICE - Assigns workers, monitors operations
+  TECHNICIAN = 'TECHNICIAN',   // Was: WORKER - Executes tasks in the field
+}
+
+// Legacy role aliases for backward compatibility during migration
+// TODO: Remove after all references are updated
+export const LegacyRoleMap = {
+  PARTNER: Role.CLIENT,
+  OFFICE: Role.DISPATCHER,
+  WORKER: Role.TECHNICIAN,
+} as const;
+
+// Access level for organization delegation (SaaS multi-tenant)
+export enum AccessLevel {
+  NONE = 'NONE',                 // No access - manager sees nothing
+  TASKS_ONLY = 'TASKS_ONLY',     // Can view tasks only
+  TASKS_ASSIGN = 'TASKS_ASSIGN', // Can view tasks + assign workers
+  FULL = 'FULL',                 // Can view everything + assign
 }
 
 // Task Status - follows the lifecycle: DRAFT → NEW → ASSIGNED → IN_PROGRESS → COMPLETED → CLOSED
@@ -103,6 +119,17 @@ export interface User extends BaseEntity {
 export interface Organization extends BaseEntity {
   name: string;
   isActive: boolean;
+}
+
+// Organization Access (delegation between orgs)
+export interface OrganizationAccess extends BaseEntity {
+  grantorOrgId: string;    // The org granting access
+  granteeOrgId: string;    // The org receiving access
+  accessLevel: AccessLevel;
+  canViewTasks: boolean;
+  canAssignWorkers: boolean;
+  canViewWorkers: boolean;
+  canViewTracking: boolean;
 }
 
 // Task interface

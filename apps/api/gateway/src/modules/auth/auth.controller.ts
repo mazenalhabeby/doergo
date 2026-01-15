@@ -13,7 +13,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
+import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { Public } from '../../common/decorators';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 
@@ -33,10 +33,10 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async register(@Body() registerDto: RegisterDto) {
-    // SECURITY: Always set role to PARTNER - never trust client input for role
+    // SECURITY: Always set role to CLIENT - never trust client input for role
     const securePayload = {
       ...registerDto,
-      role: 'PARTNER',
+      role: 'CLIENT',
     };
 
     const result = await firstValueFrom(
@@ -110,6 +110,53 @@ export class AuthController {
     return firstValueFrom(
       this.authClient.send({ cmd: 'logout' }, refreshTokenDto),
     );
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  // Strict rate limit: 3 requests per minute to prevent abuse
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: 'Request password reset email' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent if account exists' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'forgot_password' }, forgotPasswordDto),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return result;
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  // Rate limit: 5 attempts per minute
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Reset password using token from email' })
+  @ApiResponse({ status: 200, description: 'Password reset successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'reset_password' }, resetPasswordDto),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return result;
   }
 
   @Get('me')

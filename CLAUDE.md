@@ -1,6 +1,6 @@
 # DOERGO - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-01-14 (Phase 2 Auth + Security Complete)
+> **Last Updated**: 2026-01-15 (Phase 2 Complete + Security Audit + Password Reset Flow)
 
 ---
 
@@ -13,7 +13,7 @@
 | Monorepo | pnpm workspaces |
 | Root | `/Users/pc/work/doergo` |
 
-**Core Flow**: `Partner creates task` → `Office assigns worker` → `Worker executes` → `Real-time updates`
+**Core Flow**: `Client creates task` → `Dispatcher assigns technician` → `Technician executes` → `Real-time updates`
 
 ---
 
@@ -22,13 +22,13 @@
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           CLIENTS                                    │
-├─────────────────┬─────────────────┬─────────────────────────────────┤
-│  web-partner    │   web-office    │         mobile                  │
-│  (Next.js)      │   (Next.js)     │     (React Native/Expo)         │
-│  :3001          │   :3002         │                                 │
-└────────┬────────┴────────┬────────┴──────────────┬──────────────────┘
-         │                 │                       │
-         └─────────────────┴───────────────────────┘
+├───────────────────────────────────┬─────────────────────────────────┤
+│              web-app              │         mobile                  │
+│         (Next.js + RBAC)          │     (React Native/Expo)         │
+│   :3000 (CLIENT & DISPATCHER)     │       (TECHNICIAN only)         │
+└─────────────────┬─────────────────┴──────────────┬──────────────────┘
+                  │                                │
+                  └────────────────────────────────┘
                            │
                     ┌──────▼──────┐
                     │ API Gateway │ :4000/api/v1
@@ -73,11 +73,11 @@ doergo/
 │   │   ├── task-service/      # Task CRUD + assignment
 │   │   ├── notification-service/  # Socket.IO + Email + Push
 │   │   └── tracking-service/  # GPS location updates
-│   ├── web-partner/           # Partner portal (Next.js) :3001
-│   │   └── src/app/           # App Router
-│   ├── web-office/            # Office portal (Next.js) :3002
-│   │   └── src/app/
-│   └── mobile/                # Worker app (Expo)
+│   ├── web-app/               # Unified web portal (Next.js) :3000
+│   │   └── src/app/           # App Router with role-based views
+│   │                          # CLIENT sees: Dashboard, My Tasks, Create Task, Invoices
+│   │                          # DISPATCHER sees: Dashboard, All Tasks, Technicians, Live Map, Managed Orgs
+│   └── mobile/                # Technician app (Expo)
 │       └── src/
 ├── packages/
 │   └── shared/                # Shared types, modules, utilities
@@ -86,7 +86,8 @@ doergo/
 │           ├── prisma/        # Shared PrismaService & PrismaModule
 │           ├── microservices/ # Redis config factories, service names
 │           ├── api/           # Response helpers, error codes
-│           └── design/        # Design tokens, Tailwind preset
+│           ├── design/        # Design tokens, Tailwind preset
+│           └── components/    # Shared React components (AnimatedLogo)
 ├── infra/
 │   └── docker/
 │       └── docker-compose.dev.yml
@@ -97,11 +98,16 @@ doergo/
 
 ## 4. ROLES & PERMISSIONS
 
-| Role | Platform | Can Create Tasks | Can Assign | Can Execute | Can Track Workers |
-|------|----------|------------------|------------|-------------|-------------------|
-| **PARTNER** | Web | ✅ Own org only | ❌ | ❌ | ❌ |
-| **OFFICE** | Web | ❌ | ✅ | ❌ | ✅ |
-| **WORKER** | Mobile | ❌ | ❌ | ✅ Assigned only | ❌ (is tracked) |
+| Role | Platform | Can Create Tasks | Can Assign | Can Execute | Can Track Technicians |
+|------|----------|------------------|------------|-------------|----------------------|
+| **CLIENT** | Web | ✅ Own org only | ❌ | ❌ | ❌ |
+| **DISPATCHER** | Web | ❌ | ✅ | ❌ | ✅ (within allowed scope) |
+| **TECHNICIAN** | Mobile | ❌ | ❌ | ✅ Assigned only | ❌ (is tracked) |
+
+### Multi-Tenant SaaS Delegation
+Organizations can grant access to other organizations:
+- **DISPATCHER** from Org A can access Org B's data only if B grants access via `OrganizationAccess`
+- Access levels: `NONE`, `TASKS_ONLY`, `TASKS_ASSIGN`, `FULL`
 
 ---
 
@@ -111,9 +117,11 @@ doergo/
 
 ### Core Models
 ```
-Organization { id, name, isActive }
-User { id, email, passwordHash, firstName, lastName, role, organizationId }
-RefreshToken { id, token, expiresAt, userId }
+Organization { id, name, isActive, grantedAccess[], receivedAccess[] }
+OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, canAssignWorkers, canViewWorkers, canViewTracking }
+User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil }
+RefreshToken { id, tokenHash, expiresAt, userId }
+PasswordResetToken { id, tokenHash, expiresAt, used, userId }
 Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId }
 Comment { id, content, taskId, userId }
 Attachment { id, fileName, fileUrl, fileType, fileSize, taskId, uploadedById }
@@ -123,7 +131,8 @@ WorkerLastLocation { id, lat, lng, accuracy, userId }
 
 ### Enums
 ```typescript
-Role: PARTNER | OFFICE | WORKER
+Role: CLIENT | DISPATCHER | TECHNICIAN
+AccessLevel: NONE | TASKS_ONLY | TASKS_ASSIGN | FULL
 TaskStatus: DRAFT | NEW | ASSIGNED | IN_PROGRESS | BLOCKED | COMPLETED | CANCELED | CLOSED
 TaskPriority: LOW | MEDIUM | HIGH | URGENT
 TaskEventType: CREATED | UPDATED | ASSIGNED | UNASSIGNED | STATUS_CHANGED | COMMENT_ADDED | ATTACHMENT_ADDED | ATTACHMENT_REMOVED
@@ -152,29 +161,32 @@ DRAFT ──► NEW ──► ASSIGNED ──► IN_PROGRESS ──► COMPLETED
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | POST | `/auth/login` | Login, returns tokens | No |
+| POST | `/auth/register` | Register new CLIENT account | No |
 | POST | `/auth/refresh` | Refresh access token | No |
 | POST | `/auth/logout` | Invalidate refresh token | Yes |
+| POST | `/auth/forgot-password` | Request password reset email | No |
+| POST | `/auth/reset-password` | Reset password with token | No |
 | GET | `/auth/me` | Get current user | Yes |
 
 ### Tasks (`/tasks`)
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
 | GET | `/tasks` | List tasks | ALL |
-| POST | `/tasks` | Create task | PARTNER |
+| POST | `/tasks` | Create task | CLIENT |
 | GET | `/tasks/:id` | Get task detail | ALL |
-| PATCH | `/tasks/:id` | Update task | PARTNER (own) |
-| DELETE | `/tasks/:id` | Delete task | PARTNER (own) |
-| POST | `/tasks/:id/assign` | Assign worker | OFFICE |
-| POST | `/tasks/:id/start` | Start task | WORKER |
-| POST | `/tasks/:id/block` | Block task | WORKER |
-| POST | `/tasks/:id/complete` | Complete task | WORKER |
+| PATCH | `/tasks/:id` | Update task | CLIENT (own) |
+| DELETE | `/tasks/:id` | Delete task | CLIENT (own) |
+| POST | `/tasks/:id/assign` | Assign technician | DISPATCHER |
+| POST | `/tasks/:id/start` | Start task | TECHNICIAN |
+| POST | `/tasks/:id/block` | Block task | TECHNICIAN |
+| POST | `/tasks/:id/complete` | Complete task | TECHNICIAN |
 
 ### Tracking (`/tracking`)
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
-| POST | `/tracking/location` | Update worker location | WORKER |
-| GET | `/tracking/workers` | Get all worker locations | OFFICE |
-| GET | `/tracking/workers/:id` | Get specific worker | OFFICE |
+| POST | `/tracking/location` | Update technician location | TECHNICIAN |
+| GET | `/tracking/workers` | Get all technician locations | DISPATCHER |
+| GET | `/tracking/workers/:id` | Get specific technician | DISPATCHER |
 
 ---
 
@@ -214,7 +226,7 @@ DRAFT ──► NEW ──► ASSIGNED ──► IN_PROGRESS ──► COMPLETED
 | Web Frontend | Next.js 15 + TypeScript | App Router |
 | UI Components | Tailwind CSS + shadcn/ui | |
 | State/Data | TanStack Query | |
-| Mobile | React Native + Expo | SDK 52 |
+| Mobile | React Native + Expo | SDK 54 |
 | Mobile Maps | react-native-maps | Google provider |
 | Mobile Location | expo-location | Background tracking |
 | Backend | NestJS + TypeScript | Microservices |
@@ -235,7 +247,7 @@ DRAFT ──► NEW ──► ASSIGNED ──► IN_PROGRESS ──► COMPLETED
 ```bash
 # Development
 pnpm dev:api          # Start all API services (gateway + microservices)
-pnpm dev:web          # Start both web apps (partner:3001, office:3002)
+pnpm dev:web          # Start web app (port 3000)
 pnpm dev:mobile       # Start Expo mobile app
 
 # Database
@@ -262,8 +274,7 @@ pnpm build            # Build all packages
 | task-service | `apps/api/task-service/.env` | `DATABASE_URL`, `REDIS_*` |
 | notification-service | `apps/api/notification-service/.env` | `REDIS_*`, `SMTP_*`, `FCM_SERVER_KEY` |
 | tracking-service | `apps/api/tracking-service/.env` | `DATABASE_URL`, `REDIS_*` |
-| web-partner | `apps/web-partner/.env.local` | `NEXT_PUBLIC_API_URL` |
-| web-office | `apps/web-office/.env.local` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` |
+| web-app | `apps/web-app/.env.local` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL` |
 | mobile | `apps/mobile/.env` | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` |
 
 ---
@@ -272,10 +283,10 @@ pnpm build            # Build all packages
 
 | Role | Email | Password |
 |------|-------|----------|
-| Partner | partner@example.com | password123 |
-| Office | office@example.com | password123 |
-| Worker 1 | worker1@example.com | password123 |
-| Worker 2 | worker2@example.com | password123 |
+| Client | client@example.com | password123 |
+| Dispatcher | dispatcher@example.com | password123 |
+| Technician 1 | technician1@example.com | password123 |
+| Technician 2 | technician2@example.com | password123 |
 
 ---
 
@@ -289,36 +300,46 @@ pnpm build            # Build all packages
 - [x] Environment files
 - [x] API Gateway scaffold
 - [x] All microservices scaffold
-- [x] Web apps scaffold (Partner + Office)
+- [x] Web app scaffold (merged with RBAC navigation)
 - [x] Mobile app scaffold
 - [x] Shared types package
 
 ### Phase 2: Authentication ✅ COMPLETE
 - [x] Auth service: login, refresh, logout endpoints
+- [x] Auth service: forgot-password + reset-password endpoints
 - [x] JWT access/refresh token generation
 - [x] Refresh token rotation (DB storage with SHA-256 hashing)
+- [x] Password reset tokens (SHA-256 hashed, 1-hour expiry, one-time use)
 - [x] Password hashing (bcrypt, cost factor 12)
 - [x] RolesGuard + JwtAuthGuard decorators
 - [x] Gateway auth proxy to auth-service
-- [x] Web Partner: login page + auth context + registration
+- [x] Gateway global exception filter (consistent error responses)
+- [x] Web app: unified portal with role-based navigation (CLIENT & DISPATCHER)
+- [x] Web app: login page + auth context + registration
+- [x] Web app: forgot-password + reset-password pages
+- [x] Web app: role-based dashboard views
 - [x] Account lockout (5 failed attempts = 15 min lockout)
 - [x] Rate limiting (Throttler: 3/sec, 20/10sec, 100/min)
 - [x] Security headers (Helmet.js)
 - [x] Input validation (class-validator + Zod frontend)
-- [ ] Mobile: login screen + secure storage (pending)
+- [x] "Remember Me" functionality (24h default / 30d extended)
+- [x] Shared AnimatedLogo component (`@doergo/shared/components`)
+- [x] Mobile: login screen + SecureStore + auth context + tab navigation
+- [x] Mobile: animated splash screen with gear rotation + button click effect
+- [x] Mobile: safe area handling for Android navigation bar
 
 ### Phase 3: Task Management 🔲 PENDING
 - [ ] Task CRUD endpoints (task-service)
 - [ ] Task status transitions (state machine)
-- [ ] Partner: create task UI
-- [ ] Office: task list with filters
-- [ ] Office: assign worker UI
+- [ ] Web CLIENT: create task UI
+- [ ] Web DISPATCHER: task list with filters
+- [ ] Web DISPATCHER: assign technician UI
 - [ ] TaskEvent creation on changes
 
-### Phase 4: Worker Mobile 🔲 PENDING
-- [ ] Worker: my tasks list
-- [ ] Worker: task detail screen
-- [ ] Worker: start/block/complete actions
+### Phase 4: Technician Mobile 🔲 PENDING
+- [ ] Technician: my tasks list
+- [ ] Technician: task detail screen
+- [ ] Technician: start/block/complete actions
 - [ ] Comments: add/list API + UI
 - [ ] Attachments: camera capture + upload
 
@@ -328,7 +349,7 @@ pnpm build            # Build all packages
 - [ ] Web: real-time updates
 - [ ] Location tracking API
 - [ ] Mobile: background location
-- [ ] Office: live map view
+- [ ] Web DISPATCHER: live map view
 
 ### Phase 6: Notifications 🔲 PENDING
 - [ ] BullMQ job queue
@@ -367,6 +388,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `success()`, `error()`, `paginated()` | Standardized API responses |
 | `ErrorCodes` | Common error code constants |
 | `PrismaModule`, `PrismaService` | Shared database access |
+| `AnimatedLogo` | Shared logo component (from `@doergo/shared/components`) |
 
 ### SOLID Principles
 
@@ -398,7 +420,7 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @Roles(Role.PARTNER)
+  @Roles(Role.CLIENT)
   @UseGuards(JwtAuthGuard, RolesGuard)
   create(@Body() dto: CreateTaskDto, @CurrentUser() user: User) {
     return this.tasksService.create(dto, user);
@@ -482,12 +504,13 @@ export class TasksController {
 3. **gateway**: Proxy task routes
    - File: `apps/api/gateway/src/modules/tasks/tasks.controller.ts`
 
-4. **web-partner**: Tasks list page
-   - File: `apps/web-partner/src/app/(dashboard)/tasks/page.tsx`
-   - Table view with status filters
+4. **web-app**: Tasks list page (role-based views)
+   - File: `apps/web-app/src/app/(dashboard)/tasks/page.tsx`
+   - CLIENT: Table view of own tasks
+   - DISPATCHER: Table view with filters, technician assignment
 
-5. **web-partner**: Create task form
-   - File: `apps/web-partner/src/app/(dashboard)/tasks/new/page.tsx`
+5. **web-app**: Create task form (CLIENT only)
+   - File: `apps/web-app/src/app/(dashboard)/tasks/new/page.tsx`
 
 ---
 
@@ -499,10 +522,183 @@ export class TasksController {
 | Account Lockout | 5 failed attempts = 15 min lockout |
 | Password Hashing | bcrypt with cost factor 12 |
 | Token Security | SHA-256 hashed refresh tokens in DB |
+| Password Reset Tokens | SHA-256 hashed, 1-hour expiry, one-time use |
 | Security Headers | Helmet.js middleware |
 | Input Validation | class-validator (backend) + Zod (frontend) |
 | Role Injection | Blocked - role always set server-side |
+| Global Exception Filter | Consistent error responses, no stack trace leak |
 | Swagger | Disabled in production |
+| IDOR Protection | Authorization checks on `/users/:id` endpoint |
+| JWT None-Algorithm | Protected - rejects unsigned tokens |
+| CORS | Whitelisted origins only (no wildcard) |
+| SQL Injection | Protected via Prisma ORM + input validation |
+| XSS Prevention | Input validation + sanitization |
+| NoSQL Injection | Protected - no raw queries |
+| Command Injection | Protected - no shell execution |
+| Path Traversal | Protected - no file path handling |
+| Mobile Token Storage | expo-secure-store (encrypted) |
+| Email Enumeration | Protected - forgot-password always returns success |
+
+### Security Audit (2026-01-15) - 17 Vulnerabilities Found
+
+**Full report:** `SECURITY_AUDIT_REPORT.md`
+
+| Severity | Count | Status |
+|----------|-------|--------|
+| CRITICAL | 5 | Requires immediate fix |
+| HIGH | 6 | Fix within 7 days |
+| MEDIUM | 4 | Fix within 30 days |
+| LOW | 2 | Fix as resources allow |
+
+**Critical Issues Requiring Immediate Action:**
+1. ⚠️ Missing @Roles on task endpoints (`tasks.controller.ts`)
+2. ⚠️ IDOR on tracking endpoints - any user can see any worker location
+3. ⚠️ Hardcoded JWT secret fallback `'secret'` (`app.module.ts:18`)
+4. ⚠️ Password reset token logged in plaintext (`auth.service.ts:363`)
+5. ⚠️ Weak JWT secrets in .env files
+
+**What's Working Well:**
+| Test Category | Result |
+|---------------|--------|
+| Password Hashing | ✅ STRONG (bcrypt cost 12) |
+| Refresh Token Security | ✅ STRONG (SHA-256 hashed) |
+| Account Lockout | ✅ STRONG (5 attempts = 15 min) |
+| Rate Limiting | ✅ STRONG (3-tier throttling) |
+| Token Rotation | ✅ STRONG (refresh invalidation) |
+| Input Validation (Auth) | ✅ STRONG (class-validator + Zod) |
+| Email Enumeration | ✅ PROTECTED |
+| SQL Injection | ✅ PROTECTED (Prisma ORM) |
+
+---
+
+## 19. DESIGN SYSTEM
+
+### Brand Identity
+| Element | Value | Notes |
+|---------|-------|-------|
+| Name | Doergo | "Doer" + "go" - action-oriented |
+| Logo | Wordmark with gear icon | Gear represents work/execution |
+| Tagline | Field Service Management | Task management & execution platform |
+
+### Color Palette
+
+#### Primary Colors
+| Color | Hex | Tailwind | CSS Variable | Usage |
+|-------|-----|----------|--------------|-------|
+| Primary | `#2563EB` | `blue-600` | `--brand-600` | Buttons, links, active states, logo accent |
+| Primary Hover | `#1D4ED8` | `blue-700` | `--brand-700` | Button hover states |
+| Primary Light | `#DBEAFE` | `blue-100` | `--brand-100` | Backgrounds, badges |
+
+#### Neutral Colors
+| Color | Hex | Tailwind | Usage |
+|-------|-----|----------|-------|
+| Text Primary | `#1e293b` | `slate-800` | Headings, important text |
+| Text Secondary | `#64748b` | `slate-500` | Body text, descriptions |
+| Text Muted | `#94a3b8` | `slate-400` | Placeholders, disabled |
+| Background | `#f8fafc` | `slate-50` | Page backgrounds |
+| Surface | `#ffffff` | `white` | Cards, modals |
+| Border | `#e2e8f0` | `slate-200` | Dividers, borders |
+
+#### Semantic Colors
+| Color | Hex | Tailwind | Usage |
+|-------|-----|----------|-------|
+| Success | `#16A34A` | `green-600` | Success states, completed |
+| Warning | `#CA8A04` | `yellow-600` | Warnings, pending |
+| Error | `#DC2626` | `red-600` | Errors, destructive |
+| Info | `#2563EB` | `blue-600` | Information, links |
+
+### Typography
+
+#### Font Stack
+```css
+font-family: Inter, system-ui, -apple-system, sans-serif;
+```
+
+#### Scale
+| Size | Class | Usage |
+|------|-------|-------|
+| xs | `text-xs` (12px) | Labels, badges |
+| sm | `text-sm` (14px) | Body text, inputs |
+| base | `text-base` (16px) | Default body |
+| lg | `text-lg` (18px) | Subheadings |
+| xl | `text-xl` (20px) | Section titles |
+| 2xl | `text-2xl` (24px) | Page titles |
+
+### Spacing System
+Uses Tailwind default 4px grid: `1` = 4px, `2` = 8px, `4` = 16px, `6` = 24px, `8` = 32px
+
+### Components
+
+#### Shared Components (`@doergo/shared/components`)
+```typescript
+// AnimatedLogo - Full wordmark with gear icon
+import { AnimatedLogo } from '@doergo/shared/components';
+
+<AnimatedLogo />                           // Default: dark text, blue accent
+<AnimatedLogo variant="light" />           // White text for dark backgrounds
+<AnimatedLogo size="large" />              // Sizes: small (h-8), default (h-10), large (h-14)
+<AnimatedLogo primaryColor="#custom" />    // Custom accent color
+```
+
+#### UI Components (`web-app/src/components/ui/`)
+Built with shadcn/ui + Radix primitives:
+- `Button` - Primary, secondary, outline, ghost, destructive variants
+- `Card` - Container with header, content, footer
+- `Input` - Form inputs with validation states
+- `Label` - Form labels
+- `Checkbox` - Checkboxes with indeterminate state
+- `Dialog` - Modal dialogs
+- `DropdownMenu` - Dropdown menus
+- `Select` - Select inputs
+- `Separator` - Visual dividers
+- `Sidebar` - Collapsible navigation sidebar
+- `Tabs` - Tab navigation
+- `Toast` - Toast notifications (Sonner)
+- `Tooltip` - Hover tooltips
+- `Spinner` - Loading indicators
+- `Skeleton` - Loading placeholders
+
+### Status Badges
+| Status | Color | Background |
+|--------|-------|------------|
+| DRAFT | `slate-600` | `slate-100` |
+| NEW | `blue-600` | `blue-100` |
+| ASSIGNED | `purple-600` | `purple-100` |
+| IN_PROGRESS | `amber-600` | `amber-100` |
+| BLOCKED | `red-600` | `red-100` |
+| COMPLETED | `green-600` | `green-100` |
+| CANCELED | `slate-500` | `slate-100` |
+| CLOSED | `slate-400` | `slate-50` |
+
+### Priority Badges
+| Priority | Color | Icon |
+|----------|-------|------|
+| LOW | `slate-500` | `ArrowDown` |
+| MEDIUM | `blue-500` | `Minus` |
+| HIGH | `orange-500` | `ArrowUp` |
+| URGENT | `red-600` | `AlertTriangle` |
+
+### Role-Based UI
+
+#### CLIENT View
+- Dashboard: Task stats (Total, In Progress, Completed, Pending)
+- Navigation: Dashboard, My Tasks, Create Task, Invoices
+- Actions: Create tasks, view own tasks, add comments
+
+#### DISPATCHER View
+- Dashboard: Operations stats (Active Tasks, Technicians Online, Completed Today, Pending Assignment)
+- Navigation: Dashboard, All Tasks, Technicians, Live Map, Managed Orgs
+- Actions: Assign technicians, view all tasks, track locations
+
+#### TECHNICIAN View (Mobile Only)
+- Tabs: Tasks, Profile
+- Actions: Start/block/complete tasks, add photos, update location
+
+### Animation Guidelines
+- Transitions: 200-300ms duration, ease-out timing
+- Hover states: Scale 1.02 for interactive elements
+- Loading: Pulse animation for skeletons
+- Toast: Slide in from top-right
 
 ---
 

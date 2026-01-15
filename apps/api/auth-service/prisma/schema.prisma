@@ -9,9 +9,17 @@ datasource db {
 
 // Enums
 enum Role {
-  PARTNER
-  OFFICE
-  WORKER
+  CLIENT      // Was: PARTNER - Creates tasks (external customer)
+  DISPATCHER  // Was: OFFICE - Assigns workers, monitors operations
+  TECHNICIAN  // Was: WORKER - Executes tasks in the field
+}
+
+// Access level for organization delegation
+enum AccessLevel {
+  NONE           // No access - manager sees nothing
+  TASKS_ONLY     // Can view tasks only
+  TASKS_ASSIGN   // Can view tasks + assign workers
+  FULL           // Can view everything + assign
 }
 
 enum TaskStatus {
@@ -60,7 +68,42 @@ model Organization {
   users User[]
   tasks Task[]
 
+  // Organization delegation relationships
+  grantedAccess  OrganizationAccess[] @relation("Grantor")  // Access this org has granted to others
+  receivedAccess OrganizationAccess[] @relation("Grantee")  // Access this org has received from others
+
   @@map("organizations")
+}
+
+// Many-to-many delegation: Org A can manage Org B (if B grants access)
+model OrganizationAccess {
+  id String @id @default(cuid())
+
+  // Who is granting access (the managed org)
+  grantorOrgId String
+  grantorOrg   Organization @relation("Grantor", fields: [grantorOrgId], references: [id], onDelete: Cascade)
+
+  // Who is receiving access (the manager org)
+  granteeOrgId String
+  granteeOrg   Organization @relation("Grantee", fields: [granteeOrgId], references: [id], onDelete: Cascade)
+
+  // Access level
+  accessLevel AccessLevel @default(NONE)
+
+  // Granular permissions (for fine-tuned control)
+  canViewTasks     Boolean @default(false)
+  canAssignWorkers Boolean @default(false)
+  canViewWorkers   Boolean @default(false)
+  canViewTracking  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Each org pair can only have one access record
+  @@unique([grantorOrgId, granteeOrgId])
+  @@index([grantorOrgId])
+  @@index([granteeOrgId])
+  @@map("organization_access")
 }
 
 model User {
@@ -86,8 +129,9 @@ model User {
   comments       Comment[]
   attachments    Attachment[]
   taskEvents     TaskEvent[]
-  lastLocation   WorkerLastLocation?
-  refreshTokens  RefreshToken[]
+  lastLocation         WorkerLastLocation?
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
 
   @@index([organizationId])
   @@index([role])
@@ -107,6 +151,21 @@ model RefreshToken {
   @@index([userId])
   @@index([tokenHash])
   @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique  // Store SHA-256 hash, not plain token
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("password_reset_tokens")
 }
 
 model Task {

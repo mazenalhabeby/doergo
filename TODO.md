@@ -1,7 +1,7 @@
 # DOERGO - Implementation Checklist
 
 > **Usage**: Check off items as completed. Use `[x]` for done, `[ ]` for pending, `[~]` for in progress.
-> **Last Updated**: 2026-01-14 (Phase 2 Complete)
+> **Last Updated**: 2026-01-15 (Phase 2 Complete + Password Reset + Security Audit)
 >
 > **IMPORTANT**: All code MUST follow **SOLID** and **DRY** principles. See CLAUDE.md Section 13.
 
@@ -30,9 +30,8 @@
 - [x] Shared package (types/enums)
 
 ### Frontend Scaffolding
-- [x] Web Partner (Next.js) - basic setup
-- [x] Web Office (Next.js) - basic setup
-- [x] Mobile (Expo) - basic setup
+- [x] Web App (Next.js) - merged CLIENT + DISPATCHER portal with RBAC
+- [x] Mobile (Expo) - TECHNICIAN app
 
 ---
 
@@ -43,13 +42,16 @@
 - [x] `POST /auth/refresh` - Refresh access token with rotation
 - [x] `POST /auth/logout` - Invalidate refresh token
 - [x] `GET /auth/me` - Return current user profile
-- [x] `POST /auth/register` - User registration (Partner role)
+- [x] `POST /auth/register` - User registration (CLIENT role)
 - [x] Password hashing with bcrypt (cost factor 12)
 - [x] JWT generation (access: 15m, refresh: 7d)
 - [x] Refresh token storage in database (SHA-256 hashed)
 - [x] Token rotation (invalidate old refresh token)
 - [x] Account lockout (5 failed attempts = 15 min)
 - [x] Data normalization (lowercase email, names)
+- [x] `POST /auth/forgot-password` - Generate reset token (email TODO)
+- [x] `POST /auth/reset-password` - Validate token, update password
+- [x] Password reset token model in Prisma schema (SHA-256 hashed)
 
 ### Backend - Gateway
 - [x] Proxy `/auth/*` routes to auth-service
@@ -61,11 +63,11 @@
 - [x] Rate limiting (`@nestjs/throttler`)
 - [x] Security headers (Helmet.js)
 - [x] Input validation (class-validator DTOs)
-- [x] Role injection prevention (hardcoded PARTNER)
+- [x] Role injection prevention (hardcoded CLIENT)
 - [x] Swagger disabled in production
-- [ ] Global exception filter (nice to have)
+- [x] Global exception filter (consistent error responses)
 
-### Web - Partner Portal
+### Web - Unified Portal (web-app)
 - [x] Login page (`/login`) with sliding animation
 - [x] Registration form with validation
 - [x] Auth context/provider
@@ -79,19 +81,26 @@
 - [x] Zod validation matching backend DTOs
 - [x] Shared Spinner components
 - [x] Shared validation schemas (`lib/validation.ts`)
+- [x] Forgot password page (`/forgot-password`) with API integration
+- [x] Reset password page (`/reset-password`)
+- [x] Skeleton loaders (auth + dashboard)
+- [x] Role-based sidebar navigation (CLIENT vs DISPATCHER)
+- [x] Role-based dashboard views
+- [x] Unauthorized page for wrong roles (TECHNICIAN → mobile)
 
-### Web - Office Portal
-- [ ] Login page (`/login`)
-- [ ] Auth context/provider
-- [ ] Protected route wrapper
-- [ ] Same auth logic as partner
-
-### Mobile - Worker App
-- [ ] Login screen
-- [ ] Secure token storage (expo-secure-store)
-- [ ] Auth context
-- [ ] Auto-refresh logic
-- [ ] Navigation to tasks after login
+### Mobile - Technician App
+- [x] Login screen with premium dark header UI
+- [x] Secure token storage (expo-secure-store)
+- [x] Auth context with auto-refresh
+- [x] Auto-refresh logic (every 10 min)
+- [x] Navigation guards (redirect based on auth)
+- [x] Tab navigation (Tasks + Profile)
+- [x] TECHNICIAN role enforcement
+- [x] Animated splash screen with logo animation
+- [x] Gear rotation entrance animation
+- [x] "Start button" click effect with particles
+- [x] Zoom transition to app
+- [x] Safe area handling for Android navigation bar
 
 ---
 
@@ -99,15 +108,15 @@
 
 ### Backend - Task Service
 - [ ] `GET /tasks` - List tasks (filtered by role/org)
-- [ ] `POST /tasks` - Create task (Partner only)
+- [ ] `POST /tasks` - Create task (CLIENT only)
 - [ ] `GET /tasks/:id` - Get task detail
-- [ ] `PATCH /tasks/:id` - Update task (Partner: own only)
+- [ ] `PATCH /tasks/:id` - Update task (CLIENT: own only)
 - [ ] `DELETE /tasks/:id` - Soft delete task
-- [ ] `POST /tasks/:id/assign` - Assign to worker (Office only)
+- [ ] `POST /tasks/:id/assign` - Assign to technician (DISPATCHER only)
 - [ ] `POST /tasks/:id/unassign` - Remove assignment
-- [ ] `POST /tasks/:id/start` - Worker starts task
-- [ ] `POST /tasks/:id/block` - Worker blocks with reason
-- [ ] `POST /tasks/:id/complete` - Worker completes task
+- [ ] `POST /tasks/:id/start` - Technician starts task
+- [ ] `POST /tasks/:id/block` - Technician blocks with reason
+- [ ] `POST /tasks/:id/complete` - Technician completes task
 - [ ] Task status state machine (validate transitions)
 - [ ] Create TaskEvent on every change
 - [ ] Pagination support
@@ -116,23 +125,23 @@
 ### Backend - Gateway
 - [ ] Proxy `/tasks/*` routes to task-service
 
-### Web - Partner Portal
-- [ ] Tasks list page (`/tasks`)
+### Web - CLIENT View
+- [ ] Tasks list page (`/tasks`) - own tasks only
 - [ ] Create task form (`/tasks/new`)
 - [ ] Task detail page (`/tasks/[id]`)
 - [ ] Edit task modal
 - [ ] Status badges
 - [ ] Filter by status
 
-### Web - Office Portal
+### Web - DISPATCHER View
 - [ ] Tasks list page (`/tasks`) with all org tasks
 - [ ] Task detail page (`/tasks/[id]`)
-- [ ] Worker assignment panel
-- [ ] Worker dropdown selector
-- [ ] Filter by status, worker, priority
+- [ ] Technician assignment panel
+- [ ] Technician dropdown selector
+- [ ] Filter by status, technician, priority
 - [ ] Bulk actions (optional)
 
-### Mobile - Worker App
+### Mobile - Technician App
 - [ ] My Tasks tab (assigned tasks only)
 - [ ] Task card component
 - [ ] Task detail screen
@@ -157,7 +166,7 @@
 - [ ] File type validation
 - [ ] File size limits
 
-### Web - Partner & Office
+### Web - CLIENT & DISPATCHER
 - [ ] Comments section on task detail
 - [ ] Comment input form
 - [ ] Comment list with timestamps
@@ -166,7 +175,7 @@
 - [ ] Download attachment
 - [ ] Delete attachment (own only)
 
-### Mobile - Worker App
+### Mobile - Technician App
 - [ ] Comments section on task detail
 - [ ] Add comment input
 - [ ] Camera capture for photos
@@ -198,7 +207,7 @@
 - [ ] Emit `task.commentAdded` from task-service
 - [ ] Emit `task.attachmentAdded` from task-service
 
-### Web - Partner & Office
+### Web - CLIENT & DISPATCHER
 - [ ] Socket.IO client setup
 - [ ] Connect on login
 - [ ] Disconnect on logout
@@ -206,7 +215,7 @@
 - [ ] Update UI in real-time (invalidate queries)
 - [ ] Toast notifications for important events
 
-### Mobile - Worker App
+### Mobile - Technician App
 - [ ] Socket.IO client setup
 - [ ] Background connection handling
 - [ ] Listen for assignment events
@@ -218,9 +227,9 @@
 ## PHASE 6: Location Tracking 🔲
 
 ### Backend - Tracking Service
-- [ ] `POST /tracking/location` - Update worker location
-- [ ] `GET /tracking/workers` - Get all active workers (Office)
-- [ ] `GET /tracking/workers/:id` - Get specific worker
+- [ ] `POST /tracking/location` - Update technician location
+- [ ] `GET /tracking/workers` - Get all active technicians (DISPATCHER)
+- [ ] `GET /tracking/workers/:id` - Get specific technician
 - [ ] Store in `WorkerLastLocation` table
 - [ ] Emit `worker.locationUpdated` event
 - [ ] Rate limiting (max 1 update per 5 seconds)
@@ -228,7 +237,7 @@
 ### Backend - Gateway
 - [ ] Proxy `/tracking/*` routes
 
-### Mobile - Worker App
+### Mobile - Technician App
 - [ ] Request location permissions
 - [ ] Background location tracking (expo-location)
 - [ ] Start tracking when task IN_PROGRESS
@@ -237,10 +246,10 @@
 - [ ] "Tracking ON" indicator
 - [ ] Battery-efficient update intervals
 
-### Web - Office Portal
+### Web - DISPATCHER View (Live Map)
 - [ ] Live map page (`/map`)
 - [ ] Google Maps integration
-- [ ] Worker markers with status
+- [ ] Technician markers with status
 - [ ] Task location markers
 - [ ] Click marker for details
 - [ ] Auto-refresh positions
@@ -258,10 +267,10 @@
 - [ ] FCM integration for push
 
 ### Triggers
-- [ ] Email on task created (to Office)
-- [ ] Email on task assigned (to Worker)
-- [ ] Email on task completed (to Partner)
-- [ ] Push on new assignment (to Worker)
+- [ ] Email on task created (to DISPATCHER)
+- [ ] Email on task assigned (to TECHNICIAN)
+- [ ] Email on task completed (to CLIENT)
+- [ ] Push on new assignment (to TECHNICIAN)
 - [ ] Push on status change (to relevant users)
 
 ### Web
@@ -278,13 +287,29 @@
 
 ## PHASE 8: Polish & Production 🔲
 
-### Security
-- [ ] Rate limiting on all endpoints
-- [ ] Input validation (class-validator)
-- [ ] SQL injection prevention (Prisma handles)
-- [ ] XSS prevention
-- [ ] CORS configuration
-- [ ] Helmet middleware
+### Security ⚠️ AUDIT COMPLETE - ISSUES FOUND
+- [x] Rate limiting on all endpoints (3/sec, 20/10sec, 100/min)
+- [x] Input validation (class-validator)
+- [x] SQL injection prevention (Prisma + validation)
+- [x] XSS prevention (input validation)
+- [x] CORS configuration (whitelisted origins only)
+- [x] Helmet middleware (security headers)
+- [x] IDOR vulnerability fixed (authorization checks on /users/:id)
+- [x] JWT none-algorithm attack protected
+- [x] Account lockout (5 failed attempts)
+- [x] NoSQL injection protected
+- [x] Command injection protected
+- [x] Path traversal protected
+- [x] Email enumeration protected (forgot-password)
+- [ ] **CRITICAL**: Add @Roles to task endpoints
+- [ ] **CRITICAL**: Add @Roles to tracking endpoints (IDOR)
+- [ ] **CRITICAL**: Remove hardcoded JWT fallback 'secret'
+- [ ] **CRITICAL**: Remove token logging in auth.service.ts:363
+- [ ] **CRITICAL**: Generate strong JWT secrets (replace .env defaults)
+- [ ] **HIGH**: Migrate tokens to HttpOnly cookies (XSS protection)
+- [ ] **HIGH**: Implement JTI blacklist for token revocation
+
+> **Full audit report:** `SECURITY_AUDIT_REPORT.md` (17 vulnerabilities)
 
 ### Testing
 - [ ] Auth service unit tests
@@ -312,15 +337,19 @@
 | Phase | Status | Progress |
 |-------|--------|----------|
 | 1. Foundation | ✅ Complete | 100% |
-| 2. Authentication | ✅ Complete | 95% (Mobile pending) |
+| 2. Authentication | ✅ Complete | 100% |
 | 3. Task Management | 🔲 Pending | 0% |
 | 4. Comments & Attachments | 🔲 Pending | 0% |
 | 5. Real-time Updates | 🔲 Pending | 0% |
 | 6. Location Tracking | 🔲 Pending | 0% |
 | 7. Notifications | 🔲 Pending | 0% |
-| 8. Polish & Production | 🔲 Pending | 0% |
+| 8. Polish & Production | ⚠️ Security Issues | 10% |
 
 **Overall Progress**: ~25%
+
+### ⚠️ Security Priority
+**5 CRITICAL vulnerabilities** require immediate attention before Phase 3.
+See `SECURITY_AUDIT_REPORT.md` for details.
 
 ---
 
@@ -344,8 +373,23 @@ Before completing any task, verify:
 | 2026-01-14 | Initial setup | Phase 1 complete |
 | 2026-01-14 | Authentication backend | Auth service + Gateway complete |
 | 2026-01-14 | Security hardening | Rate limiting, account lockout, Helmet, validation |
-| 2026-01-14 | Web Partner login | Login page, registration, auth context |
+| 2026-01-14 | Web CLIENT login | Login page, registration, auth context |
 | 2026-01-14 | Code organization | DRY/SOLID refactor, shared modules |
+| 2026-01-15 | Web DISPATCHER auth | Login page with premium dark header, auth context |
+| 2026-01-15 | Shared components | AnimatedLogo component in @doergo/shared/components |
+| 2026-01-15 | Remember Me | Backend token expiration (24h / 30d), rememberMe DTO field |
+| 2026-01-15 | Mobile auth | Login screen, SecureStore, auth context, tab navigation |
+| 2026-01-15 | Mobile splash | Animated splash with gear rotation, button click effect |
+| 2026-01-15 | Security audit | Comprehensive penetration testing, IDOR fix, audit complete |
+| 2026-01-15 | Role rename | PARTNER→CLIENT, OFFICE→DISPATCHER, WORKER→TECHNICIAN |
+| 2026-01-15 | Multi-tenant SaaS | OrganizationAccess table, AccessLevel enum, delegation model |
+| 2026-01-15 | Web app merge | Merged web-partner + web-office → single web-app (port 3000) with RBAC |
+| 2026-01-15 | Documentation | Updated CLAUDE.md design system, TODO.md role terminology |
+| 2026-01-15 | Password Reset | Backend forgot/reset-password endpoints, DTOs, PasswordResetToken model |
+| 2026-01-15 | Global Exception | Gateway GlobalExceptionFilter for consistent error responses |
+| 2026-01-15 | Web Password Reset | Forgot-password API integration, reset-password page |
+| 2026-01-15 | Security Audit | Comprehensive pentest - 17 vulnerabilities found (see SECURITY_AUDIT_REPORT.md) |
+| 2026-01-15 | React Version Fix | Pinned react to 19.1.0 for mobile compatibility |
 
 ---
 
@@ -361,8 +405,45 @@ import { SERVICE_NAMES, createMicroserviceOptions, createClientOptions } from '@
 import { success, error, paginated, ErrorCodes } from '@doergo/shared';
 
 // Types
-import { Role, TaskStatus, TaskPriority, ApiResponse } from '@doergo/shared';
+import { Role, AccessLevel, TaskStatus, TaskPriority, ApiResponse } from '@doergo/shared';
+// Role: CLIENT | DISPATCHER | TECHNICIAN
+// AccessLevel: NONE | TASKS_ONLY | TASKS_ASSIGN | FULL
+
+// React Components (for web apps)
+import { AnimatedLogo } from '@doergo/shared/components';
+// Props: size ('small' | 'default' | 'large'), variant ('light' | 'dark'), primaryColor (hex)
 ```
+
+---
+
+## DESIGN SYSTEM QUICK REFERENCE
+
+### Brand Colors
+| Name | Hex | Tailwind |
+|------|-----|----------|
+| Primary | `#2563EB` | `blue-600` |
+| Primary Hover | `#1D4ED8` | `blue-700` |
+| Success | `#16A34A` | `green-600` |
+| Warning | `#CA8A04` | `yellow-600` |
+| Error | `#DC2626` | `red-600` |
+
+### Role-Based Navigation
+| Role | Navigation Items |
+|------|------------------|
+| CLIENT | Dashboard, My Tasks, Create Task, Invoices |
+| DISPATCHER | Dashboard, All Tasks, Technicians, Live Map, Managed Orgs |
+| TECHNICIAN | Tasks tab, Profile tab (mobile only) |
+
+### Status Badge Colors
+| Status | Color Class |
+|--------|-------------|
+| NEW | `blue-600/blue-100` |
+| ASSIGNED | `purple-600/purple-100` |
+| IN_PROGRESS | `amber-600/amber-100` |
+| BLOCKED | `red-600/red-100` |
+| COMPLETED | `green-600/green-100` |
+
+> See CLAUDE.md Section 19 for complete design system documentation.
 
 ---
 
