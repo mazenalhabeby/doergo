@@ -27,8 +27,8 @@ export class TasksController {
   ) {}
 
   @Post()
-  @Roles(Role.CLIENT)
-  @ApiOperation({ summary: 'Create a new task (CLIENT only)' })
+  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @ApiOperation({ summary: 'Create a new task (CLIENT or DISPATCHER)' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
     return firstValueFrom(
       this.taskClient.send({ cmd: 'create_task' }, {
@@ -72,28 +72,30 @@ export class TasksController {
   }
 
   @Put(':id')
-  @Roles(Role.CLIENT)
-  @ApiOperation({ summary: 'Update a task (CLIENT only - own tasks)' })
+  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @ApiOperation({ summary: 'Update a task (CLIENT or DISPATCHER)' })
   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
     return firstValueFrom(
       this.taskClient.send({ cmd: 'update_task' }, {
         id,
         ...updateTaskDto,
         userId: req.user.id,
+        userRole: req.user.role,
         organizationId: req.user.organizationId,
       }),
     );
   }
 
   @Patch(':id/assign')
-  @Roles(Role.DISPATCHER)
-  @ApiOperation({ summary: 'Assign a task to a technician (DISPATCHER only)' })
+  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @ApiOperation({ summary: 'Assign a task to a technician (CLIENT or DISPATCHER)' })
   async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: any) {
     return firstValueFrom(
       this.taskClient.send({ cmd: 'assign_task' }, {
         id,
         ...assignTaskDto,
-        dispatcherId: req.user.id,
+        userId: req.user.id,
+        userRole: req.user.role,
         organizationId: req.user.organizationId,
       }),
     );
@@ -114,12 +116,13 @@ export class TasksController {
 
   @Delete(':id')
   @Roles(Role.CLIENT)
-  @ApiOperation({ summary: 'Delete a task (CLIENT only - own tasks)' })
+  @ApiOperation({ summary: 'Delete a task (CLIENT only - org owner)' })
   async remove(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
       this.taskClient.send({ cmd: 'delete_task' }, {
         id,
         userId: req.user.id,
+        userRole: req.user.role,
         organizationId: req.user.organizationId,
       }),
     );

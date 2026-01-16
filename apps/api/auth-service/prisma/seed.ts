@@ -6,57 +6,51 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
-  // Create organizations
-  const clientOrg = await prisma.organization.create({
+  // Create organization (all users in same org for simpler testing)
+  const organization = await prisma.organization.create({
     data: {
-      name: 'Client Company A',
+      name: 'Acme Corporation',
     },
   });
 
-  const dispatcherOrg = await prisma.organization.create({
-    data: {
-      name: 'Doergo Operations',
-    },
-  });
-
-  console.log('Created organizations:', clientOrg.name, dispatcherOrg.name);
+  console.log('Created organization:', organization.name);
 
   // Hash password for all users
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  // Create Client user
+  // Create Client user (organization owner)
   const clientUser = await prisma.user.create({
     data: {
       email: 'client@example.com',
       passwordHash,
       firstName: 'John',
-      lastName: 'Client',
+      lastName: 'Owner',
       role: Role.CLIENT,
-      organizationId: clientOrg.id,
+      organizationId: organization.id,
     },
   });
 
-  // Create Dispatcher user
+  // Create Dispatcher user (manager)
   const dispatcherUser = await prisma.user.create({
     data: {
       email: 'dispatcher@example.com',
       passwordHash,
       firstName: 'Jane',
-      lastName: 'Dispatcher',
+      lastName: 'Manager',
       role: Role.DISPATCHER,
-      organizationId: dispatcherOrg.id,
+      organizationId: organization.id,
     },
   });
 
-  // Create Technician users
+  // Create Technician users (field workers)
   const technician1 = await prisma.user.create({
     data: {
       email: 'technician1@example.com',
       passwordHash,
       firstName: 'Mike',
-      lastName: 'Technician',
+      lastName: 'Worker',
       role: Role.TECHNICIAN,
-      organizationId: dispatcherOrg.id,
+      organizationId: organization.id,
     },
   });
 
@@ -65,9 +59,9 @@ async function main() {
       email: 'technician2@example.com',
       passwordHash,
       firstName: 'Sarah',
-      lastName: 'Technician',
+      lastName: 'Worker',
       role: Role.TECHNICIAN,
-      organizationId: dispatcherOrg.id,
+      organizationId: organization.id,
     },
   });
 
@@ -81,7 +75,7 @@ async function main() {
         description: 'Urgent delivery of documents to the main office building',
         status: TaskStatus.NEW,
         priority: TaskPriority.HIGH,
-        organizationId: clientOrg.id,
+        organizationId: organization.id,
         createdById: clientUser.id,
         locationLat: 40.7128,
         locationLng: -74.006,
@@ -95,7 +89,7 @@ async function main() {
         description: 'Install new equipment at client site',
         status: TaskStatus.ASSIGNED,
         priority: TaskPriority.MEDIUM,
-        organizationId: clientOrg.id,
+        organizationId: organization.id,
         createdById: clientUser.id,
         assignedToId: technician1.id,
         locationLat: 40.7589,
@@ -110,7 +104,7 @@ async function main() {
         description: 'Perform routine site inspection and report findings',
         status: TaskStatus.IN_PROGRESS,
         priority: TaskPriority.LOW,
-        organizationId: clientOrg.id,
+        organizationId: organization.id,
         createdById: clientUser.id,
         assignedToId: technician2.id,
         locationLat: 40.7484,
@@ -125,7 +119,7 @@ async function main() {
         description: 'Perform scheduled maintenance check on equipment',
         status: TaskStatus.DRAFT,
         priority: TaskPriority.MEDIUM,
-        organizationId: clientOrg.id,
+        organizationId: organization.id,
         createdById: clientUser.id,
         locationLat: 40.7614,
         locationLng: -73.9776,

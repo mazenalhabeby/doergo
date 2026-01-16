@@ -10,6 +10,7 @@ const MAX_SESSIONS_PER_USER = 5;
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
 const PASSWORD_RESET_EXPIRATION_HOURS = 1;
+const REFRESH_TOKEN_GRACE_PERIOD_SECONDS = 60; // Allow reuse within 60 seconds
 
 // Hash a token using SHA-256 for secure storage
 function hashToken(token: string): string {
@@ -208,8 +209,7 @@ export class AuthService {
         });
       }
 
-      const rememberMe = data.rememberMe ?? false;
-      const tokens = await this.generateTokens(user.id, user.email, user.role, rememberMe);
+      const tokens = await this.generateTokens(user.id, user.email, user.role);
 
       return {
         success: true,
@@ -237,8 +237,21 @@ export class AuthService {
 
   async refresh(refreshToken: string) {
     try {
+      this.logger.log('Refresh attempt started');
+
+      if (!refreshToken) {
+        this.logger.warn('Refresh called with empty token');
+        return {
+          success: false,
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Refresh token is required',
+        };
+      }
+
       // SECURITY: Hash the incoming token to compare with stored hash
       const tokenHash = hashToken(refreshToken);
+      this.logger.log(`Token hash generated (first 20 chars): ${tokenHash.substring(0, 20)}`);
+      this.logger.log(`Incoming token (first 20 chars): ${refreshToken.substring(0, 20)}`);
 
       // Find the stored token by hash
       const storedToken = await this.prisma.refreshToken.findUnique({
@@ -247,6 +260,15 @@ export class AuthService {
       });
 
       if (!storedToken) {
+        this.logger.warn('Refresh token not found in database');
+        // Debug: List all tokens to see what's in DB
+        const allTokens = await this.prisma.refreshToken.findMany({
+          select: { id: true, tokenHash: true, usedAt: true, expiresAt: true, userId: true },
+        });
+        this.logger.warn(`Total tokens in DB: ${allTokens.length}`);
+        allTokens.forEach((t, i) => {
+          this.logger.warn(`Token ${i}: hash=${t.tokenHash.substring(0, 20)}, usedAt=${t.usedAt}, expires=${t.expiresAt}`);
+        });
         return {
           success: false,
           statusCode: HttpStatus.UNAUTHORIZED,
@@ -254,7 +276,11 @@ export class AuthService {
         };
       }
 
+      this.logger.log(`Found token for user: ${storedToken.user.email}, token ID: ${storedToken.id}`);
+      this.logger.log(`Token expires at: ${storedToken.expiresAt}, now: ${new Date()}`);
+
       if (storedToken.expiresAt < new Date()) {
+        this.logger.warn('Refresh token expired');
         // Clean up expired token
         await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
         return {
@@ -266,6 +292,7 @@ export class AuthService {
 
       // Check if user is still active
       if (!storedToken.user.isActive) {
+        this.logger.warn('User account is deactivated');
         await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
         return {
           success: false,
@@ -274,21 +301,153 @@ export class AuthService {
         };
       }
 
-      // Delete old refresh token (token rotation)
-      await this.prisma.refreshToken.delete({
-        where: { id: storedToken.id },
+      // ========== GRACE PERIOD HANDLING ==========
+      // If token was already used, check if we're within the grace period
+      if (storedToken.usedAt) {
+        const gracePeriodEnd = new Date(storedToken.usedAt.getTime() + REFRESH_TOKEN_GRACE_PERIOD_SECONDS * 1000);
+        const now = new Date();
+
+        if (now > gracePeriodEnd) {
+          // Beyond grace period - reject
+          this.logger.warn(`Token already used at ${storedToken.usedAt}, grace period expired`);
+          return {
+            success: false,
+            statusCode: HttpStatus.UNAUTHORIZED,
+            message: 'Token already used',
+          };
+        }
+
+        // Within grace period - check for cached tokens or wait for them
+        if (storedToken.cachedAccessToken && storedToken.cachedRefreshToken) {
+          this.logger.log(`Token reuse within grace period (${REFRESH_TOKEN_GRACE_PERIOD_SECONDS}s). Returning cached tokens.`);
+          return {
+            success: true,
+            data: {
+              accessToken: storedToken.cachedAccessToken,
+              refreshToken: storedToken.cachedRefreshToken,
+            },
+          };
+        }
+
+        // Within grace period but no cached tokens yet - another request is generating them
+        // Wait and retry to get the cached tokens
+        this.logger.log('Token used but cached tokens not ready - waiting for concurrent request to finish');
+        for (let attempt = 0; attempt < 10; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+
+          const updatedToken = await this.prisma.refreshToken.findUnique({
+            where: { id: storedToken.id },
+          });
+
+          if (updatedToken?.cachedAccessToken && updatedToken?.cachedRefreshToken) {
+            this.logger.log(`Got cached tokens from concurrent request (attempt ${attempt + 1})`);
+            return {
+              success: true,
+              data: {
+                accessToken: updatedToken.cachedAccessToken,
+                refreshToken: updatedToken.cachedRefreshToken,
+              },
+            };
+          }
+          this.logger.log(`Waiting for cached tokens, attempt ${attempt + 1}/10`);
+        }
+
+        // After waiting, still no cached tokens - give up
+        this.logger.warn('Cached tokens not available after waiting');
+        return {
+          success: false,
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Token already used',
+        };
+      }
+
+      // ========== FIRST USE OF TOKEN ==========
+      // Use atomic update to prevent race conditions
+      // Only mark as used if usedAt is still null (no other request processed it)
+      this.logger.log('First use of token - attempting atomic claim');
+
+      const claimResult = await this.prisma.refreshToken.updateMany({
+        where: {
+          id: storedToken.id,
+          usedAt: null,  // Only update if not already used (atomic check)
+        },
+        data: {
+          usedAt: new Date(),
+        },
       });
 
-      // Generate new tokens
+      if (claimResult.count === 0) {
+        // Another request already claimed this token - wait for cached tokens
+        this.logger.log('Token was claimed by another request - waiting for cached tokens');
+
+        // Retry a few times with small delay to wait for the other request to finish
+        for (let attempt = 0; attempt < 5; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+
+          const updatedToken = await this.prisma.refreshToken.findUnique({
+            where: { id: storedToken.id },
+          });
+
+          if (updatedToken?.cachedAccessToken && updatedToken?.cachedRefreshToken) {
+            this.logger.log(`Returning cached tokens from concurrent request (attempt ${attempt + 1})`);
+            return {
+              success: true,
+              data: {
+                accessToken: updatedToken.cachedAccessToken,
+                refreshToken: updatedToken.cachedRefreshToken,
+              },
+            };
+          }
+
+          this.logger.log(`Cached tokens not ready yet, attempt ${attempt + 1}/5`);
+        }
+
+        // After retries, still no cached tokens - give up
+        this.logger.warn('Token claimed but no cached tokens after retries');
+        return {
+          success: false,
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Token already used',
+        };
+      }
+
+      // We successfully claimed the token - now generate new tokens
+      this.logger.log('Token claimed successfully - generating new tokens');
+
       const tokens = await this.generateTokens(
         storedToken.user.id,
         storedToken.user.email,
         storedToken.user.role,
       );
 
+      // Find the new refresh token hash (it was just created by generateTokens)
+      const newRefreshTokenHash = hashToken(tokens.refreshToken);
+      this.logger.log(`New refresh token hash (first 20 chars): ${newRefreshTokenHash.substring(0, 20)}`);
+      this.logger.log(`New refresh token (first 20 chars): ${tokens.refreshToken.substring(0, 20)}`);
+
+      // Update the token with cached values for grace period
+      // Use updateMany to avoid throwing if record was somehow deleted
+      const updateResult = await this.prisma.refreshToken.updateMany({
+        where: { id: storedToken.id },
+        data: {
+          replacedByTokenHash: newRefreshTokenHash,
+          cachedAccessToken: tokens.accessToken,
+          cachedRefreshToken: tokens.refreshToken,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        // Token was deleted between claim and update - this shouldn't happen
+        // But we already created the new token, so just return success
+        this.logger.warn('Token record disappeared after claim - but new tokens were created, returning success');
+      } else {
+        this.logger.log('Refresh successful - token marked as used with grace period');
+      }
+
       return { success: true, data: tokens };
     } catch (error) {
       this.logger.error('Refresh token error:', error);
+      this.logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
       return {
         success: false,
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -463,19 +622,32 @@ export class AuthService {
   }
 
   /**
-   * Clean up all expired refresh tokens from the database.
-   * Runs daily at midnight automatically.
+   * Clean up expired and used refresh tokens from the database.
+   * Runs every 5 minutes to clean up used tokens after grace period.
    */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async cleanupExpiredTokens() {
-    const result = await this.prisma.refreshToken.deleteMany({
+    const now = new Date();
+    const gracePeriodCutoff = new Date(now.getTime() - REFRESH_TOKEN_GRACE_PERIOD_SECONDS * 1000);
+
+    // Delete expired tokens
+    const expiredResult = await this.prisma.refreshToken.deleteMany({
       where: {
-        expiresAt: { lt: new Date() },
+        expiresAt: { lt: now },
       },
     });
 
-    this.logger.log(`Cleaned up ${result.count} expired refresh tokens`);
-    return { success: true, deletedCount: result.count };
+    // Delete used tokens past grace period (clear sensitive cached data)
+    const usedResult = await this.prisma.refreshToken.deleteMany({
+      where: {
+        usedAt: { lt: gracePeriodCutoff },
+      },
+    });
+
+    if (expiredResult.count > 0 || usedResult.count > 0) {
+      this.logger.log(`Cleaned up ${expiredResult.count} expired + ${usedResult.count} used refresh tokens`);
+    }
+    return { success: true, deletedExpired: expiredResult.count, deletedUsed: usedResult.count };
   }
 
   async validateToken(token: string) {
@@ -504,20 +676,20 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, role: string, rememberMe = false) {
+  private async generateTokens(userId: string, email: string, role: string) {
     const basePayload = { sub: userId, email, role };
 
-    // Use different refresh token expiration based on rememberMe
-    // rememberMe=true: 30 days, rememberMe=false: 24 hours
-    const refreshExpiration = rememberMe
-      ? this.configService.get('JWT_REFRESH_EXPIRATION_REMEMBER', '30d')
-      : this.configService.get('JWT_REFRESH_EXPIRATION', '24h');
+    // Token expiration from environment variables
+    const accessExpiration = this.configService.get('JWT_ACCESS_EXPIRATION') || '15m';
+    const refreshExpiration = this.configService.get('JWT_REFRESH_EXPIRATION') || '7d';
+
+    this.logger.log(`Generating tokens with refreshExpiration=${refreshExpiration}`);
 
     const accessToken = this.jwtService.sign(
       { ...basePayload, jti: randomUUID() },
       {
         secret: this.configService.get('JWT_ACCESS_SECRET'),
-        expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION', '15m'),
+        expiresIn: accessExpiration,
       },
     );
 
@@ -535,13 +707,14 @@ export class AuthService {
     // SECURITY: Store only the hash of the refresh token, not the token itself
     const tokenHash = hashToken(refreshToken);
 
-    await this.prisma.refreshToken.create({
+    const created = await this.prisma.refreshToken.create({
       data: {
         tokenHash,
         userId,
         expiresAt,
       },
     });
+    this.logger.log(`NEW TOKEN CREATED in DB: id=${created.id}, hash=${tokenHash.substring(0, 20)}, expires=${expiresAt}`);
 
     // Return the plain token to the client (they need it to authenticate)
     return { accessToken, refreshToken };

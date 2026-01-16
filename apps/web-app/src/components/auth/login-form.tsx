@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { Button, Input, Label, Checkbox, Spinner } from '@/components/ui';
+import { Button, Input, Label, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import { loginSchema } from '@/lib/validation';
@@ -29,7 +29,6 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -54,7 +53,7 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
     }
 
     try {
-      await login(email, password, rememberMe);
+      await login(email, password);
       toast.success('Welcome back!', {
         description: 'You have been signed in successfully.',
       });
@@ -120,28 +119,6 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
           onFocusChange={setFocusedField}
           transitionDelay={getTransitionDelay(0.2)}
         />
-
-        {/* Remember Me */}
-        <div
-          className={cn(
-            'flex items-center gap-2 transition-all duration-500',
-            isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          )}
-          style={{ transitionDelay: getTransitionDelay(0.25) }}
-        >
-          <Checkbox
-            id="login-remember"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-            className="data-[state=checked]:bg-brand-600 data-[state=checked]:border-brand-600"
-          />
-          <Label
-            htmlFor="login-remember"
-            className="text-xs sm:text-sm text-slate-600 cursor-pointer hover:text-slate-900 transition-colors"
-          >
-            Keep me signed in
-          </Label>
-        </div>
 
         {/* Submit Button */}
         <div

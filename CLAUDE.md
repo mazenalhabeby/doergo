@@ -1,6 +1,6 @@
 # DOERGO - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-01-15 (Phase 2 Complete + Security Audit + Password Reset Flow)
+> **Last Updated**: 2026-01-16 (Phase 2 Complete + Token Refresh Grace Period)
 
 ---
 
@@ -120,7 +120,7 @@ Organizations can grant access to other organizations:
 Organization { id, name, isActive, grantedAccess[], receivedAccess[] }
 OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, canAssignWorkers, canViewWorkers, canViewTracking }
 User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil }
-RefreshToken { id, tokenHash, expiresAt, userId }
+RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
 Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId }
 Comment { id, content, taskId, userId }
@@ -270,7 +270,7 @@ pnpm build            # Build all packages
 | App | File | Key Variables |
 |-----|------|---------------|
 | gateway | `apps/api/gateway/.env` | `PORT`, `JWT_SECRET`, `REDIS_*`, `CORS_ORIGINS` |
-| auth-service | `apps/api/auth-service/.env` | `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `REDIS_*` |
+| auth-service | `apps/api/auth-service/.env` | `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `REDIS_*` |
 | task-service | `apps/api/task-service/.env` | `DATABASE_URL`, `REDIS_*` |
 | notification-service | `apps/api/notification-service/.env` | `REDIS_*`, `SMTP_*`, `FCM_SERVER_KEY` |
 | tracking-service | `apps/api/tracking-service/.env` | `DATABASE_URL`, `REDIS_*` |
@@ -309,6 +309,10 @@ pnpm build            # Build all packages
 - [x] Auth service: forgot-password + reset-password endpoints
 - [x] JWT access/refresh token generation
 - [x] Refresh token rotation (DB storage with SHA-256 hashing)
+- [x] Token refresh grace period (60s) for concurrent requests
+- [x] Atomic token claiming to prevent race conditions
+- [x] Configurable token expiration via `.env` file
+- [x] Dynamic token monitor (reads expiration from JWT)
 - [x] Password reset tokens (SHA-256 hashed, 1-hour expiry, one-time use)
 - [x] Password hashing (bcrypt, cost factor 12)
 - [x] RolesGuard + JwtAuthGuard decorators
@@ -522,6 +526,9 @@ export class TasksController {
 | Account Lockout | 5 failed attempts = 15 min lockout |
 | Password Hashing | bcrypt with cost factor 12 |
 | Token Security | SHA-256 hashed refresh tokens in DB |
+| Token Refresh Grace Period | 60-second grace period for concurrent refresh requests |
+| Concurrent Request Handling | Atomic token claiming + wait loop for cached tokens |
+| Configurable Token Expiration | Via `.env` (JWT_ACCESS_EXPIRATION, JWT_REFRESH_EXPIRATION) |
 | Password Reset Tokens | SHA-256 hashed, 1-hour expiry, one-time use |
 | Security Headers | Helmet.js middleware |
 | Input Validation | class-validator (backend) + Zod (frontend) |

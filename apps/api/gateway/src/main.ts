@@ -8,6 +8,30 @@ import { GlobalExceptionFilter } from './common/filters';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Simple request logging for testing
+  app.use((req: any, res: any, next: any) => {
+    const start = Date.now();
+    const { method, url, body } = req;
+
+    // Log request
+    console.log(`\n→ ${method} ${url}`);
+    if (body && Object.keys(body).length > 0) {
+      const safeBody = { ...body };
+      if (safeBody.password) safeBody.password = '***';
+      console.log(`  Body:`, safeBody);
+    }
+
+    // Log response
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const status = res.statusCode;
+      const color = status >= 400 ? '\x1b[31m' : '\x1b[32m';
+      console.log(`← ${method} ${url} ${color}${status}\x1b[0m ${duration}ms`);
+    });
+
+    next();
+  });
   const configService = app.get(ConfigService);
   const isProduction = configService.get<string>('NODE_ENV') === 'production';
 

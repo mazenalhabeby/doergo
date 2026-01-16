@@ -2,83 +2,125 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   ClipboardList,
   Plus,
   FileText,
-  Settings,
-  HelpCircle,
-  LogOut,
-  ChevronsUpDown,
   Users,
   MapPin,
   Building2,
+  Settings,
+  HelpCircle,
+  type LucideIcon,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
+import { NavMain } from "@/components/nav-main"
+import { NavSecondary } from "@/components/nav-secondary"
+import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
+// Navigation item type
+type NavItem = {
+  title: string
+  url: string
+  icon: LucideIcon
+  isActive?: boolean
+  items?: {
+    title: string
+    url: string
+  }[]
+}
 
 // Navigation items for CLIENT role
-const clientNavigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "My Tasks", href: "/tasks", icon: ClipboardList },
-  { name: "Create Task", href: "/tasks/new", icon: Plus },
-  { name: "Invoices", href: "/invoices", icon: FileText },
+const clientNavMain: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Tasks",
+    url: "/tasks",
+    icon: ClipboardList,
+    items: [
+      { title: "All Tasks", url: "/tasks" },
+      { title: "Create Task", url: "/tasks/new" },
+    ],
+  },
+  {
+    title: "Invoices",
+    url: "/invoices",
+    icon: FileText,
+  },
 ]
 
 // Navigation items for DISPATCHER role
-const dispatcherNavigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "All Tasks", href: "/tasks", icon: ClipboardList },
-  { name: "Technicians", href: "/technicians", icon: Users },
-  { name: "Live Map", href: "/map", icon: MapPin },
-  { name: "Managed Orgs", href: "/organizations", icon: Building2 },
+const dispatcherNavMain: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Tasks",
+    url: "/tasks",
+    icon: ClipboardList,
+    items: [
+      { title: "All Tasks", url: "/tasks" },
+      { title: "Pending Assignment", url: "/tasks?status=NEW" },
+      { title: "In Progress", url: "/tasks?status=IN_PROGRESS" },
+    ],
+  },
+  {
+    title: "Technicians",
+    url: "/technicians",
+    icon: Users,
+  },
+  {
+    title: "Live Map",
+    url: "/map",
+    icon: MapPin,
+  },
+  {
+    title: "Organizations",
+    url: "/organizations",
+    icon: Building2,
+  },
 ]
 
-const secondaryNavigation = [
-  { name: "Settings", href: "/settings", icon: Settings },
-  { name: "Help", href: "/help", icon: HelpCircle },
+// Secondary navigation (same for all roles)
+const navSecondary = [
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
+  },
+  {
+    title: "Help & Support",
+    url: "/help",
+    icon: HelpCircle,
+  },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname()
-  const { user, logout } = useAuth()
-
-  const isActive = (href: string) => {
-    return pathname === href || pathname.startsWith(href + "/")
-  }
+  const { user } = useAuth()
 
   // Get navigation based on user role
-  const mainNavigation = user?.role === 'DISPATCHER'
-    ? dispatcherNavigation
-    : clientNavigation
+  const navMain = user?.role === "DISPATCHER" ? dispatcherNavMain : clientNavMain
 
   // Get portal subtitle based on role
-  const portalName = user?.role === 'DISPATCHER'
-    ? 'Dispatcher Portal'
-    : 'Client Portal'
+  const portalName = user?.role === "DISPATCHER" ? "Dispatcher Portal" : "Client Portal"
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -94,102 +136,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <span className="truncate font-semibold">
                     Doer<span className="text-blue-600">go</span>
                   </span>
-                  <span className="truncate text-xs text-muted-foreground">{portalName}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {portalName}
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-
       <SidebarContent>
-        {/* Main Navigation */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavigation.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton asChild isActive={isActive(item.href)} tooltip={item.name}>
-                    <Link href={item.href}>
-                      <item.icon className="size-4" />
-                      <span>{item.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Secondary Navigation */}
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryNavigation.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton asChild isActive={isActive(item.href)} tooltip={item.name}>
-                    <Link href={item.href}>
-                      <item.icon className="size-4" />
-                      <span>{item.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <NavMain items={navMain} />
+        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
-
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-blue-100 text-blue-600">
-                      {user?.firstName?.[0]}
-                      {user?.lastName?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
-                      {user?.firstName} {user?.lastName}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
-              >
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  Role: <span className="font-medium text-foreground">{user?.role}</span>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2 size-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut className="mr-2 size-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

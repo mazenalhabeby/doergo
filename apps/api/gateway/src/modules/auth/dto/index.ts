@@ -6,8 +6,6 @@ import {
   MaxLength,
   Matches,
   IsNotEmpty,
-  IsBoolean,
-  IsOptional,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -36,11 +34,6 @@ export class LoginDto {
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
   password: string;
-
-  @ApiProperty({ example: false, description: 'Keep user signed in for 30 days', required: false })
-  @IsBoolean()
-  @IsOptional()
-  rememberMe?: boolean;
 }
 
 export class RegisterDto {

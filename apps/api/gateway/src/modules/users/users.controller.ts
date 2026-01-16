@@ -35,9 +35,9 @@ export class UsersController {
   }
 
   @Get('workers')
-  @ApiOperation({ summary: 'Get all technicians (Dispatcher only)' })
+  @ApiOperation({ summary: 'Get all technicians (CLIENT or DISPATCHER)' })
   @ApiQuery({ name: 'organizationId', required: false })
-  @Roles(Role.DISPATCHER)
+  @Roles(Role.CLIENT, Role.DISPATCHER)
   async getWorkers(
     @CurrentUser() user: CurrentUserData,
     @Query() query: Record<string, any>,

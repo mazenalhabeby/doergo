@@ -145,11 +145,18 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
+  // Grace period fields for handling concurrent refresh requests
+  usedAt               DateTime?  // When the token was first used (null = not used yet)
+  replacedByTokenHash  String?    // Hash of the new token that replaced this one
+  cachedAccessToken    String?    // Cached access token to return during grace period
+  cachedRefreshToken   String?    // Cached refresh token to return during grace period (temporary, deleted after grace period)
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tokenHash])
+  @@index([usedAt])  // For cleanup of old used tokens
   @@map("refresh_tokens")
 }
 

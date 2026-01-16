@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/contexts/auth-context';
+import { useAuth } from '../../../src/contexts/auth-context';
 
 const PRIMARY_COLOR = '#2563EB';
 

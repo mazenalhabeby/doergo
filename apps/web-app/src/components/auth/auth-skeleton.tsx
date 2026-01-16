@@ -94,12 +94,6 @@ function MobileAuthSkeleton() {
           <FormFieldSkeleton />
           <FormFieldSkeleton />
 
-          {/* Remember me */}
-          <div className="flex items-center gap-2">
-            <Shimmer className="w-4 h-4 rounded" />
-            <Shimmer className="w-32 h-4 rounded" />
-          </div>
-
           <ButtonSkeleton />
           <DividerSkeleton />
           <SocialButtonsSkeleton />
@@ -156,12 +150,6 @@ function FormSkeleton() {
             <Shimmer className="w-24 h-4 rounded" />
           </div>
           <Shimmer className="w-full h-11 rounded-lg" />
-        </div>
-
-        {/* Remember me */}
-        <div className="flex items-center gap-2">
-          <Shimmer className="w-4 h-4 rounded" />
-          <Shimmer className="w-32 h-4 rounded" />
         </div>
 
         <ButtonSkeleton />

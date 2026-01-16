@@ -17,18 +17,25 @@ function RootLayoutNav() {
   const router = useRouter();
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
   const [appIsReady, setAppIsReady] = useState(false);
+  const [splashHidden, setSplashHidden] = useState(false);
 
-  // Hide native splash when auth state is loaded
+  // Hide native splash when auth state is loaded (only once)
   useEffect(() => {
     async function prepare() {
-      if (!isLoading) {
-        // Hide the native splash screen
-        await SplashScreen.hideAsync();
+      if (!isLoading && !splashHidden) {
+        try {
+          // Hide the native splash screen
+          await SplashScreen.hideAsync();
+        } catch (e) {
+          // Ignore error if splash screen was already hidden
+          console.log('SplashScreen already hidden');
+        }
+        setSplashHidden(true);
         setAppIsReady(true);
       }
     }
     prepare();
-  }, [isLoading]);
+  }, [isLoading, splashHidden]);
 
   // Configure Android navigation bar based on current screen
   useEffect(() => {

@@ -30,7 +30,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
@@ -105,7 +104,7 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      await login(email.toLowerCase().trim(), password, rememberMe);
+      await login(email.toLowerCase().trim(), password);
       router.replace('/(app)' as Href);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
@@ -255,18 +254,6 @@ export default function LoginScreen() {
                 </View>
               )}
             </View>
-
-            {/* Remember Me */}
-            <TouchableOpacity
-              style={styles.rememberContainer}
-              onPress={() => setRememberMe(!rememberMe)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                {rememberMe && <Ionicons name="checkmark" size={14} color="white" />}
-              </View>
-              <Text style={styles.rememberText}>Keep me signed in for 30 days</Text>
-            </TouchableOpacity>
 
             {/* Login Button */}
             <TouchableOpacity
@@ -462,33 +449,8 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontWeight: '500',
   },
-  rememberContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 4,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#cbd5e1',
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-  },
-  checkboxChecked: {
-    backgroundColor: PRIMARY_COLOR,
-    borderColor: PRIMARY_COLOR,
-  },
-  rememberText: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
-  },
   loginButton: {
+    marginTop: 8,
     borderRadius: 14,
     overflow: 'hidden',
     shadowColor: PRIMARY_COLOR,

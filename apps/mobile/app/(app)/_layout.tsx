@@ -1,25 +1,11 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Stack } from 'expo-router';
 
 const PRIMARY_COLOR = '#2563EB';
 
 export default function AppLayout() {
   return (
-    <Tabs
+    <Stack
       screenOptions={{
-        tabBarActiveTintColor: PRIMARY_COLOR,
-        tabBarInactiveTintColor: '#94a3b8',
-        tabBarStyle: {
-          backgroundColor: 'white',
-          borderTopColor: '#e2e8f0',
-          height: 84,
-          paddingTop: 8,
-          paddingBottom: 24,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
         headerStyle: {
           backgroundColor: 'white',
         },
@@ -27,26 +13,20 @@ export default function AppLayout() {
           fontWeight: '600',
           color: '#1e293b',
         },
+        headerTintColor: PRIMARY_COLOR,
       }}
     >
-      <Tabs.Screen
-        name="index"
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="task/[id]"
         options={{
-          title: 'My Tasks',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="clipboard-outline" size={size} color={color} />
-          ),
+          title: 'Task Details',
+          presentation: 'card',
         }}
       />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+    </Stack>
   );
 }
