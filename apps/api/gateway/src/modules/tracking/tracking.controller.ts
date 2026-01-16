@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Inject, Request } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
+import { Role } from '@doergo/shared';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateLocationDto } from './dto';
 
 @ApiTags('tracking')
@@ -13,34 +15,52 @@ export class TrackingController {
   ) {}
 
   @Post('location')
-  @ApiOperation({ summary: 'Update worker location (Mobile app)' })
-  async updateLocation(@Body() updateLocationDto: UpdateLocationDto) {
+  @Roles(Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Update technician location (TECHNICIAN only - Mobile app)' })
+  async updateLocation(@Body() updateLocationDto: UpdateLocationDto, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'update_location' }, updateLocationDto),
+      this.trackingClient.send({ cmd: 'update_location' }, {
+        ...updateLocationDto,
+        userId: req.user.id, // Always use authenticated user's ID
+      }),
     );
   }
 
   @Get('workers')
-  @ApiOperation({ summary: 'Get all active worker locations (Office only)' })
-  async getActiveWorkers() {
+  @Roles(Role.DISPATCHER)
+  @ApiOperation({ summary: 'Get all active technician locations (DISPATCHER only)' })
+  async getActiveWorkers(@Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_active_workers' }, {}),
+      this.trackingClient.send({ cmd: 'get_active_workers' }, {
+        dispatcherId: req.user.id,
+        organizationId: req.user.organizationId,
+      }),
     );
   }
 
   @Get('workers/:id')
-  @ApiOperation({ summary: 'Get worker location by ID' })
-  async getWorkerLocation(@Param('id') id: string) {
+  @Roles(Role.DISPATCHER)
+  @ApiOperation({ summary: 'Get technician location by ID (DISPATCHER only)' })
+  async getWorkerLocation(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_worker_location' }, { workerId: id }),
+      this.trackingClient.send({ cmd: 'get_worker_location' }, {
+        workerId: id,
+        dispatcherId: req.user.id,
+        organizationId: req.user.organizationId,
+      }),
     );
   }
 
   @Get('workers/:id/history')
-  @ApiOperation({ summary: 'Get worker location history' })
-  async getWorkerHistory(@Param('id') id: string) {
+  @Roles(Role.DISPATCHER)
+  @ApiOperation({ summary: 'Get technician location history (DISPATCHER only)' })
+  async getWorkerHistory(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_worker_history' }, { workerId: id }),
+      this.trackingClient.send({ cmd: 'get_worker_history' }, {
+        workerId: id,
+        dispatcherId: req.user.id,
+        organizationId: req.user.organizationId,
+      }),
     );
   }
 }

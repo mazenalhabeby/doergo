@@ -359,8 +359,9 @@ export class AuthService {
       });
 
       // TODO: Send email with reset link when email service is configured
-      // For now, log the token (DEVELOPMENT ONLY - remove in production)
-      this.logger.log(`Password reset token generated for ${email}: ${resetToken}`);
+      // In development, use Prisma Studio or database query to retrieve tokens if needed
+      // SECURITY: Never log tokens - even in development
+      this.logger.log(`Password reset token generated for user: ${email}`);
 
       return successResponse;
     } catch (error) {

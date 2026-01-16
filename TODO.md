@@ -301,11 +301,11 @@
 - [x] Command injection protected
 - [x] Path traversal protected
 - [x] Email enumeration protected (forgot-password)
-- [ ] **CRITICAL**: Add @Roles to task endpoints
-- [ ] **CRITICAL**: Add @Roles to tracking endpoints (IDOR)
-- [ ] **CRITICAL**: Remove hardcoded JWT fallback 'secret'
-- [ ] **CRITICAL**: Remove token logging in auth.service.ts:363
-- [ ] **CRITICAL**: Generate strong JWT secrets (replace .env defaults)
+- [x] **CRITICAL**: Add @Roles to task endpoints
+- [x] **CRITICAL**: Add @Roles to tracking endpoints (IDOR)
+- [x] **CRITICAL**: Remove hardcoded JWT fallback 'secret'
+- [x] **CRITICAL**: Remove token logging in auth.service.ts
+- [x] **CRITICAL**: Generate strong JWT secrets (replace .env defaults)
 - [ ] **HIGH**: Migrate tokens to HttpOnly cookies (XSS protection)
 - [ ] **HIGH**: Implement JTI blacklist for token revocation
 
@@ -343,13 +343,14 @@
 | 5. Real-time Updates | 🔲 Pending | 0% |
 | 6. Location Tracking | 🔲 Pending | 0% |
 | 7. Notifications | 🔲 Pending | 0% |
-| 8. Polish & Production | ⚠️ Security Issues | 10% |
+| 8. Polish & Production | ✅ Critical Fixed | 25% |
 
-**Overall Progress**: ~25%
+**Overall Progress**: ~30%
 
-### ⚠️ Security Priority
-**5 CRITICAL vulnerabilities** require immediate attention before Phase 3.
-See `SECURITY_AUDIT_REPORT.md` for details.
+### ✅ Security Status
+**All 5 CRITICAL vulnerabilities have been fixed.**
+Remaining: 2 HIGH severity items (HttpOnly cookies, JTI blacklist).
+See `SECURITY_AUDIT_REPORT.md` for full details.
 
 ---
 
@@ -390,6 +391,7 @@ Before completing any task, verify:
 | 2026-01-15 | Web Password Reset | Forgot-password API integration, reset-password page |
 | 2026-01-15 | Security Audit | Comprehensive pentest - 17 vulnerabilities found (see SECURITY_AUDIT_REPORT.md) |
 | 2026-01-15 | React Version Fix | Pinned react to 19.1.0 for mobile compatibility |
+| 2026-01-16 | Security Fixes | Fixed all 5 CRITICAL vulnerabilities (@Roles, IDOR, JWT secrets, token logging) |
 
 ---
 
