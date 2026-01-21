@@ -26,6 +26,9 @@ enum TaskStatus {
   DRAFT
   NEW
   ASSIGNED
+  ACCEPTED     // Technician acknowledges the assigned task
+  EN_ROUTE     // Technician is traveling to the job location
+  ARRIVED      // Technician has arrived at the location
   IN_PROGRESS
   BLOCKED
   COMPLETED
@@ -121,6 +124,12 @@ model User {
   failedLoginAttempts Int      @default(0)
   lockedUntil         DateTime?
 
+  // Technician-specific fields (only used when role = TECHNICIAN)
+  specialty     String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
+  rating        Float?    @default(5.0) // Average rating (1-5)
+  ratingCount   Int?      @default(0)   // Number of ratings received
+  maxDailyJobs  Int?      @default(5)   // Maximum jobs per day
+
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
@@ -130,6 +139,7 @@ model User {
   attachments    Attachment[]
   taskEvents     TaskEvent[]
   lastLocation         WorkerLastLocation?
+  locationHistory      LocationHistory[]
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
 
@@ -187,6 +197,11 @@ model Task {
   locationLng     Float?
   locationAddress String?
 
+  // Route tracking fields
+  routeStartedAt DateTime?  // When EN_ROUTE started
+  routeEndedAt   DateTime?  // When ARRIVED
+  routeDistance  Float?     // Total distance in meters
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -199,9 +214,10 @@ model Task {
   assignedToId String?
   assignedTo   User?   @relation("TaskAssignee", fields: [assignedToId], references: [id])
 
-  comments    Comment[]
-  attachments Attachment[]
-  events      TaskEvent[]
+  comments        Comment[]
+  attachments     Attachment[]
+  events          TaskEvent[]
+  locationHistory LocationHistory[]
 
   @@index([organizationId])
   @@index([status])
@@ -275,4 +291,23 @@ model WorkerLastLocation {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("worker_last_locations")
+}
+
+// Location history for route tracking during EN_ROUTE status
+model LocationHistory {
+  id        String   @id @default(cuid())
+  lat       Float
+  lng       Float
+  accuracy  Float?
+  timestamp DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  taskId String?
+  task   Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([taskId, timestamp])
+  @@map("location_history")
 }

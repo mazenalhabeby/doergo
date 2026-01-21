@@ -15,6 +15,11 @@
       "import": "./dist/types/index.js",
       "require": "./dist/types/index.js"
     },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.js",
+      "require": "./dist/constants/index.js"
+    },
     "./design": {
       "types": "./dist/design/index.d.ts",
       "import": "./dist/design/index.js",
@@ -53,16 +58,24 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^3.3.0",
+    "@nestjs/core": "^11.0.0",
     "@nestjs/microservices": "^11.0.0",
-    "@prisma/client": "^6.3.0"
+    "@prisma/client": "^6.3.0",
+    "bullmq": "^5.34.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^3.3.0",
+    "@nestjs/core": "^11.0.0",
     "@nestjs/microservices": "^11.0.0",
     "@prisma/client": "^6.3.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {

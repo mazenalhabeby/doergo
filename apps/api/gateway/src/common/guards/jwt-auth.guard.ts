@@ -8,7 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '@doergo/shared';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {

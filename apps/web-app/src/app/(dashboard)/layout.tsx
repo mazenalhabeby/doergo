@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { AppSidebar } from '@/components/app-sidebar';
 import {
   SidebarProvider,
@@ -64,8 +65,8 @@ function BreadcrumbNav() {
           <React.Fragment key={crumb.href}>
             <BreadcrumbItem>
               {index < breadcrumbs.length - 1 ? (
-                <BreadcrumbLink href={crumb.href}>
-                  {crumb.label}
+                <BreadcrumbLink asChild>
+                  <Link href={crumb.href}>{crumb.label}</Link>
                 </BreadcrumbLink>
               ) : (
                 <BreadcrumbPage>{crumb.label}</BreadcrumbPage>

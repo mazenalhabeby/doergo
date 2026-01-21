@@ -19,8 +19,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../src/contexts/auth-context';
 import { AnimatedLogo } from '../../src/components';
-
-const PRIMARY_COLOR = '#2563EB';
+import {
+  COLORS,
+  SPACING,
+  RADIUS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  ROUTES,
+} from '../../src/lib/constants';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -105,7 +111,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await login(email.toLowerCase().trim(), password);
-      router.replace('/(app)' as Href);
+      router.replace(ROUTES.home as Href);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
       Alert.alert('Login Failed', message);
@@ -131,7 +137,7 @@ export default function LoginScreen() {
         colors={['#0f172a', '#1e293b', '#0f172a']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 20 }]}
+        style={[styles.header, { paddingTop: insets.top + SPACING.xl }]}
       >
         {/* Animated Gradient Orbs */}
         <Animated.View
@@ -193,12 +199,12 @@ export default function LoginScreen() {
               <Text style={styles.label}>Email address</Text>
               <View style={[styles.inputContainer, errors.email && styles.inputError]}>
                 <View style={styles.inputIconContainer}>
-                  <Ionicons name="mail-outline" size={20} color="#64748b" />
+                  <Ionicons name="mail-outline" size={20} color={COLORS.slate500} />
                 </View>
                 <TextInput
                   style={styles.input}
                   placeholder="you@company.com"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={COLORS.slate400}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -211,7 +217,7 @@ export default function LoginScreen() {
               </View>
               {errors.email && (
                 <View style={styles.errorContainer}>
-                  <Ionicons name="alert-circle" size={14} color="#ef4444" />
+                  <Ionicons name="alert-circle" size={14} color={COLORS.error} />
                   <Text style={styles.errorText}>{errors.email}</Text>
                 </View>
               )}
@@ -222,12 +228,12 @@ export default function LoginScreen() {
               <Text style={styles.label}>Password</Text>
               <View style={[styles.inputContainer, errors.password && styles.inputError]}>
                 <View style={styles.inputIconContainer}>
-                  <Ionicons name="lock-closed-outline" size={20} color="#64748b" />
+                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.slate500} />
                 </View>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your password"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={COLORS.slate400}
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={(text) => {
@@ -243,13 +249,13 @@ export default function LoginScreen() {
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color="#64748b"
+                    color={COLORS.slate500}
                   />
                 </TouchableOpacity>
               </View>
               {errors.password && (
                 <View style={styles.errorContainer}>
-                  <Ionicons name="alert-circle" size={14} color="#ef4444" />
+                  <Ionicons name="alert-circle" size={14} color={COLORS.error} />
                   <Text style={styles.errorText}>{errors.password}</Text>
                 </View>
               )}
@@ -263,18 +269,18 @@ export default function LoginScreen() {
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={isLoading ? ['#93c5fd', '#93c5fd'] : [PRIMARY_COLOR, '#3b82f6']}
+                colors={isLoading ? ['#93c5fd', '#93c5fd'] : [COLORS.primary, '#3b82f6']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.loginButtonGradient}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="white" size="small" />
+                  <ActivityIndicator color={COLORS.white} size="small" />
                 ) : (
                   <>
                     <Text style={styles.loginButtonText}>Sign in</Text>
                     <View style={styles.arrowContainer}>
-                      <Ionicons name="arrow-forward" size={18} color="white" />
+                      <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
                     </View>
                   </>
                 )}
@@ -284,12 +290,12 @@ export default function LoginScreen() {
             {/* Security Badges */}
             <View style={styles.securityContainer}>
               <View style={styles.securityBadge}>
-                <Ionicons name="lock-closed" size={14} color="#94a3b8" />
+                <Ionicons name="lock-closed" size={14} color={COLORS.slate400} />
                 <Text style={styles.securityText}>Enterprise protected</Text>
               </View>
               <View style={styles.securityDot} />
               <View style={styles.securityBadge}>
-                <Ionicons name="shield-checkmark" size={14} color="#94a3b8" />
+                <Ionicons name="shield-checkmark" size={14} color={COLORS.slate400} />
                 <Text style={styles.securityText}>Secure</Text>
               </View>
             </View>
@@ -298,7 +304,7 @@ export default function LoginScreen() {
       </KeyboardAvoidingView>
 
       {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING.xl) }]}>
         <Text style={styles.footerText}>
           Need help? <Text style={styles.footerLink}>Contact support</Text>
         </Text>
@@ -310,11 +316,11 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: COLORS.slate100,
   },
   header: {
     paddingBottom: 50,
-    paddingHorizontal: 24,
+    paddingHorizontal: SPACING.xxl,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
     overflow: 'hidden',
@@ -350,42 +356,42 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   logoContainer: {
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   tagline: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748b',
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate500,
     textTransform: 'uppercase',
     letterSpacing: 2,
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   divider: {
     width: 40,
     height: 3,
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: COLORS.primary,
     borderRadius: 2,
-    marginVertical: 20,
+    marginVertical: SPACING.xl,
   },
   welcomeText: {
     fontSize: 26,
-    fontWeight: '700',
-    color: 'white',
-    marginBottom: 8,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.white,
+    marginBottom: SPACING.sm,
   },
   subtitleText: {
-    fontSize: 15,
-    color: '#94a3b8',
+    fontSize: FONT_SIZE.lg,
+    color: COLORS.slate400,
   },
   formWrapper: {
     flex: 1,
-    marginTop: -24,
+    marginTop: -SPACING.xxl,
   },
   formCard: {
     flex: 1,
-    marginHorizontal: 16,
-    backgroundColor: 'white',
-    borderRadius: 24,
+    marginHorizontal: SPACING.lg,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.xl + 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -393,67 +399,67 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   scrollContent: {
-    padding: 24,
+    padding: SPACING.xxl,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 10,
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate700,
+    marginBottom: SPACING.sm + 2,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderRadius: 14,
+    backgroundColor: COLORS.slate50,
+    borderRadius: RADIUS.md + 2,
     borderWidth: 1.5,
-    borderColor: '#e2e8f0',
+    borderColor: COLORS.slate200,
     height: 56,
     overflow: 'hidden',
   },
   inputError: {
     borderColor: '#fca5a5',
-    backgroundColor: '#fef2f2',
+    backgroundColor: COLORS.errorLight,
   },
   inputIconContainer: {
     width: 52,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: COLORS.slate100,
     borderRightWidth: 1,
-    borderRightColor: '#e2e8f0',
+    borderRightColor: COLORS.slate200,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#1e293b',
-    paddingHorizontal: 16,
+    fontSize: FONT_SIZE.xl,
+    color: COLORS.slate800,
+    paddingHorizontal: SPACING.lg,
   },
   eyeButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.lg,
     height: '100%',
     justifyContent: 'center',
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    gap: 6,
+    marginTop: SPACING.sm,
+    gap: SPACING.xs + 2,
   },
   errorText: {
-    fontSize: 13,
-    color: '#ef4444',
-    fontWeight: '500',
+    fontSize: FONT_SIZE.md,
+    color: COLORS.error,
+    fontWeight: FONT_WEIGHT.medium,
   },
   loginButton: {
-    marginTop: 8,
-    borderRadius: 14,
+    marginTop: SPACING.sm,
+    borderRadius: RADIUS.md + 2,
     overflow: 'hidden',
-    shadowColor: PRIMARY_COLOR,
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -467,12 +473,12 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    gap: SPACING.sm + 2,
   },
   loginButtonText: {
     fontSize: 17,
-    fontWeight: '700',
-    color: 'white',
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.white,
     letterSpacing: 0.3,
   },
   arrowContainer: {
@@ -487,35 +493,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
-    gap: 12,
+    marginTop: SPACING.xxl,
+    gap: SPACING.md,
   },
   securityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: SPACING.xs + 2,
   },
   securityDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#cbd5e1',
+    backgroundColor: COLORS.slate300,
   },
   securityText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '500',
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.slate400,
+    fontWeight: FONT_WEIGHT.medium,
   },
   footer: {
-    paddingVertical: 20,
+    paddingVertical: SPACING.xl,
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate500,
   },
   footerLink: {
-    color: PRIMARY_COLOR,
-    fontWeight: '600',
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.semibold,
   },
 });

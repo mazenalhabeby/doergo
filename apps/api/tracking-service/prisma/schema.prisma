@@ -9,15 +9,26 @@ datasource db {
 
 // Enums
 enum Role {
-  PARTNER
-  OFFICE
-  WORKER
+  CLIENT      // Was: PARTNER - Creates tasks (external customer)
+  DISPATCHER  // Was: OFFICE - Assigns workers, monitors operations
+  TECHNICIAN  // Was: WORKER - Executes tasks in the field
+}
+
+// Access level for organization delegation
+enum AccessLevel {
+  NONE           // No access - manager sees nothing
+  TASKS_ONLY     // Can view tasks only
+  TASKS_ASSIGN   // Can view tasks + assign workers
+  FULL           // Can view everything + assign
 }
 
 enum TaskStatus {
   DRAFT
   NEW
   ASSIGNED
+  ACCEPTED     // Technician acknowledges the assigned task
+  EN_ROUTE     // Technician is traveling to the job location
+  ARRIVED      // Technician has arrived at the location
   IN_PROGRESS
   BLOCKED
   COMPLETED
@@ -60,7 +71,42 @@ model Organization {
   users User[]
   tasks Task[]
 
+  // Organization delegation relationships
+  grantedAccess  OrganizationAccess[] @relation("Grantor")  // Access this org has granted to others
+  receivedAccess OrganizationAccess[] @relation("Grantee")  // Access this org has received from others
+
   @@map("organizations")
+}
+
+// Many-to-many delegation: Org A can manage Org B (if B grants access)
+model OrganizationAccess {
+  id String @id @default(cuid())
+
+  // Who is granting access (the managed org)
+  grantorOrgId String
+  grantorOrg   Organization @relation("Grantor", fields: [grantorOrgId], references: [id], onDelete: Cascade)
+
+  // Who is receiving access (the manager org)
+  granteeOrgId String
+  granteeOrg   Organization @relation("Grantee", fields: [granteeOrgId], references: [id], onDelete: Cascade)
+
+  // Access level
+  accessLevel AccessLevel @default(NONE)
+
+  // Granular permissions (for fine-tuned control)
+  canViewTasks     Boolean @default(false)
+  canAssignWorkers Boolean @default(false)
+  canViewWorkers   Boolean @default(false)
+  canViewTracking  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Each org pair can only have one access record
+  @@unique([grantorOrgId, granteeOrgId])
+  @@index([grantorOrgId])
+  @@index([granteeOrgId])
+  @@map("organization_access")
 }
 
 model User {
@@ -74,16 +120,22 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  // Security: Account lockout fields
+  failedLoginAttempts Int      @default(0)
+  lockedUntil         DateTime?
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
   createdTasks   Task[]       @relation("TaskCreator")
   assignedTasks  Task[]       @relation("TaskAssignee")
   comments       Comment[]
   attachments    Attachment[]
   taskEvents     TaskEvent[]
-  lastLocation   WorkerLastLocation?
-  refreshTokens  RefreshToken[]
+  lastLocation         WorkerLastLocation?
+  locationHistory      LocationHistory[]
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
 
   @@index([organizationId])
   @@index([role])
@@ -93,16 +145,38 @@ model User {
 
 model RefreshToken {
   id        String   @id @default(cuid())
-  token     String   @unique
+  tokenHash String   @unique  // Store SHA-256 hash, not plain token
   expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Grace period fields for handling concurrent refresh requests
+  usedAt               DateTime?  // When the token was first used (null = not used yet)
+  replacedByTokenHash  String?    // Hash of the new token that replaced this one
+  cachedAccessToken    String?    // Cached access token to return during grace period
+  cachedRefreshToken   String?    // Cached refresh token to return during grace period (temporary, deleted after grace period)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([usedAt])  // For cleanup of old used tokens
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique  // Store SHA-256 hash, not plain token
+  expiresAt DateTime
+  used      Boolean  @default(false)
   createdAt DateTime @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([token])
-  @@map("refresh_tokens")
+  @@index([tokenHash])
+  @@map("password_reset_tokens")
 }
 
 model Task {
@@ -117,6 +191,11 @@ model Task {
   locationLng     Float?
   locationAddress String?
 
+  // Route tracking fields
+  routeStartedAt DateTime?  // When EN_ROUTE started
+  routeEndedAt   DateTime?  // When ARRIVED
+  routeDistance  Float?     // Total distance in meters
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -129,9 +208,10 @@ model Task {
   assignedToId String?
   assignedTo   User?   @relation("TaskAssignee", fields: [assignedToId], references: [id])
 
-  comments    Comment[]
-  attachments Attachment[]
-  events      TaskEvent[]
+  comments        Comment[]
+  attachments     Attachment[]
+  events          TaskEvent[]
+  locationHistory LocationHistory[]
 
   @@index([organizationId])
   @@index([status])
@@ -205,4 +285,23 @@ model WorkerLastLocation {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("worker_last_locations")
+}
+
+// Location history for route tracking during EN_ROUTE status
+model LocationHistory {
+  id        String   @id @default(cuid())
+  lat       Float
+  lng       Float
+  accuracy  Float?
+  timestamp DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  taskId String?
+  task   Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([taskId, timestamp])
+  @@map("location_history")
 }

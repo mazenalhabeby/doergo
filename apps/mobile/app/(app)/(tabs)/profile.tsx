@@ -1,13 +1,21 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/contexts/auth-context';
-
-const PRIMARY_COLOR = '#2563EB';
+import {
+  COLORS,
+  SPACING,
+  RADIUS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  ROUTES,
+} from '../../../src/lib/constants';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
     Alert.alert(
@@ -20,7 +28,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            router.replace('/(auth)/login' as Href);
+            router.replace(ROUTES.login as Href);
           },
         },
       ]
@@ -28,18 +36,22 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: insets.bottom + SPACING.xl }}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Profile Header */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarLarge}>
-          <Ionicons name="person" size={40} color={PRIMARY_COLOR} />
+          <Ionicons name="person" size={40} color={COLORS.primary} />
         </View>
         <Text style={styles.userName}>
           {user?.firstName} {user?.lastName}
         </Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
         <View style={styles.roleBadge}>
-          <Ionicons name="briefcase-outline" size={14} color={PRIMARY_COLOR} />
+          <Ionicons name="briefcase-outline" size={14} color={COLORS.primary} />
           <Text style={styles.roleText}>Worker</Text>
         </View>
       </View>
@@ -48,34 +60,34 @@ export default function ProfileScreen() {
       <View style={styles.menuContainer}>
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
           <View style={styles.menuIconContainer}>
-            <Ionicons name="notifications-outline" size={22} color="#64748b" />
+            <Ionicons name="notifications-outline" size={22} color={COLORS.slate500} />
           </View>
           <Text style={styles.menuText}>Notifications</Text>
-          <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
+          <Ionicons name="chevron-forward" size={20} color={COLORS.slate300} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
           <View style={styles.menuIconContainer}>
-            <Ionicons name="location-outline" size={22} color="#64748b" />
+            <Ionicons name="location-outline" size={22} color={COLORS.slate500} />
           </View>
           <Text style={styles.menuText}>Location Settings</Text>
-          <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
+          <Ionicons name="chevron-forward" size={20} color={COLORS.slate300} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
           <View style={styles.menuIconContainer}>
-            <Ionicons name="help-circle-outline" size={22} color="#64748b" />
+            <Ionicons name="help-circle-outline" size={22} color={COLORS.slate500} />
           </View>
           <Text style={styles.menuText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
+          <Ionicons name="chevron-forward" size={20} color={COLORS.slate300} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
           <View style={styles.menuIconContainer}>
-            <Ionicons name="information-circle-outline" size={22} color="#64748b" />
+            <Ionicons name="information-circle-outline" size={22} color={COLORS.slate500} />
           </View>
           <Text style={styles.menuText}>About</Text>
-          <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
+          <Ionicons name="chevron-forward" size={20} color={COLORS.slate300} />
         </TouchableOpacity>
       </View>
 
@@ -85,113 +97,113 @@ export default function ProfileScreen() {
         onPress={handleLogout}
         activeOpacity={0.8}
       >
-        <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+        <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
 
       {/* Version */}
       <Text style={styles.version}>Version 1.0.0</Text>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: COLORS.slate50,
   },
   profileHeader: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
+    paddingVertical: SPACING.xxxl,
+    paddingHorizontal: SPACING.xxl,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: COLORS.slate100,
   },
   avatarLarge: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#eff6ff',
+    backgroundColor: COLORS.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   userName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 4,
+    fontSize: FONT_SIZE.xxxl,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.slate800,
+    marginBottom: SPACING.xs,
   },
   userEmail: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 12,
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate500,
+    marginBottom: SPACING.md,
   },
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#eff6ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+    borderRadius: RADIUS.xl,
+    gap: SPACING.xs + 2,
   },
   roleText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: PRIMARY_COLOR,
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
   },
   menuContainer: {
-    backgroundColor: 'white',
-    marginTop: 16,
-    marginHorizontal: 16,
-    borderRadius: 16,
+    backgroundColor: COLORS.white,
+    marginTop: SPACING.lg,
+    marginHorizontal: SPACING.lg,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: COLORS.slate100,
   },
   menuIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 10,
-    backgroundColor: '#f8fafc',
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.slate50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: SPACING.md,
   },
   menuText: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#334155',
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.slate700,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fef2f2',
-    marginHorizontal: 16,
-    marginTop: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    backgroundColor: COLORS.errorLight,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.xxl,
+    paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.md,
+    gap: SPACING.sm,
   },
   logoutText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#ef4444',
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.error,
   },
   version: {
     textAlign: 'center',
-    fontSize: 13,
-    color: '#94a3b8',
-    marginTop: 24,
+    fontSize: FONT_SIZE.md,
+    color: COLORS.slate400,
+    marginTop: SPACING.xxl,
   },
 });

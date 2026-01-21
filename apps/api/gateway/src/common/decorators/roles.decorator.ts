@@ -1,5 +1,5 @@
-import { SetMetadata } from '@nestjs/common';
-import { Role } from '@doergo/shared';
-
-export const ROLES_KEY = 'roles';
-export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
+/**
+ * Re-export from shared package for backwards compatibility
+ * New code should import directly from @doergo/shared
+ */
+export { Roles, ROLES_KEY } from '@doergo/shared';

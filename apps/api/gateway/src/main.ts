@@ -43,9 +43,11 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix
+  // Global prefix (exclude admin routes for Bull Board)
   const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
-  app.setGlobalPrefix(apiPrefix);
+  app.setGlobalPrefix(apiPrefix, {
+    exclude: ['admin/queues', 'admin/queues/(.*)'],
+  });
 
   // CORS
   const corsOrigins = configService.get<string>('CORS_ORIGINS', 'http://localhost:3001,http://localhost:3002');

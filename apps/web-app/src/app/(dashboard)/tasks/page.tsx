@@ -5,40 +5,23 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  Plus,
   Search,
-  Filter,
-  MoreHorizontal,
-  Eye,
-  Pencil,
-  Trash2,
-  UserPlus,
-  MapPin,
-  Calendar,
-  Loader2,
+  ChevronLeft,
+  ChevronRight,
   RefreshCw,
+  ClipboardList,
+  Filter,
+  Plus,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { useAuth } from "@/contexts/auth-context"
-import { tasksApi, type Task } from "@/lib/api"
+import { tasksApi, type Task, type SuggestedTechnician } from "@/lib/api"
+import { TaskCard } from "@/components/tasks"
+import { TechnicianAssignDialog } from "@/components/technicians/technician-assign-dialog"
+import type { TechnicianData } from "@/components/technicians/technician-assign-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Select,
   SelectContent,
@@ -46,59 +29,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { StatusBadge, type TaskStatus } from "@/components/tasks/status-badge"
-import { PriorityBadge, type TaskPriority } from "@/components/tasks/priority-badge"
-import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { PRIORITY_FILTER_OPTIONS, getStatusConfig } from "@/lib/constants"
 
-// Status options for filter
-const statusOptions: { value: string; label: string }[] = [
-  { value: "all", label: "All Statuses" },
+// Priority sort order
+const PRIORITY_ORDER: Record<string, number> = {
+  URGENT: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+}
+
+// Status tabs configuration with icons
+const STATUS_TABS = [
+  { value: "all", label: "All Tasks" },
   { value: "NEW", label: "New" },
   { value: "ASSIGNED", label: "Assigned" },
+  { value: "ACCEPTED", label: "Accepted" },
+  { value: "EN_ROUTE", label: "En Route" },
+  { value: "ARRIVED", label: "Arrived" },
   { value: "IN_PROGRESS", label: "In Progress" },
   { value: "BLOCKED", label: "Blocked" },
   { value: "COMPLETED", label: "Completed" },
   { value: "CANCELED", label: "Canceled" },
-]
-
-// Priority options for filter
-const priorityOptions: { value: string; label: string }[] = [
-  { value: "all", label: "All Priorities" },
-  { value: "URGENT", label: "Urgent" },
-  { value: "HIGH", label: "High" },
-  { value: "MEDIUM", label: "Medium" },
-  { value: "LOW", label: "Low" },
-]
+  { value: "CLOSED", label: "Closed" },
+] as const
 
 export default function TasksPage() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
-  const isDispatcher = user?.role === "DISPATCHER"
-  const isClient = user?.role === "CLIENT"
-  const canAssign = isClient || isDispatcher
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState(
-    searchParams.get("status") || "all"
+    searchParams.get("status") || "NEW"
   )
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [page, setPage] = useState(1)
   const limit = 10
+
+  // Assign dialog state
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
   // Fetch tasks from API
   const { data: tasksData, isLoading, isError, error, refetch } = useQuery({
@@ -106,42 +80,81 @@ export default function TasksPage() {
     queryFn: () => tasksApi.list({ status: statusFilter, priority: priorityFilter, page, limit }),
   })
 
-  // Delete task mutation
-  const deleteMutation = useMutation({
-    mutationFn: (taskId: string) => tasksApi.delete(taskId),
-    onSuccess: () => {
-      toast.success("Task deleted successfully")
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to delete task")
-    },
+  // Fetch status counts for tabs
+  const { data: statusCounts, refetch: refetchCounts } = useQuery({
+    queryKey: ["taskStatusCounts"],
+    queryFn: () => tasksApi.getStatusCounts(),
+    staleTime: 30000, // Cache for 30 seconds
   })
+
+  // Fetch suggested technicians for the selected task
+  const { data: suggestedData, isLoading: loadingSuggested } = useQuery({
+    queryKey: ["suggestedTechnicians", selectedTaskId],
+    queryFn: () => tasksApi.getSuggestedTechnicians(selectedTaskId!),
+    enabled: assignDialogOpen && !!selectedTaskId,
+    staleTime: 0, // Always refetch when dialog opens
+  })
+
+  // Transform to technician data format (add avatarUrl if needed)
+  const technicians: TechnicianData[] = useMemo(() => {
+    return (suggestedData?.technicians || []).map((tech: SuggestedTechnician) => ({
+      ...tech,
+      avatarUrl: undefined, // No avatar URL from backend yet
+    }))
+  }, [suggestedData])
+
+  // Get suggested technician ID from backend
+  const suggestedTechnicianId = suggestedData?.suggestedTechnicianId
+
+  // Assign mutation
+  const assignMutation = useMutation({
+    mutationFn: (workerId: string) => {
+      if (!selectedTaskId) throw new Error("No task selected")
+      return tasksApi.assign(selectedTaskId, workerId)
+    },
+    onSuccess: () => {
+      toast.success("Technician assigned successfully")
+      setAssignDialogOpen(false)
+      setSelectedTaskId(null)
+      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
+  // Handle assign button click from task card
+  const handleAssignClick = (taskId: string) => {
+    setSelectedTaskId(taskId)
+    setAssignDialogOpen(true)
+  }
+
+  // Refetch both tasks and counts
+  const handleRefresh = () => {
+    refetch()
+    refetchCounts()
+  }
 
   const tasks = tasksData?.data || []
   const meta = tasksData?.meta
 
-  // Client-side search filter (for searching within loaded data)
+  // Client-side search filter and sort by priority
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks
-    return tasks.filter((task: Task) => {
-      const matchesSearch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-        (task.locationAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-      return matchesSearch
+    let result = tasks
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter((task: Task) =>
+        task.title.toLowerCase().includes(query) ||
+        task.id.toLowerCase().includes(query)
+      )
+    }
+
+    return [...result].sort((a: Task, b: Task) => {
+      const orderA = PRIORITY_ORDER[a.priority] ?? 99
+      const orderB = PRIORITY_ORDER[b.priority] ?? 99
+      return orderA - orderB
     })
   }, [tasks, searchQuery])
-
-  // Stats for header (from loaded data)
-  const stats = useMemo(() => {
-    return {
-      total: meta?.total || 0,
-      new: tasks.filter((t: Task) => t.status === "NEW").length,
-      inProgress: tasks.filter((t: Task) => t.status === "IN_PROGRESS").length,
-      completed: tasks.filter((t: Task) => t.status === "COMPLETED").length,
-    }
-  }, [tasks, meta])
 
   // Handle filter changes - reset to page 1
   const handleStatusChange = (value: string) => {
@@ -154,379 +167,283 @@ export default function TasksPage() {
     setPage(1)
   }
 
+  // Pagination
+  const totalPages = meta?.totalPages || 1
+  const startItem = (page - 1) * limit + 1
+  const endItem = Math.min(page * limit, meta?.total || 0)
+
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-800">
-            {isDispatcher ? "All Tasks" : "My Tasks"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isDispatcher
-              ? "Manage and assign tasks to technicians"
-              : "View and manage your service requests"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`size-4 ${isLoading ? "animate-spin" : ""}`} />
-          </Button>
-          {canAssign && (
-            <Button asChild>
-              <Link href="/tasks/new">
-                <Plus className="mr-2 size-4" />
-                Create Task
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            {isLoading ? (
-              <Skeleton className="h-8 w-16 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold text-slate-800">{stats.total}</div>
-            )}
-            <p className="text-sm text-muted-foreground">Total Tasks</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            {isLoading ? (
-              <Skeleton className="h-8 w-12 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold text-blue-600">{stats.new}</div>
-            )}
-            <p className="text-sm text-muted-foreground">New</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            {isLoading ? (
-              <Skeleton className="h-8 w-12 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold text-amber-600">
-                {stats.inProgress}
-              </div>
-            )}
-            <p className="text-sm text-muted-foreground">In Progress</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            {isLoading ? (
-              <Skeleton className="h-8 w-12 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold text-green-600">
-                {stats.completed}
-              </div>
-            )}
-            <p className="text-sm text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="max-w-screen-xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                Service Requests
+              </h1>
+              <p className="mt-1.5 text-slate-500">
+                Track, assign, and monitor all maintenance operations in real-time
+              </p>
             </div>
-            <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Search by name or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-72 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm focus:bg-white focus:shadow-md transition-all"
+                />
+              </div>
+
+              {/* Priority Filter */}
               <Select value={priorityFilter} onValueChange={handlePriorityChange}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[140px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                  <Filter className="size-4 mr-2 text-slate-400" />
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  {priorityOptions.map((option) => (
+                  {PRIORITY_FILTER_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Refresh Button */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+              >
+                <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
+              </Button>
+
+              {/* Create Task Button */}
+              <Link href="/tasks/new">
+                <Button
+                  className={cn(
+                    "h-11 px-5 rounded-xl font-medium",
+                    "bg-blue-600 text-white",
+                    "hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/25",
+                    "transition-all duration-200"
+                  )}
+                >
+                  <Plus className="size-4 mr-2" />
+                  Create Task
+                </Button>
+              </Link>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Error State */}
-      {isError && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-              <Filter className="size-8 text-red-500" />
-              <p className="text-red-600 font-medium">Failed to load tasks</p>
-              <p className="text-sm">{(error as Error)?.message || "Please try again later"}</p>
-              <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
-                <RefreshCw className="mr-2 size-4" />
-                Retry
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tasks Table */}
-      {!isError && (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[300px]">Task</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Priority</TableHead>
-                  {canAssign && <TableHead>Assigned To</TableHead>}
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  // Loading skeleton rows
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <div className="flex flex-col gap-2">
-                          <Skeleton className="h-5 w-48" />
-                          <Skeleton className="h-4 w-64" />
-                        </div>
-                      </TableCell>
-                      <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                      {canAssign && <TableCell><Skeleton className="h-6 w-32" /></TableCell>}
-                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : filteredTasks.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={canAssign ? 7 : 6}
-                      className="h-32 text-center"
-                    >
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Filter className="size-8" />
-                        <p>No tasks found</p>
-                        <p className="text-sm">
-                          {statusFilter !== "all" || priorityFilter !== "all"
-                            ? "Try adjusting your filters"
-                            : !isDispatcher
-                            ? "Create your first task to get started"
-                            : "No tasks have been created yet"}
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTasks.map((task: Task) => (
-                    <TableRow key={task.id}>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Link
-                            href={`/tasks/${task.id}`}
-                            className="font-medium text-slate-800 hover:text-blue-600 hover:underline"
-                          >
-                            {task.title}
-                          </Link>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {task.description || "No description"}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={task.status as TaskStatus} />
-                      </TableCell>
-                      <TableCell>
-                        <PriorityBadge priority={task.priority as TaskPriority} />
-                      </TableCell>
-                      {canAssign && (
-                        <TableCell>
-                          {task.assignedTo ? (
-                            <div className="flex items-center gap-2">
-                              <div className="flex size-6 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-600">
-                                {task.assignedTo.firstName[0]}
-                                {task.assignedTo.lastName[0]}
-                              </div>
-                              <span className="text-sm">
-                                {task.assignedTo.firstName}{" "}
-                                {task.assignedTo.lastName}
-                              </span>
-                            </div>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="text-amber-600 border-amber-200 bg-amber-50"
-                            >
-                              Unassigned
-                            </Badge>
-                          )}
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        {task.dueDate ? (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Calendar className="size-3.5" />
-                            {new Date(task.dueDate).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {task.locationAddress ? (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground max-w-[200px]">
-                            <MapPin className="size-3.5 shrink-0" />
-                            <span className="truncate">{task.locationAddress}</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreHorizontal className="size-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/tasks/${task.id}`}>
-                                <Eye className="mr-2 size-4" />
-                                View Details
-                              </Link>
-                            </DropdownMenuItem>
-                            {canAssign && !task.assignedTo && (
-                              <DropdownMenuItem asChild>
-                                <Link href={`/tasks/${task.id}?assign=true`}>
-                                  <UserPlus className="mr-2 size-4" />
-                                  Assign Technician
-                                </Link>
-                              </DropdownMenuItem>
-                            )}
-                            {isClient && (
-                              <>
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/tasks/${task.id}/edit`}>
-                                    <Pencil className="mr-2 size-4" />
-                                    Edit
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem
-                                      className="text-red-600 focus:text-red-600"
-                                      onSelect={(e) => e.preventDefault()}
-                                    >
-                                      <Trash2 className="mr-2 size-4" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Task</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete &ldquo;{task.title}&rdquo;? This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => deleteMutation.mutate(task.id)}
-                                        className="bg-red-600 hover:bg-red-700"
-                                        disabled={deleteMutation.isPending}
-                                      >
-                                        {deleteMutation.isPending ? (
-                                          <>
-                                            <Loader2 className="mr-2 size-4 animate-spin" />
-                                            Deleting...
-                                          </>
-                                        ) : (
-                                          "Delete"
-                                        )}
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pagination */}
-      {!isLoading && !isError && meta && meta.totalPages > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <p>
-            Showing {filteredTasks.length} of {meta.total} tasks
-            {searchQuery && ` (filtered from ${tasks.length})`}
-          </p>
-          {meta.totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm">
-                Page {page} of {meta.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
-                disabled={page === meta.totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          )}
         </div>
-      )}
+
+        {/* Status Tabs */}
+        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm mb-6">
+          <div className="flex items-center overflow-x-auto scrollbar-hide">
+            {STATUS_TABS.map((tab, index) => {
+              const isActive = statusFilter === tab.value
+              const statusConfig = tab.value !== "all" ? getStatusConfig(tab.value) : null
+              const count = statusCounts?.[tab.value] ?? 0
+
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => handleStatusChange(tab.value)}
+                  className={cn(
+                    "relative flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap transition-all duration-200",
+                    "hover:bg-slate-50/80",
+                    isActive
+                      ? "text-blue-600"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  {statusConfig && (
+                    <span
+                      className={cn(
+                        "size-2 rounded-full transition-all duration-200",
+                        isActive && "ring-4 ring-blue-100"
+                      )}
+                      style={{ backgroundColor: isActive ? "#2563eb" : statusConfig.hex }}
+                    />
+                  )}
+                  {tab.label}
+
+                  {/* Count badge */}
+                  {count > 0 && (
+                    <span
+                      className={cn(
+                        "min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold flex items-center justify-center",
+                        isActive
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-slate-100 text-slate-500"
+                      )}
+                    >
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  )}
+
+                  {/* Active indicator line */}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-blue-600 rounded-full" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Results Count */}
+        {!isLoading && !isError && meta && (
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-slate-500">
+              Showing <span className="font-medium text-slate-700">{filteredTasks.length}</span> of{" "}
+              <span className="font-medium text-slate-700">{meta.total}</span> tasks
+            </p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {isError && (
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-16 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="size-16 rounded-2xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+                <ClipboardList className="size-8 text-red-500" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-slate-800">Failed to load tasks</p>
+                <p className="text-slate-500 mt-1">{(error as Error)?.message || "Please try again later"}</p>
+              </div>
+              <Button onClick={handleRefresh} className="mt-2 rounded-xl">
+                <RefreshCw className="mr-2 size-4" />
+                Try Again
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                <div className="flex items-start gap-6">
+                  <Skeleton className="size-12 rounded-xl" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                    <Skeleton className="h-6 w-80 mb-2" />
+                    <Skeleton className="h-4 w-full max-w-2xl mb-4" />
+                    <div className="flex items-center gap-6">
+                      <Skeleton className="h-4 w-36" />
+                      <Skeleton className="h-4 w-44" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-10 w-32 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !isError && filteredTasks.length === 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-16 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="size-20 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                <ClipboardList className="size-10 text-slate-300" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-slate-800">No tasks found</p>
+                <p className="text-slate-500 mt-1 max-w-sm mx-auto">
+                  {statusFilter !== "all" || priorityFilter !== "all" || searchQuery
+                    ? "Try adjusting your filters or search query"
+                    : "Create your first task to get started"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Task Cards */}
+        {!isLoading && !isError && filteredTasks.length > 0 && (
+          <div className="grid gap-4">
+            {filteredTasks.map((task: Task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onAssign={handleAssignClick}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!isLoading && !isError && meta && meta.total > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-center mt-8 gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-10 rounded-xl"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+
+            {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+              const pageNum = i + 1
+              return (
+                <Button
+                  key={pageNum}
+                  variant={page === pageNum ? "default" : "outline"}
+                  size="icon"
+                  className={cn(
+                    "size-10 rounded-xl font-medium",
+                    page === pageNum && "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/25"
+                  )}
+                  onClick={() => setPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              )
+            })}
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-10 rounded-xl"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Bottom Padding */}
+        <div className="h-8" />
+      </div>
+
+      {/* Technician Assign Dialog */}
+      <TechnicianAssignDialog
+        open={assignDialogOpen}
+        onOpenChange={(open) => {
+          setAssignDialogOpen(open)
+          if (!open) setSelectedTaskId(null)
+        }}
+        technicians={technicians}
+        isLoading={loadingSuggested}
+        isAssigning={assignMutation.isPending}
+        onAssign={(techId) => assignMutation.mutate(techId)}
+        suggestedTechnicianId={suggestedTechnicianId}
+      />
     </div>
   )
 }

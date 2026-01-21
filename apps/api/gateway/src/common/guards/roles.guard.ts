@@ -1,8 +1,20 @@
+/**
+ * RolesGuard - must be in gateway due to NestJS DI requirements
+ * Helper functions are exported from @doergo/shared
+ */
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@doergo/shared';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { Role, ROLES_KEY } from '@doergo/shared';
 
+// Re-export helper functions from shared
+export { hasRole, isClient, isDispatcher, isTechnician } from '@doergo/shared';
+
+/**
+ * Guard to check if user has required role(s)
+ *
+ * Use with @Roles() decorator to specify required roles.
+ * Must be used AFTER JwtAuthGuard to ensure user is attached to request.
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
@@ -24,7 +36,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User not found in request');
     }
 
-    const hasRole = requiredRoles.some((role) => user.role === role);
+    const hasRole = requiredRoles.some((role: Role) => user.role === role);
 
     if (!hasRole) {
       throw new ForbiddenException(

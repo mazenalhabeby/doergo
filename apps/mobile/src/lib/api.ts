@@ -1,6 +1,33 @@
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+// Dynamically get API URL based on Expo dev server host
+function getApiUrl(): string {
+  // If explicitly set in env (non-empty), use that for production
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim().length > 0) {
+    console.log('[API] Using env URL:', envUrl);
+    return envUrl;
+  }
+
+  // In development, get host from Expo's dev server
+  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  console.log('[API] Expo debuggerHost:', debuggerHost);
+
+  if (debuggerHost) {
+    // debuggerHost is like "192.168.178.26:8081" - extract IP and use API port 4000
+    const host = debuggerHost.split(':')[0];
+    const url = `http://${host}:4000/api/v1`;
+    console.log('[API] Using dynamic URL:', url);
+    return url;
+  }
+
+  // Fallback for simulator/emulator
+  console.log('[API] Using fallback localhost');
+  return 'http://localhost:4000/api/v1';
+}
+
+const API_URL = getApiUrl();
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'doergo_access_token';
@@ -294,11 +321,24 @@ async function fetchWithAuth<T>(
 }
 
 // Task types
+export type TaskStatus =
+  | 'DRAFT'
+  | 'NEW'
+  | 'ASSIGNED'
+  | 'ACCEPTED'
+  | 'EN_ROUTE'
+  | 'ARRIVED'
+  | 'IN_PROGRESS'
+  | 'BLOCKED'
+  | 'COMPLETED'
+  | 'CANCELED'
+  | 'CLOSED';
+
 export interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'DRAFT' | 'NEW' | 'ASSIGNED' | 'IN_PROGRESS' | 'BLOCKED' | 'COMPLETED' | 'CANCELED' | 'CLOSED';
+  status: TaskStatus;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   dueDate?: string;
   locationLat?: number;
@@ -414,6 +454,32 @@ export const tasksApi = {
     return fetchWithAuth<Comment>(`/tasks/${taskId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ content }),
+    });
+  },
+};
+
+// Location tracking types
+export interface LocationUpdate {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  taskId?: string;
+}
+
+export interface LocationResponse {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  updatedAt: string;
+}
+
+// Tracking API - for technician location updates
+export const trackingApi = {
+  // Update technician's current location
+  updateLocation: async (data: LocationUpdate): Promise<LocationResponse> => {
+    return fetchWithAuth<LocationResponse>('/tracking/location', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 };

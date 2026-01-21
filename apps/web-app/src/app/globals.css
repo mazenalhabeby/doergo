@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -143,5 +145,28 @@
   }
   .sidebar-item-active:hover {
     @apply bg-blue-700;
+  }
+
+  /* Leaflet Map Overrides */
+  .leaflet-container {
+    @apply font-sans;
+  }
+
+  .leaflet-popup-content-wrapper {
+    @apply rounded-lg shadow-lg border border-slate-200;
+  }
+
+  .leaflet-popup-content {
+    @apply m-0 p-3;
+  }
+
+  .leaflet-popup-tip {
+    @apply bg-white;
+  }
+
+  /* Custom technician marker */
+  .technician-marker {
+    background: transparent;
+    border: none;
   }
 }

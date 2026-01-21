@@ -24,7 +24,7 @@ export default function AppLayout() {
         name="task/[id]"
         options={{
           title: 'Task Details',
-          presentation: 'card',
+          presentation: 'modal',
         }}
       />
     </Stack>

@@ -21,11 +21,14 @@ export enum AccessLevel {
   FULL = 'FULL',                 // Can view everything + assign
 }
 
-// Task Status - follows the lifecycle: DRAFT → NEW → ASSIGNED → IN_PROGRESS → COMPLETED → CLOSED
+// Task Status - follows the lifecycle: DRAFT → NEW → ASSIGNED → ACCEPTED → EN_ROUTE → ARRIVED → IN_PROGRESS → COMPLETED → CLOSED
 export enum TaskStatus {
   DRAFT = 'DRAFT',
   NEW = 'NEW',
   ASSIGNED = 'ASSIGNED',
+  ACCEPTED = 'ACCEPTED',       // Technician acknowledges the assigned task
+  EN_ROUTE = 'EN_ROUTE',       // Technician is traveling to the job location
+  ARRIVED = 'ARRIVED',         // Technician has arrived at the location
   IN_PROGRESS = 'IN_PROGRESS',
   BLOCKED = 'BLOCKED',
   COMPLETED = 'COMPLETED',

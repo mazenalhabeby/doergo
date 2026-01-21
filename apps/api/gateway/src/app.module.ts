@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
+import { createBullMQConfig } from '@doergo/shared';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MicroservicesModule } from './common/microservices/microservices.module';
@@ -36,6 +40,13 @@ import { RolesGuard } from './common/guards/roles.guard';
         limit: 100, // 100 requests per minute
       },
     ]),
+    // BullMQ for reliable job processing
+    BullModule.forRootAsync(createBullMQConfig()),
+    // Bull Board for job monitoring (available at /admin/queues)
+    BullBoardModule.forRoot({
+      route: '/admin/queues',
+      adapter: ExpressAdapter,
+    }),
     MicroservicesModule,
     AuthModule,
     TasksModule,

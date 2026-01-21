@@ -5,12 +5,17 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
-
-const MAX_SESSIONS_PER_USER = 5;
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MINUTES = 15;
-const PASSWORD_RESET_EXPIRATION_HOURS = 1;
-const REFRESH_TOKEN_GRACE_PERIOD_SECONDS = 60; // Allow reuse within 60 seconds
+import {
+  MAX_SESSIONS_PER_USER,
+  MAX_FAILED_ATTEMPTS,
+  LOCKOUT_DURATION_MINUTES,
+  PASSWORD_RESET_EXPIRATION_HOURS,
+  REFRESH_TOKEN_GRACE_PERIOD_SECONDS,
+  BCRYPT_COST_FACTOR,
+  success,
+  error,
+  ErrorCodes,
+} from '@doergo/shared';
 
 // Hash a token using SHA-256 for secure storage
 function hashToken(token: string): string {
@@ -57,7 +62,7 @@ export class AuthService {
       }
 
       // Use higher bcrypt cost factor (12) for better security
-      const passwordHash = await bcrypt.hash(data.password, 12);
+      const passwordHash = await bcrypt.hash(data.password, BCRYPT_COST_FACTOR);
 
       // If role is CLIENT and companyName is provided, create a new organization
       let organizationId: string | null = null;
@@ -442,6 +447,18 @@ export class AuthService {
         this.logger.warn('Token record disappeared after claim - but new tokens were created, returning success');
       } else {
         this.logger.log('Refresh successful - token marked as used with grace period');
+
+        // Schedule deletion of old token after grace period
+        setTimeout(async () => {
+          try {
+            await this.prisma.refreshToken.delete({
+              where: { id: storedToken.id },
+            });
+            this.logger.log(`Deleted old refresh token ${storedToken.id} after grace period`);
+          } catch {
+            // Token might already be deleted by cleanup job or another process
+          }
+        }, (REFRESH_TOKEN_GRACE_PERIOD_SECONDS + 1) * 1000);
       }
 
       return { success: true, data: tokens };
@@ -625,7 +642,7 @@ export class AuthService {
    * Clean up expired and used refresh tokens from the database.
    * Runs every 5 minutes to clean up used tokens after grace period.
    */
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron('0 */15 * * * *')  // Every 15 minutes
   async cleanupExpiredTokens() {
     const now = new Date();
     const gracePeriodCutoff = new Date(now.getTime() - REFRESH_TOKEN_GRACE_PERIOD_SECONDS * 1000);

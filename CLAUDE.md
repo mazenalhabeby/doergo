@@ -1,6 +1,6 @@
 # DOERGO - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-01-16 (Phase 2 Complete + Token Refresh Grace Period)
+> **Last Updated**: 2026-01-21 (Task Detail UI Enhancements)
 
 ---
 
@@ -33,23 +33,30 @@
                     ┌──────▼──────┐
                     │ API Gateway │ :4000/api/v1
                     │  (NestJS)   │ Swagger: /docs
+                    │             │ Bull Board: /admin/queues
                     └──────┬──────┘
-                           │ Redis Transport
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+         │ Redis Pub/Sub   │ BullMQ Queues   │
+         │ (auth,tracking) │ (tasks)         │
+         │                 │                 │
          ┌─────────────────┼─────────────────┬──────────────────┐
          ▼                 ▼                 ▼                  ▼
 ┌─────────────┐   ┌─────────────┐   ┌──────────────┐   ┌──────────────┐
 │auth-service │   │task-service │   │notification- │   │tracking-     │
-│             │   │             │   │service       │   │service       │
-└─────────────┘   └─────────────┘   │(Socket.IO)   │   │(GPS/Maps)    │
-                                    └──────────────┘   └──────────────┘
+│             │   │ (BullMQ     │   │service       │   │service       │
+│             │   │  Processor) │   │(Socket.IO)   │   │(GPS/Maps)    │
+└─────────────┘   └─────────────┘   └──────────────┘   └──────────────┘
                            │
               ┌────────────┴────────────┐
               ▼                         ▼
         ┌──────────┐              ┌──────────┐
         │PostgreSQL│              │  Redis   │
-        │(PostGIS) │              │          │
-        │  :5432   │              │  :6379   │
-        └──────────┘              └──────────┘
+        │(PostGIS) │              │ (Cache + │
+        │  :5432   │              │  Queues) │
+        └──────────┘              │  :6379   │
+                                  └──────────┘
 ```
 
 ---
@@ -85,7 +92,12 @@ doergo/
 │           ├── types/         # Enums, interfaces, API types
 │           ├── prisma/        # Shared PrismaService & PrismaModule
 │           ├── microservices/ # Redis config factories, service names
+│           ├── queues/        # BullMQ queue config, constants, job types
 │           ├── api/           # Response helpers, error codes
+│           ├── constants/     # Auth & task constants (configurable values)
+│           ├── validators/    # Shared validation decorators (class-validator)
+│           ├── decorators/    # NestJS decorators (Roles, Public, CurrentUser)
+│           ├── guards/        # NestJS guards (RolesGuard)
 │           ├── design/        # Design tokens, Tailwind preset
 │           └── components/    # Shared React components (AnimatedLogo)
 ├── infra/
@@ -122,18 +134,19 @@ OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, 
 User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil }
 RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
-Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId }
+Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance }
 Comment { id, content, taskId, userId }
 Attachment { id, fileName, fileUrl, fileType, fileSize, taskId, uploadedById }
 TaskEvent { id, eventType, metadata, taskId, userId }
 WorkerLastLocation { id, lat, lng, accuracy, userId }
+LocationHistory { id, lat, lng, accuracy, timestamp, userId, taskId }  # Route tracking points
 ```
 
 ### Enums
 ```typescript
 Role: CLIENT | DISPATCHER | TECHNICIAN
 AccessLevel: NONE | TASKS_ONLY | TASKS_ASSIGN | FULL
-TaskStatus: DRAFT | NEW | ASSIGNED | IN_PROGRESS | BLOCKED | COMPLETED | CANCELED | CLOSED
+TaskStatus: DRAFT | NEW | ASSIGNED | ACCEPTED | EN_ROUTE | ARRIVED | IN_PROGRESS | BLOCKED | COMPLETED | CANCELED | CLOSED
 TaskPriority: LOW | MEDIUM | HIGH | URGENT
 TaskEventType: CREATED | UPDATED | ASSIGNED | UNASSIGNED | STATUS_CHANGED | COMMENT_ADDED | ATTACHMENT_ADDED | ATTACHMENT_REMOVED
 AttachmentType: IMAGE | DOCUMENT | OTHER
@@ -141,13 +154,18 @@ AttachmentType: IMAGE | DOCUMENT | OTHER
 
 ### Task Status Flow
 ```
-DRAFT ──► NEW ──► ASSIGNED ──► IN_PROGRESS ──► COMPLETED ──► CLOSED
-                      │              │
-                      │              ▼
-                      │          BLOCKED ───► IN_PROGRESS
-                      │              │
-                      ▼              ▼
-                  CANCELED ◄────────┘
+                                    ┌─────────────────────────────────────────┐
+                                    │         TECHNICIAN EXECUTION            │
+                                    │                                         │
+DRAFT ──► NEW ──► ASSIGNED ──► ACCEPTED ──► EN_ROUTE ──► ARRIVED ──► IN_PROGRESS ──► COMPLETED ──► CLOSED
+                      │                         │           │              │
+                      │                         │           │              ▼
+                      │                         │           │          BLOCKED ───► IN_PROGRESS
+                      │                         │           │              │
+                      ▼                         ▼           ▼              ▼
+                  CANCELED ◄───────────────────────────────────────────────┘
+
+Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 ```
 
 ---
@@ -184,9 +202,11 @@ DRAFT ──► NEW ──► ASSIGNED ──► IN_PROGRESS ──► COMPLETED
 ### Tracking (`/tracking`)
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
-| POST | `/tracking/location` | Update technician location | TECHNICIAN |
+| POST | `/tracking/location` | Update technician location (stores history if EN_ROUTE) | TECHNICIAN |
 | GET | `/tracking/workers` | Get all technician locations | DISPATCHER |
 | GET | `/tracking/workers/:id` | Get specific technician | DISPATCHER |
+| GET | `/tracking/workers/:id/current-route` | Get active route for worker | DISPATCHER |
+| GET | `/tracking/tasks/:taskId/route` | Get full route for task | DISPATCHER |
 
 ---
 
@@ -217,6 +237,25 @@ DRAFT ──► NEW ──► ASSIGNED ──► IN_PROGRESS ──► COMPLETED
 - `user:{userId}` - User-specific events
 - `task:{taskId}` - Task-specific events
 
+### Socket.IO Monitoring
+
+**Service URL**: `http://localhost:4001` (notification-service)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/socket/stats` | Connection statistics (total, authenticated, by role/org, messages) |
+| GET | `/socket/clients` | List of connected clients with details |
+| GET | `/health` | Service health check |
+
+**Socket.IO Admin UI**: https://admin.socket.io → Connect to `http://localhost:4001`
+
+**Server Logs** (prefixes):
+- `[CONNECT]` / `[DISCONNECT]` - Client connections
+- `[AUTH]` - Authentication events
+- `[JOIN]` / `[LEAVE]` - Room membership
+- `[RECV]` / `[SEND]` - Message traffic (debug level)
+- `[EMIT]` - Server broadcasts
+
 ---
 
 ## 8. TECH STACK QUICK REFERENCE
@@ -235,10 +274,79 @@ DRAFT ──► NEW ──► ASSIGNED ──► IN_PROGRESS ──► COMPLETED
 | Auth | JWT (access + refresh) | RBAC |
 | Database | PostgreSQL + PostGIS | |
 | ORM | Prisma | |
-| Cache/Queue | Redis + BullMQ | |
+| Job Queue | BullMQ | Exactly-once processing |
+| Cache | Redis | |
+| Job Monitor | Bull Board | `/admin/queues` |
 | Storage | S3-compatible | Presigned URLs |
 | Email | Nodemailer | SMTP |
 | Push | Expo Notifications / FCM | |
+
+---
+
+## 8.1 BULLMQ JOB QUEUE ARCHITECTURE
+
+BullMQ provides reliable job processing with exactly-once semantics, preventing duplicate task creation from multiple service instances.
+
+### Architecture Flow
+```
+┌─────────────┐     ┌───────────────┐     ┌──────────────┐
+│   Gateway   │────►│  BullMQ Queue │────►│ task-service │
+│  (Producer) │     │    (Redis)    │     │  (Processor) │
+└─────────────┘     └───────────────┘     └──────────────┘
+       │                    │                     │
+       │ addJob()           │ Job stored          │ process()
+       │ waitUntilFinished()│ until claimed       │ return result
+       ▼                    ▼                     ▼
+```
+
+### Key Benefits
+| Feature | Description |
+|---------|-------------|
+| Exactly-once processing | Only ONE worker processes each job |
+| Automatic retries | Failed jobs retry with exponential backoff |
+| Job persistence | Jobs survive service restarts |
+| Monitoring | Bull Board UI at `/admin/queues` |
+| Horizontal scaling | Multiple workers can process jobs safely |
+
+### Queue Configuration
+```typescript
+// In gateway or task-service app.module.ts
+import { createBullMQConfig, QUEUE_NAMES } from '@doergo/shared';
+
+@Module({
+  imports: [
+    BullModule.forRootAsync(createBullMQConfig()),
+    BullModule.registerQueue({ name: QUEUE_NAMES.TASKS }),
+  ],
+})
+```
+
+### Job Types (TASK_JOB_TYPES)
+| Job Type | Description |
+|----------|-------------|
+| `task.create` | Create new task |
+| `task.update` | Update task details |
+| `task.assign` | Assign technician |
+| `task.updateStatus` | Change task status |
+| `task.delete` | Delete task |
+| `task.getTimeline` | Get task activity |
+| `task.addComment` | Add comment |
+| `task.getComments` | Get comments |
+
+### Default Job Options
+```typescript
+DEFAULT_JOB_OPTIONS.CRITICAL = {
+  attempts: 3,                    // Retry up to 3 times
+  backoff: { type: 'exponential', delay: 1000 },  // 1s, 2s, 4s
+  removeOnComplete: { age: 3600, count: 1000 },   // Keep 1hr or 1000 jobs
+  removeOnFail: { age: 86400 },   // Keep failed 24hr for debugging
+}
+```
+
+### Monitoring
+- **Bull Board UI**: `http://localhost:4000/admin/queues`
+- Shows active, waiting, completed, and failed jobs
+- Allows retry and delete operations
 
 ---
 
@@ -262,6 +370,18 @@ pnpm docker:dev       # Start PostgreSQL + Redis
 # Build
 pnpm build            # Build all packages
 ```
+
+### Important URLs (Development)
+| URL | Description |
+|-----|-------------|
+| `http://localhost:4000/api/v1` | API Gateway |
+| `http://localhost:4000/docs` | Swagger Documentation |
+| `http://localhost:4000/admin/queues` | Bull Board (Job Monitoring) |
+| `http://localhost:4001` | Notification Service (Socket.IO) |
+| `http://localhost:4001/socket/stats` | Socket.IO Statistics |
+| `https://admin.socket.io` | Socket.IO Admin UI (connect to localhost:4001) |
+| `http://localhost:3000` | Web App |
+| `http://localhost:5556` | Prisma Studio |
 
 ---
 
@@ -332,31 +452,51 @@ pnpm build            # Build all packages
 - [x] Mobile: animated splash screen with gear rotation + button click effect
 - [x] Mobile: safe area handling for Android navigation bar
 
-### Phase 3: Task Management 🔲 PENDING
-- [ ] Task CRUD endpoints (task-service)
-- [ ] Task status transitions (state machine)
-- [ ] Web CLIENT: create task UI
-- [ ] Web DISPATCHER: task list with filters
-- [ ] Web DISPATCHER: assign technician UI
-- [ ] TaskEvent creation on changes
+### Phase 3: Task Management ✅ COMPLETE
+- [x] Task CRUD endpoints (task-service)
+- [x] Task status transitions (state machine)
+- [x] Web CLIENT: create task UI
+- [x] Web DISPATCHER: task list with filters
+- [x] Web DISPATCHER: assign technician UI
+- [x] TaskEvent creation on changes
+- [x] Mobile TECHNICIAN: task list with pull-to-refresh
+- [x] Mobile TECHNICIAN: task detail with status actions
+- [x] Mobile TECHNICIAN: block task with reason input
+- [x] Mobile TECHNICIAN: comments (view & add)
+- [x] Web: task detail 60/40 layout (Request Details / Activity)
+- [x] Web: activity timeline component with real-time updates
+- [x] Web: premium comments section with scrollable list
+- [x] Web: cancel request moved to dropdown menu (best practices)
 
-### Phase 4: Technician Mobile 🔲 PENDING
-- [ ] Technician: my tasks list
-- [ ] Technician: task detail screen
-- [ ] Technician: start/block/complete actions
-- [ ] Comments: add/list API + UI
-- [ ] Attachments: camera capture + upload
+### Phase 4: Comments & Attachments 🔲 PENDING
+- [ ] Comments: list/add API (task-service) - partially done
+- [ ] Attachments: S3 presigned URL upload
+- [ ] Web: attachment upload dropzone
+- [ ] Web: attachment gallery/list
+- [ ] Mobile: camera capture for photos
+- [ ] Mobile: gallery picker
+- [ ] Mobile: upload progress indicator
 
-### Phase 5: Real-time & Tracking 🔲 PENDING
-- [ ] Socket.IO gateway setup
-- [ ] Event emission on task changes
-- [ ] Web: real-time updates
-- [ ] Location tracking API
-- [ ] Mobile: background location
-- [ ] Web DISPATCHER: live map view
+### Phase 5: Real-time & Tracking ✅ COMPLETE
+- [x] Socket.IO gateway setup (notification-service)
+- [x] Socket.IO Admin UI integration (@socket.io/admin-ui)
+- [x] Socket.IO monitoring endpoints (/socket/stats, /socket/clients, /health)
+- [x] Enhanced logging (connect/disconnect/auth/emit events)
+- [x] Event emission on task changes
+- [x] Location tracking API (POST /tracking/location)
+- [x] LocationHistory model for route tracking
+- [x] Route fields on Task (routeStartedAt, routeEndedAt, routeDistance)
+- [x] Haversine distance calculation
+- [x] Route API endpoints (getTaskRoute, getWorkerCurrentRoute)
+- [x] Mobile: auto-start tracking on EN_ROUTE status
+- [x] Mobile: auto-stop tracking on ARRIVED
+- [x] Web DISPATCHER: live map with technician markers
+- [x] Web DISPATCHER: route visualization (polyline on map)
+- [x] Web DISPATCHER: route info panel (distance, time, points)
+- [x] Web: task detail shows route tracking data
 
-### Phase 6: Notifications 🔲 PENDING
-- [ ] BullMQ job queue
+### Phase 6: Notifications 🔶 PARTIAL
+- [x] BullMQ job queue (task queue)
 - [ ] Email templates
 - [ ] Push notification service
 - [ ] Notification triggers
@@ -389,10 +529,18 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `SERVICE_NAMES` | Type-safe service name constants |
 | `createMicroserviceOptions()` | Redis microservice bootstrap config |
 | `createClientOptions(SERVICE_NAMES.X)` | ClientsModule registration |
+| `createBullMQConfig()` | BullMQ root module configuration |
+| `QUEUE_NAMES`, `TASK_JOB_TYPES` | Queue and job type constants |
+| `DEFAULT_JOB_OPTIONS` | Standard job retry/backoff options |
 | `success()`, `error()`, `paginated()` | Standardized API responses |
 | `ErrorCodes` | Common error code constants |
 | `PrismaModule`, `PrismaService` | Shared database access |
 | `AnimatedLogo` | Shared logo component (from `@doergo/shared/components`) |
+| `Roles`, `Public`, `CurrentUser` | NestJS decorators (from `@doergo/shared`) |
+| `RolesGuard`, `hasRole()` | Role-based access control guard |
+| `STATUS_TRANSITIONS`, `isValidStatusTransition()` | Task status state machine |
+| `BCRYPT_COST_FACTOR`, `MAX_FAILED_ATTEMPTS`, etc. | Auth constants |
+| `EmailField`, `PasswordField`, `NameField`, etc. | Validation decorators |
 
 ### SOLID Principles
 
@@ -490,31 +638,67 @@ export class TasksController {
 | Port already in use | Kill process: `lsof -ti:PORT \| xargs kill -9` |
 | Redis connection refused | Check Redis container: `docker ps` |
 | CORS errors | Check `CORS_ORIGINS` in gateway `.env` |
+| Duplicate tasks created | Kill zombie processes: `pkill -f task-service`, restart API |
+| Job stuck in queue | Check Bull Board at `/admin/queues`, retry or remove |
+| BullMQ connection error | Verify Redis is running, check `REDIS_HOST` and `REDIS_PORT` |
+
+### Monitoring Tools
+
+| Tool | URL / Command | Purpose |
+|------|---------------|---------|
+| **Bull Board** | `http://localhost:4000/admin/queues` | BullMQ job monitoring |
+| **Socket.IO Admin** | `https://admin.socket.io` → connect to `localhost:4001` | WebSocket monitoring |
+| **Socket Stats** | `curl http://localhost:4001/socket/stats` | Connection statistics |
+| **Swagger** | `http://localhost:4000/docs` | API documentation |
+| **Prisma Studio** | `pnpm db:studio` → `http://localhost:5556` | Database GUI |
+| **Redis CLI** | `docker exec -it doergo-redis redis-cli` | Redis commands |
+| **RedisInsight** | Install via `brew install --cask redisinsight` | Redis GUI (optional) |
+
+### Redis CLI Quick Commands
+```bash
+docker exec -it doergo-redis redis-cli
+> KEYS bull:*           # List BullMQ keys
+> LLEN bull:tasks:wait  # Count waiting jobs
+> MONITOR               # Watch all commands (Ctrl+C to exit)
+```
 
 ---
 
 ## 17. NEXT IMMEDIATE TASKS
 
-**Current Sprint**: Phase 3 - Task Management
+**Current Sprint**: Phase 4 - Comments & Attachments
 
-1. **task-service**: Implement CRUD endpoints
-   - File: `apps/api/task-service/src/modules/tasks/tasks.service.ts`
-   - GET /tasks (list with filters), POST /tasks, GET /tasks/:id, PATCH, DELETE
+1. **task-service**: Implement attachment endpoints
+   - File: `apps/api/task-service/src/modules/attachments/attachments.service.ts`
+   - S3 presigned URL generation for upload
+   - File type validation & size limits
 
-2. **task-service**: Implement status transitions
-   - State machine for valid status changes
-   - Create TaskEvent on every change
-
-3. **gateway**: Proxy task routes
+2. **gateway**: Proxy attachment routes
    - File: `apps/api/gateway/src/modules/tasks/tasks.controller.ts`
+   - POST /tasks/:id/attachments/presign
+   - POST /tasks/:id/attachments (confirm upload)
+   - DELETE /tasks/:id/attachments/:id
 
-4. **web-app**: Tasks list page (role-based views)
-   - File: `apps/web-app/src/app/(dashboard)/tasks/page.tsx`
-   - CLIENT: Table view of own tasks
-   - DISPATCHER: Table view with filters, technician assignment
+3. **web-app**: Attachment upload UI
+   - File: `apps/web-app/src/app/(dashboard)/tasks/[id]/page.tsx`
+   - Dropzone component for file upload
+   - Gallery/list view of attachments
 
-5. **web-app**: Create task form (CLIENT only)
-   - File: `apps/web-app/src/app/(dashboard)/tasks/new/page.tsx`
+4. **mobile**: Camera & gallery integration
+   - File: `apps/mobile/app/(app)/task/[id].tsx`
+   - Camera capture using expo-camera
+   - Gallery picker using expo-image-picker
+   - Upload progress indicator
+
+### Recently Completed (2026-01-21)
+- Task detail page UI enhancements:
+  - 60/40 layout split (Request Details left, Activity right)
+  - Activity timeline component with event icons and descriptions
+  - Real-time activity updates via React Query invalidation
+  - Premium comments section with gradient avatars and scrollable list
+  - Cancel request moved to "More actions" dropdown menu
+- Route tracking feature (LocationHistory, distance calculation, route visualization)
+- Socket.IO monitoring (Admin UI, stats endpoints, enhanced logging)
 
 ---
 

@@ -17,6 +17,7 @@
     "@nestjs/microservices": "^11.0.0",
     "@nestjs/platform-socket.io": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",
+    "@socket.io/admin-ui": "^0.5.1",
     "bullmq": "^5.34.0",
     "ioredis": "^5.4.2",
     "nodemailer": "^6.9.16",
@@ -26,8 +27,8 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
-    "@types/nodemailer": "^6.4.17",
     "@types/node": "^22.10.0",
+    "@types/nodemailer": "^6.4.17",
     "typescript": "^5.7.0"
   }
 }

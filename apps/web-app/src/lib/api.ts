@@ -459,6 +459,37 @@ export interface TasksQueryParams {
   limit?: number;
 }
 
+// Suggested technician response types
+export interface SuggestedTechnician {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  specialty: string | null | undefined;
+  rating: number;
+  ratingCount: number;
+  activeTaskCount: number;
+  todayTaskCount: number;
+  maxDailyJobs: number;
+  distanceKm: number | null;
+  hasLocation: boolean;
+  lastLocationUpdatedAt: string | null;
+  score: number;
+  scoreBreakdown: {
+    distance: number;
+    availability: number;
+    specialization: number;
+    workload: number;
+    rating: number;
+  };
+}
+
+export interface SuggestedTechniciansResponse {
+  taskId: string;
+  technicians: SuggestedTechnician[];
+  suggestedTechnicianId: string | null;
+}
+
 // Tasks API methods
 // User/Worker types
 export interface Worker {
@@ -500,7 +531,24 @@ export const usersApi = {
   },
 };
 
+// Status counts response type
+export interface StatusCountsResponse {
+  success: boolean;
+  data: Record<string, number>;
+}
+
 export const tasksApi = {
+  // Get task counts grouped by status
+  getStatusCounts: async () => {
+    const response = await api.get<StatusCountsResponse>('/tasks/counts');
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || {};
+  },
+
   // Get all tasks with optional filters
   list: async (params?: TasksQueryParams) => {
     const searchParams = new URLSearchParams();
@@ -620,6 +668,117 @@ export const tasksApi = {
   // Get task comments
   getComments: async (taskId: string) => {
     const response = await api.get<{ success: boolean; data: Comment[] }>(`/tasks/${taskId}/comments`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Get suggested technicians for a task (with scoring)
+  getSuggestedTechnicians: async (taskId: string) => {
+    const response = await api.get<{ success: boolean; data: SuggestedTechniciansResponse }>(
+      `/tasks/${taskId}/suggested-technicians`
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+};
+
+// Worker location types for tracking
+export interface WorkerLocation {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  updatedAt?: string;
+  currentTaskId?: string;
+  currentTask?: {
+    id: string;
+    title: string;
+    status: string;
+  };
+}
+
+// Route tracking types
+export interface RoutePoint {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  timestamp: string;
+}
+
+export interface TaskRoute {
+  taskId: string;
+  workerId: string | null;
+  status: string;
+  startTime: string | null;
+  endTime: string | null;
+  duration: number | null; // seconds
+  distance: number | null; // meters
+  points: RoutePoint[];
+}
+
+export interface WorkerCurrentRoute {
+  taskId: string;
+  taskTitle: string;
+  startTime: string | null;
+  duration: number | null; // seconds
+  distance: number; // meters
+  destination: { lat: number; lng: number } | null;
+  points: RoutePoint[];
+}
+
+// Tracking API methods (DISPATCHER only)
+export const trackingApi = {
+  // Get all active worker locations
+  getWorkers: async () => {
+    const response = await api.get<{ success: boolean; data: WorkerLocation[] }>('/tracking/workers');
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Get specific worker location
+  getWorkerLocation: async (workerId: string) => {
+    const response = await api.get<{ success: boolean; data: WorkerLocation }>(`/tracking/workers/${workerId}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Get worker's current EN_ROUTE journey
+  getWorkerCurrentRoute: async (workerId: string) => {
+    const response = await api.get<{ success: boolean; data: WorkerCurrentRoute | null }>(
+      `/tracking/workers/${workerId}/current-route`
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Get full route for a completed task
+  getTaskRoute: async (taskId: string) => {
+    const response = await api.get<{ success: boolean; data: TaskRoute | null }>(
+      `/tracking/tasks/${taskId}/route`
+    );
 
     if (response.error) {
       throw new Error(response.error);

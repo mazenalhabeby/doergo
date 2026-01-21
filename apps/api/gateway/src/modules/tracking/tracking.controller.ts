@@ -63,4 +63,26 @@ export class TrackingController {
       }),
     );
   }
+
+  @Get('workers/:id/current-route')
+  @Roles(Role.DISPATCHER)
+  @ApiOperation({ summary: 'Get technician current EN_ROUTE journey (DISPATCHER only)' })
+  async getWorkerCurrentRoute(@Param('id') id: string) {
+    return firstValueFrom(
+      this.trackingClient.send({ cmd: 'get_worker_current_route' }, {
+        workerId: id,
+      }),
+    );
+  }
+
+  @Get('tasks/:taskId/route')
+  @Roles(Role.DISPATCHER)
+  @ApiOperation({ summary: 'Get full route for a task (DISPATCHER only)' })
+  async getTaskRoute(@Param('taskId') taskId: string) {
+    return firstValueFrom(
+      this.trackingClient.send({ cmd: 'get_task_route' }, {
+        taskId,
+      }),
+    );
+  }
 }

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { ChevronRight, MapPin, Calendar, User, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getStatusConfig, getPriorityConfig } from "@/lib/constants"
 
 export interface RecentTask {
   id: string
@@ -16,17 +17,6 @@ export interface RecentTask {
     name: string
   }
   createdAt: Date
-}
-
-const statusStyles: Record<string, string> = {
-  DRAFT: "bg-slate-100 text-slate-500",
-  NEW: "bg-slate-100 text-slate-600",
-  ASSIGNED: "bg-violet-50 text-violet-600",
-  IN_PROGRESS: "bg-amber-50 text-amber-600",
-  BLOCKED: "bg-red-50 text-red-600",
-  COMPLETED: "bg-emerald-50 text-emerald-600",
-  CANCELED: "bg-slate-100 text-slate-400",
-  CLOSED: "bg-slate-50 text-slate-400",
 }
 
 interface RecentTasksProps {
@@ -52,8 +42,9 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
 
   return (
     <div className={cn("space-y-1", className)}>
-      {tasks.map((task, index) => {
-        const statusStyle = statusStyles[task.status] || statusStyles.NEW
+      {tasks.map((task) => {
+        const statusConfig = getStatusConfig(task.status)
+        const priorityConfig = getPriorityConfig(task.priority)
 
         return (
           <Link
@@ -67,13 +58,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
           >
             {/* Priority indicator */}
             <div
-              className={cn(
-                "w-1 h-12 rounded-full shrink-0",
-                task.priority === "URGENT" && "bg-red-400",
-                task.priority === "HIGH" && "bg-amber-400",
-                task.priority === "MEDIUM" && "bg-slate-300",
-                task.priority === "LOW" && "bg-slate-200"
-              )}
+              className={cn("w-1 h-12 rounded-full shrink-0", priorityConfig.dotColor)}
             />
 
             {/* Content */}
@@ -84,9 +69,10 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
                 </span>
                 <span className={cn(
                   "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium",
-                  statusStyle
+                  statusConfig.bgClass,
+                  statusConfig.textClass
                 )}>
-                  {task.status.replace("_", " ")}
+                  {statusConfig.label}
                 </span>
               </div>
               <div className="flex items-center gap-4 text-[13px] text-slate-400">

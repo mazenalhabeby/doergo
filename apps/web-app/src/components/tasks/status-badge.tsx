@@ -1,72 +1,39 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { getStatusConfig, type TaskStatus } from "@/lib/constants"
 
-// Task status type matching backend enum
-export type TaskStatus =
-  | "DRAFT"
-  | "NEW"
-  | "ASSIGNED"
-  | "IN_PROGRESS"
-  | "BLOCKED"
-  | "COMPLETED"
-  | "CANCELED"
-  | "CLOSED"
-
-// Status configuration with colors and labels
-const statusConfig: Record<
-  TaskStatus,
-  { label: string; className: string }
-> = {
-  DRAFT: {
-    label: "Draft",
-    className: "bg-slate-100 text-slate-600 hover:bg-slate-100",
-  },
-  NEW: {
-    label: "New",
-    className: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  },
-  ASSIGNED: {
-    label: "Assigned",
-    className: "bg-purple-100 text-purple-700 hover:bg-purple-100",
-  },
-  IN_PROGRESS: {
-    label: "In Progress",
-    className: "bg-amber-100 text-amber-700 hover:bg-amber-100",
-  },
-  BLOCKED: {
-    label: "Blocked",
-    className: "bg-red-100 text-red-700 hover:bg-red-100",
-  },
-  COMPLETED: {
-    label: "Completed",
-    className: "bg-green-100 text-green-700 hover:bg-green-100",
-  },
-  CANCELED: {
-    label: "Canceled",
-    className: "bg-slate-100 text-slate-500 hover:bg-slate-100",
-  },
-  CLOSED: {
-    label: "Closed",
-    className: "bg-slate-50 text-slate-400 hover:bg-slate-50",
-  },
-}
+// Re-export for backwards compatibility
+export type { TaskStatus }
 
 interface StatusBadgeProps {
-  status: TaskStatus
+  status: TaskStatus | string
   className?: string
+  showDot?: boolean
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const config = statusConfig[status] || statusConfig.DRAFT
+export function StatusBadge({ status, className, showDot = true }: StatusBadgeProps) {
+  const config = getStatusConfig(status)
 
   return (
-    <Badge
-      variant="secondary"
-      className={cn(config.className, className)}
+    <div
+      className={cn(
+        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold",
+        className
+      )}
+      style={{
+        backgroundColor: `${config.hex}15`,
+        color: config.hex,
+        boxShadow: `0 1px 2px ${config.hex}10`,
+      }}
     >
+      {showDot && (
+        <span
+          className="size-1.5 rounded-full"
+          style={{ backgroundColor: config.hex }}
+        />
+      )}
       {config.label}
-    </Badge>
+    </div>
   )
 }

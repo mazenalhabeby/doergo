@@ -1,15 +1,22 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsDateString, IsNumber } from 'class-validator';
-import { TaskStatus, TaskPriority } from '@doergo/shared';
+import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { TaskStatus, TaskPriority, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH } from '@doergo/shared';
 
+/**
+ * Create task request DTO
+ */
 export class CreateTaskDto {
   @ApiProperty({ example: 'Fix leaking pipe' })
   @IsString()
+  @IsNotEmpty({ message: 'Title is required' })
+  @MaxLength(TASK_TITLE_MAX_LENGTH, { message: `Title must not exceed ${TASK_TITLE_MAX_LENGTH} characters` })
   title: string;
 
   @ApiPropertyOptional({ example: 'Customer reported water leak in kitchen' })
   @IsString()
   @IsOptional()
+  @MaxLength(TASK_DESCRIPTION_MAX_LENGTH, { message: `Description must not exceed ${TASK_DESCRIPTION_MAX_LENGTH} characters` })
   description?: string;
 
   @ApiPropertyOptional({ enum: TaskPriority, default: TaskPriority.MEDIUM })
@@ -38,42 +45,11 @@ export class CreateTaskDto {
   locationAddress?: string;
 }
 
-export class UpdateTaskDto {
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  title?: string;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  description?: string;
-
-  @ApiPropertyOptional({ enum: TaskPriority })
-  @IsEnum(TaskPriority)
-  @IsOptional()
-  priority?: TaskPriority;
-
-  @ApiPropertyOptional()
-  @IsDateString()
-  @IsOptional()
-  dueDate?: string;
-
-  @ApiPropertyOptional()
-  @IsNumber()
-  @IsOptional()
-  locationLat?: number;
-
-  @ApiPropertyOptional()
-  @IsNumber()
-  @IsOptional()
-  locationLng?: number;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  locationAddress?: string;
-}
+/**
+ * Update task request DTO
+ * Inherits all fields from CreateTaskDto but makes them optional
+ */
+export class UpdateTaskDto extends PartialType(CreateTaskDto) {}
 
 export class AssignTaskDto {
   @ApiProperty({ example: 'worker-123' })

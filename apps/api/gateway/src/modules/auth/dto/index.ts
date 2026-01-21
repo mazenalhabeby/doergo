@@ -1,118 +1,80 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEmail,
-  IsString,
-  MinLength,
-  MaxLength,
-  Matches,
-  IsNotEmpty,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
+  EmailField,
+  PasswordField,
+  StrongPasswordField,
+  NameField,
+  CompanyNameField,
+  TokenField,
+} from '@doergo/shared';
 
-// Sanitize string: trim whitespace, convert to lowercase where appropriate
-const sanitizeString = (value: string) => (typeof value === 'string' ? value.trim() : value);
-const toLowercase = (value: string) => (typeof value === 'string' ? value.trim().toLowerCase() : value);
-
-// Name validation regex: only letters, spaces, hyphens, and apostrophes
-const NAME_REGEX = /^[a-zA-Z\s\-']+$/;
-// Company name regex: letters, numbers, spaces, and common punctuation
-const COMPANY_REGEX = /^[a-zA-Z0-9\s\-'&.,]+$/;
-// Password regex: at least one uppercase, one lowercase, one number
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
-
+/**
+ * Login request DTO
+ */
 export class LoginDto {
   @ApiProperty({ example: 'user@example.com', description: 'User email address' })
-  @IsEmail({}, { message: 'Please enter a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
-  @MaxLength(255, { message: 'Email must not exceed 255 characters' })
-  @Transform(({ value }) => toLowercase(value))
+  @EmailField()
   email: string;
 
   @ApiProperty({ example: 'Password123', description: 'User password' })
-  @IsString()
-  @IsNotEmpty({ message: 'Password is required' })
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
+  @PasswordField()
   password: string;
 }
 
+/**
+ * Registration request DTO
+ */
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com', description: 'User email address' })
-  @IsEmail({}, { message: 'Please enter a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
-  @MaxLength(255, { message: 'Email must not exceed 255 characters' })
-  @Transform(({ value }) => toLowercase(value))
+  @EmailField()
   email: string;
 
   @ApiProperty({ example: 'Password123', description: 'Password (min 8 chars, must include uppercase, lowercase, and number)' })
-  @IsString()
-  @IsNotEmpty({ message: 'Password is required' })
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @Matches(PASSWORD_REGEX, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-  })
+  @StrongPasswordField()
   password: string;
 
   @ApiProperty({ example: 'John', description: 'First name' })
-  @IsString()
-  @IsNotEmpty({ message: 'First name is required' })
-  @MinLength(2, { message: 'First name must be at least 2 characters' })
-  @MaxLength(50, { message: 'First name must not exceed 50 characters' })
-  @Matches(NAME_REGEX, { message: 'First name can only contain letters, spaces, hyphens, and apostrophes' })
-  @Transform(({ value }) => toLowercase(value))
+  @NameField('First name')
   firstName: string;
 
   @ApiProperty({ example: 'Doe', description: 'Last name' })
-  @IsString()
-  @IsNotEmpty({ message: 'Last name is required' })
-  @MinLength(2, { message: 'Last name must be at least 2 characters' })
-  @MaxLength(50, { message: 'Last name must not exceed 50 characters' })
-  @Matches(NAME_REGEX, { message: 'Last name can only contain letters, spaces, hyphens, and apostrophes' })
-  @Transform(({ value }) => toLowercase(value))
+  @NameField('Last name')
   lastName: string;
 
   @ApiProperty({ example: 'Acme Inc.', description: 'Company name' })
-  @IsString()
-  @IsNotEmpty({ message: 'Company name is required' })
-  @MinLength(2, { message: 'Company name must be at least 2 characters' })
-  @MaxLength(100, { message: 'Company name must not exceed 100 characters' })
-  @Matches(COMPANY_REGEX, { message: 'Company name contains invalid characters' })
-  @Transform(({ value }) => toLowercase(value))
+  @CompanyNameField()
   companyName: string;
 
-  // NOTE: Role is NOT accepted from user input - always set to PARTNER on backend
+  // NOTE: Role is NOT accepted from user input - always set to CLIENT on backend
 }
 
+/**
+ * Refresh token request DTO
+ */
 export class RefreshTokenDto {
   @ApiProperty({ description: 'Refresh token for getting new access token' })
-  @IsString()
-  @IsNotEmpty({ message: 'Refresh token is required' })
+  @TokenField('Refresh token')
   refreshToken: string;
 }
 
+/**
+ * Forgot password request DTO
+ */
 export class ForgotPasswordDto {
   @ApiProperty({ example: 'user@example.com', description: 'Email address for password reset' })
-  @IsEmail({}, { message: 'Please enter a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
-  @MaxLength(255, { message: 'Email must not exceed 255 characters' })
-  @Transform(({ value }) => toLowercase(value))
+  @EmailField()
   email: string;
 }
 
+/**
+ * Reset password request DTO
+ */
 export class ResetPasswordDto {
   @ApiProperty({ description: 'Password reset token from email' })
-  @IsString()
-  @IsNotEmpty({ message: 'Reset token is required' })
+  @TokenField('Reset token')
   token: string;
 
   @ApiProperty({ example: 'NewPassword123', description: 'New password (min 8 chars, must include uppercase, lowercase, and number)' })
-  @IsString()
-  @IsNotEmpty({ message: 'New password is required' })
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @Matches(PASSWORD_REGEX, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-  })
+  @StrongPasswordField()
   newPassword: string;
 }

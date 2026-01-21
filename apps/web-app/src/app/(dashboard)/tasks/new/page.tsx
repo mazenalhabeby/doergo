@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -10,11 +10,6 @@ import {
   Loader2,
   X,
   FileText,
-  Image as ImageIcon,
-  Minus,
-  ArrowDown,
-  ArrowUp,
-  AlertTriangle,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -31,46 +26,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-
-// Priority options with icons
-const priorityOptions = [
-  {
-    value: "LOW",
-    label: "Low",
-    description: "No rush",
-    icon: ArrowDown,
-    baseStyle: "border-slate-200 hover:border-slate-300",
-    activeStyle: "border-slate-900 bg-slate-900 text-white",
-    dotColor: "bg-slate-400"
-  },
-  {
-    value: "MEDIUM",
-    label: "Medium",
-    description: "Standard",
-    icon: Minus,
-    baseStyle: "border-slate-200 hover:border-blue-300",
-    activeStyle: "border-blue-600 bg-blue-600 text-white",
-    dotColor: "bg-blue-500"
-  },
-  {
-    value: "HIGH",
-    label: "High",
-    description: "Important",
-    icon: ArrowUp,
-    baseStyle: "border-slate-200 hover:border-amber-300",
-    activeStyle: "border-amber-500 bg-amber-500 text-white",
-    dotColor: "bg-amber-500"
-  },
-  {
-    value: "URGENT",
-    label: "Urgent",
-    description: "Critical",
-    icon: AlertTriangle,
-    baseStyle: "border-slate-200 hover:border-red-300",
-    activeStyle: "border-red-500 bg-red-500 text-white",
-    dotColor: "bg-red-500"
-  },
-]
+import { PrioritySelector } from "@/components/tasks"
 
 export default function CreateTaskPage() {
   const router = useRouter()
@@ -80,38 +36,57 @@ export default function CreateTaskPage() {
   // Form state
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState("MEDIUM")
+  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">("MEDIUM")
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined)
   const [locationAddress, setLocationAddress] = useState("")
   const [additionalNotes, setAdditionalNotes] = useState("")
   const [isDragOver, setIsDragOver] = useState(false)
   const [attachments, setAttachments] = useState<File[]>([])
 
+  // State to track submission (more reliable than isPending for preventing double-clicks)
+  const [isSubmittingLocal, setIsSubmittingLocal] = useState(false)
+
   // Create task mutation
   const createMutation = useMutation({
     mutationFn: (input: CreateTaskInput) => tasksApi.create(input),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Task created successfully!")
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      // Invalidate all task-related queries to ensure fresh data
+      await queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+        refetchType: "all", // Force refetch all matching queries
+      })
       router.push("/tasks")
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create task. Please try again.")
+      setIsSubmittingLocal(false)
     },
   })
 
   // Form validation
   const isFormValid = title.trim() !== "" && description.trim() !== ""
-  const isSubmitting = createMutation.isPending
+  const isSubmitting = isSubmittingLocal || createMutation.isPending
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('[Task Form] Blocked duplicate submission')
+      return
+    }
 
     if (!isFormValid) {
       toast.error("Please fill in all required fields")
       return
     }
+
+    // Set local state immediately
+    setIsSubmittingLocal(true)
+    console.log('[Task Form] Submitting task...')
 
     createMutation.mutate({
       title: title.trim(),
@@ -354,30 +329,11 @@ export default function CreateTaskPage() {
             <Label className="text-sm font-medium text-slate-700">
               Priority
             </Label>
-            <div className="flex flex-wrap gap-2">
-              {priorityOptions.map((option) => {
-                const Icon = option.icon
-                const isActive = priority === option.value
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setPriority(option.value)}
-                    disabled={isSubmitting}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200",
-                      isActive ? option.activeStyle : option.baseStyle
-                    )}
-                  >
-                    <Icon className={cn(
-                      "size-4",
-                      isActive ? "text-current" : "text-slate-400"
-                    )} />
-                    <span className="text-sm font-medium">{option.label}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <PrioritySelector
+              value={priority}
+              onChange={setPriority}
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* Submit Button */}

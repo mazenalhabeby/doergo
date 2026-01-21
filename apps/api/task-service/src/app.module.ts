@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule } from '@nestjs/microservices';
-import { SERVICE_NAMES, createClientOptions } from '@doergo/shared';
+import { BullModule } from '@nestjs/bullmq';
+import {
+  SERVICE_NAMES,
+  createClientOptions,
+  createBullMQConfig,
+  QUEUE_NAMES,
+} from '@doergo/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { CommentsModule } from './modules/comments/comments.module';
@@ -12,6 +18,11 @@ import { AttachmentsModule } from './modules/attachments/attachments.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    // BullMQ for job processing
+    BullModule.forRootAsync(createBullMQConfig()),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.TASKS,
     }),
     // Client for notification service (to emit events)
     ClientsModule.registerAsync([

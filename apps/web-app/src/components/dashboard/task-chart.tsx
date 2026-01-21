@@ -3,6 +3,9 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import { cn } from "@/lib/utils"
 
+// Re-export chart colors from constants for backwards compatibility
+export { taskStatusColors, priorityColors } from "@/lib/constants"
+
 interface TaskChartData {
   name: string
   value: number
@@ -73,23 +76,4 @@ export function TaskChart({ data, className }: TaskChartProps) {
       </div>
     </div>
   )
-}
-
-// Muted, sophisticated colors
-export const taskStatusColors = {
-  NEW: "#64748b",       // slate-500
-  ASSIGNED: "#8b5cf6",  // violet-500
-  IN_PROGRESS: "#f59e0b", // amber-500
-  BLOCKED: "#ef4444",   // red-500
-  COMPLETED: "#10b981", // emerald-500
-  CANCELED: "#94a3b8",  // slate-400
-  DRAFT: "#cbd5e1",     // slate-300
-  CLOSED: "#475569",    // slate-600
-}
-
-export const priorityColors = {
-  LOW: "#94a3b8",
-  MEDIUM: "#64748b",
-  HIGH: "#f59e0b",
-  URGENT: "#ef4444",
 }

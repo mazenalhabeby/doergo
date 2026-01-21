@@ -10,59 +10,153 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { tasksApi, type Task, type Comment } from '../../../src/lib/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { tasksApi, type Task, type Comment, type TaskStatus } from '../../../src/lib/api';
+import { useLocationTracking } from '../../../src/hooks/useLocationTracking';
+import {
+  COLORS,
+  SPACING,
+  RADIUS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  SHADOWS,
+} from '../../../src/lib/constants';
+import { getStatusStyle } from '../../../src/lib/styles';
+import { getJobId } from '../../../src/lib/utils';
 
-const PRIMARY_COLOR = '#2563EB';
+// Progress steps configuration for the detail view (6-step flow)
+const PROGRESS_STEPS = [
+  { key: 'ASSIGNED', label: 'Assigned', icon: 'checkmark' as const },
+  { key: 'ACCEPTED', label: 'Accepted', icon: 'checkmark' as const },
+  { key: 'EN_ROUTE', label: 'En Route', icon: 'car' as const },
+  { key: 'ARRIVED', label: 'Arrived', icon: 'location' as const },
+  { key: 'IN_PROGRESS', label: 'In Progress', icon: 'construct' as const },
+  { key: 'COMPLETED', label: 'Completed', icon: 'checkmark' as const },
+] as const;
 
-// Status colors
-const statusColors: Record<string, { bg: string; text: string }> = {
-  DRAFT: { bg: '#f1f5f9', text: '#475569' },
-  NEW: { bg: '#dbeafe', text: '#1d4ed8' },
-  ASSIGNED: { bg: '#f3e8ff', text: '#7c3aed' },
-  IN_PROGRESS: { bg: '#fef3c7', text: '#b45309' },
-  BLOCKED: { bg: '#fee2e2', text: '#dc2626' },
-  COMPLETED: { bg: '#dcfce7', text: '#16a34a' },
-  CANCELED: { bg: '#f1f5f9', text: '#64748b' },
-  CLOSED: { bg: '#f8fafc', text: '#94a3b8' },
-};
+// Map task status to progress step index (specific to the 6-step detail view)
+function getDetailProgressIndex(status: string): number {
+  switch (status) {
+    case 'ASSIGNED':
+      return 0;
+    case 'ACCEPTED':
+      return 1;
+    case 'EN_ROUTE':
+      return 2;
+    case 'ARRIVED':
+      return 3;
+    case 'IN_PROGRESS':
+      return 4;
+    case 'COMPLETED':
+    case 'CLOSED':
+      return 5;
+    case 'BLOCKED':
+      return 4; // Show as at in-progress step
+    default:
+      return -1;
+  }
+}
 
-// Priority labels
-const priorityLabels: Record<string, { label: string; color: string }> = {
-  LOW: { label: 'Low', color: '#64748b' },
-  MEDIUM: { label: 'Medium', color: '#3b82f6' },
-  HIGH: { label: 'High', color: '#f97316' },
-  URGENT: { label: 'Urgent', color: '#dc2626' },
-};
+// Get next status action based on current status
+interface StatusAction {
+  nextStatus: TaskStatus;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+function getStatusAction(status: string): StatusAction | null {
+  switch (status) {
+    case 'ASSIGNED':
+      return { nextStatus: 'ACCEPTED', label: 'Accept Job', icon: 'checkmark-circle' };
+    case 'ACCEPTED':
+      return { nextStatus: 'EN_ROUTE', label: 'Start Driving', icon: 'car' };
+    case 'EN_ROUTE':
+      return { nextStatus: 'ARRIVED', label: "I've Arrived", icon: 'location' };
+    case 'ARRIVED':
+      return { nextStatus: 'IN_PROGRESS', label: 'Start Work', icon: 'construct' };
+    case 'IN_PROGRESS':
+      return { nextStatus: 'COMPLETED', label: 'Finish Job', icon: 'checkmark-done' };
+    case 'BLOCKED':
+      return { nextStatus: 'IN_PROGRESS', label: 'Resume Job', icon: 'play' };
+    default:
+      return null;
+  }
+}
+
+// Format elapsed time for timer display (HH:MM:SS)
+function formatElapsedTime(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [task, setTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [isAddingComment, setIsAddingComment] = useState(false);
+  const [showBlockReasonModal, setShowBlockReasonModal] = useState(false);
+  const [blockReason, setBlockReason] = useState('');
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Ref to prevent duplicate fetches (React 18 StrictMode runs effects twice)
+  // Location tracking hook - only active during EN_ROUTE status
+  const {
+    isTracking,
+    lastLocation,
+    startTracking,
+    stopTracking,
+    error: locationError,
+  } = useLocationTracking({ taskId: task?.id });
+
+  // Ref to prevent duplicate fetches
   const fetchingRef = useRef(false);
   const lastFetchedIdRef = useRef<string | null>(null);
 
+  // Timer logic - starts when task is IN_PROGRESS
   useEffect(() => {
-    // Prevent duplicate fetches (React 18 StrictMode runs effects twice)
-    if (!id || fetchingRef.current) {
-      console.log('[TaskDetail] Skipping fetch - no id or already fetching');
-      return;
+    if (task?.status === 'IN_PROGRESS') {
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
 
-    // Skip if we've already fetched this exact ID
-    if (lastFetchedIdRef.current === id) {
-      console.log('[TaskDetail] Already fetched this task, skipping');
-      return;
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [task?.status]);
+
+  // Auto-start/stop location tracking based on task status
+  useEffect(() => {
+    if (task?.status === 'EN_ROUTE' && !isTracking) {
+      // Auto-start tracking when status changes to EN_ROUTE
+      startTracking();
+    } else if (task?.status !== 'EN_ROUTE' && isTracking) {
+      // Auto-stop tracking when status changes from EN_ROUTE
+      stopTracking();
     }
+  }, [task?.status, isTracking, startTracking, stopTracking]);
+
+  useEffect(() => {
+    if (!id || fetchingRef.current) return;
+    if (lastFetchedIdRef.current === id) return;
 
     const fetchData = async () => {
       try {
@@ -70,9 +164,6 @@ export default function TaskDetailScreen() {
         setIsLoading(true);
         setError(null);
 
-        console.log('[TaskDetail] Fetching task:', id);
-
-        // API handles auth internally with automatic 401 refresh
         const [taskResponse, commentsResponse] = await Promise.all([
           tasksApi.getById(id),
           tasksApi.getComments(id),
@@ -82,12 +173,9 @@ export default function TaskDetailScreen() {
         setComments(commentsResponse);
         lastFetchedIdRef.current = id;
       } catch (err: any) {
-        // Don't show error for session expiry - app will redirect to login
         if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
-          console.log('[TaskDetail] Session expired, redirecting to login...');
           return;
         }
-        console.error('Error fetching task:', err);
         setError(err instanceof Error ? err.message : 'Failed to load task');
       } finally {
         setIsLoading(false);
@@ -98,33 +186,24 @@ export default function TaskDetailScreen() {
     fetchData();
   }, [id]);
 
-  // Handle retry - reset refs and trigger refetch
   const handleRetry = useCallback(() => {
     lastFetchedIdRef.current = null;
     fetchingRef.current = false;
-    // Force a re-render to trigger the useEffect
     setError(null);
     setIsLoading(true);
-    // Manually trigger fetch since refs are reset
+
     const fetchData = async () => {
       try {
         fetchingRef.current = true;
-        console.log('[TaskDetail] Retry fetching task:', id);
-
         const [taskResponse, commentsResponse] = await Promise.all([
           tasksApi.getById(id!),
           tasksApi.getComments(id!),
         ]);
-
         setTask(taskResponse);
         setComments(commentsResponse);
         lastFetchedIdRef.current = id!;
       } catch (err: any) {
-        if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
-          console.log('[TaskDetail] Session expired, redirecting to login...');
-          return;
-        }
-        console.error('Error fetching task:', err);
+        if (err?.statusCode === 401) return;
         setError(err instanceof Error ? err.message : 'Failed to load task');
       } finally {
         setIsLoading(false);
@@ -134,8 +213,14 @@ export default function TaskDetailScreen() {
     fetchData();
   }, [id]);
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: string, reason?: string) => {
     if (!task) return;
+
+    if (newStatus === 'BLOCKED' && reason === undefined) {
+      setBlockReason('');
+      setShowBlockReasonModal(true);
+      return;
+    }
 
     Alert.alert(
       'Update Status',
@@ -147,9 +232,33 @@ export default function TaskDetailScreen() {
           onPress: async () => {
             try {
               setIsUpdating(true);
-              const updatedTask = await tasksApi.updateStatus(task.id, newStatus);
+
+              // Stop tracking IMMEDIATELY when transitioning away from EN_ROUTE
+              // This prevents extra location requests while waiting for API response
+              if (task.status === 'EN_ROUTE' && newStatus === 'ARRIVED') {
+                stopTracking();
+              }
+
+              // Start tracking IMMEDIATELY when transitioning to EN_ROUTE
+              // This ensures tracking starts without waiting for API response
+              if (newStatus === 'EN_ROUTE') {
+                startTracking();
+              }
+
+              const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason);
               setTask(updatedTask);
+              if (newStatus === 'COMPLETED') {
+                setElapsedTime(0);
+              }
             } catch (err) {
+              // If API fails while transitioning to ARRIVED, restart tracking
+              if (task.status === 'EN_ROUTE' && newStatus === 'ARRIVED') {
+                startTracking();
+              }
+              // If API fails while starting EN_ROUTE, stop tracking
+              if (newStatus === 'EN_ROUTE') {
+                stopTracking();
+              }
               Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update status');
             } finally {
               setIsUpdating(false);
@@ -160,45 +269,49 @@ export default function TaskDetailScreen() {
     );
   };
 
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !task) return;
-
+  const handleBlockSubmit = async () => {
+    if (!task) return;
     try {
-      setIsAddingComment(true);
-      const comment = await tasksApi.addComment(task.id, newComment.trim());
-      setComments([comment, ...comments]);
-      setNewComment('');
+      setIsUpdating(true);
+      setShowBlockReasonModal(false);
+      const updatedTask = await tasksApi.updateStatus(task.id, 'BLOCKED', blockReason.trim() || undefined);
+      setTask(updatedTask);
+      setBlockReason('');
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to add comment');
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to report issue');
     } finally {
-      setIsAddingComment(false);
+      setIsUpdating(false);
     }
   };
 
-  // Get available status actions based on current status
-  const getAvailableActions = () => {
-    if (!task) return [];
+  const handleOpenMaps = () => {
+    if (!task?.locationLat || !task?.locationLng) return;
+    const url = Platform.select({
+      ios: `maps:0,0?q=${task.locationLat},${task.locationLng}`,
+      android: `geo:0,0?q=${task.locationLat},${task.locationLng}(${encodeURIComponent(task.locationAddress || 'Location')})`,
+    });
+    if (url) Linking.openURL(url);
+  };
 
-    switch (task.status) {
-      case 'ASSIGNED':
-        return [{ status: 'IN_PROGRESS', label: 'Start Task', icon: 'play' as const, color: '#16a34a' }];
-      case 'IN_PROGRESS':
-        return [
-          { status: 'BLOCKED', label: 'Report Issue', icon: 'warning' as const, color: '#dc2626' },
-          { status: 'COMPLETED', label: 'Complete', icon: 'checkmark-circle' as const, color: '#16a34a' },
-        ];
-      case 'BLOCKED':
-        return [{ status: 'IN_PROGRESS', label: 'Resume', icon: 'play' as const, color: '#16a34a' }];
-      default:
-        return [];
-    }
+  const handleStartNavigation = () => {
+    if (!task?.locationLat || !task?.locationLng) return;
+    const url = Platform.select({
+      ios: `maps:0,0?daddr=${task.locationLat},${task.locationLng}`,
+      android: `google.navigation:q=${task.locationLat},${task.locationLng}`,
+    });
+    if (url) Linking.openURL(url);
+  };
+
+  const handleCall = () => {
+    // Since we don't have phone in task, use a placeholder action
+    Alert.alert('Contact', 'Contact information not available for this task.');
   };
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Stack.Screen options={{ title: 'Loading...' }} />
-        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+        <Stack.Screen options={{ title: 'Task Details', headerBackTitle: '' }} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
@@ -207,7 +320,7 @@ export default function TaskDetailScreen() {
     return (
       <View style={styles.errorContainer}>
         <Stack.Screen options={{ title: 'Error' }} />
-        <Ionicons name="alert-circle-outline" size={48} color="#dc2626" />
+        <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
         <Text style={styles.errorText}>{error || 'Task not found'}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -219,157 +332,344 @@ export default function TaskDetailScreen() {
     );
   }
 
-  const statusStyle = statusColors[task.status] || statusColors.NEW;
-  const priority = priorityLabels[task.priority] || priorityLabels.MEDIUM;
-  const actions = getAvailableActions();
+  const statusStyle = getStatusStyle(task.status);
+  const progressIndex = getDetailProgressIndex(task.status);
+  const jobId = getJobId(task.id);
+  const showTimer = task.status === 'IN_PROGRESS';
+  const statusAction = getStatusAction(task.status);
+  const showLocationToggle = task.status === 'EN_ROUTE';
+  const showBottomBar = !['COMPLETED', 'CLOSED', 'CANCELED'].includes(task.status);
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Stack.Screen options={{ title: 'Task Details' }} />
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Status & Priority */}
-        <View style={styles.statusRow}>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>
-              {task.status.replace('_', ' ')}
-            </Text>
-          </View>
-          <View style={styles.priorityBadge}>
-            <View style={[styles.priorityDot, { backgroundColor: priority.color }]} />
-            <Text style={[styles.priorityText, { color: priority.color }]}>
-              {priority.label} Priority
-            </Text>
+      {/* Block Reason Modal */}
+      <Modal
+        visible={showBlockReasonModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBlockReasonModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Report Issue</Text>
+            <Text style={styles.modalSubtitle}>What's blocking this task? (optional)</Text>
+            <TextInput
+              style={styles.reasonInput}
+              placeholder="e.g., Waiting for parts, Customer unavailable..."
+              placeholderTextColor={COLORS.slate400}
+              value={blockReason}
+              onChangeText={setBlockReason}
+              multiline
+              maxLength={200}
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowBlockReasonModal(false);
+                  setBlockReason('');
+                }}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalSubmitButton, isUpdating && styles.buttonDisabled]}
+                onPress={handleBlockSubmit}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.modalSubmitText}>Report Issue</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
+      </Modal>
 
-        {/* Title & Description */}
-        <Text style={styles.title}>{task.title}</Text>
-        {task.description && (
-          <Text style={styles.description}>{task.description}</Text>
-        )}
+      <Stack.Screen
+        options={{
+          title: 'Task Details',
+          headerBackTitle: '',
+          headerRight: () => (
+            <TouchableOpacity style={{ padding: 8 }}>
+              <Ionicons name="ellipsis-vertical" size={20} color={COLORS.slate800} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
-        {/* Info Cards */}
-        <View style={styles.infoCard}>
-          {task.locationAddress && (
-            <View style={styles.infoRow}>
-              <Ionicons name="location-outline" size={20} color="#64748b" />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue}>{task.locationAddress}</Text>
-              </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Job Info Card */}
+        <View style={styles.jobInfoCard}>
+          <View style={styles.jobHeader}>
+            <Text style={styles.jobIdText}>Job #{jobId}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
+                {statusStyle.label}
+              </Text>
             </View>
-          )}
+          </View>
 
-          {task.dueDate && (
-            <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color="#64748b" />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Due Date</Text>
-                <Text style={styles.infoValue}>
-                  {new Date(task.dueDate).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </Text>
-              </View>
+          {/* Machine/Equipment Info */}
+          <View style={styles.infoRow}>
+            <Ionicons name="construct-outline" size={18} color={COLORS.slate400} />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Machine</Text>
+              <Text style={styles.infoValue}>{task.title}</Text>
+              {task.id && (
+                <Text style={styles.infoSubValue}>S/N: {task.id.slice(0, 12).toUpperCase()}</Text>
+              )}
             </View>
-          )}
+          </View>
 
+          {/* Company Info */}
           {task.createdBy && (
             <View style={styles.infoRow}>
-              <Ionicons name="person-outline" size={20} color="#64748b" />
+              <Ionicons name="business-outline" size={18} color={COLORS.slate400} />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Created By</Text>
+                <Text style={styles.infoLabel}>Company</Text>
                 <Text style={styles.infoValue}>
                   {task.createdBy.firstName} {task.createdBy.lastName}
                 </Text>
               </View>
             </View>
           )}
+
+          {/* Contact */}
+          <TouchableOpacity style={styles.infoRow} onPress={handleCall}>
+            <Ionicons name="call-outline" size={18} color={COLORS.slate400} />
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoValue, { color: COLORS.primary }]}>
+                Contact Client
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Location */}
+          {task.locationAddress && (
+            <View style={styles.infoRow}>
+              <Ionicons name="location-outline" size={18} color={COLORS.slate400} />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Location</Text>
+                <Text style={styles.infoValue}>{task.locationAddress}</Text>
+                <TouchableOpacity onPress={handleOpenMaps}>
+                  <View style={styles.openMapsLink}>
+                    <Text style={styles.openMapsText}>Open in Maps</Text>
+                    <Ionicons name="open-outline" size={14} color={COLORS.primary} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
-        {/* Action Buttons */}
-        {actions.length > 0 && (
-          <View style={styles.actionsSection}>
-            <Text style={styles.sectionTitle}>Actions</Text>
-            <View style={styles.actionButtons}>
-              {actions.map((action) => (
-                <TouchableOpacity
-                  key={action.status}
-                  style={[styles.actionButton, { backgroundColor: action.color }]}
-                  onPress={() => handleStatusUpdate(action.status)}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <>
-                      <Ionicons name={action.icon} size={20} color="white" />
-                      <Text style={styles.actionButtonText}>{action.label}</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
+        {/* Progress Section */}
+        <View style={styles.progressCard}>
+          <Text style={styles.sectionTitle}>Progress</Text>
+          <View style={styles.progressSteps}>
+            {PROGRESS_STEPS.map((step, index) => {
+              const isCompleted = index < progressIndex;
+              const isCurrent = index === progressIndex;
+              const isPending = index > progressIndex;
+
+              return (
+                <View key={step.key} style={styles.progressStep}>
+                  <View style={styles.progressStepLeft}>
+                    <View
+                      style={[
+                        styles.progressIcon,
+                        isCompleted && styles.progressIconCompleted,
+                        isCurrent && styles.progressIconCurrent,
+                        isPending && styles.progressIconPending,
+                      ]}
+                    >
+                      <Ionicons
+                        name={step.icon}
+                        size={16}
+                        color={isCompleted || isCurrent ? COLORS.white : COLORS.slate400}
+                      />
+                    </View>
+                    {index < PROGRESS_STEPS.length - 1 && (
+                      <View
+                        style={[
+                          styles.progressLine,
+                          (isCompleted || isCurrent) && styles.progressLineCompleted,
+                        ]}
+                      />
+                    )}
+                  </View>
+                  <View style={styles.progressStepContent}>
+                    <Text
+                      style={[
+                        styles.progressStepLabel,
+                        isCurrent && styles.progressStepLabelCurrent,
+                      ]}
+                    >
+                      {step.label}
+                    </Text>
+                    <Text style={styles.progressStepStatus}>
+                      {isCompleted ? 'Completed' : isCurrent ? 'Current Step' : ''}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Job Description */}
+        {task.description && (
+          <View style={styles.descriptionCard}>
+            <Text style={styles.sectionTitle}>Job Description</Text>
+            <Text style={styles.descriptionText}>{task.description}</Text>
           </View>
         )}
 
-        {/* Comments Section */}
-        <View style={styles.commentsSection}>
-          <Text style={styles.sectionTitle}>Comments ({comments.length})</Text>
-
-          {/* Add Comment */}
-          <View style={styles.addCommentContainer}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Add a comment..."
-              value={newComment}
-              onChangeText={setNewComment}
-              multiline
-              maxLength={500}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                (!newComment.trim() || isAddingComment) && styles.sendButtonDisabled,
-              ]}
-              onPress={handleAddComment}
-              disabled={!newComment.trim() || isAddingComment}
-            >
-              {isAddingComment ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Ionicons name="send" size={18} color="white" />
-              )}
+        {/* Attachments Section (Placeholder) */}
+        <View style={styles.attachmentsCard}>
+          <View style={styles.attachmentsHeader}>
+            <Text style={styles.sectionTitle}>Attachments</Text>
+            <TouchableOpacity>
+              <View style={styles.viewReportLink}>
+                <Ionicons name="document-text-outline" size={16} color={COLORS.primary} />
+                <Text style={styles.viewReportText}>View Report</Text>
+              </View>
             </TouchableOpacity>
           </View>
-
-          {/* Comments List */}
-          {comments.length === 0 ? (
-            <Text style={styles.noComments}>No comments yet</Text>
-          ) : (
-            comments.map((comment) => (
-              <View key={comment.id} style={styles.commentCard}>
-                <View style={styles.commentHeader}>
-                  <Text style={styles.commentAuthor}>
-                    {comment.user.firstName} {comment.user.lastName}
-                  </Text>
-                  <Text style={styles.commentDate}>
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-                <Text style={styles.commentContent}>{comment.content}</Text>
-              </View>
-            ))
-          )}
+          <View style={styles.attachmentsThumbnails}>
+            <View style={styles.attachmentPlaceholder}>
+              <Ionicons name="image-outline" size={32} color={COLORS.slate300} />
+            </View>
+            <View style={styles.attachmentPlaceholder}>
+              <Ionicons name="image-outline" size={32} color={COLORS.slate300} />
+            </View>
+          </View>
         </View>
+
+        {/* Client Location with Map */}
+        {task.locationLat && task.locationLng && (
+          <View style={styles.locationCard}>
+            <View style={styles.locationHeader}>
+              <Ionicons name="location" size={20} color={COLORS.slate800} />
+              <Text style={styles.locationTitle}>Client Location</Text>
+            </View>
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                provider={PROVIDER_GOOGLE}
+                initialRegion={{
+                  latitude: task.locationLat,
+                  longitude: task.locationLng,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: task.locationLat,
+                    longitude: task.locationLng,
+                  }}
+                />
+              </MapView>
+            </View>
+            <Text style={styles.locationAddress}>{task.locationAddress}</Text>
+            <TouchableOpacity style={styles.navigationButton} onPress={handleStartNavigation}>
+              <Ionicons name="navigate" size={20} color="white" />
+              <Text style={styles.navigationButtonText}>Start Navigation</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Spacer for bottom bar */}
+        <View style={{ height: 120 }} />
       </ScrollView>
+
+      {/* Bottom Bar - Timer, Location Toggle, and Action Buttons */}
+      {showBottomBar && (
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          {/* Timer for IN_PROGRESS */}
+          {showTimer && (
+            <View style={styles.timerContainer}>
+              <Ionicons name="time-outline" size={20} color={COLORS.slate500} />
+              <Text style={styles.timerText}>{formatElapsedTime(elapsedTime)}</Text>
+            </View>
+          )}
+
+          {/* Location Tracking Indicator (automatically active during EN_ROUTE) */}
+          {showLocationToggle && (
+            <View style={styles.trackingRow}>
+              <View
+                style={[
+                  styles.trackingIndicator,
+                  isTracking && styles.trackingIndicatorActive,
+                ]}
+              >
+                <Ionicons
+                  name={isTracking ? 'location' : 'location-outline'}
+                  size={20}
+                  color={isTracking ? COLORS.white : COLORS.slate400}
+                />
+                <Text
+                  style={[
+                    styles.trackingIndicatorText,
+                    isTracking && styles.trackingIndicatorTextActive,
+                  ]}
+                >
+                  {isTracking ? 'Location Tracking Active' : 'Starting Tracking...'}
+                </Text>
+                {isTracking && (
+                  <View style={styles.trackingPulse} />
+                )}
+              </View>
+              {locationError && (
+                <TouchableOpacity onPress={startTracking} style={styles.retryTrackingButton}>
+                  <Text style={styles.retryTrackingText}>Retry</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Action Buttons Row */}
+          <View style={styles.actionButtonsRow}>
+            {/* Report Issue Button (only for IN_PROGRESS) */}
+            {task.status === 'IN_PROGRESS' && (
+              <TouchableOpacity
+                style={styles.reportIssueButton}
+                onPress={() => handleStatusUpdate('BLOCKED')}
+                disabled={isUpdating}
+              >
+                <Ionicons name="warning-outline" size={18} color={COLORS.error} />
+              </TouchableOpacity>
+            )}
+
+            {/* Main Action Button */}
+            {statusAction && (
+              <TouchableOpacity
+                style={[styles.finishButton, { backgroundColor: COLORS.success }]}
+                onPress={() => handleStatusUpdate(statusAction.nextStatus)}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <Ionicons name={statusAction.icon} size={20} color="white" />
+                    <Text style={styles.finishButtonText}>{statusAction.label}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -377,214 +677,463 @@ export default function TaskDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: COLORS.slate50,
   },
   scrollView: {
     flex: 1,
-    padding: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: COLORS.slate50,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
-    backgroundColor: '#f8fafc',
+    padding: SPACING.xxxl,
+    backgroundColor: COLORS.slate50,
   },
   errorText: {
-    fontSize: 16,
-    color: '#64748b',
+    fontSize: FONT_SIZE.xl,
+    color: COLORS.slate500,
     textAlign: 'center',
-    marginTop: 16,
-    marginBottom: 24,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.xxl,
   },
   retryButton: {
-    backgroundColor: PRIMARY_COLOR,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.sm,
+    marginBottom: SPACING.md,
   },
   retryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    color: COLORS.white,
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   backButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.md,
   },
   backButtonText: {
-    color: PRIMARY_COLOR,
-    fontSize: 16,
-    fontWeight: '600',
+    color: COLORS.primary,
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.semibold,
   },
-  statusRow: {
+
+  // Job Info Card
+  jobInfoCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+    ...SHADOWS.sm,
+  },
+  jobHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
+  },
+  jobIdText: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.slate800,
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+    borderRadius: RADIUS.lg,
   },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  priorityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  priorityText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 16,
-    color: '#64748b',
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  infoCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+  statusBadgeText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    paddingVertical: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.slate50,
   },
   infoContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: SPACING.md,
   },
   infoLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.slate400,
     marginBottom: 2,
   },
   infoValue: {
-    fontSize: 15,
-    color: '#334155',
-    fontWeight: '500',
+    fontSize: FONT_SIZE.lg,
+    color: COLORS.slate800,
+    fontWeight: FONT_WEIGHT.medium,
   },
-  actionsSection: {
-    marginBottom: 20,
+  infoSubValue: {
+    fontSize: FONT_SIZE.md,
+    color: COLORS.slate500,
+    marginTop: 2,
+  },
+  openMapsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginTop: SPACING.xs + 2,
+  },
+  openMapsText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+
+  // Progress Card
+  progressCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 12,
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate800,
+    marginBottom: SPACING.lg,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
+  progressSteps: {
+    gap: 0,
   },
-  actionButton: {
-    flex: 1,
+  progressStep: {
     flexDirection: 'row',
+    minHeight: 56,
+  },
+  progressStepLeft: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 10,
+    width: 32,
   },
-  actionButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: 'white',
-  },
-  commentsSection: {
-    marginBottom: 32,
-  },
-  addCommentContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 12,
-    marginBottom: 16,
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    minHeight: 48,
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  sendButton: {
-    backgroundColor: PRIMARY_COLOR,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  progressIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.slate100,
   },
-  sendButtonDisabled: {
-    backgroundColor: '#94a3b8',
+  progressIconCompleted: {
+    backgroundColor: COLORS.success,
   },
-  noComments: {
-    textAlign: 'center',
-    color: '#94a3b8',
-    fontSize: 14,
-    paddingVertical: 24,
+  progressIconCurrent: {
+    backgroundColor: COLORS.primary,
   },
-  commentCard: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 10,
+  progressIconPending: {
+    backgroundColor: COLORS.slate100,
   },
-  commentHeader: {
+  progressLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: COLORS.slate200,
+    marginVertical: SPACING.xs,
+  },
+  progressLineCompleted: {
+    backgroundColor: COLORS.success,
+  },
+  progressStepContent: {
+    flex: 1,
+    marginLeft: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  progressStepLabel: {
+    fontSize: FONT_SIZE.lg,
+    color: COLORS.slate500,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  progressStepLabelCurrent: {
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  progressStepStatus: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.slate400,
+    marginTop: 2,
+  },
+
+  // Description Card
+  descriptionCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  descriptionText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate500,
+    lineHeight: 22,
+  },
+
+  // Attachments Card
+  attachmentsCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  attachmentsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
   },
-  commentAuthor: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
+  viewReportLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
   },
-  commentDate: {
-    fontSize: 12,
-    color: '#94a3b8',
+  viewReportText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
   },
-  commentContent: {
-    fontSize: 14,
-    color: '#64748b',
+  attachmentsThumbnails: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+  },
+  attachmentPlaceholder: {
+    width: 100,
+    height: 80,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.slate50,
+    borderWidth: 1,
+    borderColor: COLORS.slate200,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Location Card
+  locationCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  locationTitle: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate800,
+  },
+  mapContainer: {
+    height: 160,
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    marginBottom: SPACING.md,
+  },
+  map: {
+    flex: 1,
+  },
+  locationAddress: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate500,
+    marginBottom: SPACING.lg,
     lineHeight: 20,
+  },
+  navigationButton: {
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.md + 2,
+    borderRadius: RADIUS.sm + 2,
+  },
+  navigationButtonText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
+  },
+
+  // Bottom Bar
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.slate50,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.slate200,
+  },
+  timerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  timerText: {
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate800,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+  },
+  reportIssueButton: {
+    width: 52,
+    height: 52,
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.errorLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  finishButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.primary,
+  },
+  finishButtonText: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xxl,
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xxl,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: FONT_SIZE.xl + 2,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.slate800,
+    marginBottom: SPACING.sm,
+  },
+  modalSubtitle: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate500,
+    marginBottom: SPACING.lg,
+  },
+  reasonInput: {
+    backgroundColor: COLORS.slate50,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md + 2,
+    fontSize: FONT_SIZE.lg,
+    minHeight: 100,
+    maxHeight: 150,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: COLORS.slate200,
+    marginBottom: SPACING.xl,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: SPACING.md + 2,
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.slate100,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate500,
+  },
+  modalSubmitButton: {
+    flex: 1,
+    paddingVertical: SPACING.md + 2,
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.error,
+    alignItems: 'center',
+  },
+  modalSubmitText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  // Location Tracking Styles
+  trackingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+  },
+  trackingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.slate100,
+  },
+  trackingIndicatorActive: {
+    backgroundColor: COLORS.success,
+  },
+  trackingIndicatorText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.slate500,
+  },
+  trackingIndicatorTextActive: {
+    color: COLORS.white,
+  },
+  trackingPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.white,
+    marginLeft: SPACING.xs,
+  },
+  retryTrackingButton: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+  },
+  retryTrackingText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
   },
 });

@@ -2,14 +2,21 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
 
+/**
+ * Microservice Controller for Task READ Operations
+ *
+ * Handles direct Redis microservice calls for READ operations only.
+ * These don't need BullMQ's exactly-once guarantees.
+ *
+ * WRITE operations (create, update, delete, assign, updateStatus, addComment)
+ * are handled by TasksProcessor via BullMQ for exactly-once processing.
+ */
 @Controller()
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
-  @MessagePattern({ cmd: 'create_task' })
-  async create(@Payload() data: any) {
-    return this.tasksService.create(data);
-  }
+  // ============ READ Operations (Direct Microservice) ============
+  // WRITE operations are handled by TasksProcessor via BullMQ
 
   @MessagePattern({ cmd: 'find_all_tasks' })
   async findAll(@Payload() data: any) {
@@ -23,49 +30,11 @@ export class TasksController {
     return this.tasksService.findOne(data);
   }
 
-  @MessagePattern({ cmd: 'update_task' })
-  async update(@Payload() data: any) {
-    return this.tasksService.update(data);
-  }
-
-  @MessagePattern({ cmd: 'assign_task' })
-  async assign(
-    @Payload() data: { id: string; workerId: string; userId: string; userRole: string; organizationId: string },
-  ) {
-    return this.tasksService.assign(data);
-  }
-
-  @MessagePattern({ cmd: 'update_task_status' })
-  async updateStatus(
-    @Payload() data: { id: string; status: string; technicianId: string; reason?: string },
-  ) {
-    return this.tasksService.updateStatus(data);
-  }
-
-  @MessagePattern({ cmd: 'delete_task' })
-  async remove(@Payload() data: { id: string; userId: string; userRole: string; organizationId: string }) {
-    return this.tasksService.remove(data);
-  }
-
   @MessagePattern({ cmd: 'get_task_timeline' })
   async getTimeline(
     @Payload() data: { id: string; userId: string; userRole: string; organizationId: string },
   ) {
     return this.tasksService.getTimeline(data);
-  }
-
-  @MessagePattern({ cmd: 'add_comment' })
-  async addComment(
-    @Payload()
-    data: {
-      taskId: string;
-      content: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-    },
-  ) {
-    return this.tasksService.addComment(data);
   }
 
   @MessagePattern({ cmd: 'get_comments' })
@@ -79,5 +48,30 @@ export class TasksController {
     },
   ) {
     return this.tasksService.getComments(data);
+  }
+
+  @MessagePattern({ cmd: 'get_status_counts' })
+  async getStatusCounts(
+    @Payload()
+    data: {
+      userId: string;
+      userRole: string;
+      organizationId: string;
+    },
+  ) {
+    return this.tasksService.getStatusCounts(data);
+  }
+
+  @MessagePattern({ cmd: 'get_suggested_technicians' })
+  async getSuggestedTechnicians(
+    @Payload()
+    data: {
+      taskId: string;
+      userId: string;
+      userRole: string;
+      organizationId: string;
+    },
+  ) {
+    return this.tasksService.getSuggestedTechnicians(data);
   }
 }

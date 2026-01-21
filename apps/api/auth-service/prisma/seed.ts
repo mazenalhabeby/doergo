@@ -174,6 +174,26 @@ async function main() {
 
   console.log('Created task events');
 
+  // Create worker last locations for technicians (for Live Map testing)
+  await prisma.workerLastLocation.createMany({
+    data: [
+      {
+        userId: technician1.id,
+        lat: 40.7128,  // Near task location in NYC
+        lng: -74.006,
+        accuracy: 10,
+      },
+      {
+        userId: technician2.id,
+        lat: 40.7589,  // Different location in NYC
+        lng: -73.9851,
+        accuracy: 15,
+      },
+    ],
+  });
+
+  console.log('Created worker locations for Live Map');
+
   console.log('\nSeed completed successfully!');
   console.log('\nTest credentials:');
   console.log('  Client:      client@example.com / password123');
