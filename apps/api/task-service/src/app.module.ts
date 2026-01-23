@@ -12,6 +12,8 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
+import { AssetsModule } from './modules/assets/assets.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -24,6 +26,12 @@ import { AttachmentsModule } from './modules/attachments/attachments.module';
     BullModule.registerQueue({
       name: QUEUE_NAMES.TASKS,
     }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.ASSETS,
+    }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.REPORTS,
+    }),
     // Client for notification service (to emit events)
     ClientsModule.registerAsync([
       createClientOptions(SERVICE_NAMES.NOTIFICATION),
@@ -32,6 +40,8 @@ import { AttachmentsModule } from './modules/attachments/attachments.module';
     TasksModule,
     CommentsModule,
     AttachmentsModule,
+    AssetsModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

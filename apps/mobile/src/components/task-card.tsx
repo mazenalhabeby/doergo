@@ -112,11 +112,6 @@ export function TaskCard({
   );
 }
 
-// Also export a compact variant for use in lists
-export function TaskCardCompact(props: Omit<TaskCardProps, 'compact'>) {
-  return <TaskCard {...props} compact />;
-}
-
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.white,

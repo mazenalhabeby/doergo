@@ -68,17 +68,6 @@ export function formatRelativeDate(date: string | Date): string {
 }
 
 /**
- * Format a date as full date string (e.g., "January 15, 2024")
- */
-export function formatFullDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-/**
  * Format a date as short date string (e.g., "Jan 15")
  */
 export function formatShortDate(date: string | Date): string {
@@ -86,32 +75,6 @@ export function formatShortDate(date: string | Date): string {
     month: 'short',
     day: 'numeric',
   });
-}
-
-/**
- * Format a date range for time off requests (e.g., "Jan 15 - Jan 20, 2024")
- */
-export function formatDateRange(startDate: string | Date, endDate: string | Date): string {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-  return `${startStr} - ${endStr}`;
-}
-
-/**
- * Get the days remaining until a date
- */
-export function getDaysUntil(date: string | Date): number {
-  const target = new Date(date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-
-  const diffTime = target.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
 // =============================================================================
@@ -180,34 +143,6 @@ export function isSameDay(date1: Date, date2: Date): boolean {
 }
 
 // =============================================================================
-// STRING HELPERS
-// =============================================================================
-
-/**
- * Truncate a string to a maximum length with ellipsis
- */
-export function truncate(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str;
-  return str.slice(0, maxLength - 3) + '...';
-}
-
-/**
- * Capitalize the first letter of a string
- */
-export function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-/**
- * Get initials from a name (e.g., "John Doe" -> "JD")
- */
-export function getInitials(firstName?: string, lastName?: string): string {
-  const first = firstName?.charAt(0)?.toUpperCase() || '';
-  const last = lastName?.charAt(0)?.toUpperCase() || '';
-  return `${first}${last}`;
-}
-
-// =============================================================================
 // TASK HELPERS
 // =============================================================================
 
@@ -217,73 +152,4 @@ export function getInitials(firstName?: string, lastName?: string): string {
  */
 export function getJobId(taskId: string): string {
   return `A-${taskId.slice(-3).toUpperCase()}`;
-}
-
-/**
- * Progress stages for task status
- */
-export const TASK_PROGRESS_STAGES = ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED'] as const;
-
-/**
- * Get the progress index for a task status (0-3)
- */
-export function getTaskProgressIndex(status: string): number {
-  const upperStatus = status.toUpperCase();
-
-  switch (upperStatus) {
-    case 'DRAFT':
-    case 'NEW':
-      return 0;
-    case 'ASSIGNED':
-      return 1;
-    case 'IN_PROGRESS':
-    case 'BLOCKED':
-      return 2;
-    case 'COMPLETED':
-    case 'CLOSED':
-      return 3;
-    case 'CANCELED':
-      return -1; // Special case for canceled
-    default:
-      return 0;
-  }
-}
-
-/**
- * Check if a task can be started (must be ASSIGNED)
- */
-export function canStartTask(status: string): boolean {
-  return status.toUpperCase() === 'ASSIGNED';
-}
-
-/**
- * Check if a task can be completed (must be IN_PROGRESS)
- */
-export function canCompleteTask(status: string): boolean {
-  return status.toUpperCase() === 'IN_PROGRESS';
-}
-
-/**
- * Check if a task can be blocked (must be IN_PROGRESS)
- */
-export function canBlockTask(status: string): boolean {
-  return status.toUpperCase() === 'IN_PROGRESS';
-}
-
-// =============================================================================
-// NUMBER HELPERS
-// =============================================================================
-
-/**
- * Format a number with commas (e.g., 1000 -> "1,000")
- */
-export function formatNumber(num: number): string {
-  return num.toLocaleString();
-}
-
-/**
- * Clamp a number between min and max
- */
-export function clamp(num: number, min: number, max: number): number {
-  return Math.min(Math.max(num, min), max);
 }

@@ -1,7 +1,7 @@
 # DOERGO - Implementation Checklist
 
 > **Usage**: Check off items as completed. Use `[x]` for done, `[ ]` for pending, `[~]` for in progress.
-> **Last Updated**: 2026-01-21 (Task Detail UI Enhancements)
+> **Last Updated**: 2026-01-22 (ServiceReport Feature)
 >
 > **IMPORTANT**: All code MUST follow **SOLID** and **DRY** principles. See CLAUDE.md Section 13.
 
@@ -164,6 +164,58 @@
 - [x] Block Task button + reason input
 - [x] Complete Task button + confirmation
 - [x] Pull-to-refresh
+
+---
+
+## PHASE 3.1: Service Reports ✅ COMPLETE
+
+### Database Schema
+- [x] `ServiceReport` model (taskId, summary, workPerformed, workDuration, signatures)
+- [x] `ReportAttachment` model (BEFORE/AFTER photos)
+- [x] `PartUsed` model (name, partNumber, quantity, unitCost)
+- [x] `ReportAttachmentType` enum (BEFORE, AFTER)
+- [x] Database migration
+
+### Backend - Task Service
+- [x] `reports.service.ts` - CRUD operations with authorization
+- [x] `reports.controller.ts` - MessagePattern handlers
+- [x] `reports.processor.ts` - BullMQ processor
+- [x] `reports.module.ts` - Module registration
+- [x] `REPORT_JOB_TYPES` in shared package
+
+### Backend - Gateway
+- [x] `CompleteTaskDto` - Validation with class-validator
+- [x] `UpdateReportDto` - Partial update validation
+- [x] `reports.service.ts` - Direct microservice for READ
+- [x] `reports.queue.service.ts` - BullMQ for WRITE
+- [x] `reports.controller.ts` - REST endpoints
+- [x] `POST /tasks/:taskId/complete` - Complete task with report
+- [x] `GET /tasks/:taskId/report` - Get task's service report
+- [x] `GET /assets/:assetId/reports` - Get maintenance history
+- [x] `PATCH /reports/:id` - Update report (within 24h)
+- [x] Parts CRUD endpoints
+
+### Web - Task Detail
+- [x] `reportsApi` methods in `lib/api.ts`
+- [x] `ServiceReportSection` component
+- [x] Photo gallery with before/after tabs
+- [x] Parts table with cost totals
+- [x] Signature display (technician + customer)
+- [x] Duration formatting
+- [x] Conditional render for COMPLETED/CLOSED tasks
+
+### Mobile - Completion Flow
+- [x] `CompleteTaskInput` interface in api.ts
+- [x] `reportsApi.completeTask()` method
+- [x] Completion modal with summary input
+- [x] Work details (optional) input
+- [x] Duration display from timer
+- [x] Submit button with loading state
+
+### Seed Data
+- [x] 4 sample service reports for completed tasks
+- [x] Parts used data (compressor, refrigerant, filters, etc.)
+- [x] Before/after photo attachments (placeholder URLs)
 
 ---
 
@@ -400,6 +452,7 @@
 | 1. Foundation | ✅ Complete | 100% |
 | 2. Authentication | ✅ Complete | 100% |
 | 3. Task Management | ✅ Complete | 100% |
+| 3.1 Service Reports | ✅ Complete | 100% |
 | 4. Comments & Attachments | 🔲 Pending | 0% |
 | 5. Real-time Updates | ✅ Complete | 100% |
 | 5.1 Route Tracking | ✅ Complete | 100% |
@@ -407,7 +460,7 @@
 | 7. Notifications | 🔶 BullMQ Done | 40% |
 | 8. Polish & Production | ✅ Critical Fixed | 25% |
 
-**Overall Progress**: ~75%
+**Overall Progress**: ~78%
 
 ### ✅ Security Status
 **All 5 CRITICAL vulnerabilities have been fixed.**
@@ -463,6 +516,7 @@ Before completing any task, verify:
 | 2026-01-20 | Live Map Enhancement | Route polyline visualization, route info panel, task detail route data section |
 | 2026-01-20 | Socket.IO Monitoring | Admin UI integration, stats endpoints (/socket/stats, /socket/clients), enhanced logging |
 | 2026-01-21 | Task Detail UI | 60/40 layout, activity timeline, premium comments, cancel in dropdown menu |
+| 2026-01-22 | ServiceReport Feature | ServiceReport/ReportAttachment/PartUsed models, reports module (task-service + gateway), ServiceReportSection web component, mobile completion modal, seed data with 4 sample reports |
 
 ---
 

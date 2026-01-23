@@ -112,6 +112,19 @@
   }
 }
 
+/* Route tracking animations */
+@keyframes carTravel {
+  0% {
+    left: 5%;
+  }
+  50% {
+    left: 85%;
+  }
+  100% {
+    left: 5%;
+  }
+}
+
 @layer components {
   /* Status Badges */
   .badge {
@@ -166,6 +179,12 @@
 
   /* Custom technician marker */
   .technician-marker {
+    background: transparent;
+    border: none;
+  }
+
+  /* Custom route marker */
+  .custom-marker {
     background: transparent;
     border: none;
   }

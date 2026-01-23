@@ -60,6 +60,18 @@ enum AttachmentType {
   OTHER
 }
 
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum ReportAttachmentType {
+  BEFORE  // Photo taken before work started
+  AFTER   // Photo taken after work completed
+}
+
 // Models
 model Organization {
   id        String   @id @default(cuid())
@@ -74,6 +86,13 @@ model Organization {
   // Organization delegation relationships
   grantedAccess  OrganizationAccess[] @relation("Grantor")  // Access this org has granted to others
   receivedAccess OrganizationAccess[] @relation("Grantee")  // Access this org has received from others
+
+  // Asset management
+  assetCategories AssetCategory[]
+  assets          Asset[]
+
+  // Service reports
+  serviceReports ServiceReport[]
 
   @@map("organizations")
 }
@@ -142,6 +161,7 @@ model User {
   locationHistory      LocationHistory[]
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
+  serviceReports       ServiceReport[]
 
   @@index([organizationId])
   @@index([role])
@@ -214,15 +234,21 @@ model Task {
   assignedToId String?
   assignedTo   User?   @relation("TaskAssignee", fields: [assignedToId], references: [id])
 
+  // Optional link to asset for maintenance history
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
   comments        Comment[]
   attachments     Attachment[]
   events          TaskEvent[]
   locationHistory LocationHistory[]
+  serviceReport   ServiceReport?
 
   @@index([organizationId])
   @@index([status])
   @@index([createdById])
   @@index([assignedToId])
+  @@index([assetId])
   @@index([createdAt])
   @@map("tasks")
 }
@@ -310,4 +336,171 @@ model LocationHistory {
   @@index([userId, timestamp])
   @@index([taskId, timestamp])
   @@map("location_history")
+}
+
+// Dynamic category created by organization (e.g., "HVAC", "Electrical", "Plumbing")
+model AssetCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  color       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  types  AssetType[]
+  assets Asset[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("asset_categories")
+}
+
+// Dynamic type within a category (e.g., under HVAC: "Air Conditioner", "Heater")
+model AssetType {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categoryId String
+  category   AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  assets Asset[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+  @@map("asset_types")
+}
+
+// The actual equipment/asset
+model Asset {
+  id           String      @id @default(cuid())
+  name         String
+  serialNumber String?
+  model        String?
+  manufacturer String?
+
+  status AssetStatus @default(ACTIVE)
+
+  installDate    DateTime?
+  warrantyExpiry DateTime?
+
+  locationAddress String?
+  locationLat     Float?
+  locationLng     Float?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   AssetCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  typeId String?
+  type   AssetType? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+
+  // Tasks linked to this asset (maintenance history)
+  tasks          Task[]
+  serviceReports ServiceReport[]
+
+  @@index([organizationId])
+  @@index([categoryId])
+  @@index([typeId])
+  @@index([status])
+  @@index([serialNumber])
+  @@map("assets")
+}
+
+// Service report created when technician completes a task
+model ServiceReport {
+  id String @id @default(cuid())
+
+  // Link to task (one-to-one)
+  taskId String @unique
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // Link to asset (denormalized for faster history queries)
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  // Work details
+  summary       String  // Brief summary of work done
+  workPerformed String? // Detailed description
+  workDuration  Int     // Duration in seconds (from mobile timer)
+
+  // Signatures (base64 encoded PNG or URL)
+  technicianSignature String? @db.Text
+  customerSignature   String? @db.Text
+  customerName        String? // Who signed
+
+  // Metadata
+  completedAt   DateTime
+  completedById String
+  completedBy   User     @relation(fields: [completedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  attachments ReportAttachment[]
+  partsUsed   PartUsed[]
+
+  // Organization scope (for multi-tenant queries)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([taskId])
+  @@index([assetId])
+  @@index([completedAt])
+  @@index([organizationId])
+  @@map("service_reports")
+}
+
+// Attachment for service report (before/after photos)
+model ReportAttachment {
+  id String @id @default(cuid())
+
+  reportId String
+  report   ServiceReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  type     ReportAttachmentType // BEFORE or AFTER
+  fileName String
+  fileUrl  String
+  fileSize Int                  // bytes
+  caption  String?              // Optional description
+
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+  @@map("report_attachments")
+}
+
+// Parts/materials used in service
+model PartUsed {
+  id String @id @default(cuid())
+
+  reportId String
+  report   ServiceReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  name       String  // "Air Filter", "Compressor Belt"
+  partNumber String? // Optional SKU/part number
+  quantity   Int     @default(1)
+  unitCost   Float?  // Optional cost per unit
+  notes      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+  @@map("parts_used")
 }

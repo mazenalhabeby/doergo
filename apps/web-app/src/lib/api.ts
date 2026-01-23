@@ -364,6 +364,10 @@ export interface Task {
   assignedToId: string | null;
   createdAt: string;
   updatedAt: string;
+  // Route tracking fields
+  routeStartedAt: string | null;
+  routeEndedAt: string | null;
+  routeDistance: number | null;
   createdBy?: {
     id: string;
     firstName: string;
@@ -380,6 +384,25 @@ export interface Task {
     id: string;
     name: string;
   };
+  assetId?: string | null;
+  asset?: {
+    id: string;
+    name: string;
+    serialNumber: string | null;
+    model: string | null;
+    manufacturer: string | null;
+    status: string;
+    category?: {
+      id: string;
+      name: string;
+      icon: string | null;
+      color: string | null;
+    } | null;
+    type?: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
   comments?: Comment[];
   attachments?: Attachment[];
 }
@@ -440,6 +463,7 @@ export interface CreateTaskInput {
   locationLat?: number;
   locationLng?: number;
   locationAddress?: string;
+  assetId?: string;
 }
 
 export interface UpdateTaskInput {
@@ -450,6 +474,7 @@ export interface UpdateTaskInput {
   locationLat?: number;
   locationLng?: number;
   locationAddress?: string;
+  assetId?: string | null;
 }
 
 export interface TasksQueryParams {
@@ -785,6 +810,545 @@ export const trackingApi = {
     }
 
     return response.data?.data;
+  },
+};
+
+// ============================================
+// ASSET MANAGEMENT TYPES & API
+// ============================================
+
+export type AssetStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE' | 'RETIRED';
+
+export interface AssetCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  organizationId: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    types: number;
+    assets: number;
+  };
+}
+
+export interface AssetType {
+  id: string;
+  name: string;
+  description: string | null;
+  categoryId: string;
+  createdAt: string;
+  updatedAt: string;
+  category?: AssetCategory;
+  _count?: {
+    assets: number;
+  };
+}
+
+export interface Asset {
+  id: string;
+  name: string;
+  serialNumber: string | null;
+  model: string | null;
+  manufacturer: string | null;
+  status: AssetStatus;
+  installDate: string | null;
+  warrantyExpiry: string | null;
+  locationAddress: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
+  notes: string | null;
+  organizationId: string;
+  categoryId: string | null;
+  typeId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category?: AssetCategory | null;
+  type?: AssetType | null;
+  _count?: {
+    tasks: number;
+  };
+}
+
+export interface MaintenanceHistoryItem {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  completedAt: string | null;
+  createdAt: string;
+  assignedTo: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+  routeDistance: number | null;
+  // Duration calculated from events or route data
+  duration?: number | null;
+}
+
+export interface CreateAssetCategoryInput {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+}
+
+export interface UpdateAssetCategoryInput {
+  name?: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+}
+
+export interface CreateAssetTypeInput {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateAssetTypeInput {
+  name?: string;
+  description?: string;
+}
+
+export interface CreateAssetInput {
+  name: string;
+  serialNumber?: string;
+  model?: string;
+  manufacturer?: string;
+  status?: AssetStatus;
+  installDate?: string;
+  warrantyExpiry?: string;
+  locationAddress?: string;
+  locationLat?: number;
+  locationLng?: number;
+  notes?: string;
+  categoryId?: string;
+  typeId?: string;
+}
+
+export interface UpdateAssetInput {
+  name?: string;
+  serialNumber?: string;
+  model?: string;
+  manufacturer?: string;
+  status?: AssetStatus;
+  installDate?: string;
+  warrantyExpiry?: string;
+  locationAddress?: string;
+  locationLat?: number;
+  locationLng?: number;
+  notes?: string;
+  categoryId?: string | null;
+  typeId?: string | null;
+}
+
+export interface AssetsQueryParams {
+  categoryId?: string;
+  typeId?: string;
+  status?: AssetStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+// Assets API methods
+export const assetsApi = {
+  // ============================================
+  // CATEGORIES
+  // ============================================
+
+  // Get all categories for organization
+  getCategories: async () => {
+    const response = await api.get<{ success: boolean; data: AssetCategory[] }>('/asset-categories');
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Create a new category
+  createCategory: async (input: CreateAssetCategoryInput) => {
+    const response = await api.post<{ success: boolean; data: AssetCategory }>('/asset-categories', input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Update a category
+  updateCategory: async (id: string, input: UpdateAssetCategoryInput) => {
+    const response = await api.patch<{ success: boolean; data: AssetCategory }>(`/asset-categories/${id}`, input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Delete a category
+  deleteCategory: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/asset-categories/${id}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // ============================================
+  // TYPES
+  // ============================================
+
+  // Get types for a category
+  getTypes: async (categoryId: string) => {
+    const response = await api.get<{ success: boolean; data: AssetType[] }>(
+      `/asset-categories/${categoryId}/types`
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Create a new type in a category
+  createType: async (categoryId: string, input: CreateAssetTypeInput) => {
+    const response = await api.post<{ success: boolean; data: AssetType }>(
+      `/asset-categories/${categoryId}/types`,
+      input
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Update a type
+  updateType: async (id: string, input: UpdateAssetTypeInput) => {
+    const response = await api.patch<{ success: boolean; data: AssetType }>(`/asset-types/${id}`, input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Delete a type
+  deleteType: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/asset-types/${id}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // ============================================
+  // ASSETS
+  // ============================================
+
+  // Get all assets with optional filters
+  getAssets: async (params?: AssetsQueryParams) => {
+    const searchParams = new URLSearchParams();
+    if (params?.categoryId) {
+      searchParams.set('categoryId', params.categoryId);
+    }
+    if (params?.typeId) {
+      searchParams.set('typeId', params.typeId);
+    }
+    if (params?.status) {
+      searchParams.set('status', params.status);
+    }
+    if (params?.search) {
+      searchParams.set('search', params.search);
+    }
+    if (params?.page) {
+      searchParams.set('page', String(params.page));
+    }
+    if (params?.limit) {
+      searchParams.set('limit', String(params.limit));
+    }
+
+    const queryString = searchParams.toString();
+    const endpoint = `/assets${queryString ? `?${queryString}` : ''}`;
+
+    const response = await api.get<{
+      success: boolean;
+      data: Asset[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Get a single asset by ID
+  getAsset: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: Asset }>(`/assets/${id}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Create a new asset
+  createAsset: async (input: CreateAssetInput) => {
+    const response = await api.post<{ success: boolean; data: Asset }>('/assets', input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Update an asset
+  updateAsset: async (id: string, input: UpdateAssetInput) => {
+    const response = await api.patch<{ success: boolean; data: Asset }>(`/assets/${id}`, input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Delete an asset
+  deleteAsset: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/assets/${id}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Get maintenance history for an asset (completed tasks)
+  getAssetHistory: async (assetId: string) => {
+    const response = await api.get<{ success: boolean; data: MaintenanceHistoryItem[] }>(
+      `/assets/${assetId}/history`
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+};
+
+// ============================================
+// SERVICE REPORTS TYPES & API
+// ============================================
+
+export type ReportAttachmentType = 'BEFORE' | 'AFTER';
+
+export interface ReportAttachment {
+  id: string;
+  reportId: string;
+  type: ReportAttachmentType;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  caption: string | null;
+  createdAt: string;
+}
+
+export interface PartUsed {
+  id: string;
+  reportId: string;
+  name: string;
+  partNumber: string | null;
+  quantity: number;
+  unitCost: number | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface ServiceReport {
+  id: string;
+  taskId: string;
+  assetId: string | null;
+  summary: string;
+  workPerformed: string | null;
+  workDuration: number; // in seconds
+  technicianSignature: string | null;
+  customerSignature: string | null;
+  customerName: string | null;
+  completedAt: string;
+  completedById: string;
+  organizationId: string;
+  createdAt: string;
+  updatedAt: string;
+  completedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  };
+  attachments?: ReportAttachment[];
+  partsUsed?: PartUsed[];
+}
+
+export interface ServiceReportSummary {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  summary: string;
+  workDuration: number; // in seconds
+  completedAt: string;
+  completedBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  partsTotal: number; // Total cost of parts used
+  attachmentCount: number;
+  hasBeforePhotos: boolean;
+  hasAfterPhotos: boolean;
+}
+
+export interface CompleteTaskInput {
+  summary: string;
+  workPerformed?: string;
+  workDuration: number;
+  technicianSignature?: string;
+  customerSignature?: string;
+  customerName?: string;
+  partsUsed?: {
+    name: string;
+    partNumber?: string;
+    quantity: number;
+    unitCost?: number;
+    notes?: string;
+  }[];
+}
+
+export interface UpdateReportInput {
+  summary?: string;
+  workPerformed?: string;
+  technicianSignature?: string;
+  customerSignature?: string;
+  customerName?: string;
+}
+
+// Reports API methods
+export const reportsApi = {
+  // Get service report for a task
+  getTaskReport: async (taskId: string) => {
+    const response = await api.get<{ success: boolean; data: ServiceReport }>(
+      `/tasks/${taskId}/report`
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Get all service reports for an asset (maintenance history)
+  getAssetReports: async (assetId: string, params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) {
+      searchParams.set('page', String(params.page));
+    }
+    if (params?.limit) {
+      searchParams.set('limit', String(params.limit));
+    }
+
+    const queryString = searchParams.toString();
+    const endpoint = `/assets/${assetId}/reports${queryString ? `?${queryString}` : ''}`;
+
+    const response = await api.get<{
+      success: boolean;
+      data: ServiceReportSummary[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Complete a task with service report (TECHNICIAN only)
+  completeTask: async (taskId: string, input: CompleteTaskInput) => {
+    const response = await api.post<{ success: boolean; data: ServiceReport }>(
+      `/tasks/${taskId}/complete`,
+      input
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Update a service report (TECHNICIAN only, within 24 hours)
+  updateReport: async (reportId: string, input: UpdateReportInput) => {
+    const response = await api.patch<{ success: boolean; data: ServiceReport }>(
+      `/reports/${reportId}`,
+      input
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Add a part to a report
+  addPart: async (
+    reportId: string,
+    part: { name: string; partNumber?: string; quantity: number; unitCost?: number; notes?: string }
+  ) => {
+    const response = await api.post<{ success: boolean; data: PartUsed }>(
+      `/reports/${reportId}/parts`,
+      part
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Delete a part from a report
+  deletePart: async (reportId: string, partId: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/reports/${reportId}/parts/${partId}`
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
   },
 };
 

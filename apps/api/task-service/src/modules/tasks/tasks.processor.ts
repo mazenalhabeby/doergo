@@ -63,6 +63,9 @@ export class TasksProcessor extends WorkerHost {
       case TASK_JOB_TYPES.ASSIGN:
         return this.tasksService.assign(data);
 
+      case TASK_JOB_TYPES.DECLINE:
+        return this.tasksService.decline(data);
+
       case TASK_JOB_TYPES.UPDATE_STATUS:
         return this.tasksService.updateStatus(data);
 

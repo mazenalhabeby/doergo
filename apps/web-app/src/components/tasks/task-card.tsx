@@ -1,14 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { Clock, MapPin, User, ArrowRight } from "lucide-react"
+import { Clock, MapPin, User, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
-import { cn, getRequestId, formatRelativeDate } from "@/lib/utils"
+import { cn, getRequestId, formatTimeAgo } from "@/lib/utils"
 import { getPriorityConfig } from "@/lib/constants"
 import { StatusBadge } from "./status-badge"
 import type { Task } from "@/lib/api"
@@ -85,7 +85,7 @@ export function TaskCard({
           {/* Time */}
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
             <Clock className="size-3.5" />
-            {formatRelativeDate(task.updatedAt)}
+            {formatTimeAgo(task.updatedAt)}
           </div>
         </div>
 
@@ -142,6 +142,22 @@ export function TaskCard({
                   <span className="text-sm text-slate-600">
                     {task.assignedTo.firstName} {task.assignedTo.lastName}
                   </span>
+                  {/* Acceptance Status Indicator */}
+                  {task.status === "ASSIGNED" && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-600 ring-1 ring-amber-200/50">
+                      <span className="relative flex size-1.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
+                        <span className="relative inline-flex size-1.5 rounded-full bg-amber-500" />
+                      </span>
+                      Awaiting acceptance
+                    </span>
+                  )}
+                  {task.status === "ACCEPTED" && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-50 text-green-600 ring-1 ring-green-200/50">
+                      <CheckCircle2 className="size-3" />
+                      Confirmed
+                    </span>
+                  )}
                 </div>
               )}
               {task.locationAddress && (

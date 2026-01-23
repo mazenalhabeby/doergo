@@ -6,3 +6,4 @@ export {
   createClientOptions,
   createMultipleClientOptions,
 } from './redis.config';
+export { BaseGatewayService } from './base-gateway.service';

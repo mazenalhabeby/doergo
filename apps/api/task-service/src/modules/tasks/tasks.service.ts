@@ -41,6 +41,7 @@ export class TasksService {
         locationAddress: data.locationAddress,
         organizationId: data.organizationId,
         createdById: data.userId, // Map from gateway's userId
+        assetId: data.assetId || null,
       },
       include: {
         createdBy: {
@@ -123,6 +124,15 @@ export class TasksService {
           createdBy: { select: { id: true, firstName: true, lastName: true } },
           assignedTo: { select: { id: true, firstName: true, lastName: true } },
           organization: { select: { id: true, name: true } },
+          asset: {
+            select: {
+              id: true,
+              name: true,
+              serialNumber: true,
+              category: { select: { id: true, name: true } },
+              type: { select: { id: true, name: true } },
+            },
+          },
         },
       }),
       this.prisma.task.count({ where }),
@@ -141,6 +151,12 @@ export class TasksService {
         createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true, email: true } },
         organization: { select: { id: true, name: true } },
+        asset: {
+          include: {
+            category: { select: { id: true, name: true, color: true, icon: true } },
+            type: { select: { id: true, name: true } },
+          },
+        },
         comments: {
           orderBy: { createdAt: 'desc' },
           take: 20,
@@ -195,6 +211,7 @@ export class TasksService {
         ...(updateData.locationLat !== undefined && { locationLat: updateData.locationLat }),
         ...(updateData.locationLng !== undefined && { locationLng: updateData.locationLng }),
         ...(updateData.locationAddress !== undefined && { locationAddress: updateData.locationAddress }),
+        ...(updateData.assetId !== undefined && { assetId: updateData.assetId }),
       },
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true } },
@@ -266,6 +283,60 @@ export class TasksService {
     });
 
     return success(updatedTask);
+  }
+
+  /**
+   * Decline task assignment (TECHNICIAN only)
+   * Returns task to NEW status and removes assignment
+   */
+  async decline(data: { id: string; userId: string; userRole: string; organizationId: string }) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: data.id },
+      include: {
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    // Only assigned technician can decline
+    if (task.assignedToId !== data.userId) {
+      throw new ForbiddenException('You can only decline tasks assigned to you');
+    }
+
+    // Can only decline ASSIGNED tasks
+    if (task.status !== TaskStatus.ASSIGNED) {
+      throw new BadRequestException('Can only decline tasks that are in ASSIGNED status');
+    }
+
+    const previousWorker = task.assignedTo;
+
+    const updatedTask = await this.prisma.task.update({
+      where: { id: data.id },
+      data: {
+        assignedToId: null,
+        status: TaskStatus.NEW,
+      },
+      include: {
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+
+    await this.createTaskEvent(data.id, data.userId, TaskEventType.UNASSIGNED, {
+      reason: 'Technician declined the assignment',
+      previousWorkerId: previousWorker?.id,
+      previousWorkerName: previousWorker ? `${previousWorker.firstName} ${previousWorker.lastName}` : null,
+    });
+
+    // Notify dispatcher/client that task was declined
+    this.notificationClient.emit('task_declined', {
+      task: updatedTask,
+      declinedBy: previousWorker,
+    });
+
+    return success(updatedTask, 'Task declined and returned for reassignment');
   }
 
   /**

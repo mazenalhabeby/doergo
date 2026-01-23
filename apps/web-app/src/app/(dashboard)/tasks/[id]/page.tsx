@@ -44,7 +44,7 @@ import type { TechnicianData } from "@/components/technicians/technician-assign-
 import {
   TaskProgressCard,
   RouteTrackingSection,
-  JobReportSection,
+  ServiceReportSection,
   RequestDetailsSection,
   CommentsSection,
   ActivitySection,
@@ -147,19 +147,7 @@ export default function TaskDetailPage({
   // Determine states
   const isCanceled = task?.status === "CANCELED"
   const isCompleted = task?.status === "COMPLETED" || task?.status === "CLOSED"
-  const isInProgress =
-    task?.status === "IN_PROGRESS" || task?.status === "BLOCKED"
-  const isAssigned = task?.status === "ASSIGNED"
   const hasAssignee = !!task?.assignedTo
-
-  // Determine current step (0-3)
-  const getCurrentStep = () => {
-    if (isCompleted) return 3
-    if (isInProgress) return 2
-    if (isAssigned) return 1
-    return 0
-  }
-  const currentStep = getCurrentStep()
 
   // Transform suggested technicians to dialog format
   const technicians: TechnicianData[] =
@@ -303,54 +291,41 @@ export default function TaskDetailPage({
           </div>
         </div>
 
-        {/* Acceptance Banner (shown when recently assigned) */}
-        {isAssigned && hasAssignee && (
-          <div className="border-2 border-amber-300 bg-amber-50 rounded-xl px-6 py-4 mb-6 text-center">
-            <p className="text-base font-medium text-amber-900 mb-1">
-              Your maintenance request has been accepted
-            </p>
-            <p className="text-sm text-amber-700">
-              A technician has been assigned to your case. You can view details
-              and progress below.
-            </p>
-          </div>
-        )}
-
         {/* Progress Card with Technician */}
         {hasAssignee && !isCanceled && (
           <TaskProgressCard
+            taskId={id}
             assignedTo={task.assignedTo!}
-            currentStep={currentStep}
             isCompleted={isCompleted}
             taskStatus={task.status}
+            createdAt={task.createdAt}
+            routeStartedAt={task.routeStartedAt}
+            routeEndedAt={task.routeEndedAt}
+            routeDistance={task.routeDistance}
           />
         )}
 
         {/* Route Tracking Section (Dispatcher only) */}
         {isDispatcher && (
           <RouteTrackingSection
-            taskId={id}
             routeData={routeData}
             isLoading={loadingRoute}
             hasAssignee={hasAssignee}
           />
         )}
 
-        {/* Job Report (only when completed) */}
-        {isCompleted && (
-          <JobReportSection
-            attachments={task.attachments}
-            comments={comments}
-            completedAt={task.updatedAt}
-          />
-        )}
+        {/* Service Report (only when completed) */}
+        <ServiceReportSection
+          taskId={id}
+          taskStatus={task.status}
+        />
 
 
         {/* Request Details and Activity - 60/40 split */}
         <div className="flex gap-6 mb-6">
           {/* Request Details - 60% */}
           <div className="w-[60%]">
-            <RequestDetailsSection task={task} isCompleted={isCompleted} />
+            <RequestDetailsSection task={task} />
           </div>
 
           {/* Activity - 40% */}

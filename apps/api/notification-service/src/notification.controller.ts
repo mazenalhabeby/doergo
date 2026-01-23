@@ -71,6 +71,12 @@ export class NotificationController {
     this.websocketGateway.emitTaskStatusChanged(data.task, data.oldStatus, data.newStatus);
   }
 
+  @EventPattern('task_declined')
+  async handleTaskDeclined(@Payload() data: any) {
+    this.logger.log(`Task declined: ${data.task.id} by ${data.declinedBy?.firstName} ${data.declinedBy?.lastName}`);
+    this.websocketGateway.emitTaskDeclined(data.task, data.declinedBy);
+  }
+
   @EventPattern('comment_added')
   async handleCommentAdded(@Payload() data: any) {
     this.logger.log(`Comment added to task: ${data.taskId}`);

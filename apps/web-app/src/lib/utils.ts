@@ -10,35 +10,28 @@ export function cn(...inputs: ClassValue[]) {
 // =============================================================================
 
 /**
- * Format a date as relative time (e.g., "Today at 2:30 PM", "Yesterday at 10:00 AM")
+ * Format a date as relative time ago (e.g., "Just now", "5m ago", "2h ago", "Yesterday")
+ * Used for activity feeds, comments, and timeline displays
  */
-export function formatRelativeDate(dateString: string): string {
+export function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
 
-  const timeStr = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
+  if (diffMins < 1) return "Just now"
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays === 1) return "Yesterday"
+  if (diffDays < 7) return `${diffDays}d ago`
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
   })
-
-  if (diffDays === 0) {
-    return `Today at ${timeStr}`
-  } else if (diffDays === 1) {
-    return `Yesterday at ${timeStr}`
-  } else if (diffDays < 7) {
-    return `${diffDays} days ago at ${timeStr}`
-  } else {
-    return (
-      date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }) + ` at ${timeStr}`
-    )
-  }
 }
 
 /**
@@ -50,24 +43,6 @@ export function formatShortDate(dateString: string): string {
     day: "numeric",
     year: "numeric",
   })
-}
-
-/**
- * Format a date as full date with time (e.g., "January 15, 2024 at 2:30 PM")
- */
-export function formatFullDateTime(dateString: string): string {
-  const date = new Date(dateString)
-  const dateStr = date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })
-  const timeStr = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })
-  return `${dateStr} at ${timeStr}`
 }
 
 /**
@@ -150,37 +125,4 @@ export function getInitials(firstName?: string, lastName?: string): string {
   const first = firstName?.charAt(0)?.toUpperCase() || ""
   const last = lastName?.charAt(0)?.toUpperCase() || ""
   return `${first}${last}`
-}
-
-/**
- * Truncate a string to a maximum length with ellipsis
- */
-export function truncate(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str
-  return str.slice(0, maxLength - 3) + "..."
-}
-
-/**
- * Capitalize the first letter of a string
- */
-export function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
-}
-
-// =============================================================================
-// NUMBER HELPERS
-// =============================================================================
-
-/**
- * Format a number with commas (e.g., 1000 -> "1,000")
- */
-export function formatNumber(num: number): string {
-  return num.toLocaleString()
-}
-
-/**
- * Clamp a number between min and max
- */
-export function clamp(num: number, min: number, max: number): number {
-  return Math.min(Math.max(num, min), max)
 }

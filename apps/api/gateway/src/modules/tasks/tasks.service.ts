@@ -1,7 +1,6 @@
-import { Injectable, Inject, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES } from '@doergo/shared';
-import { firstValueFrom, timeout, catchError } from 'rxjs';
+import { SERVICE_NAMES, BaseGatewayService } from '@doergo/shared';
 
 /**
  * Service for direct microservice communication with task-service
@@ -13,42 +12,11 @@ import { firstValueFrom, timeout, catchError } from 'rxjs';
  * still use TasksQueueService for exactly-once processing.
  */
 @Injectable()
-export class TasksService {
-  private readonly logger = new Logger(TasksService.name);
-  private readonly TIMEOUT_MS = 10000; // 10 second timeout for read operations
-
+export class TasksService extends BaseGatewayService {
   constructor(
-    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
-  ) {}
-
-  /**
-   * Send a message to task-service and wait for response
-   */
-  private async send<T>(pattern: { cmd: string }, data: any): Promise<T> {
-    try {
-      const result = await firstValueFrom(
-        this.taskClient.send<T>(pattern, data).pipe(
-          timeout(this.TIMEOUT_MS),
-          catchError((error) => {
-            this.logger.error(`Task service error: ${error.message}`);
-            throw error;
-          }),
-        ),
-      );
-      return result;
-    } catch (error) {
-      if (error.name === 'TimeoutError') {
-        throw new HttpException('Task service timeout', HttpStatus.REQUEST_TIMEOUT);
-      }
-      // Re-throw HTTP exceptions from task-service
-      if (error.status && error.message) {
-        throw new HttpException(error.message, error.status);
-      }
-      throw new HttpException(
-        error.message || 'Task service error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    @Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy,
+  ) {
+    super(taskClient, TasksService.name);
   }
 
   // ============ Read Operations (Direct Microservice) ============

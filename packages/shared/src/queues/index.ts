@@ -5,3 +5,4 @@
  */
 export * from './constants';
 export * from './bullmq.config';
+export { BaseQueueService } from './base-queue.service';

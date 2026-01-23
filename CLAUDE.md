@@ -134,12 +134,15 @@ OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, 
 User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil }
 RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
-Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance }
+Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance, assetId }
 Comment { id, content, taskId, userId }
 Attachment { id, fileName, fileUrl, fileType, fileSize, taskId, uploadedById }
 TaskEvent { id, eventType, metadata, taskId, userId }
 WorkerLastLocation { id, lat, lng, accuracy, userId }
 LocationHistory { id, lat, lng, accuracy, timestamp, userId, taskId }  # Route tracking points
+ServiceReport { id, taskId, assetId, summary, workPerformed, workDuration, technicianSignature, customerSignature, customerName, completedAt, completedById, organizationId }
+ReportAttachment { id, reportId, type, fileName, fileUrl, fileSize, caption }
+PartUsed { id, reportId, name, partNumber, quantity, unitCost, notes }
 ```
 
 ### Enums
@@ -150,6 +153,7 @@ TaskStatus: DRAFT | NEW | ASSIGNED | ACCEPTED | EN_ROUTE | ARRIVED | IN_PROGRESS
 TaskPriority: LOW | MEDIUM | HIGH | URGENT
 TaskEventType: CREATED | UPDATED | ASSIGNED | UNASSIGNED | STATUS_CHANGED | COMMENT_ADDED | ATTACHMENT_ADDED | ATTACHMENT_REMOVED
 AttachmentType: IMAGE | DOCUMENT | OTHER
+ReportAttachmentType: BEFORE | AFTER
 ```
 
 ### Task Status Flow
@@ -207,6 +211,16 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | GET | `/tracking/workers/:id` | Get specific technician | DISPATCHER |
 | GET | `/tracking/workers/:id/current-route` | Get active route for worker | DISPATCHER |
 | GET | `/tracking/tasks/:taskId/route` | Get full route for task | DISPATCHER |
+
+### Reports (`/reports` & `/tasks`)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| POST | `/tasks/:taskId/complete` | Complete task with service report | TECHNICIAN |
+| GET | `/tasks/:taskId/report` | Get task's service report | ALL |
+| PATCH | `/reports/:id` | Update report (within 24h) | TECHNICIAN |
+| GET | `/assets/:assetId/reports` | Get asset's maintenance history | CLIENT, DISPATCHER |
+| POST | `/reports/:id/parts` | Add part to report | TECHNICIAN |
+| DELETE | `/reports/:id/parts/:partId` | Remove part from report | TECHNICIAN |
 
 ---
 
@@ -468,6 +482,19 @@ pnpm build            # Build all packages
 - [x] Web: premium comments section with scrollable list
 - [x] Web: cancel request moved to dropdown menu (best practices)
 
+### Phase 3.1: Service Reports ✅ COMPLETE
+- [x] ServiceReport, ReportAttachment, PartUsed database models
+- [x] Reports module in task-service (BullMQ processor)
+- [x] Reports module in gateway (REST endpoints)
+- [x] `POST /tasks/:taskId/complete` - Complete task with report
+- [x] `GET /tasks/:taskId/report` - Get task's service report
+- [x] `GET /assets/:assetId/reports` - Get maintenance history
+- [x] `PATCH /reports/:id` - Update report (within 24h)
+- [x] Parts CRUD endpoints
+- [x] Web: ServiceReportSection component (photos, parts, signatures)
+- [x] Mobile: Completion modal with summary/details input
+- [x] Seed data: 4 sample reports with parts and attachments
+
 ### Phase 4: Comments & Attachments 🔲 PENDING
 - [ ] Comments: list/add API (task-service) - partially done
 - [ ] Attachments: S3 presigned URL upload
@@ -690,13 +717,16 @@ docker exec -it doergo-redis redis-cli
    - Gallery picker using expo-image-picker
    - Upload progress indicator
 
-### Recently Completed (2026-01-21)
-- Task detail page UI enhancements:
-  - 60/40 layout split (Request Details left, Activity right)
-  - Activity timeline component with event icons and descriptions
-  - Real-time activity updates via React Query invalidation
-  - Premium comments section with gradient avatars and scrollable list
-  - Cancel request moved to "More actions" dropdown menu
+### Recently Completed (2026-01-22)
+- **ServiceReport Feature** (Phase 3.1):
+  - Database: ServiceReport, ReportAttachment, PartUsed models
+  - Backend: Reports module in task-service (BullMQ) and gateway (REST)
+  - Web: ServiceReportSection component with photos, parts table, signatures
+  - Mobile: Completion modal with summary/details inputs and duration display
+  - Seed: 4 sample reports with parts and before/after photos
+
+### Previously Completed (2026-01-21)
+- Task detail page UI enhancements (60/40 layout, activity timeline, premium comments)
 - Route tracking feature (LocationHistory, distance calculation, route visualization)
 - Socket.IO monitoring (Admin UI, stats endpoints, enhanced logging)
 

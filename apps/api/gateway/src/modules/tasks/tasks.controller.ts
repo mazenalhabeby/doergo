@@ -131,6 +131,18 @@ export class TasksController {
     });
   }
 
+  @Post(':id/decline')
+  @Roles(Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Decline task assignment (TECHNICIAN only - returns task to dispatcher)' })
+  async declineTask(@Param('id') id: string, @Request() req: any) {
+    return this.tasksQueueService.declineTask({
+      id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Delete(':id')
   @Roles(Role.CLIENT)
   @ApiOperation({ summary: 'Delete a task (CLIENT only - org owner)' })

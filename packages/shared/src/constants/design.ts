@@ -180,7 +180,7 @@ export const STATUS_COLORS: Record<TaskStatus, StatusColors> = {
     text: 'text-cyan-700',
     bgLight: 'bg-cyan-100',
     border: 'border-cyan-300',
-    label: 'En Route',
+    label: 'On The Way',
     mobile: {
       bg: '#0891b2',
       bgLight: '#cffafe',

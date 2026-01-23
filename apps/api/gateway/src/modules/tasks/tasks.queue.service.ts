@@ -1,8 +1,8 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue, QueueEvents, Job } from 'bullmq';
+import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import { QUEUE_NAMES, TASK_JOB_TYPES, DEFAULT_JOB_OPTIONS } from '@doergo/shared';
+import { QUEUE_NAMES, TASK_JOB_TYPES, BaseQueueService } from '@doergo/shared';
 
 /**
  * Service for managing task-related WRITE jobs via BullMQ
@@ -15,73 +15,12 @@ import { QUEUE_NAMES, TASK_JOB_TYPES, DEFAULT_JOB_OPTIONS } from '@doergo/shared
  * use TasksService for direct microservice communication (faster, no queue overhead).
  */
 @Injectable()
-export class TasksQueueService {
-  private readonly logger = new Logger(TasksQueueService.name);
-  private queueEvents: QueueEvents;
-
+export class TasksQueueService extends BaseQueueService {
   constructor(
-    @InjectQueue(QUEUE_NAMES.TASKS) private readonly tasksQueue: Queue,
-    private readonly configService: ConfigService,
+    @InjectQueue(QUEUE_NAMES.TASKS) tasksQueue: Queue,
+    configService: ConfigService,
   ) {
-    // Initialize QueueEvents for listening to job completion
-    const redisHost = this.configService.get('REDIS_HOST', 'localhost');
-    const redisPort = this.configService.get('REDIS_PORT', 6379);
-
-    this.queueEvents = new QueueEvents(QUEUE_NAMES.TASKS, {
-      connection: {
-        host: redisHost,
-        port: redisPort,
-      },
-    });
-
-    this.logger.log('TasksQueueService initialized');
-  }
-
-  /**
-   * Add a job to the queue and wait for the result
-   * This provides synchronous request-response over async job processing
-   */
-  private async addJobAndWait<T>(
-    jobType: string,
-    data: Record<string, any>,
-    timeoutMs: number = 30000,
-  ): Promise<T> {
-    const job = await this.tasksQueue.add(jobType, data, {
-      ...DEFAULT_JOB_OPTIONS.CRITICAL,
-      // Add unique job ID to prevent duplicates from rapid retries
-      jobId: `${jobType}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-    });
-
-    this.logger.debug(`Job ${job.id} added to queue: ${jobType}`);
-
-    try {
-      // Wait for job completion with timeout
-      const result = await job.waitUntilFinished(this.queueEvents, timeoutMs);
-      this.logger.debug(`Job ${job.id} completed successfully`);
-      return result as T;
-    } catch (error) {
-      this.logger.error(`Job ${job.id} failed: ${error.message}`);
-
-      // Check if job failed or timed out
-      const failedJob = await Job.fromId(this.tasksQueue, job.id!);
-      if (failedJob?.failedReason) {
-        // Parse error from worker if it's a structured error
-        try {
-          const errorData = JSON.parse(failedJob.failedReason);
-          throw new HttpException(
-            errorData.message || failedJob.failedReason,
-            errorData.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        } catch {
-          throw new HttpException(failedJob.failedReason, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-      }
-
-      throw new HttpException(
-        'Request timed out or failed',
-        HttpStatus.REQUEST_TIMEOUT,
-      );
-    }
+    super(tasksQueue, configService, QUEUE_NAMES.TASKS, TasksQueueService.name);
   }
 
   // ============ Task Write Operations (BullMQ) ============
@@ -101,6 +40,10 @@ export class TasksQueueService {
 
   async updateTaskStatus(data: Record<string, any>) {
     return this.addJobAndWait(TASK_JOB_TYPES.UPDATE_STATUS, data);
+  }
+
+  async declineTask(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.DECLINE, data);
   }
 
   async deleteTask(data: Record<string, any>) {

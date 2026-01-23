@@ -361,16 +361,6 @@ export interface Task {
   };
 }
 
-export interface TasksResponse {
-  data: Task[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
-
 export interface Comment {
   id: string;
   content: string;
@@ -456,6 +446,13 @@ export const tasksApi = {
       body: JSON.stringify({ content }),
     });
   },
+
+  // Decline task assignment (technician rejects the job)
+  declineTask: async (taskId: string): Promise<void> => {
+    return fetchWithAuth<void>(`/tasks/${taskId}/decline`, {
+      method: 'POST',
+    });
+  },
 };
 
 // Location tracking types
@@ -480,6 +477,49 @@ export const trackingApi = {
     return fetchWithAuth<LocationResponse>('/tracking/location', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+};
+
+// Service Report types
+export interface PartUsedInput {
+  name: string;
+  partNumber?: string;
+  quantity: number;
+  unitCost?: number;
+  notes?: string;
+}
+
+export interface CompleteTaskInput {
+  summary: string;
+  workPerformed?: string;
+  workDuration: number; // in seconds
+  technicianSignature?: string;
+  customerSignature?: string;
+  customerName?: string;
+  partsUsed?: PartUsedInput[];
+}
+
+export interface ServiceReport {
+  id: string;
+  taskId: string;
+  summary: string;
+  workPerformed?: string;
+  workDuration: number;
+  technicianSignature?: string;
+  customerSignature?: string;
+  customerName?: string;
+  completedAt: string;
+  completedById: string;
+}
+
+// Reports API - for completing tasks with service reports
+export const reportsApi = {
+  // Complete a task with a service report
+  completeTask: async (taskId: string, input: CompleteTaskInput): Promise<ServiceReport> => {
+    return fetchWithAuth<ServiceReport>(`/tasks/${taskId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(input),
     });
   },
 };

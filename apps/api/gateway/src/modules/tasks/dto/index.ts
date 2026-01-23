@@ -43,6 +43,11 @@ export class CreateTaskDto {
   @IsString()
   @IsOptional()
   locationAddress?: string;
+
+  @ApiPropertyOptional({ description: 'Asset ID to link this task to equipment' })
+  @IsString()
+  @IsOptional()
+  assetId?: string;
 }
 
 /**

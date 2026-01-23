@@ -5,23 +5,14 @@
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './constants';
+import type { TaskStatus } from './api';
+
+// Re-export TaskStatus for convenience
+export type { TaskStatus };
 
 // =============================================================================
 // STATUS BADGE STYLES
 // =============================================================================
-
-export type TaskStatus =
-  | 'DRAFT'
-  | 'NEW'
-  | 'ASSIGNED'
-  | 'ACCEPTED'
-  | 'EN_ROUTE'
-  | 'ARRIVED'
-  | 'IN_PROGRESS'
-  | 'BLOCKED'
-  | 'COMPLETED'
-  | 'CANCELED'
-  | 'CLOSED';
 
 export type StatusStyle = {
   bg: string;
@@ -59,7 +50,7 @@ export const STATUS_STYLES: Record<TaskStatus, StatusStyle> = {
     bg: '#cffafe', // cyan light
     text: '#0891b2', // cyan
     border: '#67e8f9', // cyan border
-    label: 'En Route'
+    label: 'On The Way'
   },
   ARRIVED: {
     bg: '#e0e7ff', // indigo light

@@ -13,6 +13,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { UsersModule } from './modules/users/users.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
+import { AssetsModule } from './modules/assets/assets.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -52,6 +54,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     TasksModule,
     UsersModule,
     TrackingModule,
+    AssetsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

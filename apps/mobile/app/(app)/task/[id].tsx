@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { tasksApi, type Task, type Comment, type TaskStatus } from '../../../src/lib/api';
+import { tasksApi, reportsApi, type Task, type Comment, type TaskStatus, type CompleteTaskInput } from '../../../src/lib/api';
 import { useLocationTracking } from '../../../src/hooks/useLocationTracking';
 import {
   COLORS,
@@ -34,7 +34,7 @@ import { getJobId } from '../../../src/lib/utils';
 const PROGRESS_STEPS = [
   { key: 'ASSIGNED', label: 'Assigned', icon: 'checkmark' as const },
   { key: 'ACCEPTED', label: 'Accepted', icon: 'checkmark' as const },
-  { key: 'EN_ROUTE', label: 'En Route', icon: 'car' as const },
+  { key: 'EN_ROUTE', label: 'On The Way', icon: 'car' as const },
   { key: 'ARRIVED', label: 'Arrived', icon: 'location' as const },
   { key: 'IN_PROGRESS', label: 'In Progress', icon: 'construct' as const },
   { key: 'COMPLETED', label: 'Completed', icon: 'checkmark' as const },
@@ -109,6 +109,11 @@ export default function TaskDetailScreen() {
   const [blockReason, setBlockReason] = useState('');
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Completion modal state
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionSummary, setCompletionSummary] = useState('');
+  const [completionDetails, setCompletionDetails] = useState('');
 
   // Location tracking hook - only active during EN_ROUTE status
   const {
@@ -222,6 +227,14 @@ export default function TaskDetailScreen() {
       return;
     }
 
+    // Show completion modal for COMPLETED status
+    if (newStatus === 'COMPLETED') {
+      setCompletionSummary('');
+      setCompletionDetails('');
+      setShowCompletionModal(true);
+      return;
+    }
+
     Alert.alert(
       'Update Status',
       `Change status to ${newStatus.replace('_', ' ')}?`,
@@ -247,9 +260,6 @@ export default function TaskDetailScreen() {
 
               const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason);
               setTask(updatedTask);
-              if (newStatus === 'COMPLETED') {
-                setElapsedTime(0);
-              }
             } catch (err) {
               // If API fails while transitioning to ARRIVED, restart tracking
               if (task.status === 'EN_ROUTE' && newStatus === 'ARRIVED') {
@@ -269,6 +279,42 @@ export default function TaskDetailScreen() {
     );
   };
 
+  // Handle task completion with service report
+  const handleCompleteTask = async () => {
+    if (!task) return;
+
+    if (!completionSummary.trim()) {
+      Alert.alert('Required', 'Please enter a summary of the work completed.');
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      setShowCompletionModal(false);
+
+      const input: CompleteTaskInput = {
+        summary: completionSummary.trim(),
+        workPerformed: completionDetails.trim() || undefined,
+        workDuration: elapsedTime,
+      };
+
+      await reportsApi.completeTask(task.id, input);
+
+      // Refresh task data to show updated status
+      const updatedTask = await tasksApi.getById(task.id);
+      setTask(updatedTask);
+      setElapsedTime(0);
+      setCompletionSummary('');
+      setCompletionDetails('');
+
+      Alert.alert('Success', 'Job completed successfully!');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to complete task');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleBlockSubmit = async () => {
     if (!task) return;
     try {
@@ -282,6 +328,34 @@ export default function TaskDetailScreen() {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleDeclineTask = () => {
+    if (!task) return;
+
+    Alert.alert(
+      'Decline Job',
+      'Are you sure you want to decline this job? It will be returned to the dispatcher for reassignment.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Decline',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsUpdating(true);
+              await tasksApi.declineTask(task.id);
+              Alert.alert('Job Declined', 'The job has been returned for reassignment.');
+              router.back();
+            } catch (err) {
+              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to decline job');
+            } finally {
+              setIsUpdating(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleOpenMaps = () => {
@@ -385,6 +459,84 @@ export default function TaskDetailScreen() {
                   <ActivityIndicator size="small" color="white" />
                 ) : (
                   <Text style={styles.modalSubmitText}>Report Issue</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Completion Modal */}
+      <Modal
+        visible={showCompletionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCompletionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.completionModalContent}>
+            <View style={styles.completionHeader}>
+              <Ionicons name="checkmark-done-circle" size={40} color={COLORS.success} />
+              <Text style={styles.completionTitle}>Complete Job</Text>
+            </View>
+
+            {/* Duration Display */}
+            <View style={styles.completionDuration}>
+              <Ionicons name="time-outline" size={18} color={COLORS.slate500} />
+              <Text style={styles.completionDurationText}>
+                Work Duration: {formatElapsedTime(elapsedTime)}
+              </Text>
+            </View>
+
+            {/* Summary Input */}
+            <Text style={styles.inputLabel}>Summary *</Text>
+            <TextInput
+              style={styles.summaryInput}
+              placeholder="Brief summary of work completed..."
+              placeholderTextColor={COLORS.slate400}
+              value={completionSummary}
+              onChangeText={setCompletionSummary}
+              multiline
+              maxLength={200}
+              autoFocus
+            />
+
+            {/* Work Details Input */}
+            <Text style={styles.inputLabel}>Work Details (optional)</Text>
+            <TextInput
+              style={styles.detailsInput}
+              placeholder="Detailed description of work performed..."
+              placeholderTextColor={COLORS.slate400}
+              value={completionDetails}
+              onChangeText={setCompletionDetails}
+              multiline
+              maxLength={500}
+            />
+
+            {/* Action Buttons */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowCompletionModal(false);
+                  setCompletionSummary('');
+                  setCompletionDetails('');
+                }}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.completionSubmitButton, isUpdating && styles.buttonDisabled]}
+                onPress={handleCompleteTask}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={18} color="white" />
+                    <Text style={styles.completionSubmitText}>Complete Job</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
@@ -650,8 +802,33 @@ export default function TaskDetailScreen() {
               </TouchableOpacity>
             )}
 
-            {/* Main Action Button */}
-            {statusAction && (
+            {/* Accept/Decline Buttons for ASSIGNED status */}
+            {task.status === 'ASSIGNED' ? (
+              <>
+                <TouchableOpacity
+                  style={styles.declineButton}
+                  onPress={() => handleDeclineTask()}
+                  disabled={isUpdating}
+                >
+                  <Ionicons name="close-circle-outline" size={20} color={COLORS.error} />
+                  <Text style={styles.declineButtonText}>Decline</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.finishButton, { backgroundColor: COLORS.success }]}
+                  onPress={() => handleStatusUpdate('ACCEPTED')}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark-circle" size={20} color="white" />
+                      <Text style={styles.finishButtonText}>Accept Job</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </>
+            ) : statusAction && (
               <TouchableOpacity
                 style={[styles.finishButton, { backgroundColor: COLORS.success }]}
                 onPress={() => handleStatusUpdate(statusAction.nextStatus)}
@@ -1007,6 +1184,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  declineButton: {
+    flex: 0.4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: COLORS.error,
+  },
+  declineButtonText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.error,
+  },
   finishButton: {
     flex: 1,
     flexDirection: 'row',
@@ -1135,5 +1329,85 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: COLORS.primary,
     fontWeight: FONT_WEIGHT.medium,
+  },
+
+  // Completion Modal Styles
+  completionModalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    width: '90%',
+    maxWidth: 400,
+  },
+  completionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  completionTitle: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.slate800,
+  },
+  completionDuration: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.slate100,
+    borderRadius: RADIUS.sm,
+    marginBottom: SPACING.lg,
+  },
+  completionDurationText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate600,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  inputLabel: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate700,
+    marginBottom: SPACING.xs,
+  },
+  summaryInput: {
+    borderWidth: 1,
+    borderColor: COLORS.slate200,
+    borderRadius: RADIUS.sm,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate800,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: SPACING.md,
+  },
+  detailsInput: {
+    borderWidth: 1,
+    borderColor: COLORS.slate200,
+    borderRadius: RADIUS.sm,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate800,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: SPACING.lg,
+  },
+  completionSubmitButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md + 2,
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.success,
+  },
+  completionSubmitText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
   },
 });

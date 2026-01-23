@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -47,7 +47,7 @@ const STATUS_TABS = [
   { value: "NEW", label: "New" },
   { value: "ASSIGNED", label: "Assigned" },
   { value: "ACCEPTED", label: "Accepted" },
-  { value: "EN_ROUTE", label: "En Route" },
+  { value: "EN_ROUTE", label: "On The Way" },
   { value: "ARRIVED", label: "Arrived" },
   { value: "IN_PROGRESS", label: "In Progress" },
   { value: "BLOCKED", label: "Blocked" },
@@ -73,6 +73,48 @@ export default function TasksPage() {
   // Assign dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+
+  // Status tabs scroll state
+  const tabsContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  // Check scroll position and update arrow visibility
+  const updateScrollButtons = useCallback(() => {
+    const container = tabsContainerRef.current
+    if (!container) return
+
+    const { scrollLeft, scrollWidth, clientWidth } = container
+    setCanScrollLeft(scrollLeft > 0)
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1)
+  }, [])
+
+  // Initialize and listen for scroll/resize
+  useEffect(() => {
+    const container = tabsContainerRef.current
+    if (!container) return
+
+    updateScrollButtons()
+    container.addEventListener("scroll", updateScrollButtons)
+    window.addEventListener("resize", updateScrollButtons)
+
+    return () => {
+      container.removeEventListener("scroll", updateScrollButtons)
+      window.removeEventListener("resize", updateScrollButtons)
+    }
+  }, [updateScrollButtons])
+
+  // Scroll handlers
+  const scrollTabs = (direction: "left" | "right") => {
+    const container = tabsContainerRef.current
+    if (!container) return
+
+    const scrollAmount = 200
+    container.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    })
+  }
 
   // Fetch tasks from API
   const { data: tasksData, isLoading, isError, error, refetch } = useQuery({
@@ -243,9 +285,38 @@ export default function TasksPage() {
         </div>
 
         {/* Status Tabs */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm mb-6">
-          <div className="flex items-center overflow-x-auto scrollbar-hide">
-            {STATUS_TABS.map((tab, index) => {
+        <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/60 shadow-sm mb-6">
+          {/* Left scroll button */}
+          <div
+            className={cn(
+              "absolute left-0 top-0 bottom-0 z-10 flex items-center pl-1.5 pr-6",
+              "bg-gradient-to-r from-white from-60% to-transparent",
+              "transition-all duration-300",
+              canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            <button
+              onClick={() => scrollTabs("left")}
+              className={cn(
+                "group size-9 rounded-xl flex items-center justify-center",
+                "bg-white/80 backdrop-blur-sm",
+                "border border-slate-200/60 shadow-lg shadow-slate-200/50",
+                "hover:bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-300/50",
+                "hover:scale-105 active:scale-95",
+                "transition-all duration-200"
+              )}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="size-4 text-slate-500 group-hover:text-slate-700 transition-colors" />
+            </button>
+          </div>
+
+          {/* Scrollable tabs container */}
+          <div
+            ref={tabsContainerRef}
+            className="flex items-center overflow-x-auto scrollbar-hide px-2"
+          >
+            {STATUS_TABS.map((tab) => {
               const isActive = statusFilter === tab.value
               const statusConfig = tab.value !== "all" ? getStatusConfig(tab.value) : null
               const count = statusCounts?.[tab.value] ?? 0
@@ -294,6 +365,31 @@ export default function TasksPage() {
                 </button>
               )
             })}
+          </div>
+
+          {/* Right scroll button */}
+          <div
+            className={cn(
+              "absolute right-0 top-0 bottom-0 z-10 flex items-center pr-1.5 pl-6",
+              "bg-gradient-to-l from-white from-60% to-transparent",
+              "transition-all duration-300",
+              canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            <button
+              onClick={() => scrollTabs("right")}
+              className={cn(
+                "group size-9 rounded-xl flex items-center justify-center",
+                "bg-white/80 backdrop-blur-sm",
+                "border border-slate-200/60 shadow-lg shadow-slate-200/50",
+                "hover:bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-300/50",
+                "hover:scale-105 active:scale-95",
+                "transition-all duration-200"
+              )}
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="size-4 text-slate-500 group-hover:text-slate-700 transition-colors" />
+            </button>
           </div>
         </div>
 

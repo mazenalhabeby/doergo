@@ -302,7 +302,7 @@ export default function TechnicianMap({
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-medium text-slate-900">
-                {selectedWorker.firstName} {selectedWorker.lastName} - En Route
+                {selectedWorker.firstName} {selectedWorker.lastName} - On The Way
               </div>
               <div className="text-xs text-slate-500 truncate max-w-[200px]">
                 {currentRoute.taskTitle}
