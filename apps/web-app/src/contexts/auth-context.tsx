@@ -18,6 +18,13 @@ export interface User {
   role: string;
   firstName: string;
   lastName: string;
+  organizationId?: string;
+  // Permission fields
+  platform: string;
+  canCreateTasks: boolean;
+  canViewAllTasks: boolean;
+  canAssignTasks: boolean;
+  canManageUsers: boolean;
 }
 
 // Token info type

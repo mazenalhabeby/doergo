@@ -83,10 +83,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // authApi.login saves tokens internally
     const response = await authApi.login(email, password);
 
-    // Only allow TECHNICIAN role on mobile
-    if (response.user.role !== 'TECHNICIAN') {
+    // Platform-based access check (replaces TECHNICIAN-only check)
+    // Any role with platform=MOBILE or platform=BOTH can access mobile app
+    const userPlatform = response.user.platform;
+    if (userPlatform !== 'MOBILE' && userPlatform !== 'BOTH') {
       await clearTokens();
-      throw new ApiError('Access denied. This app is for technicians only.', 403);
+      throw new ApiError('Access denied. Your account cannot access the mobile app.', 403);
     }
 
     await saveUser(response.user);

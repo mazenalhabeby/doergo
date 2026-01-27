@@ -250,4 +250,71 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.messagesSent++;
     this.server.to('role:DISPATCHER').emit(SocketEvents.WORKER_LOCATION_UPDATED, { workerId, location });
   }
+
+  // =========================================================================
+  // ATTENDANCE EVENTS
+  // =========================================================================
+
+  emitClockIn(userId: string, organizationId: string, timeEntry: any) {
+    this.logger.log(`[EMIT] attendance.clockIn for user ${userId}`);
+    this.messagesSent += 2;
+    this.server.to(`user:${userId}`).emit(SocketEvents.CLOCK_IN, { timeEntry });
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.CLOCK_IN, { userId, timeEntry });
+  }
+
+  emitClockOut(userId: string, organizationId: string, timeEntry: any) {
+    this.logger.log(`[EMIT] attendance.clockOut for user ${userId}`);
+    this.messagesSent += 2;
+    this.server.to(`user:${userId}`).emit(SocketEvents.CLOCK_OUT, { timeEntry });
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.CLOCK_OUT, { userId, timeEntry });
+  }
+
+  // =========================================================================
+  // BREAK EVENTS
+  // =========================================================================
+
+  emitBreakStarted(userId: string, organizationId: string, breakData: any) {
+    this.logger.log(`[EMIT] break.started for user ${userId}`);
+    this.messagesSent += 2;
+    this.server.to(`user:${userId}`).emit(SocketEvents.BREAK_STARTED, { break: breakData });
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.BREAK_STARTED, { userId, break: breakData });
+  }
+
+  emitBreakEnded(userId: string, organizationId: string, breakData: any) {
+    this.logger.log(`[EMIT] break.ended for user ${userId}`);
+    this.messagesSent += 2;
+    this.server.to(`user:${userId}`).emit(SocketEvents.BREAK_ENDED, { break: breakData });
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.BREAK_ENDED, { userId, break: breakData });
+  }
+
+  // =========================================================================
+  // GENERIC EMIT METHODS
+  // =========================================================================
+
+  /**
+   * Emit an event to all clients in an organization
+   */
+  emitToOrganization(organizationId: string, event: string, data: any) {
+    this.logger.log(`[EMIT] ${event} to org:${organizationId}`);
+    this.messagesSent++;
+    this.server.to(`org:${organizationId}`).emit(event, data);
+  }
+
+  /**
+   * Emit an event to a specific user
+   */
+  emitToUser(userId: string, event: string, data: any) {
+    this.logger.log(`[EMIT] ${event} to user:${userId}`);
+    this.messagesSent++;
+    this.server.to(`user:${userId}`).emit(event, data);
+  }
+
+  /**
+   * Emit an event to all clients with a specific role
+   */
+  emitToRole(role: string, event: string, data: any) {
+    this.logger.log(`[EMIT] ${event} to role:${role}`);
+    this.messagesSent++;
+    this.server.to(`role:${role}`).emit(event, data);
+  }
 }

@@ -36,7 +36,7 @@ export class AssetsController {
   ) {}
 
   @Post()
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Create a new asset' })
   async create(@Body() dto: CreateAssetDto, @Request() req: any) {
     return this.assetsQueueService.create({
@@ -48,7 +48,7 @@ export class AssetsController {
   }
 
   @Get()
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'List all assets' })
   async findAll(@Query() query: AssetQueryDto, @Request() req: any) {
     return this.assetsService.findAll({
@@ -60,7 +60,7 @@ export class AssetsController {
   }
 
   @Get(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get asset by ID' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async findOne(@Param('id') id: string, @Request() req: any) {
@@ -73,7 +73,7 @@ export class AssetsController {
   }
 
   @Patch(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Update an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async update(
@@ -91,7 +91,7 @@ export class AssetsController {
   }
 
   @Delete(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Delete an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async delete(@Param('id') id: string, @Request() req: any) {
@@ -104,7 +104,7 @@ export class AssetsController {
   }
 
   @Get(':id/history')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get maintenance history for an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiQuery({ name: 'page', required: false })

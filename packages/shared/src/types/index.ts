@@ -1,17 +1,31 @@
 // User Roles (Field Service Industry Standard)
 export enum Role {
-  CLIENT = 'CLIENT',           // Was: PARTNER - Creates tasks (external customer)
-  DISPATCHER = 'DISPATCHER',   // Was: OFFICE - Assigns workers, monitors operations
-  TECHNICIAN = 'TECHNICIAN',   // Was: WORKER - Executes tasks in the field
+  ADMIN = 'ADMIN',             // Organization owner/admin - full control
+  CLIENT = 'CLIENT',           // DEPRECATED: Use ADMIN instead (kept for backward compatibility)
+  DISPATCHER = 'DISPATCHER',   // Office manager - assigns workers, monitors operations
+  TECHNICIAN = 'TECHNICIAN',   // Field worker - executes tasks
+}
+
+// Platform access restriction
+export enum Platform {
+  WEB = 'WEB',       // Web app only
+  MOBILE = 'MOBILE', // Mobile app only
+  BOTH = 'BOTH',     // Both platforms
 }
 
 // Legacy role aliases for backward compatibility during migration
-// TODO: Remove after all references are updated
 export const LegacyRoleMap = {
-  PARTNER: Role.CLIENT,
+  PARTNER: Role.ADMIN,
   OFFICE: Role.DISPATCHER,
   WORKER: Role.TECHNICIAN,
+  CLIENT: Role.ADMIN,  // Map old CLIENT to ADMIN
 } as const;
+
+// Helper to normalize role (handles backward compatibility)
+export function normalizeRole(role: string): Role {
+  if (role === 'CLIENT') return Role.ADMIN;
+  return role as Role;
+}
 
 // Access level for organization delegation (SaaS multi-tenant)
 export enum AccessLevel {
@@ -77,6 +91,34 @@ export enum ReportAttachmentType {
   AFTER = 'AFTER',     // Photo taken after work completed
 }
 
+// Technician employment type for attendance tracking
+export enum TechnicianType {
+  FREELANCER = 'FREELANCER',   // External contractor, task-based work
+  FULL_TIME = 'FULL_TIME',     // Employee assigned to company locations
+}
+
+// Time entry status for attendance tracking
+export enum TimeEntryStatus {
+  CLOCKED_IN = 'CLOCKED_IN',   // Currently clocked in
+  CLOCKED_OUT = 'CLOCKED_OUT', // Normal clock out
+  AUTO_OUT = 'AUTO_OUT',       // System auto clock-out (midnight, etc.)
+}
+
+// Break type for attendance tracking
+export enum BreakType {
+  LUNCH = 'LUNCH',   // Lunch break (typically 30-60 min)
+  SHORT = 'SHORT',   // Short break (typically 10-15 min)
+  OTHER = 'OTHER',   // Other break type
+}
+
+// Time entry approval status
+export enum ApprovalStatus {
+  PENDING = 'PENDING',    // Awaiting manager review
+  APPROVED = 'APPROVED',  // Manager approved
+  REJECTED = 'REJECTED',  // Manager rejected
+  AUTO = 'AUTO',          // Auto-approved
+}
+
 // Socket.IO Events
 export const SocketEvents = {
   // Task events
@@ -89,6 +131,12 @@ export const SocketEvents = {
   TASK_ATTACHMENT_ADDED: 'task.attachmentAdded',
   // Worker events
   WORKER_LOCATION_UPDATED: 'worker.locationUpdated',
+  // Attendance events
+  CLOCK_IN: 'attendance.clockIn',
+  CLOCK_OUT: 'attendance.clockOut',
+  // Break events
+  BREAK_STARTED: 'break.started',
+  BREAK_ENDED: 'break.ended',
 } as const;
 
 // API Response wrapper
@@ -131,12 +179,157 @@ export interface User extends BaseEntity {
   role: Role;
   organizationId: string;
   isActive: boolean;
+  // Permission fields
+  platform: Platform;
+  canCreateTasks: boolean;
+  canViewAllTasks: boolean;
+  canAssignTasks: boolean;
+  canManageUsers: boolean;
+  // Technician-specific fields
+  technicianType?: TechnicianType;
 }
+
+// Default permissions by role
+export const DEFAULT_PERMISSIONS: Record<Role, {
+  platform: Platform;
+  canCreateTasks: boolean;
+  canViewAllTasks: boolean;
+  canAssignTasks: boolean;
+  canManageUsers: boolean;
+}> = {
+  [Role.ADMIN]: {
+    platform: Platform.BOTH,
+    canCreateTasks: true,
+    canViewAllTasks: true,
+    canAssignTasks: true,
+    canManageUsers: true,
+  },
+  [Role.CLIENT]: {
+    // Deprecated, same as ADMIN for backward compatibility
+    platform: Platform.BOTH,
+    canCreateTasks: true,
+    canViewAllTasks: true,
+    canAssignTasks: true,
+    canManageUsers: true,
+  },
+  [Role.DISPATCHER]: {
+    platform: Platform.WEB,
+    canCreateTasks: false,
+    canViewAllTasks: true,
+    canAssignTasks: true,
+    canManageUsers: false,
+  },
+  [Role.TECHNICIAN]: {
+    platform: Platform.MOBILE,
+    canCreateTasks: false,
+    canViewAllTasks: false,
+    canAssignTasks: false,
+    canManageUsers: false,
+  },
+};
 
 // Organization interface
 export interface Organization extends BaseEntity {
   name: string;
   isActive: boolean;
+}
+
+// Company Location interface (for full-time technician attendance)
+export interface CompanyLocation extends BaseEntity {
+  name: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  geofenceRadius: number;
+  isActive: boolean;
+  organizationId: string;
+}
+
+// Technician Assignment interface (many-to-many: User ↔ CompanyLocation)
+export interface TechnicianAssignment extends BaseEntity {
+  userId: string;
+  locationId: string;
+  isPrimary: boolean;       // Main work location
+  schedule: string[];       // Work days: ["MON", "TUE", "WED", "THU", "FRI"]
+  effectiveFrom: Date;      // Assignment start date
+  effectiveTo?: Date;       // Assignment end date (null = indefinite)
+  // Populated relations
+  location?: CompanyLocation;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    technicianType?: TechnicianType;
+  };
+}
+
+// Break interface (breaks during a shift)
+export interface Break extends BaseEntity {
+  timeEntryId: string;
+  type: BreakType;
+  startedAt: Date;
+  endedAt?: Date;
+  durationMinutes?: number;
+  notes?: string;
+}
+
+// Time Entry interface (clock-in/clock-out records)
+export interface TimeEntry extends BaseEntity {
+  userId: string;
+  locationId: string;
+  status: TimeEntryStatus;
+  clockInAt: Date;
+  clockInLat: number;
+  clockInLng: number;
+  clockInAccuracy?: number;
+  clockOutAt?: Date;
+  clockOutLat?: number;
+  clockOutLng?: number;
+  clockOutAccuracy?: number;
+  clockInWithinGeofence: boolean;
+  clockOutWithinGeofence?: boolean;
+  totalMinutes?: number;
+  breakMinutes?: number;
+  notes?: string;
+  organizationId: string;
+  // Approval workflow
+  approvalStatus?: ApprovalStatus;
+  approvedById?: string;
+  approvedAt?: Date;
+  approvalNotes?: string;
+  // Edit tracking
+  isEdited?: boolean;
+  editedById?: string;
+  editedAt?: Date;
+  originalClockIn?: Date;
+  originalClockOut?: Date;
+  editReason?: string;
+  // Populated relations
+  location?: CompanyLocation;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  approvedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  editedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  breaks?: Break[];
+}
+
+// Attendance Status (for technician's current clock status)
+export interface AttendanceStatus {
+  isClockedIn: boolean;
+  currentEntry?: TimeEntry;
+  assignedLocations: CompanyLocation[];
 }
 
 // Organization Access (delegation between orgs)
@@ -324,3 +517,6 @@ export interface CompleteTaskInput {
     notes?: string;
   }[];
 }
+
+// Export attendance types
+export * from './attendance';

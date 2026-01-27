@@ -33,10 +33,11 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async register(@Body() registerDto: RegisterDto) {
-    // SECURITY: Always set role to CLIENT - never trust client input for role
+    // SECURITY: Always set role to ADMIN - never trust client input for role
+    // Self-registered users become ADMIN of their own organization
     const securePayload = {
       ...registerDto,
-      role: 'CLIENT',
+      role: 'ADMIN',
     };
 
     const result = await firstValueFrom(

@@ -14,6 +14,8 @@ import { CommentsModule } from './modules/comments/comments.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { LocationsModule } from './modules/locations/locations.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
 
 @Module({
   imports: [
@@ -32,6 +34,12 @@ import { ReportsModule } from './modules/reports/reports.module';
     BullModule.registerQueue({
       name: QUEUE_NAMES.REPORTS,
     }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.LOCATIONS,
+    }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.ATTENDANCE,
+    }),
     // Client for notification service (to emit events)
     ClientsModule.registerAsync([
       createClientOptions(SERVICE_NAMES.NOTIFICATION),
@@ -42,6 +50,8 @@ import { ReportsModule } from './modules/reports/reports.module';
     AttachmentsModule,
     AssetsModule,
     ReportsModule,
+    LocationsModule,
+    AttendanceModule,
   ],
 })
 export class AppModule {}

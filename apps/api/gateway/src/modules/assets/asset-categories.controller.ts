@@ -43,7 +43,7 @@ export class AssetCategoriesController {
   // ============================================
 
   @Post()
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Create a new asset category' })
   async createCategory(@Body() dto: CreateAssetCategoryDto, @Request() req: any) {
     return this.assetsQueueService.createCategory({
@@ -55,7 +55,7 @@ export class AssetCategoriesController {
   }
 
   @Get()
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'List all asset categories' })
   async findAllCategories(@Request() req: any) {
     return this.assetsService.findAllCategories({
@@ -66,7 +66,7 @@ export class AssetCategoriesController {
   }
 
   @Patch(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Update a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   async updateCategory(
@@ -84,7 +84,7 @@ export class AssetCategoriesController {
   }
 
   @Delete(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Delete a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   async deleteCategory(@Param('id') id: string, @Request() req: any) {
@@ -101,7 +101,7 @@ export class AssetCategoriesController {
   // ============================================
 
   @Post(':categoryId/types')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Create a new asset type in a category' })
   @ApiParam({ name: 'categoryId', description: 'Category ID' })
   async createType(
@@ -119,7 +119,7 @@ export class AssetCategoriesController {
   }
 
   @Get(':categoryId/types')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'List all types in a category' })
   @ApiParam({ name: 'categoryId', description: 'Category ID' })
   async findTypesByCategory(
@@ -146,7 +146,7 @@ export class AssetTypesController {
   ) {}
 
   @Patch(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Update an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
   async updateType(
@@ -164,7 +164,7 @@ export class AssetTypesController {
   }
 
   @Delete(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Delete an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
   async deleteType(@Param('id') id: string, @Request() req: any) {

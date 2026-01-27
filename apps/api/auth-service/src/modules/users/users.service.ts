@@ -18,6 +18,12 @@ export class UsersService {
         organizationId: true,
         isActive: true,
         createdAt: true,
+        // Permission fields
+        platform: true,
+        canCreateTasks: true,
+        canViewAllTasks: true,
+        canAssignTasks: true,
+        canManageUsers: true,
         organization: {
           select: {
             id: true,

@@ -60,7 +60,8 @@ export function getAllowedNextStatuses(currentStatus: TaskStatus): TaskStatus[] 
  * Statuses that each role can transition TO
  */
 export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
-  [Role.CLIENT]: [TaskStatus.CANCELED],
+  [Role.ADMIN]: [TaskStatus.CANCELED],
+  [Role.CLIENT]: [TaskStatus.CANCELED], // DEPRECATED: Use ADMIN instead
   [Role.DISPATCHER]: [TaskStatus.ASSIGNED, TaskStatus.CANCELED],
   [Role.TECHNICIAN]: [
     TaskStatus.ACCEPTED,
@@ -74,9 +75,12 @@ export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
 
 /**
  * Check if a role can transition to a specific status
+ * Handles backward compatibility: CLIENT is treated as ADMIN
  */
-export function canRoleSetStatus(role: Role, status: TaskStatus): boolean {
-  return ROLE_STATUS_PERMISSIONS[role]?.includes(status) || false;
+export function canRoleSetStatus(role: Role | string, status: TaskStatus): boolean {
+  // Handle backward compatibility: CLIENT maps to ADMIN
+  const normalizedRole = role === 'CLIENT' ? Role.ADMIN : (role as Role);
+  return ROLE_STATUS_PERMISSIONS[normalizedRole]?.includes(status) || false;
 }
 
 // =============================================================================

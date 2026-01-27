@@ -88,10 +88,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
-    // Allow CLIENT and DISPATCHER roles only (TECHNICIAN uses mobile app)
-    const allowedRoles = ['CLIENT', 'DISPATCHER'];
+    // Allow ADMIN and DISPATCHER roles only (TECHNICIAN uses mobile app)
+    const allowedRoles = ['ADMIN', 'DISPATCHER'];
     if (!isLoading && isAuthenticated && user?.role && !allowedRoles.includes(user.role)) {
       router.push('/unauthorized');
+    }
+    // Check platform access (WEB or BOTH allowed)
+    if (!isLoading && isAuthenticated && user?.platform) {
+      const canAccessWeb = user.platform === 'WEB' || user.platform === 'BOTH';
+      if (!canAccessWeb) {
+        router.push('/unauthorized');
+      }
     }
   }, [isLoading, isAuthenticated, user, router]);
 

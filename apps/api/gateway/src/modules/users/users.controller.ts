@@ -11,7 +11,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role } from '@doergo/shared';
+import { Role, SERVICE_NAMES } from '@doergo/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -24,6 +24,7 @@ import { CurrentUser, CurrentUserData } from '../../common/decorators/current-us
 export class UsersController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
   ) {}
 
   @Get('me')
@@ -37,7 +38,7 @@ export class UsersController {
   @Get('workers')
   @ApiOperation({ summary: 'Get all technicians (CLIENT or DISPATCHER)' })
   @ApiQuery({ name: 'organizationId', required: false })
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   async getWorkers(
     @CurrentUser() user: CurrentUserData,
     @Query() query: Record<string, any>,
@@ -107,6 +108,34 @@ export class UsersController {
 
     return firstValueFrom(
       this.authClient.send({ cmd: 'get_worker_tasks' }, { workerId: id }),
+    );
+  }
+
+  @Get(':id/assignments')
+  @ApiOperation({ summary: 'Get company location assignments for a user' })
+  @Roles(Role.ADMIN, Role.DISPATCHER)
+  async getUserAssignments(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    // Verify user is in the same organization
+    const targetUser = await firstValueFrom(
+      this.authClient.send({ cmd: 'find_user' }, { id }),
+    );
+
+    if (!targetUser?.data) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (targetUser.data.organizationId !== user.organizationId) {
+      throw new ForbiddenException('You can only access users in your organization');
+    }
+
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'get_technician_assignments' },
+        { userId: id, organizationId: user.organizationId },
+      ),
     );
   }
 }

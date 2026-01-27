@@ -24,3 +24,6 @@ export * from './guards';
 
 // Export queue utilities (for NestJS backend)
 export * from './queues';
+
+// Export utility functions (for NestJS backend)
+export * from './utils';

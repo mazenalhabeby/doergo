@@ -9,9 +9,17 @@ datasource db {
 
 // Enums
 enum Role {
-  CLIENT      // Was: PARTNER - Creates tasks (external customer)
-  DISPATCHER  // Was: OFFICE - Assigns workers, monitors operations
-  TECHNICIAN  // Was: WORKER - Executes tasks in the field
+  ADMIN       // Organization owner/admin - full control
+  CLIENT      // DEPRECATED: Use ADMIN instead (kept for backward compatibility)
+  DISPATCHER  // Office manager - assigns workers, monitors operations
+  TECHNICIAN  // Field worker - executes tasks
+}
+
+// Platform access restriction
+enum Platform {
+  WEB     // Web app only
+  MOBILE  // Mobile app only
+  BOTH    // Both platforms
 }
 
 // Access level for organization delegation
@@ -72,6 +80,34 @@ enum ReportAttachmentType {
   AFTER   // Photo taken after work completed
 }
 
+// Technician employment type for attendance tracking
+enum TechnicianType {
+  FREELANCER  // External contractor, task-based work
+  FULL_TIME   // Employee assigned to company locations
+}
+
+// Time entry status for attendance tracking
+enum TimeEntryStatus {
+  CLOCKED_IN   // Currently clocked in
+  CLOCKED_OUT  // Normal clock out
+  AUTO_OUT     // System auto clock-out (midnight, etc.)
+}
+
+// Time entry approval status
+enum ApprovalStatus {
+  PENDING    // Awaiting manager review
+  APPROVED   // Manager approved
+  REJECTED   // Manager rejected
+  AUTO       // Auto-approved (e.g., within geofence, normal hours)
+}
+
+// Break type for attendance tracking
+enum BreakType {
+  LUNCH    // Lunch break (typically 30-60 min)
+  SHORT    // Short break (typically 10-15 min)
+  OTHER    // Other break type
+}
+
 // Models
 model Organization {
   id        String   @id @default(cuid())
@@ -93,6 +129,12 @@ model Organization {
 
   // Service reports
   serviceReports ServiceReport[]
+
+  // Company locations for full-time technician attendance
+  companyLocations CompanyLocation[]
+
+  // Time entries for attendance tracking
+  timeEntries TimeEntry[]
 
   @@map("organizations")
 }
@@ -143,11 +185,19 @@ model User {
   failedLoginAttempts Int      @default(0)
   lockedUntil         DateTime?
 
+  // Permission fields (granular access control)
+  platform        Platform @default(BOTH)    // Which platforms user can access
+  canCreateTasks  Boolean  @default(false)   // Can create new tasks
+  canViewAllTasks Boolean  @default(false)   // Can view all org tasks (vs only assigned/created)
+  canAssignTasks  Boolean  @default(false)   // Can assign tasks to technicians
+  canManageUsers  Boolean  @default(false)   // Can manage users in organization
+
   // Technician-specific fields (only used when role = TECHNICIAN)
-  specialty     String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
-  rating        Float?    @default(5.0) // Average rating (1-5)
-  ratingCount   Int?      @default(0)   // Number of ratings received
-  maxDailyJobs  Int?      @default(5)   // Maximum jobs per day
+  technicianType TechnicianType @default(FREELANCER)  // Freelancer or full-time employee
+  specialty      String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
+  rating         Float?    @default(5.0) // Average rating (1-5)
+  ratingCount    Int?      @default(0)   // Number of ratings received
+  maxDailyJobs   Int?      @default(5)   // Maximum jobs per day
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
@@ -162,6 +212,10 @@ model User {
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
   serviceReports       ServiceReport[]
+  assignments          TechnicianAssignment[]  // Technician location assignments
+  timeEntries          TimeEntry[]             // Clock-in/clock-out records
+  approvedTimeEntries  TimeEntry[]  @relation("ApprovedTimeEntries")  // Time entries approved by this user
+  editedTimeEntries    TimeEntry[]  @relation("EditedTimeEntries")    // Time entries edited by this user
 
   @@index([organizationId])
   @@index([role])
@@ -503,4 +557,150 @@ model PartUsed {
 
   @@index([reportId])
   @@map("parts_used")
+}
+
+// Company location for full-time technician attendance (clock in/out)
+model CompanyLocation {
+  id             String  @id @default(cuid())
+  name           String  // "Main Office", "Warehouse A"
+  address        String? // Full address string
+  lat            Float   // Latitude
+  lng            Float   // Longitude
+  geofenceRadius Int     @default(15) // Radius in meters for clock-in zone
+  isActive       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Technicians assigned to this location
+  assignments TechnicianAssignment[]
+
+  // Time entries at this location
+  timeEntries TimeEntry[]
+
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("company_locations")
+}
+
+// Technician assignment to company location (many-to-many)
+model TechnicianAssignment {
+  id String @id @default(cuid())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  locationId String
+  location   CompanyLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  isPrimary Boolean  @default(false) // Main work location
+  schedule  String[] @default([])    // Work days: ["MON", "TUE", "WED", "THU", "FRI"]
+
+  effectiveFrom DateTime  @default(now()) // Assignment start date
+  effectiveTo   DateTime?                 // Assignment end date (null = indefinite)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, locationId]) // One assignment per user-location pair
+  @@index([userId])
+  @@index([locationId])
+  @@map("technician_assignments")
+}
+
+// Time entry for attendance tracking (clock-in/clock-out records)
+model TimeEntry {
+  id String @id @default(cuid())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  locationId String
+  location   CompanyLocation @relation(fields: [locationId], references: [id])
+
+  status TimeEntryStatus @default(CLOCKED_IN)
+
+  // Clock in data
+  clockInAt       DateTime @default(now())
+  clockInLat      Float
+  clockInLng      Float
+  clockInAccuracy Float?
+
+  // Clock out data (null until clocked out)
+  clockOutAt       DateTime?
+  clockOutLat      Float?
+  clockOutLng      Float?
+  clockOutAccuracy Float?
+
+  // Geofence validation results
+  clockInWithinGeofence  Boolean  @default(true)
+  clockOutWithinGeofence Boolean?
+
+  // Calculated duration (set on clock-out)
+  totalMinutes Int?
+
+  // Break duration (calculated from breaks)
+  breakMinutes Int @default(0)
+
+  notes String?
+
+  // Approval workflow
+  approvalStatus   ApprovalStatus @default(PENDING)
+  approvedById     String?
+  approvedBy       User?          @relation("ApprovedTimeEntries", fields: [approvedById], references: [id])
+  approvedAt       DateTime?
+  approvalNotes    String?
+
+  // Edit tracking
+  isEdited         Boolean        @default(false)
+  editedById       String?
+  editedBy         User?          @relation("EditedTimeEntries", fields: [editedById], references: [id])
+  editedAt         DateTime?
+  originalClockIn  DateTime?      // Original value before edit
+  originalClockOut DateTime?      // Original value before edit
+  editReason       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  // Breaks taken during this shift
+  breaks Break[]
+
+  @@index([userId, clockInAt])
+  @@index([locationId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([approvalStatus])
+  @@map("time_entries")
+}
+
+// Break records for time entries
+model Break {
+  id String @id @default(cuid())
+
+  timeEntryId String
+  timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+
+  type BreakType @default(SHORT)
+
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+
+  // Duration in minutes (calculated on end)
+  durationMinutes Int?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([timeEntryId])
+  @@index([startedAt])
+  @@map("breaks")
 }

@@ -54,7 +54,7 @@ export class ReportsController {
   // ============ Report READ Operations ============
 
   @Get('tasks/:taskId/report')
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get service report for a task' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
   async getTaskReport(@Param('taskId') taskId: string, @Request() req: any) {
@@ -67,7 +67,7 @@ export class ReportsController {
   }
 
   @Get('assets/:assetId/reports')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get maintenance history (service reports) for an asset' })
   @ApiParam({ name: 'assetId', description: 'Asset ID' })
   @ApiQuery({ name: 'page', required: false })

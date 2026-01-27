@@ -17,6 +17,19 @@ import { CreateTaskDto, UpdateTaskDto, AssignTaskDto, UpdateStatusDto } from './
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
 
+/**
+ * Normalize query parameters to handle HTTP parameter pollution.
+ * When multiple values are sent for the same parameter (e.g., ?status=NEW&status=COMPLETED),
+ * NestJS creates an array. This function takes the first value to prevent errors.
+ */
+function normalizeQueryParams(query: Record<string, any>): Record<string, any> {
+  const normalized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(query)) {
+    normalized[key] = Array.isArray(value) ? value[0] : value;
+  }
+  return normalized;
+}
+
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('tasks')
@@ -27,7 +40,7 @@ export class TasksController {
   ) {}
 
   @Post()
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Create a new task (CLIENT or DISPATCHER)' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
     return this.tasksQueueService.createTask({
@@ -38,16 +51,19 @@ export class TasksController {
   }
 
   @Get()
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get all tasks (filtered by role)' })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'priority', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async findAll(@Query() query: Record<string, any>, @Request() req: any) {
+    // Normalize query params to handle HTTP parameter pollution (multiple values for same param)
+    const normalizedQuery = normalizeQueryParams(query);
+
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.findAll({
-      ...query,
+      ...normalizedQuery,
       userId: req.user.id,
       userRole: req.user.role,
       organizationId: req.user.organizationId,
@@ -55,7 +71,7 @@ export class TasksController {
   }
 
   @Get('counts')
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get task counts grouped by status' })
   async getStatusCounts(@Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -67,7 +83,7 @@ export class TasksController {
   }
 
   @Get(':id/suggested-technicians')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get suggested technicians for a task with scoring' })
   async getSuggestedTechnicians(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -80,7 +96,7 @@ export class TasksController {
   }
 
   @Get(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get a task by ID' })
   async findOne(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -93,7 +109,7 @@ export class TasksController {
   }
 
   @Put(':id')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Update a task (CLIENT or DISPATCHER)' })
   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
     return this.tasksQueueService.updateTask({
@@ -106,7 +122,7 @@ export class TasksController {
   }
 
   @Patch(':id/assign')
-  @Roles(Role.CLIENT, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Assign a task to a technician (CLIENT or DISPATCHER)' })
   async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: any) {
     return this.tasksQueueService.assignTask({
@@ -119,7 +135,7 @@ export class TasksController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Update task status (role-based: TECHNICIAN can start/block/complete, CLIENT/DISPATCHER can cancel)' })
   async updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateStatusDto, @Request() req: any) {
     return this.tasksQueueService.updateTaskStatus({
@@ -144,7 +160,7 @@ export class TasksController {
   }
 
   @Delete(':id')
-  @Roles(Role.CLIENT)
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete a task (CLIENT only - org owner)' })
   async remove(@Param('id') id: string, @Request() req: any) {
     return this.tasksQueueService.deleteTask({
@@ -156,7 +172,7 @@ export class TasksController {
   }
 
   @Get(':id/timeline')
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get task timeline/activity' })
   async getTimeline(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -169,7 +185,7 @@ export class TasksController {
   }
 
   @Post(':id/comments')
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Add a comment to a task' })
   async addComment(@Param('id') id: string, @Body() body: { content: string }, @Request() req: any) {
     return this.tasksQueueService.addComment({
@@ -182,7 +198,7 @@ export class TasksController {
   }
 
   @Get(':id/comments')
-  @Roles(Role.CLIENT, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get task comments' })
   async getComments(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)

@@ -1,5 +1,40 @@
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import {
+  TechnicianType,
+  TimeEntryStatus,
+  BreakType,
+  Role,
+  Platform,
+  TaskStatus,
+  TaskPriority,
+  buildUrlWithQuery,
+} from '@doergo/shared';
+import type {
+  CompanyLocation,
+  TimeEntry,
+  AttendanceStatus,
+  Break,
+  BreakStatus,
+  ClockInInput,
+  ClockOutInput,
+  AttendanceHistoryParams,
+  PaginatedResponse,
+} from '@doergo/shared';
+
+// Re-export types for convenience
+export type {
+  CompanyLocation,
+  TimeEntry,
+  AttendanceStatus,
+  Break,
+  BreakStatus,
+  ClockInInput,
+  ClockOutInput,
+  AttendanceHistoryParams,
+  PaginatedResponse,
+};
+export { TechnicianType, TimeEntryStatus, BreakType };
 
 // Dynamically get API URL based on Expo dev server host
 function getApiUrl(): string {
@@ -47,8 +82,16 @@ interface LoginResponse {
     email: string;
     firstName: string;
     lastName: string;
-    role: 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
+    role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
     organizationId: string;
+    // Permission fields
+    platform: 'WEB' | 'MOBILE' | 'BOTH';
+    canCreateTasks: boolean;
+    canViewAllTasks: boolean;
+    canAssignTasks: boolean;
+    canManageUsers: boolean;
+    // Technician-specific fields
+    technicianType?: TechnicianType;
   };
   accessToken: string;
   refreshToken: string;
@@ -64,8 +107,16 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
+  role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
   organizationId: string;
+  // Permission fields
+  platform: 'WEB' | 'MOBILE' | 'BOTH';
+  canCreateTasks: boolean;
+  canViewAllTasks: boolean;
+  canAssignTasks: boolean;
+  canManageUsers: boolean;
+  // Technician-specific fields
+  technicianType?: TechnicianType;
 }
 
 class ApiError extends Error {
@@ -320,19 +371,8 @@ async function fetchWithAuth<T>(
   }
 }
 
-// Task types
-export type TaskStatus =
-  | 'DRAFT'
-  | 'NEW'
-  | 'ASSIGNED'
-  | 'ACCEPTED'
-  | 'EN_ROUTE'
-  | 'ARRIVED'
-  | 'IN_PROGRESS'
-  | 'BLOCKED'
-  | 'COMPLETED'
-  | 'CANCELED'
-  | 'CLOSED';
+// Task types (using shared TaskStatus enum)
+export { TaskStatus };
 
 export interface Task {
   id: string;
@@ -521,6 +561,58 @@ export const reportsApi = {
       method: 'POST',
       body: JSON.stringify(input),
     });
+  },
+};
+
+// Attendance API - for clock-in/clock-out (using shared types from @doergo/shared)
+export const attendanceApi = {
+  // Get current attendance status (is clocked in?, assigned locations)
+  getStatus: async (): Promise<AttendanceStatus> => {
+    return fetchWithAuth<AttendanceStatus>('/attendance/status', { method: 'GET' });
+  },
+
+  // Clock in at a location
+  clockIn: async (input: ClockInInput): Promise<TimeEntry> => {
+    return fetchWithAuth<TimeEntry>('/attendance/clock-in', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  // Clock out
+  clockOut: async (input: ClockOutInput): Promise<TimeEntry> => {
+    return fetchWithAuth<TimeEntry>('/attendance/clock-out', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  // Get attendance history
+  getHistory: async (params?: AttendanceHistoryParams): Promise<PaginatedResponse<TimeEntry>> => {
+    const endpoint = buildUrlWithQuery('/attendance/history', params ?? {});
+    return fetchWithAuth<PaginatedResponse<TimeEntry>>(endpoint, { method: 'GET' });
+  },
+
+  // Start a break
+  startBreak: async (type?: BreakType, notes?: string): Promise<Break> => {
+    const endpoint = buildUrlWithQuery('/attendance/breaks/start', { type });
+    return fetchWithAuth<Break>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  },
+
+  // End a break
+  endBreak: async (notes?: string): Promise<Break> => {
+    return fetchWithAuth<Break>('/attendance/breaks/end', {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  },
+
+  // Get current break status
+  getBreakStatus: async (): Promise<BreakStatus> => {
+    return fetchWithAuth<BreakStatus>('/attendance/breaks/status', { method: 'GET' });
   },
 };
 

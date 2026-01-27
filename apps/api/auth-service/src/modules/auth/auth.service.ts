@@ -15,6 +15,9 @@ import {
   success,
   error,
   ErrorCodes,
+  DEFAULT_PERMISSIONS,
+  Role,
+  Platform,
 } from '@doergo/shared';
 
 // Hash a token using SHA-256 for secure storage
@@ -46,8 +49,10 @@ export class AuthService {
       const firstName = data.firstName.trim().toLowerCase();
       const lastName = data.lastName.trim().toLowerCase();
       const companyName = data.companyName?.trim().toLowerCase();
-      // SECURITY: Force role to CLIENT regardless of input
-      const role = 'CLIENT';
+      // SECURITY: Force role to ADMIN regardless of input (self-registered users are admins of their org)
+      const role = Role.ADMIN;
+      // Get default permissions for the role
+      const defaultPerms = DEFAULT_PERMISSIONS[role];
 
       const existingUser = await this.prisma.user.findUnique({
         where: { email },
@@ -64,10 +69,10 @@ export class AuthService {
       // Use higher bcrypt cost factor (12) for better security
       const passwordHash = await bcrypt.hash(data.password, BCRYPT_COST_FACTOR);
 
-      // If role is CLIENT and companyName is provided, create a new organization
+      // If role is ADMIN and companyName is provided, create a new organization
       let organizationId: string | null = null;
 
-      if (role === 'CLIENT' && companyName) {
+      if (role === Role.ADMIN && companyName) {
         const organization = await this.prisma.organization.create({
           data: {
             name: companyName,
@@ -77,7 +82,7 @@ export class AuthService {
         organizationId = organization.id;
       }
 
-      // Build user data with sanitized fields
+      // Build user data with sanitized fields and default permissions
       const userData: any = {
         email,
         passwordHash,
@@ -86,6 +91,12 @@ export class AuthService {
         role,
         failedLoginAttempts: 0,
         lockedUntil: null,
+        // Permission fields with role-based defaults
+        platform: defaultPerms.platform,
+        canCreateTasks: defaultPerms.canCreateTasks,
+        canViewAllTasks: defaultPerms.canViewAllTasks,
+        canAssignTasks: defaultPerms.canAssignTasks,
+        canManageUsers: defaultPerms.canManageUsers,
       };
 
       if (organizationId) {
@@ -101,6 +112,11 @@ export class AuthService {
           lastName: true,
           role: true,
           organizationId: true,
+          platform: true,
+          canCreateTasks: true,
+          canViewAllTasks: true,
+          canAssignTasks: true,
+          canManageUsers: true,
           createdAt: true,
         },
       });
@@ -226,6 +242,14 @@ export class AuthService {
             lastName: user.lastName,
             role: user.role,
             organizationId: user.organizationId,
+            // Permission fields
+            platform: user.platform,
+            canCreateTasks: user.canCreateTasks,
+            canViewAllTasks: user.canViewAllTasks,
+            canAssignTasks: user.canAssignTasks,
+            canManageUsers: user.canManageUsers,
+            // Technician-specific fields
+            technicianType: user.technicianType,
           },
           ...tokens,
         },
@@ -680,6 +704,14 @@ export class AuthService {
           role: true,
           organizationId: true,
           isActive: true,
+          // Permission fields
+          platform: true,
+          canCreateTasks: true,
+          canViewAllTasks: true,
+          canAssignTasks: true,
+          canManageUsers: true,
+          // Technician-specific fields
+          technicianType: true,
         },
       });
 

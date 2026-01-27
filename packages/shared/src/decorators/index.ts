@@ -6,7 +6,7 @@
  */
 
 import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Role } from '../types';
+import { Role, Platform, TechnicianType } from '../types';
 
 // =============================================================================
 // METADATA KEYS
@@ -60,6 +60,14 @@ export interface CurrentUserData {
   lastName: string;
   role: Role | string;
   organizationId: string;
+  // Permission fields
+  platform: Platform | string;
+  canCreateTasks: boolean;
+  canViewAllTasks: boolean;
+  canAssignTasks: boolean;
+  canManageUsers: boolean;
+  // Technician-specific fields
+  technicianType?: TechnicianType;
 }
 
 /**

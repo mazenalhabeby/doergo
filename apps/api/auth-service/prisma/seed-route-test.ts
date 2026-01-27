@@ -23,12 +23,13 @@ async function main() {
     return;
   }
 
+  // Find admin user (formerly CLIENT role)
   const client = await prisma.user.findFirst({
-    where: { role: Role.CLIENT },
+    where: { role: Role.ADMIN },
   });
 
   if (!client) {
-    console.error('No client found. Run pnpm db:seed first.');
+    console.error('No admin found. Run pnpm db:seed first.');
     return;
   }
 

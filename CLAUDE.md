@@ -1,6 +1,6 @@
 # DOERGO - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-01-21 (Task Detail UI Enhancements)
+> **Last Updated**: 2026-01-27 (DRY/SOLID Refactoring - Shared Utilities)
 
 ---
 
@@ -9,11 +9,11 @@
 | Key | Value |
 |-----|-------|
 | Name | Doergo |
-| Type | 3-role task management & field execution platform |
+| Type | Role-based task management & field execution platform |
 | Monorepo | pnpm workspaces |
 | Root | `/Users/pc/work/doergo` |
 
-**Core Flow**: `Client creates task` → `Dispatcher assigns technician` → `Technician executes` → `Real-time updates`
+**Core Flow**: `Admin creates task` → `Dispatcher assigns technician` → `Technician executes` → `Real-time updates`
 
 ---
 
@@ -25,7 +25,7 @@
 ├───────────────────────────────────┬─────────────────────────────────┤
 │              web-app              │         mobile                  │
 │         (Next.js + RBAC)          │     (React Native/Expo)         │
-│   :3000 (CLIENT & DISPATCHER)     │       (TECHNICIAN only)         │
+│   :3000 (ADMIN & DISPATCHER)      │       (TECHNICIAN only)         │
 └─────────────────┬─────────────────┴──────────────┬──────────────────┘
                   │                                │
                   └────────────────────────────────┘
@@ -82,7 +82,7 @@ doergo/
 │   │   └── tracking-service/  # GPS location updates
 │   ├── web-app/               # Unified web portal (Next.js) :3000
 │   │   └── src/app/           # App Router with role-based views
-│   │                          # CLIENT sees: Dashboard, My Tasks, Create Task, Invoices
+│   │                          # ADMIN sees: Dashboard, My Tasks, Create Task, Invoices
 │   │                          # DISPATCHER sees: Dashboard, All Tasks, Technicians, Live Map, Managed Orgs
 │   └── mobile/                # Technician app (Expo)
 │       └── src/
@@ -110,11 +110,74 @@ doergo/
 
 ## 4. ROLES & PERMISSIONS
 
-| Role | Platform | Can Create Tasks | Can Assign | Can Execute | Can Track Technicians |
-|------|----------|------------------|------------|-------------|----------------------|
-| **CLIENT** | Web | ✅ Own org only | ❌ | ❌ | ❌ |
-| **DISPATCHER** | Web | ❌ | ✅ | ❌ | ✅ (within allowed scope) |
-| **TECHNICIAN** | Mobile | ❌ | ❌ | ✅ Assigned only | ❌ (is tracked) |
+### Role Definitions
+
+| Role | Platform | Description |
+|------|----------|-------------|
+| **ADMIN** | WEB, MOBILE (BOTH) | Organization owner with full control. Formerly "CLIENT". |
+| **DISPATCHER** | WEB only | Office manager, operation coordinator. Can view all tasks and assign technicians. |
+| **TECHNICIAN** | MOBILE only | Field worker, task executor. Can only see and execute assigned tasks. |
+
+> **Note**: The `CLIENT` role has been deprecated and migrated to `ADMIN`. A backward compatibility layer (`LegacyRoleMap`, `normalizeRole()`) handles legacy data.
+
+### Granular Permission System
+
+Each user now has individual permission flags in addition to their role:
+
+| Permission Field | ADMIN Default | DISPATCHER Default | TECHNICIAN Default | Description |
+|------------------|---------------|--------------------|--------------------|-------------|
+| `platform` | BOTH | WEB | MOBILE | Which platforms the user can access |
+| `canCreateTasks` | ✅ true | ❌ false | ❌ false | Can create new tasks |
+| `canViewAllTasks` | ✅ true | ✅ true | ❌ false | Can view all tasks in organization |
+| `canAssignTasks` | ✅ true | ✅ true | ❌ false | Can assign technicians to tasks |
+| `canManageUsers` | ✅ true | ❌ false | ❌ false | Can manage organization users |
+
+### Role-Permission Matrix
+
+| Role | Platform | Create Tasks | View All Tasks | Assign Tasks | Manage Users | Execute Tasks |
+|------|----------|--------------|----------------|--------------|--------------|---------------|
+| **ADMIN** | BOTH | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **DISPATCHER** | WEB | ❌ | ✅ | ✅ | ❌ | ❌ |
+| **TECHNICIAN** | MOBILE | ❌ | ❌ (own only) | ❌ | ❌ | ✅ |
+
+### Platform Access Control
+
+Users are restricted to specific platforms based on their `platform` field:
+
+| Platform Value | Web Access | Mobile Access |
+|----------------|------------|---------------|
+| `BOTH` | ✅ | ✅ |
+| `WEB` | ✅ | ❌ |
+| `MOBILE` | ❌ | ✅ |
+
+### Permission Helper Functions
+
+Available from `@doergo/shared/guards`:
+
+```typescript
+import {
+  hasRole, isAdmin, isDispatcher, isTechnician,
+  canAccessPlatform, canAccessWeb, canAccessMobile,
+  canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers
+} from '@doergo/shared';
+
+// Role checks (with legacy CLIENT → ADMIN normalization)
+hasRole(user, Role.ADMIN, Role.DISPATCHER)  // true if user has any of these roles
+isAdmin(user)      // true for ADMIN or legacy CLIENT
+isDispatcher(user) // true for DISPATCHER
+isTechnician(user) // true for TECHNICIAN
+
+// Platform access checks
+canAccessPlatform(user, Platform.WEB)  // true if user can access web
+canAccessWeb(user)    // shorthand for web access
+canAccessMobile(user) // shorthand for mobile access
+
+// Permission checks (with role fallback if field undefined)
+canCreateTasks(user)   // check canCreateTasks field or ADMIN role
+canViewAllTasks(user)  // check canViewAllTasks field or ADMIN/DISPATCHER role
+canAssignTasks(user)   // check canAssignTasks field or ADMIN/DISPATCHER role
+canManageUsers(user)   // check canManageUsers field or ADMIN role
+```
 
 ### Multi-Tenant SaaS Delegation
 Organizations can grant access to other organizations:
@@ -129,9 +192,9 @@ Organizations can grant access to other organizations:
 
 ### Core Models
 ```
-Organization { id, name, isActive, grantedAccess[], receivedAccess[] }
+Organization { id, name, isActive, grantedAccess[], receivedAccess[], companyLocations[] }
 OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, canAssignWorkers, canViewWorkers, canViewTracking }
-User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil }
+User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil, platform, canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers, technicianType }
 RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
 Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance, assetId }
@@ -143,11 +206,14 @@ LocationHistory { id, lat, lng, accuracy, timestamp, userId, taskId }  # Route t
 ServiceReport { id, taskId, assetId, summary, workPerformed, workDuration, technicianSignature, customerSignature, customerName, completedAt, completedById, organizationId }
 ReportAttachment { id, reportId, type, fileName, fileUrl, fileSize, caption }
 PartUsed { id, reportId, name, partNumber, quantity, unitCost, notes }
+CompanyLocation { id, name, address, lat, lng, geofenceRadius, isActive, organizationId }  # For attendance tracking
 ```
 
 ### Enums
 ```typescript
-Role: CLIENT | DISPATCHER | TECHNICIAN
+Role: ADMIN | DISPATCHER | TECHNICIAN  // Note: CLIENT deprecated, maps to ADMIN
+Platform: WEB | MOBILE | BOTH
+TechnicianType: FREELANCER | FULL_TIME  // For attendance tracking
 AccessLevel: NONE | TASKS_ONLY | TASKS_ASSIGN | FULL
 TaskStatus: DRAFT | NEW | ASSIGNED | ACCEPTED | EN_ROUTE | ARRIVED | IN_PROGRESS | BLOCKED | COMPLETED | CANCELED | CLOSED
 TaskPriority: LOW | MEDIUM | HIGH | URGENT
@@ -183,7 +249,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | POST | `/auth/login` | Login, returns tokens | No |
-| POST | `/auth/register` | Register new CLIENT account | No |
+| POST | `/auth/register` | Register new ADMIN account (org owner) | No |
 | POST | `/auth/refresh` | Refresh access token | No |
 | POST | `/auth/logout` | Invalidate refresh token | Yes |
 | POST | `/auth/forgot-password` | Request password reset email | No |
@@ -194,11 +260,11 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
 | GET | `/tasks` | List tasks | ALL |
-| POST | `/tasks` | Create task | CLIENT |
+| POST | `/tasks` | Create task | ADMIN, DISPATCHER |
 | GET | `/tasks/:id` | Get task detail | ALL |
-| PATCH | `/tasks/:id` | Update task | CLIENT (own) |
-| DELETE | `/tasks/:id` | Delete task | CLIENT (own) |
-| POST | `/tasks/:id/assign` | Assign technician | DISPATCHER |
+| PATCH | `/tasks/:id` | Update task | ADMIN, DISPATCHER |
+| DELETE | `/tasks/:id` | Delete task | ADMIN (org owner only) |
+| POST | `/tasks/:id/assign` | Assign technician | ADMIN, DISPATCHER |
 | POST | `/tasks/:id/start` | Start task | TECHNICIAN |
 | POST | `/tasks/:id/block` | Block task | TECHNICIAN |
 | POST | `/tasks/:id/complete` | Complete task | TECHNICIAN |
@@ -207,10 +273,10 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
 | POST | `/tracking/location` | Update technician location (stores history if EN_ROUTE) | TECHNICIAN |
-| GET | `/tracking/workers` | Get all technician locations | DISPATCHER |
-| GET | `/tracking/workers/:id` | Get specific technician | DISPATCHER |
-| GET | `/tracking/workers/:id/current-route` | Get active route for worker | DISPATCHER |
-| GET | `/tracking/tasks/:taskId/route` | Get full route for task | DISPATCHER |
+| GET | `/tracking/workers` | Get all technician locations | ADMIN, DISPATCHER |
+| GET | `/tracking/workers/:id` | Get specific technician | ADMIN, DISPATCHER |
+| GET | `/tracking/workers/:id/current-route` | Get active route for worker | ADMIN, DISPATCHER |
+| GET | `/tracking/tasks/:taskId/route` | Get full route for task | ADMIN, DISPATCHER |
 
 ### Reports (`/reports` & `/tasks`)
 | Method | Endpoint | Description | Roles |
@@ -218,9 +284,18 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | POST | `/tasks/:taskId/complete` | Complete task with service report | TECHNICIAN |
 | GET | `/tasks/:taskId/report` | Get task's service report | ALL |
 | PATCH | `/reports/:id` | Update report (within 24h) | TECHNICIAN |
-| GET | `/assets/:assetId/reports` | Get asset's maintenance history | CLIENT, DISPATCHER |
+| GET | `/assets/:assetId/reports` | Get asset's maintenance history | ADMIN, DISPATCHER |
 | POST | `/reports/:id/parts` | Add part to report | TECHNICIAN |
 | DELETE | `/reports/:id/parts/:partId` | Remove part from report | TECHNICIAN |
+
+### Locations (`/locations`) - Company Locations for Attendance
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| POST | `/locations` | Create company location | ADMIN |
+| GET | `/locations` | List organization's locations | ADMIN, DISPATCHER |
+| GET | `/locations/:id` | Get location details | ADMIN, DISPATCHER |
+| PATCH | `/locations/:id` | Update location | ADMIN |
+| DELETE | `/locations/:id` | Deactivate location (soft delete) | ADMIN |
 
 ---
 
@@ -415,12 +490,19 @@ pnpm build            # Build all packages
 
 ## 11. TEST CREDENTIALS (Seed Data)
 
-| Role | Email | Password |
-|------|-------|----------|
-| Client | client@example.com | password123 |
-| Dispatcher | dispatcher@example.com | password123 |
-| Technician 1 | technician1@example.com | password123 |
-| Technician 2 | technician2@example.com | password123 |
+| Role | Email | Password | Platform | Type | Permissions |
+|------|-------|----------|----------|------|-------------|
+| Admin | client@example.com | password123 | BOTH | - | All permissions |
+| Dispatcher | dispatcher@example.com | password123 | WEB | - | canViewAllTasks, canAssignTasks |
+| Technician 1 | technician1@example.com | password123 | MOBILE | FULL_TIME | None (executor only) |
+| Technician 2 | technician2@example.com | password123 | MOBILE | FREELANCER | None (executor only) |
+
+### Sample Company Locations
+| Name | Address | Coordinates | Geofence |
+|------|---------|-------------|----------|
+| Main Office | 123 Business Ave, New York, NY | 40.7128, -74.0060 | 20m |
+| Warehouse | 456 Industrial Blvd, Brooklyn, NY | 40.6892, -73.9857 | 30m |
+| Service Center | 789 Tech Park, Jersey City, NJ | 40.7178, -74.0431 | 25m |
 
 ---
 
@@ -495,6 +577,25 @@ pnpm build            # Build all packages
 - [x] Mobile: Completion modal with summary/details input
 - [x] Seed data: 4 sample reports with parts and attachments
 
+### Phase 3.2: Role System Overhaul ✅ COMPLETE
+- [x] New `ADMIN` role (replaces deprecated `CLIENT` role)
+- [x] New `Platform` enum (WEB, MOBILE, BOTH)
+- [x] Granular permission fields on User model:
+  - [x] `platform` - Platform access restriction
+  - [x] `canCreateTasks` - Task creation permission
+  - [x] `canViewAllTasks` - View all org tasks permission
+  - [x] `canAssignTasks` - Task assignment permission
+  - [x] `canManageUsers` - User management permission
+- [x] Database migrations:
+  - [x] `20260126114708_add_admin_role_and_permissions`
+  - [x] `20260126122816_migrate_client_to_admin_data`
+- [x] Backward compatibility layer (LegacyRoleMap, normalizeRole)
+- [x] Permission helper functions in `@doergo/shared/guards`
+- [x] Updated `CurrentUserData` interface with permission fields
+- [x] Controller endpoint updates with new @Roles decorators
+- [x] Registration forces ADMIN role (security: never trust client input)
+- [x] Seed data updated with new role and permission fields
+
 ### Phase 4: Comments & Attachments 🔲 PENDING
 - [ ] Comments: list/add API (task-service) - partially done
 - [ ] Attachments: S3 presigned URL upload
@@ -527,6 +628,34 @@ pnpm build            # Build all packages
 - [ ] Email templates
 - [ ] Push notification service
 - [ ] Notification triggers
+
+### Phase 7: Attendance & Time Tracking 🔶 PARTIAL
+- [x] **Phase 7.1: Foundation** ✅ COMPLETE (2026-01-26)
+  - [x] `TechnicianType` enum (FREELANCER, FULL_TIME)
+  - [x] `technicianType` field on User model
+  - [x] `CompanyLocation` model (name, address, lat, lng, geofenceRadius)
+  - [x] Database migration: `add_technician_type_and_company_locations`
+  - [x] Locations module in task-service (service, processor, controller)
+  - [x] Locations module in gateway (controller, service, queue service, DTOs)
+  - [x] CRUD API endpoints: POST/GET/PATCH/DELETE `/api/v1/locations`
+  - [x] Shared types and constants (`ATTENDANCE_CONSTANTS`, `LOCATION_JOB_TYPES`)
+  - [x] Seed data: 3 sample company locations
+- [ ] **Phase 7.2: Technician Assignment** (PENDING)
+  - [ ] `TechnicianAssignment` model (user → location mapping)
+  - [ ] Assignment CRUD endpoints
+  - [ ] Schedule support (day-based assignments)
+- [ ] **Phase 7.3: Time Tracking** (PENDING)
+  - [ ] `TimeEntry` model (clock in/out records)
+  - [ ] Clock in/out API endpoints with geofence validation
+  - [ ] Haversine distance check for geofence
+- [ ] **Phase 7.4: Mobile Integration** (PENDING)
+  - [ ] Clock in/out screen with GPS status
+  - [ ] Geofence monitoring hook
+  - [ ] Session duration display
+- [ ] **Phase 7.5: Reports & Dashboard** (PENDING)
+  - [ ] Attendance history endpoint
+  - [ ] Web dashboard for attendance tracking
+  - [ ] Export functionality
 
 ---
 
@@ -565,9 +694,22 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `AnimatedLogo` | Shared logo component (from `@doergo/shared/components`) |
 | `Roles`, `Public`, `CurrentUser` | NestJS decorators (from `@doergo/shared`) |
 | `RolesGuard`, `hasRole()` | Role-based access control guard |
+| `isAdmin()`, `isDispatcher()`, `isTechnician()` | Role check helpers with legacy normalization |
+| `canAccessPlatform()`, `canAccessWeb()`, `canAccessMobile()` | Platform access checks |
+| `canCreateTasks()`, `canViewAllTasks()`, `canAssignTasks()`, `canManageUsers()` | Permission checks with role fallback |
+| `LegacyRoleMap`, `normalizeRole()` | Backward compatibility for CLIENT → ADMIN |
+| `DEFAULT_PERMISSIONS` | Default permission values by role |
 | `STATUS_TRANSITIONS`, `isValidStatusTransition()` | Task status state machine |
 | `BCRYPT_COST_FACTOR`, `MAX_FAILED_ATTEMPTS`, etc. | Auth constants |
 | `EmailField`, `PasswordField`, `NameField`, etc. | Validation decorators |
+| `buildQueryString()`, `buildUrlWithQuery()` | Query string building utilities |
+| `buildDateRangeFilter()`, `buildSingleDayFilter()` | Prisma-compatible date filters |
+| `getStartOfDay()`, `getEndOfDay()` | Date boundary calculations |
+| `getStartOfWeek()`, `getEndOfWeek()`, `getStartOfMonth()`, `getEndOfMonth()` | Period calculations |
+| `formatDuration()`, `formatTime()`, `formatShortDate()`, `formatFullDate()` | Date display formatting |
+| `TimeEntry`, `Break`, `CompanyLocation`, `AttendanceStatus` | Attendance types (from `@doergo/shared`) |
+| `TimeEntryStatus`, `BreakType`, `ApprovalStatus` | Attendance enums |
+| `isBreakActive()`, `getBreakTypeLabel()`, `getTimeEntryStatusLabel()` | Attendance helper functions |
 
 ### SOLID Principles
 
@@ -599,7 +741,7 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @Roles(Role.CLIENT)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   create(@Body() dto: CreateTaskDto, @CurrentUser() user: User) {
     return this.tasksService.create(dto, user);
@@ -717,7 +859,48 @@ docker exec -it doergo-redis redis-cli
    - Gallery picker using expo-image-picker
    - Upload progress indicator
 
-### Recently Completed (2026-01-22)
+### Recently Completed (2026-01-27)
+- **DRY/SOLID Refactoring**:
+  - Created shared attendance types (`packages/shared/src/types/attendance.ts`)
+    - Centralized TimeEntry, Break, CompanyLocation, AttendanceStatus interfaces
+    - Added helper functions: `isBreakActive()`, `getBreakTypeLabel()`, `getTimeEntryStatusLabel()`
+  - Created date utilities (`packages/shared/src/utils/date.ts`)
+    - Date boundary: `getStartOfDay()`, `getEndOfDay()`
+    - Prisma filters: `buildDateRangeFilter()`, `buildSingleDayFilter()`
+    - Period calculations: `getStartOfWeek/Month()`, `getEndOfWeek/Month()`
+    - Display formatting: `formatDuration()`, `formatTime()`, `formatShortDate()`, `formatFullDate()`
+  - Created query string builder (`packages/shared/src/utils/query.ts`)
+    - `buildQueryString()` - Filters null/undefined values automatically
+    - `buildUrlWithQuery()` - Builds complete URLs with query parameters
+  - Updated mobile app to import from `@doergo/shared` (removed ~95 lines of duplicate types)
+  - Updated web app to import from `@doergo/shared` (removed ~70 lines of duplicate types)
+  - Replaced 10+ manual `URLSearchParams` builders with `buildUrlWithQuery()`
+  - Replaced hard-coded status strings with enums in `attendance.service.ts`:
+    - `'CLOCKED_IN'` → `TimeEntryStatus.CLOCKED_IN`
+    - `'PENDING'` → `ApprovalStatus.PENDING`, etc.
+  - Extracted 8+ manual date range calculations to use shared utilities
+  - **Deferred**: Split 1729-line attendance service (requires significant refactoring)
+
+### Previously Completed (2026-01-26)
+- **Attendance Foundation** (Phase 7.1):
+  - TechnicianType enum (FREELANCER, FULL_TIME) for employee classification
+  - CompanyLocation model with geofencing support (lat/lng, radius)
+  - Locations CRUD API endpoints (POST/GET/PATCH/DELETE /locations)
+  - Locations module in task-service and gateway
+  - Shared constants: ATTENDANCE_CONSTANTS, LOCATION_JOB_TYPES
+  - Seed data: 3 sample company locations (Main Office, Warehouse, Service Center)
+
+- **Role System Overhaul** (Phase 3.2 - 2026-01-26):
+  - New ADMIN role replacing deprecated CLIENT role
+  - Platform enum (WEB, MOBILE, BOTH) for access restriction
+  - Granular permission fields: canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers
+  - Database migrations for schema changes and data migration
+  - Backward compatibility layer (LegacyRoleMap, normalizeRole)
+  - Permission helper functions in @doergo/shared/guards
+  - Updated all controller @Roles decorators
+  - Registration now forces ADMIN role (security improvement)
+
+### Previously Completed (2026-01-22)
 - **ServiceReport Feature** (Phase 3.1):
   - Database: ServiceReport, ReportAttachment, PartUsed models
   - Backend: Reports module in task-service (BullMQ) and gateway (REST)
@@ -901,19 +1084,22 @@ Built with shadcn/ui + Radix primitives:
 
 ### Role-Based UI
 
-#### CLIENT View
+#### ADMIN View (Web)
 - Dashboard: Task stats (Total, In Progress, Completed, Pending)
 - Navigation: Dashboard, My Tasks, Create Task, Invoices
-- Actions: Create tasks, view own tasks, add comments
+- Actions: Create tasks, view all org tasks, assign technicians, manage users, add comments
+- Platform: WEB and MOBILE (BOTH)
 
-#### DISPATCHER View
+#### DISPATCHER View (Web)
 - Dashboard: Operations stats (Active Tasks, Technicians Online, Completed Today, Pending Assignment)
 - Navigation: Dashboard, All Tasks, Technicians, Live Map, Managed Orgs
 - Actions: Assign technicians, view all tasks, track locations
+- Platform: WEB only
 
 #### TECHNICIAN View (Mobile Only)
 - Tabs: Tasks, Profile
 - Actions: Start/block/complete tasks, add photos, update location
+- Platform: MOBILE only
 
 ### Animation Guidelines
 - Transitions: 200-300ms duration, ease-out timing

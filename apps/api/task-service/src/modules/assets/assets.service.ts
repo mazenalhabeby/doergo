@@ -29,7 +29,7 @@ export class AssetsService {
     organizationId: string;
   }) {
     // Only CLIENT and DISPATCHER can create categories
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can create asset categories');
     }
 
@@ -71,7 +71,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (query.userRole !== Role.CLIENT && query.userRole !== Role.DISPATCHER) {
+    if (query.userRole !== Role.ADMIN && query.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can view asset categories');
     }
 
@@ -99,7 +99,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can update asset categories');
     }
 
@@ -156,7 +156,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can delete asset categories');
     }
 
@@ -202,7 +202,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can create asset types');
     }
 
@@ -257,7 +257,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (query.userRole !== Role.CLIENT && query.userRole !== Role.DISPATCHER) {
+    if (query.userRole !== Role.ADMIN && query.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can view asset types');
     }
 
@@ -296,7 +296,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can update asset types');
     }
 
@@ -353,7 +353,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can delete asset types');
     }
 
@@ -411,7 +411,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can create assets');
     }
 
@@ -483,7 +483,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (query.userRole !== Role.CLIENT && query.userRole !== Role.DISPATCHER) {
+    if (query.userRole !== Role.ADMIN && query.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can view assets');
     }
 
@@ -534,7 +534,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can view assets');
     }
 
@@ -580,7 +580,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can update assets');
     }
 
@@ -658,7 +658,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can delete assets');
     }
 
@@ -699,7 +699,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.CLIENT && data.userRole !== Role.DISPATCHER) {
+    if (data.userRole !== Role.ADMIN && data.userRole !== Role.DISPATCHER) {
       throw new ForbiddenException('Only clients and dispatchers can view maintenance history');
     }
 

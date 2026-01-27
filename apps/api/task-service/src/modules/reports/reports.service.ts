@@ -565,7 +565,7 @@ export class ReportsService {
     organizationId: string,
   ) {
     switch (userRole) {
-      case Role.CLIENT:
+      case Role.ADMIN:
         // CLIENT can only access their own tasks
         if (task.createdById !== userId || task.organizationId !== organizationId) {
           throw new ForbiddenException('Access denied');

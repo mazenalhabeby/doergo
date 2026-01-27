@@ -92,7 +92,7 @@ export class TasksService {
 
     // Role-based filtering
     switch (userRole) {
-      case Role.CLIENT:
+      case Role.ADMIN:
         // CLIENT sees only their own tasks in their org
         where.organizationId = organizationId;
         where.createdById = userId;
@@ -374,7 +374,7 @@ export class TasksService {
         }
         break;
 
-      case Role.CLIENT:
+      case Role.ADMIN:
         // CLIENT can only update their own tasks
         if (task.createdById !== data.userId || task.organizationId !== data.organizationId) {
           throw new ForbiddenException('You can only update status of your own tasks');
@@ -512,7 +512,7 @@ export class TasksService {
     organizationId: string,
   ) {
     switch (userRole) {
-      case Role.CLIENT:
+      case Role.ADMIN:
         // CLIENT can only access their own tasks
         if (task.createdById !== userId || task.organizationId !== organizationId) {
           throw new ForbiddenException('Access denied');
@@ -652,7 +652,7 @@ export class TasksService {
     const where: any = {};
 
     switch (userRole) {
-      case Role.CLIENT:
+      case Role.ADMIN:
         where.organizationId = organizationId;
         where.createdById = userId;
         break;
@@ -717,7 +717,7 @@ export class TasksService {
     }
 
     // Authorization: Only DISPATCHER or CLIENT can see suggested technicians
-    if (data.userRole !== Role.DISPATCHER && data.userRole !== Role.CLIENT) {
+    if (data.userRole !== Role.DISPATCHER && data.userRole !== Role.ADMIN) {
       throw new ForbiddenException('Only dispatchers and clients can view suggested technicians');
     }
 

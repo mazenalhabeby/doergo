@@ -73,6 +73,8 @@ function TabItem({
     iconName = isFocused ? 'home' : 'home-outline';
   } else if (route.name === 'tasks') {
     iconName = isFocused ? 'clipboard' : 'clipboard-outline';
+  } else if (route.name === 'attendance') {
+    iconName = isFocused ? 'time' : 'time-outline';
   } else if (route.name === 'time-off') {
     iconName = isFocused ? 'calendar' : 'calendar-outline';
   } else {
@@ -180,6 +182,13 @@ export default function TabsLayout() {
           options={{
             title: 'Tasks',
             headerTitle: () => <LogoHeader subtitle="Tasks" />,
+          }}
+        />
+        <Tabs.Screen
+          name="attendance"
+          options={{
+            title: 'Clock',
+            headerTitle: () => <LogoHeader subtitle="Attendance" />,
           }}
         />
         <Tabs.Screen

@@ -33,7 +33,8 @@ import {
 
 // Role badge styles
 const roleBadgeStyles: Record<string, { bg: string; text: string; border: string }> = {
-  CLIENT: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
+  ADMIN: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
+  CLIENT: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" }, // Deprecated alias for ADMIN
   DISPATCHER: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
   TECHNICIAN: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
 }
@@ -46,7 +47,7 @@ export function NavUser() {
 
   const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`
   const fullName = `${user.firstName} ${user.lastName}`
-  const roleStyle = roleBadgeStyles[user.role] || roleBadgeStyles.CLIENT
+  const roleStyle = roleBadgeStyles[user.role] || roleBadgeStyles.ADMIN
 
   return (
     <SidebarMenu>

@@ -15,6 +15,7 @@ import {
   Calendar,
   BarChart3,
   Timer,
+  Clock,
   ChevronDown,
   Check,
 } from "lucide-react"
@@ -42,8 +43,8 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar"
 
-// Navigation groups for CLIENT role
-const clientNavGroups: { label: string; items: NavItem[] }[] = [
+// Navigation groups for ADMIN role
+const adminNavGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Main",
     items: [
@@ -60,6 +61,21 @@ const clientNavGroups: { label: string; items: NavItem[] }[] = [
           { title: "View All Tasks", url: "/tasks" },
           { title: "Create New Task", url: "/tasks/new" },
         ],
+      },
+    ],
+  },
+  {
+    label: "Resources",
+    items: [
+      {
+        title: "Technicians",
+        url: "/technicians",
+        icon: Users,
+      },
+      {
+        title: "Attendance",
+        url: "/attendance",
+        icon: Clock,
       },
     ],
   },
@@ -130,6 +146,11 @@ const dispatcherNavGroups: { label: string; items: NavItem[] }[] = [
         ],
       },
       {
+        title: "Attendance",
+        url: "/attendance",
+        icon: Clock,
+      },
+      {
         title: "Organizations",
         url: "/organizations",
         icon: Building2,
@@ -180,7 +201,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [selectedOrg, setSelectedOrg] = React.useState(organizations[0])
 
   // Get navigation based on user role
-  const navGroups = user?.role === "DISPATCHER" ? dispatcherNavGroups : clientNavGroups
+  const navGroups = user?.role === "DISPATCHER" ? dispatcherNavGroups : adminNavGroups
   const isDispatcher = user?.role === "DISPATCHER"
 
   return (
@@ -193,7 +214,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </Link>
           <div className="mt-3 space-y-0.5">
             <p className="text-[15px] font-semibold text-slate-700">
-              {isDispatcher ? "Dispatcher Portal" : "Client Portal"}
+              {isDispatcher ? "Dispatcher Portal" : "Admin Portal"}
             </p>
             <p className="text-[13px] text-slate-400">
               Field Service Management

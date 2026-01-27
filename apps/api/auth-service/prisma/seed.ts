@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, ReportAttachmentType } from '@prisma/client';
+import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, ReportAttachmentType, TechnicianType, TimeEntryStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -18,15 +18,21 @@ async function main() {
   // Hash password for all users
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  // Create Client user (organization owner)
+  // Create Admin user (organization owner) - formerly CLIENT
   const clientUser = await prisma.user.create({
     data: {
       email: 'client@example.com',
       passwordHash,
       firstName: 'John',
       lastName: 'Owner',
-      role: Role.CLIENT,
+      role: Role.ADMIN,
       organizationId: organization.id,
+      // ADMIN permissions - full access
+      platform: 'BOTH',
+      canCreateTasks: true,
+      canViewAllTasks: true,
+      canAssignTasks: true,
+      canManageUsers: true,
     },
   });
 
@@ -39,6 +45,12 @@ async function main() {
       lastName: 'Manager',
       role: Role.DISPATCHER,
       organizationId: organization.id,
+      // DISPATCHER permissions - web only, can view all and assign
+      platform: 'WEB',
+      canCreateTasks: false,
+      canViewAllTasks: true,
+      canAssignTasks: true,
+      canManageUsers: false,
     },
   });
 
@@ -51,6 +63,14 @@ async function main() {
       lastName: 'Worker',
       role: Role.TECHNICIAN,
       organizationId: organization.id,
+      // TECHNICIAN permissions - mobile only, execute tasks
+      platform: 'MOBILE',
+      canCreateTasks: false,
+      canViewAllTasks: false,
+      canAssignTasks: false,
+      canManageUsers: false,
+      // Full-time employee - assigned to company locations
+      technicianType: TechnicianType.FULL_TIME,
     },
   });
 
@@ -62,10 +82,245 @@ async function main() {
       lastName: 'Worker',
       role: Role.TECHNICIAN,
       organizationId: organization.id,
+      // TECHNICIAN permissions - mobile only, execute tasks
+      platform: 'MOBILE',
+      canCreateTasks: false,
+      canViewAllTasks: false,
+      canAssignTasks: false,
+      canManageUsers: false,
+      // Freelancer - task-based work, no fixed location
+      technicianType: TechnicianType.FREELANCER,
     },
   });
 
   console.log('Created users:', clientUser.email, dispatcherUser.email, technician1.email, technician2.email);
+
+  // ============================================
+  // Create Company Locations for attendance tracking
+  // ============================================
+
+  const mainOffice = await prisma.companyLocation.create({
+    data: {
+      name: 'Main Office',
+      address: '123 Business Ave, New York, NY 10001',
+      lat: 40.7128,
+      lng: -74.0060,
+      geofenceRadius: 20, // 20 meters for clock-in zone
+      organizationId: organization.id,
+    },
+  });
+
+  const warehouse = await prisma.companyLocation.create({
+    data: {
+      name: 'Warehouse',
+      address: '456 Industrial Blvd, Brooklyn, NY 11201',
+      lat: 40.6892,
+      lng: -73.9857,
+      geofenceRadius: 30, // Larger area for warehouse
+      organizationId: organization.id,
+    },
+  });
+
+  const serviceCenter = await prisma.companyLocation.create({
+    data: {
+      name: 'Service Center',
+      address: '789 Tech Park, Jersey City, NJ 07302',
+      lat: 40.7178,
+      lng: -74.0431,
+      geofenceRadius: 25,
+      organizationId: organization.id,
+    },
+  });
+
+  console.log('Created company locations:', mainOffice.name, warehouse.name, serviceCenter.name);
+
+  // ============================================
+  // Create Technician Assignments (FULL_TIME only)
+  // ============================================
+
+  // Assign technician1 (FULL_TIME) to Main Office as primary location
+  const assignment1 = await prisma.technicianAssignment.create({
+    data: {
+      userId: technician1.id,
+      locationId: mainOffice.id,
+      isPrimary: true,
+      schedule: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+    },
+  });
+
+  // Also assign technician1 to Warehouse for weekends
+  const assignment2 = await prisma.technicianAssignment.create({
+    data: {
+      userId: technician1.id,
+      locationId: warehouse.id,
+      isPrimary: false,
+      schedule: ['SAT', 'SUN'],
+    },
+  });
+
+  // Note: technician2 is FREELANCER so they don't get assignments
+  console.log('Created technician assignments:', assignment1.id, assignment2.id);
+  console.log('  - technician1 assigned to Main Office (primary, Mon-Fri) and Warehouse (weekends)');
+  console.log('  - technician2 is FREELANCER - no location assignments');
+
+  // ============================================
+  // Create Time Entries (Clock-In/Clock-Out records)
+  // ============================================
+
+  // Yesterday's completed shift for technician1 (8am - 5pm = 9 hours)
+  const yesterday8am = new Date();
+  yesterday8am.setDate(yesterday8am.getDate() - 1);
+  yesterday8am.setHours(8, 0, 0, 0);
+
+  const yesterday5pm = new Date();
+  yesterday5pm.setDate(yesterday5pm.getDate() - 1);
+  yesterday5pm.setHours(17, 0, 0, 0);
+
+  const yesterdayEntry = await prisma.timeEntry.create({
+    data: {
+      userId: technician1.id,
+      locationId: mainOffice.id,
+      status: TimeEntryStatus.CLOCKED_OUT,
+      clockInAt: yesterday8am,
+      clockInLat: 40.7128,
+      clockInLng: -74.0060,
+      clockInAccuracy: 10,
+      clockInWithinGeofence: true,
+      clockOutAt: yesterday5pm,
+      clockOutLat: 40.7128,
+      clockOutLng: -74.0059,
+      clockOutAccuracy: 12,
+      clockOutWithinGeofence: true,
+      totalMinutes: 540, // 9 hours
+      notes: 'Regular shift - completed scheduled work',
+      organizationId: organization.id,
+    },
+  });
+
+  // Day before yesterday shift for technician1 (Saturday at Warehouse)
+  const twoDaysAgo8am = new Date();
+  twoDaysAgo8am.setDate(twoDaysAgo8am.getDate() - 2);
+  twoDaysAgo8am.setHours(8, 30, 0, 0);
+
+  const twoDaysAgo4pm = new Date();
+  twoDaysAgo4pm.setDate(twoDaysAgo4pm.getDate() - 2);
+  twoDaysAgo4pm.setHours(16, 0, 0, 0);
+
+  const weekendEntry = await prisma.timeEntry.create({
+    data: {
+      userId: technician1.id,
+      locationId: warehouse.id,
+      status: TimeEntryStatus.CLOCKED_OUT,
+      clockInAt: twoDaysAgo8am,
+      clockInLat: 40.6892,
+      clockInLng: -73.9857,
+      clockInAccuracy: 8,
+      clockInWithinGeofence: true,
+      clockOutAt: twoDaysAgo4pm,
+      clockOutLat: 40.6893,
+      clockOutLng: -73.9858,
+      clockOutAccuracy: 15,
+      clockOutWithinGeofence: true,
+      totalMinutes: 450, // 7.5 hours
+      organizationId: organization.id,
+    },
+  });
+
+  // Current clocked-in entry for technician1 (started 2 hours ago)
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+  const currentEntry = await prisma.timeEntry.create({
+    data: {
+      userId: technician1.id,
+      locationId: mainOffice.id,
+      status: TimeEntryStatus.CLOCKED_IN,
+      clockInAt: twoHoursAgo,
+      clockInLat: 40.7128,
+      clockInLng: -74.0060,
+      clockInAccuracy: 8,
+      clockInWithinGeofence: true,
+      organizationId: organization.id,
+    },
+  });
+
+  console.log('Created time entries:');
+  console.log(`  - Yesterday's shift (${yesterdayEntry.totalMinutes} min) at Main Office`);
+  console.log(`  - Weekend shift (${weekendEntry.totalMinutes} min) at Warehouse`);
+  console.log(`  - Current active shift at Main Office (clocked in ${Math.round((Date.now() - twoHoursAgo.getTime()) / 60000)} min ago)`);
+
+  // ============================================
+  // Create Breaks for Time Entries
+  // ============================================
+
+  // Breaks for yesterday's entry
+  const yesterdayLunchBreak = await prisma.break.create({
+    data: {
+      timeEntryId: yesterdayEntry.id,
+      type: 'LUNCH',
+      startedAt: new Date(yesterday8am.getTime() + 4 * 60 * 60 * 1000), // 4 hours after clock in (12pm)
+      endedAt: new Date(yesterday8am.getTime() + 4.5 * 60 * 60 * 1000), // 30 min lunch
+      durationMinutes: 30,
+      notes: null,
+    },
+  });
+
+  const yesterdayShortBreak = await prisma.break.create({
+    data: {
+      timeEntryId: yesterdayEntry.id,
+      type: 'SHORT',
+      startedAt: new Date(yesterday8am.getTime() + 2 * 60 * 60 * 1000), // 2 hours after clock in (10am)
+      endedAt: new Date(yesterday8am.getTime() + 2.25 * 60 * 60 * 1000), // 15 min break
+      durationMinutes: 15,
+      notes: 'Coffee break',
+    },
+  });
+
+  // Update yesterday entry's break minutes
+  await prisma.timeEntry.update({
+    where: { id: yesterdayEntry.id },
+    data: { breakMinutes: 45 }, // 30 + 15
+  });
+
+  // Breaks for weekend entry
+  const weekendLunchBreak = await prisma.break.create({
+    data: {
+      timeEntryId: weekendEntry.id,
+      type: 'LUNCH',
+      startedAt: new Date(twoDaysAgo8am.getTime() + 3.5 * 60 * 60 * 1000), // 11:30am
+      endedAt: new Date(twoDaysAgo8am.getTime() + 4 * 60 * 60 * 1000), // 30 min
+      durationMinutes: 30,
+      notes: null,
+    },
+  });
+
+  // Update weekend entry's break minutes
+  await prisma.timeEntry.update({
+    where: { id: weekendEntry.id },
+    data: { breakMinutes: 30 },
+  });
+
+  // Break for current entry (technician took a short break earlier)
+  const currentShortBreak = await prisma.break.create({
+    data: {
+      timeEntryId: currentEntry.id,
+      type: 'SHORT',
+      startedAt: new Date(twoHoursAgo.getTime() + 1 * 60 * 60 * 1000), // 1 hour after clock in
+      endedAt: new Date(twoHoursAgo.getTime() + 1.17 * 60 * 60 * 1000), // ~10 min break
+      durationMinutes: 10,
+      notes: 'Quick coffee',
+    },
+  });
+
+  // Update current entry's break minutes
+  await prisma.timeEntry.update({
+    where: { id: currentEntry.id },
+    data: { breakMinutes: 10 },
+  });
+
+  console.log('Created breaks:');
+  console.log(`  - Yesterday: ${yesterdayShortBreak.type} (${yesterdayShortBreak.durationMinutes}min) + ${yesterdayLunchBreak.type} (${yesterdayLunchBreak.durationMinutes}min)`);
+  console.log(`  - Weekend: ${weekendLunchBreak.type} (${weekendLunchBreak.durationMinutes}min)`);
+  console.log(`  - Current: ${currentShortBreak.type} (${currentShortBreak.durationMinutes}min)`);
 
   // ============================================
   // Create Asset Categories, Types, and Assets
@@ -1029,10 +1284,18 @@ async function main() {
 
   console.log('\nSeed completed successfully!');
   console.log('\nTest credentials:');
-  console.log('  Client:      client@example.com / password123');
-  console.log('  Dispatcher:  dispatcher@example.com / password123');
-  console.log('  Technician1: technician1@example.com / password123');
-  console.log('  Technician2: technician2@example.com / password123');
+  console.log('  Admin:       client@example.com / password123 (platform: BOTH)');
+  console.log('  Dispatcher:  dispatcher@example.com / password123 (platform: WEB)');
+  console.log('  Technician1: technician1@example.com / password123 (platform: MOBILE, FULL_TIME)');
+  console.log('  Technician2: technician2@example.com / password123 (platform: MOBILE, FREELANCER)');
+  console.log('\nCompany Locations:');
+  console.log('  - Main Office (NYC): 40.7128, -74.0060 (20m geofence)');
+  console.log('  - Warehouse (Brooklyn): 40.6892, -73.9857 (30m geofence)');
+  console.log('  - Service Center (Jersey City): 40.7178, -74.0431 (25m geofence)');
+  console.log('\nTime Entries:');
+  console.log('  - technician1 has 3 time entries (2 completed, 1 currently clocked in)');
+  console.log('  - Use GET /attendance/status as technician1 to see current clock-in status');
+  console.log('  - Use GET /attendance/history as technician1 to see attendance history');
 }
 
 main()

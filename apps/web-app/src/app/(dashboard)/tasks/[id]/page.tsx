@@ -61,7 +61,7 @@ export default function TaskDetailPage({
   const { user } = useAuth()
   const { setOverride, clearOverride } = useBreadcrumbOverride()
   const isDispatcher = user?.role === "DISPATCHER"
-  const isClient = user?.role === "CLIENT"
+  const isAdmin = user?.role === "ADMIN"
 
   const [newComment, setNewComment] = useState("")
   const [showAssignModal, setShowAssignModal] = useState(false)
@@ -90,7 +90,7 @@ export default function TaskDetailPage({
     return () => clearOverride(id)
   }, [id, task?.title, setOverride, clearOverride])
 
-  const canAssign = isClient || isDispatcher
+  const canAssign = isAdmin || isDispatcher
   const { data: suggestedData, isLoading: loadingSuggested } = useQuery({
     queryKey: ["suggestedTechnicians", id],
     queryFn: () => tasksApi.getSuggestedTechnicians(id),

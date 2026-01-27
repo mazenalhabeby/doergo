@@ -1,7 +1,7 @@
 # DOERGO - Implementation Checklist
 
 > **Usage**: Check off items as completed. Use `[x]` for done, `[ ]` for pending, `[~]` for in progress.
-> **Last Updated**: 2026-01-22 (ServiceReport Feature)
+> **Last Updated**: 2026-01-27 (DRY/SOLID Refactoring)
 >
 > **IMPORTANT**: All code MUST follow **SOLID** and **DRY** principles. See CLAUDE.md Section 13.
 
@@ -216,6 +216,58 @@
 - [x] 4 sample service reports for completed tasks
 - [x] Parts used data (compressor, refrigerant, filters, etc.)
 - [x] Before/after photo attachments (placeholder URLs)
+
+---
+
+## CODE QUALITY: DRY/SOLID Refactoring ✅ (2026-01-27)
+
+### Shared Types (packages/shared/src/types/attendance.ts)
+- [x] Centralized attendance interfaces (TimeEntry, Break, CompanyLocation, AttendanceStatus)
+- [x] Break management types (BreakStatus, BreakSummary)
+- [x] Input/query param types (ClockInInput, ClockOutInput, AttendanceHistoryParams)
+- [x] Helper functions (isBreakActive, getBreakTypeLabel, getTimeEntryStatusLabel)
+- [x] Export from types/index.ts
+
+### Shared Utilities (packages/shared/src/utils/)
+- [x] `date.ts` - Date manipulation utilities
+  - [x] getStartOfDay(), getEndOfDay() - Date boundary calculations
+  - [x] buildDateRangeFilter(), buildSingleDayFilter() - Prisma-compatible filters
+  - [x] getStartOfWeek(), getEndOfWeek(), getStartOfMonth(), getEndOfMonth()
+  - [x] formatDuration(), formatTime(), formatShortDate(), formatFullDate()
+  - [x] calculateMinutesBetween(), toISODateString(), getRelativeDayLabel()
+- [x] `query.ts` - Query string building utilities
+  - [x] buildQueryString() - Filters null/undefined values automatically
+  - [x] buildUrlWithQuery() - Builds complete URLs with query parameters
+  - [x] parseQueryString() - Parse query string to object
+  - [x] buildPaginationParams(), buildDateRangeParams()
+- [x] Export from utils/index.ts
+
+### Mobile App Updates (apps/mobile/src/lib/api.ts)
+- [x] Import shared types and enums from @doergo/shared
+- [x] Remove duplicate type definitions (~95 lines removed)
+- [x] Replace URLSearchParams with buildUrlWithQuery()
+- [x] Re-export types for convenience
+
+### Web App Updates (apps/web-app/src/lib/api.ts)
+- [x] Import shared types and enums from @doergo/shared
+- [x] Remove duplicate type definitions (~70 lines removed)
+- [x] Replace 10+ URLSearchParams usages with buildUrlWithQuery()
+- [x] Keep web-specific types (AttendanceSummary, BreakSummary with different structure)
+
+### Task-Service Updates (apps/api/task-service/src/modules/attendance/)
+- [x] Replace hard-coded status strings with enums:
+  - [x] 'CLOCKED_IN' → TimeEntryStatus.CLOCKED_IN (10 occurrences)
+  - [x] 'CLOCKED_OUT' → TimeEntryStatus.CLOCKED_OUT
+  - [x] 'AUTO_OUT' → TimeEntryStatus.AUTO_OUT
+  - [x] 'PENDING' → ApprovalStatus.PENDING
+  - [x] 'APPROVED' → ApprovalStatus.APPROVED
+  - [x] 'REJECTED' → ApprovalStatus.REJECTED
+- [x] Replace manual date range calculations with shared utilities (8+ occurrences)
+- [ ] Split large attendance.service.ts (1729 lines) into focused services:
+  - [ ] attendance.service.ts - Core clock in/out (7 methods)
+  - [ ] break.service.ts - Break management (8 methods)
+  - [ ] attendance-reports.service.ts - Reports/analytics (4 methods)
+  - [ ] attendance-approvals.service.ts - Approval workflow (5 methods)
 
 ---
 
@@ -453,14 +505,17 @@
 | 2. Authentication | ✅ Complete | 100% |
 | 3. Task Management | ✅ Complete | 100% |
 | 3.1 Service Reports | ✅ Complete | 100% |
+| 3.2 Role System Overhaul | ✅ Complete | 100% |
 | 4. Comments & Attachments | 🔲 Pending | 0% |
 | 5. Real-time Updates | ✅ Complete | 100% |
 | 5.1 Route Tracking | ✅ Complete | 100% |
 | 6. Location Tracking | ✅ Complete | 100% |
 | 7. Notifications | 🔶 BullMQ Done | 40% |
+| 7.1 Attendance Foundation | ✅ Complete | 100% |
 | 8. Polish & Production | ✅ Critical Fixed | 25% |
+| Code Quality | ✅ DRY/SOLID | 90% |
 
-**Overall Progress**: ~78%
+**Overall Progress**: ~80%
 
 ### ✅ Security Status
 **All 5 CRITICAL vulnerabilities have been fixed.**
@@ -517,6 +572,9 @@ Before completing any task, verify:
 | 2026-01-20 | Socket.IO Monitoring | Admin UI integration, stats endpoints (/socket/stats, /socket/clients), enhanced logging |
 | 2026-01-21 | Task Detail UI | 60/40 layout, activity timeline, premium comments, cancel in dropdown menu |
 | 2026-01-22 | ServiceReport Feature | ServiceReport/ReportAttachment/PartUsed models, reports module (task-service + gateway), ServiceReportSection web component, mobile completion modal, seed data with 4 sample reports |
+| 2026-01-26 | Attendance Foundation | Phase 7.1 - TechnicianType enum, CompanyLocation model, Locations CRUD API, seed data |
+| 2026-01-26 | Role System Overhaul | Phase 3.2 - ADMIN role, Platform enum, granular permissions, migrations |
+| 2026-01-27 | DRY/SOLID Refactoring | Shared attendance types, date utilities, query string builder, removed duplicate types from mobile/web (~165 lines), replaced hard-coded strings with enums |
 
 ---
 
@@ -586,6 +644,39 @@ import {
 // React Components (for web apps)
 import { AnimatedLogo } from '@doergo/shared/components';
 // Props: size ('small' | 'default' | 'large'), variant ('light' | 'dark'), primaryColor (hex)
+
+// Date Utilities (2026-01-27)
+import {
+  getStartOfDay, getEndOfDay,         // Date boundary calculations
+  buildDateRangeFilter,                // Prisma-compatible date filter
+  buildSingleDayFilter,                // Single day filter
+  getStartOfWeek, getEndOfWeek,        // Week boundaries
+  getStartOfMonth, getEndOfMonth,      // Month boundaries
+  formatDuration,                      // "1h 30m" format
+  formatTime, formatShortDate,         // Display formatting
+  formatFullDate, getRelativeDayLabel, // "Today", "Yesterday", etc.
+  calculateMinutesBetween,             // Minutes between dates
+  toISODateString,                     // "YYYY-MM-DD" format
+} from '@doergo/shared';
+
+// Query String Utilities (2026-01-27)
+import {
+  buildQueryString,        // Build query string from object (filters null/undefined)
+  buildUrlWithQuery,       // Build URL with query string
+  parseQueryString,        // Parse query string to object
+  buildPaginationParams,   // { page, limit } helper
+  buildDateRangeParams,    // { startDate, endDate } helper
+} from '@doergo/shared';
+
+// Attendance Types (2026-01-27)
+import {
+  TimeEntry, Break, CompanyLocation, AttendanceStatus,
+  BreakStatus, ClockInInput, ClockOutInput,
+  AttendanceHistoryParams, PaginatedResponse,
+} from '@doergo/shared';
+
+// Attendance Helper Functions
+import { isBreakActive, getBreakTypeLabel, getTimeEntryStatusLabel } from '@doergo/shared';
 ```
 
 ---

@@ -173,6 +173,7 @@ export const ROUTES = {
   // App tabs
   home: '/(app)' as const,
   tasks: '/(app)/(tabs)/tasks' as const,
+  attendance: '/(app)/(tabs)/attendance' as const,
   timeOff: '/(app)/(tabs)/time-off' as const,
   profile: '/(app)/(tabs)/profile' as const,
 

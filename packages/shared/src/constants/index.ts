@@ -8,3 +8,4 @@
 export * from './auth';
 export * from './task';
 export * from './design';
+export * from './attendance';

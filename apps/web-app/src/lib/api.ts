@@ -8,6 +8,32 @@
  * - Proactive refresh before token expiry
  */
 
+import {
+  TimeEntryStatus,
+  BreakType,
+  buildUrlWithQuery,
+} from '@doergo/shared';
+import type {
+  CompanyLocation,
+  TimeEntry,
+  Break,
+  BreakStatus,
+  BreakSummary as SharedBreakSummary,
+  AttendanceSummary as SharedAttendanceSummary,
+  AttendanceQueryParams as SharedAttendanceQueryParams,
+  PaginatedResponse,
+} from '@doergo/shared';
+
+// Re-export shared types for convenience
+export type {
+  CompanyLocation,
+  TimeEntry,
+  Break,
+  BreakStatus,
+  PaginatedResponse,
+};
+export { TimeEntryStatus, BreakType };
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface ApiResponse<T = unknown> {
@@ -281,6 +307,13 @@ export const authApi = {
         role: string;
         firstName: string;
         lastName: string;
+        organizationId?: string;
+        // Permission fields
+        platform: string;
+        canCreateTasks: boolean;
+        canViewAllTasks: boolean;
+        canAssignTasks: boolean;
+        canManageUsers: boolean;
       };
     }>('/auth/me');
 
@@ -576,22 +609,12 @@ export const tasksApi = {
 
   // Get all tasks with optional filters
   list: async (params?: TasksQueryParams) => {
-    const searchParams = new URLSearchParams();
-    if (params?.status && params.status !== 'all') {
-      searchParams.set('status', params.status);
-    }
-    if (params?.priority && params.priority !== 'all') {
-      searchParams.set('priority', params.priority);
-    }
-    if (params?.page) {
-      searchParams.set('page', String(params.page));
-    }
-    if (params?.limit) {
-      searchParams.set('limit', String(params.limit));
-    }
-
-    const queryString = searchParams.toString();
-    const endpoint = `/tasks${queryString ? `?${queryString}` : ''}`;
+    const endpoint = buildUrlWithQuery('/tasks', {
+      status: params?.status !== 'all' ? params?.status : undefined,
+      priority: params?.priority !== 'all' ? params?.priority : undefined,
+      page: params?.page,
+      limit: params?.limit,
+    });
 
     const response = await api.get<TasksListResponse>(endpoint);
 
@@ -1063,28 +1086,7 @@ export const assetsApi = {
 
   // Get all assets with optional filters
   getAssets: async (params?: AssetsQueryParams) => {
-    const searchParams = new URLSearchParams();
-    if (params?.categoryId) {
-      searchParams.set('categoryId', params.categoryId);
-    }
-    if (params?.typeId) {
-      searchParams.set('typeId', params.typeId);
-    }
-    if (params?.status) {
-      searchParams.set('status', params.status);
-    }
-    if (params?.search) {
-      searchParams.set('search', params.search);
-    }
-    if (params?.page) {
-      searchParams.set('page', String(params.page));
-    }
-    if (params?.limit) {
-      searchParams.set('limit', String(params.limit));
-    }
-
-    const queryString = searchParams.toString();
-    const endpoint = `/assets${queryString ? `?${queryString}` : ''}`;
+    const endpoint = buildUrlWithQuery('/assets', params ?? {});
 
     const response = await api.get<{
       success: boolean;
@@ -1269,16 +1271,7 @@ export const reportsApi = {
 
   // Get all service reports for an asset (maintenance history)
   getAssetReports: async (assetId: string, params?: { page?: number; limit?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.page) {
-      searchParams.set('page', String(params.page));
-    }
-    if (params?.limit) {
-      searchParams.set('limit', String(params.limit));
-    }
-
-    const queryString = searchParams.toString();
-    const endpoint = `/assets/${assetId}/reports${queryString ? `?${queryString}` : ''}`;
+    const endpoint = buildUrlWithQuery(`/assets/${assetId}/reports`, params ?? {});
 
     const response = await api.get<{
       success: boolean;
@@ -1343,6 +1336,390 @@ export const reportsApi = {
     const response = await api.delete<{ success: boolean; message: string }>(
       `/reports/${reportId}/parts/${partId}`
     );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+};
+
+// ============================================
+// ATTENDANCE TYPES & API
+// ============================================
+// Core attendance types imported from @doergo/shared (see imports at top)
+
+// Re-export isBreakActive from shared
+export { isBreakActive } from '@doergo/shared';
+
+// Web-specific BreakSummary (different structure from shared)
+export interface BreakSummary {
+  totalBreaks: number;
+  totalBreakMinutes: number;
+  averageBreakMinutes: number;
+  breaksByType: {
+    LUNCH: { count: number; totalMinutes: number; averageMinutes: number };
+    SHORT: { count: number; totalMinutes: number; averageMinutes: number };
+    OTHER: { count: number; totalMinutes: number; averageMinutes: number };
+  };
+}
+
+export interface AttendanceSummary {
+  period: {
+    startDate: string;
+    endDate: string;
+    workDays: number;
+  };
+  summary: {
+    totalHours: number;
+    totalShifts: number;
+    activeShifts: number;
+    autoClockOuts: number;
+    standardHours: number;
+    overtimeHours: number;
+    averageShiftHours: number;
+  };
+  byUser: Array<{
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+    totalHours: number;
+    shifts: number;
+    autoClockOuts: number;
+    locations: string[];
+    averageShiftHours: number;
+  }>;
+  byLocation: Array<{
+    location: {
+      id: string;
+      name: string;
+    };
+    totalHours: number;
+    shifts: number;
+    uniqueTechnicians: number;
+  }>;
+}
+
+export interface AttendanceQueryParams {
+  locationId?: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: TimeEntryStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface AttendanceListResponse {
+  success: boolean;
+  data: TimeEntry[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// Attendance API methods (ADMIN/DISPATCHER only)
+export const attendanceApi = {
+  // Get time entries for a specific location
+  getLocationEntries: async (locationId: string, params?: AttendanceQueryParams) => {
+    const endpoint = buildUrlWithQuery(`/attendance/locations/${locationId}/entries`, {
+      date: params?.date,
+      page: params?.page,
+      limit: params?.limit,
+    });
+
+    const response = await api.get<AttendanceListResponse>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Get all locations for the organization
+  getLocations: async () => {
+    const response = await api.get<{ success: boolean; data: CompanyLocation[] }>('/locations');
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Get all time entries for the organization (admin view)
+  getAllEntries: async (params?: AttendanceQueryParams) => {
+    const endpoint = buildUrlWithQuery('/attendance/all-entries', params ?? {});
+
+    const response = await api.get<AttendanceListResponse>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Get scheduler info (ADMIN only)
+  getSchedulerInfo: async () => {
+    const response = await api.get<{
+      repeatableJobs: Array<{
+        name: string;
+        id: string;
+        pattern?: string;
+        every?: number;
+        next: string | null;
+      }>;
+      queueStats: {
+        waiting: number;
+        active: number;
+        delayed: number;
+        completed: number;
+        failed: number;
+      };
+    }>('/attendance/scheduler/info');
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Manually trigger auto clock-out (ADMIN only)
+  triggerAutoClockOut: async (type: 'hourly' | 'midnight' = 'hourly') => {
+    const response = await api.post<{
+      success: boolean;
+      data: {
+        type: string;
+        processedCount: number;
+        entryIds: string[];
+        message: string;
+      };
+    }>(`/attendance/scheduler/trigger?type=${type}`, {});
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // =========================================================================
+  // REPORTS
+  // =========================================================================
+
+  // Get attendance summary for a date range
+  getSummary: async (params: { startDate: string; endDate: string; userId?: string }) => {
+    const endpoint = buildUrlWithQuery('/attendance/reports/summary', params);
+
+    const response = await api.get<{
+      success: boolean;
+      data: AttendanceSummary;
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Get weekly report
+  getWeeklyReport: async (params?: { weekStartDate?: string; userId?: string }) => {
+    const endpoint = buildUrlWithQuery('/attendance/reports/weekly', params ?? {});
+
+    const response = await api.get<{
+      success: boolean;
+      data: AttendanceSummary;
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Get monthly report
+  getMonthlyReport: async (params?: { year?: number; month?: number; userId?: string }) => {
+    const endpoint = buildUrlWithQuery('/attendance/reports/monthly', params ?? {});
+
+    const response = await api.get<{
+      success: boolean;
+      data: AttendanceSummary;
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Export attendance to CSV
+  exportToCSV: async (params: { startDate: string; endDate: string; userId?: string }) => {
+    const endpoint = buildUrlWithQuery('/attendance/reports/export', params);
+
+    const response = await api.get<{
+      success: boolean;
+      data: {
+        filename: string;
+        content: string;
+        mimeType: string;
+        recordCount: number;
+      };
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // =========================================================================
+  // APPROVALS
+  // =========================================================================
+
+  // Get pending approvals
+  getPendingApprovals: async (params?: { page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery('/attendance/approvals/pending', params ?? {});
+
+    const response = await api.get<AttendanceListResponse>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Approve a time entry
+  approveEntry: async (entryId: string, notes?: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: TimeEntry;
+      message: string;
+    }>(`/attendance/approvals/${entryId}/approve`, { notes });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Reject a time entry
+  rejectEntry: async (entryId: string, reason: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: TimeEntry;
+      message: string;
+    }>(`/attendance/approvals/${entryId}/reject`, { reason });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Bulk approve entries
+  bulkApprove: async (entryIds: string[], notes?: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: {
+        approved: string[];
+        failed: Array<{ id: string; reason: string }>;
+      };
+      message: string;
+    }>('/attendance/approvals/bulk-approve', { entryIds, notes });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // =========================================================================
+  // BREAKS
+  // =========================================================================
+
+  // Get all active breaks (organization-wide)
+  getActiveBreaks: async () => {
+    const response = await api.get<{
+      success: boolean;
+      data: Break[];
+    }>('/attendance/breaks/active');
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Get break history with optional filters
+  getBreakHistory: async (params?: {
+    date?: string;
+    userId?: string;
+    type?: BreakType;
+    page?: number;
+    limit?: number;
+  }) => {
+    const endpoint = buildUrlWithQuery('/attendance/breaks/history', params ?? {});
+
+    const response = await api.get<{
+      success: boolean;
+      data: Break[];
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Get break summary for a date range
+  getBreakSummary: async (params: { startDate: string; endDate: string; userId?: string }) => {
+    const endpoint = buildUrlWithQuery('/attendance/breaks/summary', params);
+
+    const response = await api.get<{
+      success: boolean;
+      data: BreakSummary;
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // End a break manually (ADMIN only)
+  endBreakManually: async (breakId: string, notes?: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: Break;
+      message: string;
+    }>(`/attendance/breaks/${breakId}/end`, { notes });
 
     if (response.error) {
       throw new Error(response.error);

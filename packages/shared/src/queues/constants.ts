@@ -12,6 +12,8 @@ export const QUEUE_NAMES = {
   REPORTS: 'reports',
   NOTIFICATIONS: 'notifications',
   TRACKING: 'tracking',
+  LOCATIONS: 'locations',
+  ATTENDANCE: 'attendance',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -52,6 +54,28 @@ export const ASSET_JOB_TYPES = {
 } as const;
 
 export type AssetJobType = (typeof ASSET_JOB_TYPES)[keyof typeof ASSET_JOB_TYPES];
+
+// Location queue job types (company locations for attendance)
+export const LOCATION_JOB_TYPES = {
+  CREATE: 'location.create',
+  UPDATE: 'location.update',
+  DELETE: 'location.delete',
+  // Technician assignment operations
+  ASSIGN_TECHNICIAN: 'location.assignTechnician',
+  UPDATE_ASSIGNMENT: 'location.updateAssignment',
+  REMOVE_ASSIGNMENT: 'location.removeAssignment',
+} as const;
+
+export type LocationJobType = (typeof LOCATION_JOB_TYPES)[keyof typeof LOCATION_JOB_TYPES];
+
+// Attendance queue job types (clock-in/clock-out)
+export const ATTENDANCE_JOB_TYPES = {
+  CLOCK_IN: 'attendance.clockIn',
+  CLOCK_OUT: 'attendance.clockOut',
+  AUTO_CLOCK_OUT: 'attendance.autoClockOut',
+} as const;
+
+export type AttendanceJobType = (typeof ATTENDANCE_JOB_TYPES)[keyof typeof ATTENDANCE_JOB_TYPES];
 
 // Report queue job types
 export const REPORT_JOB_TYPES = {
