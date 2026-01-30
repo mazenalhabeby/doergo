@@ -1,21 +1,37 @@
 import {
   Controller,
   Get,
+  Post,
+  Delete,
   Param,
   Query,
+  Body,
   Inject,
   UseGuards,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
+import { IsString, IsOptional } from 'class-validator';
 import { Role, SERVICE_NAMES } from '@doergo/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
+
+class RegisterPushTokenDto {
+  @IsString()
+  token: string;
+
+  @IsString()
+  platform: string; // 'ios' | 'android' | 'web'
+
+  @IsString()
+  @IsOptional()
+  deviceId?: string;
+}
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -25,6 +41,7 @@ export class UsersController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   @Get('me')
@@ -32,6 +49,44 @@ export class UsersController {
   async getProfile(@CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
       this.authClient.send({ cmd: 'get_profile' }, { userId: user.id }),
+    );
+  }
+
+  // =========================================================================
+  // PUSH NOTIFICATIONS
+  // =========================================================================
+
+  @Post('push-token')
+  @ApiOperation({ summary: 'Register a push notification token for the current user' })
+  @ApiBody({ type: RegisterPushTokenDto })
+  async registerPushToken(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: RegisterPushTokenDto,
+  ) {
+    return firstValueFrom(
+      this.notificationClient.send(
+        { cmd: 'register_push_token' },
+        {
+          userId: user.id,
+          token: dto.token,
+          platform: dto.platform,
+          deviceId: dto.deviceId,
+        },
+      ),
+    );
+  }
+
+  @Delete('push-token/:token')
+  @ApiOperation({ summary: 'Remove a push notification token' })
+  async removePushToken(
+    @Param('token') token: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.notificationClient.send(
+        { cmd: 'remove_push_token' },
+        { token },
+      ),
     );
   }
 

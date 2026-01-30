@@ -11,8 +11,9 @@
 import {
   TimeEntryStatus,
   BreakType,
+  TechnicianType,
   buildUrlWithQuery,
-} from '@doergo/shared';
+} from '@doergo/shared/client';
 import type {
   CompanyLocation,
   TimeEntry,
@@ -22,7 +23,14 @@ import type {
   AttendanceSummary as SharedAttendanceSummary,
   AttendanceQueryParams as SharedAttendanceQueryParams,
   PaginatedResponse,
-} from '@doergo/shared';
+  TechnicianProfile,
+  TechnicianListItem,
+  TechnicianStats,
+  PerformanceMetrics,
+  CreateTechnicianInput,
+  UpdateTechnicianInput,
+  TechniciansQueryParams,
+} from '@doergo/shared/client';
 
 // Re-export shared types for convenience
 export type {
@@ -31,8 +39,15 @@ export type {
   Break,
   BreakStatus,
   PaginatedResponse,
+  TechnicianProfile,
+  TechnicianListItem,
+  TechnicianStats,
+  PerformanceMetrics,
+  CreateTechnicianInput,
+  UpdateTechnicianInput,
+  TechniciansQueryParams,
 };
-export { TimeEntryStatus, BreakType };
+export { TimeEntryStatus, BreakType, TechnicianType };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -1351,7 +1366,7 @@ export const reportsApi = {
 // Core attendance types imported from @doergo/shared (see imports at top)
 
 // Re-export isBreakActive from shared
-export { isBreakActive } from '@doergo/shared';
+export { isBreakActive } from '@doergo/shared/client';
 
 // Web-specific BreakSummary (different structure from shared)
 export interface BreakSummary {
@@ -1728,5 +1743,365 @@ export const attendanceApi = {
     return response.data;
   },
 };
+
+// ============================================================================
+// TECHNICIANS API
+// ============================================================================
+
+export const techniciansApi = {
+  // List technicians with filtering and pagination
+  list: async (params?: TechniciansQueryParams) => {
+    const endpoint = buildUrlWithQuery('/technicians', {
+      status: params?.status,
+      type: params?.type,
+      specialty: params?.specialty,
+      search: params?.search,
+      page: params?.page,
+      limit: params?.limit,
+      sortBy: params?.sortBy,
+      sortOrder: params?.sortOrder,
+    });
+
+    const response = await api.get<{
+      success: boolean;
+      data: TechnicianListItem[];
+      meta: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Get technician detail with stats
+  getById: async (id: string) => {
+    const response = await api.get<{
+      success: boolean;
+      data: TechnicianProfile & { stats: TechnicianStats };
+    }>(`/technicians/${id}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Create new technician
+  create: async (input: CreateTechnicianInput) => {
+    const response = await api.post<{
+      success: boolean;
+      data: TechnicianProfile;
+      generatedPassword?: string;
+    }>('/technicians', input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Update technician
+  update: async (id: string, input: UpdateTechnicianInput) => {
+    const response = await api.patch<{
+      success: boolean;
+      data: TechnicianProfile;
+    }>(`/technicians/${id}`, input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Deactivate technician (soft delete)
+  deactivate: async (id: string) => {
+    const response = await api.delete<{
+      success: boolean;
+      message: string;
+    }>(`/technicians/${id}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Get performance metrics
+  getPerformance: async (id: string, startDate?: string, endDate?: string) => {
+    const endpoint = buildUrlWithQuery(`/technicians/${id}/performance`, {
+      startDate,
+      endDate,
+    });
+
+    const response = await api.get<{
+      success: boolean;
+      data: PerformanceMetrics;
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Get task history
+  getTasks: async (id: string, params?: { status?: string; page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery(`/technicians/${id}/tasks`, params || {});
+
+    const response = await api.get<{
+      success: boolean;
+      data: Task[];
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Get attendance history
+  getAttendance: async (id: string, startDate?: string, endDate?: string) => {
+    const endpoint = buildUrlWithQuery(`/technicians/${id}/attendance`, {
+      startDate,
+      endDate,
+    });
+
+    const response = await api.get<{
+      success: boolean;
+      data: TimeEntry[];
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Get location assignments
+  getAssignments: async (id: string) => {
+    const response = await api.get<{
+      success: boolean;
+      data: {
+        id: string;
+        locationId: string;
+        isPrimary: boolean;
+        schedule: string[];
+        effectiveFrom: string;
+        effectiveTo?: string;
+        location: CompanyLocation;
+      }[];
+    }>(`/technicians/${id}/assignments`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // ========================================================================
+  // SCHEDULE MANAGEMENT
+  // ========================================================================
+
+  // Get technician weekly schedule
+  getSchedule: async (id: string) => {
+    const response = await api.get<{
+      success: boolean;
+      data: {
+        technician: { id: string; firstName: string; lastName: string };
+        schedule: ScheduleEntry[];
+      };
+    }>(`/technicians/${id}/schedule`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Set technician weekly schedule
+  setSchedule: async (id: string, schedule: ScheduleEntryInput[]) => {
+    const response = await api.post<{
+      success: boolean;
+      data: ScheduleEntry[];
+    }>(`/technicians/${id}/schedule`, { schedule });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // ========================================================================
+  // TIME-OFF MANAGEMENT
+  // ========================================================================
+
+  // Get technician time-off requests
+  getTimeOff: async (id: string, status?: TimeOffStatus) => {
+    const endpoint = buildUrlWithQuery(`/technicians/${id}/time-off`, { status });
+
+    const response = await api.get<{
+      success: boolean;
+      data: TimeOffRequest[];
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
+  // Request time off
+  requestTimeOff: async (id: string, data: { startDate: string; endDate: string; reason?: string }) => {
+    const response = await api.post<{
+      success: boolean;
+      data: TimeOffRequest;
+    }>(`/technicians/${id}/time-off`, data);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Approve or reject time-off request
+  approveTimeOff: async (timeOffId: string, approved: boolean, rejectionReason?: string) => {
+    const response = await api.patch<{
+      success: boolean;
+      data: TimeOffRequest;
+    }>(`/technicians/time-off/${timeOffId}/approve`, { approved, rejectionReason });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Cancel time-off request
+  cancelTimeOff: async (timeOffId: string) => {
+    const response = await api.delete<{
+      success: boolean;
+      data: TimeOffRequest;
+    }>(`/technicians/time-off/${timeOffId}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // ========================================================================
+  // AVAILABILITY
+  // ========================================================================
+
+  // Get all technicians availability for a date
+  getAvailability: async (date?: string) => {
+    const endpoint = buildUrlWithQuery('/technicians/availability', { date });
+
+    const response = await api.get<{
+      success: boolean;
+      data: AvailabilityResponse;
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+};
+
+// ========================================================================
+// TYPES FOR AVAILABILITY
+// ========================================================================
+
+export interface ScheduleEntry {
+  id: string;
+  technicianId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScheduleEntryInput {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive?: boolean;
+  notes?: string;
+}
+
+export type TimeOffStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+
+export interface TimeOffRequest {
+  id: string;
+  technicianId: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  status: TimeOffStatus;
+  approvedById?: string;
+  approvedBy?: { id: string; firstName: string; lastName: string };
+  approvedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TechnicianAvailability {
+  id: string;
+  firstName: string;
+  lastName: string;
+  technicianType: TechnicianType;
+  isAvailable: boolean;
+  onTimeOff: boolean;
+  schedule: {
+    startTime: string;
+    endTime: string;
+    notes?: string;
+  } | null;
+  timeOff: {
+    startDate: string;
+    endDate: string;
+    reason?: string;
+  } | null;
+}
+
+export interface AvailabilityResponse {
+  date: string;
+  dayOfWeek: number;
+  dayName: string;
+  technicians: TechnicianAvailability[];
+  summary: {
+    total: number;
+    available: number;
+    onTimeOff: number;
+    notScheduled: number;
+  };
+}
 
 export default api;

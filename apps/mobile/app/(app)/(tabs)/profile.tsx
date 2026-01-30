@@ -3,6 +3,7 @@ import { useRouter, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import {
   COLORS,
   SPACING,
@@ -15,6 +16,7 @@ import {
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { unregisterPushToken } = usePushNotifications();
   const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
@@ -27,6 +29,8 @@ export default function ProfileScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
+            // Unregister push token before logging out
+            await unregisterPushToken();
             await logout();
             router.replace(ROUTES.login as Href);
           },

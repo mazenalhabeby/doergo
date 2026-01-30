@@ -272,6 +272,14 @@ export interface Break extends BaseEntity {
   endedAt?: Date;
   durationMinutes?: number;
   notes?: string;
+  // Populated relations (from API response)
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  };
+  location?: CompanyLocation;
 }
 
 // Time Entry interface (clock-in/clock-out records)
@@ -520,3 +528,6 @@ export interface CompleteTaskInput {
 
 // Export attendance types
 export * from './attendance';
+
+// Export technician types
+export * from './technician';

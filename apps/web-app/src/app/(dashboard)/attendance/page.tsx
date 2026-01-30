@@ -107,18 +107,23 @@ function GeofenceIndicator({ withinGeofence }: { withinGeofence: boolean }) {
 }
 
 // Format duration from minutes
-function formatDuration(minutes: number | null): string {
-  if (minutes === null) return "-"
+function formatDuration(minutes: number | null | undefined): string {
+  if (minutes === null || minutes === undefined) return "-"
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
   if (hours === 0) return `${mins}m`
   return `${hours}h ${mins}m`
 }
 
+// Parse date input (handles both Date objects and ISO strings)
+function toDate(dateInput: Date | string): Date {
+  return dateInput instanceof Date ? dateInput : parseISO(dateInput)
+}
+
 // Format time
-function formatTime(dateString: string | null): string {
-  if (!dateString) return "-"
-  return format(parseISO(dateString), "h:mm a")
+function formatTime(dateInput: Date | string | null): string {
+  if (!dateInput) return "-"
+  return format(toDate(dateInput), "h:mm a")
 }
 
 // Stats card component
@@ -858,7 +863,7 @@ export default function AttendancePage() {
                             {formatTime(entry.clockInAt)}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {format(parseISO(entry.clockInAt), "MMM d")}
+                            {format(toDate(entry.clockInAt), "MMM d")}
                           </p>
                         </div>
                       </TableCell>
@@ -869,7 +874,7 @@ export default function AttendancePage() {
                               {formatTime(entry.clockOutAt)}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {format(parseISO(entry.clockOutAt), "MMM d")}
+                              {format(toDate(entry.clockOutAt), "MMM d")}
                             </p>
                           </div>
                         ) : (
@@ -1180,7 +1185,7 @@ export default function AttendancePage() {
                           </div>
                         </TableCell>
                         <TableCell>{entry.location?.name || "Unknown"}</TableCell>
-                        <TableCell>{format(parseISO(entry.clockInAt), "MMM d, yyyy")}</TableCell>
+                        <TableCell>{format(toDate(entry.clockInAt), "MMM d, yyyy")}</TableCell>
                         <TableCell>{formatTime(entry.clockInAt)}</TableCell>
                         <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt) : "-"}</TableCell>
                         <TableCell className="font-medium">{formatDuration(entry.totalMinutes)}</TableCell>

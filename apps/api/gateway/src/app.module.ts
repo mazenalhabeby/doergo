@@ -17,6 +17,7 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { TechniciansModule } from './modules/technicians/technicians.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -60,6 +61,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     ReportsModule,
     LocationsModule,
     AttendanceModule,
+    TechniciansModule,
   ],
   controllers: [AppController],
   providers: [

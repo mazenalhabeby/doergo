@@ -68,11 +68,11 @@ export function formatDuration(minutes: number | null | undefined): string {
 }
 
 /**
- * Format a date string to time only (e.g., "2:30 PM")
+ * Format a date to time only (e.g., "2:30 PM")
  */
-export function formatTime(dateString: string | null | undefined): string {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
+export function formatTime(dateInput: Date | string | null | undefined): string {
+  if (!dateInput) return '-';
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
@@ -81,11 +81,11 @@ export function formatTime(dateString: string | null | undefined): string {
 }
 
 /**
- * Format a date string to short date (e.g., "Jan 27")
+ * Format a date to short date (e.g., "Jan 27")
  */
-export function formatShortDate(dateString: string | null | undefined): string {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
+export function formatShortDate(dateInput: Date | string | null | undefined): string {
+  if (!dateInput) return '-';
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -93,11 +93,11 @@ export function formatShortDate(dateString: string | null | undefined): string {
 }
 
 /**
- * Format a date string to full date (e.g., "January 27, 2026")
+ * Format a date to full date (e.g., "January 27, 2026")
  */
-export function formatFullDate(dateString: string | null | undefined): string {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
+export function formatFullDate(dateInput: Date | string | null | undefined): string {
+  if (!dateInput) return '-';
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   return date.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -108,8 +108,8 @@ export function formatFullDate(dateString: string | null | undefined): string {
 /**
  * Get relative day label (Today, Yesterday, or formatted date)
  */
-export function getRelativeDayLabel(dateString: string): string {
-  const date = new Date(dateString);
+export function getRelativeDayLabel(dateInput: Date | string): string {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -117,7 +117,7 @@ export function getRelativeDayLabel(dateString: string): string {
   if (date.toDateString() === today.toDateString()) return 'Today';
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
 
-  return formatShortDate(dateString);
+  return formatShortDate(dateInput);
 }
 
 /**

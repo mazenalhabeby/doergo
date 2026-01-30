@@ -19,6 +19,7 @@
     "@nestjs/websockets": "^11.0.0",
     "@socket.io/admin-ui": "^0.5.1",
     "bullmq": "^5.34.0",
+    "expo-server-sdk": "^4.0.0",
     "ioredis": "^5.4.2",
     "nodemailer": "^6.9.16",
     "reflect-metadata": "^0.2.2",

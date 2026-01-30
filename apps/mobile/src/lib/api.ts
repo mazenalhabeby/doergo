@@ -9,7 +9,7 @@ import {
   TaskStatus,
   TaskPriority,
   buildUrlWithQuery,
-} from '@doergo/shared';
+} from '@doergo/shared/client';
 import type {
   CompanyLocation,
   TimeEntry,
@@ -20,7 +20,7 @@ import type {
   ClockOutInput,
   AttendanceHistoryParams,
   PaginatedResponse,
-} from '@doergo/shared';
+} from '@doergo/shared/client';
 
 // Re-export types for convenience
 export type {
@@ -613,6 +613,30 @@ export const attendanceApi = {
   // Get current break status
   getBreakStatus: async (): Promise<BreakStatus> => {
     return fetchWithAuth<BreakStatus>('/attendance/breaks/status', { method: 'GET' });
+  },
+};
+
+// Push Token API - for registering and removing push notification tokens
+export interface RegisterPushTokenInput {
+  token: string;
+  platform: 'ios' | 'android' | 'web';
+  deviceId?: string;
+}
+
+export const pushApi = {
+  // Register a push notification token
+  registerToken: async (input: RegisterPushTokenInput): Promise<{ success: boolean }> => {
+    return fetchWithAuth<{ success: boolean }>('/users/push-token', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  // Remove a push notification token
+  removeToken: async (token: string): Promise<{ success: boolean }> => {
+    return fetchWithAuth<{ success: boolean }>(`/users/push-token/${encodeURIComponent(token)}`, {
+      method: 'DELETE',
+    });
   },
 };
 

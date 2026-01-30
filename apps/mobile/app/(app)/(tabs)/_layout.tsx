@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useEffect } from 'react';
 import { TokenMonitor, AnimatedLogo } from '../../../src/components';
+import { useAuth } from '../../../src/contexts/auth-context';
 
 const PRIMARY_COLOR = '#2563EB';
 
@@ -120,14 +121,33 @@ function TabItem({
 // Custom Tab Bar - Full width premium design
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const isFullTime = user?.technicianType === 'FULL_TIME';
+
+  // Filter routes based on technician type
+  const visibleRoutes = state.routes.filter((route: any) => {
+    if (isFullTime) {
+      // FULL_TIME: Hide tasks tab (attendance-focused)
+      return route.name !== 'tasks';
+    } else {
+      // FREELANCER: Hide attendance tab only (task-focused, but needs time-off for availability)
+      return route.name !== 'attendance';
+    }
+  });
+
+  // Calculate adjusted focus index
+  const getAdjustedIndex = () => {
+    const currentRoute = state.routes[state.index];
+    return visibleRoutes.findIndex((r: any) => r.key === currentRoute.key);
+  };
 
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom }]}>
       <View style={styles.tabBarInner}>
-        {state.routes.map((route: any, index: number) => {
+        {visibleRoutes.map((route: any, index: number) => {
           const { options } = descriptors[route.key];
           const label = options.title || route.name;
-          const isFocused = state.index === index;
+          const isFocused = getAdjustedIndex() === index;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -157,6 +177,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const isFullTime = user?.technicianType === 'FULL_TIME';
+
   return (
     <View style={styles.container}>
       {/* Status bar with dark icons for white header */}
@@ -177,20 +200,25 @@ export default function TabsLayout() {
             headerTitle: () => <LogoHeader subtitle="Home" />,
           }}
         />
+        {/* Tasks tab - only for FREELANCER */}
         <Tabs.Screen
           name="tasks"
           options={{
             title: 'Tasks',
             headerTitle: () => <LogoHeader subtitle="Tasks" />,
+            href: isFullTime ? null : '/tasks',
           }}
         />
+        {/* Clock tab - only for FULL_TIME */}
         <Tabs.Screen
           name="attendance"
           options={{
             title: 'Clock',
             headerTitle: () => <LogoHeader subtitle="Attendance" />,
+            href: isFullTime ? '/attendance' : null,
           }}
         />
+        {/* Time Off tab - for both FULL_TIME and FREELANCER (availability tracking) */}
         <Tabs.Screen
           name="time-off"
           options={{

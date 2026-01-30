@@ -108,6 +108,75 @@ enum BreakType {
   OTHER    // Other break type
 }
 
+// Time-off request status
+enum TimeOffStatus {
+  PENDING    // Awaiting manager approval
+  APPROVED   // Manager approved
+  REJECTED   // Manager rejected
+  CANCELED   // Technician canceled the request
+}
+
+// ==================== MONITORING ENUMS ====================
+
+// Monitoring event types for activity logging
+enum MonitoringEventType {
+  USER_LOGIN
+  USER_LOGOUT
+  USER_LOGIN_FAILED
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  TASK_CREATED
+  TASK_ASSIGNED
+  TASK_UNASSIGNED
+  TASK_STATUS_CHANGED
+  TASK_COMPLETED
+  TASK_DELETED
+  NOTIFICATION_SENT
+  NOTIFICATION_FAILED
+  CLOCK_IN
+  CLOCK_OUT
+  GEOFENCE_VIOLATION
+  TECHNICIAN_OFFLINE
+  TASK_OVERDUE
+  API_ERROR
+  SERVICE_DOWN
+  SERVICE_UP
+}
+
+// Alert severity levels
+enum AlertSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+// Alert status
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+// Notification delivery channel
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  SMS
+  SOCKET
+}
+
+// Notification delivery status
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+}
+
 // Models
 model Organization {
   id        String   @id @default(cuid())
@@ -135,6 +204,12 @@ model Organization {
 
   // Time entries for attendance tracking
   timeEntries TimeEntry[]
+
+  // Monitoring
+  activityLogs          ActivityLog[]
+  notificationDeliveries NotificationDelivery[]
+  alerts                Alert[]
+  dailyMetrics          DailyMetric[]
 
   @@map("organizations")
 }
@@ -217,6 +292,20 @@ model User {
   approvedTimeEntries  TimeEntry[]  @relation("ApprovedTimeEntries")  // Time entries approved by this user
   editedTimeEntries    TimeEntry[]  @relation("EditedTimeEntries")    // Time entries edited by this user
 
+  // Monitoring
+  activityLogs         ActivityLog[] @relation("ActivityLogUser")     // Activity performed by this user
+  targetedActivityLogs ActivityLog[] @relation("ActivityLogTarget")   // Activity targeting this user
+  notificationDeliveries NotificationDelivery[]                       // Notifications sent to this user
+  alerts               Alert[]                                        // Alerts related to this user
+
+  // Push notifications
+  pushTokens           UserPushToken[]                                // Device push tokens for notifications
+
+  // Availability management
+  schedules            TechnicianSchedule[]                           // Weekly recurring schedule
+  timeOffRequests      TimeOff[]             @relation("TechnicianTimeOff")   // Time-off requests submitted
+  approvedTimeOffs     TimeOff[]             @relation("TimeOffApprover")     // Time-off requests approved by this user
+
   @@index([organizationId])
   @@index([role])
   @@index([email])
@@ -257,6 +346,23 @@ model PasswordResetToken {
   @@index([userId])
   @@index([tokenHash])
   @@map("password_reset_tokens")
+}
+
+// Push notification tokens for mobile devices
+model UserPushToken {
+  id        String   @id @default(cuid())
+  token     String   @unique  // Expo push token (e.g., ExponentPushToken[xxx])
+  platform  String             // 'ios' | 'android' | 'web'
+  deviceId  String?            // Optional device identifier for deduplication
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("user_push_tokens")
 }
 
 model Task {
@@ -703,4 +809,225 @@ model Break {
   @@index([timeEntryId])
   @@index([startedAt])
   @@map("breaks")
+}
+
+// ==================== AVAILABILITY & SCHEDULING ====================
+
+// Technician recurring weekly schedule (e.g., "Monday 9:00-17:00")
+model TechnicianSchedule {
+  id String @id @default(cuid())
+
+  technicianId String
+  technician   User @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
+  startTime String   // "09:00" (24h format)
+  endTime   String   // "17:00" (24h format)
+  isActive  Boolean  @default(true)
+
+  // Optional: schedule can be location-specific
+  notes String?      // Optional note (e.g., "Remote day")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Each technician can only have one schedule entry per day
+  @@unique([technicianId, dayOfWeek])
+  @@index([technicianId])
+  @@index([dayOfWeek, isActive])
+  @@map("technician_schedules")
+}
+
+// Time-off request (vacation, sick day, personal leave)
+model TimeOff {
+  id String @id @default(cuid())
+
+  technicianId String
+  technician   User @relation("TechnicianTimeOff", fields: [technicianId], references: [id], onDelete: Cascade)
+
+  startDate DateTime @db.Date  // First day of time off
+  endDate   DateTime @db.Date  // Last day of time off (inclusive)
+  reason    String?            // "Vacation", "Sick leave", "Personal", etc.
+
+  status TimeOffStatus @default(PENDING)
+
+  // Approval workflow
+  approvedById String?
+  approvedBy   User?    @relation("TimeOffApprover", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+  rejectionReason String?  // If rejected, reason why
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([technicianId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("time_off_requests")
+}
+
+// ==================== MONITORING MODELS ====================
+
+// Activity log for audit trail
+model ActivityLog {
+  id              String              @id @default(cuid())
+  eventType       MonitoringEventType
+
+  // Who performed the action
+  userId          String?
+  user            User?               @relation("ActivityLogUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  // Who was affected (e.g., user being assigned, deleted)
+  targetUserId    String?
+  targetUser      User?               @relation("ActivityLogTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  // Resource context
+  resourceType    String?             // "task", "user", "report", "timeEntry", etc.
+  resourceId      String?
+
+  // Additional context
+  metadata        Json?               // { previousStatus, newStatus, reason, etc. }
+  ipAddress       String?
+  userAgent       String?
+
+  // Organization scope
+  organizationId  String
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime            @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("activity_logs")
+}
+
+// System health metrics (time-series data)
+model HealthMetric {
+  id              String   @id @default(cuid())
+  serviceName     String   // "gateway", "auth-service", "task-service", etc.
+  metricType      String   // "latency", "error_rate", "request_count", "memory_usage"
+  value           Float
+  timestamp       DateTime @default(now())
+  metadata        Json?    // { endpoint, statusCode, errorMessage, etc. }
+
+  @@index([serviceName, timestamp])
+  @@index([metricType, timestamp])
+  @@map("health_metrics")
+}
+
+// Notification delivery tracking
+model NotificationDelivery {
+  id              String              @id @default(cuid())
+  channel         NotificationChannel
+  status          NotificationStatus  @default(PENDING)
+
+  // Recipient
+  recipientId     String
+  recipient       User                @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // Event that triggered the notification
+  eventType       String              // "task.assigned", "task.completed", "alert.raised", etc.
+  payload         Json?               // The notification content/data
+
+  // Delivery tracking
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  failureReason   String?
+  retryCount      Int                 @default(0)
+
+  // Organization scope
+  organizationId  String
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([recipientId, createdAt])
+  @@index([channel, status])
+  @@index([eventType])
+  @@map("notification_deliveries")
+}
+
+// Real-time alerts
+model Alert {
+  id              String        @id @default(cuid())
+  type            String        // "technician_offline", "task_overdue", "geofence_violation", "high_error_rate"
+  severity        AlertSeverity @default(WARNING)
+  status          AlertStatus   @default(ACTIVE)
+
+  // Alert content
+  title           String
+  message         String
+  metadata        Json?         // { technicianName, taskId, lastSeen, overdueBy, etc. }
+
+  // Related entities (optional)
+  userId          String?       // Related user (e.g., offline technician)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  taskId          String?       // Related task
+
+  // Lifecycle tracking
+  acknowledgedAt  DateTime?
+  acknowledgedById String?
+  resolvedAt      DateTime?
+  resolvedById    String?
+
+  // Organization scope
+  organizationId  String
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([organizationId, status])
+  @@index([severity, status])
+  @@index([type, createdAt])
+  @@index([userId])
+  @@map("alerts")
+}
+
+// Daily aggregated metrics for reports (computed nightly)
+model DailyMetric {
+  id              String   @id @default(cuid())
+  date            DateTime @db.Date
+
+  // Organization scope
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Task metrics
+  tasksCreated        Int      @default(0)
+  tasksCompleted      Int      @default(0)
+  tasksCanceled       Int      @default(0)
+  tasksOverdue        Int      @default(0)
+  avgCompletionTime   Float?   // Average time to complete tasks (in minutes)
+
+  // User metrics
+  activeUsers         Int      @default(0)
+  loginCount          Int      @default(0)
+  failedLoginCount    Int      @default(0)
+
+  // Attendance metrics
+  clockInCount        Int      @default(0)
+  avgWorkHours        Float?   // Average hours worked
+  geofenceViolations  Int      @default(0)
+
+  // Notification metrics
+  emailsSent          Int      @default(0)
+  emailsFailed        Int      @default(0)
+  pushSent            Int      @default(0)
+  pushFailed          Int      @default(0)
+
+  // Alert metrics
+  alertsRaised        Int      @default(0)
+  alertsResolved      Int      @default(0)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([date, organizationId])
+  @@index([organizationId, date])
+  @@map("daily_metrics")
 }

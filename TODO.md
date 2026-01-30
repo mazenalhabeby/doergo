@@ -1,7 +1,7 @@
 # DOERGO - Implementation Checklist
 
 > **Usage**: Check off items as completed. Use `[x]` for done, `[ ]` for pending, `[~]` for in progress.
-> **Last Updated**: 2026-01-27 (DRY/SOLID Refactoring)
+> **Last Updated**: 2026-01-30 (Push Notifications + Availability Calendar)
 >
 > **IMPORTANT**: All code MUST follow **SOLID** and **DRY** principles. See CLAUDE.md Section 13.
 
@@ -271,6 +271,107 @@
 
 ---
 
+## PHASE 3.3: Technician Management ✅ COMPLETE (2026-01-30)
+
+### Backend - Gateway Module
+- [x] `technicians.module.ts` - Module with microservice clients
+- [x] `technicians.controller.ts` - REST endpoints with @Roles guards
+- [x] `technicians.service.ts` - Proxy to auth-service & task-service
+- [x] DTOs: `CreateTechnicianDto`, `UpdateTechnicianDto`, `ListTechniciansDto`
+
+### API Endpoints
+- [x] `GET /technicians` - List with filters (status, type, specialty, search), pagination, sorting
+- [x] `POST /technicians` - Create technician (auto-generate password if omitted)
+- [x] `GET /technicians/:id` - Get detail with stats (tasks, attendance, performance)
+- [x] `PATCH /technicians/:id` - Update profile
+- [x] `DELETE /technicians/:id` - Deactivate (soft delete)
+- [x] `GET /technicians/:id/performance` - Performance metrics & trends
+- [x] `GET /technicians/:id/tasks` - Task history
+- [x] `GET /technicians/:id/attendance` - Attendance records
+- [x] `GET /technicians/:id/assignments` - Location assignments
+
+### Shared Types (`packages/shared/src/types/technician.ts`)
+- [x] `TechnicianProfile` - Full technician detail
+- [x] `TechnicianListItem` - List view item
+- [x] `TechnicianStats` - Tasks, attendance, performance stats
+- [x] `PerformanceMetrics` - Summary, trends, comparison
+- [x] `PerformanceTrendPoint` - Time-series data point
+- [x] Helper functions:
+  - [x] `getTechnicianTypeLabel()`, `getTechnicianTypeColor()`
+  - [x] `isTechnicianOnline()` - Check if location updated within 5 min
+  - [x] `getAvailabilityStatus()`, `getAvailabilityLabel()`, `getAvailabilityColor()`
+  - [x] `formatRating()`
+  - [x] `SPECIALTY_OPTIONS` array
+
+### Web - Technicians List (`/technicians`)
+- [x] Table with pagination (10 per page)
+- [x] Search by name/email
+- [x] Filters: Status (active/inactive/all), Type (Full-Time/Freelancer), Specialty
+- [x] Sorting: name, email, rating, taskCount, createdAt
+- [x] Availability indicators (Available/Busy/At Capacity)
+- [x] Online status (green dot)
+- [x] Rating display with stars + count
+- [x] Active task count vs max daily jobs
+- [x] Action dropdown (View, Edit, Deactivate)
+- [x] "Add Technician" button (ADMIN & DISPATCHER)
+- [x] Max-width container styling
+
+### Web - Create Technician (`/technicians/new`)
+- [x] Form: First Name, Last Name, Email (required)
+- [x] Optional password (auto-generated if blank)
+- [x] Employment Type dropdown (Freelancer/Full-Time)
+- [x] Specialty dropdown (6 options)
+- [x] Max Daily Jobs input (1-20, default: 5)
+- [x] Success modal showing generated password (copy button)
+- [x] Permission: ADMIN & DISPATCHER
+- [x] Max-width container styling
+
+### Web - Technician Detail (`/technicians/:id`)
+- [x] Header: Avatar, name, type badge, status badge, email, rating
+- [x] Action menu (Edit, Deactivate/Reactivate)
+- [x] **Overview Tab** (default):
+  - [x] Stats cards (Completion Rate, On-Time Rate, Tasks Completed, Hours This Week)
+  - [x] Active Tasks card
+  - [x] Recent Activity card
+- [x] **Tasks Tab**:
+  - [x] Task history table (Task, Status, Priority, Due Date, Created)
+  - [x] Clickable rows → task detail
+- [x] **Attendance Tab**:
+  - [x] Clock-in/out records table
+  - [x] Duration formatting (h:mm)
+  - [x] Geofence status badge (In Zone / Out of Zone)
+- [x] **Locations Tab**:
+  - [x] Location assignment cards
+  - [x] Primary location highlight
+  - [x] Schedule & effective date display
+- [x] **Performance Tab**:
+  - [x] Summary cards (3-column)
+  - [x] Tasks Completed line chart (Recharts)
+  - [x] Performance Metrics dual-axis chart (On-Time Rate + Hours)
+  - [x] Period Comparison card with ±% changes
+- [x] Max-width container styling (loading, error, main)
+
+### Web - Availability Calendar (`/technicians/availability`)
+- [x] View mode toggle: Week / Month
+- [x] Technician filter dropdown
+- [x] Navigation: Today, Prev, Next
+- [x] Calendar grid with weekday headers
+- [x] Week view: Technician names (up to 4, "+N more")
+- [x] Month view: Colored dots + count
+- [x] Today highlight (blue circle)
+- [x] Summary cards (Total, Online, Coverage Gaps)
+- [x] Legend (Online, Offline, Today)
+- [x] Permission: ADMIN & DISPATCHER
+- [x] Max-width container styling
+
+### Permissions Update
+- [x] DISPATCHER can now create technicians
+- [x] DISPATCHER can now edit technicians
+- [x] DISPATCHER can now deactivate technicians
+- [x] Updated `canManage` check in all technician pages
+
+---
+
 ## PHASE 4: Comments & Attachments 🔲
 
 ### Backend - Task Service
@@ -413,7 +514,7 @@
 
 ---
 
-## PHASE 7: Notifications 🔲
+## PHASE 7: Notifications 🔶 (Push ✅, Email 🔲)
 
 ### Backend - BullMQ Infrastructure ✅
 - [x] BullMQ queue setup (task queue implemented)
@@ -425,28 +526,92 @@
 - [x] Automatic retries with exponential backoff
 - [x] Job persistence across restarts
 
-### Backend - Notification Service
+### Backend - Push Notifications ✅ COMPLETE (2026-01-30)
+- [x] `UserPushToken` model for storing Expo push tokens
+- [x] Database migration: `add_user_push_tokens`
+- [x] Push service using `expo-server-sdk` (Expo Push API)
+- [x] Gateway endpoints: `POST /users/push-token`, `DELETE /users/push-token/:token`
+- [x] MessagePattern handlers for token registration/removal
+- [x] Push notifications for task events (assigned, status changed, comments)
+- [x] Push notifications for attendance events (clock in/out)
+
+### Mobile - Push Notifications ✅ COMPLETE (2026-01-30)
+- [x] `usePushNotifications` hook with permission handling
+- [x] Android notification channels (default, tasks, attendance)
+- [x] Notification tap navigates to task detail
+- [x] Push token cleanup on logout
+- [x] expo-device dependency for device info
+
+### Backend - Email Notifications 🔲
 - [ ] Email job processor
-- [ ] Push notification job processor
 - [ ] Email templates (task created, assigned, completed)
-- [ ] FCM integration for push
+- [ ] SMTP configuration and Nodemailer integration
 
-### Triggers
-- [ ] Email on task created (to DISPATCHER)
-- [ ] Email on task assigned (to TECHNICIAN)
-- [ ] Email on task completed (to CLIENT)
-- [ ] Push on new assignment (to TECHNICIAN)
-- [ ] Push on status change (to relevant users)
-
-### Web
+### Web - In-App Notifications 🔲
 - [ ] Notification bell icon
 - [ ] Notification dropdown
 - [ ] Mark as read
+- [ ] Notification preferences page
 
-### Mobile
-- [ ] Push notification handling
-- [ ] Notification permissions
-- [ ] Deep linking from notification
+---
+
+## PHASE 7.1: Attendance Foundation ✅ COMPLETE (2026-01-26)
+
+- [x] `TechnicianType` enum (FREELANCER, FULL_TIME)
+- [x] `technicianType` field on User model
+- [x] `CompanyLocation` model (name, address, lat, lng, geofenceRadius)
+- [x] Database migration: `add_technician_type_and_company_locations`
+- [x] Locations module in task-service (service, processor, controller)
+- [x] Locations module in gateway (controller, service, queue service, DTOs)
+- [x] CRUD API endpoints: POST/GET/PATCH/DELETE `/api/v1/locations`
+- [x] Shared types and constants (`ATTENDANCE_CONSTANTS`, `LOCATION_JOB_TYPES`)
+- [x] Seed data: 3 sample company locations
+
+---
+
+## PHASE 7.2: Scheduling & Availability ✅ COMPLETE (2026-01-30)
+
+### Database Schema
+- [x] `TechnicianSchedule` model (weekly work schedule with day/start/end times)
+- [x] `TimeOff` model (vacation/sick leave with approval workflow)
+- [x] `TimeOffStatus` enum (PENDING, APPROVED, REJECTED, CANCELED)
+- [x] Database migration: `add_technician_schedules_and_time_off`
+
+### Backend - Task Service
+- [x] `technicians.service.ts` - Schedule, time-off, and availability logic
+- [x] `setSchedule()` - Upsert weekly schedule entries
+- [x] `getSchedule()` - Get weekly schedule for technician
+- [x] `requestTimeOff()` - Create time-off request
+- [x] `getTimeOff()` - Get time-off requests with status filter
+- [x] `approveTimeOff()` - Approve/reject time-off with reason
+- [x] `cancelTimeOff()` - Cancel own pending time-off request
+- [x] `getAvailability()` - Calculate availability for all technicians on date
+
+### Backend - Gateway
+- [x] REST endpoints with proper route ordering:
+  - [x] `GET /technicians/availability` - All availability for date
+  - [x] `PATCH /technicians/time-off/:id/approve` - Approve/reject
+  - [x] `DELETE /technicians/time-off/:id` - Cancel request
+  - [x] `GET /technicians/:id/schedule` - Get schedule
+  - [x] `POST /technicians/:id/schedule` - Set schedule
+  - [x] `GET /technicians/:id/time-off` - Get time-off requests
+  - [x] `POST /technicians/:id/time-off` - Request time off
+
+### Web - Availability Calendar
+- [x] Updated `/technicians/availability` to use real API data
+- [x] Fetches availability for each day in view
+- [x] Shows scheduled/time-off/not-scheduled status with tooltips
+- [x] Displays work hours and time-off reasons
+- [x] Summary cards with real counts
+- [x] Week and month views
+
+---
+
+## PHASE 7.3: Technician Assignment 🔲
+
+- [ ] `TechnicianAssignment` model (user → location mapping)
+- [ ] Assignment CRUD endpoints
+- [ ] Location-based schedule support
 
 ---
 
@@ -506,16 +671,19 @@
 | 3. Task Management | ✅ Complete | 100% |
 | 3.1 Service Reports | ✅ Complete | 100% |
 | 3.2 Role System Overhaul | ✅ Complete | 100% |
+| 3.3 Technician Management | ✅ Complete | 100% |
 | 4. Comments & Attachments | 🔲 Pending | 0% |
 | 5. Real-time Updates | ✅ Complete | 100% |
 | 5.1 Route Tracking | ✅ Complete | 100% |
 | 6. Location Tracking | ✅ Complete | 100% |
-| 7. Notifications | 🔶 BullMQ Done | 40% |
+| 7. Notifications (Push) | ✅ Complete | 100% |
+| 7. Notifications (Email) | 🔲 Pending | 0% |
 | 7.1 Attendance Foundation | ✅ Complete | 100% |
+| 7.2 Scheduling & Availability | ✅ Complete | 100% |
 | 8. Polish & Production | ✅ Critical Fixed | 25% |
 | Code Quality | ✅ DRY/SOLID | 90% |
 
-**Overall Progress**: ~80%
+**Overall Progress**: ~90%
 
 ### ✅ Security Status
 **All 5 CRITICAL vulnerabilities have been fixed.**
@@ -575,6 +743,9 @@ Before completing any task, verify:
 | 2026-01-26 | Attendance Foundation | Phase 7.1 - TechnicianType enum, CompanyLocation model, Locations CRUD API, seed data |
 | 2026-01-26 | Role System Overhaul | Phase 3.2 - ADMIN role, Platform enum, granular permissions, migrations |
 | 2026-01-27 | DRY/SOLID Refactoring | Shared attendance types, date utilities, query string builder, removed duplicate types from mobile/web (~165 lines), replaced hard-coded strings with enums |
+| 2026-01-30 | Technician Management | Phase 3.3 - Full technician CRUD API (9 endpoints), shared types (TechnicianProfile, TechnicianStats, PerformanceMetrics), web pages (list, create, detail with 5 tabs, availability calendar), DISPATCHER can now manage technicians |
+| 2026-01-30 | Push Notifications | Phase 6 (Push) - UserPushToken model, Expo Push API integration, task/attendance event notifications, mobile usePushNotifications hook with Android channels, notification tap navigation |
+| 2026-01-30 | Availability Calendar | Phase 7.2 - TechnicianSchedule and TimeOff models, schedule/time-off CRUD endpoints, time-off approval workflow, availability query API, web calendar with real API data |
 
 ---
 
@@ -677,6 +848,37 @@ import {
 
 // Attendance Helper Functions
 import { isBreakActive, getBreakTypeLabel, getTimeEntryStatusLabel } from '@doergo/shared';
+
+// Technician Types (2026-01-30)
+import {
+  TechnicianProfile,           // Full technician detail
+  TechnicianListItem,          // List view item
+  TechnicianStats,             // Tasks, attendance, performance stats
+  PerformanceMetrics,          // Summary, trends, comparison
+  PerformanceTrendPoint,       // Time-series data point
+  TechnicianType,              // FREELANCER | FULL_TIME
+} from '@doergo/shared';
+
+// Technician Helper Functions
+import {
+  getTechnicianTypeLabel,      // "Freelancer" | "Full-Time"
+  getTechnicianTypeColor,      // Badge color classes
+  isTechnicianOnline,          // Check if location updated within 5 min
+  getAvailabilityStatus,       // 'available' | 'busy' | 'at_capacity'
+  getAvailabilityLabel,        // "Available" | "Busy" | "At Capacity"
+  getAvailabilityColor,        // Badge color classes
+  formatRating,                // Rating display string
+  SPECIALTY_OPTIONS,           // Specialty dropdown options
+} from '@doergo/shared';
+
+// Schedule & Time-Off Types (2026-01-30)
+import {
+  ScheduleEntry,               // Weekly schedule entry (day, start, end, isActive)
+  TimeOffStatus,               // PENDING | APPROVED | REJECTED | CANCELED
+  TimeOffRequest,              // Time-off request with status
+  TechnicianAvailability,      // Availability for single technician
+  AvailabilityResponse,        // Bulk availability response
+} from '@doergo/shared';
 ```
 
 ---

@@ -1,5 +1,5 @@
 import { Controller, Get, Logger } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { EmailService } from './modules/email/email.service';
 import { PushService } from './modules/push/push.service';
 import { WebsocketGateway } from './modules/websocket/websocket.gateway';
@@ -50,6 +50,31 @@ export class NotificationController {
     };
   }
 
+  // =========================================================================
+  // PUSH TOKEN MANAGEMENT (MessagePattern - request/response)
+  // =========================================================================
+
+  @MessagePattern({ cmd: 'register_push_token' })
+  async registerPushToken(@Payload() data: {
+    userId: string;
+    token: string;
+    platform: string;
+    deviceId?: string;
+  }) {
+    this.logger.log(`Registering push token for user ${data.userId}`);
+    return this.pushService.registerPushToken(data);
+  }
+
+  @MessagePattern({ cmd: 'remove_push_token' })
+  async removePushToken(@Payload() data: { token: string }) {
+    this.logger.log(`Removing push token: ${data.token.substring(0, 20)}...`);
+    return this.pushService.removePushToken(data.token);
+  }
+
+  // =========================================================================
+  // TASK EVENTS
+  // =========================================================================
+
   @EventPattern('task_created')
   async handleTaskCreated(@Payload() data: any) {
     this.logger.log(`Task created event received: ${data.id}`);
@@ -63,14 +88,37 @@ export class NotificationController {
   async handleTaskAssigned(@Payload() data: any) {
     this.logger.log(`Task assigned event received: ${data.task.id}`);
     this.websocketGateway.emitTaskAssigned(data.task, data.workerId);
-    // Send email to assigned worker
-    // this.emailService.queueTaskAssignedEmail(data);
+
+    // Send push notification to assigned technician
+    try {
+      await this.pushService.sendTaskAssignedPush(data.workerId, {
+        id: data.task.id,
+        title: data.task.title,
+      });
+      this.logger.log(`Task assigned push sent to worker ${data.workerId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send task assigned push: ${error}`);
+    }
   }
 
   @EventPattern('task_status_changed')
   async handleTaskStatusChanged(@Payload() data: any) {
     this.logger.log(`Task status changed: ${data.task.id} ${data.oldStatus} -> ${data.newStatus}`);
     this.websocketGateway.emitTaskStatusChanged(data.task, data.oldStatus, data.newStatus);
+
+    // Send push notification to task creator about status change
+    if (data.task.createdById) {
+      try {
+        await this.pushService.sendStatusChangePush(
+          data.task.createdById,
+          { id: data.task.id, title: data.task.title },
+          data.newStatus,
+        );
+        this.logger.log(`Status change push sent to creator ${data.task.createdById}`);
+      } catch (error) {
+        this.logger.error(`Failed to send status change push: ${error}`);
+      }
+    }
   }
 
   @EventPattern('task_declined')
@@ -83,6 +131,38 @@ export class NotificationController {
   async handleCommentAdded(@Payload() data: any) {
     this.logger.log(`Comment added to task: ${data.taskId}`);
     this.websocketGateway.emitCommentAdded(data.taskId, data.comment);
+
+    // Send push notification to relevant users (creator and assignee, excluding commenter)
+    const commenterName = data.comment?.user?.firstName
+      ? `${data.comment.user.firstName} ${data.comment.user.lastName || ''}`.trim()
+      : 'Someone';
+    const commenterId = data.comment?.userId;
+
+    // Notify task creator if they didn't write the comment
+    if (data.task?.createdById && data.task.createdById !== commenterId) {
+      try {
+        await this.pushService.sendTaskCommentPush(
+          data.task.createdById,
+          { id: data.taskId, title: data.task.title },
+          commenterName,
+        );
+      } catch (error) {
+        this.logger.error(`Failed to send comment push to creator: ${error}`);
+      }
+    }
+
+    // Notify assigned technician if they didn't write the comment
+    if (data.task?.assignedToId && data.task.assignedToId !== commenterId) {
+      try {
+        await this.pushService.sendTaskCommentPush(
+          data.task.assignedToId,
+          { id: data.taskId, title: data.task.title },
+          commenterName,
+        );
+      } catch (error) {
+        this.logger.error(`Failed to send comment push to assignee: ${error}`);
+      }
+    }
   }
 
   @EventPattern('attachment_added')
@@ -110,7 +190,6 @@ export class NotificationController {
     clockOutTime: string;
     totalHours: number;
     reason: 'exceeded_duration' | 'end_of_day';
-    deviceToken?: string;
     organizationId: string;
   }) {
     this.logger.log(`Auto clock-out event: user=${data.userName}, location=${data.locationName}, reason=${data.reason}`);
@@ -131,19 +210,17 @@ export class NotificationController {
       this.logger.error(`Failed to send auto clock-out email: ${error}`);
     }
 
-    // Send push notification if device token available
-    if (data.deviceToken) {
-      try {
-        await this.pushService.sendAutoClockOutPush({
-          deviceToken: data.deviceToken,
-          locationName: data.locationName,
-          totalHours: data.totalHours,
-          reason: data.reason,
-        });
-        this.logger.log(`Auto clock-out push sent to user ${data.userId}`);
-      } catch (error) {
-        this.logger.error(`Failed to send auto clock-out push: ${error}`);
-      }
+    // Send push notification (looks up tokens by userId)
+    try {
+      await this.pushService.sendAutoClockOutPush({
+        userId: data.userId,
+        locationName: data.locationName,
+        totalHours: data.totalHours,
+        reason: data.reason,
+      });
+      this.logger.log(`Auto clock-out push sent to user ${data.userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send auto clock-out push: ${error}`);
     }
 
     // Emit to websocket for real-time dashboard update
@@ -167,7 +244,7 @@ export class NotificationController {
     allowedRadius: number;
     action: 'clock_in' | 'clock_out';
     dispatcherEmails: string[];
-    dispatcherDeviceTokens: string[];
+    dispatcherIds: string[];
     organizationId: string;
   }) {
     this.logger.log(`Geofence alert: user=${data.userName}, distance=${data.distance}m, location=${data.locationName}`);
@@ -188,19 +265,17 @@ export class NotificationController {
       }
     }
 
-    // Send push to dispatchers
-    for (const token of data.dispatcherDeviceTokens) {
-      try {
-        await this.pushService.sendGeofenceAlertPush({
-          deviceToken: token,
-          userName: data.userName,
-          locationName: data.locationName,
-          distance: data.distance,
-          action: data.action,
-        });
-      } catch (error) {
-        this.logger.error(`Failed to send geofence alert push: ${error}`);
-      }
+    // Send push to dispatchers (looks up tokens by userId)
+    try {
+      await this.pushService.sendGeofenceAlertPush({
+        dispatcherIds: data.dispatcherIds,
+        userName: data.userName,
+        locationName: data.locationName,
+        distance: data.distance,
+        action: data.action,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send geofence alert push: ${error}`);
     }
 
     // Emit to websocket

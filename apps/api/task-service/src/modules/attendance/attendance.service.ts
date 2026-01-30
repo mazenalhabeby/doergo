@@ -679,7 +679,7 @@ export class AttendanceService {
     const autoClockOuts = entries.filter((e) => e.status === 'AUTO_OUT').length;
 
     // Standard hours calculation (8 hours per day for workdays in period)
-    const workDays = this.countWorkDays(startDate, endDate);
+    const workDays = this.countWorkDays(new Date(data.startDate), new Date(data.endDate));
     const standardHours = workDays * 8;
     const actualHours = totalMinutes / 60;
     const overtimeHours = Math.max(0, actualHours - standardHours);
@@ -739,8 +739,8 @@ export class AttendanceService {
 
     return success({
       period: {
-        startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd'),
+        startDate: format(new Date(data.startDate), 'yyyy-MM-dd'),
+        endDate: format(new Date(data.endDate), 'yyyy-MM-dd'),
         workDays,
       },
       summary: {
@@ -881,7 +881,7 @@ export class AttendanceService {
     ].join('\n');
 
     return success({
-      filename: `attendance_${format(startDate, 'yyyy-MM-dd')}_to_${format(endDate, 'yyyy-MM-dd')}.csv`,
+      filename: `attendance_${format(new Date(data.startDate), 'yyyy-MM-dd')}_to_${format(new Date(data.endDate), 'yyyy-MM-dd')}.csv`,
       content: csvContent,
       mimeType: 'text/csv',
       recordCount: entries.length,

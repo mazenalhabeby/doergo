@@ -1,6 +1,6 @@
 # DOERGO - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-01-27 (DRY/SOLID Refactoring - Shared Utilities)
+> **Last Updated**: 2026-01-30 (Push Notifications + Availability Calendar)
 
 ---
 
@@ -70,7 +70,7 @@ doergo/
 │   │   ├── gateway/           # API Gateway - routes to microservices
 │   │   │   └── src/
 │   │   │       ├── main.ts    # Entry: port 4000, prefix /api/v1
-│   │   │       └── modules/   # auth/, tasks/, tracking/, users/
+│   │   │       └── modules/   # auth/, tasks/, tracking/, users/, technicians/
 │   │   ├── auth-service/      # Auth microservice
 │   │   │   ├── prisma/
 │   │   │   │   ├── schema.prisma  # ⭐ MAIN DATABASE SCHEMA
@@ -207,6 +207,9 @@ ServiceReport { id, taskId, assetId, summary, workPerformed, workDuration, techn
 ReportAttachment { id, reportId, type, fileName, fileUrl, fileSize, caption }
 PartUsed { id, reportId, name, partNumber, quantity, unitCost, notes }
 CompanyLocation { id, name, address, lat, lng, geofenceRadius, isActive, organizationId }  # For attendance tracking
+UserPushToken { id, userId, token, platform, deviceId, createdAt, updatedAt }  # Push notification tokens
+TechnicianSchedule { id, technicianId, dayOfWeek, startTime, endTime, isActive, notes }  # Weekly work schedule
+TimeOff { id, technicianId, startDate, endDate, reason, status, approvedById, approvedAt, rejectionReason }  # Time-off requests
 ```
 
 ### Enums
@@ -220,6 +223,7 @@ TaskPriority: LOW | MEDIUM | HIGH | URGENT
 TaskEventType: CREATED | UPDATED | ASSIGNED | UNASSIGNED | STATUS_CHANGED | COMMENT_ADDED | ATTACHMENT_ADDED | ATTACHMENT_REMOVED
 AttachmentType: IMAGE | DOCUMENT | OTHER
 ReportAttachmentType: BEFORE | AFTER
+TimeOffStatus: PENDING | APPROVED | REJECTED | CANCELED
 ```
 
 ### Task Status Flow
@@ -296,6 +300,41 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | GET | `/locations/:id` | Get location details | ADMIN, DISPATCHER |
 | PATCH | `/locations/:id` | Update location | ADMIN |
 | DELETE | `/locations/:id` | Deactivate location (soft delete) | ADMIN |
+
+### Technicians (`/technicians`)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/technicians` | List technicians with filters & pagination | ADMIN, DISPATCHER |
+| POST | `/technicians` | Create new technician | ADMIN, DISPATCHER |
+| GET | `/technicians/:id` | Get technician detail with stats | ADMIN, DISPATCHER |
+| PATCH | `/technicians/:id` | Update technician profile | ADMIN, DISPATCHER |
+| DELETE | `/technicians/:id` | Deactivate technician (soft delete) | ADMIN, DISPATCHER |
+| GET | `/technicians/:id/performance` | Get performance metrics & trends | ADMIN, DISPATCHER |
+| GET | `/technicians/:id/tasks` | Get task history for technician | ADMIN, DISPATCHER |
+| GET | `/technicians/:id/attendance` | Get attendance/clock-in history | ADMIN, DISPATCHER |
+| GET | `/technicians/:id/assignments` | Get location assignments | ADMIN, DISPATCHER |
+| GET | `/technicians/:id/schedule` | Get weekly work schedule | ADMIN, DISPATCHER |
+| POST | `/technicians/:id/schedule` | Set weekly work schedule | ADMIN, DISPATCHER |
+| GET | `/technicians/:id/time-off` | Get time-off requests | ADMIN, DISPATCHER, TECHNICIAN |
+| POST | `/technicians/:id/time-off` | Request time off | ADMIN, DISPATCHER, TECHNICIAN |
+| PATCH | `/technicians/time-off/:id/approve` | Approve/reject time-off | ADMIN, DISPATCHER |
+| DELETE | `/technicians/time-off/:id` | Cancel time-off request | TECHNICIAN |
+| GET | `/technicians/availability` | Get all availability for date | ADMIN, DISPATCHER |
+
+### Users (`/users`) - Push Tokens
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| POST | `/users/push-token` | Register push notification token | ALL |
+| DELETE | `/users/push-token/:token` | Remove push notification token | ALL |
+
+**Query Parameters for GET `/technicians`:**
+- `status`: `active` | `inactive` | `all` (default: `active`)
+- `type`: `FULL_TIME` | `FREELANCER` | `all` (default: `all`)
+- `specialty`: Filter by specialty (partial match)
+- `search`: Search by name or email
+- `page`, `limit`: Pagination (default: 1, 10)
+- `sortBy`: `name` | `email` | `rating` | `taskCount` | `createdAt`
+- `sortOrder`: `asc` | `desc`
 
 ---
 
@@ -596,6 +635,30 @@ pnpm build            # Build all packages
 - [x] Registration forces ADMIN role (security: never trust client input)
 - [x] Seed data updated with new role and permission fields
 
+### Phase 3.3: Technician Management ✅ COMPLETE
+- [x] Gateway technicians module with full CRUD
+- [x] `GET /technicians` - List with filters, pagination, sorting
+- [x] `POST /technicians` - Create technician (auto-generate password if omitted)
+- [x] `GET /technicians/:id` - Detail with stats (tasks, attendance, performance)
+- [x] `PATCH /technicians/:id` - Update profile
+- [x] `DELETE /technicians/:id` - Deactivate (soft delete)
+- [x] `GET /technicians/:id/performance` - Performance metrics & trends
+- [x] `GET /technicians/:id/tasks` - Task history
+- [x] `GET /technicians/:id/attendance` - Attendance records
+- [x] `GET /technicians/:id/assignments` - Location assignments
+- [x] Shared types: `TechnicianProfile`, `TechnicianListItem`, `TechnicianStats`, `PerformanceMetrics`
+- [x] Shared helpers: `getTechnicianTypeLabel`, `isTechnicianOnline`, `getAvailabilityStatus`
+- [x] Web: Technicians list page (`/technicians`) with search, filters, pagination
+- [x] Web: Create technician page (`/technicians/new`) with password generation
+- [x] Web: Technician detail page (`/technicians/:id`) with 5 tabs:
+  - [x] Overview: Stats cards + recent activity
+  - [x] Tasks: Task history table
+  - [x] Attendance: Clock-in/out records
+  - [x] Locations: Assignment cards
+  - [x] Performance: Charts (Recharts) + period comparison
+- [x] Web: Availability calendar (`/technicians/availability`) with week/month views
+- [x] Permission update: DISPATCHER can now manage technicians (create/edit/deactivate)
+
 ### Phase 4: Comments & Attachments 🔲 PENDING
 - [ ] Comments: list/add API (task-service) - partially done
 - [ ] Attachments: S3 presigned URL upload
@@ -623,11 +686,21 @@ pnpm build            # Build all packages
 - [x] Web DISPATCHER: route info panel (distance, time, points)
 - [x] Web: task detail shows route tracking data
 
-### Phase 6: Notifications 🔶 PARTIAL
+### Phase 6: Notifications ✅ COMPLETE (Push) 🔶 PARTIAL (Email)
 - [x] BullMQ job queue (task queue)
 - [ ] Email templates
-- [ ] Push notification service
-- [ ] Notification triggers
+- [x] **Push Notification System** ✅ COMPLETE (2026-01-30)
+  - [x] `UserPushToken` model for storing Expo push tokens
+  - [x] Database migration: `add_user_push_tokens`
+  - [x] Push service with Expo Server SDK (`expo-server-sdk`)
+  - [x] Gateway endpoints: `POST /users/push-token`, `DELETE /users/push-token/:token`
+  - [x] MessagePattern handlers for token registration/removal
+  - [x] Task event push notifications (assigned, status changed, comments)
+  - [x] Attendance event push notifications (clock in/out)
+  - [x] Mobile: `usePushNotifications` hook with permission handling
+  - [x] Mobile: Android notification channels (default, tasks, attendance)
+  - [x] Mobile: Notification tap navigation to task detail
+  - [x] Mobile: Push token cleanup on logout
 
 ### Phase 7: Attendance & Time Tracking 🔶 PARTIAL
 - [x] **Phase 7.1: Foundation** ✅ COMPLETE (2026-01-26)
@@ -640,19 +713,33 @@ pnpm build            # Build all packages
   - [x] CRUD API endpoints: POST/GET/PATCH/DELETE `/api/v1/locations`
   - [x] Shared types and constants (`ATTENDANCE_CONSTANTS`, `LOCATION_JOB_TYPES`)
   - [x] Seed data: 3 sample company locations
-- [ ] **Phase 7.2: Technician Assignment** (PENDING)
+- [x] **Phase 7.2: Scheduling & Availability** ✅ COMPLETE (2026-01-30)
+  - [x] `TechnicianSchedule` model (weekly work schedule with day/start/end times)
+  - [x] `TimeOff` model (vacation/sick leave with approval workflow)
+  - [x] `TimeOffStatus` enum (PENDING, APPROVED, REJECTED, CANCELED)
+  - [x] Database migration: `add_technician_schedules_and_time_off`
+  - [x] Schedule CRUD: `GET/POST /technicians/:id/schedule`
+  - [x] Time-off CRUD: `GET/POST /technicians/:id/time-off`
+  - [x] Time-off approval: `PATCH /technicians/time-off/:id/approve`
+  - [x] Time-off cancellation: `DELETE /technicians/time-off/:id`
+  - [x] Availability query: `GET /technicians/availability?date=YYYY-MM-DD`
+  - [x] Task-service technicians module with schedule/time-off logic
+  - [x] Gateway REST endpoints with proper route ordering
+  - [x] Web: Availability calendar with real API data (week/month views)
+  - [x] Availability calculation: schedule + time-off + current tasks
+- [ ] **Phase 7.3: Technician Assignment** (PENDING)
   - [ ] `TechnicianAssignment` model (user → location mapping)
   - [ ] Assignment CRUD endpoints
-  - [ ] Schedule support (day-based assignments)
-- [ ] **Phase 7.3: Time Tracking** (PENDING)
+  - [ ] Location-based schedule support
+- [ ] **Phase 7.4: Time Tracking** (PENDING)
   - [ ] `TimeEntry` model (clock in/out records)
   - [ ] Clock in/out API endpoints with geofence validation
   - [ ] Haversine distance check for geofence
-- [ ] **Phase 7.4: Mobile Integration** (PENDING)
+- [ ] **Phase 7.5: Mobile Integration** (PENDING)
   - [ ] Clock in/out screen with GPS status
   - [ ] Geofence monitoring hook
   - [ ] Session duration display
-- [ ] **Phase 7.5: Reports & Dashboard** (PENDING)
+- [ ] **Phase 7.6: Reports & Dashboard** (PENDING)
   - [ ] Attendance history endpoint
   - [ ] Web dashboard for attendance tracking
   - [ ] Export functionality
@@ -710,6 +797,12 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `TimeEntry`, `Break`, `CompanyLocation`, `AttendanceStatus` | Attendance types (from `@doergo/shared`) |
 | `TimeEntryStatus`, `BreakType`, `ApprovalStatus` | Attendance enums |
 | `isBreakActive()`, `getBreakTypeLabel()`, `getTimeEntryStatusLabel()` | Attendance helper functions |
+| `TechnicianProfile`, `TechnicianListItem`, `TechnicianStats` | Technician types (from `@doergo/shared`) |
+| `PerformanceMetrics`, `PerformanceTrendPoint` | Technician performance types |
+| `getTechnicianTypeLabel()`, `getTechnicianTypeColor()` | Technician type display helpers |
+| `isTechnicianOnline()` | Check if technician is online (location updated within 5 min) |
+| `getAvailabilityStatus()`, `getAvailabilityLabel()`, `getAvailabilityColor()` | Availability status helpers |
+| `SPECIALTY_OPTIONS` | Technician specialty options array |
 
 ### SOLID Principles
 
@@ -859,7 +952,38 @@ docker exec -it doergo-redis redis-cli
    - Gallery picker using expo-image-picker
    - Upload progress indicator
 
-### Recently Completed (2026-01-27)
+### Recently Completed (2026-01-30)
+- **Push Notifications** (Phase 6 - Push):
+  - `UserPushToken` model for storing Expo push tokens per device
+  - Push service using `expo-server-sdk` for Expo Push API
+  - Gateway endpoints for token registration and removal
+  - Push notifications for task events (assigned, status changed, comments)
+  - Push notifications for attendance events (clock in/out reminders)
+  - Mobile: `usePushNotifications` hook with Android channels
+  - Mobile: Notification tap navigates to task detail
+  - Mobile: Token cleanup on logout
+
+- **Availability Calendar** (Phase 7.2):
+  - `TechnicianSchedule` model for weekly work schedules (day/start/end times)
+  - `TimeOff` model with approval workflow (PENDING → APPROVED/REJECTED)
+  - Schedule CRUD endpoints for setting/getting weekly schedules
+  - Time-off request, approval, and cancellation endpoints
+  - Availability query combining schedule + time-off + current tasks
+  - Web: Availability calendar updated to use real API data
+  - Week and month views with technician availability status
+
+- **Technician Management System** (Phase 3.3):
+  - Gateway technicians module with full REST API (9 endpoints)
+  - Shared types: `TechnicianProfile`, `TechnicianListItem`, `TechnicianStats`, `PerformanceMetrics`
+  - Shared helpers: `getTechnicianTypeLabel()`, `isTechnicianOnline()`, `getAvailabilityStatus()`
+  - Web: Technicians list page with search, filters, pagination
+  - Web: Create technician page with auto-password generation
+  - Web: Technician detail page with 5 tabs (Overview, Tasks, Attendance, Locations, Performance)
+  - Web: Availability calendar with week/month views
+  - Permission update: DISPATCHER can now create/edit/deactivate technicians
+  - Max-width container styling applied to all technician pages
+
+### Previously Completed (2026-01-27)
 - **DRY/SOLID Refactoring**:
   - Created shared attendance types (`packages/shared/src/types/attendance.ts`)
     - Centralized TimeEntry, Break, CompanyLocation, AttendanceStatus interfaces

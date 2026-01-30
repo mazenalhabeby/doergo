@@ -10,6 +10,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.js"
+    },
     "./types": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",
@@ -49,6 +54,11 @@
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.js"
     }
   },
   "scripts": {
