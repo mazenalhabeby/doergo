@@ -1,4 +1,5 @@
-import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, ReportAttachmentType, TechnicianType, TimeEntryStatus } from '@prisma/client';
+import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, ReportAttachmentType, TechnicianType, WorkMode, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@prisma/client';
+import { createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -6,10 +7,15 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
+  // Helper to hash codes with SHA-256
+  const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
+
   // Create organization (all users in same org for simpler testing)
   const organization = await prisma.organization.create({
     data: {
       name: 'Acme Corporation',
+      joinCodeHash: hashCode('ACME2026'),
+      joinPolicy: JoinPolicy.OPEN,
     },
   });
 
@@ -27,6 +33,7 @@ async function main() {
       lastName: 'Owner',
       role: Role.ADMIN,
       organizationId: organization.id,
+      onboardingCompleted: true,
       // ADMIN permissions - full access
       platform: 'BOTH',
       canCreateTasks: true,
@@ -45,6 +52,7 @@ async function main() {
       lastName: 'Manager',
       role: Role.DISPATCHER,
       organizationId: organization.id,
+      onboardingCompleted: true,
       // DISPATCHER permissions - web only, can view all and assign
       platform: 'WEB',
       canCreateTasks: false,
@@ -63,6 +71,7 @@ async function main() {
       lastName: 'Worker',
       role: Role.TECHNICIAN,
       organizationId: organization.id,
+      onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
       platform: 'MOBILE',
       canCreateTasks: false,
@@ -71,6 +80,7 @@ async function main() {
       canManageUsers: false,
       // Full-time employee - assigned to company locations
       technicianType: TechnicianType.FULL_TIME,
+      workMode: WorkMode.ON_SITE,
     },
   });
 
@@ -82,6 +92,7 @@ async function main() {
       lastName: 'Worker',
       role: Role.TECHNICIAN,
       organizationId: organization.id,
+      onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
       platform: 'MOBILE',
       canCreateTasks: false,
@@ -90,6 +101,7 @@ async function main() {
       canManageUsers: false,
       // Freelancer - task-based work, no fixed location
       technicianType: TechnicianType.FREELANCER,
+      workMode: WorkMode.ON_ROAD,
     },
   });
 
@@ -1282,12 +1294,99 @@ async function main() {
 
   console.log('Created events and comments for en-route task');
 
+  // ============================================
+  // Create Sample Invitations
+  // ============================================
+
+  // Pending invitation for a technician
+  await prisma.invitation.create({
+    data: {
+      codeHash: hashCode('TEST01'),
+      targetRole: Role.TECHNICIAN,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), // 3 days
+      status: InvitationStatus.PENDING,
+      technicianType: TechnicianType.FULL_TIME,
+      workMode: WorkMode.ON_SITE,
+      specialty: 'Electrical',
+      maxDailyJobs: 5,
+    },
+  });
+
+  // Pending invitation for a dispatcher
+  await prisma.invitation.create({
+    data: {
+      codeHash: hashCode('TEST02'),
+      targetRole: Role.DISPATCHER,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), // 3 days
+      status: InvitationStatus.PENDING,
+    },
+  });
+
+  // Already used invitation
+  await prisma.invitation.create({
+    data: {
+      codeHash: hashCode('USED01'),
+      targetRole: Role.TECHNICIAN,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000),
+      status: InvitationStatus.ACCEPTED,
+      usedAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // Used 1 day ago
+      acceptedById: technician1.id,
+      technicianType: TechnicianType.FULL_TIME,
+    },
+  });
+
+  console.log('Created sample invitations: TEST01 (technician), TEST02 (dispatcher), USED01 (accepted)');
+
+  // ============================================
+  // Create Orphan User (no organization - for onboarding flow testing)
+  // ============================================
+
+  const orphanUser = await prisma.user.create({
+    data: {
+      email: 'newuser@example.com',
+      passwordHash,
+      firstName: 'Alex',
+      lastName: 'Newbie',
+      role: Role.ADMIN, // Placeholder role - will be set during onboarding
+      onboardingCompleted: false,
+      // No organizationId - this user has not joined any org yet
+    },
+  });
+
+  console.log('Created orphan user:', orphanUser.email, '(no organization, onboarding incomplete)');
+
+  // ============================================
+  // Create Pending Join Request from orphan user to Acme Corp
+  // ============================================
+
+  const joinRequest = await prisma.joinRequest.create({
+    data: {
+      userId: orphanUser.id,
+      organizationId: organization.id,
+      message: 'Hi, I would like to join your team!',
+      status: JoinRequestStatus.PENDING,
+    },
+  });
+
+  console.log('Created pending join request:', joinRequest.id, '(from orphan user to Acme Corp)');
+
   console.log('\nSeed completed successfully!');
   console.log('\nTest credentials:');
-  console.log('  Admin:       client@example.com / password123 (platform: BOTH)');
-  console.log('  Dispatcher:  dispatcher@example.com / password123 (platform: WEB)');
-  console.log('  Technician1: technician1@example.com / password123 (platform: MOBILE, FULL_TIME)');
-  console.log('  Technician2: technician2@example.com / password123 (platform: MOBILE, FREELANCER)');
+  console.log('  Admin:       client@example.com / password123 (platform: BOTH, onboarded)');
+  console.log('  Dispatcher:  dispatcher@example.com / password123 (platform: WEB, onboarded)');
+  console.log('  Technician1: technician1@example.com / password123 (platform: MOBILE, FULL_TIME, ON_SITE, onboarded)');
+  console.log('  Technician2: technician2@example.com / password123 (platform: MOBILE, FREELANCER, ON_ROAD, onboarded)');
+  console.log('  New User:    newuser@example.com / password123 (NO org, onboarding incomplete)');
+  console.log('\nOrganization Join Code:');
+  console.log('  - Acme Corporation: ACME2026 (join policy: OPEN)');
+  console.log('\nJoin Requests:');
+  console.log('  - newuser@example.com → Acme Corporation (PENDING)');
   console.log('\nCompany Locations:');
   console.log('  - Main Office (NYC): 40.7128, -74.0060 (20m geofence)');
   console.log('  - Warehouse (Brooklyn): 40.6892, -73.9857 (30m geofence)');
@@ -1296,6 +1395,10 @@ async function main() {
   console.log('  - technician1 has 3 time entries (2 completed, 1 currently clocked in)');
   console.log('  - Use GET /attendance/status as technician1 to see current clock-in status');
   console.log('  - Use GET /attendance/history as technician1 to see attendance history');
+  console.log('\nInvitation Codes:');
+  console.log('  - TEST01: Pending technician invitation (FULL_TIME, Electrical)');
+  console.log('  - TEST02: Pending dispatcher invitation');
+  console.log('  - USED01: Already accepted invitation');
 }
 
 main()

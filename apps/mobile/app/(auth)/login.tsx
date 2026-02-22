@@ -299,6 +299,14 @@ export default function LoginScreen() {
                 <Text style={styles.securityText}>Secure</Text>
               </View>
             </View>
+
+            {/* Create Account Link */}
+            <View style={styles.createAccountContainer}>
+              <Text style={styles.createAccountText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => router.push(ROUTES.register as Href)}>
+                <Text style={styles.createAccountLink}>Create one</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -511,6 +519,20 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: COLORS.slate400,
     fontWeight: FONT_WEIGHT.medium,
+  },
+  createAccountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: SPACING.xl,
+  },
+  createAccountText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate500,
+  },
+  createAccountLink: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   footer: {
     paddingVertical: SPACING.xl,

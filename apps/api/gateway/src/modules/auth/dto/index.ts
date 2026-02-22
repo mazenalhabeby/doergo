@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsOptional } from 'class-validator';
 import {
   EmailField,
   PasswordField,
@@ -19,6 +20,11 @@ export class LoginDto {
   @ApiProperty({ example: 'Password123', description: 'User password' })
   @PasswordField()
   password: string;
+
+  @ApiPropertyOptional({ example: false, description: 'Keep user signed in for 30 days (default: false = 24h)' })
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
 }
 
 /**
@@ -34,18 +40,18 @@ export class RegisterDto {
   password: string;
 
   @ApiProperty({ example: 'John', description: 'First name' })
-  @NameField('First name')
+  @NameField('First name', { capitalize: true })
   firstName: string;
 
   @ApiProperty({ example: 'Doe', description: 'Last name' })
-  @NameField('Last name')
+  @NameField('Last name', { capitalize: true })
   lastName: string;
 
-  @ApiProperty({ example: 'Acme Inc.', description: 'Company name' })
-  @CompanyNameField()
-  companyName: string;
+  @ApiPropertyOptional({ example: 'Acme Inc.', description: 'Company name (omit to register without organization)' })
+  @CompanyNameField({ optional: true })
+  companyName?: string;
 
-  // NOTE: Role is NOT accepted from user input - always set to CLIENT on backend
+  // NOTE: Role is NOT accepted from user input - always set to ADMIN on backend
 }
 
 /**

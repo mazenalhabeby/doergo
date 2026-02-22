@@ -27,3 +27,6 @@ export * from './queues';
 
 // Export utility functions (for NestJS backend)
 export * from './utils';
+
+// Export crypto utilities (Node-only, not in client bundle)
+export * from './utils/crypto';

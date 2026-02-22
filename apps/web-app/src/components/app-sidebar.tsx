@@ -18,6 +18,8 @@ import {
   Clock,
   ChevronDown,
   Check,
+  UserPlus,
+  UserCheck,
 } from "lucide-react"
 
 import { AnimatedLogo } from "@doergo/shared/components"
@@ -71,6 +73,26 @@ const adminNavGroups: { label: string; items: NavItem[] }[] = [
         title: "Technicians",
         url: "/technicians",
         icon: Users,
+      },
+      {
+        title: "Members",
+        url: "/members",
+        icon: Users,
+      },
+      {
+        title: "Invitations",
+        url: "/invitations",
+        icon: UserPlus,
+      },
+      {
+        title: "Join Requests",
+        url: "/join-requests",
+        icon: UserCheck,
+      },
+      {
+        title: "Schedule",
+        url: "/technicians/availability",
+        icon: Calendar,
       },
       {
         title: "Attendance",
@@ -127,7 +149,7 @@ const dispatcherNavGroups: { label: string; items: NavItem[] }[] = [
       },
       {
         title: "Schedule",
-        url: "/schedule",
+        url: "/technicians/availability",
         icon: Calendar,
       },
     ],
@@ -144,6 +166,21 @@ const dispatcherNavGroups: { label: string; items: NavItem[] }[] = [
           { title: "Add Technician", url: "/technicians/new" },
           { title: "Manage Availability", url: "/technicians/availability" },
         ],
+      },
+      {
+        title: "Members",
+        url: "/members",
+        icon: Users,
+      },
+      {
+        title: "Invitations",
+        url: "/invitations",
+        icon: UserPlus,
+      },
+      {
+        title: "Join Requests",
+        url: "/join-requests",
+        icon: UserCheck,
       },
       {
         title: "Attendance",

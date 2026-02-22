@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import {
   TechnicianType,
+  WorkMode,
   TimeEntryStatus,
   BreakType,
   Role,
@@ -20,6 +21,8 @@ import type {
   ClockOutInput,
   AttendanceHistoryParams,
   PaginatedResponse,
+  InvitationValidation,
+  AcceptInvitationInput,
 } from '@doergo/shared/client';
 
 // Re-export types for convenience
@@ -34,7 +37,7 @@ export type {
   AttendanceHistoryParams,
   PaginatedResponse,
 };
-export { TechnicianType, TimeEntryStatus, BreakType };
+export { TechnicianType, WorkMode, TimeEntryStatus, BreakType };
 
 // Dynamically get API URL based on Expo dev server host
 function getApiUrl(): string {
@@ -77,22 +80,7 @@ interface ApiResponse<T> {
 }
 
 interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
-    organizationId: string;
-    // Permission fields
-    platform: 'WEB' | 'MOBILE' | 'BOTH';
-    canCreateTasks: boolean;
-    canViewAllTasks: boolean;
-    canAssignTasks: boolean;
-    canManageUsers: boolean;
-    // Technician-specific fields
-    technicianType?: TechnicianType;
-  };
+  user: User;
   accessToken: string;
   refreshToken: string;
 }
@@ -108,7 +96,8 @@ interface User {
   firstName: string;
   lastName: string;
   role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
-  organizationId: string;
+  organizationId: string | null;
+  onboardingCompleted: boolean;
   // Permission fields
   platform: 'WEB' | 'MOBILE' | 'BOTH';
   canCreateTasks: boolean;
@@ -117,6 +106,7 @@ interface User {
   canManageUsers: boolean;
   // Technician-specific fields
   technicianType?: TechnicianType;
+  workMode?: WorkMode;
 }
 
 class ApiError extends Error {
@@ -429,6 +419,28 @@ export const authApi = {
     return refreshAccessToken();
   },
 
+  register: async (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    companyName?: string;
+  }): Promise<void> => {
+    // Register the user - response contains user data but we don't need it
+    // because we'll call login() separately after registration
+    console.log('[API] Registering user:', data.email);
+    try {
+      await fetchApi('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      console.log('[API] Registration successful');
+    } catch (error) {
+      console.error('[API] Registration failed:', error);
+      throw error;
+    }
+  },
+
   logout: async (): Promise<void> => {
     try {
       const [accessToken, refreshToken] = await Promise.all([
@@ -640,6 +652,73 @@ export const pushApi = {
   },
 };
 
+// Onboarding API - for post-registration onboarding flow
+export const onboardingApi = {
+  // Get onboarding status
+  getStatus: async (): Promise<{ needsOnboarding: boolean; hasPendingJoinRequest: boolean; pendingRequest: any }> => {
+    return fetchWithAuth<{ needsOnboarding: boolean; hasPendingJoinRequest: boolean; pendingRequest: any }>('/onboarding/status');
+  },
+
+  // Path A: Create organization
+  createOrganization: async (data: { name: string; address?: string; industry?: string }): Promise<{ organization: { id: string; name: string }; joinCode: string; user: User }> => {
+    return fetchWithAuth<any>('/onboarding/create-org', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Path B: Validate org code
+  validateOrgCode: async (code: string): Promise<{ valid: boolean; organizationName?: string; joinPolicy?: string; message?: string }> => {
+    return fetchWithAuth<any>(`/onboarding/validate-org-code/${encodeURIComponent(code)}`);
+  },
+
+  // Path B: Submit join request
+  submitJoinRequest: async (data: { orgCode: string; message?: string }): Promise<any> => {
+    return fetchWithAuth<any>('/onboarding/join-by-code', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Path C: Accept invitation as existing user
+  acceptInvitation: async (code: string): Promise<{ user: User }> => {
+    return fetchWithAuth<{ user: User }>('/onboarding/accept-invitation', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
+  // Cancel join request
+  cancelJoinRequest: async (id: string): Promise<any> => {
+    return fetchWithAuth<any>(`/onboarding/join-requests/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Get current user profile (for refreshUser)
+export const userApi = {
+  me: async (): Promise<User> => {
+    return fetchWithAuth<User>('/auth/me');
+  },
+};
+
+// Invitations API - for invite code registration flow (public endpoints)
+export const invitationsApi = {
+  // Validate an invitation code
+  validate: async (code: string): Promise<InvitationValidation> => {
+    return fetchApi<InvitationValidation>(`/invitations/validate/${encodeURIComponent(code)}`);
+  },
+
+  // Accept an invitation and create account
+  accept: async (input: AcceptInvitationInput): Promise<LoginResponse> => {
+    return fetchApi<LoginResponse>('/invitations/accept', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+};
+
 // Export utilities for auth context
 export {
   ApiError,
@@ -649,4 +728,4 @@ export {
   clearTokens,
   refreshAccessToken,
 };
-export type { LoginResponse, RefreshResponse, User };
+export type { LoginResponse, RefreshResponse, User, InvitationValidation, AcceptInvitationInput };

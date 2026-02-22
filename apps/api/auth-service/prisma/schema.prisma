@@ -80,10 +80,17 @@ enum ReportAttachmentType {
   AFTER   // Photo taken after work completed
 }
 
-// Technician employment type for attendance tracking
+// Technician employment/billing type (who pays for expenses)
 enum TechnicianType {
-  FREELANCER  // External contractor, task-based work
-  FULL_TIME   // Employee assigned to company locations
+  FREELANCER  // Covers own trips and expenses
+  FULL_TIME   // Company covers trips and expenses
+}
+
+// Where the technician works (decoupled from billing type)
+enum WorkMode {
+  ON_SITE  // Works at company locations (attendance tracking)
+  ON_ROAD  // Works on-the-go (task-based, no attendance)
+  HYBRID   // Both on-site and on-road
 }
 
 // Time entry status for attendance tracking
@@ -114,6 +121,29 @@ enum TimeOffStatus {
   APPROVED   // Manager approved
   REJECTED   // Manager rejected
   CANCELED   // Technician canceled the request
+}
+
+// Invitation status
+enum InvitationStatus {
+  PENDING    // Created, waiting to be used
+  ACCEPTED   // Used by a new user
+  EXPIRED    // Past expiry date
+  REVOKED    // Manually canceled by creator/admin
+}
+
+// Organization join policy
+enum JoinPolicy {
+  OPEN          // Anyone with org code can request to join
+  INVITE_ONLY   // Only via one-time invitation codes
+  CLOSED        // No new members
+}
+
+// Join request status
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
 }
 
 // ==================== MONITORING ENUMS ====================
@@ -185,6 +215,10 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Join system
+  joinCodeHash String?     @unique  // SHA-256 hash of persistent org join code
+  joinPolicy   JoinPolicy  @default(INVITE_ONLY)
+
   users User[]
   tasks Task[]
 
@@ -204,6 +238,12 @@ model Organization {
 
   // Time entries for attendance tracking
   timeEntries TimeEntry[]
+
+  // Invitations
+  invitations Invitation[]
+
+  // Join requests
+  joinRequests JoinRequest[]
 
   // Monitoring
   activityLogs          ActivityLog[]
@@ -268,11 +308,15 @@ model User {
   canManageUsers  Boolean  @default(false)   // Can manage users in organization
 
   // Technician-specific fields (only used when role = TECHNICIAN)
-  technicianType TechnicianType @default(FREELANCER)  // Freelancer or full-time employee
+  technicianType TechnicianType @default(FREELANCER)  // Billing: who pays for expenses
+  workMode       WorkMode       @default(HYBRID)      // Where they work: on-site, on-road, or both
   specialty      String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
   rating         Float?    @default(5.0) // Average rating (1-5)
   ratingCount    Int?      @default(0)   // Number of ratings received
   maxDailyJobs   Int?      @default(5)   // Maximum jobs per day
+
+  // Onboarding flag (false = orphan user needs to complete onboarding wizard)
+  onboardingCompleted Boolean @default(true)
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
@@ -305,6 +349,13 @@ model User {
   schedules            TechnicianSchedule[]                           // Weekly recurring schedule
   timeOffRequests      TimeOff[]             @relation("TechnicianTimeOff")   // Time-off requests submitted
   approvedTimeOffs     TimeOff[]             @relation("TimeOffApprover")     // Time-off requests approved by this user
+
+  // Invitations
+  createdInvitations   Invitation[]          @relation("InvitationCreator")   // Invitations created by this user
+
+  // Join requests
+  joinRequests         JoinRequest[]         @relation("UserJoinRequests")    // Join requests submitted by this user
+  reviewedJoinRequests JoinRequest[]         @relation("JoinRequestReviewer") // Join requests reviewed by this user
 
   @@index([organizationId])
   @@index([role])
@@ -864,6 +915,83 @@ model TimeOff {
   @@index([status])
   @@index([startDate, endDate])
   @@map("time_off_requests")
+}
+
+// ==================== INVITATION SYSTEM ====================
+
+// Invitation for users to join an organization with a pre-assigned role
+model Invitation {
+  id String @id @default(cuid())
+
+  // Short code stored as SHA-256 hash (e.g., "XK7M2P" → hash)
+  codeHash String @unique
+
+  // Target role and organization
+  targetRole     Role
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Technician-specific fields (only used when targetRole = TECHNICIAN)
+  technicianType TechnicianType?
+  workMode       WorkMode?
+  specialty      String?
+  maxDailyJobs   Int?
+
+  // Status tracking
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  // Who accepted the invitation (null until accepted)
+  acceptedById String?
+
+  // Who created the invitation
+  createdById String
+  createdBy   User @relation("InvitationCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdById])
+  @@index([expiresAt])
+  @@map("invitations")
+}
+
+// ==================== JOIN REQUEST SYSTEM ====================
+
+// Request from an orphan user to join an organization
+model JoinRequest {
+  id              String             @id @default(cuid())
+
+  userId          String
+  user            User               @relation("UserJoinRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  organizationId  String
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  message         String?            // Optional message from the requesting user
+
+  status          JoinRequestStatus  @default(PENDING)
+
+  // Review fields (set when admin approves/rejects)
+  reviewedById    String?
+  reviewedBy      User?              @relation("JoinRequestReviewer", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  rejectionReason String?
+
+  // Role assignment (set by admin on approval)
+  assignedRole     Role?
+  assignedPlatform Platform?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([userId, organizationId, status])
+  @@index([organizationId, status])
+  @@index([userId])
+  @@map("join_requests")
 }
 
 // ==================== MONITORING MODELS ====================

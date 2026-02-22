@@ -8,6 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken, getRefreshToken } from '@/lib/api';
 import { DashboardSkeleton } from '@/components/skeletons';
 
@@ -92,6 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     accessTokenExp: null,
     refreshTokenExp: null,
   });
+  const queryClient = useQueryClient();
 
   // Update token info from storage
   const updateTokenInfo = useCallback(() => {
@@ -165,14 +167,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Login function
   const login = useCallback(async (email: string, password: string) => {
+    // Clear all cached data from previous session before setting new user
+    queryClient.clear();
     const response = await authApi.login(email, password);
     setUser(response.user);
     updateTokenInfo();
-  }, [updateTokenInfo]);
+  }, [updateTokenInfo, queryClient]);
 
   // Logout function
   const logout = useCallback(async () => {
     await authApi.logout();
+    // Clear all cached data so next login doesn't show stale data
+    queryClient.clear();
     setUser(null);
     setTokenInfo({
       accessToken: null,
@@ -180,7 +186,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       accessTokenExp: null,
       refreshTokenExp: null,
     });
-  }, []);
+  }, [queryClient]);
 
   // Refresh user data
   const refreshUser = useCallback(async () => {

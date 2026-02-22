@@ -12,6 +12,10 @@ import {
   TimeEntryStatus,
   BreakType,
   TechnicianType,
+  WorkMode,
+  InvitationStatus,
+  JoinRequestStatus,
+  JoinPolicy,
   buildUrlWithQuery,
 } from '@doergo/shared/client';
 import type {
@@ -30,6 +34,12 @@ import type {
   CreateTechnicianInput,
   UpdateTechnicianInput,
   TechniciansQueryParams,
+  Invitation,
+  InvitationValidation,
+  CreateInvitationInput,
+  JoinRequest,
+  OnboardingStatus,
+  OrgCodeValidation,
 } from '@doergo/shared/client';
 
 // Re-export shared types for convenience
@@ -46,10 +56,16 @@ export type {
   CreateTechnicianInput,
   UpdateTechnicianInput,
   TechniciansQueryParams,
+  Invitation,
+  InvitationValidation,
+  CreateInvitationInput,
+  JoinRequest,
+  OnboardingStatus,
+  OrgCodeValidation,
 };
-export { TimeEntryStatus, BreakType, TechnicianType };
+export { TimeEntryStatus, BreakType, TechnicianType, WorkMode, InvitationStatus, JoinRequestStatus, JoinPolicy };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 interface ApiResponse<T = unknown> {
   data?: T;
@@ -99,6 +115,9 @@ export function hasTokens(): boolean {
   return !!getAccessToken() && !!getRefreshToken();
 }
 
+// Request timeout in milliseconds
+const REQUEST_TIMEOUT = 15000;
+
 // Refresh access token using refresh token
 export async function refreshTokens(): Promise<boolean> {
   return refreshAccessToken();
@@ -126,6 +145,9 @@ function refreshAccessToken(): Promise<boolean> {
   // Create the promise IMMEDIATELY and store it
   // This ensures any concurrent calls will get the same promise
   refreshPromise = (async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
     try {
       console.log('[Auth] Sending refresh request to', `${API_BASE_URL}/auth/refresh`);
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -134,8 +156,10 @@ function refreshAccessToken(): Promise<boolean> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ refreshToken }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       console.log('[Auth] Refresh response status:', response.status);
       const result = await response.json();
       console.log('[Auth] Refresh response:', result);
@@ -163,6 +187,7 @@ function refreshAccessToken(): Promise<boolean> {
 
       return true;
     } catch (error) {
+      clearTimeout(timeoutId);
       console.log('[Auth] Refresh error:', error);
       clearTokens();
       return false;
@@ -279,24 +304,56 @@ export const api = {
   delete: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: 'DELETE' }),
 };
 
+// Helper to create fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your connection and try again.');
+    }
+    throw new Error('Unable to connect to server. Please check if the API is running.');
+  }
+}
+
 // Auth-specific API methods
 export const authApi = {
   login: async (email: string, password: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    console.log('[Auth] Login attempt for:', email);
+    console.log('[Auth] API URL:', `${API_BASE_URL}/auth/login`);
+
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
     const result = await response.json();
+    console.log('[Auth] Login response status:', response.status);
 
     if (!response.ok) {
+      console.log('[Auth] Login failed:', result.message);
       throw new Error(result.message || 'Login failed');
     }
 
     // API returns { success: true, data: { user, accessToken, refreshToken } }
     const data = result.data;
 
+    if (!data?.accessToken || !data?.refreshToken) {
+      console.log('[Auth] Login response missing tokens');
+      throw new Error('Invalid server response');
+    }
+
+    console.log('[Auth] Login successful, saving tokens');
     setTokens({
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
@@ -347,24 +404,32 @@ export const authApi = {
     lastName: string;
     companyName: string;
   }) => {
-    // Note: Role is NOT sent - backend always sets it to PARTNER for security
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    // Note: Role is NOT sent - backend always sets it to ADMIN for security
+    console.log('[Auth] Register attempt for:', data.email);
+    console.log('[Auth] API URL:', `${API_BASE_URL}/auth/register`);
+
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
     const result = await response.json();
+    console.log('[Auth] Register response status:', response.status);
 
     if (!response.ok) {
+      console.log('[Auth] Register failed:', result.message);
       throw new Error(result.message || 'Registration failed');
     }
 
+    console.log('[Auth] Registration successful');
     return result;
   },
 
   forgotPassword: async (email: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    console.log('[Auth] Forgot password for:', email);
+
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -380,7 +445,9 @@ export const authApi = {
   },
 
   resetPassword: async (token: string, newPassword: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    console.log('[Auth] Reset password attempt');
+
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, newPassword }),
@@ -1754,6 +1821,7 @@ export const techniciansApi = {
     const endpoint = buildUrlWithQuery('/technicians', {
       status: params?.status,
       type: params?.type,
+      workMode: params?.workMode,
       specialty: params?.specialty,
       search: params?.search,
       page: params?.page,
@@ -2077,6 +2145,7 @@ export interface TechnicianAvailability {
   firstName: string;
   lastName: string;
   technicianType: TechnicianType;
+  workMode: WorkMode;
   isAvailable: boolean;
   onTimeOff: boolean;
   schedule: {
@@ -2103,5 +2172,214 @@ export interface AvailabilityResponse {
     notScheduled: number;
   };
 }
+
+// ============================================================================
+// INVITATIONS API
+// ============================================================================
+
+export const invitationsApi = {
+  // Create a new invitation (ADMIN/DISPATCHER)
+  create: async (input: CreateInvitationInput) => {
+    const response = await api.post<{
+      success: boolean;
+      code: string;
+      invitation: Invitation;
+    }>('/invitations', input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // List organization invitations (ADMIN/DISPATCHER)
+  list: async (params?: { status?: string; page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery('/invitations', {
+      status: params?.status,
+      page: params?.page,
+      limit: params?.limit,
+    });
+
+    const response = await api.get<{
+      success: boolean;
+      data: Invitation[];
+      meta: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Validate an invitation code (Public)
+  validate: async (code: string) => {
+    const response = await api.get<InvitationValidation>(
+      `/invitations/validate/${code}`,
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+
+  // Revoke an invitation (ADMIN/DISPATCHER)
+  revoke: async (id: string) => {
+    const response = await api.delete<{
+      success: boolean;
+      message: string;
+    }>(`/invitations/${id}`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+};
+
+// ============================================================================
+// JOIN REQUESTS API
+// ============================================================================
+
+export const joinRequestsApi = {
+  list: async (params?: { status?: string; page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery('/join-requests', {
+      status: params?.status,
+      page: params?.page,
+      limit: params?.limit,
+    });
+    const response = await api.get<{
+      success: boolean;
+      data: JoinRequest[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  approve: async (id: string, data: {
+    role: string;
+    platform?: string;
+    technicianType?: string;
+    workMode?: string;
+    specialty?: string;
+    maxDailyJobs?: number;
+  }) => {
+    const response = await api.patch<{ success: boolean; data: JoinRequest }>(`/join-requests/${id}/approve`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  reject: async (id: string, data?: { reason?: string }) => {
+    const response = await api.patch<{ success: boolean; data: JoinRequest }>(`/join-requests/${id}/reject`, data || {});
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+};
+
+// ============================================================================
+// ORGANIZATIONS API
+// ============================================================================
+
+// Organization member type
+export interface OrgMember {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  platform: string;
+  isActive: boolean;
+  createdAt: string;
+  technicianType?: string;
+  workMode?: string;
+  specialty?: string;
+  canCreateTasks: boolean;
+  canViewAllTasks: boolean;
+  canAssignTasks: boolean;
+  canManageUsers: boolean;
+}
+
+export interface UpdateMemberRoleInput {
+  role: string;
+  platform?: string;
+  canCreateTasks?: boolean;
+  canViewAllTasks?: boolean;
+  canAssignTasks?: boolean;
+  canManageUsers?: boolean;
+}
+
+export const organizationsApi = {
+  getJoinCode: async () => {
+    const response = await api.get<{
+      success: boolean;
+      data: { hasJoinCode: boolean; joinPolicy: string };
+    }>('/organizations/join-code');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  regenerateJoinCode: async () => {
+    const response = await api.post<{
+      success: boolean;
+      data: { code: string; message: string };
+    }>('/organizations/regenerate-join-code');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateSettings: async (data: { joinPolicy: string }) => {
+    const response = await api.patch<{
+      success: boolean;
+      data: { joinPolicy: string };
+    }>('/organizations/settings', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  getMembers: async (params?: { search?: string; role?: string; page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery('/organizations/members', {
+      search: params?.search,
+      role: params?.role !== 'all' ? params?.role : undefined,
+      page: params?.page,
+      limit: params?.limit,
+    });
+    const response = await api.get<{
+      success: boolean;
+      data: OrgMember[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  updateMemberRole: async (memberId: string, data: UpdateMemberRoleInput) => {
+    const response = await api.patch<{
+      success: boolean;
+      data: OrgMember;
+    }>(`/organizations/members/${memberId}/role`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  removeMember: async (memberId: string) => {
+    const response = await api.delete<{
+      success: boolean;
+      message: string;
+    }>(`/organizations/members/${memberId}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+};
 
 export default api;

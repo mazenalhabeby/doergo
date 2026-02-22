@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useRouter, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/contexts/auth-context';
@@ -10,11 +9,9 @@ import {
   RADIUS,
   FONT_SIZE,
   FONT_WEIGHT,
-  ROUTES,
 } from '../../../src/lib/constants';
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const { user, logout } = useAuth();
   const { unregisterPushToken } = usePushNotifications();
   const insets = useSafeAreaInsets();
@@ -32,7 +29,7 @@ export default function ProfileScreen() {
             // Unregister push token before logging out
             await unregisterPushToken();
             await logout();
-            router.replace(ROUTES.login as Href);
+            // Navigation is handled automatically by root layout when isAuthenticated changes
           },
         },
       ]

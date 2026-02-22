@@ -82,16 +82,18 @@ async function bootstrap() {
       .addTag('tasks', 'Task management endpoints')
       .addTag('users', 'User management endpoints')
       .addTag('tracking', 'Location tracking endpoints')
+      .addTag('invitations', 'Invitation management endpoints')
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('docs', app, document);
   }
 
   // Start server
+  // Listen on 0.0.0.0 to accept connections from mobile devices on the same network
   const port = configService.get<number>('PORT', 4000);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`API Gateway is running on: http://localhost:${port}`);
+  console.log(`API Gateway is running on: http://0.0.0.0:${port}`);
   if (!isProduction) {
     console.log(`Swagger docs available at: http://localhost:${port}/docs`);
   }

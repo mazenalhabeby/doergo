@@ -6,7 +6,7 @@
  */
 
 import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Role, Platform, TechnicianType } from '../types';
+import { Role, Platform, TechnicianType, WorkMode } from '../types';
 
 // =============================================================================
 // METADATA KEYS
@@ -59,7 +59,8 @@ export interface CurrentUserData {
   firstName: string;
   lastName: string;
   role: Role | string;
-  organizationId: string;
+  organizationId: string | null;
+  onboardingCompleted: boolean;
   // Permission fields
   platform: Platform | string;
   canCreateTasks: boolean;
@@ -68,6 +69,7 @@ export interface CurrentUserData {
   canManageUsers: boolean;
   // Technician-specific fields
   technicianType?: TechnicianType;
+  workMode?: WorkMode;
 }
 
 /**
@@ -95,3 +97,9 @@ export const CurrentUser = createParamDecorator(
     return data ? user[data] : user;
   },
 );
+
+// =============================================================================
+// SKIP ONBOARDING CHECK
+// =============================================================================
+
+export { SkipOnboardingCheck, IS_SKIP_ONBOARDING_KEY } from './skip-onboarding.decorator';

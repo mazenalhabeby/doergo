@@ -4,7 +4,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { Role } from '@doergo/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { UpdateLocationDto } from './dto';
+import { UpdateTrackingLocationDto } from './dto';
 
 @ApiTags('tracking')
 @ApiBearerAuth()
@@ -17,7 +17,7 @@ export class TrackingController {
   @Post('location')
   @Roles(Role.TECHNICIAN)
   @ApiOperation({ summary: 'Update technician location (TECHNICIAN only - Mobile app)' })
-  async updateLocation(@Body() updateLocationDto: UpdateLocationDto, @Request() req: any) {
+  async updateLocation(@Body() updateLocationDto: UpdateTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'update_location' }, {
         ...updateLocationDto,

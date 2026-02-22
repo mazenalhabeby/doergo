@@ -12,6 +12,7 @@ import {
   techniciansApi,
   type CreateTechnicianInput,
   TechnicianType,
+  WorkMode,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -63,6 +64,7 @@ export default function NewTechnicianPage() {
   const [technicianType, setTechnicianType] = useState<TechnicianType>(
     TechnicianType.FREELANCER
   )
+  const [workMode, setWorkMode] = useState<WorkMode>(WorkMode.HYBRID)
   const [specialty, setSpecialty] = useState("")
   const [maxDailyJobs, setMaxDailyJobs] = useState(5)
 
@@ -114,6 +116,7 @@ export default function NewTechnicianPage() {
       lastName: lastName.trim(),
       password: password.trim() || undefined,
       technicianType,
+      workMode,
       specialty: specialty || undefined,
       maxDailyJobs,
     })
@@ -290,10 +293,38 @@ export default function NewTechnicianPage() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-slate-500">
-                    Full-time employees can clock in at company locations
+                    Determines billing and expense coverage
                   </p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="workMode">Work Mode</Label>
+                  <Select
+                    value={workMode}
+                    onValueChange={(v) => setWorkMode(v as WorkMode)}
+                  >
+                    <SelectTrigger id="workMode">
+                      <SelectValue placeholder="Select work mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={WorkMode.HYBRID}>
+                        Hybrid (On-Site + On-Road)
+                      </SelectItem>
+                      <SelectItem value={WorkMode.ON_SITE}>
+                        On-Site (Company Locations)
+                      </SelectItem>
+                      <SelectItem value={WorkMode.ON_ROAD}>
+                        On-Road (Field Tasks Only)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500">
+                    On-Site: attendance tracking, On-Road: task-based, Hybrid: both
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="specialty">Specialty</Label>
                   <Select value={specialty} onValueChange={setSpecialty}>

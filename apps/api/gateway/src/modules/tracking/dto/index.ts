@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class UpdateLocationDto {
+export class UpdateTrackingLocationDto {
   @ApiProperty({ example: 40.7128 })
   @IsNumber()
   lat: number;

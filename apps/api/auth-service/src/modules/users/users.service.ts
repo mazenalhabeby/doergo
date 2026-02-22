@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TechnicianType, Platform, TaskStatus } from '@doergo/shared';
+import { Role, TechnicianType, WorkMode, Platform, TaskStatus } from '@doergo/shared';
 import * as bcrypt from 'bcrypt';
 import {
   CreateTechnicianDto,
@@ -13,6 +13,9 @@ import {
   ListTechniciansDto,
   GetTechnicianDetailDto,
   GetTechnicianPerformanceDto,
+  ListOrgMembersDto,
+  UpdateMemberRoleDto,
+  RemoveMemberDto,
 } from './dto';
 
 const BCRYPT_COST_FACTOR = 12;
@@ -31,6 +34,7 @@ export class UsersService {
         lastName: true,
         role: true,
         organizationId: true,
+        onboardingCompleted: true,
         isActive: true,
         createdAt: true,
         // Permission fields
@@ -134,6 +138,11 @@ export class UsersService {
       where.technicianType = type;
     }
 
+    // Work mode filter
+    if (dto.workMode && dto.workMode !== 'all') {
+      where.workMode = dto.workMode;
+    }
+
     // Specialty filter
     if (specialty) {
       where.specialty = {
@@ -183,6 +192,7 @@ export class UsersService {
         lastName: true,
         isActive: true,
         technicianType: true,
+        workMode: true,
         specialty: true,
         rating: true,
         ratingCount: true,
@@ -227,6 +237,7 @@ export class UsersService {
       lastName: tech.lastName,
       isActive: tech.isActive,
       technicianType: tech.technicianType,
+      workMode: tech.workMode,
       specialty: tech.specialty,
       rating: tech.rating || 5.0,
       ratingCount: tech.ratingCount || 0,
@@ -271,6 +282,7 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
         technicianType: true,
+        workMode: true,
         specialty: true,
         rating: true,
         ratingCount: true,
@@ -318,6 +330,7 @@ export class UsersService {
       createdAt: technician.createdAt.toISOString(),
       updatedAt: technician.updatedAt.toISOString(),
       technicianType: technician.technicianType,
+      workMode: technician.workMode,
       specialty: technician.specialty,
       rating: technician.rating || 5.0,
       ratingCount: technician.ratingCount || 0,
@@ -373,6 +386,7 @@ export class UsersService {
       lastName,
       password,
       technicianType = TechnicianType.FREELANCER,
+      workMode = WorkMode.HYBRID,
       specialty,
       maxDailyJobs = 5,
       organizationId,
@@ -400,6 +414,7 @@ export class UsersService {
         passwordHash,
         role: Role.TECHNICIAN,
         technicianType,
+        workMode,
         specialty,
         maxDailyJobs,
         organizationId,
@@ -418,6 +433,7 @@ export class UsersService {
         role: true,
         isActive: true,
         technicianType: true,
+        workMode: true,
         specialty: true,
         maxDailyJobs: true,
         organizationId: true,
@@ -463,6 +479,7 @@ export class UsersService {
         ...(dto.technicianType !== undefined && {
           technicianType: dto.technicianType,
         }),
+        ...(dto.workMode !== undefined && { workMode: dto.workMode }),
         ...(dto.specialty !== undefined && { specialty: dto.specialty }),
         ...(dto.maxDailyJobs !== undefined && { maxDailyJobs: dto.maxDailyJobs }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
@@ -477,6 +494,7 @@ export class UsersService {
         role: true,
         isActive: true,
         technicianType: true,
+        workMode: true,
         specialty: true,
         maxDailyJobs: true,
         rating: true,
@@ -633,6 +651,201 @@ export class UsersService {
         comparison: null, // TODO: Calculate comparison with previous period
       },
     };
+  }
+
+  // ============================================================================
+  // ORGANIZATION MEMBERS METHODS
+  // ============================================================================
+
+  /**
+   * List all members of an organization with filtering and pagination
+   */
+  async listOrgMembers(dto: ListOrgMembersDto) {
+    const { organizationId, search, role, page = 1, limit = 10 } = dto;
+
+    const where: any = { organizationId };
+
+    if (role) {
+      where.role = role;
+    }
+
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const total = await this.prisma.user.count({ where });
+
+    const members = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        platform: true,
+        isActive: true,
+        createdAt: true,
+        technicianType: true,
+        workMode: true,
+        specialty: true,
+        canCreateTasks: true,
+        canViewAllTasks: true,
+        canAssignTasks: true,
+        canManageUsers: true,
+      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      success: true,
+      data: members,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Update a member's role and permissions
+   */
+  async updateMemberRole(
+    memberId: string,
+    organizationId: string,
+    requesterId: string,
+    dto: UpdateMemberRoleDto,
+  ) {
+    // Can't change own role
+    if (memberId === requesterId) {
+      throw new BadRequestException('You cannot change your own role');
+    }
+
+    // Verify member exists and belongs to the organization
+    const member = await this.prisma.user.findFirst({
+      where: { id: memberId, organizationId },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    // If demoting from ADMIN, check there's at least one other active ADMIN
+    if (member.role === Role.ADMIN && dto.role !== Role.ADMIN) {
+      const adminCount = await this.prisma.user.count({
+        where: {
+          organizationId,
+          role: Role.ADMIN,
+          isActive: true,
+          id: { not: memberId },
+        },
+      });
+
+      if (adminCount === 0) {
+        throw new BadRequestException(
+          'Cannot demote the last admin. Promote another member to admin first.',
+        );
+      }
+    }
+
+    // Set default platform based on role if not provided
+    const platform =
+      dto.platform ||
+      (dto.role === Role.TECHNICIAN
+        ? Platform.MOBILE
+        : dto.role === Role.DISPATCHER
+          ? Platform.WEB
+          : Platform.BOTH);
+
+    const updated = await this.prisma.user.update({
+      where: { id: memberId },
+      data: {
+        role: dto.role,
+        platform,
+        canCreateTasks: dto.canCreateTasks ?? (dto.role === Role.ADMIN),
+        canViewAllTasks:
+          dto.canViewAllTasks ??
+          (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER),
+        canAssignTasks:
+          dto.canAssignTasks ??
+          (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER),
+        canManageUsers: dto.canManageUsers ?? (dto.role === Role.ADMIN),
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        platform: true,
+        isActive: true,
+        canCreateTasks: true,
+        canViewAllTasks: true,
+        canAssignTasks: true,
+        canManageUsers: true,
+      },
+    });
+
+    return { success: true, data: updated };
+  }
+
+  /**
+   * Remove a member from the organization
+   */
+  async removeMember(dto: RemoveMemberDto) {
+    const { memberId, organizationId, requesterId } = dto;
+
+    // Can't remove self
+    if (memberId === requesterId) {
+      throw new BadRequestException('You cannot remove yourself');
+    }
+
+    // Verify member exists and belongs to the organization
+    const member = await this.prisma.user.findFirst({
+      where: { id: memberId, organizationId },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    // Can't remove the last ADMIN
+    if (member.role === Role.ADMIN) {
+      const adminCount = await this.prisma.user.count({
+        where: {
+          organizationId,
+          role: Role.ADMIN,
+          isActive: true,
+          id: { not: memberId },
+        },
+      });
+
+      if (adminCount === 0) {
+        throw new BadRequestException(
+          'Cannot remove the last admin from the organization.',
+        );
+      }
+    }
+
+    // Remove from org (set organizationId to null, deactivate)
+    await this.prisma.user.update({
+      where: { id: memberId },
+      data: {
+        organizationId: null,
+        isActive: false,
+        onboardingCompleted: false,
+      },
+    });
+
+    return { success: true, message: 'Member removed successfully' };
   }
 
   // ============================================================================

@@ -2,8 +2,11 @@
  * Shared Guard Utilities
  *
  * Helper functions for role-based and permission-based authorization.
- * Note: RolesGuard class must be defined in each app due to NestJS DI requirements.
+ * Note: RolesGuard and OnboardingCompleteGuard classes must be defined in each app
+ * due to NestJS DI requirements. The shared package provides the implementation.
  */
+
+export { OnboardingCompleteGuard } from './onboarding.guard';
 
 import { Role, Platform } from '../types';
 

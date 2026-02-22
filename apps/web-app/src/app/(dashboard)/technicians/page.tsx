@@ -29,6 +29,7 @@ import {
   type TechnicianListItem,
   type TechniciansQueryParams,
   TechnicianType,
+  WorkMode,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,6 +83,14 @@ const TYPE_OPTIONS = [
   { value: TechnicianType.FREELANCER, label: "Freelancer" },
 ] as const
 
+// Work mode filter options
+const WORK_MODE_OPTIONS = [
+  { value: "all", label: "All Modes" },
+  { value: WorkMode.ON_SITE, label: "On-Site" },
+  { value: WorkMode.ON_ROAD, label: "On-Road" },
+  { value: WorkMode.HYBRID, label: "Hybrid" },
+] as const
+
 // Specialty filter options
 const SPECIALTY_OPTIONS = [
   { value: "all", label: "All Specialties" },
@@ -101,6 +110,7 @@ export default function TechniciansPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active")
   const [typeFilter, setTypeFilter] = useState<TechnicianType | "all">("all")
+  const [workModeFilter, setWorkModeFilter] = useState<WorkMode | "all">("all")
   const [specialtyFilter, setSpecialtyFilter] = useState("all")
   const [page, setPage] = useState(1)
   const limit = 10
@@ -113,11 +123,12 @@ export default function TechniciansPage() {
   const queryParams: TechniciansQueryParams = useMemo(() => ({
     status: statusFilter,
     type: typeFilter,
+    workMode: workModeFilter,
     specialty: specialtyFilter !== "all" ? specialtyFilter : undefined,
     search: searchQuery || undefined,
     page,
     limit,
-  }), [statusFilter, typeFilter, specialtyFilter, searchQuery, page, limit])
+  }), [statusFilter, typeFilter, workModeFilter, specialtyFilter, searchQuery, page, limit])
 
   // Fetch technicians
   const { data: techniciansData, isLoading, isError, error, refetch } = useQuery({
@@ -152,6 +163,11 @@ export default function TechniciansPage() {
 
   const handleTypeChange = (value: string) => {
     setTypeFilter(value as TechnicianType | "all")
+    setPage(1)
+  }
+
+  const handleWorkModeChange = (value: string) => {
+    setWorkModeFilter(value as WorkMode | "all")
     setPage(1)
   }
 
@@ -207,6 +223,19 @@ export default function TechniciansPage() {
         return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Full-Time</Badge>
       case TechnicianType.FREELANCER:
         return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Freelancer</Badge>
+      default:
+        return null
+    }
+  }
+
+  const getWorkModeBadge = (mode: WorkMode) => {
+    switch (mode) {
+      case WorkMode.ON_SITE:
+        return <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100">On-Site</Badge>
+      case WorkMode.ON_ROAD:
+        return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">On-Road</Badge>
+      case WorkMode.HYBRID:
+        return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">Hybrid</Badge>
       default:
         return null
     }
@@ -285,6 +314,20 @@ export default function TechniciansPage() {
             </SelectContent>
           </Select>
 
+          {/* Work Mode Filter */}
+          <Select value={workModeFilter} onValueChange={handleWorkModeChange}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Work Mode" />
+            </SelectTrigger>
+            <SelectContent>
+              {WORK_MODE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Specialty Filter */}
           <Select value={specialtyFilter} onValueChange={handleSpecialtyChange}>
             <SelectTrigger className="w-[160px]">
@@ -348,6 +391,7 @@ export default function TechniciansPage() {
                 <TableRow className="bg-slate-50">
                   <TableHead className="w-[250px]">Technician</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Work Mode</TableHead>
                   <TableHead>Specialty</TableHead>
                   <TableHead className="text-center">Rating</TableHead>
                   <TableHead className="text-center">Active Tasks</TableHead>
@@ -384,6 +428,7 @@ export default function TechniciansPage() {
                         </div>
                       </TableCell>
                       <TableCell>{getTypeBadge(tech.technicianType)}</TableCell>
+                      <TableCell>{tech.workMode ? getWorkModeBadge(tech.workMode) : <span className="text-slate-400">—</span>}</TableCell>
                       <TableCell>
                         {tech.specialty ? (
                           <span className="text-slate-700 capitalize">{tech.specialty}</span>

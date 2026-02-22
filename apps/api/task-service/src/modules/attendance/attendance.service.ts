@@ -10,7 +10,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
   paginated,
-  TechnicianType,
+  WorkMode,
   TimeEntryStatus,
   BreakType,
   ApprovalStatus,
@@ -52,12 +52,17 @@ export class AttendanceService {
   }) {
     this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}`);
 
-    // Verify user is a FULL_TIME technician
+    // Verify user is a technician with on-site work mode
     const user = await this.prisma.user.findFirst({
       where: {
         id: data.userId,
         organizationId: data.organizationId,
         role: 'TECHNICIAN',
+      },
+      select: {
+        id: true,
+        workMode: true,
+        organizationId: true,
       },
     });
 
@@ -65,9 +70,9 @@ export class AttendanceService {
       throw new NotFoundException('Technician not found');
     }
 
-    if (user.technicianType !== TechnicianType.FULL_TIME) {
+    if (user.workMode === WorkMode.ON_ROAD) {
       throw new BadRequestException(
-        'Only FULL_TIME technicians can use attendance clock-in',
+        'ON_ROAD technicians cannot use attendance clock-in. Change work mode to ON_SITE or HYBRID.',
       );
     }
 

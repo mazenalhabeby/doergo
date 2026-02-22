@@ -380,4 +380,100 @@ export class NotificationController {
       durationMinutes: data.durationMinutes,
     });
   }
+
+  // =========================================================================
+  // JOIN REQUEST EVENTS
+  // =========================================================================
+
+  @EventPattern('join_request_submitted')
+  async handleJoinRequestSubmitted(@Payload() data: {
+    userId: string;
+    userName: string;
+    organizationId: string;
+    organizationName: string;
+    message?: string;
+  }) {
+    this.logger.log(`Join request submitted: user=${data.userName}, org=${data.organizationName}`);
+
+    // Emit websocket event to org admins/dispatchers for real-time dashboard
+    this.websocketGateway.emitToOrganization(data.organizationId, 'join_request_submitted', {
+      userId: data.userId,
+      userName: data.userName,
+      organizationName: data.organizationName,
+      message: data.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @EventPattern('join_request_approved')
+  async handleJoinRequestApproved(@Payload() data: {
+    userId: string;
+    userName: string;
+    organizationId: string;
+    organizationName: string;
+    role: string;
+    approvedByName: string;
+  }) {
+    this.logger.log(`Join request approved: user=${data.userName}, org=${data.organizationName}, approvedBy=${data.approvedByName}`);
+
+    // Send push notification to the user
+    try {
+      await this.pushService.sendToUser(
+        data.userId,
+        'Join Request Approved',
+        `Your request to join ${data.organizationName} has been approved. Welcome aboard!`,
+        { type: 'join_request_approved', organizationId: data.organizationId, role: data.role },
+      );
+      this.logger.log(`Join request approved push sent to user ${data.userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send join request approved push: ${error}`);
+    }
+
+    // Emit websocket event to the user
+    this.websocketGateway.emitToUser(data.userId, 'join_request_approved', {
+      organizationId: data.organizationId,
+      organizationName: data.organizationName,
+      role: data.role,
+      approvedByName: data.approvedByName,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @EventPattern('join_request_rejected')
+  async handleJoinRequestRejected(@Payload() data: {
+    userId: string;
+    userName: string;
+    organizationId: string;
+    organizationName: string;
+    reason?: string;
+    rejectedByName: string;
+  }) {
+    this.logger.log(`Join request rejected: user=${data.userName}, org=${data.organizationName}, rejectedBy=${data.rejectedByName}`);
+
+    // Send push notification to the user
+    try {
+      const body = data.reason
+        ? `Your request to join ${data.organizationName} was not approved. Reason: ${data.reason}`
+        : `Your request to join ${data.organizationName} was not approved.`;
+
+      await this.pushService.sendToUser(
+        data.userId,
+        'Join Request Not Approved',
+        body,
+        { type: 'join_request_rejected', organizationId: data.organizationId, reason: data.reason },
+      );
+      this.logger.log(`Join request rejected push sent to user ${data.userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send join request rejected push: ${error}`);
+    }
+
+    // Emit websocket event to the user
+    this.websocketGateway.emitToUser(data.userId, 'join_request_rejected', {
+      organizationId: data.organizationId,
+      organizationName: data.organizationName,
+      reason: data.reason,
+      rejectedByName: data.rejectedByName,
+      timestamp: new Date().toISOString(),
+    });
+  }
 }

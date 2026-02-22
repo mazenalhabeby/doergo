@@ -1,7 +1,7 @@
 # DOERGO - Implementation Checklist
 
 > **Usage**: Check off items as completed. Use `[x]` for done, `[ ]` for pending, `[~]` for in progress.
-> **Last Updated**: 2026-01-30 (Push Notifications + Availability Calendar)
+> **Last Updated**: 2026-02-11 (Schedule & Members Web UI)
 >
 > **IMPORTANT**: All code MUST follow **SOLID** and **DRY** principles. See CLAUDE.md Section 13.
 
@@ -372,6 +372,260 @@
 
 ---
 
+## PHASE 3.4: Invitation System ✅ COMPLETE (2026-02-04)
+
+### Database Schema
+- [x] `Invitation` model (codeHash, targetRole, status, expiresAt, technicianType, workMode, specialty, maxDailyJobs)
+- [x] `InvitationStatus` enum (PENDING, ACCEPTED, EXPIRED, REVOKED)
+- [x] Database migration: `add_invitation_system`
+
+### Backend - Auth Service
+- [x] `invitation.service.ts` - Create, validate, accept, revoke, list
+- [x] SHA-256 hashed invitation codes (plaintext never stored)
+- [x] Code format: 6-8 character alphanumeric, auto-uppercased
+- [x] Configurable expiration (1-720 hours, default: 72)
+- [x] Accept creates user with pre-assigned role, org, technician settings
+
+### Backend - Gateway
+- [x] `invitations.module.ts` - Module with microservice clients
+- [x] `invitations.controller.ts` - REST endpoints with rate limiting
+- [x] DTOs: `CreateInvitationDto`, `AcceptInvitationDto`, `ListInvitationsDto`
+- [x] `POST /invitations` - Create invitation code (10/min rate limit)
+- [x] `GET /invitations` - List org invitations with status/pagination filters
+- [x] `GET /invitations/validate/:code` - Public validation (10/min rate limit)
+- [x] `POST /invitations/accept` - Public accept & register (5/min rate limit)
+- [x] `DELETE /invitations/:id` - Revoke invitation
+
+### Shared Types
+- [x] `Invitation` interface
+- [x] `InvitationValidation` interface
+- [x] `CreateInvitationInput` interface
+
+### Web - Invitations Page
+- [x] Invitations management page (`/invitations`)
+- [x] Invitation list with status badges
+- [x] Create invitation dialog (role, type, workMode, specialty, maxDailyJobs)
+- [x] Revoke invitation with confirmation
+
+### Mobile - Registration
+- [x] Registration screen with invitation code input
+- [x] Code validation before form submission
+- [x] Auto-login after successful registration
+
+### Seed Data
+- [x] Pending technician invitation (FULL_TIME, ON_SITE, Electrical)
+- [x] Pending dispatcher invitation
+
+---
+
+## PHASE 3.5: WorkMode Decoupling ✅ COMPLETE (2026-02-04)
+
+### Concept
+Decoupled two concerns previously conflated in `TechnicianType`:
+- **TechnicianType** (FREELANCER | FULL_TIME) = billing/employment model (who pays expenses)
+- **WorkMode** (ON_SITE | ON_ROAD | HYBRID) = where the technician works
+
+### Database Schema
+- [x] `WorkMode` enum (ON_SITE, ON_ROAD, HYBRID)
+- [x] `workMode` field on User model (default: HYBRID)
+- [x] `workMode` field on Invitation model
+- [x] Database migration: `add_work_mode`
+- [x] Data migration: FULL_TIME→ON_SITE, FREELANCER→ON_ROAD
+
+### Shared Types
+- [x] `WorkMode` enum in `@doergo/shared`
+- [x] `workMode` added to: TechnicianProfile, TechnicianListItem, CreateTechnicianInput, UpdateTechnicianInput, TechniciansQueryParams
+- [x] `workMode` added to: Invitation, InvitationValidation, CreateInvitationInput
+- [x] Helper functions: `getWorkModeLabel()`, `getWorkModeColor()`, `canUseAttendance()`, `canBeAssignedToLocation()`
+
+### Backend - Gate Logic Changes
+- [x] Attendance service: gate on `workMode === ON_ROAD` instead of `technicianType !== FULL_TIME`
+- [x] Locations service: gate on `workMode === ON_ROAD` instead of `technicianType !== FULL_TIME`
+- [x] Technicians service: `workMode` in availability query response
+
+### Backend - Auth Service
+- [x] Login response includes `workMode`
+- [x] `validateToken` includes `workMode`
+- [x] Users service: `workMode` in all CRUD operations and response mappings
+- [x] Invitation service: `workMode` in create, validate, and accept flows
+
+### Backend - Gateway DTOs
+- [x] `create-technician.dto.ts`: `workMode` field (default: HYBRID)
+- [x] `update-technician.dto.ts`: `workMode` field
+- [x] `list-technicians.dto.ts`: `workMode` filter
+- [x] `invitations/dto/index.ts`: `workMode` field
+
+### Mobile
+- [x] `api.ts`: `WorkMode` in User and LoginResponse types
+- [x] `_layout.tsx`: Tab visibility gated on workMode:
+  - ON_ROAD: Tasks tab only (no Clock)
+  - ON_SITE: Clock tab only (no Tasks)
+  - HYBRID: Both Tasks + Clock
+
+### Web
+- [x] `api.ts`: `WorkMode` import/export, `workMode` in TechnicianAvailability
+- [x] Technicians list: WorkMode filter dropdown + badge column
+- [x] Create technician: WorkMode select field
+- [x] Create invitation dialog: WorkMode select field
+
+### Seed Data
+- [x] technician1 (FULL_TIME): `workMode: ON_SITE`
+- [x] technician2 (FREELANCER): `workMode: ON_ROAD`
+- [x] Pending technician invitation: `workMode: ON_SITE`
+
+---
+
+## PHASE 3.6: Dynamic Mobile Onboarding ✅ COMPLETE (2026-02-10)
+
+### Concept
+Decoupled account creation from organization membership. New users register without an org, then choose a path: Create Org, Join by Code (with admin approval), or Use Invitation Code. Existing users are unaffected (`onboardingCompleted: true`).
+
+### Phase 3.6.1: Schema Changes & Migration
+- [x] `JoinPolicy` enum (OPEN, INVITE_ONLY, CLOSED)
+- [x] `JoinRequestStatus` enum (PENDING, APPROVED, REJECTED, CANCELED)
+- [x] `JoinRequest` model (userId, organizationId, message, status, reviewedById, rejectionReason, assignedRole, assignedPlatform)
+- [x] `joinCodeHash` and `joinPolicy` fields on Organization model
+- [x] `onboardingCompleted` field on User model (default: true)
+- [x] Database migration with `UPDATE "users" SET "onboardingCompleted" = true`
+
+### Phase 3.6.2: Shared Package Updates
+- [x] `packages/shared/src/types/onboarding.ts` - All onboarding types (JoinPolicy, JoinRequestStatus, JoinRequest, OnboardingStatus, OrgCodeValidation, CreateOrganizationInput, etc.)
+- [x] `packages/shared/src/constants/onboarding.ts` - ORG_CODE_LENGTH, ORG_CODE_CHARSET, limits, helpers
+- [x] `packages/shared/src/utils/crypto.ts` - Extracted shared `hashCode()` function
+- [x] Updated types/index.ts and constants/index.ts exports
+- [x] Updated `CurrentUserData` with `onboardingCompleted`, nullable `organizationId`
+
+### Phase 3.6.3: OnboardingCompleteGuard
+- [x] `@SkipOnboardingCheck()` decorator
+- [x] `OnboardingCompleteGuard` - Returns 403 if `onboardingCompleted === false`
+- [x] Guard order: ThrottlerGuard → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard
+- [x] `@SkipOnboardingCheck()` on `GET /auth/me` and `POST /auth/logout`
+
+### Phase 3.6.4: Auth Service Backend
+- [x] `register()` creates orphan user when `companyName` is empty (null org, onboardingCompleted: false)
+- [x] `login()` and `validateToken()` include `onboardingCompleted` in response
+- [x] Onboarding module: `onboarding.service.ts`, `onboarding.controller.ts`, `onboarding.module.ts`
+- [x] `createOrganization()` - Path A: Create org, generate join code, update user → ADMIN
+- [x] `validateOrgCode()` - Path B: Hash code, find org by joinCodeHash
+- [x] `submitJoinRequest()` - Path B: Validate code, check limits, create PENDING request
+- [x] `acceptInvitationForExistingUser()` - Path C: Validate invitation, update user
+- [x] `getOnboardingStatus()` - Return status + pending request info
+- [x] `listJoinRequests()` - Admin: paginated list
+- [x] `approveJoinRequest()` - Admin: update user + mark APPROVED with push notification
+- [x] `rejectJoinRequest()` - Admin: mark REJECTED with push notification
+- [x] `cancelJoinRequest()` - User: cancel own request
+- [x] `regenerateJoinCode()` - Generate new 8-char code
+- [x] `updateJoinPolicy()` - Update org join policy
+
+### Phase 3.6.5: Gateway Layer
+- [x] `RegisterDto.companyName` made optional
+- [x] Onboarding module with `@SkipOnboardingCheck()`:
+  - [x] `POST /onboarding/create-org` - Create organization (Path A)
+  - [x] `GET /onboarding/validate-org-code/:code` - Validate org code (Path B)
+  - [x] `POST /onboarding/join-by-code` - Submit join request (Path B)
+  - [x] `POST /onboarding/accept-invitation` - Accept invitation (Path C)
+  - [x] `GET /onboarding/status` - Get onboarding status
+  - [x] `DELETE /onboarding/join-requests/:id` - Cancel own join request
+- [x] Join Requests module (ADMIN/DISPATCHER):
+  - [x] `GET /join-requests` - List pending requests
+  - [x] `PATCH /join-requests/:id/approve` - Approve with role assignment
+  - [x] `PATCH /join-requests/:id/reject` - Reject with reason
+- [x] Organizations module:
+  - [x] `GET /organizations/join-code` - Get org join code info
+  - [x] `POST /organizations/regenerate-join-code` - Generate new join code
+  - [x] `PATCH /organizations/settings` - Update join policy
+
+### Phase 3.6.6: Mobile App
+- [x] `onboardingApi` in api.ts (getStatus, createOrganization, validateOrgCode, submitJoinRequest, acceptInvitation, cancelJoinRequest)
+- [x] `needsOnboarding` in auth context (derived from `user.onboardingCompleted`)
+- [x] `refreshUser()` method in auth context
+- [x] 3-way navigation guard (auth → onboarding → app)
+- [x] Simplified register screen (no company name, no invitation code)
+- [x] `(onboarding)/_layout.tsx` - Stack layout
+- [x] `choose-path.tsx` - 3 option cards (Create Org, Join Org, Use Invitation)
+- [x] `create-org.tsx` - Path A: Name + address → create org → main app
+- [x] `join-org.tsx` - Path B: Org code → verify → message → submit request
+- [x] `use-invitation.tsx` - Path C: Invitation code → verify → accept → main app
+- [x] `pending-approval.tsx` - Waiting screen with 30s polling, cancel, retry
+
+### Phase 3.6.7: Web App
+- [x] `joinRequestsApi` in api.ts (list, approve, reject)
+- [x] `organizationsApi` in api.ts (getJoinCode, regenerateJoinCode, updateSettings)
+- [x] Join Requests page (`/join-requests`) with approve/reject dialogs
+- [x] Settings page (`/settings`) with join code + join policy management
+- [x] "Join Requests" nav item in sidebar (ADMIN + DISPATCHER)
+
+### Phase 3.6.8: Seed Data
+- [x] `onboardingCompleted: true` for all 4 existing users
+- [x] Org join code: `ACME2026` (SHA-256 hashed), `joinPolicy: OPEN`
+- [x] Orphan user: `newuser@example.com / password123` (no org, onboardingCompleted: false)
+- [x] Pending join request from orphan user to Acme Corp
+
+### Phase 3.6.9: Push Notifications
+- [x] `@EventPattern('join_request_submitted')` → websocket to org
+- [x] `@EventPattern('join_request_approved')` → push + websocket to user
+- [x] `@EventPattern('join_request_rejected')` → push + websocket to user
+
+---
+
+## PHASE 3.7: Schedule & Members Web UI ✅ COMPLETE (2026-02-11)
+
+### Concept
+Built the web frontend for schedule management and organization members management. Extracted technician detail tabs into separate components for maintainability.
+
+### Tab Extraction (Refactor)
+- [x] Extracted 5 existing inline tabs from `technicians/[id]/page.tsx` (~867 lines → ~335 lines)
+- [x] `_components/overview-tab.tsx` - Stats cards + recent activity
+- [x] `_components/tasks-tab.tsx` - Task history table
+- [x] `_components/attendance-tab.tsx` - Clock-in/out records
+- [x] `_components/locations-tab.tsx` - Location assignment cards
+- [x] `_components/performance-tab.tsx` - Recharts line charts + period comparison
+- [x] `_components/index.ts` - Barrel exports
+
+### Schedule Tab (New)
+- [x] `_components/schedule-tab.tsx` - Weekly schedule editor
+- [x] Read mode: table with 7 rows (Mon-Sun), formatted times ("9:00 AM"), active/off badges
+- [x] Edit mode: `<input type="time">` for start/end, Switch toggle, notes Input
+- [x] Empty state with "Set Schedule" CTA
+- [x] Uses `techniciansApi.getSchedule()` / `techniciansApi.setSchedule()`
+
+### Time-Off Tab (New)
+- [x] `_components/time-off-tab.tsx` - Time-off request management
+- [x] Status filter Select (All/Pending/Approved/Rejected/Canceled)
+- [x] Table: dates, duration, reason, status badges, reviewer, actions dropdown
+- [x] "Request Time Off" Dialog with Calendar `mode="range"` + Textarea for reason
+- [x] Approve AlertDialog confirmation
+- [x] Reject Dialog with rejection reason Textarea
+- [x] Cancel action for own pending requests
+
+### Members Management (Backend)
+- [x] `listOrgMembers()` in users.service.ts - paginated member list with search + role filter
+- [x] `updateMemberRole()` in users.service.ts - validates can't change own role, can't demote last ADMIN
+- [x] `removeMember()` in users.service.ts - validates can't remove self, can't remove last ADMIN
+- [x] 3 MessagePattern handlers in users.controller.ts (list_org_members, update_member_role, remove_member)
+- [x] `GET /organizations/members` (ADMIN, DISPATCHER) - list org members
+- [x] `PATCH /organizations/members/:id/role` (ADMIN only) - update member role/permissions
+- [x] `DELETE /organizations/members/:id` (ADMIN only) - remove member
+- [x] Gateway DTOs: ListMembersQueryDto, UpdateMemberRoleDto
+
+### Members Page (Frontend)
+- [x] `/members` page with search, role filter, pagination
+- [x] Table: Name + email, Role badge, Platform badge, Status, Joined date, Actions dropdown
+- [x] Edit Role Dialog: role Select, platform Select, 4 permission Checkboxes (auto-defaults by role)
+- [x] Remove AlertDialog with red confirmation
+- [x] "Invite Member" button links to `/invitations`
+- [x] Only ADMIN sees action dropdowns (can't act on self)
+
+### Sidebar Updates
+- [x] ADMIN: added "Members" (`/members`, Users icon) + "Schedule" (`/technicians/availability`, Calendar icon)
+- [x] DISPATCHER: added "Members" (`/members`, Users icon), updated Schedule URL
+
+### API Client
+- [x] `OrgMember` type + `UpdateMemberRoleInput` type in api.ts
+- [x] `organizationsApi.getMembers()`, `.updateMemberRole()`, `.removeMember()` methods
+
+---
+
 ## PHASE 4: Comments & Attachments 🔲
 
 ### Backend - Task Service
@@ -672,6 +926,10 @@
 | 3.1 Service Reports | ✅ Complete | 100% |
 | 3.2 Role System Overhaul | ✅ Complete | 100% |
 | 3.3 Technician Management | ✅ Complete | 100% |
+| 3.4 Invitation System | ✅ Complete | 100% |
+| 3.5 WorkMode Decoupling | ✅ Complete | 100% |
+| 3.6 Dynamic Mobile Onboarding | ✅ Complete | 100% |
+| 3.7 Schedule & Members Web UI | ✅ Complete | 100% |
 | 4. Comments & Attachments | 🔲 Pending | 0% |
 | 5. Real-time Updates | ✅ Complete | 100% |
 | 5.1 Route Tracking | ✅ Complete | 100% |
@@ -746,6 +1004,10 @@ Before completing any task, verify:
 | 2026-01-30 | Technician Management | Phase 3.3 - Full technician CRUD API (9 endpoints), shared types (TechnicianProfile, TechnicianStats, PerformanceMetrics), web pages (list, create, detail with 5 tabs, availability calendar), DISPATCHER can now manage technicians |
 | 2026-01-30 | Push Notifications | Phase 6 (Push) - UserPushToken model, Expo Push API integration, task/attendance event notifications, mobile usePushNotifications hook with Android channels, notification tap navigation |
 | 2026-01-30 | Availability Calendar | Phase 7.2 - TechnicianSchedule and TimeOff models, schedule/time-off CRUD endpoints, time-off approval workflow, availability query API, web calendar with real API data |
+| 2026-02-04 | Invitation System | Phase 3.4 - Invitation model, SHA-256 hashed codes, full REST API (create/validate/accept/revoke), rate limiting, web invitations page, mobile registration screen, seed data |
+| 2026-02-04 | WorkMode Decoupling | Phase 3.5 - WorkMode enum (ON_SITE/ON_ROAD/HYBRID), decoupled from TechnicianType (billing-only), backend gate logic, mobile tab visibility, web filters/forms, data migration |
+| 2026-02-10 | Dynamic Mobile Onboarding | Phase 3.6 - Decoupled registration from org membership, 3-path onboarding wizard (Create Org/Join by Code/Use Invitation), JoinRequest model with approval workflow, OnboardingCompleteGuard, 5 mobile onboarding screens, web join-requests + settings pages, push notifications for join request lifecycle |
+| 2026-02-11 | Schedule & Members Web UI | Phase 3.7 - Extracted 5 technician detail tabs into `_components/`, added Schedule tab (weekly editor with read/edit modes), Time-Off tab (request/approve/reject/cancel), Members backend (listOrgMembers/updateMemberRole/removeMember with safety guards), Members page (search/filter/edit role/remove), sidebar nav updates |
 
 ---
 
@@ -879,6 +1141,53 @@ import {
   TechnicianAvailability,      // Availability for single technician
   AvailabilityResponse,        // Bulk availability response
 } from '@doergo/shared';
+
+// WorkMode Types (2026-02-04)
+import {
+  WorkMode,                    // ON_SITE | ON_ROAD | HYBRID
+  getWorkModeLabel,            // "On-Site" | "On-Road" | "Hybrid"
+  getWorkModeColor,            // Badge color classes
+  canUseAttendance,            // true for ON_SITE or HYBRID
+  canBeAssignedToLocation,     // true for ON_SITE or HYBRID
+} from '@doergo/shared';
+
+// Invitation Types (2026-02-04)
+import {
+  Invitation,                  // Full invitation interface
+  InvitationValidation,        // Validation response
+  CreateInvitationInput,       // Create invitation input
+  InvitationStatus,            // PENDING | ACCEPTED | EXPIRED | REVOKED
+} from '@doergo/shared';
+
+// Onboarding Types (2026-02-10)
+import {
+  JoinPolicy,                  // OPEN | INVITE_ONLY | CLOSED
+  JoinRequestStatus,           // PENDING | APPROVED | REJECTED | CANCELED
+  JoinRequest,                 // Full join request interface
+  OnboardingStatus,            // Onboarding status response
+  OrgCodeValidation,           // Org code validation response
+  CreateOrganizationInput,     // Create org input (name, address?)
+  SubmitJoinRequestInput,      // Join request input (orgCode, message?)
+  ApproveJoinRequestInput,     // Approve input (role, platform?, etc.)
+  RejectJoinRequestInput,      // Reject input (reason?)
+} from '@doergo/shared';
+
+// Onboarding Constants
+import {
+  ORG_CODE_LENGTH,             // 8
+  ORG_CODE_CHARSET,            // Excludes I, O, 0, 1
+  JOIN_REQUEST_MAX_PENDING_PER_USER,  // 3
+  JOIN_REQUEST_MESSAGE_MAX_LENGTH,    // 500
+  getJoinPolicyLabel,          // "Open" | "Invite Only" | "Closed"
+  getJoinRequestStatusLabel,   // Status display labels
+  getJoinRequestStatusColor,   // Status badge colors
+} from '@doergo/shared';
+
+// Crypto Utilities (2026-02-10)
+import { hashCode } from '@doergo/shared';  // SHA-256 hash for codes
+
+// Onboarding Guard (2026-02-10)
+import { SkipOnboardingCheck, OnboardingCompleteGuard } from '@doergo/shared';
 ```
 
 ---
@@ -897,8 +1206,8 @@ import {
 ### Role-Based Navigation
 | Role | Navigation Items |
 |------|------------------|
-| CLIENT | Dashboard, My Tasks, Create Task, Invoices |
-| DISPATCHER | Dashboard, All Tasks, Technicians, Live Map, Managed Orgs |
+| ADMIN | Dashboard, My Tasks, Create Task, Invoices, Invitations, Join Requests, Members, Schedule, Settings |
+| DISPATCHER | Dashboard, All Tasks, Technicians, Live Map, Managed Orgs, Invitations, Join Requests, Members, Schedule |
 | TECHNICIAN | Tasks tab, Profile tab (mobile only) |
 
 ### Status Badge Colors

@@ -122,17 +122,16 @@ function TabItem({
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const isFullTime = user?.technicianType === 'FULL_TIME';
+  // Work mode determines tab visibility (decoupled from billing type)
+  const workMode = user?.workMode || 'HYBRID';
+  const showTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
+  const showAttendance = workMode === 'ON_SITE' || workMode === 'HYBRID';
 
-  // Filter routes based on technician type
+  // Filter routes based on work mode
   const visibleRoutes = state.routes.filter((route: any) => {
-    if (isFullTime) {
-      // FULL_TIME: Hide tasks tab (attendance-focused)
-      return route.name !== 'tasks';
-    } else {
-      // FREELANCER: Hide attendance tab only (task-focused, but needs time-off for availability)
-      return route.name !== 'attendance';
-    }
+    if (route.name === 'tasks') return showTasks;
+    if (route.name === 'attendance') return showAttendance;
+    return true;
   });
 
   // Calculate adjusted focus index
@@ -178,7 +177,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
 export default function TabsLayout() {
   const { user } = useAuth();
-  const isFullTime = user?.technicianType === 'FULL_TIME';
+  const workMode = user?.workMode || 'HYBRID';
+  const showTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
+  const showAttendance = workMode === 'ON_SITE' || workMode === 'HYBRID';
 
   return (
     <View style={styles.container}>
@@ -200,22 +201,22 @@ export default function TabsLayout() {
             headerTitle: () => <LogoHeader subtitle="Home" />,
           }}
         />
-        {/* Tasks tab - only for FREELANCER */}
+        {/* Tasks tab - visible for ON_ROAD and HYBRID */}
         <Tabs.Screen
           name="tasks"
           options={{
             title: 'Tasks',
             headerTitle: () => <LogoHeader subtitle="Tasks" />,
-            href: isFullTime ? null : '/tasks',
+            href: showTasks ? '/tasks' : null,
           }}
         />
-        {/* Clock tab - only for FULL_TIME */}
+        {/* Clock tab - visible for ON_SITE and HYBRID */}
         <Tabs.Screen
           name="attendance"
           options={{
             title: 'Clock',
             headerTitle: () => <LogoHeader subtitle="Attendance" />,
-            href: isFullTime ? '/attendance' : null,
+            href: showAttendance ? '/attendance' : null,
           }}
         />
         {/* Time Off tab - for both FULL_TIME and FREELANCER (availability tracking) */}

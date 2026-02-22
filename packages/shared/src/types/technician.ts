@@ -5,7 +5,7 @@
  * profiles, statistics, performance metrics, and API inputs.
  */
 
-import { TechnicianType, Role, Platform, TaskStatus } from './index';
+import { TechnicianType, WorkMode, Role, Platform, TaskStatus } from './index';
 
 // ============================================================================
 // TECHNICIAN PROFILE
@@ -27,6 +27,7 @@ export interface TechnicianProfile {
 
   // Technician-specific fields
   technicianType: TechnicianType;
+  workMode: WorkMode;
   specialty: string | null;
   rating: number;
   ratingCount: number;
@@ -68,6 +69,7 @@ export interface TechnicianListItem {
   lastName: string;
   isActive: boolean;
   technicianType: TechnicianType;
+  workMode: WorkMode;
   specialty: string | null;
   rating: number;
   ratingCount: number;
@@ -200,6 +202,7 @@ export interface CreateTechnicianInput {
   lastName: string;
   password?: string; // Optional - system can generate
   technicianType?: TechnicianType;
+  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
 }
@@ -211,6 +214,7 @@ export interface UpdateTechnicianInput {
   firstName?: string;
   lastName?: string;
   technicianType?: TechnicianType;
+  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
@@ -225,6 +229,7 @@ export interface TechniciansQueryParams {
   // Filters
   status?: 'active' | 'inactive' | 'all';
   type?: TechnicianType | 'all';
+  workMode?: WorkMode | 'all';
   specialty?: string;
   search?: string; // Search by name or email
 
@@ -425,3 +430,55 @@ export const SPECIALTY_OPTIONS = [
   { value: 'general', label: 'General' },
   { value: 'other', label: 'Other' },
 ] as const;
+
+// ============================================================================
+// WORK MODE HELPERS
+// ============================================================================
+
+/**
+ * Get display label for work mode
+ */
+export function getWorkModeLabel(mode: WorkMode): string {
+  switch (mode) {
+    case WorkMode.ON_SITE:
+      return 'On-Site';
+    case WorkMode.ON_ROAD:
+      return 'On-Road';
+    case WorkMode.HYBRID:
+      return 'Hybrid';
+    default:
+      return mode;
+  }
+}
+
+/**
+ * Get color class for work mode badge
+ */
+export function getWorkModeColor(mode: WorkMode): string {
+  switch (mode) {
+    case WorkMode.ON_SITE:
+      return 'bg-teal-100 text-teal-700';
+    case WorkMode.ON_ROAD:
+      return 'bg-orange-100 text-orange-700';
+    case WorkMode.HYBRID:
+      return 'bg-indigo-100 text-indigo-700';
+    default:
+      return 'bg-gray-100 text-gray-700';
+  }
+}
+
+/**
+ * Check if a technician's work mode allows attendance (clock in/out)
+ * ON_SITE and HYBRID can use attendance, ON_ROAD cannot
+ */
+export function canUseAttendance(workMode: WorkMode): boolean {
+  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
+}
+
+/**
+ * Check if a technician's work mode allows location assignment
+ * ON_SITE and HYBRID can be assigned to locations, ON_ROAD cannot
+ */
+export function canBeAssignedToLocation(workMode: WorkMode): boolean {
+  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
+}

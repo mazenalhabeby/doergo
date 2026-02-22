@@ -8,7 +8,7 @@ import {
   Max,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { TechnicianType } from '@doergo/shared';
+import { TechnicianType, WorkMode } from '@doergo/shared';
 
 export class ListTechniciansDto {
   @ApiPropertyOptional({
@@ -29,6 +29,15 @@ export class ListTechniciansDto {
   })
   @IsOptional()
   type?: TechnicianType | 'all';
+
+  @ApiPropertyOptional({
+    enum: [...Object.values(WorkMode), 'all'],
+    example: 'all',
+    description: 'Filter by work mode',
+    default: 'all',
+  })
+  @IsOptional()
+  workMode?: WorkMode | 'all';
 
   @ApiPropertyOptional({
     example: 'Electrical',

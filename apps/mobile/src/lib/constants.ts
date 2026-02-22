@@ -169,6 +169,14 @@ export const STORAGE_KEYS = {
 export const ROUTES = {
   // Auth
   login: '/(auth)/login' as const,
+  register: '/(auth)/register' as const,
+
+  // Onboarding
+  choosePath: '/(onboarding)/choose-path' as const,
+  createOrg: '/(onboarding)/create-org' as const,
+  joinOrg: '/(onboarding)/join-org' as const,
+  useInvitation: '/(onboarding)/use-invitation' as const,
+  pendingApproval: '/(onboarding)/pending-approval' as const,
 
   // App tabs
   home: '/(app)' as const,

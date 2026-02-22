@@ -10,7 +10,7 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { TechnicianType } from '@doergo/shared';
+import { TechnicianType, WorkMode } from '@doergo/shared';
 
 export class UpdateTechnicianDto {
   @ApiPropertyOptional({
@@ -41,6 +41,15 @@ export class UpdateTechnicianDto {
   @IsEnum(TechnicianType)
   @IsOptional()
   technicianType?: TechnicianType;
+
+  @ApiPropertyOptional({
+    enum: WorkMode,
+    example: WorkMode.HYBRID,
+    description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
+  })
+  @IsEnum(WorkMode)
+  @IsOptional()
+  workMode?: WorkMode;
 
   @ApiPropertyOptional({
     example: 'Electrical',

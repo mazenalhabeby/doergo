@@ -16,6 +16,7 @@ import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { Public } from '../../common/decorators';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
+import { SkipOnboardingCheck } from '@doergo/shared';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -102,6 +103,7 @@ export class AuthController {
     return result;
   }
 
+  @SkipOnboardingCheck()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -160,6 +162,7 @@ export class AuthController {
     return result;
   }
 
+  @SkipOnboardingCheck()
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })

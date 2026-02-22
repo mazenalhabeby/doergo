@@ -18,8 +18,13 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
+import { InvitationsModule } from './modules/invitations/invitations.module';
+import { OnboardingModule } from './modules/onboarding/onboarding.module';
+import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 
 @Module({
   imports: [
@@ -62,11 +67,15 @@ import { RolesGuard } from './common/guards/roles.guard';
     LocationsModule,
     AttendanceModule,
     TechniciansModule,
+    InvitationsModule,
+    OnboardingModule,
+    JoinRequestsModule,
+    OrganizationsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    // Global guards - Throttler runs first, then JwtAuthGuard, then RolesGuard
+    // Global guards - Throttler → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
@@ -78,6 +87,10 @@ import { RolesGuard } from './common/guards/roles.guard';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: OnboardingCompleteGuard,
     },
   ],
 })

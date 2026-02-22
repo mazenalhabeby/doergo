@@ -91,10 +91,17 @@ export enum ReportAttachmentType {
   AFTER = 'AFTER',     // Photo taken after work completed
 }
 
-// Technician employment type for attendance tracking
+// Technician employment/billing type (who pays for expenses)
 export enum TechnicianType {
-  FREELANCER = 'FREELANCER',   // External contractor, task-based work
-  FULL_TIME = 'FULL_TIME',     // Employee assigned to company locations
+  FREELANCER = 'FREELANCER',   // Covers own trips and expenses
+  FULL_TIME = 'FULL_TIME',     // Company covers trips and expenses
+}
+
+// Where the technician works (decoupled from billing type)
+export enum WorkMode {
+  ON_SITE = 'ON_SITE',   // Works at company locations (attendance tracking)
+  ON_ROAD = 'ON_ROAD',   // Works on-the-go (task-based, no attendance)
+  HYBRID = 'HYBRID',     // Both on-site and on-road
 }
 
 // Time entry status for attendance tracking
@@ -177,8 +184,9 @@ export interface User extends BaseEntity {
   firstName: string;
   lastName: string;
   role: Role;
-  organizationId: string;
+  organizationId: string | null;
   isActive: boolean;
+  onboardingCompleted: boolean;
   // Permission fields
   platform: Platform;
   canCreateTasks: boolean;
@@ -187,6 +195,7 @@ export interface User extends BaseEntity {
   canManageUsers: boolean;
   // Technician-specific fields
   technicianType?: TechnicianType;
+  workMode?: WorkMode;
 }
 
 // Default permissions by role
@@ -531,3 +540,9 @@ export * from './attendance';
 
 // Export technician types
 export * from './technician';
+
+// Export invitation types
+export * from './invitation';
+
+// Export onboarding types
+export * from './onboarding';

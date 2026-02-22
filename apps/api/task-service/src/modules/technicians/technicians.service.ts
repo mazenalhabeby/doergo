@@ -235,7 +235,7 @@ export class TechniciansService {
    */
   private buildDailyTrends(
     tasks: Array<{
-      status: TaskStatus;
+      status: string;
       createdAt: Date;
       updatedAt: Date;
     }>,
@@ -599,6 +599,7 @@ export class TechniciansService {
         firstName: true,
         lastName: true,
         technicianType: true,
+        workMode: true,
         schedules: {
           where: { dayOfWeek, isActive: true },
         },
@@ -622,6 +623,7 @@ export class TechniciansService {
         firstName: tech.firstName,
         lastName: tech.lastName,
         technicianType: tech.technicianType,
+        workMode: tech.workMode,
         isAvailable: hasSchedule && !onTimeOff,
         onTimeOff,
         schedule: schedule

@@ -2,7 +2,7 @@
  * User/Technician DTOs for Auth Service
  */
 
-import { TechnicianType } from '@doergo/shared';
+import { TechnicianType, WorkMode, Role, Platform } from '@doergo/shared';
 
 /**
  * DTO for creating a new technician
@@ -13,6 +13,7 @@ export interface CreateTechnicianDto {
   lastName: string;
   password?: string;
   technicianType?: TechnicianType;
+  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
   organizationId: string;
@@ -25,6 +26,7 @@ export interface UpdateTechnicianDto {
   firstName?: string;
   lastName?: string;
   technicianType?: TechnicianType;
+  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
@@ -39,6 +41,7 @@ export interface ListTechniciansDto {
   organizationId: string;
   status?: 'active' | 'inactive' | 'all';
   type?: TechnicianType | 'all';
+  workMode?: WorkMode | 'all';
   specialty?: string;
   search?: string;
   page?: number;
@@ -63,4 +66,40 @@ export interface GetTechnicianPerformanceDto {
   organizationId: string;
   startDate?: string;
   endDate?: string;
+}
+
+// ============================================================================
+// ORGANIZATION MEMBERS DTOs
+// ============================================================================
+
+/**
+ * DTO for listing organization members
+ */
+export interface ListOrgMembersDto {
+  organizationId: string;
+  search?: string;
+  role?: Role;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * DTO for updating a member's role/permissions
+ */
+export interface UpdateMemberRoleDto {
+  role: Role;
+  platform?: Platform;
+  canCreateTasks?: boolean;
+  canViewAllTasks?: boolean;
+  canAssignTasks?: boolean;
+  canManageUsers?: boolean;
+}
+
+/**
+ * DTO for removing a member
+ */
+export interface RemoveMemberDto {
+  memberId: string;
+  organizationId: string;
+  requesterId: string;
 }

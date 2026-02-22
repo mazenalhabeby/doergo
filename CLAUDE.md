@@ -1,6 +1,6 @@
 # DOERGO - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-01-30 (Push Notifications + Availability Calendar)
+> **Last Updated**: 2026-02-11 (Schedule & Members Web UI)
 
 ---
 
@@ -194,7 +194,7 @@ Organizations can grant access to other organizations:
 ```
 Organization { id, name, isActive, grantedAccess[], receivedAccess[], companyLocations[] }
 OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, canAssignWorkers, canViewWorkers, canViewTracking }
-User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil, platform, canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers, technicianType }
+User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil, platform, canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers, technicianType, workMode }
 RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
 Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance, assetId }
@@ -210,13 +210,15 @@ CompanyLocation { id, name, address, lat, lng, geofenceRadius, isActive, organiz
 UserPushToken { id, userId, token, platform, deviceId, createdAt, updatedAt }  # Push notification tokens
 TechnicianSchedule { id, technicianId, dayOfWeek, startTime, endTime, isActive, notes }  # Weekly work schedule
 TimeOff { id, technicianId, startDate, endDate, reason, status, approvedById, approvedAt, rejectionReason }  # Time-off requests
+Invitation { id, codeHash, targetRole, organizationId, technicianType?, workMode?, specialty?, maxDailyJobs?, status, expiresAt, usedAt?, acceptedById?, createdById, createdAt, updatedAt }  # Code-based invitations
 ```
 
 ### Enums
 ```typescript
 Role: ADMIN | DISPATCHER | TECHNICIAN  // Note: CLIENT deprecated, maps to ADMIN
 Platform: WEB | MOBILE | BOTH
-TechnicianType: FREELANCER | FULL_TIME  // For attendance tracking
+TechnicianType: FREELANCER | FULL_TIME  // Billing/employment type (who pays expenses)
+WorkMode: ON_SITE | ON_ROAD | HYBRID  // Where the technician works (decoupled from TechnicianType)
 AccessLevel: NONE | TASKS_ONLY | TASKS_ASSIGN | FULL
 TaskStatus: DRAFT | NEW | ASSIGNED | ACCEPTED | EN_ROUTE | ARRIVED | IN_PROGRESS | BLOCKED | COMPLETED | CANCELED | CLOSED
 TaskPriority: LOW | MEDIUM | HIGH | URGENT
@@ -224,6 +226,7 @@ TaskEventType: CREATED | UPDATED | ASSIGNED | UNASSIGNED | STATUS_CHANGED | COMM
 AttachmentType: IMAGE | DOCUMENT | OTHER
 ReportAttachmentType: BEFORE | AFTER
 TimeOffStatus: PENDING | APPROVED | REJECTED | CANCELED
+InvitationStatus: PENDING | ACCEPTED | EXPIRED | REVOKED
 ```
 
 ### Task Status Flow
@@ -321,6 +324,42 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | DELETE | `/technicians/time-off/:id` | Cancel time-off request | TECHNICIAN |
 | GET | `/technicians/availability` | Get all availability for date | ADMIN, DISPATCHER |
 
+### Invitations (`/invitations`)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| POST | `/invitations` | Create invitation code | ADMIN, DISPATCHER |
+| GET | `/invitations` | List organization invitations | ADMIN, DISPATCHER |
+| GET | `/invitations/validate/:code` | Validate invitation code (public) | None |
+| POST | `/invitations/accept` | Accept invitation & register (public) | None |
+| DELETE | `/invitations/:id` | Revoke invitation | ADMIN, DISPATCHER |
+
+### Onboarding (`/onboarding`) - Mobile Onboarding Flow
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/onboarding/create-org` | Create organization (Path A) | JWT + SkipOnboarding |
+| GET | `/onboarding/validate-org-code/:code` | Validate org code (Path B) | JWT + SkipOnboarding |
+| POST | `/onboarding/join-by-code` | Submit join request (Path B) | JWT + SkipOnboarding |
+| POST | `/onboarding/accept-invitation` | Accept invitation (Path C) | JWT + SkipOnboarding |
+| GET | `/onboarding/status` | Get onboarding status | JWT + SkipOnboarding |
+| DELETE | `/onboarding/join-requests/:id` | Cancel own join request | JWT + SkipOnboarding |
+
+### Join Requests (`/join-requests`) - Admin Management
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/join-requests` | List pending join requests | ADMIN, DISPATCHER |
+| PATCH | `/join-requests/:id/approve` | Approve with role assignment | ADMIN, DISPATCHER |
+| PATCH | `/join-requests/:id/reject` | Reject with optional reason | ADMIN, DISPATCHER |
+
+### Organizations (`/organizations`) - Org Settings
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/organizations/join-code` | Get org join code info | ADMIN, DISPATCHER |
+| POST | `/organizations/regenerate-join-code` | Generate new join code | ADMIN |
+| PATCH | `/organizations/settings` | Update join policy | ADMIN |
+| GET | `/organizations/members` | List organization members | ADMIN, DISPATCHER |
+| PATCH | `/organizations/members/:id/role` | Update member role/permissions | ADMIN |
+| DELETE | `/organizations/members/:id` | Remove member from organization | ADMIN |
+
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
@@ -330,6 +369,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 **Query Parameters for GET `/technicians`:**
 - `status`: `active` | `inactive` | `all` (default: `active`)
 - `type`: `FULL_TIME` | `FREELANCER` | `all` (default: `all`)
+- `workMode`: `ON_SITE` | `ON_ROAD` | `HYBRID` | `all` (default: `all`)
 - `specialty`: Filter by specialty (partial match)
 - `search`: Search by name or email
 - `page`, `limit`: Pagination (default: 1, 10)
@@ -529,12 +569,20 @@ pnpm build            # Build all packages
 
 ## 11. TEST CREDENTIALS (Seed Data)
 
-| Role | Email | Password | Platform | Type | Permissions |
-|------|-------|----------|----------|------|-------------|
-| Admin | client@example.com | password123 | BOTH | - | All permissions |
-| Dispatcher | dispatcher@example.com | password123 | WEB | - | canViewAllTasks, canAssignTasks |
-| Technician 1 | technician1@example.com | password123 | MOBILE | FULL_TIME | None (executor only) |
-| Technician 2 | technician2@example.com | password123 | MOBILE | FREELANCER | None (executor only) |
+| Role | Email | Password | Platform | Type | WorkMode | Permissions |
+|------|-------|----------|----------|------|----------|-------------|
+| Admin | client@example.com | password123 | BOTH | - | - | All permissions |
+| Dispatcher | dispatcher@example.com | password123 | WEB | - | - | canViewAllTasks, canAssignTasks |
+| Technician 1 | technician1@example.com | password123 | MOBILE | FULL_TIME | ON_SITE | None (executor only) |
+| Technician 2 | technician2@example.com | password123 | MOBILE | FREELANCER | ON_ROAD | None (executor only) |
+| New User (orphan) | newuser@example.com | password123 | - | - | - | No org, onboarding incomplete |
+
+### Onboarding Test Data
+| Item | Value | Notes |
+|------|-------|-------|
+| Org Join Code | `ACME2026` | For testing "Join Organization" flow |
+| Join Policy | OPEN | Anyone with code can request to join |
+| Orphan User | newuser@example.com | Has pending join request to Acme Corp |
 
 ### Sample Company Locations
 | Name | Address | Coordinates | Geofence |
@@ -658,6 +706,70 @@ pnpm build            # Build all packages
   - [x] Performance: Charts (Recharts) + period comparison
 - [x] Web: Availability calendar (`/technicians/availability`) with week/month views
 - [x] Permission update: DISPATCHER can now manage technicians (create/edit/deactivate)
+
+### Phase 3.4: Invitation System ✅ COMPLETE (2026-02-04)
+- [x] `Invitation` model (codeHash, targetRole, status, expiresAt, technicianType, workMode, specialty, maxDailyJobs)
+- [x] `InvitationStatus` enum (PENDING, ACCEPTED, EXPIRED, REVOKED)
+- [x] Database migration: `add_invitation_system`
+- [x] Invitation service in auth-service (create, validate, accept, revoke, list)
+- [x] SHA-256 hashed invitation codes (plaintext never stored)
+- [x] Gateway invitations module (controller, service, DTOs)
+- [x] `POST /invitations` - Create invitation code (ADMIN, DISPATCHER)
+- [x] `GET /invitations` - List organization invitations with filters
+- [x] `GET /invitations/validate/:code` - Validate code (public)
+- [x] `POST /invitations/accept` - Accept invitation & register (public)
+- [x] `DELETE /invitations/:id` - Revoke invitation
+- [x] Rate limiting: 10/min create/validate, 5/min accept
+- [x] Shared types: `Invitation`, `InvitationValidation`, `CreateInvitationInput`
+- [x] Web: Invitations management page (`/invitations`) with list, create dialog, revoke
+- [x] Mobile: Registration screen with invitation code input
+- [x] Seed data: 2 sample invitations (1 pending technician, 1 pending dispatcher)
+
+### Phase 3.5: WorkMode Decoupling ✅ COMPLETE (2026-02-04)
+- [x] `WorkMode` enum (ON_SITE, ON_ROAD, HYBRID) - decoupled from TechnicianType
+- [x] `workMode` field on User model (default: HYBRID)
+- [x] `workMode` field on Invitation model
+- [x] Database migration: `add_work_mode` with data migration (FULL_TIME→ON_SITE, FREELANCER→ON_ROAD)
+- [x] Shared types: `WorkMode` enum, helpers (`getWorkModeLabel`, `getWorkModeColor`, `canUseAttendance`, `canBeAssignedToLocation`)
+- [x] Backend gate logic: attendance/locations gate on `workMode` instead of `technicianType`
+- [x] Auth service: `workMode` in login response, user CRUD, invitation flow
+- [x] Gateway DTOs: `workMode` in technician create/update/list and invitation DTOs
+- [x] Mobile: Tab visibility gated on workMode (ON_ROAD=Tasks, ON_SITE=Clock, HYBRID=both)
+- [x] Web: WorkMode filter + badge on technicians list page
+- [x] Web: WorkMode select on create technician and invitation forms
+- [x] Seed data: technician1=ON_SITE, technician2=ON_ROAD
+
+### Phase 3.6: Dynamic Mobile Onboarding ✅ COMPLETE (2026-02-10)
+- [x] Schema: `JoinRequest` model, `JoinPolicy`/`JoinRequestStatus` enums, `joinCodeHash`/`joinPolicy` on Organization, `onboardingCompleted` on User
+- [x] Database migrations: `add_onboarding_join_system`
+- [x] Shared types: `JoinPolicy`, `JoinRequestStatus`, `JoinRequest`, `OnboardingStatus`, `OrgCodeValidation`, `CreateOrganizationInput`, `SubmitJoinRequestInput`, `ApproveJoinRequestInput`, `RejectJoinRequestInput`
+- [x] Shared constants: `ORG_CODE_LENGTH`, `ORG_CODE_CHARSET`, `JOIN_REQUEST_MAX_PENDING_PER_USER/ORG`, join policy/status helpers
+- [x] Shared guard: `OnboardingCompleteGuard` (4th global guard), `@SkipOnboardingCheck()` decorator
+- [x] Auth service: orphan user registration (no companyName → `onboardingCompleted: false`), `onboardingCompleted` in login/validateToken
+- [x] Auth service: `OnboardingModule` (createOrganization, validateOrgCode, submitJoinRequest, acceptInvitation, getStatus, listJoinRequests, approve/reject/cancel, regenerateJoinCode, updateJoinPolicy)
+- [x] Gateway: `OnboardingModule` (6 endpoints: create-org, validate-org-code, join-by-code, accept-invitation, status, cancel)
+- [x] Gateway: `JoinRequestsModule` (3 endpoints: list, approve, reject) for ADMIN/DISPATCHER
+- [x] Gateway: `OrganizationsModule` (3 endpoints: get join-code, regenerate, update settings) for ADMIN
+- [x] Mobile: Simplified registration (no company name, no invitation code)
+- [x] Mobile: 3-way navigation guard (auth → onboarding → app)
+- [x] Mobile: Onboarding wizard with 5 screens (choose-path, create-org, join-org, use-invitation, pending-approval)
+- [x] Mobile: Pending approval screen with 30-second polling
+- [x] Web: Join Requests management page (`/join-requests`) with approve/reject dialogs
+- [x] Web: Organization Settings page (`/settings`) with join code regeneration and policy management
+- [x] Web: "Join Requests" nav item in sidebar for ADMIN/DISPATCHER
+- [x] Web API client: `joinRequestsApi` and `organizationsApi` modules
+- [x] Seed data: `onboardingCompleted: true` for existing users, org join code `ACME2026`, orphan user `newuser@example.com`, pending join request
+- [x] Push notifications: `join_request_submitted`, `join_request_approved`, `join_request_rejected` event handlers
+
+### Phase 3.7: Schedule & Members Web UI ✅ COMPLETE (2026-02-11)
+- [x] Technician detail page refactored: 5 inline tabs extracted into `_components/` directory
+- [x] **Schedule Tab**: Weekly schedule editor with read/edit modes, time inputs, active toggle, notes
+- [x] **Time-Off Tab**: Time-off request management with create (date range picker), approve/reject/cancel actions, status filters
+- [x] **Members Management Backend**: `listOrgMembers`, `updateMemberRole`, `removeMember` in auth-service
+- [x] Backend guards: can't change own role, can't demote/remove last ADMIN
+- [x] Gateway endpoints: `GET /organizations/members`, `PATCH /organizations/members/:id/role`, `DELETE /organizations/members/:id`
+- [x] **Members Page** (`/members`): Organization members list with role/search filters, edit role dialog with permission checkboxes, remove confirmation
+- [x] Sidebar updates: "Members" + "Schedule" nav items for ADMIN, "Members" for DISPATCHER, Schedule URL normalized to `/technicians/availability`
 
 ### Phase 4: Comments & Attachments 🔲 PENDING
 - [ ] Comments: list/add API (task-service) - partially done
@@ -803,6 +915,12 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `isTechnicianOnline()` | Check if technician is online (location updated within 5 min) |
 | `getAvailabilityStatus()`, `getAvailabilityLabel()`, `getAvailabilityColor()` | Availability status helpers |
 | `SPECIALTY_OPTIONS` | Technician specialty options array |
+| `WorkMode` | WorkMode enum (ON_SITE, ON_ROAD, HYBRID) |
+| `getWorkModeLabel()`, `getWorkModeColor()` | WorkMode display helpers |
+| `canUseAttendance()` | Check if workMode allows attendance (ON_SITE or HYBRID) |
+| `canBeAssignedToLocation()` | Check if workMode allows location assignment |
+| `Invitation`, `InvitationValidation`, `CreateInvitationInput` | Invitation types |
+| `InvitationStatus` | Invitation status enum (PENDING, ACCEPTED, EXPIRED, REVOKED) |
 
 ### SOLID Principles
 
@@ -952,7 +1070,48 @@ docker exec -it doergo-redis redis-cli
    - Gallery picker using expo-image-picker
    - Upload progress indicator
 
-### Recently Completed (2026-01-30)
+### Recently Completed (2026-02-11)
+- **Schedule & Members Web UI** (Phase 3.7):
+  - Refactored technician detail page: extracted 5 inline tabs into `_components/` directory
+  - New Schedule tab: weekly schedule editor with read/edit modes, time inputs, active toggles
+  - New Time-Off tab: request management with date range picker, approve/reject/cancel, status filters
+  - Members backend: 3 new methods in auth-service (list, update role, remove) with safety guards
+  - 3 new gateway endpoints on `/organizations/members`
+  - Members page (`/members`): full members list with role editing, permission management, remove flow
+  - Sidebar: added Members + Schedule for ADMIN, Members for DISPATCHER
+
+### Previously Completed (2026-02-10)
+- **Dynamic Mobile Onboarding** (Phase 3.6):
+  - Decoupled account creation from organization membership
+  - Post-registration onboarding wizard with 3 paths: Create Org, Join by Code, Use Invitation
+  - `JoinRequest` model with admin approval workflow (PENDING/APPROVED/REJECTED/CANCELED)
+  - `OnboardingCompleteGuard` (4th global guard) blocks non-onboarded users from regular endpoints
+  - `OnboardingModule` in auth-service with 12 MessagePattern handlers
+  - 3 new gateway modules: Onboarding (6 endpoints), JoinRequests (3 endpoints), Organizations (3 endpoints)
+  - Mobile: simplified registration (no company name), 3-way nav guard, 5 onboarding screens
+  - Web: Join Requests page, Organization Settings page, sidebar nav item
+  - Push notifications for join request lifecycle events
+  - Seed data: org join code `ACME2026`, orphan user `newuser@example.com`, pending join request
+
+### Previously Completed (2026-02-04)
+- **WorkMode Decoupling** (Phase 3.5):
+  - `WorkMode` enum (ON_SITE, ON_ROAD, HYBRID) decouples work location from billing type
+  - `TechnicianType` now billing-only (FREELANCER = covers own expenses, FULL_TIME = company covers)
+  - Backend gates changed: attendance/locations check `workMode` instead of `technicianType`
+  - Mobile tab visibility: ON_ROAD=Tasks, ON_SITE=Clock, HYBRID=both
+  - Web: WorkMode filter/badge on technicians list, select on create forms
+  - Migration with data migration: FULL_TIME→ON_SITE, FREELANCER→ON_ROAD
+
+- **Invitation System** (Phase 3.4):
+  - Code-based invitation flow (SHA-256 hashed, 6-8 char alphanumeric codes)
+  - `Invitation` model with status tracking (PENDING→ACCEPTED/EXPIRED/REVOKED)
+  - Full REST API: create, list, validate (public), accept (public), revoke
+  - Rate limiting: 10/min create/validate, 5/min accept
+  - Supports pre-assigning role, technicianType, workMode, specialty, maxDailyJobs
+  - Web: Invitations management page with create dialog
+  - Mobile: Registration screen with invitation code input
+
+### Previously Completed (2026-01-30)
 - **Push Notifications** (Phase 6 - Push):
   - `UserPushToken` model for storing Expo push tokens per device
   - Push service using `expo-server-sdk` for Expo Push API
@@ -1221,8 +1380,11 @@ Built with shadcn/ui + Radix primitives:
 - Platform: WEB only
 
 #### TECHNICIAN View (Mobile Only)
-- Tabs: Tasks, Profile
-- Actions: Start/block/complete tasks, add photos, update location
+- Tabs: Home, Tasks*, Clock*, Time Off, Profile (*visibility based on WorkMode)
+  - ON_ROAD: Tasks only (no Clock)
+  - ON_SITE: Clock only (no Tasks)
+  - HYBRID: Both Tasks + Clock
+- Actions: Start/block/complete tasks, add photos, update location, clock in/out
 - Platform: MOBILE only
 
 ### Animation Guidelines

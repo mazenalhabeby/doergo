@@ -44,11 +44,11 @@ export class AuthService {
     companyName?: string;
   }) {
     try {
-      // Sanitize and normalize all string inputs to lowercase
+      // Sanitize inputs: email to lowercase, names preserve case (capitalized by DTO)
       const email = data.email.trim().toLowerCase();
-      const firstName = data.firstName.trim().toLowerCase();
-      const lastName = data.lastName.trim().toLowerCase();
-      const companyName = data.companyName?.trim().toLowerCase();
+      const firstName = data.firstName.trim();
+      const lastName = data.lastName.trim();
+      const companyName = data.companyName?.trim();
       // SECURITY: Force role to ADMIN regardless of input (self-registered users are admins of their org)
       const role = Role.ADMIN;
       // Get default permissions for the role
@@ -69,59 +69,94 @@ export class AuthService {
       // Use higher bcrypt cost factor (12) for better security
       const passwordHash = await bcrypt.hash(data.password, BCRYPT_COST_FACTOR);
 
-      // If role is ADMIN and companyName is provided, create a new organization
-      let organizationId: string | null = null;
+      // Determine if this is a full registration (with org) or orphan user (onboarding later)
+      const hasCompanyName = !!companyName;
 
-      if (role === Role.ADMIN && companyName) {
-        const organization = await this.prisma.organization.create({
+      if (hasCompanyName) {
+        // Full registration: create org + user in a transaction
+        const result = await this.prisma.$transaction(async (tx) => {
+          const organization = await tx.organization.create({
+            data: {
+              name: companyName,
+              isActive: true,
+            },
+          });
+
+          const newUser = await tx.user.create({
+            data: {
+              email,
+              passwordHash,
+              firstName,
+              lastName,
+              role,
+              organizationId: organization.id,
+              onboardingCompleted: true,
+              failedLoginAttempts: 0,
+              lockedUntil: null,
+              platform: defaultPerms.platform,
+              canCreateTasks: defaultPerms.canCreateTasks,
+              canViewAllTasks: defaultPerms.canViewAllTasks,
+              canAssignTasks: defaultPerms.canAssignTasks,
+              canManageUsers: defaultPerms.canManageUsers,
+            },
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              organizationId: true,
+              onboardingCompleted: true,
+              platform: true,
+              canCreateTasks: true,
+              canViewAllTasks: true,
+              canAssignTasks: true,
+              canManageUsers: true,
+              createdAt: true,
+            },
+          });
+
+          return newUser;
+        });
+
+        return { success: true, data: result };
+      } else {
+        // Orphan user: no org, onboarding required
+        const user = await this.prisma.user.create({
           data: {
-            name: companyName,
-            isActive: true,
+            email,
+            passwordHash,
+            firstName,
+            lastName,
+            role,
+            onboardingCompleted: false,
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+            platform: defaultPerms.platform,
+            canCreateTasks: defaultPerms.canCreateTasks,
+            canViewAllTasks: defaultPerms.canViewAllTasks,
+            canAssignTasks: defaultPerms.canAssignTasks,
+            canManageUsers: defaultPerms.canManageUsers,
+          },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            organizationId: true,
+            onboardingCompleted: true,
+            platform: true,
+            canCreateTasks: true,
+            canViewAllTasks: true,
+            canAssignTasks: true,
+            canManageUsers: true,
+            createdAt: true,
           },
         });
-        organizationId = organization.id;
+
+        return { success: true, data: user };
       }
-
-      // Build user data with sanitized fields and default permissions
-      const userData: any = {
-        email,
-        passwordHash,
-        firstName,
-        lastName,
-        role,
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-        // Permission fields with role-based defaults
-        platform: defaultPerms.platform,
-        canCreateTasks: defaultPerms.canCreateTasks,
-        canViewAllTasks: defaultPerms.canViewAllTasks,
-        canAssignTasks: defaultPerms.canAssignTasks,
-        canManageUsers: defaultPerms.canManageUsers,
-      };
-
-      if (organizationId) {
-        userData.organizationId = organizationId;
-      }
-
-      const user = await this.prisma.user.create({
-        data: userData,
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          organizationId: true,
-          platform: true,
-          canCreateTasks: true,
-          canViewAllTasks: true,
-          canAssignTasks: true,
-          canManageUsers: true,
-          createdAt: true,
-        },
-      });
-
-      return { success: true, data: user };
     } catch (error) {
       this.logger.error('Registration error:', error);
       return {
@@ -242,6 +277,7 @@ export class AuthService {
             lastName: user.lastName,
             role: user.role,
             organizationId: user.organizationId,
+            onboardingCompleted: user.onboardingCompleted,
             // Permission fields
             platform: user.platform,
             canCreateTasks: user.canCreateTasks,
@@ -250,6 +286,7 @@ export class AuthService {
             canManageUsers: user.canManageUsers,
             // Technician-specific fields
             technicianType: user.technicianType,
+            workMode: user.workMode,
           },
           ...tokens,
         },
@@ -703,6 +740,7 @@ export class AuthService {
           lastName: true,
           role: true,
           organizationId: true,
+          onboardingCompleted: true,
           isActive: true,
           // Permission fields
           platform: true,
@@ -712,6 +750,7 @@ export class AuthService {
           canManageUsers: true,
           // Technician-specific fields
           technicianType: true,
+          workMode: true,
         },
       });
 

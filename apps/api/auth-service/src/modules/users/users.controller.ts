@@ -7,6 +7,8 @@ import {
   ListTechniciansDto,
   GetTechnicianDetailDto,
   GetTechnicianPerformanceDto,
+  ListOrgMembersDto,
+  UpdateMemberRoleDto,
 } from './dto';
 
 @Controller()
@@ -73,5 +75,44 @@ export class UsersController {
   @MessagePattern({ cmd: 'get_technician_performance' })
   async getTechnicianPerformance(@Payload() data: GetTechnicianPerformanceDto) {
     return this.usersService.getTechnicianPerformance(data);
+  }
+
+  // ============================================================================
+  // ORGANIZATION MEMBERS
+  // ============================================================================
+
+  @MessagePattern({ cmd: 'list_org_members' })
+  async listOrgMembers(@Payload() data: ListOrgMembersDto) {
+    return this.usersService.listOrgMembers(data);
+  }
+
+  @MessagePattern({ cmd: 'update_member_role' })
+  async updateMemberRole(
+    @Payload()
+    data: {
+      memberId: string;
+      organizationId: string;
+      requesterId: string;
+      dto: UpdateMemberRoleDto;
+    },
+  ) {
+    return this.usersService.updateMemberRole(
+      data.memberId,
+      data.organizationId,
+      data.requesterId,
+      data.dto,
+    );
+  }
+
+  @MessagePattern({ cmd: 'remove_member' })
+  async removeMember(
+    @Payload()
+    data: {
+      memberId: string;
+      organizationId: string;
+      requesterId: string;
+    },
+  ) {
+    return this.usersService.removeMember(data);
   }
 }

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import * as SecureStore from 'expo-secure-store';
 import {
   authApi,
+  userApi,
   setAuthFailureCallback,
   getAccessToken as getStoredAccessToken,
   clearTokens,
@@ -16,8 +17,10 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  needsOnboarding: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -95,6 +98,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(response.user);
   };
 
+  const refreshUser = async () => {
+    try {
+      const updatedUser = await userApi.me();
+      await saveUser(updatedUser);
+      setUser(updatedUser);
+      console.log('[AuthContext] User refreshed, onboardingCompleted:', updatedUser.onboardingCompleted);
+    } catch (error) {
+      console.error('[AuthContext] Error refreshing user:', error);
+    }
+  };
+
   const logout = async () => {
     try {
       await authApi.logout();
@@ -111,8 +125,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
+        needsOnboarding: !!user && !user.onboardingCompleted,
         login,
         logout,
+        refreshUser,
       }}
     >
       {children}

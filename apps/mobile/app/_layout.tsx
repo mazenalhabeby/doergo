@@ -14,7 +14,7 @@ import { AnimatedSplash } from '../src/components';
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, needsOnboarding } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
@@ -53,20 +53,26 @@ function RootLayoutNav() {
   }, [appIsReady, showAnimatedSplash]);
 
 
-  // Handle navigation after auth state changes
+  // Handle navigation after auth state changes (3-way: auth → onboarding → app)
   useEffect(() => {
     if (isLoading || showAnimatedSplash) return;
 
     const firstSegment = segments[0] as string | undefined;
     const inAuthGroup = firstSegment === '(auth)';
     const inAppGroup = firstSegment === '(app)';
+    const inOnboardingGroup = firstSegment === '(onboarding)';
 
-    if (isAuthenticated && (inAuthGroup || !firstSegment)) {
+    if (isAuthenticated && needsOnboarding && !inOnboardingGroup) {
+      // Authenticated but needs onboarding → onboarding wizard
+      router.replace('/(onboarding)/choose-path' as Href);
+    } else if (isAuthenticated && !needsOnboarding && (inAuthGroup || inOnboardingGroup || !firstSegment)) {
+      // Authenticated and onboarded → main app
       router.replace('/(app)' as Href);
-    } else if (!isAuthenticated && (inAppGroup || !firstSegment)) {
+    } else if (!isAuthenticated && (inAppGroup || inOnboardingGroup || !firstSegment)) {
+      // Not authenticated → login
       router.replace('/(auth)/login' as Href);
     }
-  }, [isAuthenticated, isLoading, segments, showAnimatedSplash]);
+  }, [isAuthenticated, needsOnboarding, isLoading, segments, showAnimatedSplash]);
 
   const handleSplashComplete = useCallback(() => {
     setShowAnimatedSplash(false);
@@ -88,6 +94,7 @@ function RootLayoutNav() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(app)" />
       </Stack>
     </>
