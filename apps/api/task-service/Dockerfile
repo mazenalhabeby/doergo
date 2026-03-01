@@ -1,0 +1,38 @@
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+
+# -- Dependencies --
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/auth-service/package.json ./apps/api/auth-service/
+COPY apps/api/task-service/package.json ./apps/api/task-service/
+RUN pnpm install --frozen-lockfile --prod=false
+
+# -- Build --
+FROM deps AS build
+COPY packages/shared/ ./packages/shared/
+COPY apps/api/auth-service/prisma/ ./apps/api/auth-service/prisma/
+COPY apps/api/task-service/ ./apps/api/task-service/
+COPY tsconfig.base.json ./
+RUN pnpm --filter @doergo/shared build
+RUN cd apps/api/auth-service && npx prisma generate
+RUN pnpm --filter @doergo/task-service build
+
+# -- Production --
+FROM base AS production
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=deps /app/apps/api/task-service/node_modules ./apps/api/task-service/node_modules
+COPY --from=deps /app/apps/api/auth-service/node_modules ./apps/api/auth-service/node_modules
+COPY --from=build /app/packages/shared/dist ./packages/shared/dist
+COPY --from=build /app/apps/api/task-service/dist ./apps/api/task-service/dist
+COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/task-service/package.json ./apps/api/task-service/
+COPY apps/api/auth-service/package.json ./apps/api/auth-service/
+COPY pnpm-workspace.yaml package.json ./
+
+CMD ["node", "apps/api/task-service/dist/main.js"]

@@ -10,8 +10,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-doergo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-doergo_secret}
       POSTGRES_DB: ${POSTGRES_DB:-doergo}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -26,8 +24,6 @@ services:
     image: redis:7-alpine
     container_name: doergo-redis
     restart: unless-stopped
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -40,29 +36,6 @@ services:
       - doergo-network
 
   # ==================== BACKEND SERVICES ====================
-  api-gateway:
-    build:
-      context: ../../
-      dockerfile: apps/api/gateway/Dockerfile
-    container_name: doergo-api-gateway
-    restart: unless-stopped
-    ports:
-      - "4000:4000"
-    environment:
-      - NODE_ENV=production
-      - PORT=4000
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CORS_ORIGINS=http://localhost:3001,http://localhost:3002
-    depends_on:
-      - redis
-      - auth-service
-      - task-service
-      - notification-service
-      - tracking-service
-    networks:
-      - doergo-network
-
   auth-service:
     build:
       context: ../../
@@ -76,9 +49,14 @@ services:
       - REDIS_PORT=6379
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION:-15m}
+      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-24h}
+      - JWT_REFRESH_EXPIRATION_REMEMBER=${JWT_REFRESH_EXPIRATION_REMEMBER:-30d}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - doergo-network
 
@@ -94,8 +72,10 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - doergo-network
 
@@ -105,18 +85,17 @@ services:
       dockerfile: apps/api/notification-service/Dockerfile
     container_name: doergo-notification-service
     restart: unless-stopped
-    ports:
-      - "4001:4001"
     environment:
       - NODE_ENV=production
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - doergo-network
 
@@ -132,8 +111,66 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - doergo-network
+
+  api-gateway:
+    build:
+      context: ../../
+      dockerfile: apps/api/gateway/Dockerfile
+    container_name: doergo-api-gateway
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    depends_on:
       - redis
+      - auth-service
+      - task-service
+      - notification-service
+      - tracking-service
+    networks:
+      - doergo-network
+
+  # ==================== WEB APP ====================
+  web-app:
+    build:
+      context: ../../
+      dockerfile: apps/web-app/Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000/api/v1}
+        - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-Doergo}
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    container_name: doergo-web-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - api-gateway
+    networks:
+      - doergo-network
+
+  # ==================== REVERSE PROXY ====================
+  nginx:
+    image: nginx:alpine
+    container_name: doergo-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api-gateway
+      - web-app
+      - notification-service
     networks:
       - doergo-network
 
