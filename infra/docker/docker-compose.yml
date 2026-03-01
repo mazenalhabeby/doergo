@@ -93,6 +93,7 @@ services:
       - "127.0.0.1:4001:4001"
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - SMTP_HOST=${SMTP_HOST:-}
@@ -100,6 +101,8 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
