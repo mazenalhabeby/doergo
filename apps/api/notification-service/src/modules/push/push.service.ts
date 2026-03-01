@@ -75,7 +75,7 @@ export class PushService {
       where: { userId },
       select: { token: true },
     });
-    return tokens.map((t) => t.token);
+    return tokens.map((t: { token: string }) => t.token);
   }
 
   /**
