@@ -24,7 +24,6 @@ RUN pnpm --filter @doergo/tracking-service build
 FROM base AS production
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=deps /app/apps/api/tracking-service/node_modules ./apps/api/tracking-service/node_modules
 COPY --from=deps /app/apps/api/auth-service/node_modules ./apps/api/auth-service/node_modules
@@ -35,5 +34,6 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/tracking-service/package.json ./apps/api/tracking-service/
 COPY apps/api/auth-service/package.json ./apps/api/auth-service/
 COPY pnpm-workspace.yaml package.json ./
+RUN cd apps/api/auth-service && npx prisma generate
 
 CMD ["node", "apps/api/tracking-service/dist/main.js"]
