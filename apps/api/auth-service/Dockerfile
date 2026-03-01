@@ -27,6 +27,8 @@ COPY --from=deps /app/apps/api/auth-service/node_modules ./apps/api/auth-service
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/apps/api/auth-service/dist ./apps/api/auth-service/dist
 COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
+COPY apps/api/auth-service/tsconfig.json ./apps/api/auth-service/
+COPY tsconfig.base.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/auth-service/package.json ./apps/api/auth-service/
 COPY pnpm-workspace.yaml package.json ./
