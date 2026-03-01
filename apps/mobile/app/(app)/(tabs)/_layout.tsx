@@ -74,6 +74,8 @@ function TabItem({
     iconName = isFocused ? 'home' : 'home-outline';
   } else if (route.name === 'tasks') {
     iconName = isFocused ? 'clipboard' : 'clipboard-outline';
+  } else if (route.name === 'create-task') {
+    iconName = isFocused ? 'add-circle' : 'add-circle-outline';
   } else if (route.name === 'attendance') {
     iconName = isFocused ? 'time' : 'time-outline';
   } else if (route.name === 'time-off') {
@@ -122,14 +124,24 @@ function TabItem({
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  // Work mode determines tab visibility (decoupled from billing type)
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
+  const isTechnician = user?.role === 'TECHNICIAN';
+  // Work mode determines tab visibility for technicians
   const workMode = user?.workMode || 'HYBRID';
-  const showTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
-  const showAttendance = workMode === 'ON_SITE' || workMode === 'HYBRID';
+  const showTechTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
+  const showAttendance = isTechnician && (workMode === 'ON_SITE' || workMode === 'HYBRID');
 
-  // Filter routes based on work mode
+  // Filter routes based on role and work mode
   const visibleRoutes = state.routes.filter((route: any) => {
-    if (route.name === 'tasks') return showTasks;
+    if (isAdmin) {
+      // ADMIN sees: Dashboard, Tasks, Create, Profile
+      if (route.name === 'attendance') return false;
+      if (route.name === 'time-off') return false;
+      return true;
+    }
+    // TECHNICIAN: existing workMode-based logic
+    if (route.name === 'create-task') return false;
+    if (route.name === 'tasks') return showTechTasks;
     if (route.name === 'attendance') return showAttendance;
     return true;
   });
@@ -177,9 +189,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
 export default function TabsLayout() {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
+  const isTechnician = user?.role === 'TECHNICIAN';
   const workMode = user?.workMode || 'HYBRID';
-  const showTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
-  const showAttendance = workMode === 'ON_SITE' || workMode === 'HYBRID';
+  const showTechTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
+  const showAttendance = isTechnician && (workMode === 'ON_SITE' || workMode === 'HYBRID');
 
   return (
     <View style={styles.container}>
@@ -197,20 +211,29 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Home',
-            headerTitle: () => <LogoHeader subtitle="Home" />,
+            title: isAdmin ? 'Dashboard' : 'Home',
+            headerTitle: () => <LogoHeader subtitle={isAdmin ? 'Dashboard' : 'Home'} />,
           }}
         />
-        {/* Tasks tab - visible for ON_ROAD and HYBRID */}
+        {/* Tasks tab - ADMIN always sees, TECHNICIAN based on workMode */}
         <Tabs.Screen
           name="tasks"
           options={{
             title: 'Tasks',
             headerTitle: () => <LogoHeader subtitle="Tasks" />,
-            href: showTasks ? '/tasks' : null,
+            href: isAdmin || showTechTasks ? '/tasks' : null,
           }}
         />
-        {/* Clock tab - visible for ON_SITE and HYBRID */}
+        {/* Create Task tab - ADMIN only */}
+        <Tabs.Screen
+          name="create-task"
+          options={{
+            title: 'Create',
+            headerTitle: () => <LogoHeader subtitle="Create Task" />,
+            href: isAdmin ? '/create-task' : null,
+          }}
+        />
+        {/* Clock tab - TECHNICIAN only, based on workMode */}
         <Tabs.Screen
           name="attendance"
           options={{
@@ -219,12 +242,13 @@ export default function TabsLayout() {
             href: showAttendance ? '/attendance' : null,
           }}
         />
-        {/* Time Off tab - for both FULL_TIME and FREELANCER (availability tracking) */}
+        {/* Time Off tab - TECHNICIAN only */}
         <Tabs.Screen
           name="time-off"
           options={{
             title: 'Time Off',
             headerTitle: () => <LogoHeader subtitle="Time Off" />,
+            href: isTechnician ? '/time-off' : null,
           }}
         />
         <Tabs.Screen

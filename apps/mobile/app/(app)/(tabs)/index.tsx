@@ -98,13 +98,213 @@ function formatDate(dateString: string): string {
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const isFullTimeTechnician = user?.technicianType === 'FULL_TIME';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
+  const isTechnician = user?.role === 'TECHNICIAN';
+  const isFullTimeTechnician = isTechnician && user?.technicianType === 'FULL_TIME';
+
+  if (isAdmin) {
+    return <AdminDashboard />;
+  }
 
   if (isFullTimeTechnician) {
     return <FullTimeHome />;
   }
 
   return <FreelancerHome />;
+}
+
+// ============================================================================
+// ADMIN DASHBOARD - Overview & management focused
+// ============================================================================
+function AdminDashboard() {
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const initialFetchDoneRef = useRef(false);
+  const fetchingRef = useRef(false);
+
+  const stats = useMemo(() => {
+    return {
+      total: tasks.length,
+      inProgress: tasks.filter(t =>
+        ['IN_PROGRESS', 'EN_ROUTE', 'ARRIVED'].includes(t.status)
+      ).length,
+      completed: tasks.filter(t => t.status === 'COMPLETED' || t.status === 'CLOSED').length,
+      pending: tasks.filter(t =>
+        ['NEW', 'ASSIGNED', 'ACCEPTED'].includes(t.status)
+      ).length,
+    };
+  }, [tasks]);
+
+  const recentTasks = useMemo(() => {
+    return [...tasks]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5);
+  }, [tasks]);
+
+  const fetchTasks = useCallback(async (showRefresh = false) => {
+    if (fetchingRef.current && !showRefresh) return;
+    try {
+      fetchingRef.current = true;
+      if (showRefresh) setIsRefreshing(true);
+      else setIsLoading(true);
+      setError(null);
+      const fetchedTasks = await tasksApi.list();
+      setTasks(fetchedTasks || []);
+    } catch (err: any) {
+      if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
+      setError(err instanceof Error ? err.message : 'Failed to load tasks');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      fetchingRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialFetchDoneRef.current) return;
+    initialFetchDoneRef.current = true;
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const handleTaskPress = (task: Task) => {
+    router.push(ROUTES.taskDetail(task.id));
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchTasks()}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => fetchTasks(true)}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
+        {/* Welcome */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeGreeting}>
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},
+          </Text>
+          <Text style={styles.welcomeName}>{user?.firstName}!</Text>
+        </View>
+
+        {/* Stat Cards */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <View style={styles.statRow}>
+              <View style={[styles.statIcon, { backgroundColor: COLORS.primaryLight }]}>
+                <Ionicons name="list" size={18} color={COLORS.primary} />
+              </View>
+              <Text style={styles.statNumber}>{stats.total}</Text>
+            </View>
+            <Text style={styles.statLabel}>Total Tasks</Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.statRow}>
+              <View style={[styles.statIcon, { backgroundColor: COLORS.amberLight }]}>
+                <Ionicons name="play-circle" size={18} color={COLORS.amber} />
+              </View>
+              <Text style={styles.statNumber}>{stats.inProgress}</Text>
+            </View>
+            <Text style={styles.statLabel}>In Progress</Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.statRow}>
+              <View style={[styles.statIcon, { backgroundColor: COLORS.successLight }]}>
+                <Ionicons name="checkmark-done" size={18} color={COLORS.success} />
+              </View>
+              <Text style={styles.statNumber}>{stats.completed}</Text>
+            </View>
+            <Text style={styles.statLabel}>Completed</Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.statRow}>
+              <View style={[styles.statIcon, { backgroundColor: COLORS.purpleLight }]}>
+                <Ionicons name="hourglass-outline" size={18} color={COLORS.purple} />
+              </View>
+              <Text style={styles.statNumber}>{stats.pending}</Text>
+            </View>
+            <Text style={styles.statLabel}>Pending</Text>
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={adminStyles.quickActions}>
+          <TouchableOpacity
+            style={adminStyles.quickActionButton}
+            onPress={() => router.push(ROUTES.createTask)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle" size={20} color={COLORS.white} />
+            <Text style={adminStyles.quickActionText}>Create Task</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[adminStyles.quickActionButton, adminStyles.quickActionSecondary]}
+            onPress={() => router.push(ROUTES.tasks)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="clipboard" size={20} color={COLORS.primary} />
+            <Text style={adminStyles.quickActionSecondaryText}>View All</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Recent Tasks */}
+        <View style={adminStyles.recentSection}>
+          <Text style={styles.sectionTitle}>Recent Tasks</Text>
+          {recentTasks.length === 0 ? (
+            <View style={adminStyles.emptyRecent}>
+              <Text style={adminStyles.emptyRecentText}>No tasks yet. Create one to get started!</Text>
+            </View>
+          ) : (
+            <View style={adminStyles.recentList}>
+              {recentTasks.map(task => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onPress={() => handleTaskPress(task)}
+                  showAssignee
+                  showPriority
+                />
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={{ height: SPACING.xl }} />
+      </ScrollView>
+    </View>
+  );
 }
 
 // ============================================================================
@@ -1402,5 +1602,58 @@ const styles = StyleSheet.create({
   },
   tasksList: {
     gap: SPACING.md,
+  },
+});
+
+// Admin Dashboard specific styles
+const adminStyles = StyleSheet.create({
+  quickActions: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
+    gap: SPACING.md,
+  },
+  quickActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.md + 2,
+    borderRadius: RADIUS.md,
+    gap: SPACING.sm,
+  },
+  quickActionSecondary: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  quickActionText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
+  },
+  quickActionSecondaryText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
+  },
+  recentSection: {
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.xxl,
+  },
+  recentList: {
+    gap: SPACING.md,
+  },
+  emptyRecent: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    padding: SPACING.xxxl,
+    alignItems: 'center',
+  },
+  emptyRecentText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate400,
+    textAlign: 'center',
   },
 });

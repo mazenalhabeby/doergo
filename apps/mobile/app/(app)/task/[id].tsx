@@ -17,8 +17,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { tasksApi, reportsApi, type Task, type Comment, type TaskStatus, type CompleteTaskInput } from '../../../src/lib/api';
+import { tasksApi, reportsApi, type Task, type Comment, type TaskStatus, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
+import { useAuth } from '../../../src/contexts/auth-context';
 import { useLocationTracking } from '../../../src/hooks/useLocationTracking';
+import { TechnicianPicker } from '../../../src/components';
 import {
   COLORS,
   SPACING,
@@ -27,7 +29,7 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../../../src/lib/constants';
-import { getStatusStyle } from '../../../src/lib/styles';
+import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
 import { getJobId } from '../../../src/lib/utils';
 
 // Progress steps configuration for the detail view (6-step flow)
@@ -100,6 +102,9 @@ function formatElapsedTime(seconds: number): string {
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
+
   const [task, setTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,6 +119,14 @@ export default function TaskDetailScreen() {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completionSummary, setCompletionSummary] = useState('');
   const [completionDetails, setCompletionDetails] = useState('');
+
+  // Admin modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState<string>('MEDIUM');
+  const [editLocation, setEditLocation] = useState('');
 
   // Location tracking hook - only active during EN_ROUTE status
   const {
@@ -381,6 +394,79 @@ export default function TaskDetailScreen() {
     Alert.alert('Contact', 'Contact information not available for this task.');
   };
 
+  // Admin: Assign technician
+  const handleAssignTechnician = async (technician: TechnicianListItem) => {
+    if (!task) return;
+    try {
+      setIsUpdating(true);
+      setShowAssignModal(false);
+      const updatedTask = await tasksApi.assign(task.id, technician.id);
+      setTask(updatedTask);
+      Alert.alert('Success', `Assigned to ${technician.firstName} ${technician.lastName}`);
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to assign');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Admin: Open edit modal
+  const handleOpenEdit = () => {
+    if (!task) return;
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+    setEditPriority(task.priority);
+    setEditLocation(task.locationAddress || '');
+    setShowEditModal(true);
+  };
+
+  // Admin: Submit edit
+  const handleEditSubmit = async () => {
+    if (!task || !editTitle.trim()) {
+      Alert.alert('Required', 'Title is required.');
+      return;
+    }
+    try {
+      setIsUpdating(true);
+      setShowEditModal(false);
+      const input: UpdateTaskInput = {
+        title: editTitle.trim(),
+        description: editDescription.trim() || undefined,
+        priority: editPriority as any,
+        locationAddress: editLocation.trim() || undefined,
+      };
+      const updatedTask = await tasksApi.update(task.id, input);
+      setTask(updatedTask);
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Admin: Cancel task
+  const handleCancelTask = () => {
+    if (!task) return;
+    Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Cancel Task',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setIsUpdating(true);
+            const updatedTask = await tasksApi.updateStatus(task.id, 'CANCELED');
+            setTask(updatedTask);
+          } catch (err) {
+            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to cancel');
+          } finally {
+            setIsUpdating(false);
+          }
+        },
+      },
+    ]);
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -409,9 +495,9 @@ export default function TaskDetailScreen() {
   const statusStyle = getStatusStyle(task.status);
   const progressIndex = getDetailProgressIndex(task.status);
   const jobId = getJobId(task.id);
-  const showTimer = task.status === 'IN_PROGRESS';
+  const showTimer = !isAdmin && task.status === 'IN_PROGRESS';
   const statusAction = getStatusAction(task.status);
-  const showLocationToggle = task.status === 'EN_ROUTE';
+  const showLocationToggle = !isAdmin && task.status === 'EN_ROUTE';
   const showBottomBar = !['COMPLETED', 'CLOSED', 'CANCELED'].includes(task.status);
 
   return (
@@ -544,6 +630,105 @@ export default function TaskDetailScreen() {
         </View>
       </Modal>
 
+      {/* Admin: Assign Technician Modal */}
+      <TechnicianPicker
+        visible={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+        onSelect={handleAssignTechnician}
+        selectedId={task?.assignedToId}
+      />
+
+      {/* Admin: Edit Task Modal */}
+      <Modal
+        visible={showEditModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.completionModalContent}>
+            <Text style={styles.modalTitle}>Edit Task</Text>
+
+            <Text style={adminDetailStyles.editLabel}>Title *</Text>
+            <TextInput
+              style={styles.summaryInput}
+              value={editTitle}
+              onChangeText={setEditTitle}
+              placeholder="Task title"
+              placeholderTextColor={COLORS.slate400}
+              maxLength={200}
+            />
+
+            <Text style={adminDetailStyles.editLabel}>Description</Text>
+            <TextInput
+              style={styles.detailsInput}
+              value={editDescription}
+              onChangeText={setEditDescription}
+              placeholder="Task description"
+              placeholderTextColor={COLORS.slate400}
+              multiline
+              maxLength={1000}
+            />
+
+            <Text style={adminDetailStyles.editLabel}>Priority</Text>
+            <View style={adminDetailStyles.editPriorityRow}>
+              {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((p) => {
+                const pStyle = getPriorityStyle(p);
+                const isSelected = editPriority === p;
+                return (
+                  <TouchableOpacity
+                    key={p}
+                    style={[
+                      adminDetailStyles.editPriorityChip,
+                      isSelected && { backgroundColor: pStyle.bg, borderColor: pStyle.color },
+                    ]}
+                    onPress={() => setEditPriority(p)}
+                  >
+                    <View style={[adminDetailStyles.editPriorityDot, { backgroundColor: pStyle.color }]} />
+                    <Text style={[
+                      adminDetailStyles.editPriorityText,
+                      isSelected && { color: pStyle.color, fontWeight: FONT_WEIGHT.semibold },
+                    ]}>
+                      {pStyle.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={adminDetailStyles.editLabel}>Location</Text>
+            <TextInput
+              style={[styles.summaryInput, { minHeight: 44 }]}
+              value={editLocation}
+              onChangeText={setEditLocation}
+              placeholder="Address"
+              placeholderTextColor={COLORS.slate400}
+              maxLength={300}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowEditModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.completionSubmitButton, { backgroundColor: COLORS.primary }, isUpdating && styles.buttonDisabled]}
+                onPress={handleEditSubmit}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.completionSubmitText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Stack.Screen
         options={{
           title: 'Task Details',
@@ -621,7 +806,47 @@ export default function TaskDetailScreen() {
           )}
         </View>
 
-        {/* Progress Section */}
+        {/* Admin: Task Metadata */}
+        {isAdmin && (
+          <View style={adminDetailStyles.metaCard}>
+            {task.assignedTo && (
+              <View style={adminDetailStyles.metaRow}>
+                <Ionicons name="person" size={16} color={COLORS.primary} />
+                <Text style={adminDetailStyles.metaLabel}>Assigned to</Text>
+                <Text style={adminDetailStyles.metaValue}>
+                  {task.assignedTo.firstName} {task.assignedTo.lastName}
+                </Text>
+              </View>
+            )}
+            {!task.assignedTo && (
+              <View style={adminDetailStyles.metaRow}>
+                <Ionicons name="person-outline" size={16} color={COLORS.warning} />
+                <Text style={[adminDetailStyles.metaValue, { color: COLORS.warning }]}>Unassigned</Text>
+              </View>
+            )}
+            {task.createdBy && (
+              <View style={adminDetailStyles.metaRow}>
+                <Ionicons name="create-outline" size={16} color={COLORS.slate400} />
+                <Text style={adminDetailStyles.metaLabel}>Created by</Text>
+                <Text style={adminDetailStyles.metaValue}>
+                  {task.createdBy.firstName} {task.createdBy.lastName}
+                </Text>
+              </View>
+            )}
+            <View style={adminDetailStyles.metaRow}>
+              <Ionicons name="time-outline" size={16} color={COLORS.slate400} />
+              <Text style={adminDetailStyles.metaLabel}>Created</Text>
+              <Text style={adminDetailStyles.metaValue}>
+                {new Date(task.createdAt).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric', year: 'numeric',
+                })}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Progress Section (Technician only) */}
+        {!isAdmin && (
         <View style={styles.progressCard}>
           <Text style={styles.sectionTitle}>Progress</Text>
           <View style={styles.progressSteps}>
@@ -674,6 +899,7 @@ export default function TaskDetailScreen() {
             })}
           </View>
         </View>
+        )}
 
         {/* Job Description */}
         {task.description && (
@@ -733,10 +959,12 @@ export default function TaskDetailScreen() {
               </MapView>
             </View>
             <Text style={styles.locationAddress}>{task.locationAddress}</Text>
-            <TouchableOpacity style={styles.navigationButton} onPress={handleStartNavigation}>
-              <Ionicons name="navigate" size={20} color="white" />
-              <Text style={styles.navigationButtonText}>Start Navigation</Text>
-            </TouchableOpacity>
+            {!isAdmin && (
+              <TouchableOpacity style={styles.navigationButton} onPress={handleStartNavigation}>
+                <Ionicons name="navigate" size={20} color="white" />
+                <Text style={styles.navigationButtonText}>Start Navigation</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -744,107 +972,144 @@ export default function TaskDetailScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Bottom Bar - Timer, Location Toggle, and Action Buttons */}
+      {/* Bottom Bar */}
       {showBottomBar && (
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          {/* Timer for IN_PROGRESS */}
-          {showTimer && (
-            <View style={styles.timerContainer}>
-              <Ionicons name="time-outline" size={20} color={COLORS.slate500} />
-              <Text style={styles.timerText}>{formatElapsedTime(elapsedTime)}</Text>
-            </View>
-          )}
-
-          {/* Location Tracking Indicator (automatically active during EN_ROUTE) */}
-          {showLocationToggle && (
-            <View style={styles.trackingRow}>
-              <View
-                style={[
-                  styles.trackingIndicator,
-                  isTracking && styles.trackingIndicatorActive,
-                ]}
+          {isAdmin ? (
+            /* Admin Bottom Bar: Assign, Edit, Cancel */
+            <View style={styles.actionButtonsRow}>
+              <TouchableOpacity
+                style={adminDetailStyles.adminActionBtn}
+                onPress={() => setShowAssignModal(true)}
+                disabled={isUpdating}
               >
-                <Ionicons
-                  name={isTracking ? 'location' : 'location-outline'}
-                  size={20}
-                  color={isTracking ? COLORS.white : COLORS.slate400}
-                />
-                <Text
-                  style={[
-                    styles.trackingIndicatorText,
-                    isTracking && styles.trackingIndicatorTextActive,
-                  ]}
-                >
-                  {isTracking ? 'Location Tracking Active' : 'Starting Tracking...'}
+                <Ionicons name="person-add" size={18} color={COLORS.primary} />
+                <Text style={adminDetailStyles.adminActionBtnText}>
+                  {task.assignedToId ? 'Reassign' : 'Assign'}
                 </Text>
-                {isTracking && (
-                  <View style={styles.trackingPulse} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[adminDetailStyles.adminActionBtn, { backgroundColor: COLORS.primary }]}
+                onPress={handleOpenEdit}
+                disabled={isUpdating}
+              >
+                <Ionicons name="create" size={18} color={COLORS.white} />
+                <Text style={[adminDetailStyles.adminActionBtnText, { color: COLORS.white }]}>Edit</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[adminDetailStyles.adminActionBtn, { borderColor: COLORS.error }]}
+                onPress={handleCancelTask}
+                disabled={isUpdating}
+              >
+                <Ionicons name="close-circle" size={18} color={COLORS.error} />
+                <Text style={[adminDetailStyles.adminActionBtnText, { color: COLORS.error }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            /* Technician Bottom Bar */
+            <>
+              {/* Timer for IN_PROGRESS */}
+              {showTimer && (
+                <View style={styles.timerContainer}>
+                  <Ionicons name="time-outline" size={20} color={COLORS.slate500} />
+                  <Text style={styles.timerText}>{formatElapsedTime(elapsedTime)}</Text>
+                </View>
+              )}
+
+              {/* Location Tracking Indicator */}
+              {showLocationToggle && (
+                <View style={styles.trackingRow}>
+                  <View
+                    style={[
+                      styles.trackingIndicator,
+                      isTracking && styles.trackingIndicatorActive,
+                    ]}
+                  >
+                    <Ionicons
+                      name={isTracking ? 'location' : 'location-outline'}
+                      size={20}
+                      color={isTracking ? COLORS.white : COLORS.slate400}
+                    />
+                    <Text
+                      style={[
+                        styles.trackingIndicatorText,
+                        isTracking && styles.trackingIndicatorTextActive,
+                      ]}
+                    >
+                      {isTracking ? 'Location Tracking Active' : 'Starting Tracking...'}
+                    </Text>
+                    {isTracking && (
+                      <View style={styles.trackingPulse} />
+                    )}
+                  </View>
+                  {locationError && (
+                    <TouchableOpacity onPress={startTracking} style={styles.retryTrackingButton}>
+                      <Text style={styles.retryTrackingText}>Retry</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              {/* Action Buttons Row */}
+              <View style={styles.actionButtonsRow}>
+                {/* Report Issue Button (only for IN_PROGRESS) */}
+                {task.status === 'IN_PROGRESS' && (
+                  <TouchableOpacity
+                    style={styles.reportIssueButton}
+                    onPress={() => handleStatusUpdate('BLOCKED')}
+                    disabled={isUpdating}
+                  >
+                    <Ionicons name="warning-outline" size={18} color={COLORS.error} />
+                  </TouchableOpacity>
+                )}
+
+                {/* Accept/Decline Buttons for ASSIGNED status */}
+                {task.status === 'ASSIGNED' ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.declineButton}
+                      onPress={() => handleDeclineTask()}
+                      disabled={isUpdating}
+                    >
+                      <Ionicons name="close-circle-outline" size={20} color={COLORS.error} />
+                      <Text style={styles.declineButtonText}>Decline</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.finishButton, { backgroundColor: COLORS.success }]}
+                      onPress={() => handleStatusUpdate('ACCEPTED')}
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <>
+                          <Ionicons name="checkmark-circle" size={20} color="white" />
+                          <Text style={styles.finishButtonText}>Accept Job</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </>
+                ) : statusAction && (
+                  <TouchableOpacity
+                    style={[styles.finishButton, { backgroundColor: COLORS.success }]}
+                    onPress={() => handleStatusUpdate(statusAction.nextStatus)}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <>
+                        <Ionicons name={statusAction.icon} size={20} color="white" />
+                        <Text style={styles.finishButtonText}>{statusAction.label}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
                 )}
               </View>
-              {locationError && (
-                <TouchableOpacity onPress={startTracking} style={styles.retryTrackingButton}>
-                  <Text style={styles.retryTrackingText}>Retry</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            </>
           )}
-
-          {/* Action Buttons Row */}
-          <View style={styles.actionButtonsRow}>
-            {/* Report Issue Button (only for IN_PROGRESS) */}
-            {task.status === 'IN_PROGRESS' && (
-              <TouchableOpacity
-                style={styles.reportIssueButton}
-                onPress={() => handleStatusUpdate('BLOCKED')}
-                disabled={isUpdating}
-              >
-                <Ionicons name="warning-outline" size={18} color={COLORS.error} />
-              </TouchableOpacity>
-            )}
-
-            {/* Accept/Decline Buttons for ASSIGNED status */}
-            {task.status === 'ASSIGNED' ? (
-              <>
-                <TouchableOpacity
-                  style={styles.declineButton}
-                  onPress={() => handleDeclineTask()}
-                  disabled={isUpdating}
-                >
-                  <Ionicons name="close-circle-outline" size={20} color={COLORS.error} />
-                  <Text style={styles.declineButtonText}>Decline</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.finishButton, { backgroundColor: COLORS.success }]}
-                  onPress={() => handleStatusUpdate('ACCEPTED')}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark-circle" size={20} color="white" />
-                      <Text style={styles.finishButtonText}>Accept Job</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </>
-            ) : statusAction && (
-              <TouchableOpacity
-                style={[styles.finishButton, { backgroundColor: COLORS.success }]}
-                onPress={() => handleStatusUpdate(statusAction.nextStatus)}
-                disabled={isUpdating}
-              >
-                {isUpdating ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Ionicons name={statusAction.icon} size={20} color="white" />
-                    <Text style={styles.finishButtonText}>{statusAction.label}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
         </View>
       )}
     </KeyboardAvoidingView>
@@ -1409,5 +1674,82 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.white,
+  },
+});
+
+// Admin-specific styles for task detail
+const adminDetailStyles = StyleSheet.create({
+  metaCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
+  },
+  metaLabel: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.slate400,
+  },
+  metaValue: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.slate800,
+  },
+  adminActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md + 2,
+    borderRadius: RADIUS.sm + 2,
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+  },
+  adminActionBtnText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
+  },
+  editLabel: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.slate700,
+    marginBottom: SPACING.xs,
+    marginTop: SPACING.sm,
+  },
+  editPriorityRow: {
+    flexDirection: 'row',
+    gap: SPACING.xs,
+    marginBottom: SPACING.md,
+  },
+  editPriorityChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.slate200,
+    gap: SPACING.xs,
+  },
+  editPriorityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  editPriorityText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.slate500,
   },
 });

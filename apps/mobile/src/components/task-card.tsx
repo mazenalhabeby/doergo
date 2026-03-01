@@ -22,6 +22,11 @@ export interface TaskCardData {
     firstName: string;
     lastName: string;
   };
+  assignedTo?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
   organization?: {
     name: string;
   };
@@ -32,6 +37,7 @@ interface TaskCardProps {
   onPress: () => void;
   showPriority?: boolean;
   showDate?: boolean;
+  showAssignee?: boolean;
   compact?: boolean;
 }
 
@@ -49,6 +55,7 @@ export function TaskCard({
   onPress,
   showPriority = false,
   showDate = false,
+  showAssignee = false,
   compact = false,
 }: TaskCardProps) {
   const statusStyle = getStatusStyle(task.status);
@@ -105,6 +112,27 @@ export function TaskCard({
           <Ionicons name="time-outline" size={16} color={COLORS.slate400} />
           <Text style={styles.infoText}>
             {showDate ? formatRelativeDate(task.dueDate) : formatTimeRange(task.dueDate)}
+          </Text>
+        </View>
+      )}
+
+      {/* Assignee */}
+      {showAssignee && (
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="person-outline"
+            size={16}
+            color={task.assignedTo ? COLORS.slate400 : COLORS.warning}
+          />
+          <Text
+            style={[
+              styles.infoText,
+              !task.assignedTo && { color: COLORS.warning, fontWeight: FONT_WEIGHT.medium },
+            ]}
+          >
+            {task.assignedTo
+              ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
+              : 'Unassigned'}
           </Text>
         </View>
       )}

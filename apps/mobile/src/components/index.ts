@@ -6,3 +6,4 @@ export { TaskCard } from './task-card';
 export type { TaskCardData } from './task-card';
 export { FilterChip } from './filter-chip';
 export { CreateOrgIcon, JoinOrgIcon, InvitationIcon } from './onboarding-icons';
+export { TechnicianPicker } from './technician-picker';

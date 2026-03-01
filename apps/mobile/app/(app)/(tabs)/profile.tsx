@@ -11,6 +11,19 @@ import {
   FONT_WEIGHT,
 } from '../../../src/lib/constants';
 
+function getRoleLabel(role?: string): string {
+  switch (role) {
+    case 'ADMIN':
+    case 'CLIENT':
+      return 'Administrator';
+    case 'DISPATCHER':
+      return 'Dispatcher';
+    case 'TECHNICIAN':
+    default:
+      return 'Worker';
+  }
+}
+
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { unregisterPushToken } = usePushNotifications();
@@ -53,7 +66,7 @@ export default function ProfileScreen() {
         <Text style={styles.userEmail}>{user?.email}</Text>
         <View style={styles.roleBadge}>
           <Ionicons name="briefcase-outline" size={14} color={COLORS.primary} />
-          <Text style={styles.roleText}>Worker</Text>
+          <Text style={styles.roleText}>{getRoleLabel(user?.role)}</Text>
         </View>
       </View>
 

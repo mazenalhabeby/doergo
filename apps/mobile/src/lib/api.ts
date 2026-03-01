@@ -23,6 +23,8 @@ import type {
   PaginatedResponse,
   InvitationValidation,
   AcceptInvitationInput,
+  TechnicianListItem,
+  TechniciansListResponse,
 } from '@doergo/shared/client';
 
 // Re-export types for convenience
@@ -36,6 +38,8 @@ export type {
   ClockOutInput,
   AttendanceHistoryParams,
   PaginatedResponse,
+  TechnicianListItem,
+  TechniciansListResponse,
 };
 export { TechnicianType, WorkMode, TimeEntryStatus, BreakType };
 
@@ -361,6 +365,24 @@ async function fetchWithAuth<T>(
   }
 }
 
+// Task input types
+export interface CreateTaskInput {
+  title: string;
+  description?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  dueDate?: string;
+  locationAddress?: string;
+  assignedToId?: string;
+}
+
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  dueDate?: string;
+  locationAddress?: string;
+}
+
 // Task types (using shared TaskStatus enum)
 export { TaskStatus };
 
@@ -504,6 +526,51 @@ export const tasksApi = {
     return fetchWithAuth<void>(`/tasks/${taskId}/decline`, {
       method: 'POST',
     });
+  },
+
+  // Create a new task (ADMIN)
+  create: async (input: CreateTaskInput): Promise<Task> => {
+    return fetchWithAuth<Task>('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  // Update task details (ADMIN)
+  update: async (id: string, input: UpdateTaskInput): Promise<Task> => {
+    return fetchWithAuth<Task>(`/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  },
+
+  // Assign technician to task (ADMIN)
+  assign: async (taskId: string, workerId: string): Promise<Task> => {
+    return fetchWithAuth<Task>(`/tasks/${taskId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ workerId }),
+    });
+  },
+
+  // Delete task (ADMIN)
+  delete: async (id: string): Promise<void> => {
+    return fetchWithAuth<void>(`/tasks/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Technicians API - for admin/dispatcher to list and view technicians
+export const techniciansApi = {
+  // List technicians with optional filters
+  list: async (params?: { search?: string; status?: string; page?: number; limit?: number }): Promise<TechniciansListResponse> => {
+    const endpoint = buildUrlWithQuery('/technicians', params ?? {});
+    return fetchWithAuth<TechniciansListResponse>(endpoint, { method: 'GET' });
+  },
+
+  // Get technician by ID
+  getById: async (id: string): Promise<TechnicianListItem> => {
+    return fetchWithAuth<TechnicianListItem>(`/technicians/${id}`, { method: 'GET' });
   },
 };
 

@@ -7,9 +7,11 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useAuth } from '../../../src/contexts/auth-context';
 import { tasksApi, type Task } from '../../../src/lib/api';
 import { TaskCard, FilterChip } from '../../../src/components';
 import {
@@ -21,25 +23,41 @@ import {
   ROUTES,
 } from '../../../src/lib/constants';
 
-// Filter options
-const FILTER_OPTIONS = [
+// Filter options for technicians
+const TECH_FILTER_OPTIONS = [
   { key: 'ALL', label: 'All' },
   { key: 'ACTIVE', label: 'Active' },
   { key: 'COMPLETED', label: 'Completed' },
   { key: 'BLOCKED', label: 'Blocked' },
 ] as const;
 
-type FilterKey = typeof FILTER_OPTIONS[number]['key'];
+// Filter options for admin (more granular)
+const ADMIN_FILTER_OPTIONS = [
+  { key: 'ALL', label: 'All' },
+  { key: 'NEW', label: 'New' },
+  { key: 'ASSIGNED', label: 'Assigned' },
+  { key: 'IN_PROGRESS', label: 'Active' },
+  { key: 'COMPLETED', label: 'Done' },
+  { key: 'BLOCKED', label: 'Blocked' },
+] as const;
+
+type FilterKey = string;
 
 export default function TasksScreen() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('ALL');
+  const [search, setSearch] = useState('');
 
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
+
+  const filterOptions = isAdmin ? ADMIN_FILTER_OPTIONS : TECH_FILTER_OPTIONS;
 
   const fetchTasks = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
@@ -79,21 +97,43 @@ export default function TasksScreen() {
     router.push(ROUTES.taskDetail(task.id));
   };
 
-  // Filter tasks based on selected filter
+  // Filter tasks based on selected filter and search
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      switch (filter) {
-        case 'ACTIVE':
-          return ['ASSIGNED', 'IN_PROGRESS'].includes(task.status);
-        case 'COMPLETED':
-          return task.status === 'COMPLETED';
-        case 'BLOCKED':
-          return task.status === 'BLOCKED';
-        default:
-          return true;
+    let result = tasks;
+
+    // Apply status filter
+    if (filter !== 'ALL') {
+      if (filter === 'ACTIVE' || filter === 'IN_PROGRESS') {
+        result = result.filter(task =>
+          ['ASSIGNED', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'].includes(task.status)
+        );
+      } else if (filter === 'NEW') {
+        result = result.filter(task => task.status === 'NEW');
+      } else if (filter === 'ASSIGNED') {
+        result = result.filter(task =>
+          ['ASSIGNED', 'ACCEPTED'].includes(task.status)
+        );
+      } else if (filter === 'COMPLETED') {
+        result = result.filter(task =>
+          ['COMPLETED', 'CLOSED'].includes(task.status)
+        );
+      } else if (filter === 'BLOCKED') {
+        result = result.filter(task => task.status === 'BLOCKED');
       }
-    });
-  }, [tasks, filter]);
+    }
+
+    // Apply search (client-side)
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(task =>
+        task.title.toLowerCase().includes(q) ||
+        (task.description && task.description.toLowerCase().includes(q)) ||
+        (task.assignedTo && `${task.assignedTo.firstName} ${task.assignedTo.lastName}`.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [tasks, filter, search]);
 
   if (isLoading) {
     return (
@@ -121,16 +161,42 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Search Bar (admin only) */}
+      {isAdmin && (
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color={COLORS.slate400} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search tasks..."
+            placeholderTextColor={COLORS.slate400}
+            value={search}
+            onChangeText={setSearch}
+            autoCorrect={false}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={18} color={COLORS.slate400} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Filter Chips */}
       <View style={styles.filterContainer}>
-        {FILTER_OPTIONS.map(option => (
-          <FilterChip
-            key={option.key}
-            label={option.label}
-            active={filter === option.key}
-            onPress={() => setFilter(option.key)}
-          />
-        ))}
+        <FlatList
+          data={filterOptions as readonly { key: string; label: string }[]}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item.key}
+          renderItem={({ item }) => (
+            <FilterChip
+              label={item.label}
+              active={filter === item.key}
+              onPress={() => setFilter(item.key)}
+            />
+          )}
+          contentContainerStyle={{ gap: SPACING.sm }}
+        />
       </View>
 
       {/* Tasks Count */}
@@ -143,7 +209,13 @@ export default function TasksScreen() {
         data={filteredTasks}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TaskCard task={item} onPress={() => handleTaskPress(item)} />
+          <TaskCard
+            task={item}
+            onPress={() => handleTaskPress(item)}
+            showAssignee={isAdmin}
+            showPriority={isAdmin}
+            showDate
+          />
         )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -196,12 +268,30 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.semibold,
   },
 
+  // Search
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.slate200,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    fontSize: FONT_SIZE.base,
+    color: COLORS.slate800,
+  },
+
   // Filter
   filterContainer: {
-    flexDirection: 'row',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
-    gap: SPACING.sm,
   },
 
   // Count
