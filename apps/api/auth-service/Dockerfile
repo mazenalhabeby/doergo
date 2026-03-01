@@ -22,6 +22,7 @@ RUN pnpm --filter @doergo/auth-service build
 FROM base AS production
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=deps /app/apps/api/auth-service/node_modules ./apps/api/auth-service/node_modules
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist

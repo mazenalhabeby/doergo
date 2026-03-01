@@ -24,6 +24,7 @@ RUN pnpm --filter @doergo/tracking-service build
 FROM base AS production
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=deps /app/apps/api/tracking-service/node_modules ./apps/api/tracking-service/node_modules
 COPY --from=deps /app/apps/api/auth-service/node_modules ./apps/api/auth-service/node_modules
