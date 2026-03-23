@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import * as nodemailer from 'nodemailer';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   MAX_SESSIONS_PER_USER,
@@ -29,11 +30,69 @@ function hashToken(token: string): string {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
+  private mailTransporter: nodemailer.Transporter | null = null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    const smtpHost = this.configService.get('SMTP_HOST');
+    if (smtpHost) {
+      this.mailTransporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: this.configService.get('SMTP_PORT', 587),
+        secure: false,
+        auth: {
+          user: this.configService.get('SMTP_USER'),
+          pass: this.configService.get('SMTP_PASS'),
+        },
+      });
+      this.logger.log('SMTP transporter configured');
+    } else {
+      this.logger.warn('SMTP not configured - password reset emails will not be sent');
+    }
+  }
+
+  private async sendPasswordResetEmail(email: string, firstName: string, resetToken: string) {
+    if (!this.mailTransporter) {
+      this.logger.warn('Cannot send password reset email - SMTP not configured');
+      return;
+    }
+
+    const appUrl = this.configService.get('APP_URL', 'https://doergo.hbc-solution.io');
+    const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
+    const fromEmail = this.configService.get('SMTP_FROM', 'noreply@doergo.com');
+
+    try {
+      await this.mailTransporter.sendMail({
+        from: fromEmail,
+        to: email,
+        subject: 'Doergo - Reset Your Password',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Password Reset Request</h2>
+            <p>Hello ${firstName},</p>
+            <p>We received a request to reset your password. Click the button below to set a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                Reset Password
+              </a>
+            </div>
+            <p style="color: #64748b; font-size: 14px;">If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="color: #64748b; font-size: 14px; word-break: break-all;">${resetLink}</p>
+            <p style="color: #64748b; font-size: 14px;">This link will expire in ${PASSWORD_RESET_EXPIRATION_HOURS} hour(s).</p>
+            <p style="color: #64748b; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+            <p style="color: #94a3b8; font-size: 12px;">This is an automated message from Doergo Field Service Management.</p>
+          </div>
+        `,
+      });
+      this.logger.log(`Password reset email sent to ${email}`);
+    } catch (err) {
+      this.logger.error(`Failed to send password reset email to ${email}: ${err}`);
+    }
+  }
 
   async register(data: {
     email: string;
@@ -595,9 +654,8 @@ export class AuthService {
         },
       });
 
-      // TODO: Send email with reset link when email service is configured
-      // In development, use Prisma Studio or database query to retrieve tokens if needed
-      // SECURITY: Never log tokens - even in development
+      // Send password reset email
+      await this.sendPasswordResetEmail(user.email, user.firstName, resetToken);
       this.logger.log(`Password reset token generated for user: ${email}`);
 
       return successResponse;
@@ -837,5 +895,65 @@ export class AuthService {
     }
 
     return now;
+  }
+
+  /**
+   * Change password for authenticated user
+   */
+  async changePassword(data: { userId: string; currentPassword: string; newPassword: string }) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: data.userId },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'User not found.',
+        };
+      }
+
+      // Verify current password
+      const isCurrentValid = await bcrypt.compare(data.currentPassword, user.passwordHash);
+      if (!isCurrentValid) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Current password is incorrect.',
+        };
+      }
+
+      // Validate new password
+      if (data.newPassword.length < 8) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'New password must be at least 8 characters long.',
+        };
+      }
+
+      // Hash and update
+      const newPasswordHash = await bcrypt.hash(data.newPassword, 12);
+      await this.prisma.user.update({
+        where: { id: data.userId },
+        data: { passwordHash: newPasswordHash },
+      });
+
+      this.logger.log(`Password changed for user ${data.userId}`);
+
+      return {
+        success: true,
+        data: null,
+        message: 'Password changed successfully.',
+      };
+    } catch (error) {
+      this.logger.error(`Change password error: ${error}`);
+      return {
+        success: false,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to change password.',
+      };
+    }
   }
 }

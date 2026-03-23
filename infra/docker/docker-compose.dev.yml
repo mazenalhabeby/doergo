@@ -1,7 +1,5 @@
-version: '3.8'
-
 # Development compose file - only infrastructure services
-# Use this for local development: docker-compose -f docker-compose.dev.yml up -d
+# Use this for local development: docker compose -f docker-compose.dev.yml up -d
 
 services:
   postgres:

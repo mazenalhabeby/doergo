@@ -33,5 +33,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/auth-service/package.json ./apps/api/auth-service/
 COPY pnpm-workspace.yaml package.json ./
 RUN cd apps/api/auth-service && npx prisma generate
+COPY infra/docker/scripts/auth-entrypoint.sh /app/auth-entrypoint.sh
+RUN chmod +x /app/auth-entrypoint.sh
 
-CMD ["node", "apps/api/auth-service/dist/main.js"]
+ENTRYPOINT ["/app/auth-entrypoint.sh"]

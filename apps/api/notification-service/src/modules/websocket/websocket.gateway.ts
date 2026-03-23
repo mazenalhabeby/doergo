@@ -31,12 +31,7 @@ export interface SocketStats {
 
 @WebSocketGateway({
   cors: {
-    origin: [
-      'http://localhost:3000',  // Web app
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'https://admin.socket.io',  // Socket.IO Admin UI
-    ],
+    origin: (process.env.SOCKET_CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001,https://admin.socket.io').split(','),
     credentials: true,
   },
 })
@@ -56,9 +51,12 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     // Enable Socket.IO Admin UI
     // Access at: https://admin.socket.io
     // Server URL: http://localhost:4001
+    const isProduction = process.env.NODE_ENV === 'production';
     instrument(server, {
-      auth: false, // Set to true in production and configure auth
-      mode: 'development',
+      auth: isProduction
+        ? { type: 'basic', username: process.env.SOCKET_ADMIN_USER || 'admin', password: process.env.SOCKET_ADMIN_PASSWORD || '' }
+        : false,
+      mode: isProduction ? 'production' : 'development',
     });
 
     // Global middleware for connection logging

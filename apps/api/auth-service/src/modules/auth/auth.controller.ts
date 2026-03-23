@@ -40,4 +40,9 @@ export class AuthController {
   async validateToken(@Payload() data: any) {
     return this.authService.validateToken(data.token);
   }
+
+  @MessagePattern({ cmd: 'change_password' })
+  async changePassword(@Payload() data: any) {
+    return this.authService.changePassword(data);
+  }
 }

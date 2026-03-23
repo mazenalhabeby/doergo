@@ -13,7 +13,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
+import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto } from './dto';
 import { Public } from '../../common/decorators';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { SkipOnboardingCheck } from '@doergo/shared';
@@ -150,6 +150,35 @@ export class AuthController {
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'reset_password' }, resetPasswordDto),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return result;
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Change password for authenticated user' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid current password or weak new password' })
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'change_password' }, {
+        userId: user.id,
+        currentPassword: dto.currentPassword,
+        newPassword: dto.newPassword,
+      }),
     );
 
     if (result && result.success === false) {

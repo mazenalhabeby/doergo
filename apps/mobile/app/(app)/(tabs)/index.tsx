@@ -33,68 +33,20 @@ import {
   SHADOWS,
   ROUTES,
 } from '../../../src/lib/constants';
-import { getWeekDays, isSameDay } from '../../../src/lib/utils';
+import {
+  getWeekDays,
+  isSameDay,
+  haversineDistance,
+  formatDurationMinutes as formatDuration,
+  formatTimeString as formatTime,
+  formatDateRelative as formatDate,
+} from '../../../src/lib/utils';
 
 // Month names for calendar header
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
-
-// Calculate distance between two points using Haversine formula
-function haversineDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number {
-  const R = 6371000; // Earth radius in meters
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// Format duration from minutes
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}m`;
-  return `${hours}h ${mins}m`;
-}
-
-// Format time from date string
-function formatTime(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-}
-
-// Format date for history
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
-}
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -1007,7 +959,7 @@ function FreelancerHome() {
               const selected = isSelectedDate(weekDay.date);
               const hasTasks = dayHasTasks(weekDay.date);
 
-              let dotColor = null;
+              let dotColor: string | undefined = undefined;
               let showDot = false;
               if (!weekDay.isWeekend) {
                 showDot = true;

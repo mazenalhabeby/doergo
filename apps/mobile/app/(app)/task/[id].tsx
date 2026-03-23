@@ -17,9 +17,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { tasksApi, reportsApi, type Task, type Comment, type TaskStatus, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
+import { tasksApi, reportsApi, reportAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useSocketContext } from '../../../src/contexts/socket-context';
+import { SocketEvents } from '../../../src/lib/socket';
 import { useLocationTracking } from '../../../src/hooks/useLocationTracking';
+import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
+import { PhotoGrid } from '../../../src/components/photo-grid';
+import { SignatureCapture } from '../../../src/components/signature-capture';
 import { TechnicianPicker } from '../../../src/components';
 import {
   COLORS,
@@ -74,18 +79,18 @@ interface StatusAction {
 
 function getStatusAction(status: string): StatusAction | null {
   switch (status) {
-    case 'ASSIGNED':
-      return { nextStatus: 'ACCEPTED', label: 'Accept Job', icon: 'checkmark-circle' };
-    case 'ACCEPTED':
-      return { nextStatus: 'EN_ROUTE', label: 'Start Driving', icon: 'car' };
-    case 'EN_ROUTE':
-      return { nextStatus: 'ARRIVED', label: "I've Arrived", icon: 'location' };
-    case 'ARRIVED':
-      return { nextStatus: 'IN_PROGRESS', label: 'Start Work', icon: 'construct' };
-    case 'IN_PROGRESS':
-      return { nextStatus: 'COMPLETED', label: 'Finish Job', icon: 'checkmark-done' };
-    case 'BLOCKED':
-      return { nextStatus: 'IN_PROGRESS', label: 'Resume Job', icon: 'play' };
+    case TaskStatus.ASSIGNED:
+      return { nextStatus: TaskStatus.ACCEPTED, label: 'Accept Job', icon: 'checkmark-circle' };
+    case TaskStatus.ACCEPTED:
+      return { nextStatus: TaskStatus.EN_ROUTE, label: 'Start Driving', icon: 'car' };
+    case TaskStatus.EN_ROUTE:
+      return { nextStatus: TaskStatus.ARRIVED, label: "I've Arrived", icon: 'location' };
+    case TaskStatus.ARRIVED:
+      return { nextStatus: TaskStatus.IN_PROGRESS, label: 'Start Work', icon: 'construct' };
+    case TaskStatus.IN_PROGRESS:
+      return { nextStatus: TaskStatus.COMPLETED, label: 'Finish Job', icon: 'checkmark-done' };
+    case TaskStatus.BLOCKED:
+      return { nextStatus: TaskStatus.IN_PROGRESS, label: 'Resume Job', icon: 'play' };
     default:
       return null;
   }
@@ -119,6 +124,18 @@ export default function TaskDetailScreen() {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completionSummary, setCompletionSummary] = useState('');
   const [completionDetails, setCompletionDetails] = useState('');
+
+  // Photo state for completion modal
+  const [beforePhotos, setBeforePhotos] = useState<PickedImage[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<PickedImage[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Map<string, Map<number, number>>>(new Map());
+  const [isUploading, setIsUploading] = useState(false);
+  const { pickFromGallery, takePhoto } = useImagePicker();
+
+  // Signature state for completion modal
+  const [technicianSignature, setTechnicianSignature] = useState<string>('');
+  const [customerSignature, setCustomerSignature] = useState<string>('');
+  const [customerName, setCustomerName] = useState('');
 
   // Admin modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -203,6 +220,48 @@ export default function TaskDetailScreen() {
 
     fetchData();
   }, [id]);
+
+  // Real-time updates via Socket.IO
+  const { isConnected, subscribe } = useSocketContext();
+
+  useEffect(() => {
+    if (!isConnected || !id) return;
+
+    const refreshTask = async () => {
+      try {
+        const updatedTask = await tasksApi.getById(id);
+        setTask(updatedTask);
+      } catch {
+        // Ignore errors on background refresh
+      }
+    };
+
+    const refreshComments = async () => {
+      try {
+        const updatedComments = await tasksApi.getComments(id);
+        setComments(updatedComments);
+      } catch {
+        // Ignore errors on background refresh
+      }
+    };
+
+    const unsubs = [
+      subscribe(SocketEvents.TASK_STATUS_CHANGED, (data: any) => {
+        if (data?.task?.id === id) refreshTask();
+      }),
+      subscribe(SocketEvents.TASK_UPDATED, (data: any) => {
+        if (data?.task?.id === id) refreshTask();
+      }),
+      subscribe(SocketEvents.TASK_ASSIGNED, (data: any) => {
+        if (data?.task?.id === id) refreshTask();
+      }),
+      subscribe(SocketEvents.TASK_COMMENT_ADDED, (data: any) => {
+        if (data?.taskId === id) refreshComments();
+      }),
+    ];
+
+    return () => unsubs.forEach(fn => fn());
+  }, [isConnected, subscribe, id]);
 
   const handleRetry = useCallback(() => {
     lastFetchedIdRef.current = null;
@@ -292,6 +351,42 @@ export default function TaskDetailScreen() {
     );
   };
 
+  // Upload photos to report after completion
+  const uploadPhotos = async (reportId: string, photos: PickedImage[], type: 'BEFORE' | 'AFTER') => {
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i]!;
+      try {
+        // Get presigned URL
+        const { uploadUrl, fileUrl } = await reportAttachmentsApi.getPresignedUrl(
+          reportId,
+          photo.fileName,
+          photo.mimeType,
+        );
+
+        // Upload to presigned URL
+        await uploadToPresignedUrl(uploadUrl, photo.uri, photo.mimeType, (progress) => {
+          setUploadProgress(prev => {
+            const next = new Map(prev);
+            const typeMap = new Map(next.get(type) || []);
+            typeMap.set(i, progress);
+            next.set(type, typeMap);
+            return next;
+          });
+        });
+
+        // Confirm upload
+        await reportAttachmentsApi.confirmUpload(reportId, {
+          type,
+          fileName: photo.fileName,
+          fileUrl,
+          fileSize: photo.fileSize,
+        });
+      } catch (err) {
+        console.warn(`[Photos] Failed to upload ${type} photo ${i}:`, err);
+      }
+    }
+  };
+
   // Handle task completion with service report
   const handleCompleteTask = async () => {
     if (!task) return;
@@ -309,9 +404,28 @@ export default function TaskDetailScreen() {
         summary: completionSummary.trim(),
         workPerformed: completionDetails.trim() || undefined,
         workDuration: elapsedTime,
+        technicianSignature: technicianSignature || undefined,
+        customerSignature: customerSignature || undefined,
+        customerName: customerName.trim() || undefined,
       };
 
-      await reportsApi.completeTask(task.id, input);
+      const report = await reportsApi.completeTask(task.id, input);
+
+      // Upload photos in background if any were taken
+      const hasPhotos = beforePhotos.length > 0 || afterPhotos.length > 0;
+      if (hasPhotos && report?.id) {
+        setIsUploading(true);
+        try {
+          await Promise.all([
+            uploadPhotos(report.id, beforePhotos, 'BEFORE'),
+            uploadPhotos(report.id, afterPhotos, 'AFTER'),
+          ]);
+        } catch {
+          // Photo upload failures are non-blocking
+          console.warn('[Photos] Some photos failed to upload');
+        }
+        setIsUploading(false);
+      }
 
       // Refresh task data to show updated status
       const updatedTask = await tasksApi.getById(task.id);
@@ -319,12 +433,19 @@ export default function TaskDetailScreen() {
       setElapsedTime(0);
       setCompletionSummary('');
       setCompletionDetails('');
+      setBeforePhotos([]);
+      setAfterPhotos([]);
+      setTechnicianSignature('');
+      setCustomerSignature('');
+      setCustomerName('');
+      setUploadProgress(new Map());
 
       Alert.alert('Success', 'Job completed successfully!');
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to complete task');
     } finally {
       setIsUpdating(false);
+      setIsUploading(false);
     }
   };
 
@@ -599,6 +720,79 @@ export default function TaskDetailScreen() {
               maxLength={500}
             />
 
+            {/* Before Photos */}
+            <PhotoGrid
+              photos={beforePhotos}
+              type="BEFORE"
+              onAddFromGallery={async () => {
+                const photos = await pickFromGallery();
+                if (photos.length > 0) {
+                  setBeforePhotos(prev => [...prev, ...photos].slice(0, 5));
+                }
+              }}
+              onAddFromCamera={async () => {
+                const photo = await takePhoto();
+                if (photo) {
+                  setBeforePhotos(prev => [...prev, photo].slice(0, 5));
+                }
+              }}
+              onRemovePhoto={(index) => {
+                setBeforePhotos(prev => prev.filter((_, i) => i !== index));
+              }}
+              uploadProgress={uploadProgress.get('BEFORE')}
+            />
+
+            {/* After Photos */}
+            <PhotoGrid
+              photos={afterPhotos}
+              type="AFTER"
+              onAddFromGallery={async () => {
+                const photos = await pickFromGallery();
+                if (photos.length > 0) {
+                  setAfterPhotos(prev => [...prev, ...photos].slice(0, 5));
+                }
+              }}
+              onAddFromCamera={async () => {
+                const photo = await takePhoto();
+                if (photo) {
+                  setAfterPhotos(prev => [...prev, photo].slice(0, 5));
+                }
+              }}
+              onRemovePhoto={(index) => {
+                setAfterPhotos(prev => prev.filter((_, i) => i !== index));
+              }}
+              uploadProgress={uploadProgress.get('AFTER')}
+            />
+
+            {/* Signatures */}
+            <SignatureCapture
+              title="Technician Signature"
+              onSave={setTechnicianSignature}
+              onClear={() => setTechnicianSignature('')}
+              existingSignature={technicianSignature}
+            />
+
+            <SignatureCapture
+              title="Customer Signature (optional)"
+              onSave={setCustomerSignature}
+              onClear={() => setCustomerSignature('')}
+              existingSignature={customerSignature}
+            />
+
+            {customerSignature ? (
+              <>
+                <Text style={styles.inputLabel}>Customer Name</Text>
+                <TextInput
+                  style={[styles.summaryInput, { minHeight: 44 }]}
+                  placeholder="Customer name..."
+                  placeholderTextColor={COLORS.slate400}
+                  value={customerName}
+                  onChangeText={setCustomerName}
+                  maxLength={100}
+                />
+              </>
+            ) : null}
+
             {/* Action Buttons */}
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -607,6 +801,11 @@ export default function TaskDetailScreen() {
                   setShowCompletionModal(false);
                   setCompletionSummary('');
                   setCompletionDetails('');
+                  setBeforePhotos([]);
+                  setAfterPhotos([]);
+                  setTechnicianSignature('');
+                  setCustomerSignature('');
+                  setCustomerName('');
                 }}
               >
                 <Text style={styles.modalCancelText}>Cancel</Text>

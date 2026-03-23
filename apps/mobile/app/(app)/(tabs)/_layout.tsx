@@ -205,8 +205,8 @@ export default function TabsLayout() {
         screenOptions={{
           ...headerConfig,
           tabBarHideOnKeyboard: true,
+          sceneStyle: { backgroundColor: '#f8fafc' },
         }}
-        sceneContainerStyle={{ backgroundColor: '#f8fafc' }}
       >
         <Tabs.Screen
           name="index"

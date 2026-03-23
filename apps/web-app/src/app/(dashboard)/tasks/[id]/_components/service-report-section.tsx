@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useState, useCallback, useRef } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   CheckCircle2,
   Clock,
@@ -14,25 +14,35 @@ import {
   ZoomIn,
   FileText,
   AlertCircle,
+  Upload,
+  Loader2,
+  Trash2,
+  X,
 } from "lucide-react"
-import { reportsApi, ServiceReport, ReportAttachment, PartUsed } from "@/lib/api"
+import { reportsApi, reportAttachmentsApi, type ServiceReport, type ReportAttachment, type PartUsed } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { cn, formatDuration } from "@/lib/utils"
 
 interface ServiceReportSectionProps {
   taskId: string
   taskStatus: string
 }
 
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-
-  if (hours === 0) {
-    return `${minutes}m`
-  }
-  return `${hours}h ${minutes}m`
-}
-
-function PhotoGallery({ attachments, type }: { attachments: ReportAttachment[]; type: "BEFORE" | "AFTER" }) {
+function PhotoGallery({
+  attachments,
+  type,
+  reportId,
+  taskId,
+  canDelete,
+}: {
+  attachments: ReportAttachment[]
+  type: "BEFORE" | "AFTER"
+  reportId?: string
+  taskId?: string
+  canDelete?: boolean
+}) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showFullscreen, setShowFullscreen] = useState(false)
 
@@ -49,7 +59,7 @@ function PhotoGallery({ attachments, type }: { attachments: ReportAttachment[]; 
     )
   }
 
-  const current = filteredAttachments[currentIndex]
+  const current = filteredAttachments[currentIndex]!
 
   return (
     <div className="relative">
@@ -69,6 +79,13 @@ function PhotoGallery({ attachments, type }: { attachments: ReportAttachment[]; 
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
             <p className="text-xs text-white truncate">{current.caption}</p>
           </div>
+        )}
+        {canDelete && reportId && taskId && (
+          <AttachmentDeleteButton
+            reportId={reportId}
+            attachmentId={current.id}
+            taskId={taskId}
+          />
         )}
       </div>
 
@@ -213,6 +230,201 @@ function SignatureDisplay({ label, signature, name }: { label: string; signature
   )
 }
 
+function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: string }) {
+  const queryClient = useQueryClient()
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [uploadType, setUploadType] = useState<"BEFORE" | "AFTER">("AFTER")
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+  const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"]
+
+  const uploadFile = async (file: File) => {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast.error("Only JPG, PNG, and WebP images are accepted")
+      return
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File size must be under 10MB")
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      // Step 1: Get presigned URL
+      const presigned = await reportAttachmentsApi.getPresignedUrl(
+        reportId,
+        file.name,
+        file.type
+      )
+      if (!presigned) throw new Error("Failed to get upload URL")
+
+      // Step 2: Upload to S3
+      await fetch(presigned.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+
+      // Step 3: Confirm upload
+      await reportAttachmentsApi.confirmUpload(reportId, {
+        type: uploadType,
+        fileName: file.name,
+        fileUrl: presigned.fileUrl,
+        fileSize: file.size,
+      })
+
+      toast.success("Photo uploaded successfully")
+      queryClient.invalidateQueries({ queryKey: ["taskReport", taskId] })
+    } catch (e: any) {
+      toast.error(e.message || "Upload failed")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      setIsDragOver(false)
+      const file = e.dataTransfer.files[0]
+      if (file) uploadFile(file)
+    },
+    [uploadType]
+  )
+
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) uploadFile(file)
+      // Reset input so the same file can be selected again
+      e.target.value = ""
+    },
+    [uploadType]
+  )
+
+  return (
+    <div className="mt-4 space-y-3">
+      {/* Type toggle */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-gray-500">Upload as:</span>
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setUploadType("BEFORE")}
+            className={cn(
+              "px-3 py-1 text-xs font-medium transition-colors",
+              uploadType === "BEFORE"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            Before
+          </button>
+          <button
+            type="button"
+            onClick={() => setUploadType("AFTER")}
+            className={cn(
+              "px-3 py-1 text-xs font-medium transition-colors",
+              uploadType === "AFTER"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            After
+          </button>
+        </div>
+      </div>
+
+      {/* Dropzone */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setIsDragOver(true)
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault()
+          setIsDragOver(false)
+        }}
+        onClick={() => !isUploading && fileInputRef.current?.click()}
+        className={cn(
+          "relative rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer",
+          isDragOver
+            ? "border-blue-400 bg-blue-50"
+            : "border-gray-200 bg-gray-50 hover:border-gray-300",
+          isUploading && "pointer-events-none opacity-60"
+        )}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleFileSelect}
+          className="hidden"
+          disabled={isUploading}
+        />
+        <div className="flex flex-col items-center justify-center py-6 px-4">
+          {isUploading ? (
+            <>
+              <Loader2 className="size-5 text-blue-500 animate-spin mb-2" />
+              <p className="text-xs text-gray-600 font-medium">Uploading...</p>
+            </>
+          ) : (
+            <>
+              <Upload className="size-5 text-gray-400 mb-2" />
+              <p className="text-xs text-gray-600 font-medium">
+                Drop an image or click to upload
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                JPG, PNG, WebP up to 10MB
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AttachmentDeleteButton({
+  reportId,
+  attachmentId,
+  taskId,
+}: {
+  reportId: string
+  attachmentId: string
+  taskId: string
+}) {
+  const queryClient = useQueryClient()
+  const deleteMutation = useMutation({
+    mutationFn: () => reportAttachmentsApi.delete(reportId, attachmentId),
+    onSuccess: () => {
+      toast.success("Photo removed")
+      queryClient.invalidateQueries({ queryKey: ["taskReport", taskId] })
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to remove photo"),
+  })
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        if (confirm("Remove this photo?")) deleteMutation.mutate()
+      }}
+      disabled={deleteMutation.isPending}
+      className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+    >
+      {deleteMutation.isPending ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : (
+        <X className="size-3" />
+      )}
+    </button>
+  )
+}
+
 export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectionProps) {
   // Only fetch report for completed/closed tasks
   const shouldFetch = taskStatus === "COMPLETED" || taskStatus === "CLOSED"
@@ -258,6 +470,9 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       </div>
     )
   }
+
+  const { user } = useAuth()
+  const isAdmin = user?.role === "ADMIN"
 
   const attachments = report.attachments || []
   const partsUsed = report.partsUsed || []
@@ -319,24 +534,39 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       </div>
 
       {/* Before & After Photos */}
-      {attachments.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Camera className="size-4 text-gray-500" />
-            <h4 className="text-sm font-medium text-gray-700">Before & After Photos</h4>
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Camera className="size-4 text-gray-500" />
+          <h4 className="text-sm font-medium text-gray-700">Before & After Photos</h4>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Before</p>
+            <PhotoGallery
+              attachments={attachments}
+              type="BEFORE"
+              reportId={report.id}
+              taskId={taskId}
+              canDelete={isAdmin}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Before</p>
-              <PhotoGallery attachments={attachments} type="BEFORE" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">After</p>
-              <PhotoGallery attachments={attachments} type="AFTER" />
-            </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">After</p>
+            <PhotoGallery
+              attachments={attachments}
+              type="AFTER"
+              reportId={report.id}
+              taskId={taskId}
+              canDelete={isAdmin}
+            />
           </div>
         </div>
-      )}
+
+        {/* Upload dropzone for admins */}
+        {isAdmin && (
+          <AttachmentUpload reportId={report.id} taskId={taskId} />
+        )}
+      </div>
 
       {/* Parts Used */}
       {partsUsed.length > 0 && (

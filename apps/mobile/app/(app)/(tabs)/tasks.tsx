@@ -14,6 +14,8 @@ import { router } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { tasksApi, type Task } from '../../../src/lib/api';
 import { TaskCard, FilterChip } from '../../../src/components';
+import { useSocketContext } from '../../../src/contexts/socket-context';
+import { SocketEvents } from '../../../src/lib/socket';
 import {
   COLORS,
   SPACING,
@@ -90,6 +92,22 @@ export default function TasksScreen() {
     initialFetchDoneRef.current = true;
     fetchTasks();
   }, [fetchTasks]);
+
+  // Real-time updates via Socket.IO
+  const { isConnected, subscribe } = useSocketContext();
+
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const unsubs = [
+      subscribe(SocketEvents.TASK_ASSIGNED, () => fetchTasks()),
+      subscribe(SocketEvents.TASK_STATUS_CHANGED, () => fetchTasks()),
+      subscribe(SocketEvents.TASK_CREATED, () => fetchTasks()),
+      subscribe(SocketEvents.TASK_UPDATED, () => fetchTasks()),
+    ];
+
+    return () => unsubs.forEach(fn => fn());
+  }, [isConnected, subscribe, fetchTasks]);
 
   const handleRefresh = () => fetchTasks(true);
 

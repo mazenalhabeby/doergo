@@ -92,6 +92,26 @@ export function formatDuration(seconds: number): string {
 }
 
 /**
+ * Format duration from milliseconds to human-readable format
+ * e.g., 3665000 -> "1h 1m", 125000 -> "2m 5s"
+ */
+export function formatDurationMs(ms: number): string {
+  return formatDuration(Math.floor(ms / 1000))
+}
+
+/**
+ * Format duration from minutes to human-readable format
+ * e.g., 90 -> "1h 30m", 45 -> "45m"
+ */
+export function formatDurationMinutes(minutes: number | null | undefined): string {
+  if (minutes === null || minutes === undefined) return "-"
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  if (hours === 0) return `${mins}m`
+  return `${hours}h ${mins}m`
+}
+
+/**
  * Format distance in meters to human-readable format
  * e.g., 1500 -> "1.5 km", 500 -> "500 m"
  */

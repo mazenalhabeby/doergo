@@ -111,7 +111,7 @@ export class ReportsController {
   // ============ Attachment Operations ============
 
   @Post('reports/:id/attachments/presign')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get presigned URL for uploading attachment' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async getPresignedUrl(
@@ -130,7 +130,7 @@ export class ReportsController {
   }
 
   @Post('reports/:id/attachments')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Confirm attachment upload (after S3 upload)' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async addAttachment(
@@ -154,7 +154,7 @@ export class ReportsController {
   }
 
   @Delete('reports/:id/attachments/:attachmentId')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Delete an attachment from a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiParam({ name: 'attachmentId', description: 'Attachment ID' })

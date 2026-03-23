@@ -7,6 +7,7 @@ import {
   getTaskIdFromNotification,
   getNotificationType,
 } from '../../src/hooks/usePushNotifications';
+import { SocketProvider } from '../../src/contexts/socket-context';
 
 const PRIMARY_COLOR = '#2563EB';
 
@@ -63,29 +64,43 @@ export default function AppLayout() {
   }, [pushError]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: 'white',
-        },
-        headerTitleStyle: {
-          fontWeight: '600',
-          color: '#1e293b',
-        },
-        headerTintColor: PRIMARY_COLOR,
-      }}
-    >
-      <Stack.Screen
-        name="(tabs)"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="task/[id]"
-        options={{
-          title: 'Task Details',
-          presentation: 'modal',
+    <SocketProvider>
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: 'white',
+          },
+          headerTitleStyle: {
+            fontWeight: '600',
+            color: '#1e293b',
+          },
+          headerTintColor: PRIMARY_COLOR,
         }}
-      />
-    </Stack>
+      >
+        <Stack.Screen
+          name="(tabs)"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="task/[id]"
+          options={{
+            title: 'Task Details',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="profile/notifications"
+          options={{ title: 'Notifications' }}
+        />
+        <Stack.Screen
+          name="profile/account"
+          options={{ title: 'Account' }}
+        />
+        <Stack.Screen
+          name="profile/about"
+          options={{ title: 'About' }}
+        />
+      </Stack>
+    </SocketProvider>
   );
 }

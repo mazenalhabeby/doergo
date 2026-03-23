@@ -62,7 +62,6 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     try {
       // Check if we're on a physical device (required for push notifications)
       if (!Device.isDevice) {
-        console.log('[Push] Not a physical device - push notifications disabled');
         setState((prev) => ({
           ...prev,
           error: 'Push notifications require a physical device',
@@ -86,7 +85,6 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       }));
 
       if (finalStatus !== 'granted') {
-        console.log('[Push] Permission not granted');
         setState((prev) => ({
           ...prev,
           error: 'Push notification permission denied',
@@ -101,7 +99,6 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       });
 
       const token = tokenData.data;
-      console.log('[Push] Got Expo push token:', token.substring(0, 30) + '...');
 
       // Determine platform
       const platform = Platform.OS as 'ios' | 'android';
@@ -113,7 +110,6 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
           platform,
           deviceId: Device.deviceName ?? undefined,
         });
-        console.log('[Push] Token registered with backend');
 
         currentTokenRef.current = token;
         setState((prev) => ({
@@ -124,8 +120,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
         }));
 
         return token;
-      } catch (apiError) {
-        console.error('[Push] Failed to register token with backend:', apiError);
+      } catch {
         setState((prev) => ({
           ...prev,
           expoPushToken: token,
@@ -136,7 +131,6 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to register for push notifications';
-      console.error('[Push] Registration error:', message);
       setState((prev) => ({ ...prev, error: message }));
       return null;
     }
@@ -146,15 +140,13 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
   const unregisterPushToken = useCallback(async () => {
     const token = currentTokenRef.current;
     if (!token) {
-      console.log('[Push] No token to unregister');
       return;
     }
 
     try {
       await pushApi.removeToken(token);
-      console.log('[Push] Token unregistered from backend');
-    } catch (error) {
-      console.error('[Push] Failed to unregister token:', error);
+    } catch {
+      // Ignore unregister errors during cleanup
     }
 
     currentTokenRef.current = null;
@@ -170,7 +162,6 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     // Listener for notifications received while app is foregrounded
     notificationListener.current = Notifications.addNotificationReceivedListener(
       (notification) => {
-        console.log('[Push] Notification received:', notification.request.content.title);
         options.onNotificationReceived?.(notification);
       }
     );
@@ -178,9 +169,6 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     // Listener for when user taps on notification
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        console.log('[Push] Notification tapped:', response.notification.request.content.title);
-        const data = response.notification.request.content.data as NotificationData;
-        console.log('[Push] Notification data:', data);
         options.onNotificationResponse?.(response);
       }
     );

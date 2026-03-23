@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, CircleMarker 
 import L from "leaflet";
 import { WorkerLocation, WorkerCurrentRoute, trackingApi } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
+import { formatDuration } from "@/lib/utils";
 
 // Fix Leaflet default icon issue with Next.js
 const createTechnicianIcon = (isOnline: boolean) => {
@@ -114,16 +115,6 @@ function RoutePolyline({ route }: { route: WorkerCurrentRoute | null }) {
       )}
     </>
   );
-}
-
-// Format duration in human-readable format
-function formatDuration(seconds: number | null): string {
-  if (seconds === null) return "N/A";
-  const mins = Math.floor(seconds / 60);
-  if (mins < 60) return `${mins} min`;
-  const hours = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
-  return `${hours}h ${remainingMins}m`;
 }
 
 // Format distance in human-readable format
@@ -318,7 +309,7 @@ export default function TechnicianMap({
               <div>
                 <div className="text-xs text-slate-500">Time</div>
                 <div className="text-sm font-semibold text-blue-600">
-                  {formatDuration(currentRoute.duration)}
+                  {currentRoute.duration !== null ? formatDuration(currentRoute.duration) : "N/A"}
                 </div>
               </div>
             </div>

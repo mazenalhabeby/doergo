@@ -18,7 +18,7 @@ import {
 
 import { tasksApi, type TaskEvent } from "@/lib/api"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { cn, formatTimeAgo } from "@/lib/utils"
+import { cn, formatTimeAgo, formatDurationMs } from "@/lib/utils"
 
 interface AssignedUser {
   firstName: string
@@ -71,18 +71,6 @@ function getStepFromStatus(status: string): number {
     default:
       return 0
   }
-}
-
-// Format duration
-function formatDuration(ms: number): string {
-  const mins = Math.floor(ms / 60000)
-  const hours = Math.floor(mins / 60)
-  const remainingMins = mins % 60
-
-  if (hours > 0) {
-    return `${hours}h ${remainingMins}m`
-  }
-  return `${mins}m`
 }
 
 // Estimate arrival time
@@ -251,12 +239,12 @@ export function TaskProgressCard({
     if (isCompleted && routeEndedAt && routeStartedAt) {
       const start = new Date(routeStartedAt).getTime()
       const end = new Date(routeEndedAt).getTime()
-      return formatDuration(end - start)
+      return formatDurationMs(end - start)
     }
     if (routeStartedAt) {
       const start = new Date(routeStartedAt).getTime()
       const now = Date.now()
-      return formatDuration(now - start)
+      return formatDurationMs(now - start)
     }
     return null
   }

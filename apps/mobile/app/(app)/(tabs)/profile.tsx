@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, Href } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import {
@@ -72,7 +73,11 @@ export default function ProfileScreen() {
 
       {/* Menu Items */}
       <View style={styles.menuContainer}>
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          activeOpacity={0.7}
+          onPress={() => router.push('/profile/notifications' as Href)}
+        >
           <View style={styles.menuIconContainer}>
             <Ionicons name="notifications-outline" size={22} color={COLORS.slate500} />
           </View>
@@ -80,23 +85,23 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color={COLORS.slate300} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          activeOpacity={0.7}
+          onPress={() => router.push('/profile/account' as Href)}
+        >
           <View style={styles.menuIconContainer}>
-            <Ionicons name="location-outline" size={22} color={COLORS.slate500} />
+            <Ionicons name="lock-closed-outline" size={22} color={COLORS.slate500} />
           </View>
-          <Text style={styles.menuText}>Location Settings</Text>
+          <Text style={styles.menuText}>Account & Security</Text>
           <Ionicons name="chevron-forward" size={20} color={COLORS.slate300} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <View style={styles.menuIconContainer}>
-            <Ionicons name="help-circle-outline" size={22} color={COLORS.slate500} />
-          </View>
-          <Text style={styles.menuText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={20} color={COLORS.slate300} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          activeOpacity={0.7}
+          onPress={() => router.push('/profile/about' as Href)}
+        >
           <View style={styles.menuIconContainer}>
             <Ionicons name="information-circle-outline" size={22} color={COLORS.slate500} />
           </View>

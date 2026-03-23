@@ -19,7 +19,6 @@
     "dev:task": "pnpm --filter @doergo/task-service dev",
     "dev:notification": "pnpm --filter @doergo/notification-service dev",
     "dev:tracking": "pnpm --filter @doergo/tracking-service dev",
-    "dev:web": "pnpm --filter @doergo/web-app dev",
     "dev:web-app": "pnpm --filter @doergo/web-app dev",
     "dev:mobile": "pnpm --filter @doergo/mobile start",
     "build": "pnpm run --parallel build",

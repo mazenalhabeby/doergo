@@ -84,3 +84,16 @@ export class ResetPasswordDto {
   @StrongPasswordField()
   newPassword: string;
 }
+
+/**
+ * Change password request DTO (authenticated)
+ */
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'OldPassword123', description: 'Current password' })
+  @PasswordField()
+  currentPassword: string;
+
+  @ApiProperty({ example: 'NewPassword123', description: 'New password (min 8 chars, must include uppercase, lowercase, and number)' })
+  @StrongPasswordField()
+  newPassword: string;
+}

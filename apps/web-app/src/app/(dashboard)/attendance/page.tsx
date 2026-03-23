@@ -50,7 +50,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { cn, formatDurationMinutes } from "@/lib/utils"
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
@@ -104,15 +104,6 @@ function GeofenceIndicator({ withinGeofence }: { withinGeofence: boolean }) {
       Outside
     </span>
   )
-}
-
-// Format duration from minutes
-function formatDuration(minutes: number | null | undefined): string {
-  if (minutes === null || minutes === undefined) return "-"
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (hours === 0) return `${mins}m`
-  return `${hours}h ${mins}m`
 }
 
 // Parse date input (handles both Date objects and ISO strings)
@@ -883,7 +874,7 @@ export default function AttendancePage() {
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-slate-900">
-                          {formatDuration(entry.totalMinutes)}
+                          {formatDurationMinutes(entry.totalMinutes)}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -1188,7 +1179,7 @@ export default function AttendancePage() {
                         <TableCell>{format(toDate(entry.clockInAt), "MMM d, yyyy")}</TableCell>
                         <TableCell>{formatTime(entry.clockInAt)}</TableCell>
                         <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt) : "-"}</TableCell>
-                        <TableCell className="font-medium">{formatDuration(entry.totalMinutes)}</TableCell>
+                        <TableCell className="font-medium">{formatDurationMinutes(entry.totalMinutes)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
@@ -1239,7 +1230,7 @@ export default function AttendancePage() {
                 />
                 <StatCard
                   title="Total Break Time"
-                  value={formatDuration(breakSummary.totalBreakMinutes)}
+                  value={formatDurationMinutes(breakSummary.totalBreakMinutes)}
                   icon={Clock}
                   color="amber"
                 />
@@ -1274,7 +1265,7 @@ export default function AttendancePage() {
                         <p className="text-xs text-amber-600">Count</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900">{formatDuration(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-amber-900">{formatDurationMinutes(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
                         <p className="text-xs text-amber-600">Total</p>
                       </div>
                       <div>
@@ -1294,7 +1285,7 @@ export default function AttendancePage() {
                         <p className="text-xs text-blue-600">Count</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-blue-900">{formatDuration(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-blue-900">{formatDurationMinutes(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
                         <p className="text-xs text-blue-600">Total</p>
                       </div>
                       <div>
@@ -1314,7 +1305,7 @@ export default function AttendancePage() {
                         <p className="text-xs text-slate-600">Count</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-slate-900">{formatDuration(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-slate-900">{formatDurationMinutes(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
                         <p className="text-xs text-slate-600">Total</p>
                       </div>
                       <div>
@@ -1537,7 +1528,7 @@ export default function AttendancePage() {
                           )}
                         </TableCell>
                         <TableCell className="font-medium text-slate-900">
-                          {formatDuration(breakItem.durationMinutes)}
+                          {formatDurationMinutes(breakItem.durationMinutes)}
                         </TableCell>
                         <TableCell>
                           {breakItem.notes ? (

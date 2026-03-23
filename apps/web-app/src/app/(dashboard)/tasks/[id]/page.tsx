@@ -15,6 +15,7 @@ import {
 
 import { useAuth } from "@/contexts/auth-context"
 import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
+import { useTaskEvents } from "@/hooks/use-task-events"
 import { tasksApi, trackingApi, type SuggestedTechnician } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -48,6 +49,7 @@ import {
   RequestDetailsSection,
   CommentsSection,
   ActivitySection,
+  EditTaskDialog,
 } from "./_components"
 
 export default function TaskDetailPage({
@@ -65,6 +67,10 @@ export default function TaskDetailPage({
 
   const [newComment, setNewComment] = useState("")
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+
+  // Real-time updates via Socket.IO
+  useTaskEvents(id)
 
   // Fetch task
   const {
@@ -209,6 +215,13 @@ export default function TaskDetailPage({
         suggestedTechnicianId={suggestedTechnicianId}
       />
 
+      {/* Edit Task Dialog */}
+      <EditTaskDialog
+        task={task}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+      />
+
       <div className="p-8 max-w-6xl mx-auto">
         {/* Page Header */}
         <div className="flex items-start justify-between mb-6">
@@ -241,10 +254,15 @@ export default function TaskDetailPage({
                 Assign
               </Button>
             )}
-            <Button className="h-9 px-4 text-sm bg-blue-600 hover:bg-blue-700">
-              <Pencil className="size-4 mr-2" />
-              Edit task
-            </Button>
+            {!isCompleted && !isCanceled && (
+              <Button
+                className="h-9 px-4 text-sm bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Pencil className="size-4 mr-2" />
+                Edit task
+              </Button>
+            )}
 
             {/* More Actions Dropdown */}
             {!isCompleted && !isCanceled && (

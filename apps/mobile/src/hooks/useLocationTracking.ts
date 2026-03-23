@@ -72,10 +72,8 @@ export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
         error: null,
       }));
 
-      console.log('[Location] Update sent:', { lat, lng, accuracy });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update location';
-      console.error('[Location] Update failed:', message);
       setState((prev) => ({ ...prev, error: message }));
       options.onError?.(message);
     }
@@ -97,7 +95,7 @@ export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
       // Optionally request background permissions (for when app is backgrounded)
       const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
       if (backgroundStatus !== 'granted') {
-        console.warn('[Location] Background permission not granted - tracking will pause when app is backgrounded');
+        // Background permission not granted - tracking will pause when app is backgrounded
       }
 
       setState((prev) => ({ ...prev, isTracking: true, error: null }));
@@ -108,11 +106,9 @@ export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
       // Start periodic updates
       intervalRef.current = setInterval(sendLocationUpdate, UPDATE_INTERVAL_MS);
 
-      console.log('[Location] Tracking started');
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to start tracking';
-      console.error('[Location] Start tracking failed:', message);
       setState((prev) => ({ ...prev, error: message }));
       options.onError?.(message);
       return false;
@@ -125,7 +121,6 @@ export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
       intervalRef.current = null;
     }
     setState((prev) => ({ ...prev, isTracking: false }));
-    console.log('[Location] Tracking stopped');
   }, []);
 
   // Cleanup on unmount

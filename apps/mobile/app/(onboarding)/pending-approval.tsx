@@ -14,7 +14,7 @@ export default function PendingApprovalScreen() {
   const router = useRouter();
   const { refreshUser, logout } = useAuth();
   const insets = useSafeAreaInsets();
-  const pollRef = useRef<ReturnType<typeof setInterval>>();
+  const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const [orgName, setOrgName] = useState('');
   const [requestMessage, setRequestMessage] = useState('');

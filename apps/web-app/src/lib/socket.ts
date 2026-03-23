@@ -41,6 +41,8 @@ export const SocketEvents = {
   TASK_UPDATED: 'task.updated',
   TASK_ASSIGNED: 'task.assigned',
   TASK_STATUS_CHANGED: 'task.statusChanged',
+  TASK_COMMENT_ADDED: 'task.commentAdded',
+  TASK_ATTACHMENT_ADDED: 'task.attachmentAdded',
 } as const;
 
 type SocketEventName = typeof SocketEvents[keyof typeof SocketEvents];
@@ -71,8 +73,6 @@ export function useSocket(user?: SocketUser | null) {
       return;
     }
 
-    console.log('[Socket] Connecting to', SOCKET_URL);
-
     socketRef.current = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
@@ -82,32 +82,27 @@ export function useSocket(user?: SocketUser | null) {
     });
 
     socketRef.current.on('connect', () => {
-      console.log('[Socket] Connected, socket id:', socketRef.current?.id);
       setIsConnected(true);
       setConnectionError(null);
 
       // Authenticate with user info if available
       if (user && socketRef.current) {
-        console.log('[Socket] Authenticating as', user.role);
         socketRef.current.emit('authenticate', {
           userId: user.id,
           role: user.role,
           organizationId: user.organizationId || 'default',
         }, (response: { success: boolean }) => {
-          console.log('[Socket] Auth response:', response);
           setIsAuthenticated(response?.success || false);
         });
       }
     });
 
-    socketRef.current.on('disconnect', (reason) => {
-      console.log('[Socket] Disconnected:', reason);
+    socketRef.current.on('disconnect', () => {
       setIsConnected(false);
       setIsAuthenticated(false);
     });
 
     socketRef.current.on('connect_error', (error) => {
-      console.error('[Socket] Connection error:', error.message);
       setConnectionError(error.message);
       setIsConnected(false);
     });
@@ -116,7 +111,6 @@ export function useSocket(user?: SocketUser | null) {
   // Disconnect from socket
   const disconnect = useCallback(() => {
     if (socketRef.current) {
-      console.log('[Socket] Disconnecting');
       socketRef.current.disconnect();
       socketRef.current = null;
       setIsConnected(false);
@@ -124,17 +118,14 @@ export function useSocket(user?: SocketUser | null) {
   }, []);
 
   // Subscribe to an event
-  const subscribe = useCallback(<T>(event: SocketEventName, handler: (data: T) => void) => {
+  const subscribe = useCallback(<T>(event: SocketEventName | string, handler: (data: T) => void) => {
     if (!socketRef.current) {
-      console.warn('[Socket] Cannot subscribe - not connected');
       return () => {};
     }
 
-    console.log('[Socket] Subscribing to', event);
     socketRef.current.on(event, handler);
 
     return () => {
-      console.log('[Socket] Unsubscribing from', event);
       socketRef.current?.off(event, handler);
     };
   }, []);

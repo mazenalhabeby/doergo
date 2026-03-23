@@ -461,6 +461,8 @@ model Task {
   @@index([assignedToId])
   @@index([assetId])
   @@index([createdAt])
+  @@index([organizationId, status])
+  @@index([organizationId, status, createdAt])
   @@map("tasks")
 }
 
@@ -675,6 +677,8 @@ model ServiceReport {
   @@index([assetId])
   @@index([completedAt])
   @@index([organizationId])
+  @@index([completedById])
+  @@index([organizationId, completedAt])
   @@map("service_reports")
 }
 
@@ -914,6 +918,7 @@ model TimeOff {
   @@index([technicianId])
   @@index([status])
   @@index([startDate, endDate])
+  @@index([approvedById])
   @@map("time_off_requests")
 }
 
@@ -956,6 +961,7 @@ model Invitation {
   @@index([status])
   @@index([createdById])
   @@index([expiresAt])
+  @@index([organizationId, status])
   @@map("invitations")
 }
 
@@ -991,6 +997,7 @@ model JoinRequest {
   @@unique([userId, organizationId, status])
   @@index([organizationId, status])
   @@index([userId])
+  @@index([reviewedById])
   @@map("join_requests")
 }
 

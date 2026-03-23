@@ -143,6 +143,78 @@ export function isSameDay(date1: Date, date2: Date): boolean {
 }
 
 // =============================================================================
+// DISTANCE CALCULATION
+// =============================================================================
+
+/**
+ * Calculate distance between two GPS points using Haversine formula
+ * Returns distance in meters
+ */
+export function haversineDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371000; // Earth radius in meters
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// =============================================================================
+// DURATION & DATE FORMATTING (for attendance screens)
+// =============================================================================
+
+/**
+ * Format duration from minutes to human-readable (e.g., "2h 30m")
+ */
+export function formatDurationMinutes(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  return `${hours}h ${mins}m`;
+}
+
+/**
+ * Format a date as time (e.g., "02:30 PM")
+ */
+export function formatTimeString(dateString: string | Date): string {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+/**
+ * Format a date with relative labels (Today, Yesterday, or short date)
+ */
+export function formatDateRelative(dateString: string | Date): string {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+// =============================================================================
 // TASK HELPERS
 // =============================================================================
 

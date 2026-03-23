@@ -4,8 +4,12 @@ import {
   BadRequestException,
   ForbiddenException,
   Inject,
+  Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   TaskStatus,
@@ -17,10 +21,29 @@ import {
 
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+  private readonly s3Client: S3Client;
+  private readonly s3Bucket: string;
+  private readonly s3Endpoint: string;
+
   constructor(
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-  ) {}
+  ) {
+    this.s3Endpoint = this.configService.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
+    this.s3Bucket = this.configService.get<string>('S3_BUCKET', 'doergo');
+
+    this.s3Client = new S3Client({
+      endpoint: this.s3Endpoint,
+      region: this.configService.get<string>('S3_REGION', 'eu-central-1'),
+      credentials: {
+        accessKeyId: this.configService.get<string>('S3_ACCESS_KEY', ''),
+        secretAccessKey: this.configService.get<string>('S3_SECRET_KEY', ''),
+      },
+      forcePathStyle: true,
+    });
+  }
 
   /**
    * Create a service report when completing a task
@@ -512,18 +535,31 @@ export class ReportsService {
       throw new ForbiddenException('You can only delete attachments from reports you created');
     }
 
+    // Extract S3 key from the file URL
+    const fileUrl = attachment.fileUrl;
+    const bucketPrefix = `${this.s3Endpoint}/${this.s3Bucket}/`;
+    if (fileUrl.startsWith(bucketPrefix)) {
+      const fileKey = fileUrl.slice(bucketPrefix.length);
+      try {
+        await this.s3Client.send(new DeleteObjectCommand({
+          Bucket: this.s3Bucket,
+          Key: fileKey,
+        }));
+      } catch (err) {
+        this.logger.warn(`Failed to delete S3 object ${fileKey}: ${err}`);
+        // Continue with DB deletion even if S3 delete fails
+      }
+    }
+
     await this.prisma.reportAttachment.delete({
       where: { id: data.attachmentId },
     });
-
-    // TODO: Also delete from S3
 
     return success(null, 'Attachment deleted successfully');
   }
 
   /**
    * Get presigned URL for uploading attachment to S3
-   * This will be implemented when S3 is set up
    */
   async getPresignedUrl(data: {
     reportId: string;
@@ -546,12 +582,27 @@ export class ReportsService {
       throw new ForbiddenException('You can only upload attachments to reports you created');
     }
 
-    // TODO: Implement S3 presigned URL generation
-    // For now, return a placeholder
+    // Sanitize filename: remove path separators and special chars
+    const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileKey = `reports/${data.reportId}/${Date.now()}-${safeName}`;
+    const expiresIn = 3600; // 1 hour
+
+    const command = new PutObjectCommand({
+      Bucket: this.s3Bucket,
+      Key: fileKey,
+      ContentType: data.fileType,
+    });
+
+    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
+
+    // Build the public file URL for storing in DB after upload
+    const fileUrl = `${this.s3Endpoint}/${this.s3Bucket}/${fileKey}`;
+
     return success({
-      uploadUrl: `https://s3.example.com/uploads/${data.reportId}/${Date.now()}-${data.fileName}`,
-      fileKey: `reports/${data.reportId}/${Date.now()}-${data.fileName}`,
-      expiresIn: 3600, // 1 hour
+      uploadUrl,
+      fileKey,
+      fileUrl,
+      expiresIn,
     });
   }
 

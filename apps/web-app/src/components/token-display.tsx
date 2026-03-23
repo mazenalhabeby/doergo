@@ -34,7 +34,7 @@ function formatDuration(seconds: number): string {
 
 export function TokenDisplay() {
   const { tokenInfo, manualRefresh, isAuthenticated } = useAuth();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Parse tokens to get total duration

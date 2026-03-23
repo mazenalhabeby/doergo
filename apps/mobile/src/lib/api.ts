@@ -48,24 +48,20 @@ function getApiUrl(): string {
   // If explicitly set in env (non-empty), use that for production
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl && envUrl.trim().length > 0) {
-    console.log('[API] Using env URL:', envUrl);
     return envUrl;
   }
 
   // In development, get host from Expo's dev server
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
-  console.log('[API] Expo debuggerHost:', debuggerHost);
 
   if (debuggerHost) {
     // debuggerHost is like "192.168.178.26:8081" - extract IP and use API port 4000
     const host = debuggerHost.split(':')[0];
     const url = `http://${host}:4000/api/v1`;
-    console.log('[API] Using dynamic URL:', url);
     return url;
   }
 
   // Fallback for simulator/emulator
-  console.log('[API] Using fallback localhost');
   return 'http://localhost:4000/api/v1';
 }
 
@@ -175,7 +171,6 @@ async function clearTokens(): Promise<void> {
 function refreshAccessToken(): Promise<string | null> {
   // If a refresh is already in progress, wait for it
   if (refreshPromise) {
-    console.log('[Auth] Refresh already in progress, waiting...');
     return refreshPromise;
   }
 
@@ -183,14 +178,11 @@ function refreshAccessToken(): Promise<string | null> {
   refreshPromise = (async () => {
     try {
       const storedRefreshToken = await getRefreshToken();
-      console.log('[Auth] Attempting refresh, has token:', !!storedRefreshToken);
-      console.log('[Auth] Sending refresh token (first 20 chars):', storedRefreshToken?.substring(0, 20));
 
       if (!storedRefreshToken) {
         return null;
       }
 
-      console.log('[Auth] Sending refresh request to:', `${API_URL}/auth/refresh`);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -206,34 +198,22 @@ function refreshAccessToken(): Promise<string | null> {
       clearTimeout(timeoutId);
 
       const result = await response.json() as ApiResponse<RefreshResponse>;
-      console.log('[Auth] Refresh response status:', response.status);
 
       if (!response.ok || !result.success) {
-        console.log('[Auth] Refresh failed!');
-        console.log('[Auth] Response status:', response.status);
-        console.log('[Auth] Response body:', JSON.stringify(result));
         await clearTokens();
         return null;
       }
 
       const data = result.data;
       if (!data?.accessToken || !data?.refreshToken) {
-        console.log('[Auth] Refresh response missing tokens');
         await clearTokens();
         return null;
       }
 
-      console.log('[Auth] Refresh successful, saving new tokens');
-      console.log('[Auth] New refresh token (first 20 chars):', data.refreshToken.substring(0, 20));
       await saveTokens(data.accessToken, data.refreshToken);
-
-      // Verify tokens were saved
-      const verifyRefresh = await getRefreshToken();
-      console.log('[Auth] Verified saved refresh token (first 20 chars):', verifyRefresh?.substring(0, 20));
 
       return data.accessToken;
     } catch (error) {
-      console.error('[Auth] Refresh error:', error);
       await clearTokens();
       return null;
     } finally {
@@ -301,7 +281,6 @@ async function fetchWithAuth<T>(
 ): Promise<T> {
   const accessToken = await getAccessToken();
   const url = `${API_URL}${endpoint}`;
-  console.log(`[Auth] fetchWithAuth ${endpoint} retry=${retry} hasToken=${!!accessToken}`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -321,20 +300,13 @@ async function fetchWithAuth<T>(
 
     // Handle 401 - Automatic token refresh and retry
     if (response.status === 401 && retry) {
-      console.log('[Auth] Got 401 on', endpoint, '- attempting refresh');
       const newToken = await refreshAccessToken();
-      console.log('[Auth] refreshAccessToken returned:', !!newToken);
 
       if (newToken) {
-        // Verify token is in storage before retry
-        const storedToken = await getAccessToken();
-        console.log('[Auth] Token in storage before retry:', !!storedToken);
-        console.log('[Auth] Retrying', endpoint, 'with new token');
         return fetchWithAuth<T>(endpoint, options, false);
       }
 
       // Refresh failed - notify auth context which will redirect to login
-      console.log('[Auth] Refresh failed for', endpoint, '- triggering logout');
       if (onAuthFailure) {
         onAuthFailure();
       }
@@ -450,17 +422,10 @@ export const authApi = {
   }): Promise<void> => {
     // Register the user - response contains user data but we don't need it
     // because we'll call login() separately after registration
-    console.log('[API] Registering user:', data.email);
-    try {
-      await fetchApi('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-      console.log('[API] Registration successful');
-    } catch (error) {
-      console.error('[API] Registration failed:', error);
-      throw error;
-    }
+    await fetchApi('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
   logout: async (): Promise<void> => {
@@ -476,8 +441,8 @@ export const authApi = {
           body: JSON.stringify({ refreshToken }),
         }, false); // Don't retry on 401 during logout
       }
-    } catch (error) {
-      console.error('Error during logout:', error);
+    } catch {
+      // Ignore logout errors - tokens will be cleared regardless
     } finally {
       await clearTokens();
     }
@@ -782,6 +747,109 @@ export const invitationsApi = {
     return fetchApi<LoginResponse>('/invitations/accept', {
       method: 'POST',
       body: JSON.stringify(input),
+    });
+  },
+};
+
+// Time-Off types
+export interface TimeOffRequest {
+  id: string;
+  technicianId: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+  approvedById?: string;
+  approvedBy?: { id: string; firstName: string; lastName: string };
+  approvedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Time-Off API
+export const timeOffApi = {
+  list: async (technicianId: string, status?: string): Promise<TimeOffRequest[]> => {
+    const endpoint = buildUrlWithQuery(`/technicians/${technicianId}/time-off`, { status });
+    return fetchWithAuth<TimeOffRequest[]>(endpoint, { method: 'GET' });
+  },
+
+  request: async (technicianId: string, data: { startDate: string; endDate: string; reason?: string }): Promise<TimeOffRequest> => {
+    return fetchWithAuth<TimeOffRequest>(`/technicians/${technicianId}/time-off`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  cancel: async (timeOffId: string): Promise<void> => {
+    return fetchWithAuth<void>(`/technicians/time-off/${timeOffId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Report Attachments API
+export const reportAttachmentsApi = {
+  getPresignedUrl: async (reportId: string, fileName: string, fileType: string): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number }> => {
+    return fetchWithAuth(`/reports/${reportId}/attachments/presign`, {
+      method: 'POST',
+      body: JSON.stringify({ fileName, fileType }),
+    });
+  },
+
+  confirmUpload: async (reportId: string, data: { type: string; fileName: string; fileUrl: string; fileSize: number; caption?: string }): Promise<any> => {
+    return fetchWithAuth(`/reports/${reportId}/attachments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (reportId: string, attachmentId: string): Promise<void> => {
+    return fetchWithAuth<void>(`/reports/${reportId}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Upload file to presigned URL with progress tracking
+export function uploadToPresignedUrl(
+  url: string,
+  fileUri: string,
+  contentType: string,
+  onProgress?: (progress: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(event.loaded / event.total);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', contentType);
+    xhr.send({ uri: fileUri, type: contentType, name: 'upload' } as any);
+  });
+}
+
+// Auth API - change password
+export const passwordApi = {
+  changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<void> => {
+    return fetchWithAuth<void>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 };

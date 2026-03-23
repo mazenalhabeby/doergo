@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {children}
           </div>
         </SidebarInset>
-        <TokenDisplay />
+        {process.env.NODE_ENV === 'development' && <TokenDisplay />}
       </SidebarProvider>
     </BreadcrumbProvider>
   );

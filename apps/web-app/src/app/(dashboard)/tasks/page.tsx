@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner"
 
 import { useAuth } from "@/contexts/auth-context"
+import { useTaskEvents } from "@/hooks/use-task-events"
 import { tasksApi, type Task, type SuggestedTechnician } from "@/lib/api"
 import { TaskCard } from "@/components/tasks"
 import { TechnicianAssignDialog } from "@/components/technicians/technician-assign-dialog"
@@ -60,6 +61,9 @@ export default function TasksPage() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
+
+  // Real-time updates via Socket.IO
+  useTaskEvents()
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")

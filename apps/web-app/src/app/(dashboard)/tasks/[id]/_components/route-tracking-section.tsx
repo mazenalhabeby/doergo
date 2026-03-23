@@ -17,7 +17,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { cn, formatDurationMs } from "@/lib/utils"
 
 // Dynamic import for map to avoid SSR issues
 const RouteMapView = dynamic(() => import("./route-map-view"), {
@@ -59,23 +59,6 @@ function formatDistance(meters: number): string {
     return `${(meters / 1000).toFixed(1)} km`
   }
   return `${Math.round(meters)} m`
-}
-
-// Format duration in human readable
-function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-
-  if (hours > 0) {
-    const remainingMins = minutes % 60
-    return `${hours}h ${remainingMins}m`
-  }
-  if (minutes > 0) {
-    const remainingSecs = seconds % 60
-    return `${minutes}m ${remainingSecs}s`
-  }
-  return `${seconds}s`
 }
 
 // Calculate average speed in km/h
@@ -279,7 +262,7 @@ export function RouteTrackingSection({
                   <div className="flex items-center gap-1">
                     <Timer className="size-3 text-slate-400" />
                     <span className="text-[11px] font-semibold text-slate-700 tabular-nums">
-                      {formatDuration(displayDuration)}
+                      {formatDurationMs(displayDuration)}
                     </span>
                     {isLive && <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />}
                   </div>

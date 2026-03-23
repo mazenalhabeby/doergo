@@ -130,15 +130,12 @@ export async function refreshTokens(): Promise<boolean> {
 function refreshAccessToken(): Promise<boolean> {
   // If a refresh is already in progress, return the existing promise
   if (refreshPromise) {
-    console.log('[Auth] Refresh already in progress, waiting for existing request...');
     return refreshPromise;
   }
 
   const refreshToken = getRefreshToken();
-  console.log('[Auth] Attempting token refresh, has refresh token:', !!refreshToken);
 
   if (!refreshToken) {
-    console.log('[Auth] No refresh token available');
     return Promise.resolve(false);
   }
 
@@ -149,7 +146,6 @@ function refreshAccessToken(): Promise<boolean> {
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     try {
-      console.log('[Auth] Sending refresh request to', `${API_BASE_URL}/auth/refresh`);
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -160,13 +156,10 @@ function refreshAccessToken(): Promise<boolean> {
       });
 
       clearTimeout(timeoutId);
-      console.log('[Auth] Refresh response status:', response.status);
       const result = await response.json();
-      console.log('[Auth] Refresh response:', result);
 
       // Check both HTTP status and response body for success
       if (!response.ok || !result.success) {
-        console.log('[Auth] Refresh failed - clearing tokens');
         clearTokens();
         return false;
       }
@@ -174,12 +167,10 @@ function refreshAccessToken(): Promise<boolean> {
       // API returns { success: true, data: { accessToken, refreshToken } }
       const data = result.data;
       if (!data?.accessToken || !data?.refreshToken) {
-        console.log('[Auth] Refresh response missing tokens - clearing');
         clearTokens();
         return false;
       }
 
-      console.log('[Auth] Refresh successful - storing new tokens');
       setTokens({
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
@@ -188,7 +179,6 @@ function refreshAccessToken(): Promise<boolean> {
       return true;
     } catch (error) {
       clearTimeout(timeoutId);
-      console.log('[Auth] Refresh error:', error);
       clearTokens();
       return false;
     } finally {
@@ -232,12 +222,9 @@ async function apiRequest<T>(
 
     // Handle 401 - Automatic token refresh
     if (response.status === 401 && retry) {
-      console.log('[Auth] Got 401 on', endpoint, '- attempting refresh');
-
       // Check if we have a refresh token before attempting
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        console.log('[Auth] No refresh token - redirecting to login');
         // No refresh token - redirect to login
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
@@ -248,12 +235,10 @@ async function apiRequest<T>(
       const refreshed = await refreshAccessToken();
 
       if (refreshed) {
-        console.log('[Auth] Refresh successful - retrying original request');
         // Retry the original request with new token
         return apiRequest<T>(endpoint, options, false);
       }
 
-      console.log('[Auth] Refresh failed - redirecting to login');
       // Refresh failed - redirect to login
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
@@ -328,9 +313,6 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
 // Auth-specific API methods
 export const authApi = {
   login: async (email: string, password: string) => {
-    console.log('[Auth] Login attempt for:', email);
-    console.log('[Auth] API URL:', `${API_BASE_URL}/auth/login`);
-
     const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -338,10 +320,8 @@ export const authApi = {
     });
 
     const result = await response.json();
-    console.log('[Auth] Login response status:', response.status);
 
     if (!response.ok) {
-      console.log('[Auth] Login failed:', result.message);
       throw new Error(result.message || 'Login failed');
     }
 
@@ -349,11 +329,9 @@ export const authApi = {
     const data = result.data;
 
     if (!data?.accessToken || !data?.refreshToken) {
-      console.log('[Auth] Login response missing tokens');
       throw new Error('Invalid server response');
     }
 
-    console.log('[Auth] Login successful, saving tokens');
     setTokens({
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
@@ -405,9 +383,6 @@ export const authApi = {
     companyName: string;
   }) => {
     // Note: Role is NOT sent - backend always sets it to ADMIN for security
-    console.log('[Auth] Register attempt for:', data.email);
-    console.log('[Auth] API URL:', `${API_BASE_URL}/auth/register`);
-
     const response = await fetchWithTimeout(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -415,20 +390,15 @@ export const authApi = {
     });
 
     const result = await response.json();
-    console.log('[Auth] Register response status:', response.status);
 
     if (!response.ok) {
-      console.log('[Auth] Register failed:', result.message);
       throw new Error(result.message || 'Registration failed');
     }
 
-    console.log('[Auth] Registration successful');
     return result;
   },
 
   forgotPassword: async (email: string) => {
-    console.log('[Auth] Forgot password for:', email);
-
     const response = await fetchWithTimeout(`${API_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -445,8 +415,6 @@ export const authApi = {
   },
 
   resetPassword: async (token: string, newPassword: string) => {
-    console.log('[Auth] Reset password attempt');
-
     const response = await fetchWithTimeout(`${API_BASE_URL}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -460,6 +428,19 @@ export const authApi = {
     }
 
     return result;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await api.post<{ success: boolean; message: string }>('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
   },
 };
 
@@ -1417,6 +1398,59 @@ export const reportsApi = {
   deletePart: async (reportId: string, partId: string) => {
     const response = await api.delete<{ success: boolean; message: string }>(
       `/reports/${reportId}/parts/${partId}`
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  },
+};
+
+// Report Attachments API (presigned URL upload flow)
+export const reportAttachmentsApi = {
+  // Get presigned URL for uploading
+  getPresignedUrl: async (reportId: string, fileName: string, fileType: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: { uploadUrl: string; fileUrl: string };
+    }>(`/reports/${reportId}/attachments/presign`, { fileName, fileType });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Confirm upload after S3 upload completes
+  confirmUpload: async (
+    reportId: string,
+    data: {
+      type: 'BEFORE' | 'AFTER';
+      fileName: string;
+      fileUrl: string;
+      fileSize: number;
+      caption?: string;
+    }
+  ) => {
+    const response = await api.post<{ success: boolean; data: ReportAttachment }>(
+      `/reports/${reportId}/attachments`,
+      data
+    );
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
+  // Delete an attachment
+  delete: async (reportId: string, attachmentId: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/reports/${reportId}/attachments/${attachmentId}`
     );
 
     if (response.error) {
