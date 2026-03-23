@@ -65,7 +65,7 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_FROM=${SMTP_FROM:-noreply@doergo.com}
-      - APP_URL=https://${DOMAIN:-doergo.hbc-solution.io}
+      - APP_URL=${PROTOCOL:-http}://${DOMAIN:-doergo.hbc-solution.io}
     depends_on:
       postgres:
         condition: service_healthy
@@ -133,7 +133,7 @@ services:
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
-      - SOCKET_CORS_ORIGINS=https://${DOMAIN:-doergo.hbc-solution.io}
+      - SOCKET_CORS_ORIGINS=${PROTOCOL:-http}://${DOMAIN:-doergo.hbc-solution.io}
       - SOCKET_ADMIN_USER=${SOCKET_ADMIN_USER:-}
       - SOCKET_ADMIN_PASSWORD=${SOCKET_ADMIN_PASSWORD:-}
     depends_on:
@@ -195,7 +195,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
-      - CORS_ORIGINS=https://${DOMAIN:-doergo.hbc-solution.io}
+      - CORS_ORIGINS=${PROTOCOL:-http}://${DOMAIN:-doergo.hbc-solution.io}
     depends_on:
       auth-service:
         condition: service_healthy
@@ -226,7 +226,7 @@ services:
       context: ../../
       dockerfile: apps/web-app/Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://${DOMAIN:-doergo.hbc-solution.io}/api/v1
+        - NEXT_PUBLIC_API_URL=${PROTOCOL:-http}://${DOMAIN:-doergo.hbc-solution.io}/api/v1
     container_name: doergo-web-app
     restart: unless-stopped
     environment:
@@ -257,8 +257,9 @@ services:
       - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - doergo_certbot_conf:/etc/letsencrypt:ro
-      - doergo_certbot_www:/var/www/certbot:ro
+      - ./downloads:/var/www/downloads:ro
+      #- doergo_certbot_conf:/etc/letsencrypt:ro
+      #- doergo_certbot_www:/var/www/certbot:ro
     depends_on:
       web-app:
         condition: service_healthy
@@ -277,26 +278,26 @@ services:
     networks:
       - doergo-network
 
-  # Let's Encrypt certificate renewal
-  certbot:
-    image: certbot/certbot
-    container_name: doergo-certbot
-    volumes:
-      - doergo_certbot_conf:/etc/letsencrypt
-      - doergo_certbot_www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    networks:
-      - doergo-network
+  # Let's Encrypt certificate renewal (uncomment after running ssl-init.sh)
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: doergo-certbot
+  #   volumes:
+  #     - doergo_certbot_conf:/etc/letsencrypt
+  #     - doergo_certbot_www:/var/www/certbot
+  #   entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+  #   networks:
+  #     - doergo-network
 
 volumes:
   doergo_postgres_data:
     name: doergo-postgres-data
   doergo_redis_data:
     name: doergo-redis-data
-  doergo_certbot_conf:
-    name: doergo-certbot-conf
-  doergo_certbot_www:
-    name: doergo-certbot-www
+  # doergo_certbot_conf:
+  #   name: doergo-certbot-conf
+  # doergo_certbot_www:
+  #   name: doergo-certbot-www
 
 networks:
   doergo-network:
