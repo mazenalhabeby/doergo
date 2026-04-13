@@ -24,7 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { getRoleLabel } from "@hbcfield/shared"
+import { getRoleLabel } from "@hbcfield/shared/types"
 
 function getRoleColor(role: string) {
   switch (role) {
