@@ -1,5 +1,5 @@
 /**
- * API Client for Doergo Backend
+ * API Client for HBCField Backend
  *
  * Handles all HTTP communication with the API gateway.
  * Implements standard OAuth 2.0 token refresh with:
@@ -17,7 +17,7 @@ import {
   JoinRequestStatus,
   JoinPolicy,
   buildUrlWithQuery,
-} from '@doergo/shared/client';
+} from '@hbcfield/shared/client';
 import type {
   CompanyLocation,
   TimeEntry,
@@ -40,7 +40,7 @@ import type {
   JoinRequest,
   OnboardingStatus,
   OrgCodeValidation,
-} from '@doergo/shared/client';
+} from '@hbcfield/shared/client';
 
 // Re-export shared types for convenience
 export type {
@@ -79,8 +79,8 @@ interface AuthTokens {
 }
 
 // Token storage keys
-const ACCESS_TOKEN_KEY = 'doergo_access_token';
-const REFRESH_TOKEN_KEY = 'doergo_refresh_token';
+const ACCESS_TOKEN_KEY = 'hbcfield_access_token';
+const REFRESH_TOKEN_KEY = 'hbcfield_refresh_token';
 
 // Token refresh state management - shared promise ensures only one refresh at a time
 let refreshPromise: Promise<boolean> | null = null;
@@ -521,6 +521,11 @@ export interface Attachment {
   fileType: string;
   fileSize: number;
   createdAt: string;
+  uploadedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export interface TaskEvent {
@@ -800,6 +805,82 @@ export const tasksApi = {
     return response.data?.data;
   },
 };
+
+// Task Attachments API (presigned URL upload flow)
+export const taskAttachmentsApi = {
+  getPresignedUrl: async (taskId: string, fileName: string, fileType: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number };
+    }>(`/tasks/${taskId}/attachments/presign`, { fileName, fileType });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data?.data;
+  },
+
+  confirmUpload: async (
+    taskId: string,
+    data: { fileName: string; fileUrl: string; fileType: string; fileSize: number }
+  ) => {
+    const response = await api.post<{ success: boolean; data: Attachment }>(
+      `/tasks/${taskId}/attachments`,
+      data
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data?.data;
+  },
+
+  getAttachments: async (taskId: string) => {
+    const response = await api.get<{ success: boolean; data: Attachment[] }>(
+      `/tasks/${taskId}/attachments`
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data?.data || [];
+  },
+
+  delete: async (taskId: string, attachmentId: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/tasks/${taskId}/attachments/${attachmentId}`
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  },
+};
+
+// Upload file to S3 presigned URL (browser)
+export function uploadToS3(
+  url: string,
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(event.loaded / event.total);
+      }
+    });
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`));
+      }
+    });
+    xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.send(file);
+  });
+}
 
 // Worker location types for tracking
 export interface WorkerLocation {
@@ -1464,10 +1545,10 @@ export const reportAttachmentsApi = {
 // ============================================
 // ATTENDANCE TYPES & API
 // ============================================
-// Core attendance types imported from @doergo/shared (see imports at top)
+// Core attendance types imported from @hbcfield/shared (see imports at top)
 
 // Re-export isBreakActive from shared
-export { isBreakActive } from '@doergo/shared/client';
+export { isBreakActive } from '@hbcfield/shared/client';
 
 // Web-specific BreakSummary (different structure from shared)
 export interface BreakSummary {
@@ -2344,8 +2425,10 @@ export interface OrgMember {
   canManageUsers: boolean;
 }
 
-export interface UpdateMemberRoleInput {
-  role: string;
+export interface UpdateMemberInput {
+  firstName?: string;
+  lastName?: string;
+  role?: string;
   platform?: string;
   canCreateTasks?: boolean;
   canViewAllTasks?: boolean;
@@ -2397,13 +2480,22 @@ export const organizationsApi = {
     return response.data;
   },
 
-  updateMemberRole: async (memberId: string, data: UpdateMemberRoleInput) => {
+  updateMember: async (memberId: string, data: UpdateMemberInput) => {
     const response = await api.patch<{
       success: boolean;
       data: OrgMember;
-    }>(`/organizations/members/${memberId}/role`, data);
+    }>(`/organizations/members/${memberId}`, data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
+  },
+
+  resetMemberPassword: async (memberId: string) => {
+    const response = await api.post<{
+      success: boolean;
+      temporaryPassword: string;
+    }>(`/organizations/members/${memberId}/reset-password`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
   },
 
   removeMember: async (memberId: string) => {

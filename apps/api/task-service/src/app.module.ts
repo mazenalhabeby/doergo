@@ -7,7 +7,7 @@ import {
   createClientOptions,
   createBullMQConfig,
   QUEUE_NAMES,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { CommentsModule } from './modules/comments/comments.module';

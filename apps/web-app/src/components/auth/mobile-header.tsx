@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatedLogo } from '@doergo/shared/components';
+import { AnimatedLogo } from '@hbcfield/shared/components';
 
 export function MobileHeader() {
   return (

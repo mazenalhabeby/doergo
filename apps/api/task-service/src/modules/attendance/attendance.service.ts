@@ -26,7 +26,7 @@ import {
   getStartOfMonth,
   getEndOfMonth,
   formatDuration,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 import { format } from 'date-fns';
 
 @Injectable()

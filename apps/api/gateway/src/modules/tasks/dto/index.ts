@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
-import { TaskStatus, TaskPriority, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH } from '@doergo/shared';
+import { TaskStatus, TaskPriority, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH } from '@hbcfield/shared';
 
 /**
  * Create task request DTO

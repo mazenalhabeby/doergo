@@ -11,7 +11,7 @@ import {
   ApiError,
 } from '../lib/api';
 
-const USER_KEY = 'doergo_user';
+const USER_KEY = 'hbcfield_user';
 
 interface AuthContextType {
   user: User | null;

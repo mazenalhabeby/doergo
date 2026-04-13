@@ -8,7 +8,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { ATTENDANCE_CONSTANTS } from '@doergo/shared';
+import { ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
 
 export class CreateLocationDto {
   @ApiProperty({

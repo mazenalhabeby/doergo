@@ -12,7 +12,7 @@ import {
   Matches,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { EmailField, StrongPasswordField, NameField } from '@doergo/shared';
+import { EmailField, StrongPasswordField, NameField } from '@hbcfield/shared';
 
 export class CreateInvitationDto {
   @ApiProperty({

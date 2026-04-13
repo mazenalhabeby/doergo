@@ -1,8 +1,8 @@
-# Doergo
+# HBCField
 
 **Role-based task management & field execution platform**
 
-Doergo is a full-stack SaaS platform for managing field service operations. Admins create tasks, dispatchers assign technicians, and technicians execute work in the field with real-time GPS tracking.
+HBCField is a full-stack SaaS platform for managing field service operations. Admins create tasks, dispatchers assign technicians, and technicians execute work in the field with real-time GPS tracking.
 
 ```
 Admin creates task  ->  Dispatcher assigns technician  ->  Technician executes  ->  Real-time updates
@@ -20,7 +20,7 @@ Admin creates task  ->  Dispatcher assigns technician  ->  Technician executes  
 
 ```bash
 # 1. Clone and install
-git clone <REPO_URL> && cd doergo
+git clone <REPO_URL> && cd hbcfield
 pnpm install
 
 # 2. Start infrastructure (PostgreSQL + Redis)
@@ -100,7 +100,7 @@ pnpm dev:mobile  # Expo mobile app
 ## Project Structure
 
 ```
-doergo/
+hbcfield/
 +-- apps/
 |   +-- api/
 |   |   +-- gateway/              # API Gateway (:4000)

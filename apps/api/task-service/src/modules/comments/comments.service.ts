@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { TaskEventType } from '@doergo/shared';
+import { TaskEventType } from '@hbcfield/shared';
 
 @Injectable()
 export class CommentsService {

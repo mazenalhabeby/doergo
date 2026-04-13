@@ -16,9 +16,9 @@ COPY packages/shared/ ./packages/shared/
 COPY apps/api/auth-service/prisma/ ./apps/api/auth-service/prisma/
 COPY apps/api/tracking-service/ ./apps/api/tracking-service/
 COPY tsconfig.base.json ./
-RUN pnpm --filter @doergo/shared build
+RUN pnpm --filter @hbcfield/shared build
 RUN cd apps/api/auth-service && npx prisma generate
-RUN pnpm --filter @doergo/tracking-service build
+RUN pnpm --filter @hbcfield/tracking-service build
 
 # -- Production --
 FROM base AS production

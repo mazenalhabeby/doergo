@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
@@ -12,103 +11,57 @@ import {
   Platform,
   Modal,
   Linking,
+  Animated,
+  Dimensions,
+  Pressable,
+  Image,
+  StyleSheet as RNStyleSheet,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { tasksApi, reportsApi, reportAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
+import { tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
+import { Role } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useTheme } from '../../../src/contexts/theme-context';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { SocketEvents } from '../../../src/lib/socket';
-import { useLocationTracking } from '../../../src/hooks/useLocationTracking';
+import { useLocationTrackingContext } from '../../../src/contexts/location-tracking-context';
 import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
 import { PhotoGrid } from '../../../src/components/photo-grid';
 import { SignatureCapture } from '../../../src/components/signature-capture';
-import { TechnicianPicker } from '../../../src/components';
+import { TechnicianPicker, LoadingState, ErrorState } from '../../../src/components';
+import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
+import { getJobId, formatRelativeDate, formatTimeAgo } from '../../../src/lib/utils';
 import {
+  styles,
+  adminDetailStyles,
   COLORS,
   SPACING,
   RADIUS,
   FONT_SIZE,
   FONT_WEIGHT,
-  SHADOWS,
-} from '../../../src/lib/constants';
-import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
-import { getJobId } from '../../../src/lib/utils';
+  PROGRESS_STEPS,
+  getDetailProgressIndex,
+  getStatusAction,
+  formatElapsedTime,
+} from '../../../src/components/task-detail';
 
-// Progress steps configuration for the detail view (6-step flow)
-const PROGRESS_STEPS = [
-  { key: 'ASSIGNED', label: 'Assigned', icon: 'checkmark' as const },
-  { key: 'ACCEPTED', label: 'Accepted', icon: 'checkmark' as const },
-  { key: 'EN_ROUTE', label: 'On The Way', icon: 'car' as const },
-  { key: 'ARRIVED', label: 'Arrived', icon: 'location' as const },
-  { key: 'IN_PROGRESS', label: 'In Progress', icon: 'construct' as const },
-  { key: 'COMPLETED', label: 'Completed', icon: 'checkmark' as const },
-] as const;
-
-// Map task status to progress step index (specific to the 6-step detail view)
-function getDetailProgressIndex(status: string): number {
-  switch (status) {
-    case 'ASSIGNED':
-      return 0;
-    case 'ACCEPTED':
-      return 1;
-    case 'EN_ROUTE':
-      return 2;
-    case 'ARRIVED':
-      return 3;
-    case 'IN_PROGRESS':
-      return 4;
-    case 'COMPLETED':
-    case 'CLOSED':
-      return 5;
-    case 'BLOCKED':
-      return 4; // Show as at in-progress step
-    default:
-      return -1;
-  }
-}
-
-// Get next status action based on current status
-interface StatusAction {
-  nextStatus: TaskStatus;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}
-
-function getStatusAction(status: string): StatusAction | null {
-  switch (status) {
-    case TaskStatus.ASSIGNED:
-      return { nextStatus: TaskStatus.ACCEPTED, label: 'Accept Job', icon: 'checkmark-circle' };
-    case TaskStatus.ACCEPTED:
-      return { nextStatus: TaskStatus.EN_ROUTE, label: 'Start Driving', icon: 'car' };
-    case TaskStatus.EN_ROUTE:
-      return { nextStatus: TaskStatus.ARRIVED, label: "I've Arrived", icon: 'location' };
-    case TaskStatus.ARRIVED:
-      return { nextStatus: TaskStatus.IN_PROGRESS, label: 'Start Work', icon: 'construct' };
-    case TaskStatus.IN_PROGRESS:
-      return { nextStatus: TaskStatus.COMPLETED, label: 'Finish Job', icon: 'checkmark-done' };
-    case TaskStatus.BLOCKED:
-      return { nextStatus: TaskStatus.IN_PROGRESS, label: 'Resume Job', icon: 'play' };
-    default:
-      return null;
-  }
-}
-
-// Format elapsed time for timer display (HH:MM:SS)
-function formatElapsedTime(seconds: number): string {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
+  const { colors, isDark } = useTheme();
+  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
+
+  // Bottom sheet animation
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const overlayAnim = useRef(new Animated.Value(0)).current;
+  const hasAnimatedIn = useRef(false);
 
   const [task, setTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -132,6 +85,11 @@ export default function TaskDetailScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const { pickFromGallery, takePhoto } = useImagePicker();
 
+  // Task attachments state
+  const [taskAttachments, setTaskAttachments] = useState<any[]>([]);
+  const [taskAttachmentProgress, setTaskAttachmentProgress] = useState<Map<number, number>>(new Map());
+  const [isUploadingTaskAttachment, setIsUploadingTaskAttachment] = useState(false);
+
   // Signature state for completion modal
   const [technicianSignature, setTechnicianSignature] = useState<string>('');
   const [customerSignature, setCustomerSignature] = useState<string>('');
@@ -145,22 +103,45 @@ export default function TaskDetailScreen() {
   const [editPriority, setEditPriority] = useState<string>('MEDIUM');
   const [editLocation, setEditLocation] = useState('');
 
-  // Location tracking hook - only active during EN_ROUTE status
+  // Comment input state
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  // Location tracking from app-level context (survives screen navigation)
   const {
     isTracking,
     lastLocation,
     startTracking,
     stopTracking,
     error: locationError,
-  } = useLocationTracking({ taskId: task?.id });
+  } = useLocationTrackingContext();
+
+  // Animate in on mount
+  useEffect(() => {
+    if (!hasAnimatedIn.current) {
+      hasAnimatedIn.current = true;
+      Animated.parallel([
+        Animated.timing(overlayAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
+      ]).start();
+    }
+  }, []);
+
+  const handleClose = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }),
+    ]).start(() => router.back());
+  }, [slideAnim, overlayAnim]);
 
   // Ref to prevent duplicate fetches
   const fetchingRef = useRef(false);
   const lastFetchedIdRef = useRef<string | null>(null);
 
-  // Timer logic - starts when task is IN_PROGRESS
+  // Timer logic - starts when task is IN_PROGRESS, seeded from real start time
   useEffect(() => {
-    if (task?.status === 'IN_PROGRESS') {
+    if (task?.status === TaskStatus.IN_PROGRESS) {
+      // Tick every second — elapsedTime was seeded with the correct offset on fetch
       timerRef.current = setInterval(() => {
         setElapsedTime((prev) => prev + 1);
       }, 1000);
@@ -169,6 +150,7 @@ export default function TaskDetailScreen() {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      setElapsedTime(0);
     }
 
     return () => {
@@ -179,19 +161,20 @@ export default function TaskDetailScreen() {
   }, [task?.status]);
 
   // Auto-start/stop location tracking based on task status
+  // Tracking lives in app-level context — survives screen navigation
   useEffect(() => {
-    if (task?.status === 'EN_ROUTE' && !isTracking) {
-      // Auto-start tracking when status changes to EN_ROUTE
-      startTracking();
-    } else if (task?.status !== 'EN_ROUTE' && isTracking) {
-      // Auto-stop tracking when status changes from EN_ROUTE
+    if (task?.status === TaskStatus.EN_ROUTE && !isTracking && task.id) {
+      startTracking(task.id);
+    } else if (task?.status !== TaskStatus.EN_ROUTE && isTracking) {
       stopTracking();
     }
-  }, [task?.status, isTracking, startTracking, stopTracking]);
+  }, [task?.status, task?.id, isTracking, startTracking, stopTracking]);
 
   useEffect(() => {
     if (!id || fetchingRef.current) return;
     if (lastFetchedIdRef.current === id) return;
+
+    let cancelled = false;
 
     const fetchData = async () => {
       try {
@@ -199,26 +182,53 @@ export default function TaskDetailScreen() {
         setIsLoading(true);
         setError(null);
 
-        const [taskResponse, commentsResponse] = await Promise.all([
+        const [taskResponse, commentsResponse, attachmentsResponse] = await Promise.all([
           tasksApi.getById(id),
           tasksApi.getComments(id),
+          taskAttachmentsApi.getAttachments(id).catch(() => []),
         ]);
+
+        // Don't update state if component unmounted or navigated away
+        if (cancelled) return;
+
+        // Seed elapsed timer from timeline if task is IN_PROGRESS
+        if (taskResponse.status === TaskStatus.IN_PROGRESS) {
+          try {
+            const timeline = await tasksApi.getTimeline(id);
+            const inProgressEvent = timeline.find(
+              (e) => e.eventType === 'STATUS_CHANGED' && e.metadata?.newStatus === 'IN_PROGRESS',
+            );
+            if (inProgressEvent) {
+              const startedAt = new Date(inProgressEvent.createdAt).getTime();
+              const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+              setElapsedTime(Math.max(0, elapsed));
+            }
+          } catch {
+            // Non-blocking — timer starts from 0 if timeline fails
+          }
+        }
 
         setTask(taskResponse);
         setComments(commentsResponse);
+        setTaskAttachments(attachmentsResponse || []);
         lastFetchedIdRef.current = id;
       } catch (err: any) {
+        if (cancelled) return;
         if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
           return;
         }
         setError(err instanceof Error ? err.message : 'Failed to load task');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
         fetchingRef.current = false;
       }
     };
 
     fetchData();
+
+    return () => { cancelled = true; };
   }, [id]);
 
   // Real-time updates via Socket.IO
@@ -263,6 +273,20 @@ export default function TaskDetailScreen() {
     return () => unsubs.forEach(fn => fn());
   }, [isConnected, subscribe, id]);
 
+  const handleAddComment = useCallback(async () => {
+    if (!task || !newComment.trim()) return;
+    try {
+      setIsSubmittingComment(true);
+      const comment = await tasksApi.addComment(task.id, newComment.trim());
+      setComments(prev => [...prev, comment]);
+      setNewComment('');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to add comment');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  }, [task, newComment]);
+
   const handleRetry = useCallback(() => {
     lastFetchedIdRef.current = null;
     fetchingRef.current = false;
@@ -272,12 +296,32 @@ export default function TaskDetailScreen() {
     const fetchData = async () => {
       try {
         fetchingRef.current = true;
-        const [taskResponse, commentsResponse] = await Promise.all([
+        const [taskResponse, commentsResponse, attachmentsResponse] = await Promise.all([
           tasksApi.getById(id!),
           tasksApi.getComments(id!),
+          taskAttachmentsApi.getAttachments(id!).catch(() => []),
         ]);
+
+        // Seed elapsed timer from timeline if task is IN_PROGRESS
+        if (taskResponse.status === TaskStatus.IN_PROGRESS) {
+          try {
+            const timeline = await tasksApi.getTimeline(id!);
+            const inProgressEvent = timeline.find(
+              (e) => e.eventType === 'STATUS_CHANGED' && e.metadata?.newStatus === 'IN_PROGRESS',
+            );
+            if (inProgressEvent) {
+              const startedAt = new Date(inProgressEvent.createdAt).getTime();
+              const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+              setElapsedTime(Math.max(0, elapsed));
+            }
+          } catch {
+            // Non-blocking
+          }
+        }
+
         setTask(taskResponse);
         setComments(commentsResponse);
+        setTaskAttachments(attachmentsResponse || []);
         lastFetchedIdRef.current = id!;
       } catch (err: any) {
         if (err?.statusCode === 401) return;
@@ -293,14 +337,14 @@ export default function TaskDetailScreen() {
   const handleStatusUpdate = async (newStatus: string, reason?: string) => {
     if (!task) return;
 
-    if (newStatus === 'BLOCKED' && reason === undefined) {
+    if (newStatus === TaskStatus.BLOCKED && reason === undefined) {
       setBlockReason('');
       setShowBlockReasonModal(true);
       return;
     }
 
     // Show completion modal for COMPLETED status
-    if (newStatus === 'COMPLETED') {
+    if (newStatus === TaskStatus.COMPLETED) {
       setCompletionSummary('');
       setCompletionDetails('');
       setShowCompletionModal(true);
@@ -320,25 +364,25 @@ export default function TaskDetailScreen() {
 
               // Stop tracking IMMEDIATELY when transitioning away from EN_ROUTE
               // This prevents extra location requests while waiting for API response
-              if (task.status === 'EN_ROUTE' && newStatus === 'ARRIVED') {
+              if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
                 stopTracking();
               }
 
               // Start tracking IMMEDIATELY when transitioning to EN_ROUTE
               // This ensures tracking starts without waiting for API response
-              if (newStatus === 'EN_ROUTE') {
-                startTracking();
+              if (newStatus === TaskStatus.EN_ROUTE) {
+                startTracking(task.id);
               }
 
               const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason);
               setTask(updatedTask);
             } catch (err) {
               // If API fails while transitioning to ARRIVED, restart tracking
-              if (task.status === 'EN_ROUTE' && newStatus === 'ARRIVED') {
-                startTracking();
+              if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
+                startTracking(task.id);
               }
               // If API fails while starting EN_ROUTE, stop tracking
-              if (newStatus === 'EN_ROUTE') {
+              if (newStatus === TaskStatus.EN_ROUTE) {
                 stopTracking();
               }
               Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update status');
@@ -396,6 +440,21 @@ export default function TaskDetailScreen() {
       return;
     }
 
+    if (!technicianSignature) {
+      Alert.alert('Required', 'Technician signature is required.');
+      return;
+    }
+
+    if (!customerSignature) {
+      Alert.alert('Required', 'Customer signature is required.');
+      return;
+    }
+
+    if (!customerName.trim()) {
+      Alert.alert('Required', 'Please enter the customer name.');
+      return;
+    }
+
     try {
       setIsUpdating(true);
       setShowCompletionModal(false);
@@ -404,9 +463,9 @@ export default function TaskDetailScreen() {
         summary: completionSummary.trim(),
         workPerformed: completionDetails.trim() || undefined,
         workDuration: elapsedTime,
-        technicianSignature: technicianSignature || undefined,
-        customerSignature: customerSignature || undefined,
-        customerName: customerName.trim() || undefined,
+        technicianSignature,
+        customerSignature,
+        customerName: customerName.trim(),
       };
 
       const report = await reportsApi.completeTask(task.id, input);
@@ -449,12 +508,71 @@ export default function TaskDetailScreen() {
     }
   };
 
+  // Upload a task attachment (photo from camera/gallery)
+  const handleUploadTaskAttachment = async (photos: PickedImage[]) => {
+    if (!task || photos.length === 0) return;
+    setIsUploadingTaskAttachment(true);
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i]!;
+      try {
+        const { uploadUrl, fileUrl } = await taskAttachmentsApi.getPresignedUrl(
+          task.id,
+          photo.fileName,
+          photo.mimeType,
+        );
+        await uploadToPresignedUrl(uploadUrl, photo.uri, photo.mimeType, (progress) => {
+          setTaskAttachmentProgress(prev => {
+            const next = new Map(prev);
+            next.set(i, progress);
+            return next;
+          });
+        });
+        await taskAttachmentsApi.confirmUpload(task.id, {
+          fileName: photo.fileName,
+          fileUrl,
+          fileType: photo.mimeType,
+          fileSize: photo.fileSize,
+        });
+      } catch (err) {
+        console.warn(`[Attachments] Failed to upload photo ${i}:`, err);
+        Alert.alert('Error', `Failed to upload ${photo.fileName}`);
+      }
+    }
+    // Refresh attachments
+    try {
+      const updated = await taskAttachmentsApi.getAttachments(task.id);
+      setTaskAttachments(updated || []);
+    } catch {}
+    setTaskAttachmentProgress(new Map());
+    setIsUploadingTaskAttachment(false);
+  };
+
+  // Delete a task attachment
+  const handleDeleteTaskAttachment = (attachmentId: string, fileName: string) => {
+    if (!task) return;
+    Alert.alert('Delete Attachment', `Delete "${fileName}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await taskAttachmentsApi.delete(task.id, attachmentId);
+            setTaskAttachments(prev => prev.filter(a => a.id !== attachmentId));
+          } catch (err) {
+            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete');
+          }
+        },
+      },
+    ]);
+  };
+
   const handleBlockSubmit = async () => {
     if (!task) return;
     try {
       setIsUpdating(true);
       setShowBlockReasonModal(false);
-      const updatedTask = await tasksApi.updateStatus(task.id, 'BLOCKED', blockReason.trim() || undefined);
+      const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.BLOCKED, blockReason.trim() || undefined);
       setTask(updatedTask);
       setBlockReason('');
     } catch (err) {
@@ -508,11 +626,6 @@ export default function TaskDetailScreen() {
       android: `google.navigation:q=${task.locationLat},${task.locationLng}`,
     });
     if (url) Linking.openURL(url);
-  };
-
-  const handleCall = () => {
-    // Since we don't have phone in task, use a placeholder action
-    Alert.alert('Contact', 'Contact information not available for this task.');
   };
 
   // Admin: Assign technician
@@ -576,7 +689,7 @@ export default function TaskDetailScreen() {
         onPress: async () => {
           try {
             setIsUpdating(true);
-            const updatedTask = await tasksApi.updateStatus(task.id, 'CANCELED');
+            const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.CANCELED);
             setTask(updatedTask);
           } catch (err) {
             Alert.alert('Error', err instanceof Error ? err.message : 'Failed to cancel');
@@ -590,42 +703,89 @@ export default function TaskDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Stack.Screen options={{ title: 'Task Details', headerBackTitle: '' }} />
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={RNStyleSheet.absoluteFill} pointerEvents="box-none">
+        <Animated.View style={[RNStyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
+          <BlurView intensity={40} tint="dark" style={RNStyleSheet.absoluteFill}>
+            <Pressable style={RNStyleSheet.absoluteFill} onPress={handleClose} />
+          </BlurView>
+        </Animated.View>
+        <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: slideAnim }] }]}>
+          <View style={styles.sheetHandle} />
+          <View style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <LoadingState />
+          </View>
+        </Animated.View>
       </View>
     );
   }
 
   if (error || !task) {
     return (
-      <View style={styles.errorContainer}>
-        <Stack.Screen options={{ title: 'Error' }} />
-        <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-        <Text style={styles.errorText}>{error || 'Task not found'}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
+      <View style={RNStyleSheet.absoluteFill} pointerEvents="box-none">
+        <Animated.View style={[RNStyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
+          <BlurView intensity={40} tint="dark" style={RNStyleSheet.absoluteFill}>
+            <Pressable style={RNStyleSheet.absoluteFill} onPress={handleClose} />
+          </BlurView>
+        </Animated.View>
+        <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: slideAnim }] }]}>
+          <View style={styles.sheetHandle} />
+          <View style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.errorContainer, { backgroundColor: colors.surface }]}>
+              <Stack.Screen options={{ headerShown: false }} />
+              <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
+              <Text style={[styles.errorText, { color: colors.textMuted }]}>{error || 'Task not found'}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.backButton} onPress={handleClose}>
+                <Text style={styles.backButtonText}>Go Back</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
       </View>
     );
   }
 
-  const statusStyle = getStatusStyle(task.status);
+  const statusStyle = getStatusStyle(task.status, colors);
+  const priorityStyle = getPriorityStyle(task.priority, colors);
   const progressIndex = getDetailProgressIndex(task.status);
   const jobId = getJobId(task.id);
-  const showTimer = !isAdmin && task.status === 'IN_PROGRESS';
+  const showTimer = !isAdmin && task.status === TaskStatus.IN_PROGRESS;
   const statusAction = getStatusAction(task.status);
-  const showLocationToggle = !isAdmin && task.status === 'EN_ROUTE';
-  const showBottomBar = !['COMPLETED', 'CLOSED', 'CANCELED'].includes(task.status);
+  const showLocationToggle = !isAdmin && task.status === TaskStatus.EN_ROUTE;
+  const showBottomBar = ![TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(task.status);
+  const currentStepLabel = PROGRESS_STEPS[progressIndex]?.label;
+
+  // Due date gate — cannot accept a task scheduled for a future date
+  const isFutureTask = (() => {
+    if (!task.dueDate) return false;
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return new Date(task.dueDate) > endOfToday;
+  })();
 
   return (
+    <View style={RNStyleSheet.absoluteFill} pointerEvents="box-none">
+    <Animated.View style={[RNStyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
+      <BlurView intensity={40} tint="dark" style={RNStyleSheet.absoluteFill}>
+        <Pressable style={RNStyleSheet.absoluteFill} onPress={handleClose} />
+      </BlurView>
+    </Animated.View>
+    <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: slideAnim }] }]}>
+    <View style={styles.sheetHandle} />
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.sheetContent, { backgroundColor: colors.surface }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {/* Header */}
+      <View style={[styles.sheetHeader, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>Task Details</Text>
+        <TouchableOpacity onPress={handleClose}>
+          <Ionicons name="close" size={24} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
       {/* Block Reason Modal */}
       <Modal
         visible={showBlockReasonModal}
@@ -634,13 +794,13 @@ export default function TaskDetailScreen() {
         onRequestClose={() => setShowBlockReasonModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Report Issue</Text>
-            <Text style={styles.modalSubtitle}>What's blocking this task? (optional)</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Report Issue</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>What's blocking this task? (optional)</Text>
             <TextInput
-              style={styles.reasonInput}
+              style={[styles.reasonInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="e.g., Waiting for parts, Customer unavailable..."
-              placeholderTextColor={COLORS.slate400}
+              placeholderTextColor={colors.textMuted}
               value={blockReason}
               onChangeText={setBlockReason}
               multiline
@@ -649,13 +809,13 @@ export default function TaskDetailScreen() {
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.modalCancelButton}
+                style={[styles.modalCancelButton, { backgroundColor: colors.surfaceRaised }]}
                 onPress={() => {
                   setShowBlockReasonModal(false);
                   setBlockReason('');
                 }}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalSubmitButton, isUpdating && styles.buttonDisabled]}
@@ -673,158 +833,173 @@ export default function TaskDetailScreen() {
         </View>
       </Modal>
 
-      {/* Completion Modal */}
+      {/* Completion Modal — full-screen sheet */}
       <Modal
         visible={showCompletionModal}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowCompletionModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.completionModalContent}>
-            <View style={styles.completionHeader}>
-              <Ionicons name="checkmark-done-circle" size={40} color={COLORS.success} />
-              <Text style={styles.completionTitle}>Complete Job</Text>
+        <View style={[styles.completionSheetContainer, { backgroundColor: colors.surface }]}>
+          {/* Fixed Header */}
+          <View style={[styles.completionSheetHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCompletionModal(false);
+                setCompletionSummary('');
+                setCompletionDetails('');
+                setBeforePhotos([]);
+                setAfterPhotos([]);
+                setTechnicianSignature('');
+                setCustomerSignature('');
+                setCustomerName('');
+              }}
+            >
+              <Text style={styles.completionSheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.completionSheetTitle, { color: colors.textPrimary }]}>Complete Job</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <ScrollView
+            style={styles.completionSheetScroll}
+            contentContainerStyle={styles.completionSheetScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Duration Badge */}
+            <View style={[styles.completionDurationBadge, { backgroundColor: colors.card }]}>
+              <View style={[styles.completionDurationIcon, { backgroundColor: colors.primaryLight }]}>
+                <Ionicons name="time-outline" size={22} color={COLORS.primary} />
+              </View>
+              <View>
+                <Text style={[styles.completionDurationLabel, { color: colors.textMuted }]}>Work Duration</Text>
+                <Text style={[styles.completionDurationValue, { color: colors.textPrimary }]}>{formatElapsedTime(elapsedTime)}</Text>
+              </View>
             </View>
 
-            {/* Duration Display */}
-            <View style={styles.completionDuration}>
-              <Ionicons name="time-outline" size={18} color={COLORS.slate500} />
-              <Text style={styles.completionDurationText}>
-                Work Duration: {formatElapsedTime(elapsedTime)}
-              </Text>
+            {/* Summary Section */}
+            <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Summary *</Text>
+              <TextInput
+                style={[styles.completionTextInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
+                placeholder="Brief summary of work completed..."
+                placeholderTextColor={colors.textMuted}
+                value={completionSummary}
+                onChangeText={setCompletionSummary}
+                multiline
+                maxLength={200}
+              />
             </View>
 
-            {/* Summary Input */}
-            <Text style={styles.inputLabel}>Summary *</Text>
-            <TextInput
-              style={styles.summaryInput}
-              placeholder="Brief summary of work completed..."
-              placeholderTextColor={COLORS.slate400}
-              value={completionSummary}
-              onChangeText={setCompletionSummary}
-              multiline
-              maxLength={200}
-              autoFocus
-            />
+            {/* Work Details Section */}
+            <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Work Details</Text>
+              <TextInput
+                style={[styles.completionTextInput, { minHeight: 100, backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
+                placeholder="Detailed description of work performed..."
+                placeholderTextColor={colors.textMuted}
+                value={completionDetails}
+                onChangeText={setCompletionDetails}
+                multiline
+                maxLength={500}
+              />
+            </View>
 
-            {/* Work Details Input */}
-            <Text style={styles.inputLabel}>Work Details (optional)</Text>
-            <TextInput
-              style={styles.detailsInput}
-              placeholder="Detailed description of work performed..."
-              placeholderTextColor={COLORS.slate400}
-              value={completionDetails}
-              onChangeText={setCompletionDetails}
-              multiline
-              maxLength={500}
-            />
+            {/* Photos Section */}
+            <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Photos</Text>
+              <PhotoGrid
+                photos={beforePhotos}
+                type="BEFORE"
+                onAddFromGallery={async () => {
+                  const photos = await pickFromGallery();
+                  if (photos.length > 0) {
+                    setBeforePhotos(prev => [...prev, ...photos].slice(0, 5));
+                  }
+                }}
+                onAddFromCamera={async () => {
+                  const photo = await takePhoto();
+                  if (photo) {
+                    setBeforePhotos(prev => [...prev, photo].slice(0, 5));
+                  }
+                }}
+                onRemovePhoto={(index) => {
+                  setBeforePhotos(prev => prev.filter((_, i) => i !== index));
+                }}
+                uploadProgress={uploadProgress.get('BEFORE')}
+              />
+              <View style={{ height: SPACING.md }} />
+              <PhotoGrid
+                photos={afterPhotos}
+                type="AFTER"
+                onAddFromGallery={async () => {
+                  const photos = await pickFromGallery();
+                  if (photos.length > 0) {
+                    setAfterPhotos(prev => [...prev, ...photos].slice(0, 5));
+                  }
+                }}
+                onAddFromCamera={async () => {
+                  const photo = await takePhoto();
+                  if (photo) {
+                    setAfterPhotos(prev => [...prev, photo].slice(0, 5));
+                  }
+                }}
+                onRemovePhoto={(index) => {
+                  setAfterPhotos(prev => prev.filter((_, i) => i !== index));
+                }}
+                uploadProgress={uploadProgress.get('AFTER')}
+              />
+            </View>
 
-            {/* Before Photos */}
-            <PhotoGrid
-              photos={beforePhotos}
-              type="BEFORE"
-              onAddFromGallery={async () => {
-                const photos = await pickFromGallery();
-                if (photos.length > 0) {
-                  setBeforePhotos(prev => [...prev, ...photos].slice(0, 5));
-                }
-              }}
-              onAddFromCamera={async () => {
-                const photo = await takePhoto();
-                if (photo) {
-                  setBeforePhotos(prev => [...prev, photo].slice(0, 5));
-                }
-              }}
-              onRemovePhoto={(index) => {
-                setBeforePhotos(prev => prev.filter((_, i) => i !== index));
-              }}
-              uploadProgress={uploadProgress.get('BEFORE')}
-            />
-
-            {/* After Photos */}
-            <PhotoGrid
-              photos={afterPhotos}
-              type="AFTER"
-              onAddFromGallery={async () => {
-                const photos = await pickFromGallery();
-                if (photos.length > 0) {
-                  setAfterPhotos(prev => [...prev, ...photos].slice(0, 5));
-                }
-              }}
-              onAddFromCamera={async () => {
-                const photo = await takePhoto();
-                if (photo) {
-                  setAfterPhotos(prev => [...prev, photo].slice(0, 5));
-                }
-              }}
-              onRemovePhoto={(index) => {
-                setAfterPhotos(prev => prev.filter((_, i) => i !== index));
-              }}
-              uploadProgress={uploadProgress.get('AFTER')}
-            />
-
-            {/* Signatures */}
-            <SignatureCapture
-              title="Technician Signature"
-              onSave={setTechnicianSignature}
-              onClear={() => setTechnicianSignature('')}
-              existingSignature={technicianSignature}
-            />
-
-            <SignatureCapture
-              title="Customer Signature (optional)"
-              onSave={setCustomerSignature}
-              onClear={() => setCustomerSignature('')}
-              existingSignature={customerSignature}
-            />
-
-            {customerSignature ? (
-              <>
-                <Text style={styles.inputLabel}>Customer Name</Text>
+            {/* Signatures Section */}
+            <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Signatures</Text>
+              <SignatureCapture
+                title="Technician Signature *"
+                onSave={setTechnicianSignature}
+                onClear={() => setTechnicianSignature('')}
+                existingSignature={technicianSignature}
+              />
+              <View style={{ height: SPACING.md }} />
+              <SignatureCapture
+                title="Customer Signature *"
+                onSave={setCustomerSignature}
+                onClear={() => setCustomerSignature('')}
+                existingSignature={customerSignature}
+              />
+              <View style={{ marginTop: SPACING.md }}>
+                <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Customer Name *</Text>
                 <TextInput
-                  style={[styles.summaryInput, { minHeight: 44 }]}
+                  style={[styles.completionTextInput, { minHeight: 44, backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="Customer name..."
-                  placeholderTextColor={COLORS.slate400}
+                  placeholderTextColor={colors.textMuted}
                   value={customerName}
                   onChangeText={setCustomerName}
                   maxLength={100}
                 />
-              </>
-            ) : null}
-
-            {/* Action Buttons */}
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => {
-                  setShowCompletionModal(false);
-                  setCompletionSummary('');
-                  setCompletionDetails('');
-                  setBeforePhotos([]);
-                  setAfterPhotos([]);
-                  setTechnicianSignature('');
-                  setCustomerSignature('');
-                  setCustomerName('');
-                }}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.completionSubmitButton, isUpdating && styles.buttonDisabled]}
-                onPress={handleCompleteTask}
-                disabled={isUpdating}
-              >
-                {isUpdating ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Ionicons name="checkmark" size={18} color="white" />
-                    <Text style={styles.completionSubmitText}>Complete Job</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              </View>
             </View>
+
+            <View style={{ height: 100 }} />
+          </ScrollView>
+
+          {/* Sticky Bottom Action Bar */}
+          <View style={[styles.completionSheetFooter, { paddingBottom: Math.max(insets.bottom, SPACING.lg), backgroundColor: colors.card, borderTopColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.completionSheetSubmitBtn, isUpdating && styles.buttonDisabled]}
+              onPress={handleCompleteTask}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={22} color="white" />
+                  <Text style={styles.completionSheetSubmitText}>Complete Job</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -845,40 +1020,41 @@ export default function TaskDetailScreen() {
         onRequestClose={() => setShowEditModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.completionModalContent}>
-            <Text style={styles.modalTitle}>Edit Task</Text>
+          <View style={[styles.completionModalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Task</Text>
 
-            <Text style={adminDetailStyles.editLabel}>Title *</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Title *</Text>
             <TextInput
-              style={styles.summaryInput}
+              style={[styles.summaryInput, { borderColor: colors.border, color: colors.textPrimary }]}
               value={editTitle}
               onChangeText={setEditTitle}
               placeholder="Task title"
-              placeholderTextColor={COLORS.slate400}
+              placeholderTextColor={colors.textMuted}
               maxLength={200}
             />
 
-            <Text style={adminDetailStyles.editLabel}>Description</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Description</Text>
             <TextInput
-              style={styles.detailsInput}
+              style={[styles.detailsInput, { borderColor: colors.border, color: colors.textPrimary }]}
               value={editDescription}
               onChangeText={setEditDescription}
               placeholder="Task description"
-              placeholderTextColor={COLORS.slate400}
+              placeholderTextColor={colors.textMuted}
               multiline
               maxLength={1000}
             />
 
-            <Text style={adminDetailStyles.editLabel}>Priority</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Priority</Text>
             <View style={adminDetailStyles.editPriorityRow}>
               {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((p) => {
-                const pStyle = getPriorityStyle(p);
+                const pStyle = getPriorityStyle(p, colors);
                 const isSelected = editPriority === p;
                 return (
                   <TouchableOpacity
                     key={p}
                     style={[
                       adminDetailStyles.editPriorityChip,
+                      { borderColor: colors.border },
                       isSelected && { backgroundColor: pStyle.bg, borderColor: pStyle.color },
                     ]}
                     onPress={() => setEditPriority(p)}
@@ -886,6 +1062,7 @@ export default function TaskDetailScreen() {
                     <View style={[adminDetailStyles.editPriorityDot, { backgroundColor: pStyle.color }]} />
                     <Text style={[
                       adminDetailStyles.editPriorityText,
+                      { color: colors.textSecondary },
                       isSelected && { color: pStyle.color, fontWeight: FONT_WEIGHT.semibold },
                     ]}>
                       {pStyle.label}
@@ -895,22 +1072,22 @@ export default function TaskDetailScreen() {
               })}
             </View>
 
-            <Text style={adminDetailStyles.editLabel}>Location</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Location</Text>
             <TextInput
-              style={[styles.summaryInput, { minHeight: 44 }]}
+              style={[styles.summaryInput, { minHeight: 44, borderColor: colors.border, color: colors.textPrimary }]}
               value={editLocation}
               onChangeText={setEditLocation}
               placeholder="Address"
-              placeholderTextColor={COLORS.slate400}
+              placeholderTextColor={colors.textMuted}
               maxLength={300}
             />
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.modalCancelButton}
+                style={[styles.modalCancelButton, { backgroundColor: colors.surfaceRaised }]}
                 onPress={() => setShowEditModal(false)}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.completionSubmitButton, { backgroundColor: COLORS.primary }, isUpdating && styles.buttonDisabled]}
@@ -928,72 +1105,124 @@ export default function TaskDetailScreen() {
         </View>
       </Modal>
 
-      <Stack.Screen
-        options={{
-          title: 'Task Details',
-          headerBackTitle: '',
-          headerRight: () => (
-            <TouchableOpacity style={{ padding: 8 }}>
-              <Ionicons name="ellipsis-vertical" size={20} color={COLORS.slate800} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Job Info Card */}
-        <View style={styles.jobInfoCard}>
-          <View style={styles.jobHeader}>
-            <Text style={styles.jobIdText}>Job #{jobId}</Text>
+        {/* Section 1: Hero Status Card */}
+        <View style={[styles.heroCard, { backgroundColor: colors.card }]}>
+          <View style={styles.heroHeader}>
+            <Text style={[styles.heroJobId, { color: colors.textMuted }]}>JOB #{jobId}</Text>
             <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
               <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
                 {statusStyle.label}
               </Text>
             </View>
           </View>
-
-          {/* Machine/Equipment Info */}
-          <View style={styles.infoRow}>
-            <Ionicons name="construct-outline" size={18} color={COLORS.slate400} />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Machine</Text>
-              <Text style={styles.infoValue}>{task.title}</Text>
-              {task.id && (
-                <Text style={styles.infoSubValue}>S/N: {task.id.slice(0, 12).toUpperCase()}</Text>
-              )}
+          <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>{task.title}</Text>
+          <View style={styles.heroMeta}>
+            <View style={[styles.priorityBadge, { backgroundColor: priorityStyle.bg }]}>
+              <View style={[styles.priorityDot, { backgroundColor: priorityStyle.color }]} />
+              <Text style={[styles.priorityText, { color: priorityStyle.color }]}>
+                {priorityStyle.label}
+              </Text>
             </View>
+            {task.dueDate && (
+              <View style={styles.dueDateRow}>
+                <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+                <Text style={[styles.dueDateText, { color: colors.textSecondary }]}>{formatRelativeDate(task.dueDate)}</Text>
+              </View>
+            )}
           </View>
+        </View>
 
-          {/* Company Info */}
+        {/* Section 2: Compact Progress Dots (Technician only) */}
+        {!isAdmin && progressIndex >= 0 && (
+          <View style={[styles.progressCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.progressLabel, { color: colors.textMuted }]}>PROGRESS</Text>
+            <View style={styles.progressDotsRow}>
+              {PROGRESS_STEPS.map((step, index) => {
+                const isCompleted = index < progressIndex;
+                const isCurrent = index === progressIndex;
+                const isLast = index === PROGRESS_STEPS.length - 1;
+                return (
+                  <View key={step.key} style={[styles.progressDotWrapper, isLast && styles.progressDotWrapperLast]}>
+                    <View
+                      style={[
+                        styles.progressDot,
+                        isCompleted && styles.progressDotCompleted,
+                        isCurrent && styles.progressDotCurrent,
+                        !isCompleted && !isCurrent && [styles.progressDotPending, { backgroundColor: colors.border }],
+                      ]}
+                    />
+                    {!isLast && (
+                      <View
+                        style={[
+                          styles.progressLine,
+                          { backgroundColor: colors.border },
+                          isCompleted && styles.progressLineCompleted,
+                        ]}
+                      />
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+            {currentStepLabel && (
+              <Text style={styles.progressCurrentLabel}>{currentStepLabel}</Text>
+            )}
+          </View>
+        )}
+
+        {/* Section 3: Info Rows Card */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>DETAILS</Text>
+
+          {/* Created by */}
           {task.createdBy && (
             <View style={styles.infoRow}>
-              <Ionicons name="business-outline" size={18} color={COLORS.slate400} />
+              <View style={[styles.infoIconCircle, { backgroundColor: colors.surfaceRaised }]}>
+                <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
+              </View>
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Company</Text>
-                <Text style={styles.infoValue}>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Created by</Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
                   {task.createdBy.firstName} {task.createdBy.lastName}
+                </Text>
+                <Text style={[styles.infoSubValue, { color: colors.textSecondary }]}>
+                  {new Date(task.createdAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                  })}
                 </Text>
               </View>
             </View>
           )}
 
-          {/* Contact */}
-          <TouchableOpacity style={styles.infoRow} onPress={handleCall}>
-            <Ionicons name="call-outline" size={18} color={COLORS.slate400} />
-            <View style={styles.infoContent}>
-              <Text style={[styles.infoValue, { color: COLORS.primary }]}>
-                Contact Client
-              </Text>
+          {/* Assigned to (admin view) */}
+          {isAdmin && (
+            <View style={[styles.infoRow, styles.infoRowBorder, { borderTopColor: colors.border }]}>
+              <View style={[styles.infoIconCircle, { backgroundColor: colors.surfaceRaised }]}>
+                <Ionicons name="person" size={16} color={task.assignedTo ? COLORS.primary : COLORS.warning} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Assigned to</Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }, !task.assignedTo && { color: COLORS.warning }]}>
+                  {task.assignedTo
+                    ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
+                    : 'Unassigned'}
+                </Text>
+              </View>
             </View>
-          </TouchableOpacity>
+          )}
 
           {/* Location */}
           {task.locationAddress && (
-            <View style={styles.infoRow}>
-              <Ionicons name="location-outline" size={18} color={COLORS.slate400} />
+            <View style={[styles.infoRow, styles.infoRowBorder, { borderTopColor: colors.border }]}>
+              <View style={[styles.infoIconCircle, { backgroundColor: colors.surfaceRaised }]}>
+                <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+              </View>
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue}>{task.locationAddress}</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Location</Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{task.locationAddress}</Text>
                 <TouchableOpacity onPress={handleOpenMaps}>
                   <View style={styles.openMapsLink}>
                     <Text style={styles.openMapsText}>Open in Maps</Text>
@@ -1005,137 +1234,18 @@ export default function TaskDetailScreen() {
           )}
         </View>
 
-        {/* Admin: Task Metadata */}
-        {isAdmin && (
-          <View style={adminDetailStyles.metaCard}>
-            {task.assignedTo && (
-              <View style={adminDetailStyles.metaRow}>
-                <Ionicons name="person" size={16} color={COLORS.primary} />
-                <Text style={adminDetailStyles.metaLabel}>Assigned to</Text>
-                <Text style={adminDetailStyles.metaValue}>
-                  {task.assignedTo.firstName} {task.assignedTo.lastName}
-                </Text>
-              </View>
-            )}
-            {!task.assignedTo && (
-              <View style={adminDetailStyles.metaRow}>
-                <Ionicons name="person-outline" size={16} color={COLORS.warning} />
-                <Text style={[adminDetailStyles.metaValue, { color: COLORS.warning }]}>Unassigned</Text>
-              </View>
-            )}
-            {task.createdBy && (
-              <View style={adminDetailStyles.metaRow}>
-                <Ionicons name="create-outline" size={16} color={COLORS.slate400} />
-                <Text style={adminDetailStyles.metaLabel}>Created by</Text>
-                <Text style={adminDetailStyles.metaValue}>
-                  {task.createdBy.firstName} {task.createdBy.lastName}
-                </Text>
-              </View>
-            )}
-            <View style={adminDetailStyles.metaRow}>
-              <Ionicons name="time-outline" size={16} color={COLORS.slate400} />
-              <Text style={adminDetailStyles.metaLabel}>Created</Text>
-              <Text style={adminDetailStyles.metaValue}>
-                {new Date(task.createdAt).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric',
-                })}
-              </Text>
-            </View>
+        {/* Section 4: Description Card */}
+        {task.description ? (
+          <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>DESCRIPTION</Text>
+            <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{task.description}</Text>
           </View>
-        )}
+        ) : null}
 
-        {/* Progress Section (Technician only) */}
-        {!isAdmin && (
-        <View style={styles.progressCard}>
-          <Text style={styles.sectionTitle}>Progress</Text>
-          <View style={styles.progressSteps}>
-            {PROGRESS_STEPS.map((step, index) => {
-              const isCompleted = index < progressIndex;
-              const isCurrent = index === progressIndex;
-              const isPending = index > progressIndex;
-
-              return (
-                <View key={step.key} style={styles.progressStep}>
-                  <View style={styles.progressStepLeft}>
-                    <View
-                      style={[
-                        styles.progressIcon,
-                        isCompleted && styles.progressIconCompleted,
-                        isCurrent && styles.progressIconCurrent,
-                        isPending && styles.progressIconPending,
-                      ]}
-                    >
-                      <Ionicons
-                        name={step.icon}
-                        size={16}
-                        color={isCompleted || isCurrent ? COLORS.white : COLORS.slate400}
-                      />
-                    </View>
-                    {index < PROGRESS_STEPS.length - 1 && (
-                      <View
-                        style={[
-                          styles.progressLine,
-                          (isCompleted || isCurrent) && styles.progressLineCompleted,
-                        ]}
-                      />
-                    )}
-                  </View>
-                  <View style={styles.progressStepContent}>
-                    <Text
-                      style={[
-                        styles.progressStepLabel,
-                        isCurrent && styles.progressStepLabelCurrent,
-                      ]}
-                    >
-                      {step.label}
-                    </Text>
-                    <Text style={styles.progressStepStatus}>
-                      {isCompleted ? 'Completed' : isCurrent ? 'Current Step' : ''}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-        )}
-
-        {/* Job Description */}
-        {task.description && (
-          <View style={styles.descriptionCard}>
-            <Text style={styles.sectionTitle}>Job Description</Text>
-            <Text style={styles.descriptionText}>{task.description}</Text>
-          </View>
-        )}
-
-        {/* Attachments Section (Placeholder) */}
-        <View style={styles.attachmentsCard}>
-          <View style={styles.attachmentsHeader}>
-            <Text style={styles.sectionTitle}>Attachments</Text>
-            <TouchableOpacity>
-              <View style={styles.viewReportLink}>
-                <Ionicons name="document-text-outline" size={16} color={COLORS.primary} />
-                <Text style={styles.viewReportText}>View Report</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.attachmentsThumbnails}>
-            <View style={styles.attachmentPlaceholder}>
-              <Ionicons name="image-outline" size={32} color={COLORS.slate300} />
-            </View>
-            <View style={styles.attachmentPlaceholder}>
-              <Ionicons name="image-outline" size={32} color={COLORS.slate300} />
-            </View>
-          </View>
-        </View>
-
-        {/* Client Location with Map */}
-        {task.locationLat && task.locationLng && (
-          <View style={styles.locationCard}>
-            <View style={styles.locationHeader}>
-              <Ionicons name="location" size={20} color={COLORS.slate800} />
-              <Text style={styles.locationTitle}>Client Location</Text>
-            </View>
+        {/* Section 5: Location Map Card */}
+        {task.locationLat && task.locationLng ? (
+          <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>LOCATION</Text>
             <View style={styles.mapContainer}>
               <MapView
                 style={styles.map}
@@ -1157,15 +1267,150 @@ export default function TaskDetailScreen() {
                 />
               </MapView>
             </View>
-            <Text style={styles.locationAddress}>{task.locationAddress}</Text>
-            {!isAdmin && (
+            <Text style={[styles.locationAddress, { color: colors.textSecondary }]}>{task.locationAddress}</Text>
+            {!isAdmin && [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE].includes(task.status) && (
               <TouchableOpacity style={styles.navigationButton} onPress={handleStartNavigation}>
                 <Ionicons name="navigate" size={20} color="white" />
                 <Text style={styles.navigationButtonText}>Start Navigation</Text>
               </TouchableOpacity>
             )}
           </View>
-        )}
+        ) : null}
+
+        {/* Section 6: Attachments */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <View style={styles.attachmentsHeader}>
+            <Text style={[styles.sectionTitleInline, { color: colors.textMuted }]}>
+              ATTACHMENTS{taskAttachments.length > 0 ? ` (${taskAttachments.length})` : ''}
+            </Text>
+            <View style={styles.attachmentUploadRow}>
+              <TouchableOpacity
+                onPress={async () => {
+                  const photo = await takePhoto();
+                  if (photo) handleUploadTaskAttachment([photo]);
+                }}
+                disabled={isUploadingTaskAttachment}
+                style={styles.attachmentUploadBtn}
+              >
+                <Ionicons name="camera-outline" size={18} color={COLORS.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  const photos = await pickFromGallery();
+                  if (photos.length > 0) handleUploadTaskAttachment(photos);
+                }}
+                disabled={isUploadingTaskAttachment}
+                style={styles.attachmentUploadBtn}
+              >
+                <Ionicons name="images-outline" size={18} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {isUploadingTaskAttachment && (
+            <View style={styles.attachmentUploadProgress}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.attachmentUploadText}>Uploading...</Text>
+            </View>
+          )}
+
+          {taskAttachments.length > 0 ? (
+            <View style={styles.attachmentGrid}>
+              {taskAttachments.map((att) => (
+                <TouchableOpacity
+                  key={att.id}
+                  onLongPress={() => handleDeleteTaskAttachment(att.id, att.fileName)}
+                  onPress={() => {
+                    if (att.fileUrl) Linking.openURL(att.fileUrl);
+                  }}
+                >
+                  {att.fileType?.startsWith('image/') ? (
+                    <View style={[styles.attachmentThumb, { backgroundColor: colors.surfaceRaised }]}>
+                      <Image
+                        source={{ uri: att.fileUrl }}
+                        style={styles.attachmentThumbImage}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  ) : (
+                    <View style={[styles.attachmentDocCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <Ionicons name="document-text" size={28} color={COLORS.primary} />
+                      <Text style={[styles.attachmentDocName, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {att.fileName}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.attachmentEmptyState}>
+              <Ionicons name="cloud-upload-outline" size={28} color={colors.textMuted} />
+              <Text style={[styles.attachmentEmptyText, { color: colors.textMuted }]}>No attachments yet</Text>
+              <Text style={[styles.attachmentEmptyHint, { color: colors.textMuted }]}>Tap camera or gallery to add</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Section 7: Comments */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
+            COMMENTS{comments.length > 0 ? ` (${comments.length})` : ''}
+          </Text>
+
+          {comments.length > 0 ? (
+            comments.map((comment) => {
+              const initials = `${comment.user.firstName.charAt(0)}${comment.user.lastName.charAt(0)}`.toUpperCase();
+              return (
+                <View key={comment.id} style={styles.commentItem}>
+                  <View style={[styles.commentAvatar, { backgroundColor: colors.primaryLight }]}>
+                    <Text style={styles.commentAvatarText}>{initials}</Text>
+                  </View>
+                  <View style={styles.commentBody}>
+                    <View style={styles.commentHeader}>
+                      <Text style={[styles.commentAuthor, { color: colors.textPrimary }]}>
+                        {comment.user.firstName} {comment.user.lastName}
+                      </Text>
+                      <Text style={[styles.commentTime, { color: colors.textMuted }]}>
+                        {formatTimeAgo(comment.createdAt)}
+                      </Text>
+                    </View>
+                    <Text style={[styles.commentText, { color: colors.textSecondary }]}>{comment.content}</Text>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.commentsEmpty}>
+              <Text style={[styles.commentsEmptyText, { color: colors.textMuted }]}>No comments yet</Text>
+            </View>
+          )}
+
+          <View style={[styles.commentInputRow, { borderTopColor: colors.border }]}>
+            <TextInput
+              style={[styles.commentInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
+              placeholder="Add a comment..."
+              placeholderTextColor={colors.textMuted}
+              value={newComment}
+              onChangeText={setNewComment}
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[
+                styles.commentSendBtn,
+                (!newComment.trim() || isSubmittingComment) && [styles.commentSendBtnDisabled, { backgroundColor: colors.border }],
+              ]}
+              onPress={handleAddComment}
+              disabled={!newComment.trim() || isSubmittingComment}
+            >
+              {isSubmittingComment ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Ionicons name="send" size={16} color={COLORS.white} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Spacer for bottom bar */}
         <View style={{ height: 120 }} />
@@ -1173,7 +1418,7 @@ export default function TaskDetailScreen() {
 
       {/* Bottom Bar */}
       {showBottomBar && (
-        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16), backgroundColor: colors.card, borderTopColor: colors.border }]}>
           {isAdmin ? (
             /* Admin Bottom Bar: Assign, Edit, Cancel */
             <View style={styles.actionButtonsRow}>
@@ -1244,20 +1489,30 @@ export default function TaskDetailScreen() {
                     )}
                   </View>
                   {locationError && (
-                    <TouchableOpacity onPress={startTracking} style={styles.retryTrackingButton}>
+                    <TouchableOpacity onPress={() => task && startTracking(task.id)} style={styles.retryTrackingButton}>
                       <Text style={styles.retryTrackingText}>Retry</Text>
                     </TouchableOpacity>
                   )}
                 </View>
               )}
 
+              {/* Future Date Banner — shown when task is accepted but can't start yet */}
+              {task.status === TaskStatus.ACCEPTED && isFutureTask && (
+                <View style={styles.futureDateBanner}>
+                  <Ionicons name="calendar-outline" size={20} color={COLORS.amber} />
+                  <Text style={styles.futureDateText}>
+                    This task is scheduled for {new Date(task.dueDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}. You can start it on the due date.
+                  </Text>
+                </View>
+              )}
+
               {/* Action Buttons Row */}
               <View style={styles.actionButtonsRow}>
                 {/* Report Issue Button (only for IN_PROGRESS) */}
-                {task.status === 'IN_PROGRESS' && (
+                {task.status === TaskStatus.IN_PROGRESS && (
                   <TouchableOpacity
                     style={styles.reportIssueButton}
-                    onPress={() => handleStatusUpdate('BLOCKED')}
+                    onPress={() => handleStatusUpdate(TaskStatus.BLOCKED)}
                     disabled={isUpdating}
                   >
                     <Ionicons name="warning-outline" size={18} color={COLORS.error} />
@@ -1265,7 +1520,7 @@ export default function TaskDetailScreen() {
                 )}
 
                 {/* Accept/Decline Buttons for ASSIGNED status */}
-                {task.status === 'ASSIGNED' ? (
+                {task.status === TaskStatus.ASSIGNED ? (
                   <>
                     <TouchableOpacity
                       style={styles.declineButton}
@@ -1277,7 +1532,7 @@ export default function TaskDetailScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.finishButton, { backgroundColor: COLORS.success }]}
-                      onPress={() => handleStatusUpdate('ACCEPTED')}
+                      onPress={() => handleStatusUpdate(TaskStatus.ACCEPTED)}
                       disabled={isUpdating}
                     >
                       {isUpdating ? (
@@ -1292,16 +1547,18 @@ export default function TaskDetailScreen() {
                   </>
                 ) : statusAction && (
                   <TouchableOpacity
-                    style={[styles.finishButton, { backgroundColor: COLORS.success }]}
+                    style={[styles.finishButton, { backgroundColor: (isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE) ? COLORS.slate300 : COLORS.success }]}
                     onPress={() => handleStatusUpdate(statusAction.nextStatus)}
-                    disabled={isUpdating}
+                    disabled={isUpdating || (isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE)}
                   >
                     {isUpdating ? (
                       <ActivityIndicator size="small" color="white" />
                     ) : (
                       <>
-                        <Ionicons name={statusAction.icon} size={20} color="white" />
-                        <Text style={styles.finishButtonText}>{statusAction.label}</Text>
+                        <Ionicons name={(isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE) ? 'time-outline' : statusAction.icon} size={20} color="white" />
+                        <Text style={styles.finishButtonText}>
+                          {(isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE) ? 'Not Yet Available' : statusAction.label}
+                        </Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -1312,643 +1569,8 @@ export default function TaskDetailScreen() {
         </View>
       )}
     </KeyboardAvoidingView>
+    </Animated.View>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.slate50,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.slate50,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.xxxl,
-    backgroundColor: COLORS.slate50,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.xl,
-    color: COLORS.slate500,
-    textAlign: 'center',
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.xxl,
-  },
-  retryButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.sm,
-    marginBottom: SPACING.md,
-  },
-  retryButtonText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  backButton: {
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.md,
-  },
-  backButtonText: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-
-  // Job Info Card
-  jobInfoCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-    ...SHADOWS.sm,
-  },
-  jobHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  jobIdText: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
-  },
-  statusBadge: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
-    borderRadius: RADIUS.lg,
-  },
-  statusBadgeText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.slate50,
-  },
-  infoContent: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  infoLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.slate800,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  infoSubValue: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.slate500,
-    marginTop: 2,
-  },
-  openMapsLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    marginTop: SPACING.xs + 2,
-  },
-  openMapsText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-
-  // Progress Card
-  progressCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    ...SHADOWS.sm,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
-    marginBottom: SPACING.lg,
-  },
-  progressSteps: {
-    gap: 0,
-  },
-  progressStep: {
-    flexDirection: 'row',
-    minHeight: 56,
-  },
-  progressStepLeft: {
-    alignItems: 'center',
-    width: 32,
-  },
-  progressIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.slate100,
-  },
-  progressIconCompleted: {
-    backgroundColor: COLORS.success,
-  },
-  progressIconCurrent: {
-    backgroundColor: COLORS.primary,
-  },
-  progressIconPending: {
-    backgroundColor: COLORS.slate100,
-  },
-  progressLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: COLORS.slate200,
-    marginVertical: SPACING.xs,
-  },
-  progressLineCompleted: {
-    backgroundColor: COLORS.success,
-  },
-  progressStepContent: {
-    flex: 1,
-    marginLeft: SPACING.md,
-    paddingBottom: SPACING.sm,
-  },
-  progressStepLabel: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.slate500,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  progressStepLabelCurrent: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  progressStepStatus: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
-    marginTop: 2,
-  },
-
-  // Description Card
-  descriptionCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    ...SHADOWS.sm,
-  },
-  descriptionText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
-    lineHeight: 22,
-  },
-
-  // Attachments Card
-  attachmentsCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    ...SHADOWS.sm,
-  },
-  attachmentsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  viewReportLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  viewReportText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  attachmentsThumbnails: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  attachmentPlaceholder: {
-    width: 100,
-    height: 80,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.slate50,
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Location Card
-  locationCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    ...SHADOWS.sm,
-  },
-  locationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  locationTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
-  },
-  mapContainer: {
-    height: 160,
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
-    marginBottom: SPACING.md,
-  },
-  map: {
-    flex: 1,
-  },
-  locationAddress: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
-    marginBottom: SPACING.lg,
-    lineHeight: 20,
-  },
-  navigationButton: {
-    backgroundColor: COLORS.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.sm + 2,
-  },
-  navigationButtonText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-
-  // Bottom Bar
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: COLORS.slate50,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.slate200,
-  },
-  timerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  timerText: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
-  },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  reportIssueButton: {
-    width: 52,
-    height: 52,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.errorLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  declineButton: {
-    flex: 0.4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.white,
-    borderWidth: 1.5,
-    borderColor: COLORS.error,
-  },
-  declineButtonText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.error,
-  },
-  finishButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.primary,
-  },
-  finishButtonText: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.xxl,
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.xxl,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.xl + 2,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
-    marginBottom: SPACING.sm,
-  },
-  modalSubtitle: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
-    marginBottom: SPACING.lg,
-  },
-  reasonInput: {
-    backgroundColor: COLORS.slate50,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md + 2,
-    fontSize: FONT_SIZE.lg,
-    minHeight: 100,
-    maxHeight: 150,
-    textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    marginBottom: SPACING.xl,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  modalCancelButton: {
-    flex: 1,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.slate100,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate500,
-  },
-  modalSubmitButton: {
-    flex: 1,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.error,
-    alignItems: 'center',
-  },
-  modalSubmitText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-
-  // Location Tracking Styles
-  trackingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-  },
-  trackingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.slate100,
-  },
-  trackingIndicatorActive: {
-    backgroundColor: COLORS.success,
-  },
-  trackingIndicatorText: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate500,
-  },
-  trackingIndicatorTextActive: {
-    color: COLORS.white,
-  },
-  trackingPulse: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.white,
-    marginLeft: SPACING.xs,
-  },
-  retryTrackingButton: {
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-  },
-  retryTrackingText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-
-  // Completion Modal Styles
-  completionModalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.xl,
-    width: '90%',
-    maxWidth: 400,
-  },
-  completionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
-  },
-  completionTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
-  },
-  completionDuration: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.slate100,
-    borderRadius: RADIUS.sm,
-    marginBottom: SPACING.lg,
-  },
-  completionDurationText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate600,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  inputLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
-    marginBottom: SPACING.xs,
-  },
-  summaryInput: {
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    borderRadius: RADIUS.sm,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    marginBottom: SPACING.md,
-  },
-  detailsInput: {
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    borderRadius: RADIUS.sm,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: SPACING.lg,
-  },
-  completionSubmitButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.xs,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.success,
-  },
-  completionSubmitText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-});
-
-// Admin-specific styles for task detail
-const adminDetailStyles = StyleSheet.create({
-  metaCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    ...SHADOWS.sm,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.sm,
-  },
-  metaLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
-  },
-  metaValue: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate800,
-  },
-  adminActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.xs,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.white,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-  },
-  adminActionBtnText: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-  },
-  editLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
-    marginBottom: SPACING.xs,
-    marginTop: SPACING.sm,
-  },
-  editPriorityRow: {
-    flexDirection: 'row',
-    gap: SPACING.xs,
-    marginBottom: SPACING.md,
-  },
-  editPriorityChip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    gap: SPACING.xs,
-  },
-  editPriorityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  editPriorityText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate500,
-  },
-});

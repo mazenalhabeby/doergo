@@ -2,13 +2,17 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
+  Param,
+  Req,
   Inject,
   HttpCode,
   HttpStatus,
   UseGuards,
   HttpException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
@@ -16,7 +20,7 @@ import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto } from './dto';
 import { Public } from '../../common/decorators';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
-import { SkipOnboardingCheck } from '@doergo/shared';
+import { SkipOnboardingCheck } from '@hbcfield/shared';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -65,9 +69,13 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 429, description: 'Too many requests - account temporarily locked' })
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto, @Req() req: Request) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'login' }, loginDto),
+      this.authClient.send({ cmd: 'login' }, {
+        ...loginDto,
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip || req.headers['x-forwarded-for'],
+      }),
     );
 
     // Check if the result is an error response
@@ -202,5 +210,48 @@ export class AuthController {
       success: true,
       data: user,
     };
+  }
+
+  // =========================================================================
+  // SESSION MANAGEMENT
+  // =========================================================================
+
+  @Get('sessions')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List active sessions for current user' })
+  async listSessions(@CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'list_sessions' }, { userId: user.id }),
+    );
+  }
+
+  @Delete('sessions/:id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke a specific session' })
+  async revokeSession(
+    @Param('id') sessionId: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result: any = await firstValueFrom(
+      this.authClient.send({ cmd: 'revoke_session' }, { userId: user.id, sessionId }),
+    );
+
+    if (result?.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return result;
+  }
+
+  @Delete('sessions')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke all other sessions (keep current)' })
+  async revokeAllSessions(@CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'revoke_all_sessions' }, { userId: user.id }),
+    );
   }
 }

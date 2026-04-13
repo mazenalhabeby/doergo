@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@doergo/shared';
+import { PrismaModule } from '@hbcfield/shared';
 import { EmailModule } from './modules/email/email.module';
 import { PushModule } from './modules/push/push.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';

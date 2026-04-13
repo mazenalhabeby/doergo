@@ -25,6 +25,7 @@ import {
   ROUTES,
 } from '../../../src/lib/constants';
 import { getPriorityStyle } from '../../../src/lib/styles';
+import { useTheme } from '../../../src/contexts/theme-context';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 type Priority = typeof PRIORITIES[number];
@@ -38,6 +39,7 @@ export default function CreateTaskScreen() {
   const [selectedTechnician, setSelectedTechnician] = useState<TechnicianListItem | null>(null);
   const [showTechnicianPicker, setShowTechnicianPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { colors } = useTheme();
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -89,7 +91,7 @@ export default function CreateTaskScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.surface }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
@@ -99,11 +101,11 @@ export default function CreateTaskScreen() {
       >
         {/* Title */}
         <View style={styles.field}>
-          <Text style={styles.label}>Title *</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>Title *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="What needs to be done?"
-            placeholderTextColor={COLORS.slate400}
+            placeholderTextColor={colors.textMuted}
             value={title}
             onChangeText={setTitle}
             maxLength={200}
@@ -112,11 +114,11 @@ export default function CreateTaskScreen() {
 
         {/* Description */}
         <View style={styles.field}>
-          <Text style={styles.label}>Description</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>Description</Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="Add details about the task..."
-            placeholderTextColor={COLORS.slate400}
+            placeholderTextColor={colors.textMuted}
             value={description}
             onChangeText={setDescription}
             multiline
@@ -127,7 +129,7 @@ export default function CreateTaskScreen() {
 
         {/* Priority */}
         <View style={styles.field}>
-          <Text style={styles.label}>Priority</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>Priority</Text>
           <View style={styles.priorityRow}>
             {PRIORITIES.map((p) => {
               const style = getPriorityStyle(p);
@@ -137,8 +139,7 @@ export default function CreateTaskScreen() {
                   key={p}
                   style={[
                     styles.priorityChip,
-                    { backgroundColor: isSelected ? style.bg : COLORS.white },
-                    isSelected && { borderColor: style.color },
+                    { backgroundColor: isSelected ? style.bg : colors.card, borderColor: isSelected ? style.color : colors.border },
                   ]}
                   onPress={() => setPriority(p)}
                   activeOpacity={0.7}
@@ -147,6 +148,7 @@ export default function CreateTaskScreen() {
                   <Text
                     style={[
                       styles.priorityText,
+                      { color: colors.textSecondary },
                       isSelected && { color: style.color, fontWeight: FONT_WEIGHT.semibold },
                     ]}
                   >
@@ -160,13 +162,13 @@ export default function CreateTaskScreen() {
 
         {/* Due Date */}
         <View style={styles.field}>
-          <Text style={styles.label}>Due Date</Text>
-          <View style={styles.dateButton}>
-            <Ionicons name="calendar-outline" size={20} color={COLORS.slate400} />
+          <Text style={[styles.label, { color: colors.textPrimary }]}>Due Date</Text>
+          <View style={[styles.dateButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Ionicons name="calendar-outline" size={20} color={colors.textMuted} />
             <TextInput
-              style={[styles.dateText, { flex: 1 }]}
+              style={[styles.dateText, { flex: 1, color: colors.textPrimary }]}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={COLORS.slate400}
+              placeholderTextColor={colors.textMuted}
               value={dueDateText}
               onChangeText={setDueDateText}
               maxLength={10}
@@ -174,7 +176,7 @@ export default function CreateTaskScreen() {
             />
             {dueDateText.length > 0 && (
               <TouchableOpacity onPress={() => setDueDateText('')}>
-                <Ionicons name="close-circle" size={18} color={COLORS.slate400} />
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -182,11 +184,11 @@ export default function CreateTaskScreen() {
 
         {/* Location */}
         <View style={styles.field}>
-          <Text style={styles.label}>Location</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>Location</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="Enter address..."
-            placeholderTextColor={COLORS.slate400}
+            placeholderTextColor={colors.textMuted}
             value={locationAddress}
             onChangeText={setLocationAddress}
             maxLength={300}
@@ -195,9 +197,9 @@ export default function CreateTaskScreen() {
 
         {/* Assign Technician */}
         <View style={styles.field}>
-          <Text style={styles.label}>Assign Technician</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>Assign Technician</Text>
           <TouchableOpacity
-            style={styles.technicianButton}
+            style={[styles.technicianButton, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => setShowTechnicianPicker(true)}
             activeOpacity={0.7}
           >
@@ -208,17 +210,17 @@ export default function CreateTaskScreen() {
                     {selectedTechnician.firstName[0]}{selectedTechnician.lastName[0]}
                   </Text>
                 </View>
-                <Text style={styles.techName}>
+                <Text style={[styles.techName, { color: colors.textPrimary }]}>
                   {selectedTechnician.firstName} {selectedTechnician.lastName}
                 </Text>
                 <TouchableOpacity onPress={() => setSelectedTechnician(null)}>
-                  <Ionicons name="close-circle" size={18} color={COLORS.slate400} />
+                  <Ionicons name="close-circle" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.techPlaceholder}>
-                <Ionicons name="person-add-outline" size={20} color={COLORS.slate400} />
-                <Text style={styles.placeholderText}>Select technician (optional)</Text>
+                <Ionicons name="person-add-outline" size={20} color={colors.textMuted} />
+                <Text style={[styles.placeholderText, { color: colors.textMuted }]}>Select technician (optional)</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -261,7 +263,6 @@ export default function CreateTaskScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   scrollView: {
     flex: 1,
@@ -274,18 +275,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
     marginBottom: SPACING.sm,
   },
   input: {
-    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: COLORS.slate200,
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
     ...SHADOWS.sm,
   },
   textArea: {
@@ -304,7 +301,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     borderRadius: RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.slate200,
     gap: SPACING.xs,
   },
   priorityDot: {
@@ -315,14 +311,11 @@ const styles = StyleSheet.create({
   priorityText: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate500,
   },
   dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: COLORS.slate200,
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
@@ -332,15 +325,11 @@ const styles = StyleSheet.create({
   dateText: {
     flex: 1,
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
   },
   placeholderText: {
-    color: COLORS.slate400,
   },
   technicianButton: {
-    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: COLORS.slate200,
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
@@ -368,7 +357,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate800,
   },
   techPlaceholder: {
     flexDirection: 'row',

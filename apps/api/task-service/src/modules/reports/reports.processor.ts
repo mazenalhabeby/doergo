@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, REPORT_JOB_TYPES } from '@doergo/shared';
+import { QUEUE_NAMES, REPORT_JOB_TYPES } from '@hbcfield/shared';
 import { ReportsService } from './reports.service';
 
 /**

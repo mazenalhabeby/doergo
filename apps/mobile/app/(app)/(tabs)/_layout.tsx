@@ -4,32 +4,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useEffect } from 'react';
-import { TokenMonitor, AnimatedLogo } from '../../../src/components';
+import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useTheme } from '../../../src/contexts/theme-context';
+import { COLORS } from '../../../src/lib/constants';
+import { Role, WorkMode } from '@hbcfield/shared/client';
 
-const PRIMARY_COLOR = '#2563EB';
-
-// Custom header with Doergo logo
+// Custom header with HBCField logo
 function LogoHeader({ subtitle }: { subtitle: string }) {
+  const { colors, isDark } = useTheme();
   return (
     <View style={styles.headerContent}>
-      <AnimatedLogo size="small" />
-      <Text style={styles.headerSubtitle}>{subtitle}</Text>
+      <AnimatedLogo size="small" variant={isDark ? 'light' : undefined} />
+      <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>{subtitle}</Text>
     </View>
   );
 }
-
-// Premium header style configuration
-const headerConfig = {
-  headerStyle: {
-    backgroundColor: 'white',
-    elevation: 0,
-    shadowOpacity: 0,
-    borderBottomWidth: 0,
-  },
-  headerShadowVisible: false,
-  headerTitleAlign: 'center' as const,
-};
 
 // Animated Tab Item
 function TabItem({
@@ -37,11 +27,13 @@ function TabItem({
   label,
   isFocused,
   onPress,
+  themeColors,
 }: {
   route: any;
   label: string;
   isFocused: boolean;
   onPress: () => void;
+  themeColors: import('../../../src/lib/constants').ThemeColors;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const indicatorAnim = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
@@ -94,17 +86,17 @@ function TabItem({
       <Animated.View
         style={[
           styles.tabIconWrapper,
-          isFocused && styles.tabIconWrapperActive,
+          isFocused && { backgroundColor: themeColors.primaryLight },
           { transform: [{ scale: scaleAnim }] },
         ]}
       >
         <Ionicons
           name={iconName as any}
           size={22}
-          color={isFocused ? PRIMARY_COLOR : '#9ca3af'}
+          color={isFocused ? COLORS.primary : themeColors.textMuted}
         />
       </Animated.View>
-      <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+      <Text style={[styles.tabLabel, { color: themeColors.textMuted }, isFocused && styles.tabLabelActive]}>
         {label}
       </Text>
       <Animated.View
@@ -123,13 +115,14 @@ function TabItem({
 // Custom Tab Bar - Full width premium design
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
-  const isTechnician = user?.role === 'TECHNICIAN';
+  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
+  const isTechnician = user?.role === Role.TECHNICIAN;
   // Work mode determines tab visibility for technicians
-  const workMode = user?.workMode || 'HYBRID';
-  const showTechTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
-  const showAttendance = isTechnician && (workMode === 'ON_SITE' || workMode === 'HYBRID');
+  const userWorkMode = user?.workMode || WorkMode.HYBRID;
+  const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
+  const showAttendance = isTechnician && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
 
   // Filter routes based on role and work mode
   const visibleRoutes = state.routes.filter((route: any) => {
@@ -153,7 +146,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   };
 
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom, backgroundColor: themeColors.tabBar }]}>
       <View style={styles.tabBarInner}>
         {visibleRoutes.map((route: any, index: number) => {
           const { options } = descriptors[route.key];
@@ -179,6 +172,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               label={label}
               isFocused={isFocused}
               onPress={onPress}
+              themeColors={themeColors}
             />
           );
         })}
@@ -189,23 +183,30 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
 export default function TabsLayout() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
-  const isTechnician = user?.role === 'TECHNICIAN';
-  const workMode = user?.workMode || 'HYBRID';
-  const showTechTasks = workMode === 'ON_ROAD' || workMode === 'HYBRID';
-  const showAttendance = isTechnician && (workMode === 'ON_SITE' || workMode === 'HYBRID');
+  const { colors, isDark } = useTheme();
+  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
+  const isTechnician = user?.role === Role.TECHNICIAN;
+  const userWorkMode = user?.workMode || WorkMode.HYBRID;
+  const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
+  const showAttendance = isTechnician && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
 
   return (
-    <View style={styles.container}>
-      {/* Status bar with dark icons for white header */}
-      <StatusBar style="dark" backgroundColor="white" />
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.header} />
 
       <Tabs
         tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{
-          ...headerConfig,
+          headerStyle: {
+            backgroundColor: colors.header,
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+          },
+          headerShadowVisible: false,
+          headerTitleAlign: 'center' as const,
           tabBarHideOnKeyboard: true,
-          sceneStyle: { backgroundColor: '#f8fafc' },
+          sceneStyle: { backgroundColor: colors.surface },
         }}
       >
         <Tabs.Screen
@@ -260,8 +261,6 @@ export default function TabsLayout() {
         />
       </Tabs>
 
-      {/* Token Monitor - only in development */}
-      {__DEV__ && <TokenMonitor />}
     </View>
   );
 }
@@ -269,7 +268,6 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   headerContent: {
     alignItems: 'center',
@@ -279,14 +277,12 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginTop: 6,
   },
   // Premium Full-Width Tab Bar
   tabBarContainer: {
-    backgroundColor: 'white',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: '#000',
@@ -312,17 +308,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabIconWrapperActive: {
-    backgroundColor: '#eff6ff',
-  },
   tabLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#9ca3af',
     marginTop: 4,
   },
   tabLabelActive: {
-    color: PRIMARY_COLOR,
+    color: COLORS.primary,
     fontWeight: '600',
   },
   activeIndicator: {
@@ -331,6 +323,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: COLORS.primary,
   },
 });

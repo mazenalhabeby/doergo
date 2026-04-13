@@ -45,12 +45,23 @@ export class ListMembersQueryDto {
 }
 
 /**
- * Update member role and permissions DTO
+ * Update member profile, role, and permissions DTO
  */
-export class UpdateMemberRoleDto {
-  @ApiProperty({ enum: ['ADMIN', 'DISPATCHER', 'TECHNICIAN'], description: 'New role' })
+export class UpdateMemberDto {
+  @ApiPropertyOptional({ description: 'First name' })
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @ApiPropertyOptional({ description: 'Last name' })
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @ApiPropertyOptional({ enum: ['ADMIN', 'DISPATCHER', 'TECHNICIAN'], description: 'New role' })
+  @IsOptional()
   @IsEnum(['ADMIN', 'DISPATCHER', 'TECHNICIAN'])
-  role: string;
+  role?: string;
 
   @ApiPropertyOptional({ enum: ['WEB', 'MOBILE', 'BOTH'], description: 'Platform access' })
   @IsOptional()

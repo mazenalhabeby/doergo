@@ -315,19 +315,19 @@ export function getPriorityLabel(priority: string): string {
 
 export const BRAND_COLORS = {
   primary: {
-    hex: '#2563eb',
-    tailwind: 'blue-600',
-    mobile: '#2563eb',
+    hex: '#059669',
+    tailwind: 'emerald-600',
+    mobile: '#059669',
   },
   primaryHover: {
-    hex: '#1d4ed8',
-    tailwind: 'blue-700',
-    mobile: '#1d4ed8',
+    hex: '#047857',
+    tailwind: 'emerald-700',
+    mobile: '#047857',
   },
   primaryLight: {
-    hex: '#dbeafe',
-    tailwind: 'blue-100',
-    mobile: '#dbeafe',
+    hex: '#ecfdf5',
+    tailwind: 'emerald-50',
+    mobile: '#ecfdf5',
   },
   success: {
     hex: '#16a34a',

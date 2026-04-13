@@ -4,7 +4,7 @@
  */
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, type ThemeColors } from './constants';
 import type { TaskStatus } from './api';
 
 // Re-export TaskStatus for convenience
@@ -21,80 +21,105 @@ export type StatusStyle = {
   label: string;
 };
 
+/**
+ * Get theme-aware status styles.
+ * Most statuses use fixed accent colors; DRAFT/CANCELED/CLOSED adapt to theme.
+ */
+export function getThemedStatusStyles(colors: ThemeColors): Record<TaskStatus, StatusStyle> {
+  return {
+    DRAFT: {
+      bg: colors.surfaceRaised,
+      text: colors.textSecondary,
+      border: colors.border,
+      label: 'Draft',
+    },
+    NEW: {
+      bg: COLORS.infoLight,
+      text: COLORS.primary,
+      border: COLORS.infoBorder,
+      label: 'New',
+    },
+    ASSIGNED: {
+      bg: COLORS.purpleLight,
+      text: COLORS.purple,
+      border: COLORS.purpleBorder,
+      label: 'Assigned',
+    },
+    ACCEPTED: {
+      bg: COLORS.emeraldLight,
+      text: COLORS.emerald,
+      border: COLORS.emeraldBorder,
+      label: 'Accepted',
+    },
+    EN_ROUTE: {
+      bg: COLORS.cyanLight,
+      text: COLORS.cyan,
+      border: COLORS.cyanBorder,
+      label: 'On The Way',
+    },
+    ARRIVED: {
+      bg: COLORS.indigoLight,
+      text: COLORS.indigo,
+      border: COLORS.indigoBorder,
+      label: 'Arrived',
+    },
+    IN_PROGRESS: {
+      bg: COLORS.amberLight,
+      text: COLORS.amber,
+      border: COLORS.amberBorder,
+      label: 'In Progress',
+    },
+    BLOCKED: {
+      bg: colors.blockedLight,
+      text: COLORS.blocked,
+      border: COLORS.blockedBorder,
+      label: 'Blocked',
+    },
+    COMPLETED: {
+      bg: COLORS.successLight,
+      text: COLORS.success,
+      border: COLORS.successBorder,
+      label: 'Completed',
+    },
+    CANCELED: {
+      bg: colors.surfaceRaised,
+      text: colors.textMuted,
+      border: colors.borderLight,
+      label: 'Canceled',
+    },
+    CLOSED: {
+      bg: colors.surfaceRaised,
+      text: colors.textMuted,
+      border: colors.border,
+      label: 'Closed',
+    },
+  };
+}
+
+// Static fallback (light theme) for non-themed contexts
 export const STATUS_STYLES: Record<TaskStatus, StatusStyle> = {
-  DRAFT: {
-    bg: COLORS.slate50,
-    text: COLORS.slate500,
-    border: COLORS.slate200,
-    label: 'Draft'
-  },
-  NEW: {
-    bg: COLORS.infoLight,
-    text: COLORS.primary,
-    border: COLORS.infoBorder,
-    label: 'New'
-  },
-  ASSIGNED: {
-    bg: COLORS.purpleLight,
-    text: COLORS.purple,
-    border: COLORS.purpleBorder,
-    label: 'Assigned'
-  },
-  ACCEPTED: {
-    bg: '#d1fae5', // emerald light
-    text: '#059669', // emerald
-    border: '#6ee7b7', // emerald border
-    label: 'Accepted'
-  },
-  EN_ROUTE: {
-    bg: '#cffafe', // cyan light
-    text: '#0891b2', // cyan
-    border: '#67e8f9', // cyan border
-    label: 'On The Way'
-  },
-  ARRIVED: {
-    bg: '#e0e7ff', // indigo light
-    text: '#4f46e5', // indigo
-    border: '#a5b4fc', // indigo border
-    label: 'Arrived'
-  },
-  IN_PROGRESS: {
-    bg: COLORS.amberLight,
-    text: COLORS.amber,
-    border: COLORS.amberBorder,
-    label: 'In Progress'
-  },
-  BLOCKED: {
-    bg: COLORS.errorLight,
-    text: COLORS.error,
-    border: COLORS.errorBorder,
-    label: 'Blocked'
-  },
-  COMPLETED: {
-    bg: COLORS.successLight,
-    text: COLORS.success,
-    border: COLORS.successBorder,
-    label: 'Completed'
-  },
-  CANCELED: {
-    bg: COLORS.slate100,
-    text: COLORS.slate500,
-    border: COLORS.slate300,
-    label: 'Canceled'
-  },
-  CLOSED: {
-    bg: COLORS.slate50,
-    text: COLORS.slate400,
-    border: COLORS.slate200,
-    label: 'Closed'
-  },
+  DRAFT: { bg: COLORS.slate50, text: COLORS.slate500, border: COLORS.slate200, label: 'Draft' },
+  NEW: { bg: COLORS.infoLight, text: COLORS.primary, border: COLORS.infoBorder, label: 'New' },
+  ASSIGNED: { bg: COLORS.purpleLight, text: COLORS.purple, border: COLORS.purpleBorder, label: 'Assigned' },
+  ACCEPTED: { bg: COLORS.emeraldLight, text: COLORS.emerald, border: COLORS.emeraldBorder, label: 'Accepted' },
+  EN_ROUTE: { bg: COLORS.cyanLight, text: COLORS.cyan, border: COLORS.cyanBorder, label: 'On The Way' },
+  ARRIVED: { bg: COLORS.indigoLight, text: COLORS.indigo, border: COLORS.indigoBorder, label: 'Arrived' },
+  IN_PROGRESS: { bg: COLORS.amberLight, text: COLORS.amber, border: COLORS.amberBorder, label: 'In Progress' },
+  BLOCKED: { bg: COLORS.blockedLight, text: COLORS.blocked, border: COLORS.blockedBorder, label: 'Blocked' },
+  COMPLETED: { bg: COLORS.successLight, text: COLORS.success, border: COLORS.successBorder, label: 'Completed' },
+  CANCELED: { bg: COLORS.slate100, text: COLORS.slate500, border: COLORS.slate300, label: 'Canceled' },
+  CLOSED: { bg: COLORS.slate50, text: COLORS.slate400, border: COLORS.slate200, label: 'Closed' },
 };
 
 /**
- * Get status style by status string (case-insensitive)
+ * Get status style by status string (case-insensitive).
+ * Accepts optional theme colors for dark mode support.
  */
-export function getStatusStyle(status: string): StatusStyle {
+export function getStatusStyle(status: string, colors?: ThemeColors): StatusStyle {
   const normalizedStatus = status.toUpperCase() as TaskStatus;
+  if (colors) {
+    return getThemedStatusStyles(colors)[normalizedStatus] || getThemedStatusStyles(colors).DRAFT;
+  }
   return STATUS_STYLES[normalizedStatus] || STATUS_STYLES.DRAFT;
 }
 
@@ -111,33 +136,33 @@ export type PriorityStyle = {
 };
 
 export const PRIORITY_STYLES: Record<TaskPriority, PriorityStyle> = {
-  LOW: {
-    color: COLORS.slate400,
-    bg: COLORS.slate100,
-    label: 'Low'
-  },
-  MEDIUM: {
-    color: COLORS.primary,
-    bg: COLORS.primaryLight,
-    label: 'Medium'
-  },
-  HIGH: {
-    color: COLORS.amber,
-    bg: COLORS.amberLight,
-    label: 'High'
-  },
-  URGENT: {
-    color: COLORS.error,
-    bg: COLORS.errorLight,
-    label: 'Urgent'
-  },
+  LOW: { color: COLORS.slate400, bg: COLORS.slate100, label: 'Low' },
+  MEDIUM: { color: COLORS.primary, bg: COLORS.primaryLight, label: 'Medium' },
+  HIGH: { color: COLORS.amber, bg: COLORS.amberLight, label: 'High' },
+  URGENT: { color: COLORS.error, bg: COLORS.errorLight, label: 'Urgent' },
 };
 
 /**
- * Get priority style by priority string (case-insensitive)
+ * Get theme-aware priority styles. LOW adapts to theme.
  */
-export function getPriorityStyle(priority: string): PriorityStyle {
+export function getThemedPriorityStyles(colors: ThemeColors): Record<TaskPriority, PriorityStyle> {
+  return {
+    LOW: { color: colors.textMuted, bg: colors.surfaceRaised, label: 'Low' },
+    MEDIUM: { color: COLORS.primary, bg: colors.primaryLight, label: 'Medium' },
+    HIGH: { color: COLORS.amber, bg: colors.amberLight, label: 'High' },
+    URGENT: { color: COLORS.error, bg: colors.errorLight, label: 'Urgent' },
+  };
+}
+
+/**
+ * Get priority style by priority string (case-insensitive).
+ * Accepts optional theme colors for dark mode support.
+ */
+export function getPriorityStyle(priority: string, colors?: ThemeColors): PriorityStyle {
   const normalizedPriority = priority.toUpperCase() as TaskPriority;
+  if (colors) {
+    return getThemedPriorityStyles(colors)[normalizedPriority] || getThemedPriorityStyles(colors).MEDIUM;
+  }
   return PRIORITY_STYLES[normalizedPriority] || PRIORITY_STYLES.MEDIUM;
 }
 
@@ -145,7 +170,7 @@ export function getPriorityStyle(priority: string): PriorityStyle {
 // TIME OFF REQUEST STATUS STYLES
 // =============================================================================
 
-export type TimeOffStatus = 'APPROVED' | 'PENDING' | 'REJECTED';
+export type TimeOffStatus = 'APPROVED' | 'PENDING' | 'REJECTED' | 'CANCELED';
 
 export type TimeOffStatusStyle = {
   bg: string;
@@ -155,31 +180,27 @@ export type TimeOffStatusStyle = {
 };
 
 export const TIME_OFF_STATUS_STYLES: Record<TimeOffStatus, TimeOffStatusStyle> = {
-  APPROVED: {
-    bg: COLORS.successLight,
-    text: COLORS.success,
-    border: COLORS.success,
-    label: 'Approved',
-  },
-  PENDING: {
-    bg: COLORS.amberLight,
-    text: COLORS.amber,
-    border: COLORS.amber,
-    label: 'Pending',
-  },
-  REJECTED: {
-    bg: COLORS.errorLight,
-    text: COLORS.error,
-    border: COLORS.error,
-    label: 'Rejected',
-  },
+  APPROVED: { bg: COLORS.successLight, text: COLORS.success, border: COLORS.success, label: 'Approved' },
+  PENDING: { bg: COLORS.amberLight, text: COLORS.amber, border: COLORS.amber, label: 'Pending' },
+  REJECTED: { bg: COLORS.errorLight, text: COLORS.error, border: COLORS.error, label: 'Rejected' },
+  CANCELED: { bg: COLORS.slate100, text: COLORS.slate500, border: COLORS.slate300, label: 'Canceled' },
 };
 
 /**
- * Get time off status style by status string (case-insensitive)
+ * Get time off status style by status string (case-insensitive).
+ * Accepts optional theme colors for dark mode support.
  */
-export function getTimeOffStatusStyle(status: string): TimeOffStatusStyle {
+export function getTimeOffStatusStyle(status: string, colors?: ThemeColors): TimeOffStatusStyle {
   const normalizedStatus = status.toUpperCase() as TimeOffStatus;
+  if (colors) {
+    const themed: Record<TimeOffStatus, TimeOffStatusStyle> = {
+      APPROVED: { bg: colors.successLight, text: COLORS.success, border: COLORS.success, label: 'Approved' },
+      PENDING: { bg: colors.amberLight, text: COLORS.amber, border: COLORS.amber, label: 'Pending' },
+      REJECTED: { bg: colors.errorLight, text: COLORS.error, border: COLORS.error, label: 'Rejected' },
+      CANCELED: { bg: colors.surfaceRaised, text: colors.textMuted, border: colors.borderLight, label: 'Canceled' },
+    };
+    return themed[normalizedStatus] || themed.PENDING;
+  }
   return TIME_OFF_STATUS_STYLES[normalizedStatus] || TIME_OFF_STATUS_STYLES.PENDING;
 }
 
@@ -188,25 +209,21 @@ export function getTimeOffStatusStyle(status: string): TimeOffStatusStyle {
 // =============================================================================
 
 export const commonStyles = StyleSheet.create({
-  // Containers
+  // Containers — backgroundColor provided inline via colors.surface
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   screenContainer: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
 
-  // Cards
+  // Cards — backgroundColor provided inline via colors.card
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     ...SHADOWS.md,
   },
   cardSmall: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     ...SHADOWS.sm,
@@ -238,19 +255,17 @@ export const commonStyles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Loading & Error states
+  // Loading & Error states — backgroundColor provided inline via colors.surface
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.slate50,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: SPACING.xl,
-    backgroundColor: COLORS.slate50,
   },
   errorText: {
     fontSize: FONT_SIZE.lg,
@@ -264,17 +279,16 @@ export const commonStyles = StyleSheet.create({
     alignItems: 'center',
     padding: SPACING.xxxl,
   },
+  // emptyText — color provided inline via colors.textSecondary
   emptyText: {
     fontSize: FONT_SIZE.lg,
-    color: COLORS.slate500,
     textAlign: 'center',
     marginTop: SPACING.md,
   },
 
-  // Dividers
+  // Dividers — backgroundColor provided inline via colors.border
   divider: {
     height: 1,
-    backgroundColor: COLORS.slate100,
     marginVertical: SPACING.md,
   },
 

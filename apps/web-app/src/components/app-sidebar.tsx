@@ -22,7 +22,7 @@ import {
   UserCheck,
 } from "lucide-react"
 
-import { AnimatedLogo } from "@doergo/shared/components"
+import { AnimatedLogo } from "@hbcfield/shared/components"
 import { useAuth } from "@/contexts/auth-context"
 import { NavGroup, type NavItem } from "@/components/nav-group"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -254,7 +254,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {isDispatcher ? "Dispatcher Portal" : "Admin Portal"}
             </p>
             <p className="text-[13px] text-slate-400">
-              Field Service Management
+              Dispatch · Track · Deliver
             </p>
           </div>
         </div>
@@ -295,7 +295,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {org.name}
                   </span>
                   {selectedOrg.id === org.id && (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-600">
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600">
                       <Check className="size-2.5 text-white" />
                     </div>
                   )}

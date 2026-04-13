@@ -1,28 +1,28 @@
 {
   "expo": {
-    "name": "Doergo",
-    "slug": "doergo",
+    "name": "HBCField",
+    "slug": "hbcfield",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "doergo",
+    "scheme": "hbcfield",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#09090b"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.doergo.mobile",
+      "bundleIdentifier": "eu.hbc-group.hbcfield",
       "config": {
         "googleMapsApiKey": ""
       },
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Doergo needs your location to track task progress",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Doergo needs your location to track task progress even when the app is in the background",
-        "NSCameraUsageDescription": "Doergo needs camera access to take photos for task documentation",
+        "NSLocationWhenInUseUsageDescription": "HBCField needs your location to track task progress",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "HBCField needs your location to track task progress even when the app is in the background",
+        "NSCameraUsageDescription": "HBCField needs camera access to take photos for task documentation",
         "UIBackgroundModes": [
           "location",
           "fetch"
@@ -32,9 +32,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#059669"
       },
-      "package": "com.doergo.mobile",
+      "package": "eu.hbcgroup.hbcfield",
       "config": {
         "googleMaps": {
           "apiKey": ""
@@ -61,7 +61,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#2563eb"
+          "color": "#059669"
         }
       ],
       "expo-secure-store",

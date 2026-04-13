@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { Role, Platform, TechnicianType, WorkMode } from '@doergo/shared';
+import { Role, Platform, TechnicianType, WorkMode } from '@hbcfield/shared';
 
 /**
  * List join requests query DTO

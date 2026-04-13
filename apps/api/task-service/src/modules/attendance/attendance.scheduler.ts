@@ -5,7 +5,7 @@ import {
   QUEUE_NAMES,
   ATTENDANCE_JOB_TYPES,
   ATTENDANCE_CONSTANTS,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 /**
  * Attendance Scheduler Service

@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TechnicianType, WorkMode, Platform, TaskStatus } from '@doergo/shared';
+import { Role, TechnicianType, WorkMode, Platform, TaskStatus } from '@hbcfield/shared';
 import * as bcrypt from 'bcrypt';
 import {
   CreateTechnicianDto,
@@ -15,6 +15,7 @@ import {
   GetTechnicianPerformanceDto,
   ListOrgMembersDto,
   UpdateMemberRoleDto,
+  UpdateMemberProfileDto,
   RemoveMemberDto,
 } from './dto';
 
@@ -35,6 +36,7 @@ export class UsersService {
         role: true,
         organizationId: true,
         onboardingCompleted: true,
+        avatarUrl: true,
         isActive: true,
         createdAt: true,
         // Permission fields
@@ -85,6 +87,7 @@ export class UsersService {
     const tasks = await this.prisma.task.findMany({
       where: { assignedToId: workerId },
       orderBy: { createdAt: 'desc' },
+      take: 100, // Limit to prevent unbounded queries
       select: {
         id: true,
         title: true,
@@ -310,14 +313,12 @@ export class UsersService {
       throw new NotFoundException('Technician not found');
     }
 
-    // Get task statistics
-    const taskStats = await this.getTaskStatsForTechnician(id);
-
-    // Get attendance statistics
-    const attendanceStats = await this.getAttendanceStatsForTechnician(id);
-
-    // Get recent activity
-    const recentActivity = await this.getRecentActivityForTechnician(id);
+    // Batch all stats queries in parallel to avoid N+1
+    const [taskStats, attendanceStats, recentActivity] = await Promise.all([
+      this.getTaskStatsForTechnician(id),
+      this.getAttendanceStatsForTechnician(id),
+      this.getRecentActivityForTechnician(id),
+    ]);
 
     // Build response
     const profile = {
@@ -848,6 +849,140 @@ export class UsersService {
     return { success: true, message: 'Member removed successfully' };
   }
 
+  /**
+   * Update a member's profile and/or role/permissions (combined endpoint)
+   */
+  async updateMemberProfile(
+    memberId: string,
+    organizationId: string,
+    requesterId: string,
+    dto: UpdateMemberProfileDto,
+  ) {
+    // Verify member exists and belongs to the organization
+    const member = await this.prisma.user.findFirst({
+      where: { id: memberId, organizationId },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    const data: any = {};
+
+    // Profile fields
+    if (dto.firstName !== undefined) data.firstName = dto.firstName;
+    if (dto.lastName !== undefined) data.lastName = dto.lastName;
+
+    // Role/permission fields — only if role is provided
+    if (dto.role !== undefined) {
+      // Can't change own role
+      if (memberId === requesterId) {
+        throw new BadRequestException('You cannot change your own role');
+      }
+
+      // If demoting from ADMIN, check there's at least one other active ADMIN
+      if (member.role === Role.ADMIN && dto.role !== Role.ADMIN) {
+        const adminCount = await this.prisma.user.count({
+          where: {
+            organizationId,
+            role: Role.ADMIN,
+            isActive: true,
+            id: { not: memberId },
+          },
+        });
+
+        if (adminCount === 0) {
+          throw new BadRequestException(
+            'Cannot demote the last admin. Promote another member to admin first.',
+          );
+        }
+      }
+
+      data.role = dto.role;
+
+      // Set default platform based on role if not provided
+      data.platform =
+        dto.platform ||
+        (dto.role === Role.TECHNICIAN
+          ? Platform.MOBILE
+          : dto.role === Role.DISPATCHER
+            ? Platform.WEB
+            : Platform.BOTH);
+
+      data.canCreateTasks = dto.canCreateTasks ?? (dto.role === Role.ADMIN);
+      data.canViewAllTasks =
+        dto.canViewAllTasks ??
+        (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER);
+      data.canAssignTasks =
+        dto.canAssignTasks ??
+        (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER);
+      data.canManageUsers = dto.canManageUsers ?? (dto.role === Role.ADMIN);
+    } else {
+      // No role change — still allow updating individual permission/platform fields
+      if (dto.platform !== undefined) data.platform = dto.platform;
+      if (dto.canCreateTasks !== undefined) data.canCreateTasks = dto.canCreateTasks;
+      if (dto.canViewAllTasks !== undefined) data.canViewAllTasks = dto.canViewAllTasks;
+      if (dto.canAssignTasks !== undefined) data.canAssignTasks = dto.canAssignTasks;
+      if (dto.canManageUsers !== undefined) data.canManageUsers = dto.canManageUsers;
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: memberId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        platform: true,
+        isActive: true,
+        canCreateTasks: true,
+        canViewAllTasks: true,
+        canAssignTasks: true,
+        canManageUsers: true,
+      },
+    });
+
+    return { success: true, data: updated };
+  }
+
+  /**
+   * Admin resets a member's password, returning a temporary password
+   */
+  async adminResetMemberPassword(
+    memberId: string,
+    organizationId: string,
+    requesterId: string,
+  ) {
+    // Can't reset own password via this method
+    if (memberId === requesterId) {
+      throw new BadRequestException(
+        'Use the change password feature to update your own password',
+      );
+    }
+
+    // Verify member exists and belongs to the organization
+    const member = await this.prisma.user.findFirst({
+      where: { id: memberId, organizationId },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    // Generate temporary password
+    const temporaryPassword = this.generateRandomPassword();
+    const passwordHash = await bcrypt.hash(temporaryPassword, BCRYPT_COST_FACTOR);
+
+    await this.prisma.user.update({
+      where: { id: memberId },
+      data: { passwordHash },
+    });
+
+    return { success: true, temporaryPassword };
+  }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
@@ -869,76 +1004,89 @@ export class UsersService {
   }
 
   private async getTaskStatsForTechnician(technicianId: string) {
-    const tasks = await this.prisma.task.findMany({
-      where: { assignedToId: technicianId },
-      select: {
-        status: true,
-        priority: true,
-        dueDate: true,
-        updatedAt: true,
-        createdAt: true,
-      },
-    });
-
     const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Use aggregation queries instead of fetching all tasks into memory
+    const [statusCounts, priorityCounts, todayCount] = await Promise.all([
+      this.prisma.task.groupBy({
+        by: ['status'],
+        where: { assignedToId: technicianId },
+        _count: { status: true },
+      }),
+      this.prisma.task.groupBy({
+        by: ['priority'],
+        where: { assignedToId: technicianId },
+        _count: { priority: true },
+      }),
+      this.prisma.task.count({
+        where: {
+          assignedToId: technicianId,
+          createdAt: { gte: todayStart },
+        },
+      }),
+    ]);
 
     const byStatus: Record<string, number> = {};
-    const byPriority: Record<string, number> = {};
+    let total = 0;
     let completed = 0;
     let inProgress = 0;
     let assigned = 0;
-    let completedOnTime = 0;
-    let todayTotal = 0;
 
-    for (const task of tasks) {
-      // Count by status
-      byStatus[task.status] = (byStatus[task.status] || 0) + 1;
+    for (const sc of statusCounts) {
+      byStatus[sc.status] = sc._count.status;
+      total += sc._count.status;
 
-      // Count by priority
-      byPriority[task.priority] = (byPriority[task.priority] || 0) + 1;
-
-      // Track specific counts
+      if (sc.status === TaskStatus.COMPLETED || sc.status === TaskStatus.CLOSED) {
+        completed += sc._count.status;
+      }
       if (
-        task.status === TaskStatus.COMPLETED ||
-        task.status === TaskStatus.CLOSED
+        sc.status === TaskStatus.EN_ROUTE ||
+        sc.status === TaskStatus.ARRIVED ||
+        sc.status === TaskStatus.IN_PROGRESS
       ) {
-        completed++;
-        if (!task.dueDate || new Date(task.updatedAt) <= new Date(task.dueDate)) {
-          completedOnTime++;
-        }
+        inProgress += sc._count.status;
       }
-
-      if (
-        task.status === TaskStatus.EN_ROUTE ||
-        task.status === TaskStatus.ARRIVED ||
-        task.status === TaskStatus.IN_PROGRESS
-      ) {
-        inProgress++;
-      }
-
-      if (task.status === TaskStatus.ASSIGNED) {
-        assigned++;
-      }
-
-      // Today's tasks
-      if (new Date(task.createdAt) >= todayStart) {
-        todayTotal++;
+      if (sc.status === TaskStatus.ASSIGNED) {
+        assigned += sc._count.status;
       }
     }
 
+    const byPriority: Record<string, number> = {};
+    for (const pc of priorityCounts) {
+      byPriority[pc.priority] = pc._count.priority;
+    }
+
+    // For on-time rate, sample recent completed tasks (last 90 days) to avoid unbounded query
+    let completedOnTime = 0;
+    if (completed > 0) {
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const recentCompleted = await this.prisma.task.findMany({
+        where: {
+          assignedToId: technicianId,
+          status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
+          createdAt: { gte: ninetyDaysAgo },
+        },
+        select: { dueDate: true, updatedAt: true },
+        take: 200, // Cap to prevent memory issues
+      });
+      completedOnTime = recentCompleted.filter(
+        (t) => !t.dueDate || t.updatedAt <= t.dueDate,
+      ).length;
+    }
+
     return {
-      total: tasks.length,
+      total,
       completed,
       inProgress,
       assigned,
       completedOnTime,
-      avgCompletionTimeMinutes: 0, // TODO: Calculate from task events
+      avgCompletionTimeMinutes: 0,
       byStatus,
       byPriority,
-      completionRate: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
+      completionRate: total > 0 ? (completed / total) * 100 : 0,
       onTimeRate: completed > 0 ? (completedOnTime / completed) * 100 : 0,
-      todayTotal,
+      todayTotal: todayCount,
     };
   }
 
@@ -950,20 +1098,7 @@ export class UsersService {
 
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Get time entries for current week
-    const weekEntries = await this.prisma.timeEntry.findMany({
-      where: {
-        userId: technicianId,
-        clockInAt: { gte: weekStart },
-      },
-      select: {
-        totalMinutes: true,
-        clockInWithinGeofence: true,
-        clockOutWithinGeofence: true,
-      },
-    });
-
-    // Get time entries for current month
+    // Batch both queries in parallel - month entries include week entries
     const monthEntries = await this.prisma.timeEntry.findMany({
       where: {
         userId: technicianId,
@@ -972,8 +1107,14 @@ export class UsersService {
       select: {
         totalMinutes: true,
         clockInWithinGeofence: true,
+        clockInAt: true,
       },
     });
+
+    // Filter week entries from month entries to avoid a second query
+    const weekEntries = monthEntries.filter(
+      (e) => new Date(e.clockInAt) >= weekStart,
+    );
 
     const weekHours =
       weekEntries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0) / 60;
@@ -992,7 +1133,7 @@ export class UsersService {
       averageShiftHours:
         monthEntries.length > 0 ? monthHours / monthEntries.length : 0,
       geofenceViolations,
-      lateClockIns: 0, // TODO: Implement late detection
+      lateClockIns: 0,
     };
   }
 

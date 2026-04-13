@@ -5,9 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignatureScreen from 'react-native-signature-canvas';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/theme-context';
 import {
   COLORS,
   SPACING,
@@ -29,12 +32,13 @@ export function SignatureCapture({
   onClear,
   existingSignature,
 }: SignatureCaptureProps) {
+  const { colors } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const signatureRef = useRef<any>(null);
+  const insets = useSafeAreaInsets();
   const hasSigned = !!existingSignature;
 
   const handleSignature = (signature: string) => {
-    // signature is a base64 data URL
     onSave(signature);
     setShowModal(false);
   };
@@ -56,30 +60,46 @@ export function SignatureCapture({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{title}</Text>
-
       <TouchableOpacity
-        style={[styles.signatureArea, hasSigned && styles.signatureAreaSigned]}
+        style={[styles.triggerCard, { borderColor: colors.border, backgroundColor: colors.surfaceRaised }, hasSigned && [styles.triggerCardSigned, { backgroundColor: colors.card }]]}
         onPress={() => setShowModal(true)}
+        activeOpacity={0.7}
       >
         {hasSigned ? (
-          <View style={styles.signedRow}>
-            <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-            <Text style={styles.signedText}>Signature captured</Text>
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation();
-                onClear();
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close-circle" size={18} color={COLORS.slate400} />
-            </TouchableOpacity>
-          </View>
+          <>
+            <View style={styles.triggerSignedHeader}>
+              <View style={styles.triggerSignedBadge}>
+                <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
+                <Text style={styles.triggerSignedLabel}>{title}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onClear();
+                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.triggerClearBtn}
+              >
+                <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.triggerPreview}>
+              <Image
+                source={{ uri: existingSignature }}
+                style={styles.triggerPreviewImage}
+                resizeMode="contain"
+              />
+            </View>
+          </>
         ) : (
-          <View style={styles.placeholderRow}>
-            <Ionicons name="create-outline" size={20} color={COLORS.slate400} />
-            <Text style={styles.placeholderText}>Tap to sign</Text>
+          <View style={styles.triggerEmpty}>
+            <View style={[styles.triggerIconCircle, { backgroundColor: colors.surfaceRaised }]}>
+              <Ionicons name="create-outline" size={22} color={colors.textMuted} />
+            </View>
+            <View>
+              <Text style={[styles.triggerTitle, { color: colors.textSecondary }]}>{title}</Text>
+              <Text style={[styles.triggerHint, { color: colors.textMuted }]}>Tap to sign</Text>
+            </View>
           </View>
         )}
       </TouchableOpacity>
@@ -87,33 +107,45 @@ export function SignatureCapture({
       <Modal
         visible={showModal}
         animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowModal(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowModal(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
+        <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
+          {/* Header */}
+          <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top, SPACING.lg), backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={() => setShowModal(false)}
+              style={styles.headerBtn}
+            >
+              <Text style={styles.headerCancelText}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <TouchableOpacity onPress={handleClear}>
-              <Text style={styles.modalClearText}>Clear</Text>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
+            <TouchableOpacity onPress={handleClear} style={styles.headerBtn}>
+              <Text style={styles.headerClearText}>Clear</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.canvasContainer}>
-            <SignatureScreen
-              ref={signatureRef}
-              onOK={handleSignature}
-              webStyle={webStyle}
-              backgroundColor={COLORS.white}
-              penColor={COLORS.slate800}
-            />
+          {/* Canvas area */}
+          <View style={styles.canvasOuter}>
+            <View style={[styles.canvasCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <SignatureScreen
+                ref={signatureRef}
+                onOK={handleSignature}
+                webStyle={webStyle}
+                backgroundColor={COLORS.white}
+                penColor={COLORS.slate800}
+              />
+              {/* Signature line */}
+              <View style={[styles.signatureLine, { backgroundColor: colors.border }]} />
+            </View>
+            <Text style={[styles.canvasHint, { color: colors.textMuted }]}>Draw your signature above the line</Text>
           </View>
 
-          <View style={styles.modalFooter}>
-            <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-              <Ionicons name="checkmark" size={20} color={COLORS.white} />
-              <Text style={styles.confirmText}>Save Signature</Text>
+          {/* Footer */}
+          <View style={[styles.modalFooter, { paddingBottom: Math.max(insets.bottom, SPACING.lg), backgroundColor: colors.card, borderTopColor: colors.border }]}>
+            <TouchableOpacity style={styles.saveButton} onPress={handleConfirm}>
+              <Ionicons name="checkmark-circle" size={22} color={COLORS.white} />
+              <Text style={styles.saveButtonText}>Save Signature</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -124,83 +156,135 @@ export function SignatureCapture({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
-  label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
-    marginBottom: SPACING.xs,
-  },
-  signatureArea: {
+
+  // Trigger Card (inline in completion form)
+  triggerCard: {
     borderWidth: 1,
-    borderColor: COLORS.slate200,
-    borderRadius: RADIUS.sm,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.slate50,
+    borderRadius: RADIUS.md,
+    borderStyle: 'dashed',
+    overflow: 'hidden',
   },
-  signatureAreaSigned: {
+  triggerCardSigned: {
     borderColor: COLORS.success,
-    backgroundColor: COLORS.successLight,
+    borderStyle: 'solid',
   },
-  placeholderRow: {
+  triggerEmpty: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+  },
+  triggerIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
-    gap: SPACING.sm,
-  },
-  placeholderText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate400,
-  },
-  signedRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
   },
-  signedText: {
-    flex: 1,
+  triggerTitle: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.success,
     fontWeight: FONT_WEIGHT.medium,
   },
+  triggerHint: {
+    fontSize: FONT_SIZE.sm,
+    marginTop: 2,
+  },
+  triggerSignedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.sm,
+  },
+  triggerSignedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  triggerSignedLabel: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.success,
+  },
+  triggerClearBtn: {
+    padding: SPACING.xs,
+  },
+  triggerPreview: {
+    height: 60,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  triggerPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  // Full-screen signing modal
   modalContainer: {
     flex: 1,
-    backgroundColor: COLORS.white,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingBottom: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.slate200,
   },
-  modalTitle: {
+  headerBtn: {
+    minWidth: 60,
+  },
+  headerTitle: {
     fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
+    fontWeight: FONT_WEIGHT.bold,
+    textAlign: 'center',
   },
-  modalCancelText: {
+  headerCancelText: {
     fontSize: FONT_SIZE.lg,
-    color: COLORS.slate500,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
   },
-  modalClearText: {
+  headerClearText: {
     fontSize: FONT_SIZE.lg,
     color: COLORS.error,
+    fontWeight: FONT_WEIGHT.medium,
+    textAlign: 'right',
   },
-  canvasContainer: {
+
+  // Canvas area
+  canvasOuter: {
     flex: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.slate200,
-  },
-  modalFooter: {
     padding: SPACING.lg,
-    paddingBottom: SPACING.xxxl,
   },
-  confirmButton: {
+  canvasCard: {
+    flex: 1,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  signatureLine: {
+    position: 'absolute',
+    bottom: '25%',
+    left: SPACING.xxl,
+    right: SPACING.xxl,
+    height: 1,
+  },
+  canvasHint: {
+    textAlign: 'center',
+    fontSize: FONT_SIZE.sm,
+    marginTop: SPACING.md,
+  },
+
+  // Footer
+  modalFooter: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+  },
+  saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -209,9 +293,9 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
     borderRadius: RADIUS.md,
   },
-  confirmText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
+  saveButtonText: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
   },
 });

@@ -1,11 +1,14 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
   Inject,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import Redis from 'ioredis';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   TaskStatus,
@@ -16,14 +19,25 @@ import {
   canRoleSetStatus,
   success,
   paginated,
-} from '@doergo/shared';
+  buildDateRangeFilter,
+} from '@hbcfield/shared';
+
+const STATUS_COUNTS_TTL = 30; // seconds
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+  private readonly redis: Redis;
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-  ) {}
+    configService: ConfigService,
+  ) {
+    const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
+    const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
+    this.redis = new Redis({ host: redisHost, port: redisPort, maxRetriesPerRequest: 1 });
+  }
 
   /**
    * Create a new task (CLIENT or DISPATCHER)
@@ -59,6 +73,8 @@ export class TasksService {
     // Notify
     this.notificationClient.emit('task_created', task);
 
+    this.invalidateStatusCountsCache(task.organizationId);
+
     return success(task);
   }
 
@@ -71,9 +87,13 @@ export class TasksService {
   async findAll(query: any) {
     const {
       page = 1,
-      limit = 10,
+      limit = 100,
       status,
       priority,
+      search,
+      startDate,
+      endDate,
+      includeNoDueDate,
       userId,
       userRole,
       organizationId,
@@ -112,6 +132,36 @@ export class TasksService {
       default:
         // No access
         return paginated([], { page: Number(page), limit: take, total: 0 });
+    }
+
+    // Build AND conditions for date range and search
+    const andConditions: any[] = [];
+
+    // Date range filter on dueDate
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
+    if (dateFilter) {
+      const shouldIncludeNoDueDate = includeNoDueDate === 'true' || includeNoDueDate === true;
+      if (shouldIncludeNoDueDate) {
+        andConditions.push({
+          OR: [{ dueDate: dateFilter }, { dueDate: null }],
+        });
+      } else {
+        andConditions.push({ dueDate: dateFilter });
+      }
+    }
+
+    // Search filter on title and description
+    if (search && typeof search === 'string' && search.trim()) {
+      andConditions.push({
+        OR: [
+          { title: { contains: search.trim(), mode: 'insensitive' } },
+          { description: { contains: search.trim(), mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     const [tasks, total] = await Promise.all([
@@ -221,6 +271,8 @@ export class TasksService {
 
     await this.createTaskEvent(id, userId, TaskEventType.UPDATED, { changes: updateData });
 
+    this.invalidateStatusCountsCache(task.organizationId);
+
     return success(task);
   }
 
@@ -282,6 +334,8 @@ export class TasksService {
       workerId: data.workerId,
     });
 
+    this.invalidateStatusCountsCache(updatedTask.organizationId);
+
     return success(updatedTask);
   }
 
@@ -335,6 +389,8 @@ export class TasksService {
       task: updatedTask,
       declinedBy: previousWorker,
     });
+
+    this.invalidateStatusCountsCache(updatedTask.organizationId);
 
     return success(updatedTask, 'Task declined and returned for reassignment');
   }
@@ -408,6 +464,47 @@ export class TasksService {
       );
     }
 
+    // ── Technician execution enforcement ──
+
+    // (a) Due Date Gate — cannot start a task whose dueDate is in the future
+    if (data.userRole === Role.TECHNICIAN && data.status === TaskStatus.EN_ROUTE) {
+      if (task.dueDate) {
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+        if (task.dueDate > endOfToday) {
+          throw new BadRequestException(
+            'Cannot start this task yet — it is scheduled for a future date. You can start it on the due date.',
+          );
+        }
+      }
+    }
+
+    // (b) Single Active Task — only one task in execution state at a time
+    //     BLOCKED is excluded, so blocking a task frees the slot
+    if (data.userRole === Role.TECHNICIAN && data.status === TaskStatus.ACCEPTED) {
+      const activeTaskCount = await this.prisma.task.count({
+        where: {
+          assignedToId: data.userId,
+          status: { in: [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS] },
+          id: { not: data.id },
+        },
+      });
+
+      if (activeTaskCount > 0) {
+        const activeTask = await this.prisma.task.findFirst({
+          where: {
+            assignedToId: data.userId,
+            status: { in: [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS] },
+            id: { not: data.id },
+          },
+          select: { title: true },
+        });
+        throw new BadRequestException(
+          `You already have an active task: "${activeTask?.title || 'Unknown'}". Complete or block it before accepting another.`,
+        );
+      }
+    }
+
     // Build update data with route timestamps
     const updateData: any = { status: data.status as any };
 
@@ -446,6 +543,28 @@ export class TasksService {
       newStatus: data.status,
     });
 
+    // (c) Blocked Task Reminder — after accepting a new task, remind about blocked ones
+    if (data.userRole === Role.TECHNICIAN && data.status === TaskStatus.ACCEPTED) {
+      try {
+        const blockedTasks = await this.prisma.task.findMany({
+          where: { assignedToId: data.userId, status: TaskStatus.BLOCKED },
+          select: { id: true, title: true },
+        });
+        if (blockedTasks.length > 0) {
+          this.notificationClient.emit('blocked_tasks_reminder', {
+            userId: data.userId,
+            blockedTasks: blockedTasks.map(t => ({ id: t.id, title: t.title })),
+            newTaskId: data.id,
+            newTaskTitle: updatedTask.title,
+          });
+        }
+      } catch {
+        // Fire-and-forget — don't block the response
+      }
+    }
+
+    this.invalidateStatusCountsCache(updatedTask.organizationId);
+
     return success(updatedTask);
   }
 
@@ -472,6 +591,8 @@ export class TasksService {
     }
 
     await this.prisma.task.delete({ where: { id: data.id } });
+
+    this.invalidateStatusCountsCache(task.organizationId);
 
     return success(null, 'Task deleted successfully');
   }
@@ -648,6 +769,21 @@ export class TasksService {
   }) {
     const { userId, userRole, organizationId } = query;
 
+    if (![Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN].includes(userRole as Role)) {
+      return success({});
+    }
+
+    // Check Redis cache first
+    const cacheKey = `status_counts:${userRole}:${userId}:${organizationId}`;
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        return success(JSON.parse(cached));
+      }
+    } catch {
+      // Redis failure is non-fatal, fall through to DB
+    }
+
     // Build where clause based on role (same logic as findAll)
     const where: any = {};
 
@@ -664,9 +800,6 @@ export class TasksService {
       case Role.TECHNICIAN:
         where.assignedToId = userId;
         break;
-
-      default:
-        return success({});
     }
 
     // Get counts grouped by status using Prisma groupBy
@@ -680,15 +813,36 @@ export class TasksService {
 
     // Transform to a simple object { NEW: 5, ASSIGNED: 3, ... }
     const counts: Record<string, number> = {};
+    let total = 0;
     for (const item of statusCounts) {
       counts[item.status] = item._count.status;
+      total += item._count.status;
     }
-
-    // Also get total count
-    const total = await this.prisma.task.count({ where });
     counts['all'] = total;
 
+    // Cache for 30 seconds
+    try {
+      await this.redis.setex(cacheKey, STATUS_COUNTS_TTL, JSON.stringify(counts));
+    } catch {
+      // Redis failure is non-fatal
+    }
+
     return success(counts);
+  }
+
+  /**
+   * Invalidate status counts cache for an organization
+   * Called after task create/update/delete/status-change operations
+   */
+  private async invalidateStatusCountsCache(organizationId: string) {
+    try {
+      const keys = await this.redis.keys(`status_counts:*:*:${organizationId}`);
+      if (keys.length > 0) {
+        await this.redis.del(...keys);
+      }
+    } catch {
+      // Redis failure is non-fatal
+    }
   }
 
   /**
@@ -725,19 +879,34 @@ export class TasksService {
       throw new ForbiddenException('Task is not in your organization');
     }
 
-    // Get all active technicians in the organization
+    // Get all active technicians in the organization with limited data
     const technicians = await this.prisma.user.findMany({
       where: {
         role: Role.TECHNICIAN,
         organizationId: data.organizationId,
         isActive: true,
       },
-      include: {
-        lastLocation: true,
-        assignedTasks: {
-          where: {
-            status: {
-              in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS],
+      take: 100, // Cap to prevent unbounded queries in large orgs
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        specialty: true,
+        rating: true,
+        ratingCount: true,
+        maxDailyJobs: true,
+        lastLocation: {
+          select: { lat: true, lng: true, updatedAt: true },
+        },
+        _count: {
+          select: {
+            assignedTasks: {
+              where: {
+                status: {
+                  in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS],
+                },
+              },
             },
           },
         },
@@ -765,14 +934,15 @@ export class TasksService {
           },
         });
 
-        const todayTaskCount = tech.assignedTasks.length + todayCompletedCount;
+        const activeTaskCount = tech._count.assignedTasks;
+        const todayTaskCount = activeTaskCount + todayCompletedCount;
         const maxDailyJobs = tech.maxDailyJobs || 5;
 
         // Calculate individual scores (0-100 scale)
         const distanceScore = this.calculateDistanceScore(task, tech.lastLocation);
         const availabilityScore = this.calculateAvailabilityScore(todayTaskCount, maxDailyJobs);
         const specializationScore = this.calculateSpecializationScore(task.title, tech.specialty);
-        const workloadScore = this.calculateWorkloadScore(tech.assignedTasks.length);
+        const workloadScore = this.calculateWorkloadScore(activeTaskCount);
         const ratingScore = this.calculateRatingScore(tech.rating);
 
         // Weighted total score
@@ -799,12 +969,11 @@ export class TasksService {
           specialty: tech.specialty,
           rating: tech.rating || 5.0,
           ratingCount: tech.ratingCount || 0,
-          activeTaskCount: tech.assignedTasks.length,
+          activeTaskCount,
           todayTaskCount,
           maxDailyJobs,
           distanceKm: distanceKm !== null ? Math.round(distanceKm * 10) / 10 : null,
           hasLocation: !!tech.lastLocation,
-          lastLocationUpdatedAt: tech.lastLocation?.updatedAt || null,
           score: Math.round(totalScore * 100) / 100,
           scoreBreakdown: {
             distance: Math.round(distanceScore),

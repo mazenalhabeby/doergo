@@ -9,7 +9,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
 import { Logger } from '@nestjs/common';
-import { SocketEvents } from '@doergo/shared';
+import { SocketEvents } from '@hbcfield/shared';
 
 export interface ClientInfo {
   userId: string;
@@ -103,6 +103,10 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     } else {
       this.logger.log(`[DISCONNECT] Client ${client.id} (unauthenticated)`);
     }
+
+    // Clean up event listeners to prevent memory leaks
+    client.offAny();
+    client.offAnyOutgoing();
 
     this.connectedClients.delete(client.id);
   }

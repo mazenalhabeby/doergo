@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../src/contexts/theme-context';
 import {
   COLORS,
   SPACING,
@@ -10,61 +11,60 @@ import {
 } from '../../../src/lib/constants';
 
 export default function AboutScreen() {
+  const { colors } = useTheme();
   const appVersion = Constants.expoConfig?.version || '1.0.0';
-  const buildNumber = Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || '1';
 
   return (
-    <View style={styles.container}>
-      {/* App Info */}
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.surface }]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* App Branding */}
       <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Ionicons name="settings" size={40} color={COLORS.primary} />
+        <View style={[styles.logoContainer, { backgroundColor: colors.primaryLight }]}>
+          <Ionicons name="construct" size={36} color={COLORS.primary} />
         </View>
-        <Text style={styles.appName}>Doergo</Text>
-        <Text style={styles.tagline}>Field Service Management</Text>
+        <Text style={[styles.appName, { color: colors.textPrimary }]}>HBCField</Text>
+        <Text style={[styles.tagline, { color: colors.textSecondary }]}>Dispatch · Track · Deliver</Text>
+        <View style={[styles.versionBadge, { backgroundColor: colors.surfaceRaised }]}>
+          <Text style={[styles.versionText, { color: colors.textMuted }]}>Version {appVersion}</Text>
+        </View>
       </View>
 
-      {/* Version Info */}
+      {/* About */}
       <View style={styles.section}>
-        <View style={styles.card}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Version</Text>
-            <Text style={styles.infoValue}>{appVersion}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Build</Text>
-            <Text style={styles.infoValue}>{buildNumber}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Platform</Text>
-            <Text style={styles.infoValue}>React Native (Expo)</Text>
-          </View>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
+            HBCField is a field service management platform that helps teams dispatch tasks, track progress in real-time, and deliver exceptional service.
+          </Text>
         </View>
       </View>
 
-      <Text style={styles.copyright}>
-        {'\u00A9'} {new Date().getFullYear()} Doergo. All rights reserved.
+      {/* Footer */}
+      <Text style={[styles.copyright, { color: colors.textMuted }]}>
+        {'\u00A9'} {new Date().getFullYear()} HBCField. All rights reserved.
       </Text>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xxxl + SPACING.lg,
   },
   header: {
     alignItems: 'center',
-    paddingVertical: SPACING.xxxl + SPACING.lg,
+    paddingTop: SPACING.xxxl,
+    paddingBottom: SPACING.xl,
   },
   logoContainer: {
     width: 80,
     height: 80,
-    borderRadius: 20,
-    backgroundColor: COLORS.primaryLight,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.lg,
@@ -72,44 +72,36 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: FONT_SIZE.xxxl + 4,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
   },
   tagline: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
     marginTop: SPACING.xs,
+  },
+  versionBadge: {
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.full,
+  },
+  versionText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
   },
   section: {
     paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
   },
   card: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     padding: SPACING.lg,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  infoLabel: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.slate500,
-  },
-  infoValue: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate800,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.slate100,
-    marginVertical: SPACING.md,
+  aboutText: {
+    fontSize: FONT_SIZE.base,
+    lineHeight: 22,
   },
   copyright: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
     textAlign: 'center',
-    marginTop: SPACING.xxxl,
+    marginTop: SPACING.xxl,
   },
 });

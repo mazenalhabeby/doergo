@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CreateOrgIcon } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
+import { useTheme } from '../../src/contexts/theme-context';
 import { onboardingApi } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
@@ -14,6 +15,7 @@ export default function CreateOrgScreen() {
   const router = useRouter();
   const { refreshUser } = useAuth();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -43,12 +45,12 @@ export default function CreateOrgScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + SPACING.md }]} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.slate700} />
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.iconContainer}>
@@ -57,29 +59,29 @@ export default function CreateOrgScreen() {
             </LinearGradient>
           </View>
 
-          <Text style={styles.title}>Create Organization</Text>
-          <Text style={styles.subtitle}>Set up your company on Doergo</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Create Organization</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Set up your company on HBCField</Text>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Organization name *</Text>
-              <View style={[styles.inputContainer, error ? styles.inputError : null]}>
-                <View style={styles.inputIconContainer}>
-                  <Ionicons name="business-outline" size={18} color={COLORS.slate500} />
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Organization name *</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }, error ? styles.inputError : null]}>
+                <View style={[styles.inputIconContainer, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
+                  <Ionicons name="business-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={styles.input} placeholder="Acme Inc." placeholderTextColor={COLORS.slate400}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Acme Inc." placeholderTextColor={colors.textMuted}
                   value={name} onChangeText={(t) => { setName(t); setError(''); }} autoCapitalize="words" />
               </View>
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Address (optional)</Text>
-              <View style={styles.inputContainer}>
-                <View style={styles.inputIconContainer}>
-                  <Ionicons name="location-outline" size={18} color={COLORS.slate500} />
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Address (optional)</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
+                <View style={[styles.inputIconContainer, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
+                  <Ionicons name="location-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={styles.input} placeholder="123 Business Ave" placeholderTextColor={COLORS.slate400}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="123 Business Ave" placeholderTextColor={colors.textMuted}
                   value={address} onChangeText={setAddress} autoCapitalize="words" />
               </View>
             </View>
@@ -97,26 +99,26 @@ export default function CreateOrgScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.slate50 },
+  container: { flex: 1 },
   scrollContent: { padding: SPACING.xl, paddingBottom: SPACING.xxl },
   backButton: { width: 40, height: 40, justifyContent: 'center' },
   iconContainer: { alignItems: 'center', marginVertical: SPACING.xl },
   iconGradient: { width: 72, height: 72, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: FONT_WEIGHT.bold, color: COLORS.slate800, textAlign: 'center', marginBottom: SPACING.xs },
-  subtitle: { fontSize: FONT_SIZE.lg, color: COLORS.slate500, textAlign: 'center', marginBottom: SPACING.xl },
+  title: { fontSize: 24, fontWeight: FONT_WEIGHT.bold, textAlign: 'center', marginBottom: SPACING.xs },
+  subtitle: { fontSize: FONT_SIZE.lg, textAlign: 'center', marginBottom: SPACING.xl },
   form: { gap: SPACING.lg },
   inputGroup: { gap: SPACING.sm },
-  label: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.slate700 },
+  label: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
   inputContainer: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: RADIUS.md,
-    borderWidth: 1.5, borderColor: COLORS.slate200, height: 48, overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'center', borderRadius: RADIUS.md,
+    borderWidth: 1.5, height: 48, overflow: 'hidden',
   },
-  inputError: { borderColor: '#fca5a5' },
+  inputError: { borderColor: COLORS.errorBorder },
   inputIconContainer: {
     width: 44, height: '100%', justifyContent: 'center', alignItems: 'center',
-    backgroundColor: COLORS.slate50, borderRightWidth: 1, borderRightColor: COLORS.slate200,
+    borderRightWidth: 1,
   },
-  input: { flex: 1, fontSize: FONT_SIZE.lg, color: COLORS.slate800, paddingHorizontal: SPACING.md },
+  input: { flex: 1, fontSize: FONT_SIZE.lg, paddingHorizontal: SPACING.md },
   errorText: { fontSize: FONT_SIZE.sm, color: COLORS.error },
   button: { marginTop: SPACING.xl, borderRadius: RADIUS.md, overflow: 'hidden', shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
   buttonDisabled: { shadowOpacity: 0.1 },

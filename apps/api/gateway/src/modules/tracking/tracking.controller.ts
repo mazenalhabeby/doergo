@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Inject, Request } from '@nestjs/com
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role } from '@doergo/shared';
+import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateTrackingLocationDto } from './dto';
 

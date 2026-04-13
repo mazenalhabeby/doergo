@@ -44,4 +44,4 @@
 - [ ] No secrets or credentials committed
 - [ ] Documentation updated (CLAUDE.md / documentation/)
 - [ ] Database migration included (if schema changed)
-- [ ] Shared types added to `@doergo/shared` (if applicable)
+- [ ] Shared types added to `@hbcfield/shared` (if applicable)

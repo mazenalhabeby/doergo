@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo "  Doergo - Production Deployment"
+echo "  HBCField - Production Deployment"
 echo "=========================================="
 
 GREEN='\033[0;32m'

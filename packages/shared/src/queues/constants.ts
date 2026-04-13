@@ -33,6 +33,8 @@ export const TASK_JOB_TYPES = {
   GET_ATTACHMENTS: 'task.getAttachments',
   DELETE_ATTACHMENT: 'task.deleteAttachment',
   GET_PRESIGNED_URL: 'task.getPresignedUrl',
+  AVATAR_PRESIGNED_URL: 'task.avatarPresignedUrl',
+  AVATAR_DELETE_S3: 'task.avatarDeleteS3',
 } as const;
 
 export type TaskJobType = (typeof TASK_JOB_TYPES)[keyof typeof TASK_JOB_TYPES];

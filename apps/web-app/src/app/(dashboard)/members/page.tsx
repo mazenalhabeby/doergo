@@ -7,10 +7,14 @@ import {
   Users,
   Search,
   MoreHorizontal,
-  Shield,
+  Pencil,
   UserMinus,
   RefreshCw,
   UserPlus,
+  Copy,
+  Check,
+  KeyRound,
+  AlertTriangle,
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -19,7 +23,7 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   organizationsApi,
   type OrgMember,
-  type UpdateMemberRoleInput,
+  type UpdateMemberInput,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +31,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Separator } from "@/components/ui/separator"
 import {
   Table,
   TableBody,
@@ -97,8 +102,10 @@ export default function MembersPage() {
   const [roleFilter, setRoleFilter] = useState("all")
   const [page, setPage] = useState(1)
 
-  // Edit role dialog
+  // Edit member dialog
   const [editTarget, setEditTarget] = useState<OrgMember | null>(null)
+  const [editFirstName, setEditFirstName] = useState("")
+  const [editLastName, setEditLastName] = useState("")
   const [editRole, setEditRole] = useState("")
   const [editPlatform, setEditPlatform] = useState("")
   const [editPerms, setEditPerms] = useState({
@@ -107,6 +114,10 @@ export default function MembersPage() {
     canAssignTasks: false,
     canManageUsers: false,
   })
+
+  // Password reset state
+  const [tempPassword, setTempPassword] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // Remove dialog
   const [removeTarget, setRemoveTarget] = useState<OrgMember | null>(null)
@@ -122,16 +133,31 @@ export default function MembersPage() {
       }),
   })
 
-  const updateRoleMutation = useMutation({
-    mutationFn: ({ memberId, data }: { memberId: string; data: UpdateMemberRoleInput }) =>
-      organizationsApi.updateMemberRole(memberId, data),
+  const updateMemberMutation = useMutation({
+    mutationFn: ({ memberId, data }: { memberId: string; data: UpdateMemberInput }) =>
+      organizationsApi.updateMember(memberId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setEditTarget(null)
-      toast.success("Member role updated successfully")
+      setTempPassword(null)
+      toast.success("Member updated successfully")
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update role")
+      toast.error(error.message || "Failed to update member")
+    },
+  })
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (memberId: string) =>
+      organizationsApi.resetMemberPassword(memberId),
+    onSuccess: (data) => {
+      if (data?.temporaryPassword) {
+        setTempPassword(data.temporaryPassword)
+        setCopied(false)
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to reset password")
     },
   })
 
@@ -149,6 +175,8 @@ export default function MembersPage() {
 
   const openEditDialog = useCallback((member: OrgMember) => {
     setEditTarget(member)
+    setEditFirstName(member.firstName)
+    setEditLastName(member.lastName)
     setEditRole(member.role)
     setEditPlatform(member.platform)
     setEditPerms({
@@ -157,6 +185,8 @@ export default function MembersPage() {
       canAssignTasks: member.canAssignTasks,
       canManageUsers: member.canManageUsers,
     })
+    setTempPassword(null)
+    setCopied(false)
   }, [])
 
   const handleRoleChange = (role: string) => {
@@ -173,16 +203,26 @@ export default function MembersPage() {
     }
   }
 
-  const handleSaveRole = () => {
+  const handleSave = () => {
     if (!editTarget) return
-    updateRoleMutation.mutate({
+    updateMemberMutation.mutate({
       memberId: editTarget.id,
       data: {
+        firstName: editFirstName,
+        lastName: editLastName,
         role: editRole,
         platform: editPlatform,
         ...editPerms,
       },
     })
+  }
+
+  const handleCopyPassword = async () => {
+    if (!tempPassword) return
+    await navigator.clipboard.writeText(tempPassword)
+    setCopied(true)
+    toast.success("Password copied to clipboard")
+    setTimeout(() => setCopied(false), 3000)
   }
 
   const members = data?.data || []
@@ -207,43 +247,45 @@ export default function MembersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={roleFilter}
+            onValueChange={(v) => {
+              setRoleFilter(v)
               setPage(1)
             }}
-            className="pl-9"
-          />
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="ADMIN">Admin</SelectItem>
+              <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
+              <SelectItem value="TECHNICIAN">Technician</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="icon" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
-        <Select
-          value={roleFilter}
-          onValueChange={(v) => {
-            setRoleFilter(v)
-            setPage(1)
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="All roles" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="ADMIN">Admin</SelectItem>
-            <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
-            <SelectItem value="TECHNICIAN">Technician</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" size="icon" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {isLoading ? (
           <div className="p-6 space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -254,12 +296,12 @@ export default function MembersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
+                <TableHead className="w-[40%]">Member</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Platform</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Joined</TableHead>
-                {isAdmin && <TableHead className="w-16"></TableHead>}
+                {isAdmin && <TableHead className="w-[80px]"></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -311,8 +353,8 @@ export default function MembersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openEditDialog(member)}>
-                                <Shield className="h-4 w-4 mr-2" />
-                                Edit Role
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit Member
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-red-600"
@@ -366,111 +408,204 @@ export default function MembersPage() {
         )}
       </div>
 
-      {/* Edit Role Dialog */}
+      {/* Edit Member Dialog */}
       <Dialog
         open={!!editTarget}
-        onOpenChange={(open) => !open && setEditTarget(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditTarget(null)
+            setTempPassword(null)
+          }
+        }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Member Role</DialogTitle>
+            <DialogTitle>Edit Member</DialogTitle>
             <DialogDescription>
-              Update role and permissions for{" "}
+              Update profile, role, and permissions for{" "}
               {editTarget && `${editTarget.firstName} ${editTarget.lastName}`}.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={editRole} onValueChange={handleRoleChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
-                  <SelectItem value="TECHNICIAN">Technician</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Platform</Label>
-              <Select value={editPlatform} onValueChange={setEditPlatform}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WEB">Web Only</SelectItem>
-                  <SelectItem value="MOBILE">Mobile Only</SelectItem>
-                  <SelectItem value="BOTH">Both</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Permissions</Label>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="canCreateTasks"
-                    checked={editPerms.canCreateTasks}
-                    onCheckedChange={(checked) =>
-                      setEditPerms((p) => ({ ...p, canCreateTasks: !!checked }))
-                    }
+          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+            {/* Profile Section */}
+            <div>
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Profile</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="editFirstName">First Name</Label>
+                  <Input
+                    id="editFirstName"
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
                   />
-                  <label htmlFor="canCreateTasks" className="text-sm">
-                    Can create tasks
-                  </label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="canViewAllTasks"
-                    checked={editPerms.canViewAllTasks}
-                    onCheckedChange={(checked) =>
-                      setEditPerms((p) => ({ ...p, canViewAllTasks: !!checked }))
-                    }
+                <div className="space-y-1.5">
+                  <Label htmlFor="editLastName">Last Name</Label>
+                  <Input
+                    id="editLastName"
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
                   />
-                  <label htmlFor="canViewAllTasks" className="text-sm">
-                    Can view all tasks
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="canAssignTasks"
-                    checked={editPerms.canAssignTasks}
-                    onCheckedChange={(checked) =>
-                      setEditPerms((p) => ({ ...p, canAssignTasks: !!checked }))
-                    }
-                  />
-                  <label htmlFor="canAssignTasks" className="text-sm">
-                    Can assign tasks
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="canManageUsers"
-                    checked={editPerms.canManageUsers}
-                    onCheckedChange={(checked) =>
-                      setEditPerms((p) => ({ ...p, canManageUsers: !!checked }))
-                    }
-                  />
-                  <label htmlFor="canManageUsers" className="text-sm">
-                    Can manage users
-                  </label>
                 </div>
               </div>
             </div>
+
+            <Separator />
+
+            {/* Role & Permissions Section */}
+            <div>
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Role & Permissions</h4>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Role</Label>
+                  <Select value={editRole} onValueChange={handleRoleChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                      <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
+                      <SelectItem value="TECHNICIAN">Technician</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Platform</Label>
+                  <Select value={editPlatform} onValueChange={setEditPlatform}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="WEB">Web Only</SelectItem>
+                      <SelectItem value="MOBILE">Mobile Only</SelectItem>
+                      <SelectItem value="BOTH">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Permissions</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="canCreateTasks"
+                        checked={editPerms.canCreateTasks}
+                        onCheckedChange={(checked) =>
+                          setEditPerms((p) => ({ ...p, canCreateTasks: !!checked }))
+                        }
+                      />
+                      <label htmlFor="canCreateTasks" className="text-sm">
+                        Can create tasks
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="canViewAllTasks"
+                        checked={editPerms.canViewAllTasks}
+                        onCheckedChange={(checked) =>
+                          setEditPerms((p) => ({ ...p, canViewAllTasks: !!checked }))
+                        }
+                      />
+                      <label htmlFor="canViewAllTasks" className="text-sm">
+                        Can view all tasks
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="canAssignTasks"
+                        checked={editPerms.canAssignTasks}
+                        onCheckedChange={(checked) =>
+                          setEditPerms((p) => ({ ...p, canAssignTasks: !!checked }))
+                        }
+                      />
+                      <label htmlFor="canAssignTasks" className="text-sm">
+                        Can assign tasks
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="canManageUsers"
+                        checked={editPerms.canManageUsers}
+                        onCheckedChange={(checked) =>
+                          setEditPerms((p) => ({ ...p, canManageUsers: !!checked }))
+                        }
+                      />
+                      <label htmlFor="canManageUsers" className="text-sm">
+                        Can manage users
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Password Reset Section */}
+            <div>
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Password Reset</h4>
+              {tempPassword ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                    <p className="text-xs text-amber-700">
+                      Copy this password now. It won&apos;t be shown again.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      readOnly
+                      value={tempPassword}
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleCopyPassword}
+                      className="flex-shrink-0"
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500">
+                    Generate a temporary password for this member. They should change it after logging in.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editTarget && resetPasswordMutation.mutate(editTarget.id)}
+                    disabled={resetPasswordMutation.isPending}
+                  >
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    {resetPasswordMutation.isPending ? "Generating..." : "Reset Password"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditTarget(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditTarget(null)
+                setTempPassword(null)
+              }}
+            >
               Cancel
             </Button>
             <Button
-              onClick={handleSaveRole}
-              disabled={updateRoleMutation.isPending}
+              onClick={handleSave}
+              disabled={updateMemberMutation.isPending || !editFirstName.trim() || !editLastName.trim()}
             >
-              {updateRoleMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateMemberMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

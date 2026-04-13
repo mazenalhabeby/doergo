@@ -14,9 +14,9 @@ FROM deps AS build
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/auth-service/ ./apps/api/auth-service/
 COPY tsconfig.base.json ./
-RUN pnpm --filter @doergo/shared build
+RUN pnpm --filter @hbcfield/shared build
 RUN cd apps/api/auth-service && npx prisma generate
-RUN pnpm --filter @doergo/auth-service build
+RUN pnpm --filter @hbcfield/auth-service build
 
 # -- Production --
 FROM base AS production

@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env.production"
 
-echo "=== Doergo Deployment ==="
+echo "=== HBCField Deployment ==="
 echo "Root: $ROOT_DIR"
 echo ""
 

@@ -6,7 +6,7 @@
  *
  * @example
  * // In microservice main.ts
- * import { createMicroserviceOptions } from '@doergo/shared';
+ * import { createMicroserviceOptions } from '@hbcfield/shared';
  *
  * const app = await NestFactory.createMicroservice<MicroserviceOptions>(
  *   AppModule,
@@ -15,7 +15,7 @@
  *
  * @example
  * // In gateway/client module
- * import { createClientOptions, SERVICE_NAMES } from '@doergo/shared';
+ * import { createClientOptions, SERVICE_NAMES } from '@hbcfield/shared';
  *
  * ClientsModule.registerAsync([
  *   createClientOptions(SERVICE_NAMES.AUTH),

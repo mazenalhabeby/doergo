@@ -27,6 +27,21 @@ export function normalizeRole(role: string): Role {
   return role as Role;
 }
 
+// Get display label for a role
+export function getRoleLabel(role: string): string {
+  const normalized = normalizeRole(role);
+  switch (normalized) {
+    case Role.ADMIN:
+      return 'Administrator';
+    case Role.DISPATCHER:
+      return 'Dispatcher';
+    case Role.TECHNICIAN:
+      return 'Worker';
+    default:
+      return role;
+  }
+}
+
 // Access level for organization delegation (SaaS multi-tenant)
 export enum AccessLevel {
   NONE = 'NONE',                 // No access - manager sees nothing

@@ -7,7 +7,7 @@
  * - class-transformer
  * - @prisma/client
  *
- * For NestJS backend usage, import from '@doergo/shared' directly.
+ * For NestJS backend usage, import from '@hbcfield/shared' directly.
  */
 
 // Export all types (enums, interfaces, etc.)

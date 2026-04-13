@@ -1,5 +1,5 @@
 /**
- * DOERGO Design System Tokens
+ * HBCFIELD Design System Tokens
  *
  * This file contains all design tokens extracted from the Figma designs.
  * Use these tokens consistently across all apps (web-partner, web-office, mobile).
@@ -12,11 +12,12 @@
 export const colors = {
   // Brand Colors
   brand: {
-    primary: '#2563EB',      // Main blue - buttons, links, active states
-    primaryHover: '#1D4ED8', // Darker blue for hover
-    primaryLight: '#DBEAFE', // Light blue for backgrounds
-    accent: '#F97316',       // Orange - logo accent, urgent indicators
+    primary: '#059669',      // Main green - buttons, links, active states
+    primaryHover: '#047857', // Darker green for hover
+    primaryLight: '#ecfdf5', // Light green for backgrounds
+    accent: '#F97316',       // Orange - urgent indicators
     accentLight: '#FED7AA',  // Light orange for backgrounds
+    gradient: 'linear-gradient(135deg, #059669, #3b82f6)',
   },
 
   // Neutral Colors
@@ -33,7 +34,7 @@ export const colors = {
     secondary: '#64748B',    // Muted/secondary text
     tertiary: '#94A3B8',     // Placeholder text
     inverse: '#FFFFFF',      // White text on dark backgrounds
-    link: '#2563EB',         // Link color
+    link: '#059669',         // Link color
   },
 
   // Status Colors
@@ -77,7 +78,7 @@ export const colors = {
   // Sidebar
   sidebar: {
     background: '#FFFFFF',
-    activeBackground: '#2563EB',
+    activeBackground: '#059669',
     activeText: '#FFFFFF',
     hoverBackground: '#F1F5F9',
     text: '#64748B',

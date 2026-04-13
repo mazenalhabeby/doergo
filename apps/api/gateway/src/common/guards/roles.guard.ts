@@ -1,13 +1,13 @@
 /**
  * RolesGuard - must be in gateway due to NestJS DI requirements
- * Helper functions are exported from @doergo/shared
+ * Helper functions are exported from @hbcfield/shared
  */
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role, ROLES_KEY } from '@doergo/shared';
+import { Role, ROLES_KEY } from '@hbcfield/shared';
 
 // Re-export helper functions from shared
-export { hasRole, isClient, isDispatcher, isTechnician } from '@doergo/shared';
+export { hasRole, isClient, isDispatcher, isTechnician } from '@hbcfield/shared';
 
 /**
  * Guard to check if user has required role(s)

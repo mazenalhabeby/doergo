@@ -8,11 +8,13 @@ import {
   getNotificationType,
 } from '../../src/hooks/usePushNotifications';
 import { SocketProvider } from '../../src/contexts/socket-context';
-
-const PRIMARY_COLOR = '#2563EB';
+import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
+import { useTheme } from '../../src/contexts/theme-context';
+import { COLORS } from '../../src/lib/constants';
 
 export default function AppLayout() {
   const router = useRouter();
+  const { colors } = useTheme();
   const hasRegistered = useRef(false);
 
   // Handle notification tap - navigate to relevant screen
@@ -65,16 +67,17 @@ export default function AppLayout() {
 
   return (
     <SocketProvider>
+    <LocationTrackingProvider>
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: 'white',
+            backgroundColor: colors.header,
           },
           headerTitleStyle: {
             fontWeight: '600',
-            color: '#1e293b',
+            color: colors.textPrimary,
           },
-          headerTintColor: PRIMARY_COLOR,
+          headerTintColor: COLORS.primary,
         }}
       >
         <Stack.Screen
@@ -85,7 +88,9 @@ export default function AppLayout() {
           name="task/[id]"
           options={{
             title: 'Task Details',
-            presentation: 'modal',
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
@@ -101,6 +106,7 @@ export default function AppLayout() {
           options={{ title: 'About' }}
         />
       </Stack>
+    </LocationTrackingProvider>
     </SocketProvider>
   );
 }

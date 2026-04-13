@@ -14,13 +14,13 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role } from '@doergo/shared';
+import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
   CurrentUser,
   CurrentUserData,
 } from '../../common/decorators/current-user.decorator';
-import { UpdateOrgSettingsDto, UpdateMemberRoleDto, ListMembersQueryDto } from './dto';
+import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto } from './dto';
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -120,21 +120,23 @@ export class OrganizationsController {
     return result;
   }
 
-  @Patch('members/:id/role')
+  @Patch('members/:id')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Update member role and permissions (ADMIN only)' })
-  @ApiResponse({ status: 200, description: 'Member role updated' })
-  async updateMemberRole(
+  @ApiOperation({ summary: 'Update member profile, role, and permissions (ADMIN only)' })
+  @ApiResponse({ status: 200, description: 'Member updated' })
+  async updateMember(
     @Param('id') memberId: string,
-    @Body() dto: UpdateMemberRoleDto,
+    @Body() dto: UpdateMemberDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'update_member_role' }, {
+      this.authClient.send({ cmd: 'update_member_profile' }, {
         memberId,
         organizationId: user.organizationId,
         requesterId: user.id,
         dto: {
+          firstName: dto.firstName,
+          lastName: dto.lastName,
           role: dto.role,
           platform: dto.platform,
           canCreateTasks: dto.canCreateTasks,
@@ -142,6 +144,32 @@ export class OrganizationsController {
           canAssignTasks: dto.canAssignTasks,
           canManageUsers: dto.canManageUsers,
         },
+      }),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return result;
+  }
+
+  @Post('members/:id/reset-password')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Reset member password (ADMIN only)' })
+  @ApiResponse({ status: 200, description: 'Temporary password generated' })
+  async resetMemberPassword(
+    @Param('id') memberId: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'admin_reset_member_password' }, {
+        memberId,
+        organizationId: user.organizationId,
+        requesterId: user.id,
       }),
     );
 

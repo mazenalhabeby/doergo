@@ -1,7 +1,7 @@
 /**
  * Shared Attendance Types
  * These types are used by both web and mobile apps to ensure consistency.
- * Import from '@doergo/shared' instead of redefining in each app.
+ * Import from '@hbcfield/shared' instead of redefining in each app.
  */
 
 import { TimeEntryStatus, BreakType, ApprovalStatus } from './index';

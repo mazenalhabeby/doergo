@@ -3,7 +3,7 @@ import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@doergo/shared';
+import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@hbcfield/shared';
 import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
 import { AssetsController } from './assets.controller';

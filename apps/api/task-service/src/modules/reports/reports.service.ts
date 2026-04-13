@@ -17,7 +17,7 @@ import {
   Role,
   success,
   paginated,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 @Injectable()
 export class ReportsService {
@@ -32,7 +32,7 @@ export class ReportsService {
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
   ) {
     this.s3Endpoint = this.configService.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
-    this.s3Bucket = this.configService.get<string>('S3_BUCKET', 'doergo');
+    this.s3Bucket = this.configService.get<string>('S3_BUCKET', 'hbcfield');
 
     this.s3Client = new S3Client({
       endpoint: this.s3Endpoint,

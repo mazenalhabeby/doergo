@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
-import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@doergo/shared';
+import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@hbcfield/shared';
 import { AttendanceController } from './attendance.controller';
 import { AttendanceService } from './attendance.service';
 import { AttendanceProcessor } from './attendance.processor';

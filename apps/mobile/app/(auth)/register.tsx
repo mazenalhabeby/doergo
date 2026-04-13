@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../src/contexts/auth-context';
 import { AnimatedLogo } from '../../src/components';
+import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
+import { useTheme } from '../../src/contexts/theme-context';
 import { authApi } from '../../src/lib/api';
 import {
   COLORS,
@@ -51,35 +53,10 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const { colors, isDark } = useTheme();
+
   // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const orb1Anim = useRef(new Animated.Value(0)).current;
-  const orb2Anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
-    ]).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb1Anim, { toValue: 1, duration: 3000, useNativeDriver: true }),
-        Animated.timing(orb1Anim, { toValue: 0, duration: 3000, useNativeDriver: true }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb2Anim, { toValue: 1, duration: 4000, useNativeDriver: true }),
-        Animated.timing(orb2Anim, { toValue: 0, duration: 4000, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
-  const orb1TranslateY = orb1Anim.interpolate({ inputRange: [0, 1], outputRange: [0, -20] });
-  const orb2TranslateY = orb2Anim.interpolate({ inputRange: [0, 1], outputRange: [0, 15] });
+  const { fadeAnim, slideAnim, orb1TranslateY, orb2TranslateY } = useAuthAnimations();
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -144,12 +121,12 @@ export default function RegisterScreen() {
   ];
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.surface, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <StatusBar style="light" />
 
       {/* Premium Dark Header with Gradient */}
       <LinearGradient
-        colors={['#0f172a', '#1e293b', '#0f172a']}
+        colors={[COLORS.slate900, COLORS.slate800, COLORS.slate900]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}
@@ -167,35 +144,35 @@ export default function RegisterScreen() {
           </View>
           <View style={styles.divider} />
           <Text style={styles.welcomeText}>Create your account</Text>
-          <Text style={styles.subtitleText}>Get started with Doergo</Text>
+          <Text style={styles.subtitleText}>Get started with HBCField</Text>
         </View>
       </LinearGradient>
 
       {/* Form Card */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.formWrapper}>
-        <View style={styles.formCard}>
+        <View style={[styles.formCard, { backgroundColor: colors.card }]}>
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {/* Name Fields */}
             <View style={styles.nameRow}>
               <View style={styles.halfInputGroup}>
-                <Text style={styles.label}>First name</Text>
-                <View style={[styles.inputContainer, errors.firstName && styles.inputError]}>
-                  <View style={styles.inputIconContainer}>
-                    <Ionicons name="person-outline" size={18} color={COLORS.slate500} />
+                <Text style={[styles.label, { color: colors.textPrimary }]}>First name</Text>
+                <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.firstName && styles.inputError]}>
+                  <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
+                    <Ionicons name="person-outline" size={18} color={colors.textMuted} />
                   </View>
-                  <TextInput style={styles.input} placeholder="John" placeholderTextColor={COLORS.slate400}
+                  <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="John" placeholderTextColor={colors.textMuted}
                     value={firstName} onChangeText={(t) => { setFirstName(t); clearError('firstName'); }} autoCapitalize="words"
                     autoComplete="given-name" textContentType="givenName" />
                 </View>
                 {errors.firstName && <View style={styles.errorContainer}><Ionicons name="alert-circle" size={12} color={COLORS.error} /><Text style={styles.errorText}>{errors.firstName}</Text></View>}
               </View>
               <View style={styles.halfInputGroup}>
-                <Text style={styles.label}>Last name</Text>
-                <View style={[styles.inputContainer, errors.lastName && styles.inputError]}>
-                  <View style={styles.inputIconContainer}>
-                    <Ionicons name="person-outline" size={18} color={COLORS.slate500} />
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Last name</Text>
+                <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.lastName && styles.inputError]}>
+                  <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
+                    <Ionicons name="person-outline" size={18} color={colors.textMuted} />
                   </View>
-                  <TextInput style={styles.input} placeholder="Doe" placeholderTextColor={COLORS.slate400}
+                  <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Doe" placeholderTextColor={colors.textMuted}
                     value={lastName} onChangeText={(t) => { setLastName(t); clearError('lastName'); }} autoCapitalize="words"
                     autoComplete="family-name" textContentType="familyName" />
                 </View>
@@ -205,12 +182,12 @@ export default function RegisterScreen() {
 
             {/* Email */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <View style={[styles.inputContainer, errors.email && styles.inputError]}>
-                <View style={styles.inputIconContainer}>
-                  <Ionicons name="mail-outline" size={18} color={COLORS.slate500} />
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Email</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.email && styles.inputError]}>
+                <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
+                  <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={styles.input} placeholder="you@example.com" placeholderTextColor={COLORS.slate400}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="you@example.com" placeholderTextColor={colors.textMuted}
                   value={email} onChangeText={(t) => { setEmail(t); clearError('email'); }}
                   keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
                   autoComplete="email" textContentType="emailAddress" />
@@ -220,17 +197,17 @@ export default function RegisterScreen() {
 
             {/* Password */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={[styles.inputContainer, errors.password && styles.inputError]}>
-                <View style={styles.inputIconContainer}>
-                  <Ionicons name="lock-closed-outline" size={18} color={COLORS.slate500} />
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Password</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.password && styles.inputError]}>
+                <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
+                  <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={styles.input} placeholder="Min. 8 characters" placeholderTextColor={COLORS.slate400}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Min. 8 characters" placeholderTextColor={colors.textMuted}
                   value={password} onChangeText={(t) => { setPassword(t); clearError('password'); }}
                   secureTextEntry={!showPassword} autoCapitalize="none"
                   autoComplete="new-password" textContentType="newPassword" />
                 <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={COLORS.slate500} />
+                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
               {errors.password && <View style={styles.errorContainer}><Ionicons name="alert-circle" size={12} color={COLORS.error} /><Text style={styles.errorText}>{errors.password}</Text></View>}
@@ -238,8 +215,8 @@ export default function RegisterScreen() {
                 <View style={styles.passwordChecks}>
                   {passwordChecks.map((check) => (
                     <View key={check.label} style={styles.checkItem}>
-                      <Ionicons name={check.test ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={check.test ? COLORS.success : COLORS.slate400} />
-                      <Text style={[styles.checkText, check.test && styles.checkTextSuccess]}>{check.label}</Text>
+                      <Ionicons name={check.test ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={check.test ? COLORS.success : colors.textMuted} />
+                      <Text style={[styles.checkText, { color: colors.textMuted }, check.test && styles.checkTextSuccess]}>{check.label}</Text>
                     </View>
                   ))}
                 </View>
@@ -248,24 +225,24 @@ export default function RegisterScreen() {
 
             {/* Confirm Password */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirm password</Text>
-              <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
-                <View style={styles.inputIconContainer}>
-                  <Ionicons name="lock-closed-outline" size={18} color={COLORS.slate500} />
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Confirm password</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.confirmPassword && styles.inputError]}>
+                <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
+                  <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={styles.input} placeholder="Re-enter password" placeholderTextColor={COLORS.slate400}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Re-enter password" placeholderTextColor={colors.textMuted}
                   value={confirmPassword} onChangeText={(t) => { setConfirmPassword(t); clearError('confirmPassword'); }}
                   secureTextEntry={!showConfirmPassword} autoCapitalize="none"
                   autoComplete="new-password" textContentType="newPassword" />
                 <TouchableOpacity style={styles.eyeButton} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={COLORS.slate500} />
+                  <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
               {errors.confirmPassword && <View style={styles.errorContainer}><Ionicons name="alert-circle" size={12} color={COLORS.error} /><Text style={styles.errorText}>{errors.confirmPassword}</Text></View>}
             </View>
 
             {/* Terms */}
-            <Text style={styles.termsText}>
+            <Text style={[styles.termsText, { color: colors.textSecondary }]}>
               By creating an account, you agree to our{' '}
               <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
               <Text style={styles.termsLink}>Privacy Policy</Text>
@@ -289,7 +266,7 @@ export default function RegisterScreen() {
 
             {/* Sign In Link */}
             <View style={styles.signInContainer}>
-              <Text style={styles.signInText}>Already have an account? </Text>
+              <Text style={[styles.signInText, { color: colors.textSecondary }]}>Already have an account? </Text>
               <TouchableOpacity onPress={() => router.back()}>
                 <Text style={styles.signInLink}>Sign In</Text>
               </TouchableOpacity>
@@ -302,7 +279,7 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.slate50 },
+  container: { flex: 1 },
   header: {
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.xxl + SPACING.lg,
@@ -322,32 +299,32 @@ const styles = StyleSheet.create({
   subtitleText: { fontSize: FONT_SIZE.lg, color: COLORS.slate400 },
   formWrapper: { flex: 1, marginTop: -SPACING.xl },
   formCard: {
-    flex: 1, marginHorizontal: SPACING.lg, backgroundColor: COLORS.white, borderRadius: RADIUS.xl + 4,
+    flex: 1, marginHorizontal: SPACING.lg, borderRadius: RADIUS.xl + 4,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 8,
   },
   scrollContent: { padding: SPACING.xl, paddingBottom: SPACING.xxl },
   nameRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.lg },
   halfInputGroup: { flex: 1 },
   inputGroup: { marginBottom: SPACING.lg },
-  label: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.slate700, marginBottom: SPACING.sm },
+  label: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.sm },
   inputContainer: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.slate50, borderRadius: RADIUS.md + 2,
-    borderWidth: 1.5, borderColor: COLORS.slate200, height: 52,
+    flexDirection: 'row', alignItems: 'center', borderRadius: RADIUS.md + 2,
+    borderWidth: 1.5, height: 52,
   },
-  inputError: { borderColor: '#fca5a5', backgroundColor: COLORS.errorLight },
+  inputError: { borderColor: COLORS.errorBorder, backgroundColor: COLORS.errorLight },
   inputIconContainer: {
     width: 48, height: '100%', justifyContent: 'center', alignItems: 'center',
-    backgroundColor: COLORS.slate100, borderRightWidth: 1, borderRightColor: COLORS.slate200,
+    borderRightWidth: 1,
   },
-  input: { flex: 1, fontSize: FONT_SIZE.xl, color: COLORS.slate800, paddingHorizontal: SPACING.md, height: '100%' },
+  input: { flex: 1, fontSize: FONT_SIZE.xl, paddingHorizontal: SPACING.md, height: '100%' },
   eyeButton: { paddingHorizontal: SPACING.md, height: '100%', justifyContent: 'center' },
   errorContainer: { flexDirection: 'row', alignItems: 'center', marginTop: SPACING.xs, gap: SPACING.xs },
   errorText: { fontSize: FONT_SIZE.sm, color: COLORS.error, fontWeight: FONT_WEIGHT.medium },
   passwordChecks: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginTop: SPACING.sm },
   checkItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  checkText: { fontSize: FONT_SIZE.xs, color: COLORS.slate400 },
+  checkText: { fontSize: FONT_SIZE.xs },
   checkTextSuccess: { color: COLORS.success },
-  termsText: { fontSize: FONT_SIZE.sm, color: COLORS.slate500, textAlign: 'center', lineHeight: 18, marginBottom: SPACING.lg },
+  termsText: { fontSize: FONT_SIZE.sm, textAlign: 'center', lineHeight: 18, marginBottom: SPACING.lg },
   termsLink: { color: COLORS.primary, fontWeight: FONT_WEIGHT.semibold },
   registerButton: {
     borderRadius: RADIUS.md, overflow: 'hidden',
@@ -361,6 +338,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   signInContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.lg },
-  signInText: { fontSize: FONT_SIZE.base, color: COLORS.slate500 },
+  signInText: { fontSize: FONT_SIZE.base },
   signInLink: { fontSize: FONT_SIZE.base, color: COLORS.primary, fontWeight: FONT_WEIGHT.semibold },
 });

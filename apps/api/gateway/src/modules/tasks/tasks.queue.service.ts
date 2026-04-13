@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import { QUEUE_NAMES, TASK_JOB_TYPES, BaseQueueService } from '@doergo/shared';
+import { QUEUE_NAMES, TASK_JOB_TYPES, BaseQueueService } from '@hbcfield/shared';
 
 /**
  * Service for managing task-related WRITE jobs via BullMQ
@@ -62,15 +62,21 @@ export class TasksQueueService extends BaseQueueService {
     return this.addJobAndWait(TASK_JOB_TYPES.ADD_ATTACHMENT, data);
   }
 
-  async getAttachments(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.GET_ATTACHMENTS, data);
-  }
-
   async deleteAttachment(data: Record<string, any>) {
     return this.addJobAndWait(TASK_JOB_TYPES.DELETE_ATTACHMENT, data);
   }
 
   async getPresignedUrl(data: Record<string, any>) {
     return this.addJobAndWait(TASK_JOB_TYPES.GET_PRESIGNED_URL, data);
+  }
+
+  // ============ Avatar S3 Operations ============
+
+  async getAvatarPresignedUrl(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.AVATAR_PRESIGNED_URL, data);
+  }
+
+  async deleteAvatarFromS3(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.AVATAR_DELETE_S3, data);
   }
 }

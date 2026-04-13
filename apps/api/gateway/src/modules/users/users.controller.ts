@@ -15,11 +15,12 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { IsString, IsOptional } from 'class-validator';
-import { Role, SERVICE_NAMES } from '@doergo/shared';
+import { Role, SERVICE_NAMES } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
+import { TasksQueueService } from '../tasks/tasks.queue.service';
 
 class RegisterPushTokenDto {
   @IsString()
@@ -33,6 +34,19 @@ class RegisterPushTokenDto {
   deviceId?: string;
 }
 
+class AvatarPresignDto {
+  @IsString()
+  fileName: string;
+
+  @IsString()
+  fileType: string;
+}
+
+class AvatarConfirmDto {
+  @IsString()
+  avatarUrl: string;
+}
+
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
@@ -42,6 +56,7 @@ export class UsersController {
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    private readonly tasksQueueService: TasksQueueService,
   ) {}
 
   @Get('me')
@@ -50,6 +65,63 @@ export class UsersController {
     return firstValueFrom(
       this.authClient.send({ cmd: 'get_profile' }, { userId: user.id }),
     );
+  }
+
+  // =========================================================================
+  // AVATAR
+  // =========================================================================
+
+  @Post('avatar/presign')
+  @ApiOperation({ summary: 'Get presigned URL for avatar upload' })
+  @ApiBody({ type: AvatarPresignDto })
+  async avatarPresign(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: AvatarPresignDto,
+  ) {
+    return this.tasksQueueService.getAvatarPresignedUrl({
+      userId: user.id,
+      fileName: dto.fileName,
+      fileType: dto.fileType,
+    });
+  }
+
+  @Post('avatar')
+  @ApiOperation({ summary: 'Confirm avatar upload (save URL to user profile)' })
+  @ApiBody({ type: AvatarConfirmDto })
+  async avatarConfirm(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: AvatarConfirmDto,
+  ) {
+    return firstValueFrom(
+      this.authClient.send(
+        { cmd: 'update_avatar' },
+        { userId: user.id, avatarUrl: dto.avatarUrl },
+      ),
+    );
+  }
+
+  @Delete('avatar')
+  @ApiOperation({ summary: 'Remove avatar from user profile and S3' })
+  async avatarRemove(@CurrentUser() user: CurrentUserData) {
+    // 1. Remove from DB and get old URL
+    const result: any = await firstValueFrom(
+      this.authClient.send(
+        { cmd: 'remove_avatar' },
+        { userId: user.id },
+      ),
+    );
+
+    // 2. Delete old file from S3 if exists (fire-and-forget with logging)
+    const oldUrl = result?.data?.oldAvatarUrl;
+    if (oldUrl) {
+      this.tasksQueueService.deleteAvatarFromS3({ fileUrl: oldUrl })
+        .catch((err) => {
+          // Log but don't fail the user-facing response
+          console.warn(`[AvatarRemove] Failed to delete S3 avatar for user ${user.id}: ${err?.message}`);
+        });
+    }
+
+    return result;
   }
 
   // =========================================================================

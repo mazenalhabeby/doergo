@@ -15,7 +15,7 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role } from '@doergo/shared';
+import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';

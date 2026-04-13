@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../lib/constants';
 import { getStatusStyle, getPriorityStyle } from '../lib/styles';
 import { formatTimeRange, formatRelativeDate } from '../lib/utils';
+import { useTheme } from '../contexts/theme-context';
 
 // Task type definition
 export interface TaskCardData {
@@ -58,12 +59,13 @@ export function TaskCard({
   showAssignee = false,
   compact = false,
 }: TaskCardProps) {
+  const { colors } = useTheme();
   const statusStyle = getStatusStyle(task.status);
   const priorityStyle = task.priority ? getPriorityStyle(task.priority) : null;
 
   return (
     <TouchableOpacity
-      style={[styles.card, compact && styles.cardCompact]}
+      style={[styles.card, { backgroundColor: colors.card }, compact && styles.cardCompact]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -74,12 +76,12 @@ export function TaskCard({
             {showPriority && priorityStyle && (
               <View style={[styles.priorityDot, { backgroundColor: priorityStyle.color }]} />
             )}
-            <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={1}>
+            <Text style={[styles.title, { color: colors.textPrimary }, compact && styles.titleCompact]} numberOfLines={1}>
               {task.title}
             </Text>
           </View>
           {task.createdBy && (
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               {task.createdBy.firstName} {task.createdBy.lastName}
             </Text>
           )}
@@ -99,8 +101,8 @@ export function TaskCard({
       {/* Location */}
       {task.locationAddress && (
         <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={16} color={COLORS.slate400} />
-          <Text style={styles.infoText} numberOfLines={1}>
+          <Ionicons name="location-outline" size={16} color={colors.textMuted} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]} numberOfLines={1}>
             {task.locationAddress}
           </Text>
         </View>
@@ -109,8 +111,8 @@ export function TaskCard({
       {/* Time/Date */}
       {task.dueDate && (
         <View style={styles.infoRow}>
-          <Ionicons name="time-outline" size={16} color={COLORS.slate400} />
-          <Text style={styles.infoText}>
+          <Ionicons name="time-outline" size={16} color={colors.textMuted} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
             {showDate ? formatRelativeDate(task.dueDate) : formatTimeRange(task.dueDate)}
           </Text>
         </View>
@@ -122,11 +124,12 @@ export function TaskCard({
           <Ionicons
             name="person-outline"
             size={16}
-            color={task.assignedTo ? COLORS.slate400 : COLORS.warning}
+            color={task.assignedTo ? colors.textMuted : COLORS.warning}
           />
           <Text
             style={[
               styles.infoText,
+              { color: colors.textSecondary },
               !task.assignedTo && { color: COLORS.warning, fontWeight: FONT_WEIGHT.medium },
             ]}
           >
@@ -142,7 +145,6 @@ export function TaskCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     ...SHADOWS.md,
@@ -168,7 +170,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
     flex: 1,
   },
   titleCompact: {
@@ -176,7 +177,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
     marginTop: 2,
   },
   priorityDot: {
@@ -202,7 +202,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
     flex: 1,
   },
 });

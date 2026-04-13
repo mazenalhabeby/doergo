@@ -13,7 +13,7 @@ import {
   INVITATION_MAX_EXPIRY_HOURS,
   INVITATION_MIN_EXPIRY_HOURS,
   INVITATION_MAX_PENDING_PER_ORG,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 function hashCode(code: string): string {
   return createHash('sha256').update(code).digest('hex');

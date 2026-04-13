@@ -11,7 +11,7 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { TechnicianType, WorkMode } from '@doergo/shared';
+import { TechnicianType, WorkMode } from '@hbcfield/shared';
 
 export class CreateTechnicianDto {
   @ApiProperty({

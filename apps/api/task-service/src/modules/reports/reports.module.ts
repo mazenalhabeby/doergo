@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
-import { SERVICE_NAMES, createClientOptions } from '@doergo/shared';
+import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportsProcessor } from './reports.processor';

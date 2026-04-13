@@ -191,7 +191,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
         name: 'Default',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#2563EB', // Primary brand color
+        lightColor: '#059669', // Primary brand color
       });
 
       // Task notifications channel
@@ -200,7 +200,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
         description: 'Task assignments and status updates',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#2563EB',
+        lightColor: '#059669',
       });
 
       // Attendance notifications channel

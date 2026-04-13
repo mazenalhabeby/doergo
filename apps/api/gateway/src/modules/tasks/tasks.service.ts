@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, BaseGatewayService } from '@doergo/shared';
+import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
 
 /**
  * Service for direct microservice communication with task-service
@@ -67,5 +67,13 @@ export class TasksService extends BaseGatewayService {
   async getSuggestedTechnicians(data: Record<string, any>) {
     this.logger.debug(`Getting suggested technicians for task ${data.taskId} via direct microservice call`);
     return this.send({ cmd: 'get_suggested_technicians' }, data);
+  }
+
+  /**
+   * Get task attachments
+   */
+  async getAttachments(data: Record<string, any>) {
+    this.logger.debug(`Getting attachments for task ${data.taskId} via direct microservice call`);
+    return this.send({ cmd: 'get_attachments' }, data);
   }
 }

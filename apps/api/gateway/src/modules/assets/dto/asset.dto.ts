@@ -8,7 +8,7 @@ import {
   IsEnum,
   IsDateString,
 } from 'class-validator';
-import { AssetStatus } from '@doergo/shared';
+import { AssetStatus } from '@hbcfield/shared';
 
 export class CreateAssetDto {
   @ApiProperty({ example: 'Rooftop HVAC Unit #1', description: 'Asset name' })

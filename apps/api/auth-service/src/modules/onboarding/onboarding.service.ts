@@ -14,7 +14,7 @@ import {
   INVITATION_CODE_CHARSET,
   hashCode,
   generateSecureCode,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 @Injectable()
 export class OnboardingService {

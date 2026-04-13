@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions } from '@nestjs/microservices';
-import { createMicroserviceOptions } from '@doergo/shared';
+import { createMicroserviceOptions } from '@hbcfield/shared';
 import { AppModule } from './app.module';
 
 async function bootstrap() {

@@ -1,8 +1,8 @@
 import type { Config } from 'tailwindcss';
-import doergoPreset from '@doergo/shared/design/tailwind-preset';
+import hbcfieldPreset from '@hbcfield/shared/design/tailwind-preset';
 
 const config: Config = {
-  presets: [doergoPreset],
+  presets: [hbcfieldPreset],
   darkMode: ['class'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',

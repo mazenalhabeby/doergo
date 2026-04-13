@@ -3,7 +3,7 @@ import { ClientsModule } from '@nestjs/microservices';
 import {
   SERVICE_NAMES,
   createMultipleClientOptions,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 /**
  * Microservices Module

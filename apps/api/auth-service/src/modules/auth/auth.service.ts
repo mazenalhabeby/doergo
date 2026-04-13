@@ -19,7 +19,7 @@ import {
   DEFAULT_PERMISSIONS,
   Role,
   Platform,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Hash a token using SHA-256 for secure storage
 function hashToken(token: string): string {
@@ -60,15 +60,15 @@ export class AuthService {
       return;
     }
 
-    const appUrl = this.configService.get('APP_URL', 'https://doergo.hbc-solution.io');
+    const appUrl = this.configService.get('APP_URL', 'https://hbcfield.hbc-solution.io');
     const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
-    const fromEmail = this.configService.get('SMTP_FROM', 'noreply@doergo.com');
+    const fromEmail = this.configService.get('SMTP_FROM', 'noreply@hbcfield.eu');
 
     try {
       await this.mailTransporter.sendMail({
         from: fromEmail,
         to: email,
-        subject: 'Doergo - Reset Your Password',
+        subject: 'HBCField - Reset Your Password',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2563eb;">Password Reset Request</h2>
@@ -84,7 +84,7 @@ export class AuthService {
             <p style="color: #64748b; font-size: 14px;">This link will expire in ${PASSWORD_RESET_EXPIRATION_HOURS} hour(s).</p>
             <p style="color: #64748b; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-            <p style="color: #94a3b8; font-size: 12px;">This is an automated message from Doergo Field Service Management.</p>
+            <p style="color: #94a3b8; font-size: 12px;">This is an automated message from HBCField.</p>
           </div>
         `,
       });
@@ -166,6 +166,7 @@ export class AuthService {
               role: true,
               organizationId: true,
               onboardingCompleted: true,
+              avatarUrl: true,
               platform: true,
               canCreateTasks: true,
               canViewAllTasks: true,
@@ -226,7 +227,7 @@ export class AuthService {
     }
   }
 
-  async login(data: { email: string; password: string; rememberMe?: boolean }) {
+  async login(data: { email: string; password: string; rememberMe?: boolean; userAgent?: string; ipAddress?: string }) {
     try {
       // Normalize email to lowercase for lookup
       const email = data.email.trim().toLowerCase();
@@ -324,7 +325,10 @@ export class AuthService {
         });
       }
 
-      const tokens = await this.generateTokens(user.id, user.email, user.role);
+      const tokens = await this.generateTokens(user.id, user.email, user.role, {
+        userAgent: data.userAgent,
+        ipAddress: data.ipAddress,
+      });
 
       return {
         success: true,
@@ -337,6 +341,7 @@ export class AuthService {
             role: user.role,
             organizationId: user.organizationId,
             onboardingCompleted: user.onboardingCompleted,
+            avatarUrl: user.avatarUrl,
             // Permission fields
             platform: user.platform,
             canCreateTasks: user.canCreateTasks,
@@ -455,17 +460,18 @@ export class AuthService {
         }
 
         // Within grace period but no cached tokens yet - another request is generating them
-        // Wait and retry to get the cached tokens
+        // Wait and retry to get the cached tokens (exponential backoff: 50, 100, 200, 400, 800ms)
         this.logger.log('Token used but cached tokens not ready - waiting for concurrent request to finish');
-        for (let attempt = 0; attempt < 10; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const delay = 50 * Math.pow(2, attempt); // 50, 100, 200, 400, 800ms
+          await new Promise(resolve => setTimeout(resolve, delay));
 
           const updatedToken = await this.prisma.refreshToken.findUnique({
             where: { id: storedToken.id },
           });
 
           if (updatedToken?.cachedAccessToken && updatedToken?.cachedRefreshToken) {
-            this.logger.log(`Got cached tokens from concurrent request (attempt ${attempt + 1})`);
+            this.logger.log(`Got cached tokens from concurrent request (attempt ${attempt + 1}, ${delay}ms)`);
             return {
               success: true,
               data: {
@@ -474,7 +480,7 @@ export class AuthService {
               },
             };
           }
-          this.logger.log(`Waiting for cached tokens, attempt ${attempt + 1}/10`);
+          this.logger.debug(`Waiting for cached tokens, attempt ${attempt + 1}/5 (${delay}ms)`);
         }
 
         // After waiting, still no cached tokens - give up
@@ -505,16 +511,17 @@ export class AuthService {
         // Another request already claimed this token - wait for cached tokens
         this.logger.log('Token was claimed by another request - waiting for cached tokens');
 
-        // Retry a few times with small delay to wait for the other request to finish
-        for (let attempt = 0; attempt < 5; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+        // Retry with exponential backoff to wait for the other request to finish (50, 100, 200, 400ms)
+        for (let attempt = 0; attempt < 4; attempt++) {
+          const delay = 50 * Math.pow(2, attempt); // 50, 100, 200, 400ms
+          await new Promise(resolve => setTimeout(resolve, delay));
 
           const updatedToken = await this.prisma.refreshToken.findUnique({
             where: { id: storedToken.id },
           });
 
           if (updatedToken?.cachedAccessToken && updatedToken?.cachedRefreshToken) {
-            this.logger.log(`Returning cached tokens from concurrent request (attempt ${attempt + 1})`);
+            this.logger.log(`Returning cached tokens from concurrent request (attempt ${attempt + 1}, ${delay}ms)`);
             return {
               success: true,
               data: {
@@ -524,7 +531,7 @@ export class AuthService {
             };
           }
 
-          this.logger.log(`Cached tokens not ready yet, attempt ${attempt + 1}/5`);
+          this.logger.debug(`Cached tokens not ready yet, attempt ${attempt + 1}/4 (${delay}ms)`);
         }
 
         // After retries, still no cached tokens - give up
@@ -799,6 +806,7 @@ export class AuthService {
           role: true,
           organizationId: true,
           onboardingCompleted: true,
+          avatarUrl: true,
           isActive: true,
           // Permission fields
           platform: true,
@@ -822,7 +830,7 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, role: string) {
+  private async generateTokens(userId: string, email: string, role: string, deviceInfo?: { userAgent?: string; ipAddress?: string }) {
     const basePayload = { sub: userId, email, role };
 
     // Token expiration from environment variables
@@ -858,12 +866,62 @@ export class AuthService {
         tokenHash,
         userId,
         expiresAt,
+        userAgent: deviceInfo?.userAgent?.substring(0, 512),
+        ipAddress: deviceInfo?.ipAddress?.substring(0, 45),
       },
     });
     this.logger.log(`NEW TOKEN CREATED in DB: id=${created.id}, hash=${tokenHash.substring(0, 20)}, expires=${expiresAt}`);
 
     // Return the plain token to the client (they need it to authenticate)
     return { accessToken, refreshToken };
+  }
+
+  // ========== SESSION MANAGEMENT ==========
+
+  async listSessions(userId: string) {
+    const sessions = await this.prisma.refreshToken.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() },
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        expiresAt: true,
+        userAgent: true,
+        ipAddress: true,
+        usedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { success: true, data: sessions };
+  }
+
+  async revokeSession(userId: string, sessionId: string) {
+    const result = await this.prisma.refreshToken.deleteMany({
+      where: {
+        id: sessionId,
+        userId, // ensure user can only revoke their own sessions
+      },
+    });
+
+    if (result.count === 0) {
+      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Session not found' };
+    }
+
+    return { success: true, data: null, message: 'Session revoked' };
+  }
+
+  async revokeAllSessions(userId: string, exceptSessionId?: string) {
+    const where: any = { userId };
+    if (exceptSessionId) {
+      where.id = { not: exceptSessionId };
+    }
+
+    const result = await this.prisma.refreshToken.deleteMany({ where });
+
+    return { success: true, data: { revoked: result.count }, message: `${result.count} session(s) revoked` };
   }
 
   private calculateExpiry(duration: string): Date {
@@ -895,6 +953,54 @@ export class AuthService {
     }
 
     return now;
+  }
+
+  /**
+   * Update user avatar URL
+   */
+  async updateAvatar(data: { userId: string; avatarUrl: string }) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: data.userId },
+        data: { avatarUrl: data.avatarUrl },
+        select: {
+          id: true,
+          avatarUrl: true,
+        },
+      });
+      return { success: true, data: user };
+    } catch (error) {
+      this.logger.error(`Update avatar error: ${error}`);
+      return { success: false, statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to update avatar.' };
+    }
+  }
+
+  /**
+   * Remove user avatar URL (returns old URL for S3 cleanup)
+   */
+  async removeAvatar(data: { userId: string }) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: data.userId },
+        select: { avatarUrl: true },
+      });
+
+      if (!user?.avatarUrl) {
+        return { success: true, data: { oldAvatarUrl: null } };
+      }
+
+      const oldAvatarUrl = user.avatarUrl;
+
+      await this.prisma.user.update({
+        where: { id: data.userId },
+        data: { avatarUrl: null },
+      });
+
+      return { success: true, data: { oldAvatarUrl } };
+    } catch (error) {
+      this.logger.error(`Remove avatar error: ${error}`);
+      return { success: false, statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to remove avatar.' };
+    }
   }
 
   /**

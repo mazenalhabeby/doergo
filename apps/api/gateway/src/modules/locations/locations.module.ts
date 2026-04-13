@@ -7,7 +7,7 @@ import {
   SERVICE_NAMES,
   createClientOptions,
   QUEUE_NAMES,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 import { LocationsController } from './locations.controller';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,22 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
-  Modal,
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
-import { timeOffApi, type TimeOffRequest } from '../../../src/lib/api';
+import { useTheme } from '../../../src/contexts/theme-context';
+import { useFetchData } from '../../../src/hooks/useFetchData';
+import { LoadingState, ErrorState } from '../../../src/components/screen-states';
+import {
+  timeOffApi,
+  availabilityApi,
+  scheduleApi,
+  type TimeOffRequest,
+  type AvailabilityResponse,
+  type ScheduleEntry,
+} from '../../../src/lib/api';
 import {
   COLORS,
   SPACING,
@@ -23,7 +33,20 @@ import {
   SHADOWS,
 } from '../../../src/lib/constants';
 import { getTimeOffStatusStyle } from '../../../src/lib/styles';
-import { formatShortDate } from '../../../src/lib/utils';
+import { formatShortDate, isSameDay } from '../../../src/lib/utils';
+import { FilterChip } from '../../../src/components/filter-chip';
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+const DAY_NAMES_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const REASON_TYPES = ['Vacation', 'Sick Leave', 'Personal', 'Other'] as const;
 
 function getDayCount(startDate: string, endDate: string): number {
   const start = new Date(startDate);
@@ -49,80 +72,359 @@ function getTypeLabel(reason?: string): string {
   return 'Time Off';
 }
 
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatLongDate(d: Date): string {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** Build a grid of 6 rows x 7 columns for a month calendar (Mon-start). */
+function getMonthGrid(year: number, month: number): (Date | null)[][] {
+  const firstDay = new Date(year, month, 1);
+  // Convert JS getDay (0=Sun) to Mon-start (0=Mon)
+  let startDow = firstDay.getDay() - 1;
+  if (startDow < 0) startDow = 6;
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const grid: (Date | null)[][] = [];
+  let dayNum = 1 - startDow;
+
+  for (let row = 0; row < 6; row++) {
+    const week: (Date | null)[] = [];
+    for (let col = 0; col < 7; col++) {
+      if (dayNum >= 1 && dayNum <= daysInMonth) {
+        week.push(new Date(year, month, dayNum));
+      } else {
+        week.push(null);
+      }
+      dayNum++;
+    }
+    // Skip trailing empty rows
+    if (week.every(d => d === null) && row >= 4) break;
+    grid.push(week);
+  }
+
+  return grid;
+}
+
+function isDateInRange(date: Date, start: Date, end: Date): boolean {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+  return d >= s && d <= e;
+}
+
+type RequestFilter = 'upcoming' | 'past' | 'all';
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
 export default function TimeOffScreen() {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<TimeOffRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { colors, isDark } = useTheme();
 
-  // Request modal state
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [reason, setReason] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const fetchRequests = useCallback(async (showRefresh = false) => {
-    if (!user?.id) return;
-    try {
-      if (showRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
-      const data = await timeOffApi.list(user.id);
-      setRequests(data || []);
-    } catch (err: any) {
-      if (err?.statusCode === 401) return;
-      setError(err instanceof Error ? err.message : 'Failed to load time off requests');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
+  // Data - fetched via useFetchData
+  const fetcher = useCallback(async () => {
+    if (!user?.id) return { requests: [] as TimeOffRequest[], schedule: [] as ScheduleEntry[] };
+    const [requestsData, scheduleData] = await Promise.all([
+      timeOffApi.list(user.id),
+      scheduleApi.getMine(user.id).catch(() => [] as ScheduleEntry[]),
+    ]);
+    return {
+      requests: Array.isArray(requestsData) ? requestsData : [],
+      schedule: Array.isArray(scheduleData) ? scheduleData : [],
+    };
   }, [user?.id]);
 
-  useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
+  const {
+    data: fetchedData,
+    isLoading,
+    isRefreshing,
+    error,
+    fetchData,
+    refresh: refreshData,
+    setData: setFetchedData,
+  } = useFetchData({
+    fetcher,
+    initialData: { requests: [] as TimeOffRequest[], schedule: [] as ScheduleEntry[] },
+  });
 
-  const handleRefresh = () => fetchRequests(true);
+  const requests = fetchedData?.requests ?? [];
+  const schedule = fetchedData?.schedule ?? [];
+
+  // Calendar
+  const today = useMemo(() => new Date(), []);
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+  // Range selection
+  const [rangeStart, setRangeStart] = useState<Date | null>(null);
+  const [rangeEnd, setRangeEnd] = useState<Date | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+
+  // Availability
+  const [availabilityCache, setAvailabilityCache] = useState<Record<string, AvailabilityResponse>>({});
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState(false);
+
+  // Request form
+  const [reasonType, setReasonType] = useState<string>('Vacation');
+  const [reasonNotes, setReasonNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Request list filter
+  const [requestFilter, setRequestFilter] = useState<RequestFilter>('upcoming');
+
+  // Schedule day lookup: dayOfWeek (0=Mon..6=Sun) → isActive
+  const scheduleDays = useMemo(() => {
+    const map: Record<number, boolean> = {};
+    schedule.forEach(entry => {
+      // Backend dayOfWeek: 0=Mon..6=Sun (matches our calendar grid)
+      map[entry.dayOfWeek] = entry.isActive;
+    });
+    return map;
+  }, [schedule]);
+
+  // Build lookup maps for user's own time-off on the calendar
+  const approvedDates = useMemo(() => {
+    const dateSet: Record<string, true> = {};
+    requests.forEach(r => {
+      if (r.status !== 'APPROVED') return;
+      const start = new Date(r.startDate);
+      const end = new Date(r.endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dateSet[toDateString(d)] = true;
+      }
+    });
+    return dateSet;
+  }, [requests]);
+
+  const pendingDates = useMemo(() => {
+    const dateSet: Record<string, true> = {};
+    requests.forEach(r => {
+      if (r.status !== 'PENDING') return;
+      const start = new Date(r.startDate);
+      const end = new Date(r.endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dateSet[toDateString(d)] = true;
+      }
+    });
+    return dateSet;
+  }, [requests]);
+
+  // =========================================================================
+  // DATA FETCHING
+  // =========================================================================
+
+  // Fetch on mount & tab focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
+
+  const handleRefresh = useCallback(() => {
+    setAvailabilityCache({});
+    refreshData();
+  }, [fetchData]);
+
+  // Fetch availability when range changes
+  useEffect(() => {
+    if (!rangeStart || !rangeEnd) return;
+
+    const days: string[] = [];
+    const d = new Date(rangeStart);
+    const end = new Date(rangeEnd);
+    while (d <= end && days.length < 14) {
+      days.push(toDateString(d));
+      d.setDate(d.getDate() + 1);
+    }
+
+    if (days.length === 0) return;
+
+    let cancelled = false;
+    setIsLoadingAvailability(true);
+    setAvailabilityError(false);
+
+    Promise.all(
+      days.map(date =>
+        availabilityApi.getForDate(date).then(
+          r => ({ date, data: r, ok: true as const }),
+          () => ({ date, data: null, ok: false as const }),
+        )
+      )
+    ).then(results => {
+      if (cancelled) return;
+      const cache: Record<string, AvailabilityResponse> = {};
+      let anySuccess = false;
+      results.forEach(r => {
+        if (r.ok && r.data) {
+          cache[r.date] = r.data;
+          anySuccess = true;
+        }
+      });
+      if (anySuccess) {
+        setAvailabilityCache(prev => ({ ...prev, ...cache }));
+      } else {
+        setAvailabilityError(true);
+      }
+      setIsLoadingAvailability(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [rangeStart, rangeEnd]);
+
+  // =========================================================================
+  // CALENDAR NAVIGATION
+  // =========================================================================
+
+  const goToPrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  const goToToday = () => {
+    setViewYear(today.getFullYear());
+    setViewMonth(today.getMonth());
+  };
+
+  // =========================================================================
+  // CALENDAR TAP HANDLING
+  // =========================================================================
+
+  const handleDayPress = (date: Date) => {
+    // Don't allow past dates
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (date < todayStart) return;
+
+    if (!isSelecting || !rangeStart) {
+      // First tap - set start
+      setRangeStart(date);
+      setRangeEnd(null);
+      setIsSelecting(true);
+    } else {
+      // Second tap - set end (auto-order)
+      const start = date < rangeStart ? date : rangeStart;
+      const end = date < rangeStart ? rangeStart : date;
+      setRangeStart(start);
+      setRangeEnd(end);
+      setIsSelecting(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setRangeStart(null);
+    setRangeEnd(null);
+    setIsSelecting(false);
+    setReasonType('Vacation');
+    setReasonNotes('');
+  };
+
+  // =========================================================================
+  // AVAILABILITY INSIGHTS
+  // =========================================================================
+
+  const availabilityInsights = useMemo(() => {
+    if (!rangeStart || !rangeEnd) return null;
+
+    const days: string[] = [];
+    const d = new Date(rangeStart);
+    const end = new Date(rangeEnd);
+    while (d <= end) {
+      days.push(toDateString(d));
+      d.setDate(d.getDate() + 1);
+    }
+
+    let worstAvailable = Infinity;
+    let worstTotal = 0;
+    let worstDay = '';
+    const teamOnTimeOff: Record<string, string> = {}; // id → name
+    let hasAnyData = false;
+    const userNotScheduledDays: string[] = [];
+
+    days.forEach(dayStr => {
+      const data = availabilityCache[dayStr];
+      if (!data) return;
+      hasAnyData = true;
+
+      const available = data.summary.available;
+      const total = data.summary.total;
+      if (available < worstAvailable) {
+        worstAvailable = available;
+        worstTotal = total;
+        worstDay = dayStr;
+      }
+
+      data.technicians.forEach(tech => {
+        if (tech.onTimeOff && tech.id !== user?.id) {
+          teamOnTimeOff[tech.id] = `${tech.firstName} ${tech.lastName}`;
+        }
+      });
+
+      // Check if user is scheduled that day
+      const dayDate = new Date(dayStr + 'T00:00:00');
+      let dow = dayDate.getDay() - 1;
+      if (dow < 0) dow = 6;
+      const userScheduled = scheduleDays[dow];
+      if (userScheduled === false || (schedule.length > 0 && userScheduled === undefined)) {
+        userNotScheduledDays.push(dayStr);
+      }
+    });
+
+    if (!hasAnyData) return null;
+
+    return {
+      worstAvailable: worstAvailable === Infinity ? 0 : worstAvailable,
+      worstTotal,
+      worstDay,
+      lowCoverage: worstAvailable <= 1 && worstAvailable !== Infinity,
+      teamOnTimeOff: Object.values(teamOnTimeOff),
+      userNotScheduledDays,
+    };
+  }, [rangeStart, rangeEnd, availabilityCache, scheduleDays, schedule.length, user?.id]);
+
+  // =========================================================================
+  // SUBMIT REQUEST
+  // =========================================================================
 
   const handleSubmitRequest = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !rangeStart || !rangeEnd) return;
 
-    // Validate dates
-    if (!startDate.trim() || !endDate.trim()) {
-      Alert.alert('Required', 'Please enter both start and end dates.');
-      return;
-    }
-
-    // Basic date format validation (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
-      Alert.alert('Invalid Date', 'Please enter dates in YYYY-MM-DD format (e.g., 2026-03-25).');
-      return;
-    }
-
-    if (new Date(endDate) < new Date(startDate)) {
-      Alert.alert('Invalid Range', 'End date must be on or after start date.');
-      return;
-    }
+    const startStr = toDateString(rangeStart);
+    const endStr = toDateString(rangeEnd);
+    const fullReason = reasonNotes.trim()
+      ? `${reasonType}: ${reasonNotes.trim()}`
+      : reasonType;
 
     try {
       setIsSubmitting(true);
       await timeOffApi.request(user.id, {
-        startDate: startDate.trim(),
-        endDate: endDate.trim(),
-        reason: reason.trim() || undefined,
+        startDate: startStr,
+        endDate: endStr,
+        reason: fullReason,
       });
-      setShowRequestModal(false);
-      setStartDate('');
-      setEndDate('');
-      setReason('');
+      clearSelection();
       Alert.alert('Success', 'Time off request submitted.');
-      fetchRequests();
+      fetchData();
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to submit request');
     } finally {
@@ -142,7 +444,7 @@ export default function TimeOffScreen() {
           onPress: async () => {
             try {
               await timeOffApi.cancel(request.id);
-              fetchRequests();
+              fetchData();
             } catch (err) {
               Alert.alert('Error', err instanceof Error ? err.message : 'Failed to cancel request');
             }
@@ -152,113 +454,66 @@ export default function TimeOffScreen() {
     );
   };
 
-  // Calculate stats from real data
-  const stats = {
-    approved: requests.filter(r => r.status === 'APPROVED').length,
-    pending: requests.filter(r => r.status === 'PENDING').length,
-    usedDays: requests
-      .filter(r => r.status === 'APPROVED')
-      .reduce((sum, r) => sum + getDayCount(r.startDate, r.endDate), 0),
-    totalRequests: requests.length,
-  };
+  // =========================================================================
+  // STATS
+  // =========================================================================
 
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </View>
-    );
-  }
+  const stats = useMemo(() => {
+    const todayStr = toDateString(today);
+    const approved = requests.filter(r => r.status === 'APPROVED');
+    return {
+      daysUsed: approved
+        .filter(r => r.endDate < todayStr)
+        .reduce((sum, r) => sum + getDayCount(r.startDate, r.endDate), 0),
+      upcoming: approved
+        .filter(r => r.endDate >= todayStr)
+        .reduce((sum, r) => sum + getDayCount(r.startDate, r.endDate), 0),
+      pending: requests.filter(r => r.status === 'PENDING').length,
+      rejected: requests.filter(r => r.status === 'REJECTED').length,
+    };
+  }, [requests, today]);
 
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.centerContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => fetchRequests()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  // =========================================================================
+  // FILTERED REQUESTS
+  // =========================================================================
+
+  const filteredRequests = useMemo(() => {
+    const todayStr = toDateString(today);
+    switch (requestFilter) {
+      case 'upcoming':
+        return requests.filter(r =>
+          r.endDate >= todayStr && (r.status === 'PENDING' || r.status === 'APPROVED')
+        );
+      case 'past':
+        return requests.filter(r =>
+          r.endDate < todayStr || r.status === 'REJECTED' || r.status === 'CANCELED'
+        );
+      default:
+        return requests;
+    }
+  }, [requests, requestFilter, today]);
+
+  // =========================================================================
+  // CALENDAR GRID
+  // =========================================================================
+
+  const monthGrid = useMemo(
+    () => getMonthGrid(viewYear, viewMonth),
+    [viewYear, viewMonth]
+  );
+
+  const hasRangeSelected = rangeStart !== null && rangeEnd !== null;
+  const rangeDays = hasRangeSelected ? getDayCount(toDateString(rangeStart!), toDateString(rangeEnd!)) : 0;
+
+  // =========================================================================
+  // RENDER
+  // =========================================================================
+
+  if (isLoading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
-    <View style={styles.container}>
-      {/* Request Time Off Modal */}
-      <Modal
-        visible={showRequestModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowRequestModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Request Time Off</Text>
-
-            <Text style={styles.inputLabel}>Start Date *</Text>
-            <TextInput
-              style={styles.dateInput}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={COLORS.slate400}
-              value={startDate}
-              onChangeText={setStartDate}
-              maxLength={10}
-              autoFocus
-            />
-
-            <Text style={styles.inputLabel}>End Date *</Text>
-            <TextInput
-              style={styles.dateInput}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={COLORS.slate400}
-              value={endDate}
-              onChangeText={setEndDate}
-              maxLength={10}
-            />
-
-            <Text style={styles.inputLabel}>Reason (optional)</Text>
-            <TextInput
-              style={styles.reasonInput}
-              placeholder="e.g., Vacation, Sick Leave, Personal..."
-              placeholderTextColor={COLORS.slate400}
-              value={reason}
-              onChangeText={setReason}
-              multiline
-              maxLength={500}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => {
-                  setShowRequestModal(false);
-                  setStartDate('');
-                  setEndDate('');
-                  setReason('');
-                }}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSubmitButton, isSubmitting && styles.buttonDisabled]}
-                onPress={handleSubmitRequest}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.modalSubmitText}>Submit</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -271,54 +526,352 @@ export default function TimeOffScreen() {
           />
         }
       >
-        {/* Stats Cards */}
+        {/* ============================================================= */}
+        {/* STATS ROW                                                     */}
+        {/* ============================================================= */}
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={[styles.statNumber, { color: COLORS.success }]}>{stats.approved}</Text>
-            <Text style={styles.statLabel}>Approved</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: colors.primaryLight }]}>
+              <Ionicons name="checkmark-done" size={18} color={COLORS.primary} />
+            </View>
+            <Text style={[styles.statNumber, { color: COLORS.primary }]}>{stats.daysUsed}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Days Used</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statNumber, { color: COLORS.warning }]}>{stats.pending}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: colors.successLight }]}>
+              <Ionicons name="sunny" size={18} color={COLORS.success} />
+            </View>
+            <Text style={[styles.statNumber, { color: COLORS.success }]}>{stats.upcoming}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Upcoming</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statNumber, { color: COLORS.primary }]}>{stats.usedDays}</Text>
-            <Text style={styles.statLabel}>Days Used</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: colors.amberLight }]}>
+              <Ionicons name="hourglass" size={18} color={COLORS.amber} />
+            </View>
+            <Text style={[styles.statNumber, { color: COLORS.amber }]}>{stats.pending}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Pending</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statNumber, { color: COLORS.slate400 }]}>{stats.totalRequests}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.statIconWrap, { backgroundColor: colors.errorLight }]}>
+              <Ionicons name="ban" size={18} color={COLORS.error} />
+            </View>
+            <Text style={[styles.statNumber, { color: COLORS.error }]}>{stats.rejected}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Rejected</Text>
           </View>
         </View>
 
-        {/* Request Button */}
-        <TouchableOpacity style={styles.requestButton} onPress={() => setShowRequestModal(true)}>
-          <Ionicons name="add-circle-outline" size={20} color={COLORS.white} />
-          <Text style={styles.requestButtonText}>Request Time Off</Text>
-        </TouchableOpacity>
+        {/* Schedule info banner */}
+        {schedule.length === 0 && (
+          <View style={[styles.infoBanner, { backgroundColor: colors.primaryLight }]}>
+            <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.infoBannerText}>
+              Schedule not set up — contact your admin to configure your work schedule.
+            </Text>
+          </View>
+        )}
 
-        {/* Requests List */}
+        {/* ============================================================= */}
+        {/* MONTHLY CALENDAR                                              */}
+        {/* ============================================================= */}
+        <View style={[styles.calendarCard, { backgroundColor: colors.card }]}>
+          {/* Month header */}
+          <View style={styles.calendarHeader}>
+            <TouchableOpacity onPress={goToPrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={goToToday}>
+              <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
+                {MONTH_NAMES[viewMonth]} {viewYear}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={goToNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-forward" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Day headers */}
+          <View style={styles.dayHeaderRow}>
+            {DAY_NAMES_SHORT.map(name => (
+              <View key={name} style={styles.dayHeaderCell}>
+                <Text style={[styles.dayHeaderText, { color: colors.textMuted }]}>{name}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Grid */}
+          {monthGrid.map((week, rowIdx) => (
+            <View key={rowIdx} style={styles.weekRow}>
+              {week.map((date, colIdx) => {
+                if (!date) {
+                  return <View key={colIdx} style={styles.dayCell} />;
+                }
+
+                const ds = toDateString(date);
+                const isToday = isSameDay(date, today);
+                const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const dow = colIdx; // 0=Mon..6=Sun
+
+                // Schedule: user is active on this day?
+                const isScheduled = schedule.length === 0 || scheduleDays[dow] === true;
+
+                // Time-off dots
+                const hasApproved = !!approvedDates[ds];
+                const hasPending = !!pendingDates[ds];
+
+                // Range highlighting
+                const inRange = hasRangeSelected && isDateInRange(date, rangeStart!, rangeEnd!);
+                const isRangeEndpoint =
+                  (rangeStart && isSameDay(date, rangeStart)) ||
+                  (rangeEnd && isSameDay(date, rangeEnd));
+                const isOnlyStart = rangeStart && !rangeEnd && isSameDay(date, rangeStart);
+
+                return (
+                  <TouchableOpacity
+                    key={colIdx}
+                    style={[
+                      styles.dayCell,
+                      inRange && [styles.dayCellInRange, { backgroundColor: colors.primaryLight }],
+                      (isRangeEndpoint || isOnlyStart) && styles.dayCellEndpoint,
+                      isToday && !inRange && !isRangeEndpoint && !isOnlyStart && styles.dayCellToday,
+                    ]}
+                    onPress={() => handleDayPress(date)}
+                    disabled={isPast}
+                    activeOpacity={0.6}
+                  >
+                    <Text
+                      style={[
+                        styles.dayText,
+                        { color: colors.textPrimary },
+                        isPast && [styles.dayTextPast, { color: colors.borderLight }],
+                        !isScheduled && !isPast && [styles.dayTextOffDay, { color: colors.textMuted }],
+                        inRange && styles.dayTextInRange,
+                        (isRangeEndpoint || isOnlyStart) && styles.dayTextEndpoint,
+                      ]}
+                    >
+                      {date.getDate()}
+                    </Text>
+                    {/* Dots container */}
+                    <View style={styles.dotRow}>
+                      {hasApproved && <View style={[styles.dot, { backgroundColor: COLORS.success }]} />}
+                      {hasPending && <View style={[styles.dot, { backgroundColor: COLORS.amber }]} />}
+                      {!isScheduled && !isPast && !hasApproved && !hasPending && (
+                        <View style={[styles.dot, { backgroundColor: COLORS.slate300 }]} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+
+          {/* Legend */}
+          <View style={[styles.legendRow, { borderTopColor: colors.border }]}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: COLORS.success }]} />
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Approved</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: COLORS.amber }]} />
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Pending</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: COLORS.slate300 }]} />
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Off Day</Text>
+            </View>
+          </View>
+
+          {isSelecting && rangeStart && !rangeEnd && (
+            <Text style={styles.selectionHint}>
+              Tap another date to complete the range
+            </Text>
+          )}
+        </View>
+
+        {/* ============================================================= */}
+        {/* AVAILABILITY INSIGHT PANEL                                    */}
+        {/* ============================================================= */}
+        {hasRangeSelected && (
+          <View style={[styles.insightCard, { backgroundColor: colors.card }]}>
+            <View style={styles.insightHeader}>
+              <Ionicons name="people" size={18} color={COLORS.primary} />
+              <Text style={[styles.insightTitle, { color: colors.textPrimary }]}>Team Availability</Text>
+            </View>
+
+            {isLoadingAvailability ? (
+              <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: SPACING.md }} />
+            ) : availabilityError ? (
+              <Text style={[styles.insightMuted, { color: colors.textMuted }]}>Unable to load team availability</Text>
+            ) : availabilityInsights ? (
+              <View style={styles.insightContent}>
+                <Text style={[styles.insightSummary, { color: colors.textPrimary }]}>
+                  {availabilityInsights.worstAvailable} of {availabilityInsights.worstTotal} technicians available
+                  {availabilityInsights.worstDay && (
+                    <Text style={[styles.insightMuted, { color: colors.textMuted }]}>
+                      {' '}(worst: {formatShortDate(availabilityInsights.worstDay)})
+                    </Text>
+                  )}
+                </Text>
+
+                {availabilityInsights.lowCoverage && (
+                  <View style={[styles.warningRow, { backgroundColor: colors.amberLight }]}>
+                    <Ionicons name="warning" size={16} color={COLORS.amber} />
+                    <Text style={styles.warningText}>
+                      Low coverage on {formatShortDate(availabilityInsights.worstDay)}
+                    </Text>
+                  </View>
+                )}
+
+                {availabilityInsights.userNotScheduledDays.length > 0 && (
+                  <View style={[styles.warningRow, { backgroundColor: colors.amberLight }]}>
+                    <Ionicons name="information-circle" size={16} color={COLORS.primary} />
+                    <Text style={styles.warningText}>
+                      You're not scheduled on {availabilityInsights.userNotScheduledDays.length} selected day
+                      {availabilityInsights.userNotScheduledDays.length > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                )}
+
+                {availabilityInsights.teamOnTimeOff.length > 0 && (
+                  <View style={styles.teamOffSection}>
+                    <Text style={[styles.teamOffLabel, { color: colors.textSecondary }]}>Also on time off:</Text>
+                    {availabilityInsights.teamOnTimeOff.slice(0, 5).map((name, i) => (
+                      <Text key={i} style={[styles.teamOffName, { color: colors.textSecondary }]}>{name}</Text>
+                    ))}
+                    {availabilityInsights.teamOnTimeOff.length > 5 && (
+                      <Text style={[styles.teamOffMore, { color: colors.textMuted }]}>
+                        +{availabilityInsights.teamOnTimeOff.length - 5} more
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
+            ) : (
+              <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: SPACING.md }} />
+            )}
+          </View>
+        )}
+
+        {/* ============================================================= */}
+        {/* REQUEST FORM                                                  */}
+        {/* ============================================================= */}
+        {hasRangeSelected && (
+          <View style={[styles.formCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.formTitle, { color: colors.textPrimary }]}>Request Time Off</Text>
+
+            {/* Date range display */}
+            <View style={[styles.formDateRow, { backgroundColor: colors.primaryLight }]}>
+              <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
+              <Text style={styles.formDateText}>
+                {formatLongDate(rangeStart!)} – {formatLongDate(rangeEnd!)} ({rangeDays} day{rangeDays > 1 ? 's' : ''})
+              </Text>
+            </View>
+
+            {/* Reason type chips */}
+            <Text style={[styles.formLabel, { color: colors.textPrimary }]}>Reason</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+              <View style={styles.chipRow}>
+                {REASON_TYPES.map(type => (
+                  <FilterChip
+                    key={type}
+                    label={type}
+                    active={reasonType === type}
+                    onPress={() => setReasonType(type)}
+                  />
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Optional notes */}
+            <Text style={[styles.formLabel, { color: colors.textPrimary }]}>Notes (optional)</Text>
+            <TextInput
+              style={[styles.notesInput, { borderColor: colors.border, color: colors.textPrimary }]}
+              placeholder="Additional details..."
+              placeholderTextColor={colors.textMuted}
+              value={reasonNotes}
+              onChangeText={setReasonNotes}
+              multiline
+              maxLength={500}
+            />
+
+            {/* Action buttons */}
+            <View style={styles.formButtons}>
+              <TouchableOpacity style={[styles.clearButton, { borderColor: colors.border }]} onPress={clearSelection}>
+                <Text style={[styles.clearButtonText, { color: colors.textSecondary }]}>Clear Selection</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
+                onPress={handleSubmitRequest}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <>
+                    <Ionicons name="paper-plane" size={16} color={COLORS.white} />
+                    <Text style={styles.submitButtonText}>Submit Request</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ============================================================= */}
+        {/* REQUESTS LIST                                                 */}
+        {/* ============================================================= */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Requests</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>My Requests</Text>
 
-          {requests.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="calendar-outline" size={48} color={COLORS.slate300} />
-              <Text style={styles.emptyText}>No time off requests yet</Text>
+          {/* Segmented filter */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+            <View style={styles.filterRow}>
+              <FilterChip
+                label="Upcoming"
+                active={requestFilter === 'upcoming'}
+                onPress={() => setRequestFilter('upcoming')}
+              />
+              <FilterChip
+                label="Past"
+                active={requestFilter === 'past'}
+                onPress={() => setRequestFilter('past')}
+              />
+              <FilterChip
+                label="All"
+                active={requestFilter === 'all'}
+                onPress={() => setRequestFilter('all')}
+              />
+            </View>
+          </ScrollView>
+
+          {filteredRequests.length === 0 ? (
+            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+              <Ionicons name="calendar-outline" size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {requestFilter === 'upcoming'
+                  ? 'No upcoming time off requests'
+                  : requestFilter === 'past'
+                  ? 'No past time off requests'
+                  : 'No time off requests yet'}
+              </Text>
+              {requestFilter === 'upcoming' && (
+                <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>
+                  Tap dates on the calendar above to request time off
+                </Text>
+              )}
             </View>
           ) : (
-            requests.map(request => {
-              const statusStyle = getTimeOffStatusStyle(request.status);
+            filteredRequests.map(request => {
+              const statusStyle = getTimeOffStatusStyle(request.status, colors);
               const days = getDayCount(request.startDate, request.endDate);
               const typeLabel = getTypeLabel(request.reason);
               const typeIcon = getTypeIcon(request.reason);
 
               return (
-                <View key={request.id} style={[styles.requestCard, { borderLeftColor: statusStyle.text }]}>
+                <View key={request.id} style={[styles.requestCard, { backgroundColor: colors.card }]}>
                   <View style={styles.requestHeader}>
                     <View style={styles.requestType}>
                       <Ionicons name={typeIcon} size={20} color={COLORS.primary} />
-                      <Text style={styles.requestTypeText}>{typeLabel}</Text>
+                      <Text style={[styles.requestTypeText, { color: colors.textPrimary }]}>{typeLabel}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
                       <Text style={[styles.statusText, { color: statusStyle.text }]}>
@@ -327,26 +880,35 @@ export default function TimeOffScreen() {
                     </View>
                   </View>
 
-                  {request.reason && (
-                    <Text style={styles.reasonText} numberOfLines={2}>{request.reason}</Text>
-                  )}
-
                   <View style={styles.requestDetails}>
                     <View style={styles.detailRow}>
-                      <Ionicons name="calendar-outline" size={16} color={COLORS.slate400} />
-                      <Text style={styles.detailText}>
+                      <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
+                      <Text style={[styles.detailText, { color: colors.textSecondary }]}>
                         {formatShortDate(request.startDate)}
-                        {request.startDate !== request.endDate && ` - ${formatShortDate(request.endDate)}`}
+                        {request.startDate !== request.endDate && ` – ${formatShortDate(request.endDate)}`}
                       </Text>
                     </View>
                     <View style={styles.detailRow}>
-                      <Ionicons name="time-outline" size={16} color={COLORS.slate400} />
-                      <Text style={styles.detailText}>{days} day{days > 1 ? 's' : ''}</Text>
+                      <Ionicons name="time-outline" size={16} color={colors.textMuted} />
+                      <Text style={[styles.detailText, { color: colors.textSecondary }]}>{days} day{days > 1 ? 's' : ''}</Text>
                     </View>
                   </View>
 
+                  {request.reason && (
+                    <Text style={[styles.reasonText, { color: colors.textSecondary }]} numberOfLines={2}>{request.reason}</Text>
+                  )}
+
+                  {request.status === 'APPROVED' && request.approvedBy && (
+                    <View style={[styles.approvedRow, { borderTopColor: colors.border }]}>
+                      <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
+                      <Text style={styles.approvedText}>
+                        Approved by {request.approvedBy.firstName} {request.approvedBy.lastName}
+                      </Text>
+                    </View>
+                  )}
+
                   {request.rejectionReason && (
-                    <View style={styles.rejectionRow}>
+                    <View style={[styles.rejectionRow, { borderTopColor: colors.border }]}>
                       <Ionicons name="information-circle-outline" size={14} color={COLORS.error} />
                       <Text style={styles.rejectionText}>{request.rejectionReason}</Text>
                     </View>
@@ -354,7 +916,7 @@ export default function TimeOffScreen() {
 
                   {request.status === 'PENDING' && (
                     <TouchableOpacity
-                      style={styles.cancelButton}
+                      style={[styles.cancelButton, { borderTopColor: colors.border }]}
                       onPress={() => handleCancel(request)}
                     >
                       <Ionicons name="close-circle-outline" size={16} color={COLORS.error} />
@@ -368,83 +930,333 @@ export default function TimeOffScreen() {
         </View>
 
         {/* Bottom spacing */}
-        <View style={{ height: SPACING.xl }} />
+        <View style={{ height: SPACING.xxxl }} />
       </ScrollView>
     </View>
   );
 }
 
+// =============================================================================
+// STYLES
+// =============================================================================
+
+const CELL_SIZE = 40;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   scrollView: {
     flex: 1,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xxxl,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.xl,
-    color: COLORS.slate500,
-    textAlign: 'center',
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.xxl,
-  },
-  retryButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.sm,
-  },
-  retryButtonText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
+  // Stats
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
   statCard: {
     flex: 1,
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     alignItems: 'center',
     ...SHADOWS.sm,
   },
+  statIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs,
+  },
   statNumber: {
-    fontSize: FONT_SIZE.title - 4,
+    fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
   },
   statLabel: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.slate400,
-    marginTop: SPACING.xs,
+    marginTop: 2,
   },
-  requestButton: {
+
+  // Info banner
+  infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.primary,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.xl,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.md,
     gap: SPACING.sm,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.sm,
   },
-  requestButtonText: {
+  infoBannerText: {
+    flex: 1,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primary,
+  },
+
+  // Calendar card
+  calendarCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.lg,
+  },
+  calendarTitle: {
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+
+  // Day headers
+  dayHeaderRow: {
+    flexDirection: 'row',
+    marginBottom: SPACING.sm,
+  },
+  dayHeaderCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dayHeaderText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
+    textTransform: 'uppercase',
+  },
+
+  // Week rows & day cells
+  weekRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  dayCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: CELL_SIZE,
+    borderRadius: RADIUS.sm,
+  },
+  dayCellToday: {
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  dayCellInRange: {
+  },
+  dayCellEndpoint: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.sm,
+  },
+  dayText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  dayTextPast: {
+  },
+  dayTextOffDay: {
+  },
+  dayTextInRange: {
+    color: COLORS.primaryDark,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  dayTextEndpoint: {
     color: COLORS.white,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+
+  // Dots
+  dotRow: {
+    flexDirection: 'row',
+    gap: 2,
+    height: 6,
+    alignItems: 'center',
+    marginTop: 1,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+
+  // Legend
+  legendRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING.lg,
+    marginTop: SPACING.md,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: FONT_SIZE.xs,
+  },
+
+  selectionHint: {
+    textAlign: 'center',
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primary,
+    marginTop: SPACING.sm,
+    fontStyle: 'italic',
+  },
+
+  // Insight card
+  insightCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  insightTitle: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.semibold,
   },
+  insightContent: {
+    gap: SPACING.sm,
+  },
+  insightSummary: {
+    fontSize: FONT_SIZE.base,
+  },
+  insightMuted: {
+    fontSize: FONT_SIZE.sm,
+  },
+  warningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.sm,
+    borderRadius: RADIUS.sm,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.amber,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  teamOffSection: {
+    marginTop: SPACING.xs,
+  },
+  teamOffLabel: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    marginBottom: SPACING.xs,
+  },
+  teamOffName: {
+    fontSize: FONT_SIZE.sm,
+    paddingLeft: SPACING.md,
+    marginBottom: 2,
+  },
+  teamOffMore: {
+    fontSize: FONT_SIZE.sm,
+    paddingLeft: SPACING.md,
+    fontStyle: 'italic',
+  },
+
+  // Form card
+  formCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  formTitle: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.semibold,
+    marginBottom: SPACING.md,
+  },
+  formDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.md,
+    borderRadius: RADIUS.sm,
+    marginBottom: SPACING.lg,
+  },
+  formDateText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.primaryDark,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  formLabel: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    marginBottom: SPACING.sm,
+  },
+  chipScroll: {
+    marginBottom: SPACING.lg,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderRadius: RADIUS.sm,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONT_SIZE.base,
+    minHeight: 72,
+    textAlignVertical: 'top',
+    marginBottom: SPACING.lg,
+  },
+  formButtons: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+  },
+  clearButton: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearButtonText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  submitButton: {
+    flex: 1.5,
+    flexDirection: 'row',
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  submitButtonText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  // Requests section
   section: {
     marginTop: SPACING.xxl,
     paddingHorizontal: SPACING.lg,
@@ -452,27 +1264,36 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
+    marginBottom: SPACING.md,
+  },
+  filterScroll: {
     marginBottom: SPACING.lg,
   },
+  filterRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
   emptyState: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
-    padding: SPACING.xxxl + SPACING.sm,
+    padding: SPACING.xxxl,
     alignItems: 'center',
   },
   emptyText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate400,
     marginTop: SPACING.md,
+    textAlign: 'center',
   },
+  emptySubtext: {
+    fontSize: FONT_SIZE.sm,
+    marginTop: SPACING.xs,
+    textAlign: 'center',
+  },
+
+  // Request cards
   requestCard: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
     ...SHADOWS.sm,
   },
   requestHeader: {
@@ -489,7 +1310,6 @@ const styles = StyleSheet.create({
   requestTypeText: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
   },
   statusBadge: {
     paddingHorizontal: SPACING.sm + 2,
@@ -501,11 +1321,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
   },
-  reasonText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
-    marginBottom: SPACING.md,
-  },
   requestDetails: {
     gap: SPACING.sm,
   },
@@ -516,7 +1331,22 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
+  },
+  reasonText: {
+    fontSize: FONT_SIZE.base,
+    marginTop: SPACING.sm,
+  },
+  approvedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginTop: SPACING.md,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+  },
+  approvedText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.success,
   },
   rejectionRow: {
     flexDirection: 'row',
@@ -525,7 +1355,6 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     paddingTop: SPACING.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.slate100,
   },
   rejectionText: {
     flex: 1,
@@ -540,92 +1369,10 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     paddingTop: SPACING.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.slate100,
   },
   cancelButtonText: {
     fontSize: FONT_SIZE.base,
     color: COLORS.error,
     fontWeight: FONT_WEIGHT.medium,
-  },
-
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.xxl,
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.xl,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.xl + 2,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
-    marginBottom: SPACING.lg,
-  },
-  inputLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
-    marginBottom: SPACING.xs,
-  },
-  dateInput: {
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    borderRadius: RADIUS.sm,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
-    marginBottom: SPACING.md,
-  },
-  reasonInput: {
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    borderRadius: RADIUS.sm,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    marginBottom: SPACING.lg,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  modalCancelButton: {
-    flex: 1,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.slate100,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate500,
-  },
-  modalSubmitButton: {
-    flex: 1,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.sm + 2,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-  },
-  modalSubmitText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 });

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../src/contexts/auth-context';
 import { AnimatedLogo } from '../../src/components';
+import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
+import { useTheme } from '../../src/contexts/theme-context';
 import {
   COLORS,
   SPACING,
@@ -39,52 +41,10 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
+  const { colors, isDark } = useTheme();
+
   // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const orb1Anim = useRef(new Animated.Value(0)).current;
-  const orb2Anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    // Fade in animation
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Floating orb animations
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb1Anim, { toValue: 1, duration: 3000, useNativeDriver: true }),
-        Animated.timing(orb1Anim, { toValue: 0, duration: 3000, useNativeDriver: true }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb2Anim, { toValue: 1, duration: 4000, useNativeDriver: true }),
-        Animated.timing(orb2Anim, { toValue: 0, duration: 4000, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
-  const orb1TranslateY = orb1Anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -20],
-  });
-
-  const orb2TranslateY = orb2Anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 15],
-  });
+  const { fadeAnim, slideAnim, orb1TranslateY, orb2TranslateY } = useAuthAnimations();
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -125,6 +85,7 @@ export default function LoginScreen() {
       style={[
         styles.container,
         {
+          backgroundColor: colors.surface,
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
         },
@@ -134,7 +95,7 @@ export default function LoginScreen() {
 
       {/* Premium Dark Header with Gradient */}
       <LinearGradient
-        colors={['#0f172a', '#1e293b', '#0f172a']}
+        colors={[COLORS.slate900, COLORS.slate800, COLORS.slate900]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + SPACING.xl }]}
@@ -188,7 +149,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.formWrapper}
       >
-        <View style={styles.formCard}>
+        <View style={[styles.formCard, { backgroundColor: colors.card }]}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
@@ -196,15 +157,15 @@ export default function LoginScreen() {
           >
             {/* Email Input */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email address</Text>
-              <View style={[styles.inputContainer, errors.email && styles.inputError]}>
-                <View style={styles.inputIconContainer}>
-                  <Ionicons name="mail-outline" size={20} color={COLORS.slate500} />
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Email address</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.email && styles.inputError]}>
+                <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
+                  <Ionicons name="mail-outline" size={20} color={colors.textMuted} />
                 </View>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   placeholder="you@company.com"
-                  placeholderTextColor={COLORS.slate400}
+                  placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -225,15 +186,15 @@ export default function LoginScreen() {
 
             {/* Password Input */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={[styles.inputContainer, errors.password && styles.inputError]}>
-                <View style={styles.inputIconContainer}>
-                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.slate500} />
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Password</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.password && styles.inputError]}>
+                <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
+                  <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
                 </View>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textPrimary }]}
                   placeholder="Enter your password"
-                  placeholderTextColor={COLORS.slate400}
+                  placeholderTextColor={colors.textMuted}
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={(text) => {
@@ -249,7 +210,7 @@ export default function LoginScreen() {
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color={COLORS.slate500}
+                    color={colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
@@ -269,7 +230,7 @@ export default function LoginScreen() {
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={isLoading ? ['#93c5fd', '#93c5fd'] : [COLORS.primary, '#3b82f6']}
+                colors={isLoading ? [COLORS.infoBorder, COLORS.infoBorder] : [COLORS.primary, COLORS.inProgress]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.loginButtonGradient}
@@ -290,19 +251,19 @@ export default function LoginScreen() {
             {/* Security Badges */}
             <View style={styles.securityContainer}>
               <View style={styles.securityBadge}>
-                <Ionicons name="lock-closed" size={14} color={COLORS.slate400} />
-                <Text style={styles.securityText}>Enterprise protected</Text>
+                <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
+                <Text style={[styles.securityText, { color: colors.textMuted }]}>Enterprise protected</Text>
               </View>
-              <View style={styles.securityDot} />
+              <View style={[styles.securityDot, { backgroundColor: colors.border }]} />
               <View style={styles.securityBadge}>
-                <Ionicons name="shield-checkmark" size={14} color={COLORS.slate400} />
-                <Text style={styles.securityText}>Secure</Text>
+                <Ionicons name="shield-checkmark" size={14} color={colors.textMuted} />
+                <Text style={[styles.securityText, { color: colors.textMuted }]}>Secure</Text>
               </View>
             </View>
 
             {/* Create Account Link */}
             <View style={styles.createAccountContainer}>
-              <Text style={styles.createAccountText}>Don't have an account? </Text>
+              <Text style={[styles.createAccountText, { color: colors.textSecondary }]}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push(ROUTES.register as Href)}>
                 <Text style={styles.createAccountLink}>Create one</Text>
               </TouchableOpacity>
@@ -313,7 +274,7 @@ export default function LoginScreen() {
 
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING.xl) }]}>
-        <Text style={styles.footerText}>
+        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
           Need help? <Text style={styles.footerLink}>Contact support</Text>
         </Text>
       </View>
@@ -324,7 +285,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate100,
   },
   header: {
     paddingBottom: 50,
@@ -398,7 +358,6 @@ const styles = StyleSheet.create({
   formCard: {
     flex: 1,
     marginHorizontal: SPACING.lg,
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.xl + 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -415,21 +374,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
     marginBottom: SPACING.sm + 2,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.slate50,
     borderRadius: RADIUS.md + 2,
     borderWidth: 1.5,
-    borderColor: COLORS.slate200,
     height: 56,
     overflow: 'hidden',
   },
   inputError: {
-    borderColor: '#fca5a5',
+    borderColor: COLORS.errorBorder,
     backgroundColor: COLORS.errorLight,
   },
   inputIconContainer: {
@@ -437,14 +393,11 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.slate100,
     borderRightWidth: 1,
-    borderRightColor: COLORS.slate200,
   },
   input: {
     flex: 1,
     fontSize: FONT_SIZE.xl,
-    color: COLORS.slate800,
     paddingHorizontal: SPACING.lg,
   },
   eyeButton: {
@@ -513,11 +466,9 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.slate300,
   },
   securityText: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
     fontWeight: FONT_WEIGHT.medium,
   },
   createAccountContainer: {
@@ -527,7 +478,6 @@ const styles = StyleSheet.create({
   },
   createAccountText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
   },
   createAccountLink: {
     fontSize: FONT_SIZE.base,
@@ -540,7 +490,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
   },
   footerLink: {
     color: COLORS.primary,

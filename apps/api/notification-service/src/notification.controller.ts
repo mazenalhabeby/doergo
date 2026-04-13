@@ -171,6 +171,29 @@ export class NotificationController {
     this.websocketGateway.emitAttachmentAdded(data.taskId, data.attachment);
   }
 
+  @EventPattern('blocked_tasks_reminder')
+  async handleBlockedTasksReminder(@Payload() data: {
+    userId: string;
+    blockedTasks: { id: string; title: string }[];
+    newTaskId: string;
+    newTaskTitle: string;
+  }) {
+    const count = data.blockedTasks.length;
+    const taskNames = data.blockedTasks.map(t => t.title).join(', ');
+    this.logger.log(`Blocked tasks reminder: user=${data.userId}, blocked=${count}`);
+
+    try {
+      await this.pushService.sendToUser(
+        data.userId,
+        `${count} Blocked Task${count > 1 ? 's' : ''} Need Attention`,
+        `You have ${count} blocked task${count > 1 ? 's' : ''}: ${taskNames}`,
+        { type: 'blocked_tasks_reminder', taskId: data.blockedTasks[0]?.id },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send blocked tasks reminder push: ${error}`);
+    }
+  }
+
   @EventPattern('worker_location_updated')
   async handleWorkerLocationUpdated(@Payload() data: any) {
     this.websocketGateway.emitWorkerLocationUpdated(data.workerId, data.location);

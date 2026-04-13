@@ -8,15 +8,15 @@
  */
 
 import { ArrowDown, ArrowUp, Minus, AlertTriangle, type LucideIcon } from "lucide-react"
-import { TaskPriority, TaskStatus } from "@doergo/shared/types"
-import { PRIORITY_COLORS, STATUS_COLORS } from "@doergo/shared/constants"
+import { TaskPriority, TaskStatus } from "@hbcfield/shared/types"
+import { PRIORITY_COLORS, STATUS_COLORS } from "@hbcfield/shared/constants"
 
 // =============================================================================
 // TASK STATUS
 // =============================================================================
 
 // Re-export TaskStatus from shared for convenience
-export { TaskStatus } from "@doergo/shared/types"
+export { TaskStatus } from "@hbcfield/shared/types"
 
 export const TASK_STATUSES = [
   "DRAFT",
@@ -152,7 +152,7 @@ export function getStatusHex(status: string): string {
 // =============================================================================
 
 // Re-export TaskPriority from shared for convenience
-export { TaskPriority } from "@doergo/shared/types"
+export { TaskPriority } from "@hbcfield/shared/types"
 
 export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const
 

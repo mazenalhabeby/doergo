@@ -9,6 +9,7 @@ import {
   GetTechnicianPerformanceDto,
   ListOrgMembersDto,
   UpdateMemberRoleDto,
+  UpdateMemberProfileDto,
 } from './dto';
 
 @Controller()
@@ -101,6 +102,40 @@ export class UsersController {
       data.organizationId,
       data.requesterId,
       data.dto,
+    );
+  }
+
+  @MessagePattern({ cmd: 'update_member_profile' })
+  async updateMemberProfile(
+    @Payload()
+    data: {
+      memberId: string;
+      organizationId: string;
+      requesterId: string;
+      dto: UpdateMemberProfileDto;
+    },
+  ) {
+    return this.usersService.updateMemberProfile(
+      data.memberId,
+      data.organizationId,
+      data.requesterId,
+      data.dto,
+    );
+  }
+
+  @MessagePattern({ cmd: 'admin_reset_member_password' })
+  async adminResetMemberPassword(
+    @Payload()
+    data: {
+      memberId: string;
+      organizationId: string;
+      requesterId: string;
+    },
+  ) {
+    return this.usersService.adminResetMemberPassword(
+      data.memberId,
+      data.organizationId,
+      data.requesterId,
     );
   }
 

@@ -20,7 +20,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES } from '@doergo/shared';
+import { Role, SERVICE_NAMES } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -79,6 +79,21 @@ export class TechniciansController {
     @Query('date') date?: string,
     @CurrentUser() user?: CurrentUserData,
   ) {
+    // Validate date format if provided
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new ForbiddenException('Invalid date format. Use YYYY-MM-DD');
+    }
+
+    // Restrict date range to ±90 days from today
+    if (date) {
+      const requestedDate = new Date(date);
+      const now = new Date();
+      const ninetyDays = 90 * 24 * 60 * 60 * 1000;
+      if (Math.abs(requestedDate.getTime() - now.getTime()) > ninetyDays) {
+        throw new ForbiddenException('Date must be within 90 days of today');
+      }
+    }
+
     return firstValueFrom(
       this.taskClient.send(
         { cmd: 'get_technicians_availability' },
@@ -402,11 +417,16 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Get technician weekly schedule' })
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Schedule retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   async getTechnicianSchedule(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
+    // Technicians can only view their own schedule
+    if (user.role === Role.TECHNICIAN && user.id !== id) {
+      throw new ForbiddenException('You can only view your own schedule');
+    }
+
     return firstValueFrom(
       this.taskClient.send(
         { cmd: 'get_technician_schedule' },

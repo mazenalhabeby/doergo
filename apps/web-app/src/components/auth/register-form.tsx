@@ -77,7 +77,7 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
       });
 
       await login(formData.email, formData.password);
-      toast.success('Welcome to Doergo!', {
+      toast.success('Welcome to HBCField!', {
         description: 'Your account has been created successfully.',
       });
       router.push('/dashboard');
@@ -115,7 +115,7 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
           <h1 className="text-xl lg:text-2xl font-semibold tracking-tight text-slate-900">
             Create your account
           </h1>
-          <p className="text-xs lg:text-sm text-slate-500">Get started with Doergo</p>
+          <p className="text-xs lg:text-sm text-slate-500">Get started with HBCField</p>
         </div>
       )}
 

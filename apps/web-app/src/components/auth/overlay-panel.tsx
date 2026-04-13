@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { TeamCollaborationIllustration, DashboardAnalyticsIllustration } from '@/components/illustrations';
 import { FloatingParticles } from './floating-particles';
-import { AnimatedLogo } from '@doergo/shared/components';
+import { AnimatedLogo } from '@hbcfield/shared/components';
 
 interface OverlayPanelProps {
   isLoginActive: boolean;

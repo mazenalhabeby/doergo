@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile --prod=false
 # -- Build --
 FROM deps AS build
 ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_APP_NAME=Doergo
+ARG NEXT_PUBLIC_APP_NAME=HBCField
 ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
@@ -20,8 +20,8 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 COPY packages/shared/ ./packages/shared/
 COPY apps/web-app/ ./apps/web-app/
 COPY tsconfig.base.json ./
-RUN pnpm --filter @doergo/shared build
-RUN pnpm --filter @doergo/web-app build
+RUN pnpm --filter @hbcfield/shared build
+RUN pnpm --filter @hbcfield/web-app build
 
 # -- Production --
 FROM base AS production

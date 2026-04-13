@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useTheme } from '../../../src/contexts/theme-context';
 import { passwordApi } from '../../../src/lib/api';
 import {
   COLORS,
@@ -24,6 +25,7 @@ import {
 
 export default function AccountScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -64,27 +66,27 @@ export default function AccountScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.surface }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Account Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Account Information</Text>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.infoRow}>
-              <Ionicons name="person-outline" size={18} color={COLORS.slate400} />
+              <Ionicons name="person-outline" size={18} color={colors.textMuted} />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Name</Text>
-                <Text style={styles.infoValue}>{user?.firstName} {user?.lastName}</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Name</Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{user?.firstName} {user?.lastName}</Text>
               </View>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
             <View style={styles.infoRow}>
-              <Ionicons name="mail-outline" size={18} color={COLORS.slate400} />
+              <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>{user?.email}</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Email</Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{user?.email}</Text>
               </View>
             </View>
           </View>
@@ -92,61 +94,61 @@ export default function AccountScreen() {
 
         {/* Change Password */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Change Password</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Change Password</Text>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Current Password</Text>
-              <View style={styles.passwordRow}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Current Password</Text>
+              <View style={[styles.passwordRow, { borderColor: colors.inputBorder, backgroundColor: colors.input }]}>
                 <TextInput
-                  style={styles.passwordInput}
+                  style={[styles.passwordInput, { color: colors.textPrimary }]}
                   value={currentPassword}
                   onChangeText={setCurrentPassword}
                   secureTextEntry={!showCurrentPw}
                   placeholder="Enter current password"
-                  placeholderTextColor={COLORS.slate400}
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                 />
                 <TouchableOpacity onPress={() => setShowCurrentPw(!showCurrentPw)}>
                   <Ionicons
                     name={showCurrentPw ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color={COLORS.slate400}
+                    color={colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>New Password</Text>
-              <View style={styles.passwordRow}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>New Password</Text>
+              <View style={[styles.passwordRow, { borderColor: colors.inputBorder, backgroundColor: colors.input }]}>
                 <TextInput
-                  style={styles.passwordInput}
+                  style={[styles.passwordInput, { color: colors.textPrimary }]}
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry={!showNewPw}
                   placeholder="Min. 8 characters"
-                  placeholderTextColor={COLORS.slate400}
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                 />
                 <TouchableOpacity onPress={() => setShowNewPw(!showNewPw)}>
                   <Ionicons
                     name={showNewPw ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color={COLORS.slate400}
+                    color={colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Confirm New Password</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Confirm New Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: colors.inputBorder, backgroundColor: colors.input, color: colors.textPrimary }]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 placeholder="Re-enter new password"
-                placeholderTextColor={COLORS.slate400}
+                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
               />
             </View>
@@ -172,7 +174,6 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   content: {
     paddingBottom: SPACING.xxxl,
@@ -184,12 +185,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate500,
     textTransform: 'uppercase' as const,
     marginBottom: SPACING.sm,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
   },
@@ -203,17 +202,14 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
   },
   infoValue: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate800,
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.slate100,
     marginVertical: SPACING.md,
   },
   inputGroup: {
@@ -222,23 +218,19 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
     marginBottom: SPACING.xs,
   },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.slate200,
     borderRadius: RADIUS.sm,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
   },
   passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.slate200,
     borderRadius: RADIUS.sm,
     paddingHorizontal: SPACING.md,
   },
@@ -246,7 +238,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: SPACING.md,
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
   },
   submitButton: {
     backgroundColor: COLORS.primary,

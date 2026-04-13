@@ -1,4 +1,4 @@
-# Doergo Production Docker Compose
+# HBCField Production Docker Compose
 # Usage: docker compose --env-file .env.production up -d
 # Note: Nginx runs on the host (not in Docker) to share with other apps
 
@@ -6,18 +6,18 @@ services:
   # ==================== INFRASTRUCTURE ====================
   postgres:
     image: postgis/postgis:16-3.4-alpine
-    container_name: doergo-postgres
+    container_name: hbcfield-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-doergo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-doergo_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-doergo}
+      POSTGRES_USER: ${POSTGRES_USER:-hbcfield}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hbcfield_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-hbcfield}
     ports:
       - "127.0.0.1:5434:5432"
     volumes:
-      - doergo_postgres_data:/var/lib/postgresql/data
+      - hbcfield_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doergo} -d ${POSTGRES_DB:-doergo}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hbcfield} -d ${POSTGRES_DB:-hbcfield}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,16 +26,16 @@ services:
         limits:
           memory: 1G
     networks:
-      - doergo-network
+      - hbcfield-network
 
   redis:
     image: redis:7-alpine
-    container_name: doergo-redis
+    container_name: hbcfield-redis
     restart: unless-stopped
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
-      - doergo_redis_data:/data
+      - hbcfield_redis_data:/data
     command: redis-server --appendonly yes --maxmemory 200mb --maxmemory-policy noeviction
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -47,18 +47,18 @@ services:
         limits:
           memory: 256M
     networks:
-      - doergo-network
+      - hbcfield-network
 
   # ==================== BACKEND SERVICES ====================
   auth-service:
     build:
       context: ../../
       dockerfile: apps/api/auth-service/Dockerfile
-    container_name: doergo-auth-service
+    container_name: hbcfield-auth-service
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
@@ -69,8 +69,8 @@ services:
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
-      - SMTP_FROM=${SMTP_FROM:-noreply@doergo.com}
-      - APP_URL=https://${DOMAIN:-doergo.hbc-solution.io}
+      - SMTP_FROM=${SMTP_FROM:-noreply@hbcfield.eu}
+      - APP_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,23 +87,23 @@ services:
         limits:
           memory: 512M
     networks:
-      - doergo-network
+      - hbcfield-network
 
   task-service:
     build:
       context: ../../
       dockerfile: apps/api/task-service/Dockerfile
-    container_name: doergo-task-service
+    container_name: hbcfield-task-service
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - S3_ENDPOINT=${S3_ENDPOINT:-}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY:-}
       - S3_SECRET_KEY=${S3_SECRET_KEY:-}
-      - S3_BUCKET=${S3_BUCKET:-doergo}
+      - S3_BUCKET=${S3_BUCKET:-hbcfield}
       - S3_REGION=${S3_REGION:-eu-central-1}
     depends_on:
       postgres:
@@ -121,26 +121,26 @@ services:
         limits:
           memory: 512M
     networks:
-      - doergo-network
+      - hbcfield-network
 
   notification-service:
     build:
       context: ../../
       dockerfile: apps/api/notification-service/Dockerfile
-    container_name: doergo-notification-service
+    container_name: hbcfield-notification-service
     restart: unless-stopped
     ports:
       - "127.0.0.1:4001:4001"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
-      - SOCKET_CORS_ORIGINS=https://${DOMAIN:-doergo.hbc-solution.io}
+      - SOCKET_CORS_ORIGINS=https://${DOMAIN:-hbcfield.hbc-solution.io}
       - SOCKET_ADMIN_USER=${SOCKET_ADMIN_USER:-}
       - SOCKET_ADMIN_PASSWORD=${SOCKET_ADMIN_PASSWORD:-}
     depends_on:
@@ -159,17 +159,17 @@ services:
         limits:
           memory: 512M
     networks:
-      - doergo-network
+      - hbcfield-network
 
   tracking-service:
     build:
       context: ../../
       dockerfile: apps/api/tracking-service/Dockerfile
-    container_name: doergo-tracking-service
+    container_name: hbcfield-tracking-service
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doergo}:${POSTGRES_PASSWORD:-doergo_secret}@postgres:5432/${POSTGRES_DB:-doergo}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
@@ -188,13 +188,13 @@ services:
         limits:
           memory: 256M
     networks:
-      - doergo-network
+      - hbcfield-network
 
   api-gateway:
     build:
       context: ../../
       dockerfile: apps/api/gateway/Dockerfile
-    container_name: doergo-api-gateway
+    container_name: hbcfield-api-gateway
     restart: unless-stopped
     ports:
       - "127.0.0.1:4000:4000"
@@ -204,7 +204,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
-      - CORS_ORIGINS=https://${DOMAIN:-doergo.hbc-solution.io}
+      - CORS_ORIGINS=https://${DOMAIN:-hbcfield.hbc-solution.io}
     depends_on:
       auth-service:
         condition: service_healthy
@@ -227,7 +227,7 @@ services:
         limits:
           memory: 512M
     networks:
-      - doergo-network
+      - hbcfield-network
 
   # ==================== WEB APP ====================
   web-app:
@@ -235,8 +235,8 @@ services:
       context: ../../
       dockerfile: apps/web-app/Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://${DOMAIN:-doergo.hbc-solution.io}/api/v1
-    container_name: doergo-web-app
+        - NEXT_PUBLIC_API_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}/api/v1
+    container_name: hbcfield-web-app
     restart: unless-stopped
     ports:
       - "127.0.0.1:3001:3000"
@@ -256,15 +256,15 @@ services:
         limits:
           memory: 512M
     networks:
-      - doergo-network
+      - hbcfield-network
 
 volumes:
-  doergo_postgres_data:
-    name: doergo-postgres-data
-  doergo_redis_data:
-    name: doergo-redis-data
+  hbcfield_postgres_data:
+    name: hbcfield-postgres-data
+  hbcfield_redis_data:
+    name: hbcfield-redis-data
 
 networks:
-  doergo-network:
-    name: doergo-network
+  hbcfield-network:
+    name: hbcfield-network
     driver: bridge

@@ -7,23 +7,35 @@ import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false,
+  });
 
-  // Simple request logging for testing
+  // Increase body size limit for base64 signatures
+  const express = require('express');
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Simple request logging for testing (skip noisy endpoints)
+  const QUIET_ROUTES = ['/tracking/location'];
   app.use((req: any, res: any, next: any) => {
     const start = Date.now();
     const { method, url, body } = req;
+    const isQuiet = QUIET_ROUTES.some((r) => url.includes(r));
 
-    // Log request
-    console.log(`\n→ ${method} ${url}`);
-    if (body && Object.keys(body).length > 0) {
-      const safeBody = { ...body };
-      if (safeBody.password) safeBody.password = '***';
-      console.log(`  Body:`, safeBody);
+    // Log request (skip noisy polling endpoints)
+    if (!isQuiet) {
+      console.log(`\n→ ${method} ${url}`);
+      if (body && Object.keys(body).length > 0) {
+        const safeBody = { ...body };
+        if (safeBody.password) safeBody.password = '***';
+        console.log(`  Body:`, safeBody);
+      }
     }
 
     // Log response
     res.on('finish', () => {
+      if (isQuiet) return;
       const duration = Date.now() - start;
       const status = res.statusCode;
       const color = status >= 400 ? '\x1b[31m' : '\x1b[32m';
@@ -74,8 +86,8 @@ async function bootstrap() {
   // Swagger documentation - ONLY in development
   if (!isProduction) {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('Doergo API Gateway')
-      .setDescription('API Gateway for Doergo microservices platform')
+      .setTitle('HBCField API Gateway')
+      .setDescription('API Gateway for HBCField microservices platform')
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('auth', 'Authentication endpoints')

@@ -1,4 +1,4 @@
-# DOERGO - Project Reference Document
+# HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
 > **Last Updated**: 2026-02-11 (Schedule & Members Web UI)
 
@@ -8,7 +8,7 @@
 
 | Key | Value |
 |-----|-------|
-| Name | Doergo |
+| Name | HBCField |
 | Type | Role-based task management & field execution platform |
 | Monorepo | pnpm workspaces |
 | Root | `/Users/pc/work/doergo` |
@@ -64,7 +64,7 @@
 ## 3. DIRECTORY STRUCTURE
 
 ```
-doergo/
+hbcfield/
 ├── apps/
 │   ├── api/
 │   │   ├── gateway/           # API Gateway - routes to microservices
@@ -152,14 +152,14 @@ Users are restricted to specific platforms based on their `platform` field:
 
 ### Permission Helper Functions
 
-Available from `@doergo/shared/guards`:
+Available from `@hbcfield/shared/guards`:
 
 ```typescript
 import {
   hasRole, isAdmin, isDispatcher, isTechnician,
   canAccessPlatform, canAccessWeb, canAccessMobile,
   canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Role checks (with legacy CLIENT → ADMIN normalization)
 hasRole(user, Role.ADMIN, Role.DISPATCHER)  // true if user has any of these roles
@@ -275,6 +275,10 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | POST | `/tasks/:id/start` | Start task | TECHNICIAN |
 | POST | `/tasks/:id/block` | Block task | TECHNICIAN |
 | POST | `/tasks/:id/complete` | Complete task | TECHNICIAN |
+| POST | `/tasks/:id/attachments/presign` | Get presigned upload URL | ALL |
+| POST | `/tasks/:id/attachments` | Confirm upload after S3 upload | ALL |
+| GET | `/tasks/:id/attachments` | List task attachments | ALL |
+| DELETE | `/tasks/:id/attachments/:attachmentId` | Delete attachment | ALL |
 
 ### Tracking (`/tracking`)
 | Method | Endpoint | Description | Roles |
@@ -479,7 +483,7 @@ BullMQ provides reliable job processing with exactly-once semantics, preventing 
 ### Queue Configuration
 ```typescript
 // In gateway or task-service app.module.ts
-import { createBullMQConfig, QUEUE_NAMES } from '@doergo/shared';
+import { createBullMQConfig, QUEUE_NAMES } from '@hbcfield/shared';
 
 @Module({
   imports: [
@@ -575,6 +579,7 @@ pnpm build            # Build all packages
 | Dispatcher | dispatcher@example.com | password123 | WEB | - | - | canViewAllTasks, canAssignTasks |
 | Technician 1 | technician1@example.com | password123 | MOBILE | FULL_TIME | ON_SITE | None (executor only) |
 | Technician 2 | technician2@example.com | password123 | MOBILE | FREELANCER | ON_ROAD | None (executor only) |
+| Technician 3 | technician3@example.com | password123 | MOBILE | FULL_TIME | HYBRID | None (executor only, all 5 tabs) |
 | New User (orphan) | newuser@example.com | password123 | - | - | - | No org, onboarding incomplete |
 
 ### Onboarding Test Data
@@ -630,7 +635,7 @@ pnpm build            # Build all packages
 - [x] Security headers (Helmet.js)
 - [x] Input validation (class-validator + Zod frontend)
 - [x] "Remember Me" functionality (24h default / 30d extended)
-- [x] Shared AnimatedLogo component (`@doergo/shared/components`)
+- [x] Shared AnimatedLogo component (`@hbcfield/shared/components`)
 - [x] Mobile: login screen + SecureStore + auth context + tab navigation
 - [x] Mobile: animated splash screen with gear rotation + button click effect
 - [x] Mobile: safe area handling for Android navigation bar
@@ -677,7 +682,7 @@ pnpm build            # Build all packages
   - [x] `20260126114708_add_admin_role_and_permissions`
   - [x] `20260126122816_migrate_client_to_admin_data`
 - [x] Backward compatibility layer (LegacyRoleMap, normalizeRole)
-- [x] Permission helper functions in `@doergo/shared/guards`
+- [x] Permission helper functions in `@hbcfield/shared/guards`
 - [x] Updated `CurrentUserData` interface with permission fields
 - [x] Controller endpoint updates with new @Roles decorators
 - [x] Registration forces ADMIN role (security: never trust client input)
@@ -771,14 +776,18 @@ pnpm build            # Build all packages
 - [x] **Members Page** (`/members`): Organization members list with role/search filters, edit role dialog with permission checkboxes, remove confirmation
 - [x] Sidebar updates: "Members" + "Schedule" nav items for ADMIN, "Members" for DISPATCHER, Schedule URL normalized to `/technicians/availability`
 
-### Phase 4: Comments & Attachments 🔲 PENDING
-- [ ] Comments: list/add API (task-service) - partially done
-- [ ] Attachments: S3 presigned URL upload
-- [ ] Web: attachment upload dropzone
-- [ ] Web: attachment gallery/list
-- [ ] Mobile: camera capture for photos
-- [ ] Mobile: gallery picker
-- [ ] Mobile: upload progress indicator
+### Phase 4: Comments & Attachments ✅ COMPLETE
+- [x] Comments: list/add API (task-service)
+- [x] Attachments: S3 presigned URL upload (Hetzner Object Storage)
+- [x] Task-service: AttachmentsService with S3 presigned URL generation, org authorization, file validation
+- [x] Task-service: BullMQ processor wired for ADD_ATTACHMENT, DELETE_ATTACHMENT, GET_PRESIGNED_URL
+- [x] Gateway: 4 attachment endpoints (presign, confirm, list, delete)
+- [x] Web: attachment upload dropzone with drag-and-drop
+- [x] Web: attachment gallery with image thumbnails, document cards, delete confirmation
+- [x] Web: upload progress indicators
+- [x] Mobile: camera + gallery attachment upload via existing useImagePicker hook
+- [x] Mobile: attachment list with long-press to delete, tap to open
+- [x] Mobile: upload progress indicator
 
 ### Phase 5: Real-time & Tracking ✅ COMPLETE
 - [x] Socket.IO gateway setup (notification-service)
@@ -864,7 +873,7 @@ pnpm build            # Build all packages
 
 ### DRY (Don't Repeat Yourself)
 
-**Use shared modules from `@doergo/shared`:**
+**Use shared modules from `@hbcfield/shared`:**
 
 ```typescript
 // ❌ BAD - Duplicating Redis config in each service
@@ -874,7 +883,7 @@ pnpm build            # Build all packages
 }
 
 // ✅ GOOD - Use shared factory
-import { createMicroserviceOptions } from '@doergo/shared';
+import { createMicroserviceOptions } from '@hbcfield/shared';
 NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 ```
 
@@ -890,8 +899,8 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `success()`, `error()`, `paginated()` | Standardized API responses |
 | `ErrorCodes` | Common error code constants |
 | `PrismaModule`, `PrismaService` | Shared database access |
-| `AnimatedLogo` | Shared logo component (from `@doergo/shared/components`) |
-| `Roles`, `Public`, `CurrentUser` | NestJS decorators (from `@doergo/shared`) |
+| `AnimatedLogo` | Shared logo component (from `@hbcfield/shared/components`) |
+| `Roles`, `Public`, `CurrentUser` | NestJS decorators (from `@hbcfield/shared`) |
 | `RolesGuard`, `hasRole()` | Role-based access control guard |
 | `isAdmin()`, `isDispatcher()`, `isTechnician()` | Role check helpers with legacy normalization |
 | `canAccessPlatform()`, `canAccessWeb()`, `canAccessMobile()` | Platform access checks |
@@ -906,10 +915,10 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `getStartOfDay()`, `getEndOfDay()` | Date boundary calculations |
 | `getStartOfWeek()`, `getEndOfWeek()`, `getStartOfMonth()`, `getEndOfMonth()` | Period calculations |
 | `formatDuration()`, `formatTime()`, `formatShortDate()`, `formatFullDate()` | Date display formatting |
-| `TimeEntry`, `Break`, `CompanyLocation`, `AttendanceStatus` | Attendance types (from `@doergo/shared`) |
+| `TimeEntry`, `Break`, `CompanyLocation`, `AttendanceStatus` | Attendance types (from `@hbcfield/shared`) |
 | `TimeEntryStatus`, `BreakType`, `ApprovalStatus` | Attendance enums |
 | `isBreakActive()`, `getBreakTypeLabel()`, `getTimeEntryStatusLabel()` | Attendance helper functions |
-| `TechnicianProfile`, `TechnicianListItem`, `TechnicianStats` | Technician types (from `@doergo/shared`) |
+| `TechnicianProfile`, `TechnicianListItem`, `TechnicianStats` | Technician types (from `@hbcfield/shared`) |
 | `PerformanceMetrics`, `PerformanceTrendPoint` | Technician performance types |
 | `getTechnicianTypeLabel()`, `getTechnicianTypeColor()` | Technician type display helpers |
 | `isTechnicianOnline()` | Check if technician is online (location updated within 5 min) |
@@ -934,7 +943,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 
 ### Before Adding New Code
 
-1. **Check `@doergo/shared`** - Does a utility already exist?
+1. **Check `@hbcfield/shared`** - Does a utility already exist?
 2. **Check existing services** - Is there similar code to extract?
 3. **Consider reusability** - Will this be used more than once?
 
@@ -1031,12 +1040,12 @@ export class TasksController {
 | **Socket Stats** | `curl http://localhost:4001/socket/stats` | Connection statistics |
 | **Swagger** | `http://localhost:4000/docs` | API documentation |
 | **Prisma Studio** | `pnpm db:studio` → `http://localhost:5556` | Database GUI |
-| **Redis CLI** | `docker exec -it doergo-redis redis-cli` | Redis commands |
+| **Redis CLI** | `docker exec -it hbcfield-redis redis-cli` | Redis commands |
 | **RedisInsight** | Install via `brew install --cask redisinsight` | Redis GUI (optional) |
 
 ### Redis CLI Quick Commands
 ```bash
-docker exec -it doergo-redis redis-cli
+docker exec -it hbcfield-redis redis-cli
 > KEYS bull:*           # List BullMQ keys
 > LLEN bull:tasks:wait  # Count waiting jobs
 > MONITOR               # Watch all commands (Ctrl+C to exit)
@@ -1046,31 +1055,19 @@ docker exec -it doergo-redis redis-cli
 
 ## 17. NEXT IMMEDIATE TASKS
 
-**Current Sprint**: Phase 4 - Comments & Attachments
+**Current Sprint**: Phase 7.3 - Technician Assignment (next up)
 
-1. **task-service**: Implement attachment endpoints
-   - File: `apps/api/task-service/src/modules/attachments/attachments.service.ts`
-   - S3 presigned URL generation for upload
-   - File type validation & size limits
+### Recently Completed (2026-04-02)
+- **Task Attachments** (Phase 4):
+  - S3 presigned URL upload via Hetzner Object Storage (Helsinki)
+  - AttachmentsService: presigned URL generation, org authorization, file validation (20MB, images + documents)
+  - BullMQ processor: ADD_ATTACHMENT, DELETE_ATTACHMENT, GET_PRESIGNED_URL; GET_ATTACHMENTS via direct microservice
+  - Gateway: 4 new endpoints (presign, confirm, list, delete) on `/tasks/:id/attachments`
+  - Web: AttachmentsSection component with drag-and-drop dropzone, image thumbnails, file cards, upload progress, delete confirmation
+  - Mobile: camera + gallery upload via existing useImagePicker hook, attachment list with long-press delete
+  - S3 deletion on attachment removal (graceful fallback on failure)
 
-2. **gateway**: Proxy attachment routes
-   - File: `apps/api/gateway/src/modules/tasks/tasks.controller.ts`
-   - POST /tasks/:id/attachments/presign
-   - POST /tasks/:id/attachments (confirm upload)
-   - DELETE /tasks/:id/attachments/:id
-
-3. **web-app**: Attachment upload UI
-   - File: `apps/web-app/src/app/(dashboard)/tasks/[id]/page.tsx`
-   - Dropzone component for file upload
-   - Gallery/list view of attachments
-
-4. **mobile**: Camera & gallery integration
-   - File: `apps/mobile/app/(app)/task/[id].tsx`
-   - Camera capture using expo-camera
-   - Gallery picker using expo-image-picker
-   - Upload progress indicator
-
-### Recently Completed (2026-02-11)
+### Previously Completed (2026-02-11)
 - **Schedule & Members Web UI** (Phase 3.7):
   - Refactored technician detail page: extracted 5 inline tabs into `_components/` directory
   - New Schedule tab: weekly schedule editor with read/edit modes, time inputs, active toggles
@@ -1155,8 +1152,8 @@ docker exec -it doergo-redis redis-cli
   - Created query string builder (`packages/shared/src/utils/query.ts`)
     - `buildQueryString()` - Filters null/undefined values automatically
     - `buildUrlWithQuery()` - Builds complete URLs with query parameters
-  - Updated mobile app to import from `@doergo/shared` (removed ~95 lines of duplicate types)
-  - Updated web app to import from `@doergo/shared` (removed ~70 lines of duplicate types)
+  - Updated mobile app to import from `@hbcfield/shared` (removed ~95 lines of duplicate types)
+  - Updated web app to import from `@hbcfield/shared` (removed ~70 lines of duplicate types)
   - Replaced 10+ manual `URLSearchParams` builders with `buildUrlWithQuery()`
   - Replaced hard-coded status strings with enums in `attendance.service.ts`:
     - `'CLOCKED_IN'` → `TimeEntryStatus.CLOCKED_IN`
@@ -1179,7 +1176,7 @@ docker exec -it doergo-redis redis-cli
   - Granular permission fields: canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers
   - Database migrations for schema changes and data migration
   - Backward compatibility layer (LegacyRoleMap, normalizeRole)
-  - Permission helper functions in @doergo/shared/guards
+  - Permission helper functions in @hbcfield/shared/guards
   - Updated all controller @Roles decorators
   - Registration now forces ADMIN role (security improvement)
 
@@ -1263,7 +1260,7 @@ docker exec -it doergo-redis redis-cli
 ### Brand Identity
 | Element | Value | Notes |
 |---------|-------|-------|
-| Name | Doergo | "Doer" + "go" - action-oriented |
+| Name | HBCField | "Doer" + "go" - action-oriented |
 | Logo | Wordmark with gear icon | Gear represents work/execution |
 | Tagline | Field Service Management | Task management & execution platform |
 
@@ -1316,10 +1313,10 @@ Uses Tailwind default 4px grid: `1` = 4px, `2` = 8px, `4` = 16px, `6` = 24px, `8
 
 ### Components
 
-#### Shared Components (`@doergo/shared/components`)
+#### Shared Components (`@hbcfield/shared/components`)
 ```typescript
 // AnimatedLogo - Full wordmark with gear icon
-import { AnimatedLogo } from '@doergo/shared/components';
+import { AnimatedLogo } from '@hbcfield/shared/components';
 
 <AnimatedLogo />                           // Default: dark text, blue accent
 <AnimatedLogo variant="light" />           // White text for dark backgrounds

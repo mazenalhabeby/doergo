@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,18 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Modal,
   Alert,
   TextInput,
+  Animated,
+  Dimensions,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   COLORS,
   SPACING,
@@ -30,6 +36,8 @@ import {
   BreakType,
 } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useTheme } from '../../../src/contexts/theme-context';
+import { LoadingState, ErrorState, LocationPickerSheet } from '../../../src/components';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
@@ -39,6 +47,7 @@ import {
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -60,12 +69,37 @@ export default function AttendanceScreen() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   // Modal state
-  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<CompanyLocation | null>(null);
-  const [showBreakNotesModal, setShowBreakNotesModal] = useState(false);
+  const [breakModalVisible, setBreakModalVisible] = useState(false);
   const [pendingBreakType, setPendingBreakType] = useState<BreakType | null>(null);
   const [breakNotes, setBreakNotes] = useState('');
   const [isEndingBreak, setIsEndingBreak] = useState(false);
+
+  // Break bottom sheet animation
+  const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+  const breakSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const breakOverlayAnim = useRef(new Animated.Value(0)).current;
+
+  const openLocationModal = useCallback(() => setLocationModalVisible(true), []);
+  const closeLocationModal = useCallback(() => setLocationModalVisible(false), []);
+
+  const openBreakModal = useCallback(() => {
+    setBreakModalVisible(true);
+    Animated.parallel([
+      Animated.timing(breakOverlayAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.spring(breakSlideAnim, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
+    ]).start();
+  }, [breakSlideAnim, breakOverlayAnim]);
+
+  const closeBreakModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(breakOverlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(breakSlideAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }),
+    ]).start(() => {
+      setBreakModalVisible(false);
+    });
+  }, [breakSlideAnim, breakOverlayAnim, SCREEN_HEIGHT]);
 
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
@@ -75,21 +109,30 @@ export default function AttendanceScreen() {
   // Check if user is FULL_TIME technician
   const isFullTimeTechnician = user?.technicianType === 'FULL_TIME';
 
-  // Fetch attendance data
+  // Fetch attendance data - use allSettled to handle partial failures gracefully
   const fetchAttendanceData = useCallback(async () => {
     try {
       setError(null);
-      const [statusData, historyData, breakData] = await Promise.all([
+      const results = await Promise.allSettled([
         attendanceApi.getStatus(),
         attendanceApi.getHistory({ limit: 10 }),
         attendanceApi.getBreakStatus(),
       ]);
-      setStatus(statusData);
-      setHistory(historyData.data || []);
-      setBreakStatus(breakData);
+
+      const statusData = results[0].status === 'fulfilled' ? results[0].value : null;
+      const historyData = results[1].status === 'fulfilled' ? results[1].value : null;
+      const breakData = results[2].status === 'fulfilled' ? results[2].value : null;
+
+      if (statusData) setStatus(statusData);
+      if (historyData) {
+        // fetchWithAuth unwraps { data: T } → T, so historyData is already TimeEntry[]
+        const entries = Array.isArray(historyData) ? historyData : (historyData as any).data || [];
+        setHistory(entries);
+      }
+      if (breakData) setBreakStatus(breakData);
 
       // Calculate elapsed time if clocked in
-      if (statusData.isClockedIn && statusData.currentEntry) {
+      if (statusData?.isClockedIn && statusData?.currentEntry) {
         const clockInTime = new Date(statusData.currentEntry.clockInAt).getTime();
         const now = Date.now();
         setElapsedMinutes(Math.floor((now - clockInTime) / 60000));
@@ -104,6 +147,13 @@ export default function AttendanceScreen() {
         setBreakElapsedMinutes(Math.floor((now - breakStartTime) / 60000));
       } else {
         setBreakElapsedMinutes(0);
+      }
+
+      // Show error only if all requests failed
+      const allFailed = results.every((r) => r.status === 'rejected');
+      if (allFailed) {
+        const firstErr = (results[0] as PromiseRejectedResult).reason;
+        setError(firstErr instanceof Error ? firstErr.message : 'Failed to load attendance data');
       }
     } catch (err) {
       console.error('Error fetching attendance:', err);
@@ -120,6 +170,18 @@ export default function AttendanceScreen() {
     };
     load();
   }, [fetchAttendanceData]);
+
+  // Refetch when tab gets focus (e.g. after clocking in/out on home tab)
+  const initialLoadDone = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        return;
+      }
+      fetchAttendanceData();
+    }, [fetchAttendanceData])
+  );
 
   // Update elapsed time every minute
   useEffect(() => {
@@ -203,7 +265,7 @@ export default function AttendanceScreen() {
       Alert.alert('Location Required', 'Please enable location services to clock in.');
       return;
     }
-    setShowLocationModal(true);
+    openLocationModal();
   };
 
   // Confirm clock in at selected location
@@ -211,7 +273,7 @@ export default function AttendanceScreen() {
     if (!selectedLocation || !currentLocation) return;
 
     setIsActionLoading(true);
-    setShowLocationModal(false);
+    closeLocationModal();
 
     try {
       await attendanceApi.clockIn({
@@ -268,7 +330,7 @@ export default function AttendanceScreen() {
     setPendingBreakType(type);
     setBreakNotes('');
     setIsEndingBreak(false);
-    setShowBreakNotesModal(true);
+    openBreakModal();
   };
 
   // Handle end break - show modal for notes
@@ -276,13 +338,13 @@ export default function AttendanceScreen() {
     setPendingBreakType(null);
     setBreakNotes('');
     setIsEndingBreak(true);
-    setShowBreakNotesModal(true);
+    openBreakModal();
   };
 
   // Confirm start break with notes
   const confirmStartBreak = async () => {
     if (!pendingBreakType) return;
-    setShowBreakNotesModal(false);
+    closeBreakModal();
     setIsBreakLoading(true);
     try {
       await attendanceApi.startBreak(pendingBreakType, breakNotes || undefined);
@@ -300,7 +362,7 @@ export default function AttendanceScreen() {
 
   // Confirm end break with notes
   const confirmEndBreak = async () => {
-    setShowBreakNotesModal(false);
+    closeBreakModal();
     setIsBreakLoading(true);
     try {
       await attendanceApi.endBreak(breakNotes || undefined);
@@ -336,11 +398,11 @@ export default function AttendanceScreen() {
   // Not a FULL_TIME technician
   if (!isFullTimeTechnician) {
     return (
-      <View style={styles.container}>
-        <View style={styles.notAvailable}>
-          <Ionicons name="information-circle-outline" size={64} color={COLORS.slate300} />
-          <Text style={styles.notAvailableTitle}>Not Available</Text>
-          <Text style={styles.notAvailableText}>
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
+        <View style={[styles.notAvailable, { backgroundColor: colors.surface }]}>
+          <Ionicons name="information-circle-outline" size={64} color={colors.textMuted} />
+          <Text style={[styles.notAvailableTitle, { color: colors.textPrimary }]}>Not Available</Text>
+          <Text style={[styles.notAvailableText, { color: colors.textSecondary }]}>
             Clock-in/clock-out is only available for full-time technicians.
           </Text>
         </View>
@@ -349,34 +411,17 @@ export default function AttendanceScreen() {
   }
 
   // Loading state
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading attendance...</Text>
-      </View>
-    );
-  }
+  if (isLoading) return <LoadingState message="Loading attendance..." />;
 
   // Error state
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  if (error) return <ErrorState message={error} onRetry={handleRefresh} />;
 
   const isClockedIn = status?.isClockedIn || false;
   const currentEntry = status?.currentEntry;
   const assignedLocations = status?.assignedLocations || [];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -390,7 +435,7 @@ export default function AttendanceScreen() {
         }
       >
         {/* Status Card */}
-        <View style={styles.statusCard}>
+        <View style={[styles.statusCard, { backgroundColor: colors.card }]}>
           <View style={styles.statusHeader}>
             <View
               style={[
@@ -398,35 +443,35 @@ export default function AttendanceScreen() {
                 { backgroundColor: isClockedIn ? COLORS.success : COLORS.slate400 },
               ]}
             />
-            <Text style={styles.statusTitle}>
+            <Text style={[styles.statusTitle, { color: colors.textPrimary }]}>
               {isClockedIn ? 'Clocked In' : 'Clocked Out'}
             </Text>
           </View>
 
           {isClockedIn && currentEntry && (
-            <View style={styles.currentShiftInfo}>
+            <View style={[styles.currentShiftInfo, { borderTopColor: colors.border }]}>
               <View style={styles.shiftDetail}>
-                <Ionicons name="location-outline" size={18} color={COLORS.slate500} />
-                <Text style={styles.shiftDetailText}>
+                <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+                <Text style={[styles.shiftDetailText, { color: colors.textSecondary }]}>
                   {currentEntry.location?.name || 'Unknown Location'}
                 </Text>
               </View>
               <View style={styles.shiftDetail}>
-                <Ionicons name="time-outline" size={18} color={COLORS.slate500} />
-                <Text style={styles.shiftDetailText}>
+                <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
+                <Text style={[styles.shiftDetailText, { color: colors.textSecondary }]}>
                   Started at {formatTime(currentEntry.clockInAt)}
                 </Text>
               </View>
               <View style={styles.elapsedTimeContainer}>
-                <Text style={styles.elapsedTimeLabel}>Time on shift</Text>
+                <Text style={[styles.elapsedTimeLabel, { color: colors.textMuted }]}>Time on shift</Text>
                 <Text style={styles.elapsedTime}>{formatDuration(elapsedMinutes)}</Text>
               </View>
 
               {/* Break Section */}
               {breakStatus?.isOnBreak ? (
-                <View style={styles.breakSection}>
-                  <View style={styles.breakActiveIndicator}>
-                    <Ionicons name="cafe" size={20} color={COLORS.warning} />
+                <View style={[styles.breakSection, { borderTopColor: colors.border }]}>
+                  <View style={[styles.breakActiveIndicator, { backgroundColor: colors.amberLight }]}>
+                    <Ionicons name="cafe" size={20} color={COLORS.amber} />
                     <Text style={styles.breakActiveText}>
                       On {breakStatus.currentBreak?.type?.toLowerCase()} break
                     </Text>
@@ -437,7 +482,7 @@ export default function AttendanceScreen() {
                     <Text style={styles.breakTimerValue}>{formatDuration(breakElapsedMinutes)}</Text>
                   </View>
                   {breakStatus.currentBreak?.startedAt && (
-                    <Text style={styles.breakTimeText}>
+                    <Text style={[styles.breakTimeText, { color: colors.textSecondary }]}>
                       Started at {formatTime(breakStatus.currentBreak.startedAt)}
                     </Text>
                   )}
@@ -457,11 +502,11 @@ export default function AttendanceScreen() {
                   </TouchableOpacity>
                 </View>
               ) : (
-                <View style={styles.breakSection}>
-                  <Text style={styles.breakSectionTitle}>Take a Break</Text>
+                <View style={[styles.breakSection, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.breakSectionTitle, { color: colors.textSecondary }]}>Take a Break</Text>
                   <View style={styles.breakButtonsRow}>
                     <TouchableOpacity
-                      style={styles.breakTypeButton}
+                      style={[styles.breakTypeButton, { backgroundColor: colors.primaryLight }]}
                       onPress={() => handleStartBreak(BreakType.LUNCH)}
                       disabled={isBreakLoading}
                     >
@@ -469,7 +514,7 @@ export default function AttendanceScreen() {
                       <Text style={styles.breakTypeButtonText}>Lunch</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.breakTypeButton}
+                      style={[styles.breakTypeButton, { backgroundColor: colors.primaryLight }]}
                       onPress={() => handleStartBreak(BreakType.SHORT)}
                       disabled={isBreakLoading}
                     >
@@ -477,7 +522,7 @@ export default function AttendanceScreen() {
                       <Text style={styles.breakTypeButtonText}>Short</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.breakTypeButton}
+                      style={[styles.breakTypeButton, { backgroundColor: colors.primaryLight }]}
                       onPress={() => handleStartBreak(BreakType.OTHER)}
                       disabled={isBreakLoading}
                     >
@@ -486,7 +531,7 @@ export default function AttendanceScreen() {
                     </TouchableOpacity>
                   </View>
                   {breakStatus?.totalBreakMinutes && breakStatus.totalBreakMinutes > 0 && (
-                    <Text style={styles.totalBreakText}>
+                    <Text style={[styles.totalBreakText, { color: colors.textMuted }]}>
                       Total break time: {formatDuration(breakStatus.totalBreakMinutes)}
                     </Text>
                   )}
@@ -499,7 +544,7 @@ export default function AttendanceScreen() {
           <TouchableOpacity
             style={[
               styles.actionButton,
-              { backgroundColor: isClockedIn ? COLORS.error : COLORS.success },
+              { backgroundColor: isClockedIn ? COLORS.primaryDark : COLORS.primary },
             ]}
             onPress={isClockedIn ? handleClockOut : handleClockInPress}
             disabled={isActionLoading || isGettingLocation}
@@ -528,18 +573,18 @@ export default function AttendanceScreen() {
         {/* Assigned Locations */}
         {!isClockedIn && assignedLocations.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Assigned Locations</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Assigned Locations</Text>
             {assignedLocations.map((location) => {
               const distance = getDistanceToLocation(location);
               const isWithinGeofence = distance !== null && distance <= location.geofenceRadius;
               return (
-                <View key={location.id} style={styles.locationCard}>
+                <View key={location.id} style={[styles.locationCard, { backgroundColor: colors.card }]}>
                   <View style={styles.locationInfo}>
                     <View style={styles.locationHeader}>
                       <Ionicons name="business-outline" size={20} color={COLORS.primary} />
-                      <Text style={styles.locationName}>{location.name}</Text>
+                      <Text style={[styles.locationName, { color: colors.textPrimary }]}>{location.name}</Text>
                     </View>
-                    <Text style={styles.locationAddress} numberOfLines={2}>
+                    <Text style={[styles.locationAddress, { color: colors.textSecondary }]} numberOfLines={2}>
                       {location.address}
                     </Text>
                     {distance !== null && (
@@ -570,11 +615,11 @@ export default function AttendanceScreen() {
         {/* Today's Breaks */}
         {isClockedIn && breakStatus?.todayBreaks && breakStatus.todayBreaks.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Breaks</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Today's Breaks</Text>
             {breakStatus.todayBreaks.map((breakItem: any, index: number) => (
-              <View key={breakItem.id || index} style={styles.breakHistoryCard}>
+              <View key={breakItem.id || index} style={[styles.breakHistoryCard, { backgroundColor: colors.card }]}>
                 <View style={styles.breakHistoryHeader}>
-                  <View style={styles.breakTypeTag}>
+                  <View style={[styles.breakTypeTag, { backgroundColor: colors.primaryLight }]}>
                     <Ionicons
                       name={
                         breakItem.type === 'LUNCH'
@@ -591,29 +636,29 @@ export default function AttendanceScreen() {
                     </Text>
                   </View>
                   {!breakItem.endedAt ? (
-                    <View style={styles.breakActiveBadge}>
+                    <View style={[styles.breakActiveBadge, { backgroundColor: colors.amberLight }]}>
                       <Text style={styles.breakActiveBadgeText}>Active</Text>
                     </View>
                   ) : (
-                    <Text style={styles.breakDurationText}>
+                    <Text style={[styles.breakDurationText, { color: colors.textPrimary }]}>
                       {formatDuration(breakItem.durationMinutes || 0)}
                     </Text>
                   )}
                 </View>
                 <View style={styles.breakHistoryTimes}>
-                  <Text style={styles.breakHistoryTimeText}>
+                  <Text style={[styles.breakHistoryTimeText, { color: colors.textSecondary }]}>
                     {formatTime(breakItem.startedAt)}
                     {breakItem.endedAt && ` - ${formatTime(breakItem.endedAt)}`}
                   </Text>
                 </View>
                 {breakItem.notes && (
-                  <Text style={styles.breakNotesText}>{breakItem.notes}</Text>
+                  <Text style={[styles.breakNotesText, { color: colors.textMuted }]}>{breakItem.notes}</Text>
                 )}
               </View>
             ))}
             {breakStatus.totalBreakMinutes > 0 && (
-              <View style={styles.totalBreakSummary}>
-                <Text style={styles.totalBreakSummaryLabel}>Total break time today</Text>
+              <View style={[styles.totalBreakSummary, { backgroundColor: colors.surfaceRaised }]}>
+                <Text style={[styles.totalBreakSummaryLabel, { color: colors.textSecondary }]}>Total break time today</Text>
                 <Text style={styles.totalBreakSummaryValue}>
                   {formatDuration(breakStatus.totalBreakMinutes)}
                 </Text>
@@ -624,18 +669,18 @@ export default function AttendanceScreen() {
 
         {/* Recent History */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent History</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent History</Text>
 
           {history.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="calendar-outline" size={48} color={COLORS.slate300} />
-              <Text style={styles.emptyText}>No attendance records yet</Text>
+            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+              <Ionicons name="calendar-outline" size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No attendance records yet</Text>
             </View>
           ) : (
             history.map((entry) => (
-              <View key={entry.id} style={styles.historyCard}>
+              <View key={entry.id} style={[styles.historyCard, { backgroundColor: colors.card }]}>
                 <View style={styles.historyHeader}>
-                  <Text style={styles.historyDate}>{formatDate(entry.clockInAt)}</Text>
+                  <Text style={[styles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt)}</Text>
                   <View
                     style={[
                       styles.historyStatusBadge,
@@ -671,28 +716,28 @@ export default function AttendanceScreen() {
                   </View>
                 </View>
 
-                <Text style={styles.historyLocation}>
+                <Text style={[styles.historyLocation, { color: colors.textSecondary }]}>
                   {entry.location?.name || 'Unknown Location'}
                 </Text>
 
                 <View style={styles.historyTimes}>
                   <View style={styles.historyTimeItem}>
-                    <Text style={styles.historyTimeLabel}>In</Text>
-                    <Text style={styles.historyTimeValue}>
+                    <Text style={[styles.historyTimeLabel, { color: colors.textMuted }]}>In</Text>
+                    <Text style={[styles.historyTimeValue, { color: colors.textPrimary }]}>
                       {formatTime(entry.clockInAt)}
                     </Text>
                   </View>
                   {entry.clockOutAt && (
                     <View style={styles.historyTimeItem}>
-                      <Text style={styles.historyTimeLabel}>Out</Text>
-                      <Text style={styles.historyTimeValue}>
+                      <Text style={[styles.historyTimeLabel, { color: colors.textMuted }]}>Out</Text>
+                      <Text style={[styles.historyTimeValue, { color: colors.textPrimary }]}>
                         {formatTime(entry.clockOutAt)}
                       </Text>
                     </View>
                   )}
                   {entry.totalMinutes && (
                     <View style={styles.historyTimeItem}>
-                      <Text style={styles.historyTimeLabel}>Total</Text>
+                      <Text style={[styles.historyTimeLabel, { color: colors.textMuted }]}>Total</Text>
                       <Text style={[styles.historyTimeValue, { color: COLORS.primary }]}>
                         {formatDuration(entry.totalMinutes)}
                       </Text>
@@ -701,7 +746,7 @@ export default function AttendanceScreen() {
                 </View>
 
                 {!entry.clockInWithinGeofence && (
-                  <View style={styles.geofenceWarning}>
+                  <View style={[styles.geofenceWarning, { borderTopColor: colors.border }]}>
                     <Ionicons name="warning-outline" size={14} color={COLORS.warning} />
                     <Text style={styles.geofenceWarningText}>
                       Clocked in outside geofence
@@ -717,170 +762,96 @@ export default function AttendanceScreen() {
         <View style={{ height: SPACING.xl }} />
       </ScrollView>
 
-      {/* Location Selection Modal */}
-      <Modal
-        visible={showLocationModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowLocationModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Location</Text>
-              <TouchableOpacity onPress={() => setShowLocationModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.slate600} />
-              </TouchableOpacity>
-            </View>
+      {/* Location Selection Bottom Sheet */}
+      <LocationPickerSheet
+        visible={locationModalVisible}
+        locations={assignedLocations}
+        selectedLocation={selectedLocation}
+        onSelect={setSelectedLocation}
+        onConfirm={confirmClockIn}
+        onClose={closeLocationModal}
+        getDistance={getDistanceToLocation}
+      />
 
-            <Text style={styles.modalSubtitle}>
-              Choose the location you're clocking in at
-            </Text>
-
-            <ScrollView style={styles.modalList}>
-              {assignedLocations.map((location) => {
-                const distance = getDistanceToLocation(location);
-                const isWithinGeofence =
-                  distance !== null && distance <= location.geofenceRadius;
-                const isSelected = selectedLocation?.id === location.id;
-
-                return (
-                  <TouchableOpacity
-                    key={location.id}
-                    style={[
-                      styles.modalLocationItem,
-                      isSelected && styles.modalLocationItemSelected,
-                    ]}
-                    onPress={() => setSelectedLocation(location)}
-                  >
-                    <View style={styles.modalLocationInfo}>
-                      <Text style={styles.modalLocationName}>{location.name}</Text>
-                      <Text style={styles.modalLocationAddress} numberOfLines={1}>
-                        {location.address}
-                      </Text>
-                      {distance !== null && (
-                        <View style={styles.distanceRow}>
-                          <Ionicons
-                            name={isWithinGeofence ? 'checkmark-circle' : 'navigate-outline'}
-                            size={14}
-                            color={isWithinGeofence ? COLORS.success : COLORS.slate400}
-                          />
-                          <Text
-                            style={[
-                              styles.modalDistanceText,
-                              { color: isWithinGeofence ? COLORS.success : COLORS.slate500 },
-                            ]}
-                          >
-                            {formatDistance(distance)}
-                            {isWithinGeofence && ' - In range'}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                    <View
-                      style={[
-                        styles.radioButton,
-                        isSelected && styles.radioButtonSelected,
-                      ]}
-                    >
-                      {isSelected && (
-                        <View style={styles.radioButtonInner} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={[
-                styles.confirmButton,
-                !selectedLocation && styles.confirmButtonDisabled,
-              ]}
-              onPress={confirmClockIn}
-              disabled={!selectedLocation}
+      {/* Break Notes Bottom Sheet */}
+      {breakModalVisible && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: breakOverlayAnim }]}>
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={closeBreakModal} />
+            </BlurView>
+          </Animated.View>
+          <Animated.View
+            style={[styles.modalSheet, { transform: [{ translateY: breakSlideAnim }] }]}
+          >
+            <View style={[styles.modalHandle, { backgroundColor: colors.borderLight }]} />
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={[styles.modalContent, { backgroundColor: colors.card }]}
             >
-              <Text style={styles.confirmButtonText}>
-                Clock In at {selectedLocation?.name || 'Selected Location'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Break Notes Modal */}
-      <Modal
-        visible={showBreakNotesModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowBreakNotesModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {isEndingBreak ? 'End Break' : `Start ${pendingBreakType?.toLowerCase()} Break`}
-              </Text>
-              <TouchableOpacity onPress={() => setShowBreakNotesModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.slate600} />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalSubtitle}>
-              {isEndingBreak
-                ? 'Add any notes about your break (optional)'
-                : 'Add any notes about your break (optional)'}
-            </Text>
-
-            <TextInput
-              style={styles.notesInput}
-              placeholder="Enter notes (optional)..."
-              placeholderTextColor={COLORS.slate400}
-              value={breakNotes}
-              onChangeText={setBreakNotes}
-              multiline
-              numberOfLines={3}
-              maxLength={500}
-              textAlignVertical="top"
-            />
-
-            <Text style={styles.characterCount}>
-              {breakNotes.length}/500 characters
-            </Text>
-
-            <View style={styles.breakModalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setShowBreakNotesModal(false);
-                  setPendingBreakType(null);
-                  setIsEndingBreak(false);
-                  setBreakNotes('');
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.confirmButton,
-                  { flex: 1, backgroundColor: isEndingBreak ? COLORS.warning : COLORS.success },
-                ]}
-                onPress={isEndingBreak ? confirmEndBreak : confirmStartBreak}
-              >
-                <Ionicons
-                  name={isEndingBreak ? 'checkmark-circle-outline' : 'cafe-outline'}
-                  size={20}
-                  color={COLORS.white}
-                />
-                <Text style={styles.confirmButtonText}>
-                  {isEndingBreak ? 'End Break' : 'Start Break'}
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                  {isEndingBreak ? 'End Break' : `Start ${pendingBreakType?.toLowerCase()} Break`}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                <TouchableOpacity onPress={closeBreakModal}>
+                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                Add any notes about your break (optional)
+              </Text>
+
+              <TextInput
+                style={[styles.notesInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.textPrimary }]}
+                placeholder="Enter notes (optional)..."
+                placeholderTextColor={colors.textMuted}
+                value={breakNotes}
+                onChangeText={setBreakNotes}
+                multiline
+                numberOfLines={3}
+                maxLength={500}
+                textAlignVertical="top"
+              />
+
+              <Text style={[styles.characterCount, { color: colors.textMuted }]}>
+                {breakNotes.length}/500 characters
+              </Text>
+
+              <View style={styles.breakModalButtons}>
+                <TouchableOpacity
+                  style={[styles.cancelButton, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
+                  onPress={() => {
+                    closeBreakModal();
+                    setPendingBreakType(null);
+                    setIsEndingBreak(false);
+                    setBreakNotes('');
+                  }}
+                >
+                  <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.breakConfirmButton,
+                    { backgroundColor: isEndingBreak ? COLORS.amber : COLORS.success },
+                  ]}
+                  onPress={isEndingBreak ? confirmEndBreak : confirmStartBreak}
+                >
+                  <Ionicons
+                    name={isEndingBreak ? 'checkmark-circle-outline' : 'cafe-outline'}
+                    size={20}
+                    color={COLORS.white}
+                  />
+                  <Text style={styles.confirmButtonText}>
+                    {isEndingBreak ? 'End Break' : 'Start Break'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+          </Animated.View>
         </View>
-      </Modal>
+      )}
     </View>
   );
 }
@@ -888,48 +859,10 @@ export default function AttendanceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   scrollView: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.slate50,
-  },
-  loadingText: {
-    marginTop: SPACING.md,
-    fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.slate50,
-    padding: SPACING.xl,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.error,
-    textAlign: 'center',
-    marginTop: SPACING.md,
-  },
-  retryButton: {
-    marginTop: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-  },
-  retryButtonText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-
   // Not available state
   notAvailable: {
     flex: 1,
@@ -940,12 +873,10 @@ const styles = StyleSheet.create({
   notAvailableTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
     marginTop: SPACING.lg,
   },
   notAvailableText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
     textAlign: 'center',
     marginTop: SPACING.sm,
     maxWidth: 280,
@@ -953,7 +884,6 @@ const styles = StyleSheet.create({
 
   // Status card
   statusCard: {
-    backgroundColor: COLORS.white,
     marginHorizontal: SPACING.lg,
     marginTop: SPACING.lg,
     borderRadius: RADIUS.lg,
@@ -973,13 +903,11 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
   },
   currentShiftInfo: {
     marginTop: SPACING.lg,
     paddingTop: SPACING.lg,
     borderTopWidth: 1,
-    borderTopColor: COLORS.slate100,
   },
   shiftDetail: {
     flexDirection: 'row',
@@ -989,7 +917,6 @@ const styles = StyleSheet.create({
   },
   shiftDetailText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate600,
   },
   elapsedTimeContainer: {
     marginTop: SPACING.md,
@@ -997,7 +924,6 @@ const styles = StyleSheet.create({
   },
   elapsedTimeLabel: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
   },
   elapsedTime: {
     fontSize: FONT_SIZE.title,
@@ -1011,12 +937,10 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
     paddingTop: SPACING.lg,
     borderTopWidth: 1,
-    borderTopColor: COLORS.slate100,
   },
   breakSectionTitle: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate600,
     marginBottom: SPACING.md,
     textAlign: 'center',
   },
@@ -1032,7 +956,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.sm,
-    backgroundColor: COLORS.primaryLight,
     borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.primary,
@@ -1048,7 +971,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    backgroundColor: COLORS.warningLight,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     borderRadius: RADIUS.md,
@@ -1056,12 +978,11 @@ const styles = StyleSheet.create({
   breakActiveText: {
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.warning,
+    color: COLORS.amber,
     textTransform: 'capitalize',
   },
   breakTimeText: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
     textAlign: 'center',
     marginTop: SPACING.sm,
   },
@@ -1069,7 +990,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.warning,
+    backgroundColor: COLORS.amber,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     borderRadius: RADIUS.md,
@@ -1083,7 +1004,6 @@ const styles = StyleSheet.create({
   },
   totalBreakText: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.slate400,
     textAlign: 'center',
     marginTop: SPACING.md,
   },
@@ -1100,12 +1020,11 @@ const styles = StyleSheet.create({
   breakTimerValue: {
     fontSize: FONT_SIZE.title,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.warning,
+    color: COLORS.amber,
     marginTop: SPACING.xs,
   },
   // Break history
   breakHistoryCard: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
@@ -1123,7 +1042,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    backgroundColor: COLORS.primaryLight,
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
     borderRadius: RADIUS.sm,
@@ -1134,7 +1052,6 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   breakActiveBadge: {
-    backgroundColor: COLORS.warningLight,
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
     borderRadius: RADIUS.sm,
@@ -1142,23 +1059,20 @@ const styles = StyleSheet.create({
   breakActiveBadgeText: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.warning,
+    color: COLORS.amber,
   },
   breakDurationText: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
   },
   breakHistoryTimes: {
     marginTop: SPACING.xs,
   },
   breakHistoryTimeText: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
   },
   breakNotesText: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.slate400,
     fontStyle: 'italic',
     marginTop: SPACING.xs,
   },
@@ -1166,14 +1080,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: COLORS.slate100,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginTop: SPACING.sm,
   },
   totalBreakSummaryLabel: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate600,
   },
   totalBreakSummaryValue: {
     fontSize: FONT_SIZE.lg,
@@ -1211,13 +1123,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
     marginBottom: SPACING.lg,
   },
 
   // Location card
   locationCard: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -1235,11 +1145,9 @@ const styles = StyleSheet.create({
   locationName: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
   },
   locationAddress: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
     marginBottom: SPACING.sm,
   },
   distanceRow: {
@@ -1253,7 +1161,6 @@ const styles = StyleSheet.create({
 
   // Empty state
   emptyState: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.xxxl,
     alignItems: 'center',
@@ -1261,13 +1168,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate400,
     marginTop: SPACING.md,
   },
 
   // History card
   historyCard: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -1282,7 +1187,6 @@ const styles = StyleSheet.create({
   historyDate: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
   },
   historyStatusBadge: {
     paddingHorizontal: SPACING.sm,
@@ -1295,7 +1199,6 @@ const styles = StyleSheet.create({
   },
   historyLocation: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
     marginBottom: SPACING.md,
   },
   historyTimes: {
@@ -1307,13 +1210,11 @@ const styles = StyleSheet.create({
   },
   historyTimeLabel: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.slate400,
     marginBottom: SPACING.xs,
   },
   historyTimeValue: {
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate700,
   },
   geofenceWarning: {
     flexDirection: 'row',
@@ -1322,25 +1223,36 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: COLORS.slate100,
   },
   geofenceWarningText: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.warning,
   },
 
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+  // Bottom Sheet
+  modalSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  modalHandle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: SPACING.sm,
   },
   modalContent: {
-    backgroundColor: COLORS.white,
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
     padding: SPACING.xl,
-    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1351,73 +1263,10 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
   },
   modalSubtitle: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
     marginBottom: SPACING.lg,
-  },
-  modalList: {
-    maxHeight: 300,
-  },
-  modalLocationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.lg,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.slate200,
-    marginBottom: SPACING.md,
-  },
-  modalLocationItemSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-  },
-  modalLocationInfo: {
-    flex: 1,
-  },
-  modalLocationName: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
-  },
-  modalLocationAddress: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
-    marginTop: SPACING.xs,
-  },
-  modalDistanceText: {
-    fontSize: FONT_SIZE.xs,
-    marginTop: SPACING.xs,
-  },
-  radioButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: COLORS.slate300,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioButtonSelected: {
-    borderColor: COLORS.primary,
-  },
-  radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.primary,
-  },
-  confirmButton: {
-    backgroundColor: COLORS.success,
-    paddingVertical: SPACING.lg,
-    borderRadius: RADIUS.md,
-    alignItems: 'center',
-    marginTop: SPACING.lg,
-  },
-  confirmButtonDisabled: {
-    backgroundColor: COLORS.slate300,
   },
   confirmButtonText: {
     color: COLORS.white,
@@ -1426,19 +1275,15 @@ const styles = StyleSheet.create({
   },
   // Break notes modal
   notesInput: {
-    backgroundColor: COLORS.slate50,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.slate200,
     padding: SPACING.md,
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
     minHeight: 100,
     marginBottom: SPACING.sm,
   },
   characterCount: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.slate400,
     textAlign: 'right',
     marginBottom: SPACING.lg,
   },
@@ -1446,15 +1291,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.md,
   },
+  breakConfirmButton: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
   cancelButton: {
     flex: 1,
     paddingVertical: SPACING.lg,
     borderRadius: RADIUS.md,
     alignItems: 'center',
-    backgroundColor: COLORS.slate100,
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   cancelButtonText: {
-    color: COLORS.slate600,
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.semibold,
   },

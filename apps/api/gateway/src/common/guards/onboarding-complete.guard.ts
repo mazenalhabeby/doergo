@@ -4,7 +4,7 @@
  */
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY, IS_SKIP_ONBOARDING_KEY } from '@doergo/shared';
+import { IS_PUBLIC_KEY, IS_SKIP_ONBOARDING_KEY } from '@hbcfield/shared';
 
 @Injectable()
 export class OnboardingCompleteGuard implements CanActivate {

@@ -11,7 +11,7 @@ import { PrismaClient } from '@prisma/client';
  * @example
  * ```typescript
  * // In your module
- * import { PrismaModule } from '@doergo/shared';
+ * import { PrismaModule } from '@hbcfield/shared';
  *
  * @Module({
  *   imports: [PrismaModule],

@@ -7,7 +7,7 @@ import {
   SERVICE_NAMES,
   createClientOptions,
   QUEUE_NAMES,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 import { AttendanceController } from './attendance.controller';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';

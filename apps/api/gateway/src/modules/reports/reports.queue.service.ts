@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import { QUEUE_NAMES, REPORT_JOB_TYPES, BaseQueueService } from '@doergo/shared';
+import { QUEUE_NAMES, REPORT_JOB_TYPES, BaseQueueService } from '@hbcfield/shared';
 
 /**
  * Service for managing report-related WRITE jobs via BullMQ

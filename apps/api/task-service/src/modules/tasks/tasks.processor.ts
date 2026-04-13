@@ -1,8 +1,9 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, TASK_JOB_TYPES } from '@doergo/shared';
+import { QUEUE_NAMES, TASK_JOB_TYPES } from '@hbcfield/shared';
 import { TasksService } from './tasks.service';
+import { AttachmentsService } from '../attachments/attachments.service';
 
 /**
  * BullMQ Processor for Task Queue
@@ -10,15 +11,18 @@ import { TasksService } from './tasks.service';
  * Handles WRITE task jobs with exactly-once processing semantics.
  * Each job type is routed to the appropriate service method.
  *
- * NOTE: READ operations (findAll, findOne, getTimeline, getComments) are handled
- * via direct microservice communication (MessagePattern) for better performance.
+ * NOTE: READ operations (findAll, findOne, getTimeline, getComments, getAttachments)
+ * are handled via direct microservice communication (MessagePattern) for better performance.
  * Only WRITE operations go through BullMQ for exactly-once guarantees.
  */
 @Processor(QUEUE_NAMES.TASKS)
 export class TasksProcessor extends WorkerHost {
   private readonly logger = new Logger(TasksProcessor.name);
 
-  constructor(private readonly tasksService: TasksService) {
+  constructor(
+    private readonly tasksService: TasksService,
+    private readonly attachmentsService: AttachmentsService,
+  ) {
     super();
   }
 
@@ -76,14 +80,22 @@ export class TasksProcessor extends WorkerHost {
       case TASK_JOB_TYPES.ADD_COMMENT:
         return this.tasksService.addComment(data);
 
-      // ============ Attachment Operations ============
-      // TODO: Implement when attachment service is ready
+      // ============ Attachment Write Operations ============
       case TASK_JOB_TYPES.ADD_ATTACHMENT:
-      case TASK_JOB_TYPES.GET_ATTACHMENTS:
+        return this.attachmentsService.create(data);
+
       case TASK_JOB_TYPES.DELETE_ATTACHMENT:
+        return this.attachmentsService.remove(data);
+
       case TASK_JOB_TYPES.GET_PRESIGNED_URL:
-        this.logger.warn(`Attachment job type ${name} not yet implemented`);
-        throw new Error(`Job type ${name} not yet implemented`);
+        return this.attachmentsService.getPresignedUrl(data);
+
+      // ============ Avatar S3 Operations ============
+      case TASK_JOB_TYPES.AVATAR_PRESIGNED_URL:
+        return this.attachmentsService.getAvatarPresignedUrl(data);
+
+      case TASK_JOB_TYPES.AVATAR_DELETE_S3:
+        return this.attachmentsService.deleteAvatarFromS3(data);
 
       default:
         this.logger.warn(`Unknown job type: ${name}`);

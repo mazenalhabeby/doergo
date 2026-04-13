@@ -6,6 +6,11 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @MessagePattern({ cmd: 'health' })
+  async health() {
+    return { status: 'ok', service: 'auth-service', timestamp: new Date().toISOString() };
+  }
+
   @MessagePattern({ cmd: 'register' })
   async register(@Payload() data: any) {
     return this.authService.register(data);
@@ -44,5 +49,30 @@ export class AuthController {
   @MessagePattern({ cmd: 'change_password' })
   async changePassword(@Payload() data: any) {
     return this.authService.changePassword(data);
+  }
+
+  @MessagePattern({ cmd: 'update_avatar' })
+  async updateAvatar(@Payload() data: any) {
+    return this.authService.updateAvatar(data);
+  }
+
+  @MessagePattern({ cmd: 'remove_avatar' })
+  async removeAvatar(@Payload() data: any) {
+    return this.authService.removeAvatar(data);
+  }
+
+  @MessagePattern({ cmd: 'list_sessions' })
+  async listSessions(@Payload() data: any) {
+    return this.authService.listSessions(data.userId);
+  }
+
+  @MessagePattern({ cmd: 'revoke_session' })
+  async revokeSession(@Payload() data: any) {
+    return this.authService.revokeSession(data.userId, data.sessionId);
+  }
+
+  @MessagePattern({ cmd: 'revoke_all_sessions' })
+  async revokeAllSessions(@Payload() data: any) {
+    return this.authService.revokeAllSessions(data.userId, data.exceptSessionId);
   }
 }

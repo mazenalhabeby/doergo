@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, MaxLength, MinLength, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { CompanyNameField } from '@doergo/shared';
+import { CompanyNameField } from '@hbcfield/shared';
 
 /**
  * Create organization DTO (Path A)

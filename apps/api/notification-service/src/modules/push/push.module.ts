@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '@doergo/shared';
+import { PrismaModule } from '@hbcfield/shared';
 import { PushService } from './push.service';
 
 @Module({

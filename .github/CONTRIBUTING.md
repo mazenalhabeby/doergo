@@ -1,4 +1,4 @@
-# Contributing to Doergo
+# Contributing to HBCField
 
 ## Development Setup
 
@@ -18,7 +18,7 @@ pnpm dev:web    # Terminal 2
 ### General Principles
 
 - Follow **SOLID** and **DRY** principles
-- Check `@doergo/shared` before duplicating code
+- Check `@hbcfield/shared` before duplicating code
 - Use TypeScript strict mode - add type annotations for all functions
 - Keep solutions simple - avoid over-engineering
 
@@ -53,7 +53,7 @@ export class ResourceController {
 
 ```typescript
 // Use shared helpers
-import { success, error, paginated } from '@doergo/shared/api';
+import { success, error, paginated } from '@hbcfield/shared/api';
 
 return success(data);                    // { data: T }
 return success(data, 'Created');         // { data: T, message: 'Created' }
@@ -71,7 +71,7 @@ return paginated(items, total, page, limit);  // { data: T[], meta: {...} }
 
 - Use **Expo** managed workflow
 - Store tokens in **expo-secure-store** (not AsyncStorage)
-- Use shared types from `@doergo/shared`
+- Use shared types from `@hbcfield/shared`
 
 ## Git Workflow
 
@@ -91,7 +91,7 @@ Write clear, concise commit messages:
 ```
 feat: add technician scheduling endpoints
 fix: resolve token refresh race condition
-refactor: extract shared date utilities to @doergo/shared
+refactor: extract shared date utilities to @hbcfield/shared
 docs: update API reference for invitation endpoints
 ```
 
@@ -139,7 +139,7 @@ docs: update API reference for invitation endpoints
 
 ## Shared Package
 
-Before adding code to any app, check if it belongs in `@doergo/shared`:
+Before adding code to any app, check if it belongs in `@hbcfield/shared`:
 
 | Add to shared if... | Don't add if... |
 |---------------------|-----------------|

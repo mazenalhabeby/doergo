@@ -6,7 +6,7 @@
  *
  * @example
  * // In app.module.ts (producer - gateway)
- * import { createBullMQConfig, QUEUE_NAMES } from '@doergo/shared';
+ * import { createBullMQConfig, QUEUE_NAMES } from '@hbcfield/shared';
  *
  * BullModule.forRootAsync(createBullMQConfig()),
  * BullModule.registerQueue({ name: QUEUE_NAMES.TASKS }),

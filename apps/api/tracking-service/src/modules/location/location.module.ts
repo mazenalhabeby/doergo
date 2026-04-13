@@ -1,6 +1,6 @@
 import { Module, OnModuleInit, Inject } from '@nestjs/common';
 import { ClientsModule, ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, createClientOptions } from '@doergo/shared';
+import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { LocationController } from './location.controller';
 import { LocationService } from './location.service';
 

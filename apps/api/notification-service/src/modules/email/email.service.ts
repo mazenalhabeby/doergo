@@ -22,7 +22,7 @@ export class EmailService {
   async sendEmail(to: string, subject: string, html: string) {
     try {
       await this.transporter.sendMail({
-        from: this.configService.get('SMTP_FROM', 'noreply@doergo.com'),
+        from: this.configService.get('SMTP_FROM', 'noreply@hbcfield.eu'),
         to,
         subject,
         html,
@@ -105,7 +105,7 @@ export class EmailService {
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
         <p style="color: #94a3b8; font-size: 12px;">
-          This is an automated message from Doergo Field Service Management.
+          This is an automated message from HBCField.
         </p>
       </div>
     `;
@@ -136,7 +136,7 @@ export class EmailService {
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
         <p style="color: #94a3b8; font-size: 12px;">
-          This is an automated alert from Doergo Field Service Management.
+          This is an automated alert from HBCField.
         </p>
       </div>
     `;
@@ -170,7 +170,7 @@ export class EmailService {
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
         <p style="color: #94a3b8; font-size: 12px;">
-          This is an automated report from Doergo Field Service Management.
+          This is an automated report from HBCField.
         </p>
       </div>
     `;

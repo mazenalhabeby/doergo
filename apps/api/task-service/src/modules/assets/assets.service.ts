@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, success, paginated, TaskStatus } from '@doergo/shared';
+import { Role, success, paginated, TaskStatus } from '@hbcfield/shared';
 
 @Injectable()
 export class AssetsService {

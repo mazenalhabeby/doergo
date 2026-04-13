@@ -61,6 +61,7 @@ export interface CurrentUserData {
   role: Role | string;
   organizationId: string | null;
   onboardingCompleted: boolean;
+  avatarUrl?: string | null;
   // Permission fields
   platform: Platform | string;
   canCreateTasks: boolean;

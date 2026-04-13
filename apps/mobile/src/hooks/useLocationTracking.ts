@@ -3,11 +3,7 @@ import * as Location from 'expo-location';
 import { trackingApi } from '../lib/api';
 
 const UPDATE_INTERVAL_MS = 30000; // 30 seconds
-
-interface UseLocationTrackingOptions {
-  taskId?: string;
-  onError?: (error: string) => void;
-}
+const LOCATION_TIMEOUT_MS = 10000; // 10 second timeout for GPS
 
 interface LocationData {
   lat: number;
@@ -17,26 +13,23 @@ interface LocationData {
 
 interface LocationTrackingState {
   isTracking: boolean;
+  activeTaskId: string | null;
   lastLocation: LocationData | null;
   error: string | null;
   permissionStatus: 'undetermined' | 'granted' | 'denied';
 }
 
-export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
+export function useLocationTracking() {
   const [state, setState] = useState<LocationTrackingState>({
     isTracking: false,
+    activeTaskId: null,
     lastLocation: null,
     error: null,
     permissionStatus: 'undetermined',
   });
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const taskIdRef = useRef(options.taskId);
-
-  // Update taskId ref when it changes
-  useEffect(() => {
-    taskIdRef.current = options.taskId;
-  }, [options.taskId]);
+  const taskIdRef = useRef<string | null>(null);
 
   // Check permission on mount
   useEffect(() => {
@@ -51,19 +44,23 @@ export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
 
   const sendLocationUpdate = useCallback(async () => {
     try {
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      const location = await Promise.race([
+        Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Location request timed out')), LOCATION_TIMEOUT_MS),
+        ),
+      ]);
 
       const { latitude: lat, longitude: lng } = location.coords;
       const accuracy = location.coords.accuracy ?? undefined;
 
-      // Send to backend
       await trackingApi.updateLocation({
         lat,
         lng,
         accuracy,
-        taskId: taskIdRef.current,
+        taskId: taskIdRef.current ?? undefined,
       });
 
       setState((prev) => ({
@@ -71,34 +68,37 @@ export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
         lastLocation: { lat, lng, accuracy },
         error: null,
       }));
-
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update location';
       setState((prev) => ({ ...prev, error: message }));
-      options.onError?.(message);
     }
-  }, [options]);
+  }, []);
 
-  const startTracking = useCallback(async () => {
+  const startTracking = useCallback(async (taskId: string) => {
+    // Prevent duplicate intervals
+    if (intervalRef.current) {
+      // Update taskId if tracking is already active for a different task
+      taskIdRef.current = taskId;
+      setState((prev) => ({ ...prev, activeTaskId: taskId }));
+      return true;
+    }
+
     try {
-      // Request foreground permissions
       const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
       if (foregroundStatus !== 'granted') {
-        const message = 'Location permission denied';
-        setState((prev) => ({ ...prev, error: message, permissionStatus: 'denied' }));
-        options.onError?.(message);
+        setState((prev) => ({ ...prev, error: 'Location permission denied', permissionStatus: 'denied' }));
         return false;
       }
 
       setState((prev) => ({ ...prev, permissionStatus: 'granted' }));
 
-      // Optionally request background permissions (for when app is backgrounded)
       const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
       if (backgroundStatus !== 'granted') {
         // Background permission not granted - tracking will pause when app is backgrounded
       }
 
-      setState((prev) => ({ ...prev, isTracking: true, error: null }));
+      taskIdRef.current = taskId;
+      setState((prev) => ({ ...prev, isTracking: true, activeTaskId: taskId, error: null }));
 
       // Send initial location immediately
       await sendLocationUpdate();
@@ -110,17 +110,17 @@ export function useLocationTracking(options: UseLocationTrackingOptions = {}) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to start tracking';
       setState((prev) => ({ ...prev, error: message }));
-      options.onError?.(message);
       return false;
     }
-  }, [sendLocationUpdate, options]);
+  }, [sendLocationUpdate]);
 
   const stopTracking = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    setState((prev) => ({ ...prev, isTracking: false }));
+    taskIdRef.current = null;
+    setState((prev) => ({ ...prev, isTracking: false, activeTaskId: null }));
   }, []);
 
   // Cleanup on unmount

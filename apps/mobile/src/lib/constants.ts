@@ -8,57 +8,148 @@
 // =============================================================================
 
 export const COLORS = {
-  // Brand
-  primary: '#2563EB',
-  primaryLight: '#eff6ff',
-  primaryDark: '#1d4ed8',
+  // Brand (aligned with packages/shared/src/design/tokens.ts)
+  primary: '#059669',
+  primaryLight: '#ecfdf5',
+  primaryDark: '#047857',
+
+  // Accent
+  accent: '#F97316',
+  accentLight: '#FED7AA',
 
   // Neutral
-  white: '#ffffff',
+  white: '#FFFFFF',
   black: '#000000',
 
   // Slate scale (backgrounds, borders, text)
-  slate50: '#f8fafc',
-  slate100: '#f1f5f9',
-  slate200: '#e2e8f0',
-  slate300: '#cbd5e1',
-  slate400: '#94a3b8',
-  slate500: '#64748b',
+  slate50: '#F8FAFC',
+  slate100: '#F1F5F9',
+  slate200: '#E2E8F0',
+  slate300: '#CBD5E1',
+  slate400: '#94A3B8',
+  slate500: '#64748B',
   slate600: '#475569',
   slate700: '#334155',
-  slate800: '#1e293b',
-  slate900: '#0f172a',
+  slate800: '#1E293B',
+  slate900: '#0F172A',
 
-  // Semantic
-  success: '#16a34a',
-  successLight: '#dcfce7',
-  successBorder: '#bbf7d0',
+  // Semantic — 500-weight (brighter, matches design tokens)
+  success: '#22C55E',
+  successLight: '#DCFCE7',
+  successBorder: '#86EFAC',
 
-  warning: '#ca8a04',
-  warningLight: '#fef9c3',
-  warningBorder: '#fde047',
+  warning: '#EAB308',
+  warningLight: '#FEF9C3',
+  warningBorder: '#FDE047',
 
-  error: '#dc2626',
-  errorLight: '#fef2f2',
-  errorBorder: '#fecaca',
+  error: '#EF4444',
+  errorLight: '#FEE2E2',
+  errorBorder: '#FCA5A5',
 
-  info: '#2563eb',
-  infoLight: '#eff6ff',
-  infoBorder: '#bfdbfe',
+  info: '#059669',
+  infoLight: '#ecfdf5',
+  infoBorder: '#93C5FD',
+
+  // In Progress (blue-500)
+  inProgress: '#3B82F6',
+  inProgressLight: '#DBEAFE',
+  inProgressBorder: '#93C5FD',
 
   // Status specific
-  amber: '#d97706',
-  amberLight: '#fffbeb',
-  amberBorder: '#fde68a',
+  amber: '#D97706',
+  amberLight: '#FFFBEB',
+  amberBorder: '#FDE68A',
 
-  purple: '#7c3aed',
-  purpleLight: '#f5f3ff',
-  purpleBorder: '#c4b5fd',
+  purple: '#8B5CF6',
+  purpleLight: '#EDE9FE',
+  purpleBorder: '#C4B5FD',
+  purpleDark: '#6D28D9',
 
   emerald: '#059669',
-  emeraldLight: '#ecfdf5',
-  emeraldBorder: '#a7f3d0',
+  emeraldLight: '#ECFDF5',
+  emeraldBorder: '#A7F3D0',
+  emeraldDark: '#047857',
+
+  cyan: '#0891B2',
+  cyanLight: '#CFFAFE',
+  cyanBorder: '#67E8F9',
+
+  indigo: '#4F46E5',
+  indigoLight: '#E0E7FF',
+  indigoBorder: '#A5B4FC',
+
+  blocked: '#6B7280',
+  blockedLight: '#F3F4F6',
+  blockedBorder: '#D1D5DB',
 } as const;
+
+// =============================================================================
+// THEME COLORS (semantic tokens that change with light/dark mode)
+// =============================================================================
+
+const LIGHT_THEME = {
+  background: '#FFFFFF',
+  surface: '#F8FAFC',
+  surfaceRaised: '#F1F5F9',
+  card: '#FFFFFF',
+  input: '#F1F5F9',
+  inputBorder: '#E2E8F0',
+  inputIconBg: '#F1F5F9',
+  border: '#E2E8F0',
+  borderLight: '#CBD5E1',
+  textPrimary: '#1E293B',
+  textSecondary: '#475569',
+  textMuted: '#94A3B8',
+  tabBar: '#FFFFFF',
+  header: '#FFFFFF',
+  // Light-weight semantic backgrounds (change in dark mode)
+  primaryLight: '#ecfdf5',
+  successLight: '#DCFCE7',
+  errorLight: '#FEE2E2',
+  warningLight: '#FEF9C3',
+  inProgressLight: '#DBEAFE',
+  purpleLight: '#EDE9FE',
+  amberLight: '#FFFBEB',
+  emeraldLight: '#ECFDF5',
+  cyanLight: '#CFFAFE',
+  indigoLight: '#E0E7FF',
+  blockedLight: '#F3F4F6',
+} as const;
+
+const DARK_THEME = {
+  background: '#0c0c14',
+  surface: '#131320',
+  surfaceRaised: '#1e1e2e',
+  card: '#1a1a28',
+  input: '#1e1e2e',
+  inputBorder: '#2c2c3e',
+  inputIconBg: '#262638',
+  border: '#232335',
+  borderLight: '#363650',
+  textPrimary: '#f0f0f8',
+  textSecondary: '#9898b0',
+  textMuted: '#6a6a82',
+  tabBar: '#0a0a10',
+  header: '#101018',
+  // Rich semantic backgrounds with depth
+  primaryLight: '#0a2a20',
+  successLight: '#0c2818',
+  errorLight: '#2a1018',
+  warningLight: '#2a1f0a',
+  inProgressLight: '#0c1a32',
+  purpleLight: '#1a0c32',
+  amberLight: '#221508',
+  emeraldLight: '#0a2a20',
+  cyanLight: '#081e2a',
+  indigoLight: '#141030',
+  blockedLight: '#1e1e2e',
+} as const;
+
+export type ThemeColors = { [K in keyof typeof LIGHT_THEME]: string };
+
+export function getThemeColors(scheme: 'light' | 'dark' | null | undefined): ThemeColors {
+  return scheme === 'dark' ? DARK_THEME : LIGHT_THEME;
+}
 
 // =============================================================================
 // SPACING
@@ -157,9 +248,9 @@ export const ANIMATION = {
 // =============================================================================
 
 export const STORAGE_KEYS = {
-  accessToken: 'doergo_access_token',
-  refreshToken: 'doergo_refresh_token',
-  user: 'doergo_user',
+  accessToken: 'hbcfield_access_token',
+  refreshToken: 'hbcfield_refresh_token',
+  user: 'hbcfield_user',
 } as const;
 
 // =============================================================================

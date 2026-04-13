@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES } from '@doergo/shared';
+import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES } from '@hbcfield/shared';
 import { AttendanceService } from './attendance.service';
 
 @Processor(QUEUE_NAMES.ATTENDANCE)

@@ -6,6 +6,11 @@ import { LocationService } from './location.service';
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 
+  @MessagePattern({ cmd: 'health' })
+  async health() {
+    return { status: 'ok', service: 'tracking-service', timestamp: new Date().toISOString() };
+  }
+
   @MessagePattern({ cmd: 'update_location' })
   async updateLocation(
     @Payload() data: { userId: string; lat: number; lng: number; accuracy?: number; taskId?: string },

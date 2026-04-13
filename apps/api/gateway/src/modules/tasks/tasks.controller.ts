@@ -11,7 +11,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role } from '@doergo/shared';
+import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateTaskDto, UpdateTaskDto, AssignTaskDto, UpdateStatusDto } from './dto';
 import { TasksQueueService } from './tasks.queue.service';
@@ -55,6 +55,10 @@ export class TasksController {
   @ApiOperation({ summary: 'Get all tasks (filtered by role)' })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'priority', required: false })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by title or description' })
+  @ApiQuery({ name: 'startDate', required: false, description: 'Filter tasks with dueDate >= startDate (ISO date)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'Filter tasks with dueDate <= endDate (ISO date)' })
+  @ApiQuery({ name: 'includeNoDueDate', required: false, description: 'Include tasks without a dueDate (for Current tab)' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async findAll(@Query() query: Record<string, any>, @Request() req: any) {
@@ -204,6 +208,74 @@ export class TasksController {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getComments({
       taskId: id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  // ============ Attachment Endpoints ============
+
+  @Post(':id/attachments/presign')
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Get presigned URL for uploading an attachment' })
+  async getPresignedUrl(
+    @Param('id') id: string,
+    @Body() body: { fileName: string; fileType: string },
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.getPresignedUrl({
+      taskId: id,
+      fileName: body.fileName,
+      fileType: body.fileType,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post(':id/attachments')
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Confirm attachment upload after S3 upload' })
+  async addAttachment(
+    @Param('id') id: string,
+    @Body() body: { fileName: string; fileUrl: string; fileType: string; fileSize: number },
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.addAttachment({
+      taskId: id,
+      fileName: body.fileName,
+      fileUrl: body.fileUrl,
+      fileType: body.fileType,
+      fileSize: body.fileSize,
+      uploadedById: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Get(':id/attachments')
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Get task attachments' })
+  async getAttachments(@Param('id') id: string, @Request() req: any) {
+    // READ operation - use direct microservice call (faster, no queue overhead)
+    return this.tasksService.getAttachments({
+      taskId: id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete(':id/attachments/:attachmentId')
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Delete an attachment' })
+  async deleteAttachment(
+    @Param('id') id: string,
+    @Param('attachmentId') attachmentId: string,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.deleteAttachment({
+      id: attachmentId,
       userId: req.user.id,
       userRole: req.user.role,
       organizationId: req.user.organizationId,

@@ -6,7 +6,7 @@
  */
 
 import Constants from 'expo-constants';
-import { SocketEvents } from '@doergo/shared/client';
+import { SocketEvents } from '@hbcfield/shared/client';
 
 export { SocketEvents };
 

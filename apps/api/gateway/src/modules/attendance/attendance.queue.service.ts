@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES, BaseQueueService } from '@doergo/shared';
+import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES, BaseQueueService } from '@hbcfield/shared';
 
 @Injectable()
 export class AttendanceQueueService extends BaseQueueService {

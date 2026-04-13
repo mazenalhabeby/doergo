@@ -1,5 +1,5 @@
 {
-  "name": "@doergo/auth-service",
+  "name": "@hbcfield/auth-service",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -16,7 +16,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "@doergo/shared": "workspace:*",
+    "@hbcfield/shared": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

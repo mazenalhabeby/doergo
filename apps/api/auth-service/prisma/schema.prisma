@@ -315,6 +315,9 @@ model User {
   ratingCount    Int?      @default(0)   // Number of ratings received
   maxDailyJobs   Int?      @default(5)   // Maximum jobs per day
 
+  // Profile avatar
+  avatarUrl  String?
+
   // Onboarding flag (false = orphan user needs to complete onboarding wizard)
   onboardingCompleted Boolean @default(true)
 
@@ -360,6 +363,7 @@ model User {
   @@index([organizationId])
   @@index([role])
   @@index([email])
+  @@index([organizationId, role, isActive])  // list technicians/members in org
   @@map("users")
 }
 
@@ -375,12 +379,17 @@ model RefreshToken {
   cachedAccessToken    String?    // Cached access token to return during grace period
   cachedRefreshToken   String?    // Cached refresh token to return during grace period (temporary, deleted after grace period)
 
+  // Device/session tracking
+  userAgent  String?
+  ipAddress  String?
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tokenHash])
-  @@index([usedAt])  // For cleanup of old used tokens
+  @@index([usedAt])      // For cleanup of old used tokens
+  @@index([expiresAt])   // For expired token cleanup
   @@map("refresh_tokens")
 }
 
@@ -463,6 +472,8 @@ model Task {
   @@index([createdAt])
   @@index([organizationId, status])
   @@index([organizationId, status, createdAt])
+  @@index([assignedToId, status])  // technician task stats groupBy, suggested technicians _count
+  @@index([dueDate])               // due date filtering/sorting
   @@map("tasks")
 }
 
@@ -516,6 +527,7 @@ model TaskEvent {
   @@index([taskId])
   @@index([eventType])
   @@index([createdAt])
+  @@index([taskId, createdAt])  // timeline queries
   @@map("task_events")
 }
 
@@ -838,6 +850,8 @@ model TimeEntry {
   @@index([organizationId])
   @@index([status])
   @@index([approvalStatus])
+  @@index([userId, status])            // check active clock-in
+  @@index([organizationId, clockInAt]) // org attendance reports
   @@map("time_entries")
 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "@doergo/notification-service",
+  "name": "@hbcfield/notification-service",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
     "lint": "eslint \"{src,test}/**/*.ts\" --fix"
   },
   "dependencies": {
-    "@doergo/shared": "workspace:*",
+    "@hbcfield/shared": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

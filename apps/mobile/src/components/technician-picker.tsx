@@ -24,6 +24,7 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../lib/constants';
+import { useTheme } from '../contexts/theme-context';
 
 interface TechnicianPickerProps {
   visible: boolean;
@@ -38,6 +39,7 @@ export function TechnicianPicker({
   onSelect,
   selectedId,
 }: TechnicianPickerProps) {
+  const { colors } = useTheme();
   const [technicians, setTechnicians] = useState<TechnicianListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -46,7 +48,8 @@ export function TechnicianPicker({
     try {
       setIsLoading(true);
       const result = await techniciansApi.list({ status: 'active', limit: 50 });
-      setTechnicians(result.data || []);
+      // fetchWithAuth unwraps { data: T } → T, so result may already be the array
+      setTechnicians(Array.isArray(result) ? result : result.data || []);
     } catch (err) {
       console.error('Failed to load technicians:', err);
     } finally {
@@ -72,24 +75,24 @@ export function TechnicianPicker({
     const isSelected = item.id === selectedId;
     return (
       <TouchableOpacity
-        style={[styles.technicianRow, isSelected && styles.technicianRowSelected]}
+        style={[styles.technicianRow, isSelected && [styles.technicianRowSelected, { backgroundColor: colors.primaryLight }]]}
         onPress={() => onSelect(item)}
         activeOpacity={0.7}
       >
-        <View style={[styles.avatar, isSelected && styles.avatarSelected]}>
-          <Text style={[styles.avatarText, isSelected && styles.avatarTextSelected]}>
+        <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }, isSelected && styles.avatarSelected]}>
+          <Text style={[styles.avatarText, { color: colors.textSecondary }, isSelected && styles.avatarTextSelected]}>
             {item.firstName[0]}{item.lastName[0]}
           </Text>
         </View>
         <View style={styles.technicianInfo}>
-          <Text style={styles.technicianName}>
+          <Text style={[styles.technicianName, { color: colors.textPrimary }]}>
             {item.firstName} {item.lastName}
           </Text>
           <View style={styles.technicianMeta}>
             {item.specialty && (
-              <Text style={styles.specialty}>{item.specialty}</Text>
+              <Text style={[styles.specialty, { color: colors.textSecondary }]}>{item.specialty}</Text>
             )}
-            <Text style={styles.taskCount}>
+            <Text style={[styles.taskCount, { color: colors.textMuted }]}>
               {item.currentTaskCount ?? 0} active tasks
             </Text>
           </View>
@@ -112,29 +115,29 @@ export function TechnicianPicker({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.content}>
+        <View style={[styles.content, { backgroundColor: colors.card }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Select Technician</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>Select Technician</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={COLORS.slate500} />
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* Search */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={18} color={COLORS.slate400} />
+          <View style={[styles.searchContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }]}>
+            <Ionicons name="search" size={18} color={colors.textMuted} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.textPrimary }]}
               placeholder="Search by name..."
-              placeholderTextColor={COLORS.slate400}
+              placeholderTextColor={colors.textMuted}
               value={search}
               onChangeText={setSearch}
               autoCorrect={false}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')}>
-                <Ionicons name="close-circle" size={18} color={COLORS.slate400} />
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -154,8 +157,8 @@ export function TechnicianPicker({
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Ionicons name="people-outline" size={40} color={COLORS.slate300} />
-                  <Text style={styles.emptyText}>
+                  <Ionicons name="people-outline" size={40} color={colors.textMuted} />
+                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                     {search ? 'No technicians match your search' : 'No technicians available'}
                   </Text>
                 </View>
@@ -175,7 +178,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   content: {
-    backgroundColor: COLORS.white,
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
     maxHeight: '75%',
@@ -192,25 +194,21 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.slate50,
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.slate200,
   },
   searchInput: {
     flex: 1,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.sm,
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
   },
   list: {
     flex: 1,
@@ -231,14 +229,11 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     marginBottom: SPACING.xs,
   },
-  technicianRowSelected: {
-    backgroundColor: COLORS.primaryLight,
-  },
+  technicianRowSelected: {},
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.slate100,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -249,7 +244,6 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate500,
   },
   avatarTextSelected: {
     color: COLORS.white,
@@ -260,7 +254,6 @@ const styles = StyleSheet.create({
   technicianName: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate800,
   },
   technicianMeta: {
     flexDirection: 'row',
@@ -270,11 +263,9 @@ const styles = StyleSheet.create({
   },
   specialty: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
   },
   taskCount: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
   },
   onlineDot: {
     width: 8,
@@ -289,7 +280,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate400,
     marginTop: SPACING.md,
   },
 });

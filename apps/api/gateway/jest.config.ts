@@ -12,8 +12,8 @@ const config: Config = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src/', '<rootDir>/test/'],
   moduleNameMapper: {
-    '^@doergo/shared$': '<rootDir>/../../../packages/shared/src',
-    '^@doergo/shared/(.*)$': '<rootDir>/../../../packages/shared/src/$1',
+    '^@hbcfield/shared$': '<rootDir>/../../../packages/shared/src',
+    '^@hbcfield/shared/(.*)$': '<rootDir>/../../../packages/shared/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 };

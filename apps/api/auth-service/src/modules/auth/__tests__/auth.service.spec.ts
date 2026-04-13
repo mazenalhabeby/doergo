@@ -5,7 +5,7 @@ import { HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../auth.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { Role, Platform, BCRYPT_COST_FACTOR } from '@doergo/shared';
+import { Role, Platform, BCRYPT_COST_FACTOR } from '@hbcfield/shared';
 
 // Mock bcrypt
 jest.mock('bcrypt');

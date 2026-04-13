@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, ReportAttachmentType, TechnicianType, WorkMode, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@prisma/client';
+import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, TechnicianType, WorkMode, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@prisma/client';
 import { createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 
@@ -6,6 +6,35 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
+
+  // Clean existing data to make seed idempotent (order matters for FK constraints)
+  console.log('Cleaning existing data...');
+  await prisma.$executeRawUnsafe('DELETE FROM "breaks"');
+  await prisma.$executeRawUnsafe('DELETE FROM "time_entries"');
+  await prisma.$executeRawUnsafe('DELETE FROM "technician_assignments"');
+  await prisma.locationHistory.deleteMany();
+  await prisma.workerLastLocation.deleteMany();
+  await prisma.partUsed.deleteMany();
+  await prisma.reportAttachment.deleteMany();
+  await prisma.serviceReport.deleteMany();
+  await prisma.attachment.deleteMany();
+  await prisma.comment.deleteMany();
+  await prisma.taskEvent.deleteMany();
+  await prisma.task.deleteMany();
+  await prisma.technicianSchedule.deleteMany();
+  await prisma.timeOff.deleteMany();
+  await prisma.userPushToken.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
+  await prisma.invitation.deleteMany();
+  await prisma.joinRequest.deleteMany();
+  await prisma.companyLocation.deleteMany();
+  await prisma.$executeRawUnsafe('DELETE FROM "assets"');
+  await prisma.$executeRawUnsafe('DELETE FROM "asset_types"');
+  await prisma.$executeRawUnsafe('DELETE FROM "asset_categories"');
+  await prisma.user.deleteMany();
+  await prisma.organizationAccess.deleteMany();
+  await prisma.organization.deleteMany();
 
   // Helper to hash codes with SHA-256
   const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
@@ -105,7 +134,27 @@ async function main() {
     },
   });
 
-  console.log('Created users:', clientUser.email, dispatcherUser.email, technician1.email, technician2.email);
+  // Create Technician 3 — HYBRID (gets all 5 tabs: Home, Tasks, Clock, Time Off, Profile)
+  const technician3 = await prisma.user.create({
+    data: {
+      email: 'technician3@example.com',
+      passwordHash,
+      firstName: 'Alex',
+      lastName: 'Hybrid',
+      role: Role.TECHNICIAN,
+      organizationId: organization.id,
+      onboardingCompleted: true,
+      platform: 'MOBILE',
+      canCreateTasks: false,
+      canViewAllTasks: false,
+      canAssignTasks: false,
+      canManageUsers: false,
+      technicianType: TechnicianType.FULL_TIME,
+      workMode: WorkMode.HYBRID,
+    },
+  });
+
+  console.log('Created users:', clientUser.email, dispatcherUser.email, technician1.email, technician2.email, technician3.email);
 
   // ============================================
   // Create Company Locations for attendance tracking
@@ -114,10 +163,10 @@ async function main() {
   const mainOffice = await prisma.companyLocation.create({
     data: {
       name: 'Main Office',
-      address: '123 Business Ave, New York, NY 10001',
-      lat: 40.7128,
-      lng: -74.0060,
-      geofenceRadius: 20, // 20 meters for clock-in zone
+      address: 'Arbeiterheimstraße 35-39, 4662 Laakirchen, Austria',
+      lat: 47.98188,
+      lng: 13.82166,
+      geofenceRadius: 200, // 200 meters
       organizationId: organization.id,
     },
   });
@@ -125,10 +174,10 @@ async function main() {
   const warehouse = await prisma.companyLocation.create({
     data: {
       name: 'Warehouse',
-      address: '456 Industrial Blvd, Brooklyn, NY 11201',
-      lat: 40.6892,
-      lng: -73.9857,
-      geofenceRadius: 30, // Larger area for warehouse
+      address: 'Gmundner Straße 12, 4662 Laakirchen, Austria',
+      lat: 47.9785,
+      lng: 13.8245,
+      geofenceRadius: 200,
       organizationId: organization.id,
     },
   });
@@ -136,10 +185,10 @@ async function main() {
   const serviceCenter = await prisma.companyLocation.create({
     data: {
       name: 'Service Center',
-      address: '789 Tech Park, Jersey City, NJ 07302',
-      lat: 40.7178,
-      lng: -74.0431,
-      geofenceRadius: 25,
+      address: 'Bahnhofstraße 5, 4663 Laakirchen, Austria',
+      lat: 47.9830,
+      lng: 13.8180,
+      geofenceRadius: 200,
       organizationId: organization.id,
     },
   });
@@ -170,10 +219,41 @@ async function main() {
     },
   });
 
+  // Also assign technician1 to Service Center
+  const assignment3 = await prisma.technicianAssignment.create({
+    data: {
+      userId: technician1.id,
+      locationId: serviceCenter.id,
+      isPrimary: false,
+      schedule: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+    },
+  });
+
+  // Assign technician3 (HYBRID) to Main Office (needed for Clock tab)
+  const assignment4 = await prisma.technicianAssignment.create({
+    data: {
+      userId: technician3.id,
+      locationId: mainOffice.id,
+      isPrimary: true,
+      schedule: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+    },
+  });
+
+  // Also assign technician3 to Service Center for flexibility
+  const assignment5 = await prisma.technicianAssignment.create({
+    data: {
+      userId: technician3.id,
+      locationId: serviceCenter.id,
+      isPrimary: false,
+      schedule: ['MON', 'WED', 'FRI'],
+    },
+  });
+
   // Note: technician2 is FREELANCER so they don't get assignments
-  console.log('Created technician assignments:', assignment1.id, assignment2.id);
-  console.log('  - technician1 assigned to Main Office (primary, Mon-Fri) and Warehouse (weekends)');
+  console.log('Created technician assignments:', assignment1.id, assignment2.id, assignment3.id, assignment4.id, assignment5.id);
+  console.log('  - technician1 assigned to Main Office (primary, Mon-Fri), Warehouse (weekends), and Service Center (Mon-Fri)');
   console.log('  - technician2 is FREELANCER - no location assignments');
+  console.log('  - technician3 assigned to Main Office (primary, Mon-Fri) and Service Center (Mon/Wed/Fri)');
 
   // ============================================
   // Create Time Entries (Clock-In/Clock-Out records)
@@ -194,13 +274,13 @@ async function main() {
       locationId: mainOffice.id,
       status: TimeEntryStatus.CLOCKED_OUT,
       clockInAt: yesterday8am,
-      clockInLat: 40.7128,
-      clockInLng: -74.0060,
+      clockInLat: 47.98188,
+      clockInLng: 13.82166,
       clockInAccuracy: 10,
       clockInWithinGeofence: true,
       clockOutAt: yesterday5pm,
-      clockOutLat: 40.7128,
-      clockOutLng: -74.0059,
+      clockOutLat: 47.98190,
+      clockOutLng: 13.82170,
       clockOutAccuracy: 12,
       clockOutWithinGeofence: true,
       totalMinutes: 540, // 9 hours
@@ -224,13 +304,13 @@ async function main() {
       locationId: warehouse.id,
       status: TimeEntryStatus.CLOCKED_OUT,
       clockInAt: twoDaysAgo8am,
-      clockInLat: 40.6892,
-      clockInLng: -73.9857,
+      clockInLat: 47.9785,
+      clockInLng: 13.8245,
       clockInAccuracy: 8,
       clockInWithinGeofence: true,
       clockOutAt: twoDaysAgo4pm,
-      clockOutLat: 40.6893,
-      clockOutLng: -73.9858,
+      clockOutLat: 47.9786,
+      clockOutLng: 13.8246,
       clockOutAccuracy: 15,
       clockOutWithinGeofence: true,
       totalMinutes: 450, // 7.5 hours
@@ -247,18 +327,50 @@ async function main() {
       locationId: mainOffice.id,
       status: TimeEntryStatus.CLOCKED_IN,
       clockInAt: twoHoursAgo,
-      clockInLat: 40.7128,
-      clockInLng: -74.0060,
+      clockInLat: 47.98188,
+      clockInLng: 13.82166,
       clockInAccuracy: 8,
       clockInWithinGeofence: true,
       organizationId: organization.id,
     },
   });
 
+  // Yesterday's completed shift for technician3 (07:30 - 16:30 = 9 hours)
+  const yesterday730 = new Date();
+  yesterday730.setDate(yesterday730.getDate() - 1);
+  yesterday730.setHours(7, 30, 0, 0);
+
+  const yesterday1630 = new Date();
+  yesterday1630.setDate(yesterday1630.getDate() - 1);
+  yesterday1630.setHours(16, 30, 0, 0);
+
+  const tech3YesterdayEntry = await prisma.timeEntry.create({
+    data: {
+      userId: technician3.id,
+      locationId: mainOffice.id,
+      status: TimeEntryStatus.CLOCKED_OUT,
+      clockInAt: yesterday730,
+      clockInLat: 47.98188,
+      clockInLng: 13.82166,
+      clockInAccuracy: 10,
+      clockInWithinGeofence: true,
+      clockOutAt: yesterday1630,
+      clockOutLat: 47.98190,
+      clockOutLng: 13.82170,
+      clockOutAccuracy: 8,
+      clockOutWithinGeofence: true,
+      totalMinutes: 540, // 9 hours
+      breakMinutes: 30,
+      notes: 'Regular hybrid shift — field visits in afternoon',
+      organizationId: organization.id,
+    },
+  });
+
   console.log('Created time entries:');
-  console.log(`  - Yesterday's shift (${yesterdayEntry.totalMinutes} min) at Main Office`);
-  console.log(`  - Weekend shift (${weekendEntry.totalMinutes} min) at Warehouse`);
-  console.log(`  - Current active shift at Main Office (clocked in ${Math.round((Date.now() - twoHoursAgo.getTime()) / 60000)} min ago)`);
+  console.log(`  - Yesterday's shift (${yesterdayEntry.totalMinutes} min) at Main Office (tech1)`);
+  console.log(`  - Weekend shift (${weekendEntry.totalMinutes} min) at Warehouse (tech1)`);
+  console.log(`  - Current active shift at Main Office (tech1, clocked in ${Math.round((Date.now() - twoHoursAgo.getTime()) / 60000)} min ago)`);
+  console.log(`  - Yesterday's shift (${tech3YesterdayEntry.totalMinutes} min) at Main Office (tech3)`);
 
   // ============================================
   // Create Breaks for Time Entries
@@ -531,669 +643,97 @@ async function main() {
 
   console.log('Created assets:', rooftopHVAC.name, officeAC.name, mainPanel.name, backupGenerator.name, waterHeater.name);
 
-  // Create sample tasks
-  const tasks = await Promise.all([
-    prisma.task.create({
-      data: {
-        title: 'Deliver package to downtown office',
-        description: 'Urgent delivery of documents to the main office building',
-        status: TaskStatus.NEW,
-        priority: TaskPriority.HIGH,
-        organizationId: organization.id,
-        createdById: clientUser.id,
-        locationLat: 40.7128,
-        locationLng: -74.006,
-        locationAddress: '123 Main St, New York, NY 10001',
-        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      },
-    }),
-    prisma.task.create({
-      data: {
-        title: 'Equipment installation',
-        description: 'Install new equipment at client site',
-        status: TaskStatus.ASSIGNED,
-        priority: TaskPriority.MEDIUM,
-        organizationId: organization.id,
-        createdById: clientUser.id,
-        assignedToId: technician1.id,
-        locationLat: 40.7589,
-        locationLng: -73.9851,
-        locationAddress: '456 Broadway, New York, NY 10013',
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
-      },
-    }),
-    prisma.task.create({
-      data: {
-        title: 'Site inspection',
-        description: 'Perform routine site inspection and report findings',
-        status: TaskStatus.IN_PROGRESS,
-        priority: TaskPriority.LOW,
-        organizationId: organization.id,
-        createdById: clientUser.id,
-        assignedToId: technician2.id,
-        locationLat: 40.7484,
-        locationLng: -73.9857,
-        locationAddress: '789 Park Ave, New York, NY 10021',
-        dueDate: new Date(),
-      },
-    }),
-    prisma.task.create({
-      data: {
-        title: 'Maintenance check',
-        description: 'Perform scheduled maintenance check on equipment',
-        status: TaskStatus.DRAFT,
-        priority: TaskPriority.MEDIUM,
-        organizationId: organization.id,
-        createdById: clientUser.id,
-        locationLat: 40.7614,
-        locationLng: -73.9776,
-        locationAddress: '321 5th Ave, New York, NY 10016',
-      },
-    }),
-  ]);
 
-  console.log('Created', tasks.length, 'tasks');
+  // ============================================
+  // Create Tasks — comprehensive data covering all statuses
+  // ============================================
 
-  // Create task comments
-  await prisma.comment.createMany({
-    data: [
-      {
-        taskId: tasks[1].id,
-        userId: dispatcherUser.id,
-        content: 'Technician has been dispatched to the location.',
-      },
-      {
-        taskId: tasks[2].id,
-        userId: technician2.id,
-        content: 'On site, beginning inspection now.',
-      },
-    ],
-  });
+  const now = new Date();
+  const minutesAgo = (m: number) => new Date(now.getTime() - m * 60 * 1000);
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3600 * 1000);
+  const daysAgo = (d: number) => new Date(now.getTime() - d * 86400 * 1000);
+  const hoursFromNow = (h: number) => new Date(now.getTime() + h * 3600 * 1000);
+  const daysFromNow = (d: number) => new Date(now.getTime() + d * 86400 * 1000);
 
-  console.log('Created task comments');
-
-  // Create task events
-  await prisma.taskEvent.createMany({
-    data: [
-      {
-        taskId: tasks[0].id,
-        userId: clientUser.id,
-        eventType: TaskEventType.CREATED,
-        metadata: { title: tasks[0].title },
-      },
-      {
-        taskId: tasks[1].id,
-        userId: dispatcherUser.id,
-        eventType: TaskEventType.ASSIGNED,
-        metadata: { assignedToId: technician1.id },
-      },
-      {
-        taskId: tasks[2].id,
-        userId: technician2.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ASSIGNED, to: TaskStatus.IN_PROGRESS },
-      },
-    ],
-  });
-
-  console.log('Created task events');
-
-  // Create worker last locations for technicians (for Live Map testing)
-  await prisma.workerLastLocation.createMany({
-    data: [
-      {
-        userId: technician1.id,
-        lat: 40.7128,  // Near task location in NYC
-        lng: -74.006,
-        accuracy: 10,
-      },
-      {
-        userId: technician2.id,
-        lat: 40.7589,  // Different location in NYC
-        lng: -73.9851,
-        accuracy: 15,
-      },
-    ],
-  });
-
-  console.log('Created worker locations for Live Map');
-
-  // Create a task with FULL route tracking data for testing the route map feature
-  const routeStartTime = new Date(Date.now() - 45 * 60 * 1000); // Started 45 minutes ago
-  const routeEndTime = new Date(Date.now() - 10 * 60 * 1000); // Ended 10 minutes ago
-
-  const completedTaskWithRoute = await prisma.task.create({
+  // --- 1. DRAFT (no assignee, no due date, no location) ---
+  const taskDraft = await prisma.task.create({
     data: {
-      title: 'HVAC System Repair - Completed with Route',
-      description: 'Emergency HVAC repair at client location. Full route tracking available.',
-      status: TaskStatus.COMPLETED,
-      priority: TaskPriority.HIGH,
+      title: 'Plan Ventilation System Upgrade',
+      description: 'Evaluate current ventilation system in Building A and propose upgrade options. Get quotes from at least two suppliers.',
+      status: TaskStatus.DRAFT,
+      priority: TaskPriority.LOW,
       organizationId: organization.id,
       createdById: clientUser.id,
-      assignedToId: technician1.id,
-      locationLat: 40.7580,
-      locationLng: -73.9855,
-      locationAddress: 'Times Square, New York, NY 10036',
-      dueDate: new Date(),
-      routeStartedAt: routeStartTime,
-      routeEndedAt: routeEndTime,
-      routeDistance: 4250, // 4.25 km in meters
-      assetId: rooftopHVAC.id, // Link to the rooftop HVAC asset
+      createdAt: daysAgo(5),
+      updatedAt: daysAgo(5),
     },
   });
 
-  console.log('Created completed task with route:', completedTaskWithRoute.title);
-
-  // Create realistic GPS route points (simulating a drive through Manhattan)
-  // Route: From Chelsea to Times Square (~4.25 km)
-  const routePoints = [
-    // Starting point - Chelsea
-    { lat: 40.7433, lng: -74.0011, minutesFromStart: 0 },
-    { lat: 40.7445, lng: -73.9995, minutesFromStart: 1 },
-    { lat: 40.7458, lng: -73.9978, minutesFromStart: 2 },
-    // Heading north on 7th Ave
-    { lat: 40.7472, lng: -73.9962, minutesFromStart: 3 },
-    { lat: 40.7485, lng: -73.9948, minutesFromStart: 4 },
-    { lat: 40.7498, lng: -73.9935, minutesFromStart: 6 },
-    // Traffic slowdown
-    { lat: 40.7502, lng: -73.9930, minutesFromStart: 8 },
-    { lat: 40.7508, lng: -73.9922, minutesFromStart: 10 },
-    // Continuing north
-    { lat: 40.7520, lng: -73.9908, minutesFromStart: 12 },
-    { lat: 40.7532, lng: -73.9895, minutesFromStart: 14 },
-    { lat: 40.7545, lng: -73.9882, minutesFromStart: 16 },
-    // Approaching Times Square
-    { lat: 40.7555, lng: -73.9872, minutesFromStart: 18 },
-    { lat: 40.7562, lng: -73.9865, minutesFromStart: 20 },
-    { lat: 40.7568, lng: -73.9860, minutesFromStart: 22 },
-    // Final approach
-    { lat: 40.7572, lng: -73.9858, minutesFromStart: 25 },
-    { lat: 40.7575, lng: -73.9856, minutesFromStart: 28 },
-    { lat: 40.7578, lng: -73.9855, minutesFromStart: 30 },
-    // Arrived at Times Square
-    { lat: 40.7580, lng: -73.9855, minutesFromStart: 32 },
-  ];
-
-  // Create LocationHistory records for the route
-  await prisma.locationHistory.createMany({
-    data: routePoints.map((point) => ({
-      userId: technician1.id,
-      taskId: completedTaskWithRoute.id,
-      lat: point.lat,
-      lng: point.lng,
-      accuracy: Math.floor(Math.random() * 10) + 5, // 5-15 meters accuracy
-      timestamp: new Date(routeStartTime.getTime() + point.minutesFromStart * 60 * 1000),
-    })),
-  });
-
-  console.log('Created', routePoints.length, 'GPS route points for route tracking');
-
-  // Create task events for the completed task
-  await prisma.taskEvent.createMany({
-    data: [
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: clientUser.id,
-        eventType: TaskEventType.CREATED,
-        metadata: { title: completedTaskWithRoute.title },
-        createdAt: new Date(Date.now() - 120 * 60 * 1000), // 2 hours ago
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: dispatcherUser.id,
-        eventType: TaskEventType.ASSIGNED,
-        metadata: { assignedToId: technician1.id, assignedToName: 'Mike Worker' },
-        createdAt: new Date(Date.now() - 90 * 60 * 1000), // 1.5 hours ago
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ASSIGNED, to: TaskStatus.ACCEPTED },
-        createdAt: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ACCEPTED, to: TaskStatus.EN_ROUTE },
-        createdAt: routeStartTime,
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.EN_ROUTE, to: TaskStatus.ARRIVED },
-        createdAt: routeEndTime,
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ARRIVED, to: TaskStatus.IN_PROGRESS },
-        createdAt: new Date(routeEndTime.getTime() + 2 * 60 * 1000),
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.IN_PROGRESS, to: TaskStatus.COMPLETED },
-        createdAt: new Date(Date.now() - 5 * 60 * 1000),
-      },
-    ],
-  });
-
-  // Add comments to the completed task
-  await prisma.comment.createMany({
-    data: [
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: dispatcherUser.id,
-        content: 'High priority - customer waiting. Please proceed ASAP.',
-        createdAt: new Date(Date.now() - 85 * 60 * 1000),
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        content: 'On my way now. ETA 30 minutes.',
-        createdAt: routeStartTime,
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        content: 'Arrived on site. Starting diagnostic.',
-        createdAt: routeEndTime,
-      },
-      {
-        taskId: completedTaskWithRoute.id,
-        userId: technician1.id,
-        content: 'Issue identified: faulty compressor. Replacement completed. System running normally now.',
-        createdAt: new Date(Date.now() - 5 * 60 * 1000),
-      },
-    ],
-  });
-
-  console.log('Created events and comments for completed task with route');
-
-  // Create historical maintenance tasks for the HVAC asset
-  // These will show in the maintenance history section
-  const historicalTask1 = await prisma.task.create({
+  // --- 2. NEW (unassigned, has due date + location) ---
+  const taskNew = await prisma.task.create({
     data: {
-      title: 'Annual HVAC Inspection',
-      description: 'Routine annual inspection of rooftop HVAC unit',
-      status: TaskStatus.COMPLETED,
+      title: 'Replace Water Heater Thermostat',
+      description: 'The thermostat on the commercial water heater is reading 10\u00B0F higher than actual temperature. Replace with OEM part.',
+      status: TaskStatus.NEW,
+      priority: TaskPriority.HIGH,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: 'Building A, Basement, Mechanical Room',
+      assetId: waterHeater.id,
+      dueDate: daysFromNow(1),
+      createdAt: daysAgo(3),
+      updatedAt: daysAgo(3),
+    },
+  });
+
+  // --- 3. ASSIGNED (Mike) ---
+  const taskAssigned = await prisma.task.create({
+    data: {
+      title: 'Electrical Panel Annual Inspection',
+      description: 'Annual code-required inspection. Check all breakers, test GFCI outlets, verify grounding, and document findings.',
+      status: TaskStatus.ASSIGNED,
+      priority: TaskPriority.URGENT,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician1.id,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: 'Building A, Basement, Electrical Room',
+      assetId: mainPanel.id,
+      dueDate: daysFromNow(2),
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(1),
+    },
+  });
+
+  // --- 4. ACCEPTED (Sarah) ---
+  const taskAccepted = await prisma.task.create({
+    data: {
+      title: 'Office AC Coolant Recharge',
+      description: 'Split AC on Floor 3 not cooling efficiently. Check refrigerant levels and recharge. Inspect for leaks.',
+      status: TaskStatus.ACCEPTED,
       priority: TaskPriority.MEDIUM,
       organizationId: organization.id,
       createdById: clientUser.id,
       assignedToId: technician2.id,
-      locationLat: 40.7580,
-      locationLng: -73.9855,
-      locationAddress: 'Building A, Rooftop',
-      assetId: rooftopHVAC.id,
-      createdAt: new Date('2025-10-15T09:00:00'),
-      updatedAt: new Date('2025-10-15T11:30:00'),
-      routeDistance: 2100,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: 'Building A, Floor 3, Server Room',
+      assetId: officeAC.id,
+      dueDate: hoursFromNow(6),
+      createdAt: hoursAgo(24),
+      updatedAt: hoursAgo(18),
     },
   });
 
-  const historicalTask2 = await prisma.task.create({
+  // --- 5. EN_ROUTE (Sarah) — with live GPS route ---
+  const enRouteStart = minutesAgo(20);
+  const taskEnRoute = await prisma.task.create({
     data: {
-      title: 'Filter Replacement',
-      description: 'Quarterly filter replacement for HVAC system',
-      status: TaskStatus.COMPLETED,
-      priority: TaskPriority.LOW,
-      organizationId: organization.id,
-      createdById: clientUser.id,
-      assignedToId: technician1.id,
-      locationLat: 40.7580,
-      locationLng: -73.9855,
-      locationAddress: 'Building A, Rooftop',
-      assetId: rooftopHVAC.id,
-      createdAt: new Date('2025-07-10T14:00:00'),
-      updatedAt: new Date('2025-07-10T15:15:00'),
-      routeDistance: 1500,
-    },
-  });
-
-  const historicalTask3 = await prisma.task.create({
-    data: {
-      title: 'Refrigerant Recharge',
-      description: 'Low refrigerant detected during inspection. Recharge required.',
-      status: TaskStatus.COMPLETED,
-      priority: TaskPriority.HIGH,
-      organizationId: organization.id,
-      createdById: clientUser.id,
-      assignedToId: technician1.id,
-      locationLat: 40.7580,
-      locationLng: -73.9855,
-      locationAddress: 'Building A, Rooftop',
-      assetId: rooftopHVAC.id,
-      createdAt: new Date('2025-04-22T10:00:00'),
-      updatedAt: new Date('2025-04-22T12:45:00'),
-      routeDistance: 3200,
-    },
-  });
-
-  // Create events for historical tasks
-  await prisma.taskEvent.createMany({
-    data: [
-      // Historical task 1 events
-      {
-        taskId: historicalTask1.id,
-        userId: clientUser.id,
-        eventType: TaskEventType.CREATED,
-        metadata: { title: historicalTask1.title },
-        createdAt: new Date('2025-10-15T09:00:00'),
-      },
-      {
-        taskId: historicalTask1.id,
-        userId: technician2.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ASSIGNED, to: TaskStatus.COMPLETED },
-        createdAt: new Date('2025-10-15T11:30:00'),
-      },
-      // Historical task 2 events
-      {
-        taskId: historicalTask2.id,
-        userId: clientUser.id,
-        eventType: TaskEventType.CREATED,
-        metadata: { title: historicalTask2.title },
-        createdAt: new Date('2025-07-10T14:00:00'),
-      },
-      {
-        taskId: historicalTask2.id,
-        userId: technician1.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ASSIGNED, to: TaskStatus.COMPLETED },
-        createdAt: new Date('2025-07-10T15:15:00'),
-      },
-      // Historical task 3 events
-      {
-        taskId: historicalTask3.id,
-        userId: clientUser.id,
-        eventType: TaskEventType.CREATED,
-        metadata: { title: historicalTask3.title },
-        createdAt: new Date('2025-04-22T10:00:00'),
-      },
-      {
-        taskId: historicalTask3.id,
-        userId: technician1.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ASSIGNED, to: TaskStatus.COMPLETED },
-        createdAt: new Date('2025-04-22T12:45:00'),
-      },
-    ],
-  });
-
-  console.log('Created', 3, 'historical maintenance tasks for HVAC asset');
-
-  // ============================================
-  // Create ServiceReports for completed tasks
-  // ============================================
-
-  // Service Report for the main completed task (compressor repair)
-  const mainReport = await prisma.serviceReport.create({
-    data: {
-      taskId: completedTaskWithRoute.id,
-      assetId: rooftopHVAC.id,
-      summary: 'Replaced faulty compressor and recharged refrigerant system',
-      workPerformed: `1. Performed initial diagnostic on HVAC system
-2. Identified faulty compressor causing system shutdown
-3. Safely recovered existing refrigerant
-4. Removed and replaced Carrier CMP-2024-A compressor unit
-5. Installed new compressor with proper mounting
-6. Recharged system with R-410A refrigerant (2 lbs)
-7. Performed leak test on all connections
-8. Tested system operation - cooling within normal parameters
-9. Cleaned work area and disposed of old equipment`,
-      workDuration: 5400, // 1.5 hours in seconds
-      technicianSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      customerSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
-      customerName: 'John Smith',
-      completedAt: new Date(Date.now() - 5 * 60 * 1000),
-      completedById: technician1.id,
-      organizationId: organization.id,
-    },
-  });
-
-  // Parts used for compressor repair
-  await prisma.partUsed.createMany({
-    data: [
-      {
-        reportId: mainReport.id,
-        name: 'Carrier Compressor',
-        partNumber: 'CMP-2024-A',
-        quantity: 1,
-        unitCost: 450.00,
-        notes: 'OEM replacement compressor',
-      },
-      {
-        reportId: mainReport.id,
-        name: 'Refrigerant R-410A',
-        partNumber: 'REF-410A-2LB',
-        quantity: 2,
-        unitCost: 85.00,
-        notes: '2 lbs total',
-      },
-      {
-        reportId: mainReport.id,
-        name: 'Compressor Mounting Kit',
-        partNumber: 'MNT-KIT-001',
-        quantity: 1,
-        unitCost: 35.00,
-      },
-    ],
-  });
-
-  // Attachments for compressor repair (placeholder URLs)
-  await prisma.reportAttachment.createMany({
-    data: [
-      {
-        reportId: mainReport.id,
-        type: ReportAttachmentType.BEFORE,
-        fileName: 'damaged_compressor.jpg',
-        fileUrl: 'https://placehold.co/800x600/dc2626/ffffff?text=Damaged+Compressor',
-        fileSize: 245000,
-        caption: 'Damaged compressor unit - visible burn marks on windings',
-      },
-      {
-        reportId: mainReport.id,
-        type: ReportAttachmentType.BEFORE,
-        fileName: 'hvac_unit_before.jpg',
-        fileUrl: 'https://placehold.co/800x600/f59e0b/ffffff?text=HVAC+Before',
-        fileSize: 312000,
-        caption: 'HVAC unit before repair - system offline',
-      },
-      {
-        reportId: mainReport.id,
-        type: ReportAttachmentType.AFTER,
-        fileName: 'new_compressor_installed.jpg',
-        fileUrl: 'https://placehold.co/800x600/16a34a/ffffff?text=New+Compressor',
-        fileSize: 287000,
-        caption: 'New compressor installed and secured',
-      },
-      {
-        reportId: mainReport.id,
-        type: ReportAttachmentType.AFTER,
-        fileName: 'system_running.jpg',
-        fileUrl: 'https://placehold.co/800x600/2563eb/ffffff?text=System+Running',
-        fileSize: 198000,
-        caption: 'System running normally after repair',
-      },
-    ],
-  });
-
-  console.log('Created service report for main completed task with parts and photos');
-
-  // Service Report for Annual HVAC Inspection
-  const inspectionReport = await prisma.serviceReport.create({
-    data: {
-      taskId: historicalTask1.id,
-      assetId: rooftopHVAC.id,
-      summary: 'Completed annual HVAC inspection - system in good condition',
-      workPerformed: `1. Inspected all electrical connections
-2. Checked refrigerant levels - within normal range
-3. Cleaned condenser coils
-4. Replaced air filters
-5. Tested thermostat operation
-6. Verified drain lines are clear
-7. Checked blower motor and bearings
-8. Documented all readings and measurements`,
-      workDuration: 8100, // 2h 15m in seconds
-      technicianSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      customerSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
-      customerName: 'Building Manager',
-      completedAt: new Date('2025-10-15T11:30:00'),
-      completedById: technician2.id,
-      organizationId: organization.id,
-    },
-  });
-
-  await prisma.partUsed.createMany({
-    data: [
-      {
-        reportId: inspectionReport.id,
-        name: 'HVAC Air Filter 20x25x4',
-        partNumber: 'FLT-20254-MERV13',
-        quantity: 2,
-        unitCost: 22.50,
-        notes: 'MERV 13 rated filters',
-      },
-    ],
-  });
-
-  await prisma.reportAttachment.createMany({
-    data: [
-      {
-        reportId: inspectionReport.id,
-        type: ReportAttachmentType.BEFORE,
-        fileName: 'dirty_filter.jpg',
-        fileUrl: 'https://placehold.co/800x600/9ca3af/ffffff?text=Dirty+Filter',
-        fileSize: 156000,
-        caption: 'Old filter showing normal wear',
-      },
-      {
-        reportId: inspectionReport.id,
-        type: ReportAttachmentType.AFTER,
-        fileName: 'clean_coils.jpg',
-        fileUrl: 'https://placehold.co/800x600/16a34a/ffffff?text=Clean+Coils',
-        fileSize: 178000,
-        caption: 'Condenser coils after cleaning',
-      },
-    ],
-  });
-
-  console.log('Created service report for annual inspection');
-
-  // Service Report for Filter Replacement
-  const filterReport = await prisma.serviceReport.create({
-    data: {
-      taskId: historicalTask2.id,
-      assetId: rooftopHVAC.id,
-      summary: 'Quarterly filter replacement completed',
-      workPerformed: `1. Removed old air filters
-2. Inspected filter housing for debris
-3. Installed new MERV 13 filters
-4. Verified proper seal
-5. Logged filter replacement date`,
-      workDuration: 2700, // 45 minutes
-      technicianSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      completedAt: new Date('2025-07-10T15:15:00'),
-      completedById: technician1.id,
-      organizationId: organization.id,
-    },
-  });
-
-  await prisma.partUsed.createMany({
-    data: [
-      {
-        reportId: filterReport.id,
-        name: 'HVAC Air Filter 20x25x4',
-        partNumber: 'FLT-20254-MERV13',
-        quantity: 4,
-        unitCost: 22.50,
-        notes: 'Quarterly replacement - MERV 13',
-      },
-    ],
-  });
-
-  console.log('Created service report for filter replacement');
-
-  // Service Report for Refrigerant Recharge
-  const rechargeReport = await prisma.serviceReport.create({
-    data: {
-      taskId: historicalTask3.id,
-      assetId: rooftopHVAC.id,
-      summary: 'Refrigerant recharge completed - system cooling normally',
-      workPerformed: `1. Connected gauges and checked system pressures
-2. Identified low refrigerant level (15% below spec)
-3. Performed leak check on all connections
-4. Found and repaired minor leak at service valve
-5. Evacuated system and recharged with R-410A
-6. Verified operating pressures within spec
-7. Monitored system for 30 minutes to confirm proper operation`,
-      workDuration: 9900, // 2h 45m
-      technicianSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      customerSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
-      customerName: 'John Owner',
-      completedAt: new Date('2025-04-22T12:45:00'),
-      completedById: technician1.id,
-      organizationId: organization.id,
-    },
-  });
-
-  await prisma.partUsed.createMany({
-    data: [
-      {
-        reportId: rechargeReport.id,
-        name: 'Refrigerant R-410A',
-        partNumber: 'REF-410A-2LB',
-        quantity: 3,
-        unitCost: 85.00,
-        notes: '3 lbs added to system',
-      },
-      {
-        reportId: rechargeReport.id,
-        name: 'Service Valve O-Ring Kit',
-        partNumber: 'ORK-SV-001',
-        quantity: 1,
-        unitCost: 12.00,
-        notes: 'Replaced leaking O-ring',
-      },
-    ],
-  });
-
-  await prisma.reportAttachment.createMany({
-    data: [
-      {
-        reportId: rechargeReport.id,
-        type: ReportAttachmentType.BEFORE,
-        fileName: 'low_pressure_reading.jpg',
-        fileUrl: 'https://placehold.co/800x600/dc2626/ffffff?text=Low+Pressure',
-        fileSize: 134000,
-        caption: 'Gauge showing low refrigerant pressure',
-      },
-      {
-        reportId: rechargeReport.id,
-        type: ReportAttachmentType.AFTER,
-        fileName: 'normal_pressure.jpg',
-        fileUrl: 'https://placehold.co/800x600/16a34a/ffffff?text=Normal+Pressure',
-        fileSize: 142000,
-        caption: 'System pressure within normal range after recharge',
-      },
-    ],
-  });
-
-  console.log('Created service report for refrigerant recharge');
-  console.log('Created 4 service reports total with parts and attachments');
-
-  // Also create an EN_ROUTE task to test live tracking view
-  const liveRouteStartTime = new Date(Date.now() - 15 * 60 * 1000); // Started 15 minutes ago
-
-  const enRouteTask = await prisma.task.create({
-    data: {
-      title: 'Network Setup - Currently En Route',
-      description: 'Network infrastructure setup at new office location. Technician currently on the way.',
+      title: 'Emergency Water Leak Repair',
+      description: 'Active water leak in 2nd floor ceiling. Tenant reports dripping near east wall. Likely burst pipe above ceiling tiles.',
       status: TaskStatus.EN_ROUTE,
       priority: TaskPriority.URGENT,
       organizationId: organization.id,
@@ -1201,98 +741,745 @@ async function main() {
       assignedToId: technician2.id,
       locationLat: 40.7484,
       locationLng: -73.9857,
-      locationAddress: 'Empire State Building, 350 5th Ave, New York, NY 10118',
-      dueDate: new Date(Date.now() + 2 * 60 * 60 * 1000), // Due in 2 hours
-      routeStartedAt: liveRouteStartTime,
-      routeDistance: 1850, // Current distance traveled
+      locationAddress: '350 5th Ave, New York, NY 10118',
+      dueDate: hoursFromNow(1),
+      routeStartedAt: enRouteStart,
+      routeDistance: 1850,
+      createdAt: hoursAgo(3),
+      updatedAt: minutesAgo(20),
     },
   });
 
-  console.log('Created en-route task:', enRouteTask.title);
+  // --- 6. ARRIVED (Mike) ---
+  const arrivedRouteStart = hoursAgo(1);
+  const arrivedRouteEnd = minutesAgo(30);
+  const taskArrived = await prisma.task.create({
+    data: {
+      title: 'Server Room AC Diagnostic',
+      description: 'Server room temperature above 78\u00B0F. AC running but not cooling. Could be compressor, refrigerant, or control board.',
+      status: TaskStatus.ARRIVED,
+      priority: TaskPriority.HIGH,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician1.id,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: 'Building A, Floor 3, Server Room',
+      assetId: officeAC.id,
+      dueDate: hoursFromNow(3),
+      routeStartedAt: arrivedRouteStart,
+      routeEndedAt: arrivedRouteEnd,
+      routeDistance: 2100,
+      createdAt: hoursAgo(4),
+      updatedAt: minutesAgo(30),
+    },
+  });
 
-  // Create GPS points for the live route (in progress)
-  const liveRoutePoints = [
-    // Starting point - Lower Manhattan
-    { lat: 40.7074, lng: -74.0113, minutesFromStart: 0 },
-    { lat: 40.7095, lng: -74.0085, minutesFromStart: 2 },
-    { lat: 40.7120, lng: -74.0055, minutesFromStart: 4 },
-    { lat: 40.7148, lng: -74.0025, minutesFromStart: 6 },
-    // Heading up Broadway
-    { lat: 40.7175, lng: -73.9998, minutesFromStart: 8 },
-    { lat: 40.7205, lng: -73.9970, minutesFromStart: 10 },
-    { lat: 40.7235, lng: -73.9942, minutesFromStart: 12 },
-    // Current position (still moving)
-    { lat: 40.7265, lng: -73.9915, minutesFromStart: 14 },
+  // --- 7. IN_PROGRESS (Mike) — key task for timer testing ---
+  const inProgressStart = minutesAgo(45);
+  const inProgressRouteStart = hoursAgo(2);
+  const inProgressRouteEnd = minutesAgo(60);
+  const taskInProgress = await prisma.task.create({
+    data: {
+      title: 'Rooftop HVAC Compressor Repair',
+      description: 'Rooftop unit stopped cooling. Diagnostic indicates faulty compressor. Replace compressor, recharge refrigerant, and run full system test.',
+      status: TaskStatus.IN_PROGRESS,
+      priority: TaskPriority.HIGH,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician1.id,
+      locationLat: 40.7580,
+      locationLng: -73.9855,
+      locationAddress: 'Building A, Rooftop',
+      assetId: rooftopHVAC.id,
+      dueDate: hoursFromNow(2),
+      routeStartedAt: inProgressRouteStart,
+      routeEndedAt: inProgressRouteEnd,
+      routeDistance: 3200,
+      createdAt: hoursAgo(6),
+      updatedAt: inProgressStart,
+    },
+  });
+
+  // --- 8. BLOCKED (Mike) ---
+  const taskBlocked = await prisma.task.create({
+    data: {
+      title: 'Backup Generator Oil Change',
+      description: 'Scheduled oil change for backup generator. Includes filter replacement, fluid check, and 30-min test run.',
+      status: TaskStatus.BLOCKED,
+      priority: TaskPriority.MEDIUM,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician1.id,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: 'Building A, Exterior, Generator Pad',
+      assetId: backupGenerator.id,
+      dueDate: daysFromNow(3),
+      createdAt: daysAgo(3),
+      updatedAt: daysAgo(1),
+    },
+  });
+
+  // --- 9. COMPLETED (Mike) — with route + service report ---
+  const completedRouteStart = hoursAgo(5);
+  const completedRouteEnd = hoursAgo(4.5);
+  const taskCompleted = await prisma.task.create({
+    data: {
+      title: 'Fire Alarm System Test',
+      description: 'Monthly fire alarm test. Test all pull stations, smoke detectors, and notification devices. Document any failures.',
+      status: TaskStatus.COMPLETED,
+      priority: TaskPriority.HIGH,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician1.id,
+      locationLat: 40.7589,
+      locationLng: -73.9851,
+      locationAddress: '456 Broadway, New York, NY 10013',
+      dueDate: new Date(),
+      routeStartedAt: completedRouteStart,
+      routeEndedAt: completedRouteEnd,
+      routeDistance: 4250,
+      createdAt: hoursAgo(8),
+      updatedAt: hoursAgo(2),
+    },
+  });
+
+  // --- 10. COMPLETED older (Sarah) — with service report ---
+  const taskCompleted2 = await prisma.task.create({
+    data: {
+      title: 'Plumbing Fixture Replacement',
+      description: 'Replace leaking kitchen faucet and install new garbage disposal. Customer supplied replacement parts.',
+      status: TaskStatus.COMPLETED,
+      priority: TaskPriority.HIGH,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician2.id,
+      locationLat: 40.7484,
+      locationLng: -73.9857,
+      locationAddress: '789 Park Ave, New York, NY 10021',
+      dueDate: daysAgo(3),
+      createdAt: daysAgo(5),
+      updatedAt: daysAgo(3),
+    },
+  });
+
+  // --- 11. ASSIGNED to Sarah (today) ---
+  const taskAssignedSarah = await prisma.task.create({
+    data: {
+      title: 'Water Pump Inspection',
+      description: 'Inspect sump pump in basement. Check motor, float switch, and discharge pipe. Test backup battery if equipped.',
+      status: TaskStatus.ASSIGNED,
+      priority: TaskPriority.MEDIUM,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician2.id,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: 'Building A, Basement, Mechanical Room',
+      assetId: waterHeater.id,
+      dueDate: new Date(), // Due today
+      createdAt: daysAgo(1),
+      updatedAt: hoursAgo(4),
+    },
+  });
+
+  // --- 12. ASSIGNED to technician3 (HYBRID) — due today, can accept & start ---
+  const taskAssigned3 = await prisma.task.create({
+    data: {
+      title: 'Ventilation Filter Replacement',
+      description: 'Replace all ventilation filters in Building A. Use MERV-13 filters. Check ductwork for debris.',
+      status: TaskStatus.ASSIGNED,
+      priority: TaskPriority.MEDIUM,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician3.id,
+      locationLat: 47.9830,
+      locationLng: 13.8180,
+      locationAddress: 'Bahnhofstraße 5, 4663 Laakirchen, Austria',
+      assetId: rooftopHVAC.id,
+      dueDate: new Date(), // Due today — can accept and start
+      createdAt: daysAgo(1),
+      updatedAt: hoursAgo(6),
+    },
+  });
+
+  // --- 12. ASSIGNED to technician3 (HYBRID) — due tomorrow, can accept but not start ---
+  const taskAssigned3Future = await prisma.task.create({
+    data: {
+      title: 'Generator Monthly Test Run',
+      description: 'Perform scheduled monthly test run of backup generator. Run for 30 minutes under load. Check oil, coolant, and battery levels.',
+      status: TaskStatus.ASSIGNED,
+      priority: TaskPriority.LOW,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician3.id,
+      locationLat: 47.98188,
+      locationLng: 13.82166,
+      locationAddress: 'Arbeiterheimstraße 35-39, 4662 Laakirchen, Austria',
+      assetId: backupGenerator.id,
+      dueDate: daysFromNow(2), // Due in 2 days — can accept but cannot start
+      createdAt: hoursAgo(12),
+      updatedAt: hoursAgo(6),
+    },
+  });
+
+  // --- 13. CANCELED ---
+  const taskCanceled = await prisma.task.create({
+    data: {
+      title: 'Repaint Office Break Room',
+      description: 'Repaint break room walls. Colors TBD by office manager.',
+      status: TaskStatus.CANCELED,
+      priority: TaskPriority.LOW,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      locationLat: 40.7614,
+      locationLng: -73.9776,
+      locationAddress: '321 5th Ave, New York, NY 10016',
+      createdAt: daysAgo(4),
+      updatedAt: daysAgo(2),
+    },
+  });
+
+  // --- 12. CLOSED ---
+  const taskClosed = await prisma.task.create({
+    data: {
+      title: 'Quarterly Electrical Safety Audit',
+      description: 'Q1 2026 electrical safety audit. Inspect all panels, test emergency lighting, check ground fault protection.',
+      status: TaskStatus.CLOSED,
+      priority: TaskPriority.MEDIUM,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+      assignedToId: technician1.id,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: 'Building A, All Floors',
+      assetId: mainPanel.id,
+      createdAt: daysAgo(10),
+      updatedAt: daysAgo(5),
+    },
+  });
+
+  console.log('Created 15 tasks covering all statuses');
+
+  // ============================================
+  // Task Events — { oldStatus, newStatus } format matches real API
+  // ============================================
+
+  await prisma.taskEvent.createMany({
+    data: [
+      // DRAFT
+      { taskId: taskDraft.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskDraft.title }, createdAt: daysAgo(5) },
+
+      // NEW
+      { taskId: taskNew.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskNew.title }, createdAt: daysAgo(3) },
+
+      // ASSIGNED
+      { taskId: taskAssigned.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskAssigned.title }, createdAt: daysAgo(2) },
+      { taskId: taskAssigned.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician1.id, workerName: 'Mike Worker' }, createdAt: daysAgo(1) },
+
+      // ACCEPTED
+      { taskId: taskAccepted.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskAccepted.title }, createdAt: hoursAgo(24) },
+      { taskId: taskAccepted.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician2.id, workerName: 'Sarah Worker' }, createdAt: hoursAgo(20) },
+      { taskId: taskAccepted.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(18) },
+
+      // EN_ROUTE
+      { taskId: taskEnRoute.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskEnRoute.title }, createdAt: hoursAgo(3) },
+      { taskId: taskEnRoute.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician2.id, workerName: 'Sarah Worker' }, createdAt: hoursAgo(2.5) },
+      { taskId: taskEnRoute.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(2) },
+      { taskId: taskEnRoute.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ACCEPTED, newStatus: TaskStatus.EN_ROUTE }, createdAt: enRouteStart },
+
+      // ARRIVED
+      { taskId: taskArrived.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskArrived.title }, createdAt: hoursAgo(4) },
+      { taskId: taskArrived.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician1.id, workerName: 'Mike Worker' }, createdAt: hoursAgo(3.5) },
+      { taskId: taskArrived.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(3) },
+      { taskId: taskArrived.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ACCEPTED, newStatus: TaskStatus.EN_ROUTE }, createdAt: arrivedRouteStart },
+      { taskId: taskArrived.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.EN_ROUTE, newStatus: TaskStatus.ARRIVED }, createdAt: arrivedRouteEnd },
+
+      // IN_PROGRESS (timer will seed from this event's createdAt)
+      { taskId: taskInProgress.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskInProgress.title }, createdAt: hoursAgo(6) },
+      { taskId: taskInProgress.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician1.id, workerName: 'Mike Worker' }, createdAt: hoursAgo(5) },
+      { taskId: taskInProgress.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(4.5) },
+      { taskId: taskInProgress.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ACCEPTED, newStatus: TaskStatus.EN_ROUTE }, createdAt: inProgressRouteStart },
+      { taskId: taskInProgress.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.EN_ROUTE, newStatus: TaskStatus.ARRIVED }, createdAt: inProgressRouteEnd },
+      { taskId: taskInProgress.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ARRIVED, newStatus: TaskStatus.IN_PROGRESS }, createdAt: inProgressStart },
+
+      // BLOCKED
+      { taskId: taskBlocked.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskBlocked.title }, createdAt: daysAgo(3) },
+      { taskId: taskBlocked.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician1.id, workerName: 'Mike Worker' }, createdAt: hoursAgo(60) },
+      { taskId: taskBlocked.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(59) },
+      { taskId: taskBlocked.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ACCEPTED, newStatus: TaskStatus.EN_ROUTE }, createdAt: daysAgo(2) },
+      { taskId: taskBlocked.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.EN_ROUTE, newStatus: TaskStatus.ARRIVED }, createdAt: hoursAgo(47) },
+      { taskId: taskBlocked.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ARRIVED, newStatus: TaskStatus.IN_PROGRESS }, createdAt: hoursAgo(46) },
+      { taskId: taskBlocked.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.IN_PROGRESS, newStatus: TaskStatus.BLOCKED, reason: 'Oil filter part #GEN-OF-200 out of stock. Supplier ETA: 3 business days.' }, createdAt: daysAgo(1) },
+
+      // COMPLETED (Mike)
+      { taskId: taskCompleted.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskCompleted.title }, createdAt: hoursAgo(8) },
+      { taskId: taskCompleted.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician1.id, workerName: 'Mike Worker' }, createdAt: hoursAgo(7) },
+      { taskId: taskCompleted.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(6.5) },
+      { taskId: taskCompleted.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ACCEPTED, newStatus: TaskStatus.EN_ROUTE }, createdAt: completedRouteStart },
+      { taskId: taskCompleted.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.EN_ROUTE, newStatus: TaskStatus.ARRIVED }, createdAt: completedRouteEnd },
+      { taskId: taskCompleted.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ARRIVED, newStatus: TaskStatus.IN_PROGRESS }, createdAt: hoursAgo(4) },
+      { taskId: taskCompleted.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.IN_PROGRESS, newStatus: TaskStatus.COMPLETED }, createdAt: hoursAgo(2) },
+
+      // COMPLETED older (Sarah)
+      { taskId: taskCompleted2.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskCompleted2.title }, createdAt: daysAgo(5) },
+      { taskId: taskCompleted2.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician2.id, workerName: 'Sarah Worker' }, createdAt: daysAgo(4) },
+      { taskId: taskCompleted2.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(84) },
+      { taskId: taskCompleted2.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ACCEPTED, newStatus: TaskStatus.EN_ROUTE }, createdAt: hoursAgo(80) },
+      { taskId: taskCompleted2.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.EN_ROUTE, newStatus: TaskStatus.ARRIVED }, createdAt: hoursAgo(77) },
+      { taskId: taskCompleted2.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ARRIVED, newStatus: TaskStatus.IN_PROGRESS }, createdAt: hoursAgo(76) },
+      { taskId: taskCompleted2.id, userId: technician2.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.IN_PROGRESS, newStatus: TaskStatus.COMPLETED }, createdAt: daysAgo(3) },
+
+      // ASSIGNED to Sarah (today)
+      { taskId: taskAssignedSarah.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskAssignedSarah.title }, createdAt: daysAgo(1) },
+      { taskId: taskAssignedSarah.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician2.id, workerName: 'Sarah Worker' }, createdAt: hoursAgo(4) },
+
+      // ASSIGNED to technician3 (today)
+      { taskId: taskAssigned3.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskAssigned3.title }, createdAt: daysAgo(1) },
+      { taskId: taskAssigned3.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician3.id, workerName: 'Alex Hybrid' }, createdAt: hoursAgo(6) },
+
+      // ASSIGNED to technician3 (future)
+      { taskId: taskAssigned3Future.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskAssigned3Future.title }, createdAt: hoursAgo(12) },
+      { taskId: taskAssigned3Future.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician3.id, workerName: 'Alex Hybrid' }, createdAt: hoursAgo(6) },
+
+      // CANCELED
+      { taskId: taskCanceled.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskCanceled.title }, createdAt: daysAgo(4) },
+      { taskId: taskCanceled.id, userId: clientUser.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.NEW, newStatus: TaskStatus.CANCELED }, createdAt: daysAgo(2) },
+
+      // CLOSED (full lifecycle)
+      { taskId: taskClosed.id, userId: clientUser.id, eventType: TaskEventType.CREATED, metadata: { title: taskClosed.title }, createdAt: daysAgo(10) },
+      { taskId: taskClosed.id, userId: dispatcherUser.id, eventType: TaskEventType.ASSIGNED, metadata: { workerId: technician1.id, workerName: 'Mike Worker' }, createdAt: daysAgo(9) },
+      { taskId: taskClosed.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ASSIGNED, newStatus: TaskStatus.ACCEPTED }, createdAt: hoursAgo(204) },
+      { taskId: taskClosed.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.ACCEPTED, newStatus: TaskStatus.IN_PROGRESS }, createdAt: daysAgo(8) },
+      { taskId: taskClosed.id, userId: technician1.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.IN_PROGRESS, newStatus: TaskStatus.COMPLETED }, createdAt: daysAgo(7) },
+      { taskId: taskClosed.id, userId: clientUser.id, eventType: TaskEventType.STATUS_CHANGED, metadata: { oldStatus: TaskStatus.COMPLETED, newStatus: TaskStatus.CLOSED }, createdAt: daysAgo(5) },
+    ],
+  });
+
+  console.log('Created task events');
+
+  // ============================================
+  // Comments — varied timestamps for formatTimeAgo() testing
+  // ============================================
+
+  await prisma.comment.createMany({
+    data: [
+      // NEW task
+      { taskId: taskNew.id, userId: clientUser.id, content: 'Thermostat has been acting erratic for 2 weeks. Please prioritize.', createdAt: daysAgo(3) },
+
+      // ASSIGNED task
+      { taskId: taskAssigned.id, userId: dispatcherUser.id, content: 'Mike, please schedule this for early this week. Code inspection is mandatory.', createdAt: daysAgo(1) },
+
+      // ACCEPTED task
+      { taskId: taskAccepted.id, userId: dispatcherUser.id, content: 'Sarah, the server room is getting warm. Try to get there before noon.', createdAt: hoursAgo(19) },
+      { taskId: taskAccepted.id, userId: technician2.id, content: 'Will head out after the current job. Should be there by 11.', createdAt: hoursAgo(18) },
+
+      // EN_ROUTE task
+      { taskId: taskEnRoute.id, userId: clientUser.id, content: 'This is urgent \u2014 water is actively leaking onto office equipment!', createdAt: hoursAgo(3) },
+      { taskId: taskEnRoute.id, userId: technician2.id, content: 'On my way now. ETA 15 minutes.', createdAt: minutesAgo(20) },
+
+      // ARRIVED task
+      { taskId: taskArrived.id, userId: technician1.id, content: 'On site. Starting diagnostic now.', createdAt: minutesAgo(30) },
+
+      // IN_PROGRESS task (varied timestamps for testing)
+      { taskId: taskInProgress.id, userId: dispatcherUser.id, content: 'Customer is waiting. Please update when you have a diagnosis.', createdAt: hoursAgo(5) },
+      { taskId: taskInProgress.id, userId: technician1.id, content: 'Arrived at rooftop. Compressor is definitely the issue \u2014 bearings are shot.', createdAt: hoursAgo(1) },
+      { taskId: taskInProgress.id, userId: technician1.id, content: 'Old compressor removed. Installing replacement now.', createdAt: minutesAgo(20) },
+
+      // BLOCKED task
+      { taskId: taskBlocked.id, userId: technician1.id, content: 'Oil filter part #GEN-OF-200 is out of stock locally. Ordered from supplier \u2014 ETA 3 business days.', createdAt: daysAgo(1) },
+      { taskId: taskBlocked.id, userId: dispatcherUser.id, content: 'Understood. I will update the customer. Resume when parts arrive.', createdAt: hoursAgo(20) },
+
+      // COMPLETED task (throughout lifecycle)
+      { taskId: taskCompleted.id, userId: dispatcherUser.id, content: 'Please test all floors, not just the first two.', createdAt: hoursAgo(7) },
+      { taskId: taskCompleted.id, userId: technician1.id, content: 'Heading out now.', createdAt: hoursAgo(5) },
+      { taskId: taskCompleted.id, userId: technician1.id, content: 'All pull stations and detectors on floors 1-5 tested. Two smoke detectors on floor 3 need battery replacement.', createdAt: hoursAgo(3) },
+      { taskId: taskCompleted.id, userId: technician1.id, content: 'Replaced batteries. All systems green. Report submitted.', createdAt: hoursAgo(2) },
+
+      // COMPLETED older task
+      { taskId: taskCompleted2.id, userId: technician2.id, content: 'Faucet replaced and disposal installed. Running fine.', createdAt: daysAgo(3) },
+      { taskId: taskCompleted2.id, userId: clientUser.id, content: 'Customer confirmed everything working. Good job!', createdAt: hoursAgo(60) },
+
+      // CANCELED task
+      { taskId: taskCanceled.id, userId: clientUser.id, content: 'Canceling \u2014 decided to hire a painting contractor instead.', createdAt: daysAgo(2) },
+    ],
+  });
+
+  console.log('Created task comments');
+
+  // ============================================
+  // Worker Last Locations (for Live Map)
+  // ============================================
+
+  await prisma.workerLastLocation.createMany({
+    data: [
+      { userId: technician1.id, lat: 40.7580, lng: -73.9855, accuracy: 10 },
+      { userId: technician2.id, lat: 40.7265, lng: -73.9915, accuracy: 8 },
+      { userId: technician3.id, lat: 47.9820, lng: 13.8200, accuracy: 12 },
+    ],
+  });
+
+  console.log('Created worker locations for Live Map');
+
+  // ============================================
+  // Route GPS Points
+  // ============================================
+
+  // EN_ROUTE task (Sarah) — live route in progress
+  const enRoutePoints = [
+    { lat: 40.7074, lng: -74.0113, m: 0 },
+    { lat: 40.7095, lng: -74.0085, m: 2 },
+    { lat: 40.7120, lng: -74.0055, m: 4 },
+    { lat: 40.7148, lng: -74.0025, m: 6 },
+    { lat: 40.7175, lng: -73.9998, m: 8 },
+    { lat: 40.7205, lng: -73.9970, m: 10 },
+    { lat: 40.7235, lng: -73.9942, m: 12 },
+    { lat: 40.7265, lng: -73.9915, m: 14 },
   ];
 
   await prisma.locationHistory.createMany({
-    data: liveRoutePoints.map((point) => ({
+    data: enRoutePoints.map((p) => ({
       userId: technician2.id,
-      taskId: enRouteTask.id,
-      lat: point.lat,
-      lng: point.lng,
+      taskId: taskEnRoute.id,
+      lat: p.lat,
+      lng: p.lng,
       accuracy: Math.floor(Math.random() * 8) + 5,
-      timestamp: new Date(liveRouteStartTime.getTime() + point.minutesFromStart * 60 * 1000),
+      timestamp: new Date(enRouteStart.getTime() + p.m * 60 * 1000),
     })),
   });
 
-  // Update technician2's last location to match the route
-  await prisma.workerLastLocation.update({
-    where: { userId: technician2.id },
-    data: {
-      lat: 40.7265,
-      lng: -73.9915,
-      accuracy: 8,
-      updatedAt: new Date(),
-    },
+  // COMPLETED task (Mike) — full route: Chelsea to Midtown (~4.25 km)
+  const completedRoutePoints = [
+    { lat: 40.7433, lng: -74.0011, m: 0 },
+    { lat: 40.7445, lng: -73.9995, m: 1 },
+    { lat: 40.7458, lng: -73.9978, m: 2 },
+    { lat: 40.7472, lng: -73.9962, m: 3 },
+    { lat: 40.7485, lng: -73.9948, m: 4 },
+    { lat: 40.7498, lng: -73.9935, m: 6 },
+    { lat: 40.7502, lng: -73.9930, m: 8 },
+    { lat: 40.7508, lng: -73.9922, m: 10 },
+    { lat: 40.7520, lng: -73.9908, m: 12 },
+    { lat: 40.7532, lng: -73.9895, m: 14 },
+    { lat: 40.7545, lng: -73.9882, m: 16 },
+    { lat: 40.7555, lng: -73.9872, m: 18 },
+    { lat: 40.7562, lng: -73.9865, m: 20 },
+    { lat: 40.7568, lng: -73.9860, m: 22 },
+    { lat: 40.7572, lng: -73.9858, m: 25 },
+    { lat: 40.7575, lng: -73.9856, m: 28 },
+    { lat: 40.7578, lng: -73.9855, m: 30 },
+    { lat: 40.7580, lng: -73.9855, m: 32 },
+  ];
+
+  await prisma.locationHistory.createMany({
+    data: completedRoutePoints.map((p) => ({
+      userId: technician1.id,
+      taskId: taskCompleted.id,
+      lat: p.lat,
+      lng: p.lng,
+      accuracy: Math.floor(Math.random() * 10) + 5,
+      timestamp: new Date(completedRouteStart.getTime() + p.m * 60 * 1000),
+    })),
   });
 
-  console.log('Created', liveRoutePoints.length, 'GPS points for live tracking task');
+  console.log('Created GPS route points');
 
-  // Create task events for the en-route task
-  await prisma.taskEvent.createMany({
+  // ============================================
+  // Task Attachments (for image thumbnail testing)
+  // ============================================
+
+  await prisma.attachment.createMany({
     data: [
+      // IN_PROGRESS task — 2 images + 1 document
       {
-        taskId: enRouteTask.id,
-        userId: clientUser.id,
-        eventType: TaskEventType.CREATED,
-        metadata: { title: enRouteTask.title },
-        createdAt: new Date(Date.now() - 60 * 60 * 1000),
+        taskId: taskInProgress.id,
+        uploadedById: technician1.id,
+        fileName: 'hvac_before_repair.jpg',
+        fileUrl: 'https://placehold.co/800x600/dc2626/ffffff?text=Before+Repair',
+        fileType: AttachmentType.IMAGE,
+        fileSize: 245000,
       },
       {
-        taskId: enRouteTask.id,
-        userId: dispatcherUser.id,
-        eventType: TaskEventType.ASSIGNED,
-        metadata: { assignedToId: technician2.id, assignedToName: 'Sarah Worker' },
-        createdAt: new Date(Date.now() - 45 * 60 * 1000),
+        taskId: taskInProgress.id,
+        uploadedById: technician1.id,
+        fileName: 'compressor_damage.jpg',
+        fileUrl: 'https://placehold.co/800x600/f59e0b/ffffff?text=Compressor+Damage',
+        fileType: AttachmentType.IMAGE,
+        fileSize: 312000,
       },
       {
-        taskId: enRouteTask.id,
-        userId: technician2.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ASSIGNED, to: TaskStatus.ACCEPTED },
-        createdAt: new Date(Date.now() - 30 * 60 * 1000),
+        taskId: taskInProgress.id,
+        uploadedById: dispatcherUser.id,
+        fileName: 'work_order.pdf',
+        fileUrl: 'https://placehold.co/800x400/3b82f6/ffffff?text=Work+Order',
+        fileType: AttachmentType.DOCUMENT,
+        fileSize: 156000,
       },
+      // COMPLETED task — 1 image
       {
-        taskId: enRouteTask.id,
-        userId: technician2.id,
-        eventType: TaskEventType.STATUS_CHANGED,
-        metadata: { from: TaskStatus.ACCEPTED, to: TaskStatus.EN_ROUTE },
-        createdAt: liveRouteStartTime,
+        taskId: taskCompleted.id,
+        uploadedById: technician1.id,
+        fileName: 'fire_alarm_panel.jpg',
+        fileUrl: 'https://placehold.co/800x600/16a34a/ffffff?text=Alarm+Panel',
+        fileType: AttachmentType.IMAGE,
+        fileSize: 198000,
       },
     ],
   });
 
-  await prisma.comment.create({
+  console.log('Created task attachments');
+
+  // ============================================
+  // Service Reports (for completed + closed tasks)
+  // ============================================
+
+  // Report for Fire Alarm System Test (taskCompleted)
+  const fireAlarmReport = await prisma.serviceReport.create({
     data: {
-      taskId: enRouteTask.id,
-      userId: technician2.id,
-      content: 'Heading out now. Traffic looks moderate, should arrive in about 20 minutes.',
-      createdAt: liveRouteStartTime,
+      taskId: taskCompleted.id,
+      summary: 'Monthly fire alarm test completed. Two smoke detectors needed battery replacement.',
+      workPerformed: `1. Tested all pull stations on floors 1-5
+2. Tested all smoke detectors \u2014 found 2 dead batteries on floor 3
+3. Replaced batteries in detectors #3-12 and #3-15
+4. Tested all notification devices (horns and strobes)
+5. Verified fire panel communication with monitoring station
+6. All systems operational`,
+      workDuration: 7200,
+      technicianSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      customerSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+      customerName: 'Building Manager',
+      completedAt: hoursAgo(2),
+      completedById: technician1.id,
+      organizationId: organization.id,
     },
   });
 
-  console.log('Created events and comments for en-route task');
+  await prisma.partUsed.createMany({
+    data: [
+      { reportId: fireAlarmReport.id, name: '9V Lithium Battery', partNumber: 'BAT-9V-LITH', quantity: 2, unitCost: 8.50, notes: 'For smoke detectors #3-12 and #3-15' },
+    ],
+  });
+
+  await prisma.reportAttachment.createMany({
+    data: [
+      { reportId: fireAlarmReport.id, type: ReportAttachmentType.BEFORE, fileName: 'fire_panel_before.jpg', fileUrl: 'https://placehold.co/800x600/f59e0b/ffffff?text=Panel+Before', fileSize: 178000, caption: 'Fire alarm panel showing normal status' },
+      { reportId: fireAlarmReport.id, type: ReportAttachmentType.AFTER, fileName: 'test_complete.jpg', fileUrl: 'https://placehold.co/800x600/16a34a/ffffff?text=Test+Complete', fileSize: 195000, caption: 'All systems tested and operational' },
+    ],
+  });
+
+  // Report for Plumbing Fixture Replacement (taskCompleted2)
+  const plumbingReport = await prisma.serviceReport.create({
+    data: {
+      taskId: taskCompleted2.id,
+      summary: 'Replaced kitchen faucet and installed garbage disposal. All working properly.',
+      workPerformed: `1. Shut off water supply
+2. Removed old faucet and cleaned area
+3. Installed new Moen kitchen faucet
+4. Removed old drain assembly
+5. Installed InSinkErator garbage disposal
+6. Connected drain lines and tested for leaks
+7. Restored water supply \u2014 no leaks detected`,
+      workDuration: 5400,
+      technicianSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      customerSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+      customerName: 'Sarah Johnson',
+      completedAt: daysAgo(3),
+      completedById: technician2.id,
+      organizationId: organization.id,
+    },
+  });
+
+  await prisma.partUsed.createMany({
+    data: [
+      { reportId: plumbingReport.id, name: 'Moen Align Kitchen Faucet', partNumber: 'MOE-5923-SRS', quantity: 1, unitCost: 189.00, notes: 'Customer supplied' },
+      { reportId: plumbingReport.id, name: 'InSinkErator Disposal', partNumber: 'ISE-BADGER-5', quantity: 1, unitCost: 109.00, notes: 'Customer supplied' },
+      { reportId: plumbingReport.id, name: 'Plumber Putty', partNumber: 'PLM-PUTY-14', quantity: 1, unitCost: 4.50 },
+    ],
+  });
+
+  // Report for Quarterly Electrical Safety Audit (taskClosed)
+  const auditReport = await prisma.serviceReport.create({
+    data: {
+      taskId: taskClosed.id,
+      assetId: mainPanel.id,
+      summary: 'Q1 2026 electrical safety audit passed. All systems within code requirements.',
+      workPerformed: `1. Inspected main 400A panel \u2014 all breakers functional
+2. Tested all GFCI outlets \u2014 all tripped correctly
+3. Verified grounding continuity
+4. Tested emergency lighting \u2014 3 units needed bulb replacement
+5. Replaced emergency light bulbs
+6. Thermal scan of panel \u2014 no hot spots detected
+7. Documentation submitted to compliance office`,
+      workDuration: 10800,
+      technicianSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      customerSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+      customerName: 'John Owner',
+      completedAt: daysAgo(7),
+      completedById: technician1.id,
+      organizationId: organization.id,
+    },
+  });
+
+  await prisma.partUsed.createMany({
+    data: [
+      { reportId: auditReport.id, name: 'Emergency Light Bulb', partNumber: 'ELB-LED-6W', quantity: 3, unitCost: 12.00, notes: 'Replaced in stairwell units' },
+    ],
+  });
+
+  console.log('Created 3 service reports with parts and attachments');
+
+  // ============================================
+  // Create Technician Schedules (Weekly)
+  // ============================================
+
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  // Technician1 (Mike - FULL_TIME ON_SITE): Mon-Fri 09:00-17:00
+  for (let day = 0; day < 7; day++) {
+    await prisma.technicianSchedule.create({
+      data: {
+        technicianId: technician1.id,
+        dayOfWeek: day,
+        startTime: day >= 1 && day <= 5 ? '09:00' : '00:00',
+        endTime: day >= 1 && day <= 5 ? '17:00' : '00:00',
+        isActive: day >= 1 && day <= 5, // Mon-Fri active
+        notes: day === 3 ? 'Remote day - available by phone' : day === 5 ? 'Early leave at 16:00 allowed' : null,
+      },
+    });
+  }
+
+  // Technician2 (Sarah - FREELANCER ON_ROAD): Mon-Sat 08:00-16:00
+  for (let day = 0; day < 7; day++) {
+    await prisma.technicianSchedule.create({
+      data: {
+        technicianId: technician2.id,
+        dayOfWeek: day,
+        startTime: day >= 1 && day <= 6 ? '08:00' : '00:00',
+        endTime: day >= 1 && day <= 6 ? '16:00' : '00:00',
+        isActive: day >= 1 && day <= 6, // Mon-Sat active
+        notes: day === 6 ? 'Half day - until 12:00' : null,
+      },
+    });
+  }
+
+  // Technician3 (Alex - FULL_TIME HYBRID): Mon-Fri 07:30-16:30, Sat 08:00-12:00
+  for (let day = 0; day < 7; day++) {
+    const isWeekday = day >= 1 && day <= 5;
+    const isSaturday = day === 6;
+    await prisma.technicianSchedule.create({
+      data: {
+        technicianId: technician3.id,
+        dayOfWeek: day,
+        startTime: isWeekday ? '07:30' : isSaturday ? '08:00' : '00:00',
+        endTime: isWeekday ? '16:30' : isSaturday ? '12:00' : '00:00',
+        isActive: isWeekday || isSaturday, // Mon-Sat active
+        notes: isSaturday ? 'Half day - on-site only' : null,
+      },
+    });
+  }
+
+  console.log('Created technician schedules (7 days each for 3 technicians)');
+
+  // ============================================
+  // Create Time-Off Requests
+  // ============================================
+
+  // Technician1: Approved vacation (upcoming)
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician1.id,
+      startDate: new Date('2026-04-15'),
+      endDate: new Date('2026-04-17'),
+      reason: 'Family vacation - will be out of town',
+      status: 'APPROVED',
+      approvedById: dispatcherUser.id,
+      approvedAt: new Date('2026-03-28'),
+    },
+  });
+
+  // Technician1: Pending request (waiting for approval)
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician1.id,
+      startDate: new Date('2026-05-01'),
+      endDate: new Date('2026-05-02'),
+      reason: 'Medical appointment',
+      status: 'PENDING',
+    },
+  });
+
+  // Technician1: Rejected request
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician1.id,
+      startDate: new Date('2026-06-10'),
+      endDate: new Date('2026-06-14'),
+      reason: 'Personal time off',
+      status: 'REJECTED',
+      approvedById: clientUser.id,
+      approvedAt: new Date('2026-03-25'),
+      rejectionReason: 'Insufficient coverage - 3 other techs already off this week',
+    },
+  });
+
+  // Technician2: Approved vacation (upcoming)
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician2.id,
+      startDate: new Date('2026-05-20'),
+      endDate: new Date('2026-05-24'),
+      reason: 'Annual vacation',
+      status: 'APPROVED',
+      approvedById: dispatcherUser.id,
+      approvedAt: new Date('2026-03-15'),
+    },
+  });
+
+  // Technician2: Canceled request
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician2.id,
+      startDate: new Date('2026-04-01'),
+      endDate: new Date('2026-04-01'),
+      reason: 'Doctor visit',
+      status: 'CANCELED',
+    },
+  });
+
+  // Technician2: Pending request
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician2.id,
+      startDate: new Date('2026-04-28'),
+      endDate: new Date('2026-04-29'),
+      reason: 'Moving to new apartment',
+      status: 'PENDING',
+    },
+  });
+
+  // Technician3: Approved time off (upcoming)
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician3.id,
+      startDate: new Date('2026-04-21'),
+      endDate: new Date('2026-04-22'),
+      reason: 'Personal day',
+      status: 'APPROVED',
+      approvedById: clientUser.id,
+      approvedAt: new Date('2026-03-30'),
+    },
+  });
+
+  // Technician3: Pending request
+  await prisma.timeOff.create({
+    data: {
+      technicianId: technician3.id,
+      startDate: new Date('2026-05-12'),
+      endDate: new Date('2026-05-14'),
+      reason: 'Training course',
+      status: 'PENDING',
+    },
+  });
 
   // ============================================
   // Create Sample Invitations
@@ -1351,7 +1538,7 @@ async function main() {
     data: {
       email: 'newuser@example.com',
       passwordHash,
-      firstName: 'Alex',
+      firstName: 'Chris',
       lastName: 'Newbie',
       role: Role.ADMIN, // Placeholder role - will be set during onboarding
       onboardingCompleted: false,
@@ -1378,27 +1565,19 @@ async function main() {
 
   console.log('\nSeed completed successfully!');
   console.log('\nTest credentials:');
-  console.log('  Admin:       client@example.com / password123 (platform: BOTH, onboarded)');
-  console.log('  Dispatcher:  dispatcher@example.com / password123 (platform: WEB, onboarded)');
-  console.log('  Technician1: technician1@example.com / password123 (platform: MOBILE, FULL_TIME, ON_SITE, onboarded)');
-  console.log('  Technician2: technician2@example.com / password123 (platform: MOBILE, FREELANCER, ON_ROAD, onboarded)');
+  console.log('  Admin:       client@example.com / password123 (platform: BOTH)');
+  console.log('  Dispatcher:  dispatcher@example.com / password123 (platform: WEB)');
+  console.log('  Technician1: technician1@example.com / password123 (FULL_TIME, ON_SITE)');
+  console.log('  Technician2: technician2@example.com / password123 (FREELANCER, ON_ROAD)');
+  console.log('  Technician3: technician3@example.com / password123 (FULL_TIME, HYBRID — all 5 tabs)');
   console.log('  New User:    newuser@example.com / password123 (NO org, onboarding incomplete)');
-  console.log('\nOrganization Join Code:');
-  console.log('  - Acme Corporation: ACME2026 (join policy: OPEN)');
-  console.log('\nJoin Requests:');
-  console.log('  - newuser@example.com → Acme Corporation (PENDING)');
-  console.log('\nCompany Locations:');
-  console.log('  - Main Office (NYC): 40.7128, -74.0060 (20m geofence)');
-  console.log('  - Warehouse (Brooklyn): 40.6892, -73.9857 (30m geofence)');
-  console.log('  - Service Center (Jersey City): 40.7178, -74.0431 (25m geofence)');
-  console.log('\nTime Entries:');
-  console.log('  - technician1 has 3 time entries (2 completed, 1 currently clocked in)');
-  console.log('  - Use GET /attendance/status as technician1 to see current clock-in status');
-  console.log('  - Use GET /attendance/history as technician1 to see attendance history');
-  console.log('\nInvitation Codes:');
-  console.log('  - TEST01: Pending technician invitation (FULL_TIME, Electrical)');
-  console.log('  - TEST02: Pending dispatcher invitation');
-  console.log('  - USED01: Already accepted invitation');
+  console.log('\nOrg Join Code: ACME2026 (policy: OPEN)');
+  console.log('Invitation Codes: TEST01 (technician), TEST02 (dispatcher)');
+  console.log('\nTasks: 15 total covering all statuses');
+  console.log('  Mike (tech1): ASSIGNED, ARRIVED, IN_PROGRESS, BLOCKED, COMPLETED, CLOSED');
+  console.log('  Sarah (tech2): ASSIGNED, ACCEPTED, EN_ROUTE, COMPLETED');
+  console.log('  Alex (tech3): 2x ASSIGNED (1 today, 1 future)');
+  console.log('  Unassigned: DRAFT, NEW, CANCELED');
 }
 
 main()

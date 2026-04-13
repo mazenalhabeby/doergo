@@ -8,7 +8,7 @@ import {
   Max,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { TechnicianType, WorkMode } from '@doergo/shared';
+import { TechnicianType, WorkMode } from '@hbcfield/shared';
 
 export class ListTechniciansDto {
   @ApiPropertyOptional({

@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, BaseGatewayService } from '@doergo/shared';
+import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
 
 @Injectable()
 export class AssetsService extends BaseGatewayService {

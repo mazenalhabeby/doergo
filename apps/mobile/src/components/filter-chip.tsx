@@ -6,6 +6,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
+import { useTheme } from '../contexts/theme-context';
 
 interface FilterChipProps {
   label: string;
@@ -14,13 +15,15 @@ interface FilterChipProps {
 }
 
 export function FilterChip({ label, active, onPress }: FilterChipProps) {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
-      style={[styles.chip, active && styles.chipActive]}
+      style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }, active && styles.chipActive]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+      <Text style={[styles.chipText, { color: colors.textSecondary }, active && styles.chipTextActive]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -32,9 +35,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md + 2,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.xl,
-    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: COLORS.slate200,
   },
   chipActive: {
     backgroundColor: COLORS.primary,
@@ -43,7 +44,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate500,
   },
   chipTextActive: {
     color: COLORS.white,

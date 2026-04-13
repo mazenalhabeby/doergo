@@ -2,7 +2,7 @@
  * User/Technician DTOs for Auth Service
  */
 
-import { TechnicianType, WorkMode, Role, Platform } from '@doergo/shared';
+import { TechnicianType, WorkMode, Role, Platform } from '@hbcfield/shared';
 
 /**
  * DTO for creating a new technician
@@ -88,6 +88,20 @@ export interface ListOrgMembersDto {
  */
 export interface UpdateMemberRoleDto {
   role: Role;
+  platform?: Platform;
+  canCreateTasks?: boolean;
+  canViewAllTasks?: boolean;
+  canAssignTasks?: boolean;
+  canManageUsers?: boolean;
+}
+
+/**
+ * DTO for updating a member's profile + role/permissions (combined)
+ */
+export interface UpdateMemberProfileDto {
+  firstName?: string;
+  lastName?: string;
+  role?: Role;
   platform?: Platform;
   canCreateTasks?: boolean;
   canViewAllTasks?: boolean;

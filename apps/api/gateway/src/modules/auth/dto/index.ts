@@ -7,7 +7,7 @@ import {
   NameField,
   CompanyNameField,
   TokenField,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 /**
  * Login request DTO

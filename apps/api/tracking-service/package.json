@@ -1,5 +1,5 @@
 {
-  "name": "@doergo/tracking-service",
+  "name": "@hbcfield/tracking-service",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
     "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "@doergo/shared": "workspace:*",
+    "@hbcfield/shared": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

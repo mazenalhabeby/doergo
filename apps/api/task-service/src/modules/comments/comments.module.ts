@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
-import { SERVICE_NAMES, createClientOptions } from '@doergo/shared';
+import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 

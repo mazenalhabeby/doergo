@@ -17,9 +17,9 @@ export default function DownloadPage() {
         {/* Logo */}
         <div className="mb-8">
           <h1 className="text-5xl font-bold text-slate-800 mb-2">
-            Doer<span className="text-blue-600">go</span>
+            HBC FIELD
           </h1>
-          <p className="text-slate-500 text-lg">Field Service Management</p>
+          <p className="text-slate-500 text-lg">Dispatch · Track · Deliver</p>
         </div>
 
         {/* Download Card */}
@@ -34,11 +34,11 @@ export default function DownloadPage() {
             Download for Android
           </h2>
           <p className="text-slate-500 mb-6">
-            Get the Doergo mobile app to manage tasks, track location, and submit reports on the go.
+            Get the HBCField mobile app to manage tasks, track location, and submit reports on the go.
           </p>
 
           <a
-            href="/downloads/doergo.apk"
+            href="/downloads/hbcfield.apk"
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

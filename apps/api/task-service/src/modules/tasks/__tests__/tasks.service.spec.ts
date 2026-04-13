@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { TasksService } from '../tasks.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { Role, TaskStatus, TaskEventType } from '@doergo/shared';
+import { Role, TaskStatus, TaskEventType } from '@hbcfield/shared';
 
 describe('TasksService', () => {
   let service: TasksService;

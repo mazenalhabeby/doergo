@@ -24,19 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-
-function getRoleLabel(role: string) {
-  switch (role) {
-    case "ADMIN":
-      return "Administrator"
-    case "DISPATCHER":
-      return "Dispatcher"
-    case "TECHNICIAN":
-      return "Technician"
-    default:
-      return role
-  }
-}
+import { getRoleLabel } from "@hbcfield/shared"
 
 function getRoleColor(role: string) {
   switch (role) {

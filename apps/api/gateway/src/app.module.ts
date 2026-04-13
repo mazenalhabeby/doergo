@@ -5,7 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
-import { createBullMQConfig } from '@doergo/shared';
+import { createBullMQConfig } from '@hbcfield/shared';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MicroservicesModule } from './common/microservices/microservices.module';

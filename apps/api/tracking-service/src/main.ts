@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/microservices';
-import { createMicroserviceOptions } from '@doergo/shared';
+import { createMicroserviceOptions } from '@hbcfield/shared';
 import { AppModule } from './app.module';
 
 async function bootstrap() {

@@ -1,4 +1,4 @@
-# DOERGO - Implementation Checklist
+# HBCFIELD - Implementation Checklist
 
 > **Usage**: Check off items as completed. Use `[x]` for done, `[ ]` for pending, `[~]` for in progress.
 > **Last Updated**: 2026-02-11 (Schedule & Members Web UI)
@@ -243,13 +243,13 @@
 - [x] Export from utils/index.ts
 
 ### Mobile App Updates (apps/mobile/src/lib/api.ts)
-- [x] Import shared types and enums from @doergo/shared
+- [x] Import shared types and enums from @hbcfield/shared
 - [x] Remove duplicate type definitions (~95 lines removed)
 - [x] Replace URLSearchParams with buildUrlWithQuery()
 - [x] Re-export types for convenience
 
 ### Web App Updates (apps/web-app/src/lib/api.ts)
-- [x] Import shared types and enums from @doergo/shared
+- [x] Import shared types and enums from @hbcfield/shared
 - [x] Remove duplicate type definitions (~70 lines removed)
 - [x] Replace 10+ URLSearchParams usages with buildUrlWithQuery()
 - [x] Keep web-specific types (AttendanceSummary, BreakSummary with different structure)
@@ -433,7 +433,7 @@ Decoupled two concerns previously conflated in `TechnicianType`:
 - [x] Data migration: FULL_TIME→ON_SITE, FREELANCER→ON_ROAD
 
 ### Shared Types
-- [x] `WorkMode` enum in `@doergo/shared`
+- [x] `WorkMode` enum in `@hbcfield/shared`
 - [x] `workMode` added to: TechnicianProfile, TechnicianListItem, CreateTechnicianInput, UpdateTechnicianInput, TechniciansQueryParams
 - [x] `workMode` added to: Invitation, InvitationValidation, CreateInvitationInput
 - [x] Helper functions: `getWorkModeLabel()`, `getWorkModeColor()`, `canUseAttendance()`, `canBeAssignedToLocation()`
@@ -772,7 +772,7 @@ Built the web frontend for schedule management and organization members manageme
 
 ### Backend - BullMQ Infrastructure ✅
 - [x] BullMQ queue setup (task queue implemented)
-- [x] Shared queue configuration (`@doergo/shared/queues`)
+- [x] Shared queue configuration (`@hbcfield/shared/queues`)
 - [x] Gateway producer (TasksQueueService)
 - [x] Task-service processor (TasksProcessor)
 - [x] Bull Board monitoring (`/admin/queues`)
@@ -954,7 +954,7 @@ See `SECURITY_AUDIT_REPORT.md` for full details.
 
 Before completing any task, verify:
 
-- [ ] **DRY**: No duplicated code - use `@doergo/shared` utilities
+- [ ] **DRY**: No duplicated code - use `@hbcfield/shared` utilities
 - [ ] **SOLID**: Single responsibility, proper abstraction
 - [ ] **Types**: All functions/methods have proper TypeScript types
 - [ ] **Validation**: Input validated on both frontend (Zod) and backend (class-validator)
@@ -973,7 +973,7 @@ Before completing any task, verify:
 | 2026-01-14 | Web CLIENT login | Login page, registration, auth context |
 | 2026-01-14 | Code organization | DRY/SOLID refactor, shared modules |
 | 2026-01-15 | Web DISPATCHER auth | Login page with premium dark header, auth context |
-| 2026-01-15 | Shared components | AnimatedLogo component in @doergo/shared/components |
+| 2026-01-15 | Shared components | AnimatedLogo component in @hbcfield/shared/components |
 | 2026-01-15 | Remember Me | Backend token expiration (24h / 30d), rememberMe DTO field |
 | 2026-01-15 | Mobile auth | Login screen, SecureStore, auth context, tab navigation |
 | 2026-01-15 | Mobile splash | Animated splash with gear rotation, button click effect |
@@ -1013,11 +1013,11 @@ Before completing any task, verify:
 
 ## SHARED MODULES REFERENCE
 
-**Import from `@doergo/shared`:**
+**Import from `@hbcfield/shared`:**
 
 ```typescript
 // Microservices
-import { SERVICE_NAMES, createMicroserviceOptions, createClientOptions } from '@doergo/shared';
+import { SERVICE_NAMES, createMicroserviceOptions, createClientOptions } from '@hbcfield/shared';
 
 // BullMQ Queues
 import {
@@ -1025,21 +1025,21 @@ import {
   QUEUE_NAMES,             // { TASKS, NOTIFICATIONS, TRACKING }
   TASK_JOB_TYPES,          // { CREATE, UPDATE, ASSIGN, ... }
   DEFAULT_JOB_OPTIONS,     // { CRITICAL, STANDARD, FAST }
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // API Responses
-import { success, error, paginated, ErrorCodes } from '@doergo/shared';
+import { success, error, paginated, ErrorCodes } from '@hbcfield/shared';
 
 // Types & Enums
-import { Role, AccessLevel, TaskStatus, TaskPriority, ApiResponse } from '@doergo/shared';
+import { Role, AccessLevel, TaskStatus, TaskPriority, ApiResponse } from '@hbcfield/shared';
 // Role: CLIENT | DISPATCHER | TECHNICIAN
 // AccessLevel: NONE | TASKS_ONLY | TASKS_ASSIGN | FULL
 
 // NestJS Decorators (use in controllers)
-import { Roles, Public, CurrentUser, CurrentUserData } from '@doergo/shared';
+import { Roles, Public, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 
 // NestJS Guards
-import { RolesGuard, hasRole, isClient, isDispatcher, isTechnician } from '@doergo/shared';
+import { RolesGuard, hasRole, isClient, isDispatcher, isTechnician } from '@hbcfield/shared';
 
 // Validation Decorators (use in DTOs)
 import {
@@ -1049,7 +1049,7 @@ import {
   NameField,            // Name validation + optional capitalize
   CompanyNameField,     // Company name (2-100 chars)
   TokenField,           // Non-empty string token
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Auth Constants
 import {
@@ -1061,7 +1061,7 @@ import {
   BCRYPT_COST_FACTOR,             // 12
   PASSWORD_MIN_LENGTH,            // 8
   PASSWORD_MAX_LENGTH,            // 128
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Task Constants
 import {
@@ -1072,10 +1072,10 @@ import {
   TERMINAL_STATUSES,              // [COMPLETED, CANCELED, CLOSED]
   TASK_TITLE_MAX_LENGTH,          // 200
   TASK_DESCRIPTION_MAX_LENGTH,    // 5000
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // React Components (for web apps)
-import { AnimatedLogo } from '@doergo/shared/components';
+import { AnimatedLogo } from '@hbcfield/shared/components';
 // Props: size ('small' | 'default' | 'large'), variant ('light' | 'dark'), primaryColor (hex)
 
 // Date Utilities (2026-01-27)
@@ -1090,7 +1090,7 @@ import {
   formatFullDate, getRelativeDayLabel, // "Today", "Yesterday", etc.
   calculateMinutesBetween,             // Minutes between dates
   toISODateString,                     // "YYYY-MM-DD" format
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Query String Utilities (2026-01-27)
 import {
@@ -1099,17 +1099,17 @@ import {
   parseQueryString,        // Parse query string to object
   buildPaginationParams,   // { page, limit } helper
   buildDateRangeParams,    // { startDate, endDate } helper
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Attendance Types (2026-01-27)
 import {
   TimeEntry, Break, CompanyLocation, AttendanceStatus,
   BreakStatus, ClockInInput, ClockOutInput,
   AttendanceHistoryParams, PaginatedResponse,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Attendance Helper Functions
-import { isBreakActive, getBreakTypeLabel, getTimeEntryStatusLabel } from '@doergo/shared';
+import { isBreakActive, getBreakTypeLabel, getTimeEntryStatusLabel } from '@hbcfield/shared';
 
 // Technician Types (2026-01-30)
 import {
@@ -1119,7 +1119,7 @@ import {
   PerformanceMetrics,          // Summary, trends, comparison
   PerformanceTrendPoint,       // Time-series data point
   TechnicianType,              // FREELANCER | FULL_TIME
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Technician Helper Functions
 import {
@@ -1131,7 +1131,7 @@ import {
   getAvailabilityColor,        // Badge color classes
   formatRating,                // Rating display string
   SPECIALTY_OPTIONS,           // Specialty dropdown options
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Schedule & Time-Off Types (2026-01-30)
 import {
@@ -1140,7 +1140,7 @@ import {
   TimeOffRequest,              // Time-off request with status
   TechnicianAvailability,      // Availability for single technician
   AvailabilityResponse,        // Bulk availability response
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // WorkMode Types (2026-02-04)
 import {
@@ -1149,7 +1149,7 @@ import {
   getWorkModeColor,            // Badge color classes
   canUseAttendance,            // true for ON_SITE or HYBRID
   canBeAssignedToLocation,     // true for ON_SITE or HYBRID
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Invitation Types (2026-02-04)
 import {
@@ -1157,7 +1157,7 @@ import {
   InvitationValidation,        // Validation response
   CreateInvitationInput,       // Create invitation input
   InvitationStatus,            // PENDING | ACCEPTED | EXPIRED | REVOKED
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Onboarding Types (2026-02-10)
 import {
@@ -1170,7 +1170,7 @@ import {
   SubmitJoinRequestInput,      // Join request input (orgCode, message?)
   ApproveJoinRequestInput,     // Approve input (role, platform?, etc.)
   RejectJoinRequestInput,      // Reject input (reason?)
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Onboarding Constants
 import {
@@ -1181,13 +1181,13 @@ import {
   getJoinPolicyLabel,          // "Open" | "Invite Only" | "Closed"
   getJoinRequestStatusLabel,   // Status display labels
   getJoinRequestStatusColor,   // Status badge colors
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 // Crypto Utilities (2026-02-10)
-import { hashCode } from '@doergo/shared';  // SHA-256 hash for codes
+import { hashCode } from '@hbcfield/shared';  // SHA-256 hash for codes
 
 // Onboarding Guard (2026-02-10)
-import { SkipOnboardingCheck, OnboardingCompleteGuard } from '@doergo/shared';
+import { SkipOnboardingCheck, OnboardingCompleteGuard } from '@hbcfield/shared';
 ```
 
 ---

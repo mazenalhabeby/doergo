@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService, TaskStatus, success } from '@doergo/shared';
+import { PrismaService, TaskStatus, success } from '@hbcfield/shared';
 import {
   GetTechnicianStatsDto,
   GetTechnicianPerformanceDto,

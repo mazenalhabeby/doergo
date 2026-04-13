@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, WorkMode } from '@doergo/shared';
+import { success, paginated, WorkMode } from '@hbcfield/shared';
 
 // Valid schedule days
 const VALID_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];

@@ -7,7 +7,7 @@ import {
   TimeEntryStatus,
   ApprovalStatus,
   SERVICE_NAMES,
-} from '@doergo/shared';
+} from '@hbcfield/shared';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;

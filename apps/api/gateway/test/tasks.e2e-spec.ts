@@ -7,7 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
-import { Role, TaskStatus, TaskPriority } from '@doergo/shared';
+import { Role, TaskStatus, TaskPriority } from '@hbcfield/shared';
 import { TasksController } from '../src/modules/tasks/tasks.controller';
 import { TasksService } from '../src/modules/tasks/tasks.service';
 import { TasksQueueService } from '../src/modules/tasks/tasks.queue.service';

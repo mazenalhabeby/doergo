@@ -7,11 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { JoinOrgIcon } from '../../src/components';
 import { onboardingApi } from '../../src/lib/api';
+import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
 
 export default function JoinOrgScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
@@ -55,33 +57,33 @@ export default function JoinOrgScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + SPACING.md }]} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.slate700} />
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.iconContainer}>
-            <LinearGradient colors={['#7c3aed', '#6d28d9']} style={styles.iconGradient}>
+            <LinearGradient colors={[COLORS.purple, COLORS.purpleDark]} style={styles.iconGradient}>
               <JoinOrgIcon size={38} color={COLORS.white} variant="solid" />
             </LinearGradient>
           </View>
 
-          <Text style={styles.title}>Join Organization</Text>
-          <Text style={styles.subtitle}>Enter the organization code shared by your employer</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Join Organization</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Enter the organization code shared by your employer</Text>
 
           <View style={styles.form}>
             {/* Code Input */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Organization code</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Organization code</Text>
               <View style={styles.codeRow}>
-                <View style={[styles.inputContainer, styles.codeInputContainer, error ? styles.inputError : null]}>
+                <View style={[styles.inputContainer, styles.codeInputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }, error ? styles.inputError : null]}>
                   <TextInput
-                    style={styles.codeInput}
+                    style={[styles.codeInput, { color: colors.textPrimary }]}
                     placeholder="ABCD1234"
-                    placeholderTextColor={COLORS.slate400}
+                    placeholderTextColor={colors.textMuted}
                     value={code}
                     onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); }}
                     autoCapitalize="characters"
@@ -102,21 +104,21 @@ export default function JoinOrgScreen() {
 
             {/* Validation Badge */}
             {validation?.valid && (
-              <View style={styles.validBadge}>
+              <View style={[styles.validBadge, { backgroundColor: colors.successLight }]}>
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-                <Text style={styles.validBadgeText}>{validation.organizationName}</Text>
+                <Text style={[styles.validBadgeText, { color: colors.textPrimary }]}>{validation.organizationName}</Text>
               </View>
             )}
 
             {/* Message */}
             {validation?.valid && (
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Message (optional)</Text>
-                <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Message (optional)</Text>
+                <View style={[styles.inputContainer, styles.textAreaContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
                   <TextInput
-                    style={styles.textArea}
+                    style={[styles.textArea, { color: colors.textPrimary }]}
                     placeholder="Introduce yourself..."
-                    placeholderTextColor={COLORS.slate400}
+                    placeholderTextColor={colors.textMuted}
                     value={message}
                     onChangeText={setMessage}
                     multiline
@@ -124,14 +126,14 @@ export default function JoinOrgScreen() {
                     textAlignVertical="top"
                   />
                 </View>
-                <Text style={styles.charCount}>{message.length}/500</Text>
+                <Text style={[styles.charCount, { color: colors.textMuted }]}>{message.length}/500</Text>
               </View>
             )}
           </View>
 
           {validation?.valid && (
             <TouchableOpacity style={[styles.button, isSubmitting && styles.buttonDisabled]} onPress={handleSubmit} disabled={isSubmitting} activeOpacity={0.9}>
-              <LinearGradient colors={isSubmitting ? [COLORS.slate400, COLORS.slate500] : ['#7c3aed', '#6d28d9']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buttonGradient}>
+              <LinearGradient colors={isSubmitting ? [COLORS.slate400, COLORS.slate500] : [COLORS.purple, COLORS.purpleDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buttonGradient}>
                 {isSubmitting ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Request to Join</Text>}
               </LinearGradient>
             </TouchableOpacity>
@@ -143,25 +145,25 @@ export default function JoinOrgScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.slate50 },
+  container: { flex: 1 },
   scrollContent: { padding: SPACING.xl, paddingBottom: SPACING.xxl },
   backButton: { width: 40, height: 40, justifyContent: 'center' },
   iconContainer: { alignItems: 'center', marginVertical: SPACING.xl },
   iconGradient: { width: 72, height: 72, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: FONT_WEIGHT.bold, color: COLORS.slate800, textAlign: 'center', marginBottom: SPACING.xs },
-  subtitle: { fontSize: FONT_SIZE.lg, color: COLORS.slate500, textAlign: 'center', marginBottom: SPACING.xl },
+  title: { fontSize: 24, fontWeight: FONT_WEIGHT.bold, textAlign: 'center', marginBottom: SPACING.xs },
+  subtitle: { fontSize: FONT_SIZE.lg, textAlign: 'center', marginBottom: SPACING.xl },
   form: { gap: SPACING.lg },
   inputGroup: { gap: SPACING.sm },
-  label: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.slate700 },
+  label: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
   codeRow: { flexDirection: 'row', gap: SPACING.sm },
   inputContainer: {
-    backgroundColor: COLORS.white, borderRadius: RADIUS.md,
-    borderWidth: 1.5, borderColor: COLORS.slate200, overflow: 'hidden',
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5, overflow: 'hidden',
   },
   codeInputContainer: { flex: 1, height: 48, justifyContent: 'center' },
-  inputError: { borderColor: '#fca5a5' },
+  inputError: { borderColor: COLORS.errorBorder },
   codeInput: {
-    fontSize: 20, color: COLORS.slate800, paddingHorizontal: SPACING.md, letterSpacing: 4,
+    fontSize: 20, paddingHorizontal: SPACING.md, letterSpacing: 4,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textAlign: 'center',
   },
   verifyButton: { backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingHorizontal: SPACING.lg, height: 48, justifyContent: 'center', alignItems: 'center' },
@@ -170,13 +172,13 @@ const styles = StyleSheet.create({
   errorText: { fontSize: FONT_SIZE.sm, color: COLORS.error },
   validBadge: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md,
-    backgroundColor: COLORS.successLight, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.successBorder,
+    borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.successBorder,
   },
-  validBadgeText: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold, color: COLORS.slate800 },
+  validBadgeText: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
   textAreaContainer: { height: 100 },
-  textArea: { flex: 1, fontSize: FONT_SIZE.lg, color: COLORS.slate800, padding: SPACING.md },
-  charCount: { fontSize: FONT_SIZE.xs, color: COLORS.slate400, textAlign: 'right' },
-  button: { marginTop: SPACING.xl, borderRadius: RADIUS.md, overflow: 'hidden', shadowColor: '#7c3aed', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+  textArea: { flex: 1, fontSize: FONT_SIZE.lg, padding: SPACING.md },
+  charCount: { fontSize: FONT_SIZE.xs, textAlign: 'right' },
+  button: { marginTop: SPACING.xl, borderRadius: RADIUS.md, overflow: 'hidden', shadowColor: COLORS.purple, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
   buttonDisabled: { shadowOpacity: 0.1 },
   buttonGradient: { height: 50, justifyContent: 'center', alignItems: 'center' },
   buttonText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, color: COLORS.white },

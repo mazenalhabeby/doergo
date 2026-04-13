@@ -4,25 +4,25 @@
 services:
   postgres:
     image: postgis/postgis:16-3.4-alpine
-    container_name: doergo-postgres
+    container_name: hbcfield-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-doergo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-doergo_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-doergo}
+      POSTGRES_USER: ${POSTGRES_USER:-hbcfield}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hbcfield_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-hbcfield}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doergo} -d ${POSTGRES_DB:-doergo}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hbcfield} -d ${POSTGRES_DB:-hbcfield}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: doergo-redis
+    container_name: hbcfield-redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -37,6 +37,6 @@ services:
 
 volumes:
   postgres_data:
-    name: doergo-postgres-data
+    name: hbcfield-postgres-data
   redis_data:
-    name: doergo-redis-data
+    name: hbcfield-redis-data

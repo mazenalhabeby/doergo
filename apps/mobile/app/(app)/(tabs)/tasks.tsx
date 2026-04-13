@@ -11,8 +11,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../src/contexts/auth-context';
-import { tasksApi, type Task } from '../../../src/lib/api';
+import { useTheme } from '../../../src/contexts/theme-context';
+import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
+import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
 import { TaskCard, FilterChip } from '../../../src/components';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { SocketEvents } from '../../../src/lib/socket';
@@ -24,6 +27,18 @@ import {
   FONT_WEIGHT,
   ROUTES,
 } from '../../../src/lib/constants';
+
+// ---------------------------------------------------------------------------
+// Tab / filter definitions
+// ---------------------------------------------------------------------------
+
+type TabKey = 'current' | 'upcoming' | 'history';
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'current', label: 'Current' },
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'history', label: 'History' },
+];
 
 // Filter options for technicians
 const TECH_FILTER_OPTIONS = [
@@ -45,21 +60,80 @@ const ADMIN_FILTER_OPTIONS = [
 
 type FilterKey = string;
 
+// ---------------------------------------------------------------------------
+// Date-range helpers per tab
+// ---------------------------------------------------------------------------
+
+function getTabDateParams(tab: TabKey): Pick<TasksListParams, 'startDate' | 'endDate' | 'includeNoDueDate'> {
+  const now = new Date();
+
+  switch (tab) {
+    case 'current': {
+      const start = getStartOfMonth(now);
+      const end = getEndOfMonth(now);
+      return {
+        startDate: toISODateString(start),
+        endDate: toISODateString(end),
+        includeNoDueDate: true,
+      };
+    }
+    case 'upcoming': {
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const start = getStartOfMonth(nextMonth);
+      return {
+        startDate: toISODateString(start),
+        // No upper bound
+      };
+    }
+    case 'history': {
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = getEndOfMonth(prevMonth);
+      return {
+        // No lower bound
+        endDate: toISODateString(end),
+      };
+    }
+  }
+}
+
+const TAB_EMPTY_MESSAGES: Record<TabKey, string> = {
+  current: 'No tasks this month',
+  upcoming: 'No upcoming tasks',
+  history: 'No past tasks',
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function TasksScreen() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'CLIENT';
+  const { colors, isDark } = useTheme();
+  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>('current');
   const [filter, setFilter] = useState<FilterKey>('ALL');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
 
   const filterOptions = isAdmin ? ADMIN_FILTER_OPTIONS : TECH_FILTER_OPTIONS;
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // ---------------------------------------------------------------------------
+  // Fetch tasks with server-side filtering
+  // ---------------------------------------------------------------------------
 
   const fetchTasks = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
@@ -73,7 +147,14 @@ export default function TasksScreen() {
       }
       setError(null);
 
-      const fetchedTasks = await tasksApi.list();
+      const dateParams = getTabDateParams(activeTab);
+      const params: TasksListParams = {
+        ...dateParams,
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+        limit: 100,
+      };
+
+      const fetchedTasks = await tasksApi.list(params);
       setTasks(fetchedTasks || []);
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
@@ -85,13 +166,28 @@ export default function TasksScreen() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, []);
+  }, [activeTab, debouncedSearch]);
 
+  // Initial fetch
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
     initialFetchDoneRef.current = true;
     fetchTasks();
   }, [fetchTasks]);
+
+  // Re-fetch when tab or debounced search changes (after initial)
+  useEffect(() => {
+    if (!initialFetchDoneRef.current) return;
+    fetchTasks();
+  }, [activeTab, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refetch when screen regains focus (e.g. navigating back from task detail)
+  useFocusEffect(
+    useCallback(() => {
+      if (!initialFetchDoneRef.current) return;
+      fetchTasks();
+    }, [fetchTasks])
+  );
 
   // Real-time updates via Socket.IO
   const { isConnected, subscribe } = useSocketContext();
@@ -109,53 +205,61 @@ export default function TasksScreen() {
     return () => unsubs.forEach(fn => fn());
   }, [isConnected, subscribe, fetchTasks]);
 
+  // Tab switch resets status filter
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    setFilter('ALL');
+  };
+
   const handleRefresh = () => fetchTasks(true);
 
   const handleTaskPress = (task: Task) => {
     router.push(ROUTES.taskDetail(task.id));
   };
 
-  // Filter tasks based on selected filter and search
+  // ---------------------------------------------------------------------------
+  // Client-side status filtering (same multi-status aggregates as before)
+  // ---------------------------------------------------------------------------
+
+  // Derive blocked tasks from existing fetched data (no extra API call)
+  const blockedTasks = useMemo(
+    () => tasks.filter(t => t.status === TaskStatus.BLOCKED),
+    [tasks],
+  );
+
   const filteredTasks = useMemo(() => {
     let result = tasks;
 
-    // Apply status filter
     if (filter !== 'ALL') {
       if (filter === 'ACTIVE' || filter === 'IN_PROGRESS') {
         result = result.filter(task =>
-          ['ASSIGNED', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'].includes(task.status)
+          [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS].includes(task.status)
         );
       } else if (filter === 'NEW') {
-        result = result.filter(task => task.status === 'NEW');
+        result = result.filter(task => task.status === TaskStatus.NEW);
       } else if (filter === 'ASSIGNED') {
         result = result.filter(task =>
-          ['ASSIGNED', 'ACCEPTED'].includes(task.status)
+          [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED].includes(task.status)
         );
       } else if (filter === 'COMPLETED') {
         result = result.filter(task =>
-          ['COMPLETED', 'CLOSED'].includes(task.status)
+          [TaskStatus.COMPLETED, TaskStatus.CLOSED].includes(task.status)
         );
       } else if (filter === 'BLOCKED') {
-        result = result.filter(task => task.status === 'BLOCKED');
+        result = result.filter(task => task.status === TaskStatus.BLOCKED);
       }
     }
 
-    // Apply search (client-side)
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(task =>
-        task.title.toLowerCase().includes(q) ||
-        (task.description && task.description.toLowerCase().includes(q)) ||
-        (task.assignedTo && `${task.assignedTo.firstName} ${task.assignedTo.lastName}`.toLowerCase().includes(q))
-      );
-    }
-
     return result;
-  }, [tasks, filter, search]);
+  }, [tasks, filter]);
 
-  if (isLoading) {
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
+  if (isLoading && tasks.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
@@ -163,12 +267,12 @@ export default function TasksScreen() {
     );
   }
 
-  if (error) {
+  if (error && tasks.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => fetchTasks()}>
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
@@ -178,26 +282,42 @@ export default function TasksScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Search Bar (admin only) */}
-      {isAdmin && (
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={COLORS.slate400} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search tasks..."
-            placeholderTextColor={COLORS.slate400}
-            value={search}
-            onChangeText={setSearch}
-            autoCorrect={false}
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={COLORS.slate400} />
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      {/* Search Bar */}
+      <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.textPrimary }]}
+          placeholder="Search tasks..."
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          autoCorrect={false}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Tab Bar */}
+      <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
+        {TABS.map(tab => {
+          const active = activeTab === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tab, active && styles.tabActive]}
+              onPress={() => handleTabChange(tab.key)}
+            >
+              <Text style={[styles.tabText, { color: colors.textMuted }, active && styles.tabTextActive]}>
+                {tab.label}
+              </Text>
             </TouchableOpacity>
-          )}
-        </View>
-      )}
+          );
+        })}
+      </View>
 
       {/* Filter Chips */}
       <View style={styles.filterContainer}>
@@ -219,8 +339,36 @@ export default function TasksScreen() {
 
       {/* Tasks Count */}
       <View style={styles.countContainer}>
-        <Text style={styles.countText}>{filteredTasks.length} tasks</Text>
+        <Text style={[styles.countText, { color: colors.textMuted }]}>
+          {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
+        </Text>
+        {isLoading && (
+          <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: SPACING.sm }} />
+        )}
       </View>
+
+      {/* Blocked Tasks Banner */}
+      {blockedTasks.length > 0 && filter !== 'BLOCKED' && (
+        <View style={[styles.blockedBanner, { backgroundColor: colors.errorLight }]}>
+          <View style={styles.blockedBannerContent}>
+            <Ionicons name="warning" size={20} color={COLORS.error} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.blockedBannerTitle}>
+                {blockedTasks.length} blocked task{blockedTasks.length !== 1 ? 's' : ''}
+              </Text>
+              <Text style={[styles.blockedBannerSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                {blockedTasks.map(t => t.title).join(', ')}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.blockedBannerAction}
+              onPress={() => setFilter('BLOCKED')}
+            >
+              <Text style={styles.blockedBannerActionText}>View</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Tasks List */}
       <FlatList
@@ -247,8 +395,8 @@ export default function TasksScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="clipboard-outline" size={48} color={COLORS.slate300} />
-            <Text style={styles.emptyText}>No tasks found</Text>
+            <Ionicons name="clipboard-outline" size={48} color={colors.textMuted} />
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{TAB_EMPTY_MESSAGES[activeTab]}</Text>
           </View>
         }
       />
@@ -256,10 +404,13 @@ export default function TasksScreen() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   centerContainer: {
     flex: 1,
@@ -269,7 +420,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: FONT_SIZE.xl,
-    color: COLORS.slate500,
     textAlign: 'center',
     marginTop: SPACING.lg,
     marginBottom: SPACING.xxl,
@@ -290,20 +440,42 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
     marginHorizontal: SPACING.lg,
     marginTop: SPACING.md,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.slate200,
   },
   searchInput: {
     flex: 1,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.sm,
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate800,
+  },
+
+  // Tabs
+  tabBar: {
+    flexDirection: 'row',
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    borderBottomWidth: 1,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+  },
+  tabActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.primary,
+  },
+  tabText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  tabTextActive: {
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.semibold,
   },
 
   // Filter
@@ -314,12 +486,13 @@ const styles = StyleSheet.create({
 
   // Count
   countContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.sm,
   },
   countText: {
     fontSize: FONT_SIZE.md,
-    color: COLORS.slate400,
     fontWeight: FONT_WEIGHT.medium,
   },
 
@@ -330,6 +503,41 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
 
+  // Blocked Tasks Banner
+  blockedBanner: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.errorBorder,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+  },
+  blockedBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  blockedBannerTitle: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.error,
+  },
+  blockedBannerSubtitle: {
+    fontSize: FONT_SIZE.xs,
+    marginTop: 1,
+  },
+  blockedBannerAction: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    backgroundColor: COLORS.error,
+    borderRadius: RADIUS.sm,
+  },
+  blockedBannerActionText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.white,
+  },
+
   // Empty
   emptyContainer: {
     alignItems: 'center',
@@ -337,7 +545,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FONT_SIZE.lg,
-    color: COLORS.slate400,
     marginTop: SPACING.md,
   },
 });

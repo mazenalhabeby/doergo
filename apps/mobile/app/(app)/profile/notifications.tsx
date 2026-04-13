@@ -11,6 +11,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../src/contexts/theme-context';
 import {
   COLORS,
   SPACING,
@@ -19,7 +20,7 @@ import {
   FONT_WEIGHT,
 } from '../../../src/lib/constants';
 
-const PREFS_KEY = 'doergo_notification_prefs';
+const PREFS_KEY = 'hbcfield_notification_prefs';
 
 interface NotificationPrefs {
   tasks: boolean;
@@ -34,6 +35,7 @@ const defaultPrefs: NotificationPrefs = {
 };
 
 export default function NotificationsScreen() {
+  const { colors } = useTheme();
   const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs);
   const [permissionStatus, setPermissionStatus] = useState<string>('undetermined');
 
@@ -73,10 +75,10 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       {/* Permission Status */}
       <View style={styles.section}>
-        <View style={styles.permissionCard}>
+        <View style={[styles.permissionCard, { backgroundColor: colors.card }]}>
           <View style={styles.permissionRow}>
             <Ionicons
               name={permissionStatus === 'granted' ? 'checkmark-circle' : 'alert-circle'}
@@ -84,13 +86,13 @@ export default function NotificationsScreen() {
               color={permissionStatus === 'granted' ? COLORS.success : COLORS.warning}
             />
             <View style={styles.permissionContent}>
-              <Text style={styles.permissionTitle}>Push Notifications</Text>
-              <Text style={styles.permissionStatus}>
+              <Text style={[styles.permissionTitle, { color: colors.textPrimary }]}>Push Notifications</Text>
+              <Text style={[styles.permissionStatus, { color: colors.textSecondary }]}>
                 {permissionStatus === 'granted' ? 'Enabled' : 'Disabled'}
               </Text>
             </View>
             {permissionStatus !== 'granted' && (
-              <TouchableOpacity style={styles.settingsButton} onPress={openSettings}>
+              <TouchableOpacity style={[styles.settingsButton, { backgroundColor: colors.primaryLight }]} onPress={openSettings}>
                 <Text style={styles.settingsButtonText}>Settings</Text>
               </TouchableOpacity>
             )}
@@ -100,63 +102,63 @@ export default function NotificationsScreen() {
 
       {/* Notification Categories */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Categories</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Categories</Text>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.toggleRow}>
             <View style={styles.toggleInfo}>
               <Ionicons name="clipboard-outline" size={20} color={COLORS.primary} />
-              <View>
-                <Text style={styles.toggleLabel}>Tasks</Text>
-                <Text style={styles.toggleDescription}>New assignments, status changes, comments</Text>
+              <View style={styles.toggleTextContainer}>
+                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>Tasks</Text>
+                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>New assignments, status changes, comments</Text>
               </View>
             </View>
             <Switch
               value={prefs.tasks}
               onValueChange={(v) => updatePref('tasks', v)}
-              trackColor={{ false: COLORS.slate200, true: COLORS.primaryLight }}
-              thumbColor={prefs.tasks ? COLORS.primary : COLORS.slate400}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={prefs.tasks ? COLORS.primary : colors.textMuted}
             />
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleInfo}>
               <Ionicons name="time-outline" size={20} color={COLORS.success} />
-              <View>
-                <Text style={styles.toggleLabel}>Attendance</Text>
-                <Text style={styles.toggleDescription}>Clock-in/out reminders</Text>
+              <View style={styles.toggleTextContainer}>
+                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>Attendance</Text>
+                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>Clock-in/out reminders</Text>
               </View>
             </View>
             <Switch
               value={prefs.attendance}
               onValueChange={(v) => updatePref('attendance', v)}
-              trackColor={{ false: COLORS.slate200, true: COLORS.primaryLight }}
-              thumbColor={prefs.attendance ? COLORS.primary : COLORS.slate400}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={prefs.attendance ? COLORS.primary : colors.textMuted}
             />
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleInfo}>
               <Ionicons name="calendar-outline" size={20} color={COLORS.warning} />
-              <View>
-                <Text style={styles.toggleLabel}>Time Off</Text>
-                <Text style={styles.toggleDescription}>Request approvals and updates</Text>
+              <View style={styles.toggleTextContainer}>
+                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>Time Off</Text>
+                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>Request approvals and updates</Text>
               </View>
             </View>
             <Switch
               value={prefs.timeOff}
               onValueChange={(v) => updatePref('timeOff', v)}
-              trackColor={{ false: COLORS.slate200, true: COLORS.primaryLight }}
-              thumbColor={prefs.timeOff ? COLORS.primary : COLORS.slate400}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={prefs.timeOff ? COLORS.primary : colors.textMuted}
             />
           </View>
         </View>
       </View>
 
-      <Text style={styles.footerNote}>
+      <Text style={[styles.footerNote, { color: colors.textMuted }]}>
         Notification preferences are stored locally. Push notification permissions are managed in your device settings.
       </Text>
     </View>
@@ -166,7 +168,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   section: {
     marginTop: SPACING.lg,
@@ -175,12 +176,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate500,
     textTransform: 'uppercase' as const,
     marginBottom: SPACING.sm,
   },
   permissionCard: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
   },
@@ -195,18 +194,15 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate800,
   },
   permissionStatus: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
     marginTop: 2,
   },
   settingsButton: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.primaryLight,
   },
   settingsButtonText: {
     fontSize: FONT_SIZE.sm,
@@ -214,7 +210,6 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   card: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
   },
@@ -229,24 +224,23 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
     flex: 1,
   },
+  toggleTextContainer: {
+    flex: 1,
+  },
   toggleLabel: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.slate800,
   },
   toggleDescription: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate500,
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.slate100,
     marginVertical: SPACING.md,
   },
   footerNote: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.slate400,
     textAlign: 'center',
     paddingHorizontal: SPACING.xxl,
     marginTop: SPACING.xxl,

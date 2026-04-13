@@ -90,16 +90,18 @@ export type WeekDay = {
 };
 
 /**
- * Get the days of the current week starting from Monday
+ * Get the days of the week (Mon–Sun) that contains the given reference date.
+ * Defaults to the current week when no argument is provided.
  */
-export function getWeekDays(): WeekDay[] {
+export function getWeekDays(referenceDate?: Date): WeekDay[] {
   const today = new Date();
-  const currentDay = today.getDay();
+  const ref = referenceDate ?? today;
+  const currentDay = ref.getDay();
   // Adjust to start from Monday (0 = Monday, 6 = Sunday)
   const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
 
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + mondayOffset);
+  const monday = new Date(ref);
+  monday.setDate(ref.getDate() + mondayOffset);
 
   const days: WeekDay[] = [];
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -209,6 +211,40 @@ export function formatDateRelative(dateString: string | Date): string {
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
 
   return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+// =============================================================================
+// RELATIVE TIME AGO
+// =============================================================================
+
+/**
+ * Format a date as time ago (e.g., "Just now", "5m ago", "2h ago", "3d ago")
+ * Used for comment timestamps, activity feeds, etc.
+ */
+export function formatTimeAgo(date: string | Date): string {
+  const now = Date.now();
+  const then = new Date(date).getTime();
+  const diffMs = now - then;
+
+  if (diffMs < 0) return 'Just now';
+
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return 'Just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+
+  // Older than a week — show short date
+  return new Date(date).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   });

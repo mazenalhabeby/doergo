@@ -15,6 +15,11 @@ import { TasksService } from './tasks.service';
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  @MessagePattern({ cmd: 'health' })
+  async health() {
+    return { status: 'ok', service: 'task-service', timestamp: new Date().toISOString() };
+  }
+
   // ============ READ Operations (Direct Microservice) ============
   // WRITE operations are handled by TasksProcessor via BullMQ
 

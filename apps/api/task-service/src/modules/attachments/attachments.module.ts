@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
-import { SERVICE_NAMES, createClientOptions } from '@doergo/shared';
+import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { AttachmentsController } from './attachments.controller';
 import { AttachmentsService } from './attachments.service';
 
@@ -10,5 +10,6 @@ import { AttachmentsService } from './attachments.service';
   ],
   controllers: [AttachmentsController],
   providers: [AttachmentsService],
+  exports: [AttachmentsService],
 })
 export class AttachmentsModule {}

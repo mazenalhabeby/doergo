@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@doergo/shared'],
+  transpilePackages: ['@hbcfield/shared'],
   output: 'standalone',
 };
 

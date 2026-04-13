@@ -7,7 +7,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import * as NavigationBar from 'expo-navigation-bar';
+import { useFonts, Outfit_400Regular, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
+import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { AnimatedSplash } from '../src/components';
 
 // Keep the native splash screen visible while we fetch resources
@@ -15,6 +17,7 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading, needsOnboarding } = useAuth();
+  const { colors, isDark } = useTheme();
   const segments = useSegments();
   const router = useRouter();
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
@@ -39,18 +42,18 @@ function RootLayoutNav() {
     prepare();
   }, [isLoading, splashHidden]);
 
-  // Configure Android navigation bar based on current screen
+  // Configure Android navigation bar based on current screen and theme
   useEffect(() => {
     if (Platform.OS === 'android') {
       if (!appIsReady || showAnimatedSplash) {
-        NavigationBar.setBackgroundColorAsync('#0a0f1a');
+        NavigationBar.setBackgroundColorAsync('#09090b');
         NavigationBar.setButtonStyleAsync('light');
       } else {
-        NavigationBar.setBackgroundColorAsync('#f1f5f9');
-        NavigationBar.setButtonStyleAsync('dark');
+        NavigationBar.setBackgroundColorAsync(colors.surface);
+        NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
       }
     }
-  }, [appIsReady, showAnimatedSplash]);
+  }, [appIsReady, showAnimatedSplash, colors.surface, isDark]);
 
 
   // Handle navigation after auth state changes (3-way: auth → onboarding → app)
@@ -102,12 +105,23 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <RootLayoutNav />
+          </AuthProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -116,6 +130,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0f1a',
+    backgroundColor: '#09090b',
   },
 });

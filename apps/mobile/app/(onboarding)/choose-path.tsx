@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CreateOrgIcon, JoinOrgIcon, InvitationIcon } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
+import { useTheme } from '../../src/contexts/theme-context';
+import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
 import { onboardingApi } from '../../src/lib/api';
 import {
   COLORS,
@@ -33,10 +35,10 @@ const PATHS = [
     IconComponent: CreateOrgIcon,
     tag: 'For Admins',
     route: ROUTES.createOrg,
-    accentColors: ['#2563EB', '#3b82f6'] as [string, string],
-    iconBg: '#dbeafe',
-    tagBg: '#eff6ff',
-    accentColor: '#2563EB',
+    accentColors: [COLORS.primary, COLORS.inProgress] as [string, string],
+    iconBg: COLORS.primaryLight,
+    tagBg: COLORS.primaryLight,
+    accentColor: COLORS.primary,
   },
   {
     id: 'join',
@@ -45,10 +47,10 @@ const PATHS = [
     IconComponent: JoinOrgIcon,
     tag: 'Have a Code',
     route: ROUTES.joinOrg,
-    accentColors: ['#7c3aed', '#8b5cf6'] as [string, string],
-    iconBg: '#ede9fe',
-    tagBg: '#f5f3ff',
-    accentColor: '#7c3aed',
+    accentColors: [COLORS.purple, COLORS.purple] as [string, string],
+    iconBg: COLORS.purpleLight,
+    tagBg: COLORS.purpleLight,
+    accentColor: COLORS.purple,
   },
   {
     id: 'invitation',
@@ -57,10 +59,10 @@ const PATHS = [
     IconComponent: InvitationIcon,
     tag: 'Invited',
     route: ROUTES.useInvitation,
-    accentColors: ['#059669', '#10b981'] as [string, string],
-    iconBg: '#d1fae5',
-    tagBg: '#ecfdf5',
-    accentColor: '#059669',
+    accentColors: [COLORS.emerald, COLORS.success] as [string, string],
+    iconBg: COLORS.emeraldLight,
+    tagBg: COLORS.emeraldLight,
+    accentColor: COLORS.emerald,
   },
 ];
 
@@ -68,25 +70,25 @@ export default function ChoosePathScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const [isChecking, setIsChecking] = useState(true);
 
-  // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  // Animations (autoStart=false because we start after checking pending request)
+  const {
+    fadeAnim,
+    slideAnim,
+    orb1TranslateY,
+    orb2TranslateY,
+    startAnimations: startAuthAnimations,
+  } = useAuthAnimations({ slideOffset: 20, duration: 600, orb1Offset: -15, orb2Offset: 12, autoStart: false });
   const cardAnims = useRef(PATHS.map(() => new Animated.Value(0))).current;
-  const orb1Anim = useRef(new Animated.Value(0)).current;
-  const orb2Anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     checkPendingRequest();
   }, []);
 
   const startAnimations = () => {
-    // Header fade in
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start();
+    startAuthAnimations();
 
     // Staggered card animations
     cardAnims.forEach((anim, index) => {
@@ -97,25 +99,7 @@ export default function ChoosePathScreen() {
         useNativeDriver: true,
       }).start();
     });
-
-    // Floating orbs
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb1Anim, { toValue: 1, duration: 3000, useNativeDriver: true }),
-        Animated.timing(orb1Anim, { toValue: 0, duration: 3000, useNativeDriver: true }),
-      ]),
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb2Anim, { toValue: 1, duration: 4000, useNativeDriver: true }),
-        Animated.timing(orb2Anim, { toValue: 0, duration: 4000, useNativeDriver: true }),
-      ]),
-    ).start();
   };
-
-  const orb1TranslateY = orb1Anim.interpolate({ inputRange: [0, 1], outputRange: [0, -15] });
-  const orb2TranslateY = orb2Anim.interpolate({ inputRange: [0, 1], outputRange: [0, 12] });
 
   const checkPendingRequest = async () => {
     try {
@@ -134,7 +118,7 @@ export default function ChoosePathScreen() {
 
   if (isChecking) {
     return (
-      <View style={[styles.container, styles.centered]}>
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.surface }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -143,7 +127,7 @@ export default function ChoosePathScreen() {
   const userInitial = user?.firstName?.charAt(0)?.toUpperCase() || '?';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <StatusBar style="light" />
 
       <ScrollView
@@ -154,7 +138,7 @@ export default function ChoosePathScreen() {
         {/* Premium Header */}
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           <LinearGradient
-            colors={['#0f172a', '#1e293b', '#0f172a']}
+            colors={[COLORS.slate900, COLORS.slate800, COLORS.slate900]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.header, { paddingTop: insets.top + SPACING.xl }]}
@@ -171,7 +155,7 @@ export default function ChoosePathScreen() {
               {/* Avatar */}
               <View style={styles.avatarWrapper}>
                 <LinearGradient
-                  colors={[COLORS.primary, '#3b82f6']}
+                  colors={[COLORS.primary, COLORS.inProgress]}
                   style={styles.avatar}
                 >
                   <Text style={styles.avatarText}>{userInitial}</Text>
@@ -204,7 +188,7 @@ export default function ChoosePathScreen() {
                 style={{ opacity: cardOpacity, transform: [{ translateY: cardTranslateY }] }}
               >
                 <TouchableOpacity
-                  style={styles.pathCard}
+                  style={[styles.pathCard, { backgroundColor: colors.card }]}
                   onPress={() => router.push(path.route as Href)}
                   activeOpacity={0.7}
                 >
@@ -228,8 +212,8 @@ export default function ChoosePathScreen() {
                     </View>
 
                     {/* Title + description */}
-                    <Text style={styles.pathTitle}>{path.title}</Text>
-                    <Text style={styles.pathDescription}>{path.description}</Text>
+                    <Text style={[styles.pathTitle, { color: colors.textPrimary }]}>{path.title}</Text>
+                    <Text style={[styles.pathDescription, { color: colors.textSecondary }]}>{path.description}</Text>
 
                     {/* CTA row */}
                     <View style={styles.ctaRow}>
@@ -247,10 +231,10 @@ export default function ChoosePathScreen() {
       </ScrollView>
 
       {/* Footer */}
-      <Animated.View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.sm, opacity: fadeAnim }]}>
+      <Animated.View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.sm, opacity: fadeAnim, borderTopColor: colors.border, backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Ionicons name="log-out-outline" size={16} color={COLORS.slate400} />
-          <Text style={styles.logoutText}>Sign out</Text>
+          <Ionicons name="log-out-outline" size={16} color={colors.textMuted} />
+          <Text style={[styles.logoutText, { color: colors.textMuted }]}>Sign out</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -260,7 +244,6 @@ export default function ChoosePathScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.slate50,
   },
   centered: {
     justifyContent: 'center',
@@ -351,7 +334,6 @@ const styles = StyleSheet.create({
   },
   pathCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.xl,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -394,12 +376,10 @@ const styles = StyleSheet.create({
   pathTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.slate800,
     marginBottom: SPACING.xs,
   },
   pathDescription: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate500,
     lineHeight: 20,
     marginBottom: SPACING.md,
   },
@@ -425,8 +405,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: COLORS.slate200,
-    backgroundColor: COLORS.white,
   },
   logoutButton: {
     flexDirection: 'row',
@@ -437,7 +415,6 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.slate400,
     fontWeight: FONT_WEIGHT.medium,
   },
 });
