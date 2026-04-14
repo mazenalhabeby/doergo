@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -18,6 +18,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+
+// Lazy load the map component to avoid SSR issues with Leaflet
+const LocationPicker = lazy(() =>
+  import("@/components/location-picker").then((m) => ({ default: m.LocationPicker }))
+)
 import {
   Popover,
   PopoverContent,
@@ -39,6 +44,8 @@ export default function CreateTaskPage() {
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">("MEDIUM")
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined)
   const [locationAddress, setLocationAddress] = useState("")
+  const [locationLat, setLocationLat] = useState<number | null>(null)
+  const [locationLng, setLocationLng] = useState<number | null>(null)
   const [additionalNotes, setAdditionalNotes] = useState("")
   const [isDragOver, setIsDragOver] = useState(false)
   const [attachments, setAttachments] = useState<File[]>([])
@@ -94,6 +101,8 @@ export default function CreateTaskPage() {
       priority,
       dueDate: dueDate?.toISOString(),
       locationAddress: locationAddress.trim() || undefined,
+      locationLat: locationLat ?? undefined,
+      locationLng: locationLng ?? undefined,
     })
   }
 
@@ -177,53 +186,59 @@ export default function CreateTaskPage() {
             />
           </div>
 
-          {/* Two Column Row: Location & Due Date */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm font-medium text-slate-700">
-                Service Location
-              </Label>
-              <Input
-                id="location"
-                placeholder="Enter address..."
-                value={locationAddress}
-                onChange={(e) => setLocationAddress(e.target.value)}
-                disabled={isSubmitting}
-                className="h-12 rounded-xl border-slate-200 bg-white text-base placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
-              />
-            </div>
+          {/* Due Date */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-slate-700">
+              Preferred Date
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-12 w-full justify-start text-left text-base font-normal rounded-xl border-slate-200 bg-white hover:bg-slate-50",
+                    !dueDate && "text-slate-400"
+                  )}
+                  disabled={isSubmitting}
+                >
+                  <CalendarIcon className="mr-3 size-5 text-slate-400" />
+                  {dueDate ? format(dueDate, "MMM d, yyyy") : "Select date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
-            {/* Due Date */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700">
-                Preferred Date
-              </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-12 w-full justify-start text-left text-base font-normal rounded-xl border-slate-200 bg-white hover:bg-slate-50",
-                      !dueDate && "text-slate-400"
-                    )}
-                    disabled={isSubmitting}
-                  >
-                    <CalendarIcon className="mr-3 size-5 text-slate-400" />
-                    {dueDate ? format(dueDate, "MMM d, yyyy") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          {/* Service Location with Map */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-slate-700">
+              Service Location
+            </Label>
+            <Suspense fallback={
+              <div className="h-[340px] rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center">
+                <Loader2 className="size-6 text-slate-400 animate-spin" />
+              </div>
+            }>
+              <LocationPicker
+                address={locationAddress}
+                lat={locationLat}
+                lng={locationLng}
+                onLocationChange={(addr, lat, lng) => {
+                  setLocationAddress(addr)
+                  setLocationLat(lat)
+                  setLocationLng(lng)
+                }}
+                disabled={isSubmitting}
+              />
+            </Suspense>
           </div>
 
           {/* Attachments */}

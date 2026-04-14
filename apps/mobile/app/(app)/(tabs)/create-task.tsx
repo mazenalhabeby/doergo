@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { tasksApi, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { TechnicianPicker } from '../../../src/components';
+import { LocationSearchPicker } from '../../../src/components/location-search-picker';
 import {
   COLORS,
   SPACING,
@@ -36,6 +37,8 @@ export default function CreateTaskScreen() {
   const [priority, setPriority] = useState<Priority>('MEDIUM');
   const [dueDateText, setDueDateText] = useState('');
   const [locationAddress, setLocationAddress] = useState('');
+  const [locationLat, setLocationLat] = useState<number | null>(null);
+  const [locationLng, setLocationLng] = useState<number | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState<TechnicianListItem | null>(null);
   const [showTechnicianPicker, setShowTechnicianPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,6 +68,8 @@ export default function CreateTaskScreen() {
         priority,
         dueDate,
         locationAddress: locationAddress.trim() || undefined,
+        locationLat: locationLat ?? undefined,
+        locationLng: locationLng ?? undefined,
         assignedToId: selectedTechnician?.id,
       };
 
@@ -76,6 +81,8 @@ export default function CreateTaskScreen() {
       setPriority('MEDIUM');
       setDueDateText('');
       setLocationAddress('');
+      setLocationLat(null);
+      setLocationLng(null);
       setSelectedTechnician(null);
 
       Alert.alert('Success', 'Task created successfully!', [
@@ -185,13 +192,15 @@ export default function CreateTaskScreen() {
         {/* Location */}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textPrimary }]}>Location</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder="Enter address..."
-            placeholderTextColor={colors.textMuted}
-            value={locationAddress}
-            onChangeText={setLocationAddress}
-            maxLength={300}
+          <LocationSearchPicker
+            address={locationAddress}
+            lat={locationLat}
+            lng={locationLng}
+            onLocationChange={(addr, lat, lng) => {
+              setLocationAddress(addr);
+              setLocationLat(lat);
+              setLocationLng(lng);
+            }}
           />
         </View>
 

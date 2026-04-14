@@ -84,6 +84,8 @@ export interface CreateTaskInput {
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   dueDate?: string;
   locationAddress?: string;
+  locationLat?: number;
+  locationLng?: number;
   assignedToId?: string;
 }
 
