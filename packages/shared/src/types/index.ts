@@ -1,24 +1,22 @@
-// User Roles (Field Service Industry Standard)
-export enum Role {
-  ADMIN = 'ADMIN',             // Organization owner/admin - full control
-  CLIENT = 'CLIENT',           // DEPRECATED: Use ADMIN instead (kept for backward compatibility)
-  DISPATCHER = 'DISPATCHER',   // Office manager - assigns workers, monitors operations
-  TECHNICIAN = 'TECHNICIAN',   // Field worker - executes tasks
-}
+// Re-export all enums from dedicated file (avoids require cycles with sub-modules)
+export {
+  Role, Platform, AccessLevel, TaskStatus, TaskPriority, TaskEventType,
+  AttachmentType, AssetStatus, ReportAttachmentType, TechnicianType, WorkMode,
+  TimeEntryStatus, BreakType, ApprovalStatus,
+} from './enums';
 
-// Platform access restriction
-export enum Platform {
-  WEB = 'WEB',       // Web app only
-  MOBILE = 'MOBILE', // Mobile app only
-  BOTH = 'BOTH',     // Both platforms
-}
+import {
+  Role, Platform, AccessLevel, TaskStatus, TaskPriority,
+  TechnicianType, WorkMode, TimeEntryStatus, BreakType, ApprovalStatus,
+  AttachmentType, AssetStatus, ReportAttachmentType, TaskEventType,
+} from './enums';
 
 // Legacy role aliases for backward compatibility during migration
 export const LegacyRoleMap = {
   PARTNER: Role.ADMIN,
   OFFICE: Role.DISPATCHER,
   WORKER: Role.TECHNICIAN,
-  CLIENT: Role.ADMIN,  // Map old CLIENT to ADMIN
+  CLIENT: Role.ADMIN,
 } as const;
 
 // Helper to normalize role (handles backward compatibility)
@@ -40,105 +38,6 @@ export function getRoleLabel(role: string): string {
     default:
       return role;
   }
-}
-
-// Access level for organization delegation (SaaS multi-tenant)
-export enum AccessLevel {
-  NONE = 'NONE',                 // No access - manager sees nothing
-  TASKS_ONLY = 'TASKS_ONLY',     // Can view tasks only
-  TASKS_ASSIGN = 'TASKS_ASSIGN', // Can view tasks + assign workers
-  FULL = 'FULL',                 // Can view everything + assign
-}
-
-// Task Status - follows the lifecycle: DRAFT → NEW → ASSIGNED → ACCEPTED → EN_ROUTE → ARRIVED → IN_PROGRESS → COMPLETED → CLOSED
-export enum TaskStatus {
-  DRAFT = 'DRAFT',
-  NEW = 'NEW',
-  ASSIGNED = 'ASSIGNED',
-  ACCEPTED = 'ACCEPTED',       // Technician acknowledges the assigned task
-  EN_ROUTE = 'EN_ROUTE',       // Technician is traveling to the job location
-  ARRIVED = 'ARRIVED',         // Technician has arrived at the location
-  IN_PROGRESS = 'IN_PROGRESS',
-  BLOCKED = 'BLOCKED',
-  COMPLETED = 'COMPLETED',
-  CANCELED = 'CANCELED',
-  CLOSED = 'CLOSED',
-}
-
-// Task Priority
-export enum TaskPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
-}
-
-// Task Event Types for activity timeline
-export enum TaskEventType {
-  CREATED = 'CREATED',
-  UPDATED = 'UPDATED',
-  ASSIGNED = 'ASSIGNED',
-  UNASSIGNED = 'UNASSIGNED',
-  STATUS_CHANGED = 'STATUS_CHANGED',
-  COMMENT_ADDED = 'COMMENT_ADDED',
-  ATTACHMENT_ADDED = 'ATTACHMENT_ADDED',
-  ATTACHMENT_REMOVED = 'ATTACHMENT_REMOVED',
-}
-
-// Attachment Types
-export enum AttachmentType {
-  IMAGE = 'IMAGE',
-  DOCUMENT = 'DOCUMENT',
-  OTHER = 'OTHER',
-}
-
-// Asset Status
-export enum AssetStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  MAINTENANCE = 'MAINTENANCE',
-  RETIRED = 'RETIRED',
-}
-
-// Report Attachment Type (for service reports)
-export enum ReportAttachmentType {
-  BEFORE = 'BEFORE',   // Photo taken before work started
-  AFTER = 'AFTER',     // Photo taken after work completed
-}
-
-// Technician employment/billing type (who pays for expenses)
-export enum TechnicianType {
-  FREELANCER = 'FREELANCER',   // Covers own trips and expenses
-  FULL_TIME = 'FULL_TIME',     // Company covers trips and expenses
-}
-
-// Where the technician works (decoupled from billing type)
-export enum WorkMode {
-  ON_SITE = 'ON_SITE',   // Works at company locations (attendance tracking)
-  ON_ROAD = 'ON_ROAD',   // Works on-the-go (task-based, no attendance)
-  HYBRID = 'HYBRID',     // Both on-site and on-road
-}
-
-// Time entry status for attendance tracking
-export enum TimeEntryStatus {
-  CLOCKED_IN = 'CLOCKED_IN',   // Currently clocked in
-  CLOCKED_OUT = 'CLOCKED_OUT', // Normal clock out
-  AUTO_OUT = 'AUTO_OUT',       // System auto clock-out (midnight, etc.)
-}
-
-// Break type for attendance tracking
-export enum BreakType {
-  LUNCH = 'LUNCH',   // Lunch break (typically 30-60 min)
-  SHORT = 'SHORT',   // Short break (typically 10-15 min)
-  OTHER = 'OTHER',   // Other break type
-}
-
-// Time entry approval status
-export enum ApprovalStatus {
-  PENDING = 'PENDING',    // Awaiting manager review
-  APPROVED = 'APPROVED',  // Manager approved
-  REJECTED = 'REJECTED',  // Manager rejected
-  AUTO = 'AUTO',          // Auto-approved
 }
 
 // Socket.IO Events

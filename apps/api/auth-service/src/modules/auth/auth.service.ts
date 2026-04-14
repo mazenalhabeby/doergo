@@ -351,6 +351,7 @@ export class AuthService {
             // Technician-specific fields
             technicianType: user.technicianType,
             workMode: user.workMode,
+            specialty: user.specialty,
           },
           ...tokens,
         },
@@ -817,6 +818,7 @@ export class AuthService {
           // Technician-specific fields
           technicianType: true,
           workMode: true,
+          specialty: true,
         },
       });
 

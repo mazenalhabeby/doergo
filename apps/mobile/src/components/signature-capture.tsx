@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,11 @@ import {
   TouchableOpacity,
   Modal,
   Image,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import SignatureScreen from 'react-native-signature-canvas';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/theme-context';
@@ -17,7 +20,10 @@ import {
   RADIUS,
   FONT_SIZE,
   FONT_WEIGHT,
+  SHADOWS,
 } from '../lib/constants';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface SignatureCaptureProps {
   title: string;
@@ -32,45 +38,72 @@ export function SignatureCapture({
   onClear,
   existingSignature,
 }: SignatureCaptureProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [showModal, setShowModal] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
   const signatureRef = useRef<any>(null);
   const insets = useSafeAreaInsets();
   const hasSigned = !!existingSignature;
 
-  const handleSignature = (signature: string) => {
+  const handleSignature = useCallback((signature: string) => {
     onSave(signature);
     setShowModal(false);
-  };
+    setIsSigning(false);
+  }, [onSave]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     signatureRef.current?.clearSignature();
-  };
+    setIsSigning(false);
+  }, []);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     signatureRef.current?.readSignature();
-  };
+  }, []);
 
+  const handleBegin = useCallback(() => {
+    setIsSigning(true);
+  }, []);
+
+  // WebView styles for the signature canvas — prevent scrolling and make it fill
   const webStyle = `
-    .m-signature-pad { box-shadow: none; border: none; }
+    .m-signature-pad { box-shadow: none; border: none; margin: 0; }
     .m-signature-pad--body { border: none; }
     .m-signature-pad--footer { display: none; }
-    body,html { width: 100%; height: 100%; }
+    body, html {
+      width: 100%; height: 100%;
+      margin: 0; padding: 0;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-overflow-scrolling: none;
+    }
+    canvas {
+      touch-action: none;
+      -ms-touch-action: none;
+    }
   `;
+
+  const isTechnician = title.toLowerCase().includes('technician');
 
   return (
     <View style={styles.container}>
+      {/* Trigger Card */}
       <TouchableOpacity
-        style={[styles.triggerCard, { borderColor: colors.border, backgroundColor: colors.surfaceRaised }, hasSigned && [styles.triggerCardSigned, { backgroundColor: colors.card }]]}
+        style={[
+          styles.triggerCard,
+          { borderColor: colors.border, backgroundColor: colors.surfaceRaised },
+          hasSigned && { borderColor: COLORS.success, borderStyle: 'solid', backgroundColor: isDark ? colors.successLight : '#f0fdf4' },
+        ]}
         onPress={() => setShowModal(true)}
         activeOpacity={0.7}
       >
         {hasSigned ? (
-          <>
-            <View style={styles.triggerSignedHeader}>
+          <View style={styles.triggerSigned}>
+            <View style={styles.triggerSignedTop}>
               <View style={styles.triggerSignedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
-                <Text style={styles.triggerSignedLabel}>{title}</Text>
+                <View style={[styles.signedIconCircle, { backgroundColor: isDark ? colors.successLight : '#dcfce7' }]}>
+                  <Ionicons name="checkmark" size={14} color={COLORS.success} />
+                </View>
+                <Text style={[styles.triggerSignedLabel, { color: COLORS.success }]}>{title}</Text>
               </View>
               <TouchableOpacity
                 onPress={(e) => {
@@ -80,72 +113,130 @@ export function SignatureCapture({
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={styles.triggerClearBtn}
               >
-                <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                <Ionicons name="refresh-outline" size={16} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
-            <View style={styles.triggerPreview}>
+            <View style={[styles.triggerPreviewContainer, { backgroundColor: isDark ? '#ffffff10' : '#ffffff' }]}>
               <Image
                 source={{ uri: existingSignature }}
                 style={styles.triggerPreviewImage}
                 resizeMode="contain"
               />
             </View>
-          </>
+          </View>
         ) : (
           <View style={styles.triggerEmpty}>
-            <View style={[styles.triggerIconCircle, { backgroundColor: colors.surfaceRaised }]}>
-              <Ionicons name="create-outline" size={22} color={colors.textMuted} />
+            <View style={[styles.triggerIconCircle, { backgroundColor: isDark ? colors.card : '#f1f5f9' }]}>
+              <Ionicons
+                name={isTechnician ? 'finger-print-outline' : 'person-outline'}
+                size={24}
+                color={colors.textMuted}
+              />
             </View>
-            <View>
-              <Text style={[styles.triggerTitle, { color: colors.textSecondary }]}>{title}</Text>
-              <Text style={[styles.triggerHint, { color: colors.textMuted }]}>Tap to sign</Text>
+            <View style={styles.triggerTextCol}>
+              <Text style={[styles.triggerTitle, { color: colors.textPrimary }]}>{title}</Text>
+              <Text style={[styles.triggerHint, { color: colors.textMuted }]}>Tap to open signature pad</Text>
             </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </View>
         )}
       </TouchableOpacity>
 
+      {/* Full-screen Signature Modal */}
       <Modal
         visible={showModal}
         animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowModal(false)}
+        presentationStyle="fullScreen"
+        supportedOrientations={['portrait', 'landscape']}
+        onRequestClose={() => { setShowModal(false); setIsSigning(false); }}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
+        <View style={[styles.modalContainer, { backgroundColor: isDark ? '#0a0a14' : '#f8fafc' }]}>
           {/* Header */}
-          <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top, SPACING.lg), backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <View style={[
+            styles.modalHeader,
+            {
+              paddingTop: Math.max(insets.top, SPACING.md) + SPACING.sm,
+              backgroundColor: isDark ? '#101020' : '#ffffff',
+              borderBottomColor: colors.border,
+            },
+          ]}>
             <TouchableOpacity
-              onPress={() => setShowModal(false)}
+              onPress={() => { setShowModal(false); setIsSigning(false); }}
               style={styles.headerBtn}
+              activeOpacity={0.7}
             >
-              <Text style={styles.headerCancelText}>Cancel</Text>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
-            <TouchableOpacity onPress={handleClear} style={styles.headerBtn}>
-              <Text style={styles.headerClearText}>Clear</Text>
+
+            <View style={styles.headerCenter}>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
+            </View>
+
+            <TouchableOpacity onPress={handleClear} style={styles.headerBtn} activeOpacity={0.7}>
+              <Text style={[styles.headerClearText, { color: COLORS.error }]}>Clear</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Canvas area */}
+          {/* Instruction */}
+          <View style={styles.instructionRow}>
+            <Ionicons
+              name={isSigning ? 'pencil' : 'hand-left-outline'}
+              size={16}
+              color={isSigning ? COLORS.primary : colors.textMuted}
+            />
+            <Text style={[styles.instructionText, { color: isSigning ? COLORS.primary : colors.textMuted }]}>
+              {isSigning ? 'Signing...' : 'Use your finger to sign below'}
+            </Text>
+          </View>
+
+          {/* Canvas */}
           <View style={styles.canvasOuter}>
-            <View style={[styles.canvasCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[
+              styles.canvasCard,
+              {
+                backgroundColor: '#ffffff',
+                borderColor: isSigning ? COLORS.primary : (isDark ? '#333350' : '#e2e8f0'),
+              },
+            ]}>
               <SignatureScreen
                 ref={signatureRef}
                 onOK={handleSignature}
+                onBegin={handleBegin}
                 webStyle={webStyle}
-                backgroundColor={COLORS.white}
-                penColor={COLORS.slate800}
+                backgroundColor="#ffffff"
+                penColor="#1e293b"
+                minWidth={1.5}
+                maxWidth={3}
+                dotSize={2}
+                style={styles.signatureCanvas}
               />
-              {/* Signature line */}
-              <View style={[styles.signatureLine, { backgroundColor: colors.border }]} />
+              {/* Signature baseline */}
+              <View style={styles.baselineContainer} pointerEvents="none">
+                <View style={[styles.baseline, { backgroundColor: isDark ? '#d0d0d0' : '#cbd5e1' }]} />
+                <Text style={[styles.baselineLabel, { color: isDark ? '#a0a0a0' : '#94a3b8' }]}>
+                  {isTechnician ? 'Technician' : 'Customer'}
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.canvasHint, { color: colors.textMuted }]}>Draw your signature above the line</Text>
           </View>
 
           {/* Footer */}
-          <View style={[styles.modalFooter, { paddingBottom: Math.max(insets.bottom, SPACING.lg), backgroundColor: colors.card, borderTopColor: colors.border }]}>
-            <TouchableOpacity style={styles.saveButton} onPress={handleConfirm}>
+          <View style={[
+            styles.modalFooter,
+            {
+              paddingBottom: Math.max(insets.bottom, SPACING.lg),
+              backgroundColor: isDark ? '#101020' : '#ffffff',
+              borderTopColor: colors.border,
+            },
+          ]}>
+            <TouchableOpacity
+              style={[styles.saveButton, !isSigning && styles.saveButtonDisabled]}
+              onPress={handleConfirm}
+              disabled={!isSigning}
+              activeOpacity={0.8}
+            >
               <Ionicons name="checkmark-circle" size={22} color={COLORS.white} />
-              <Text style={styles.saveButtonText}>Save Signature</Text>
+              <Text style={styles.saveButtonText}>Confirm Signature</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -159,16 +250,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
 
-  // Trigger Card (inline in completion form)
+  // =========================================================================
+  // Trigger Card
+  // =========================================================================
   triggerCard: {
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderRadius: RADIUS.lg,
     borderStyle: 'dashed',
     overflow: 'hidden',
-  },
-  triggerCardSigned: {
-    borderColor: COLORS.success,
-    borderStyle: 'solid',
   },
   triggerEmpty: {
     flexDirection: 'row',
@@ -178,51 +267,64 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   triggerIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  triggerTextCol: {
+    flex: 1,
+  },
   triggerTitle: {
     fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.medium,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   triggerHint: {
     fontSize: FONT_SIZE.sm,
-    marginTop: 2,
+    marginTop: 3,
   },
-  triggerSignedHeader: {
+  triggerSigned: {
+    padding: SPACING.md,
+  },
+  triggerSignedTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   triggerSignedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: SPACING.sm,
+  },
+  signedIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   triggerSignedLabel: {
     fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.success,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   triggerClearBtn: {
     padding: SPACING.xs,
   },
-  triggerPreview: {
-    height: 60,
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
+  triggerPreviewContainer: {
+    height: 70,
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
   },
   triggerPreviewImage: {
     width: '100%',
     height: '100%',
   },
 
-  // Full-screen signing modal
+  // =========================================================================
+  // Full-screen Modal
+  // =========================================================================
   modalContainer: {
     flex: 1,
   },
@@ -235,47 +337,68 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerBtn: {
-    minWidth: 60,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    textAlign: 'center',
-  },
-  headerCancelText: {
     fontSize: FONT_SIZE.lg,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.medium,
+    fontWeight: FONT_WEIGHT.bold,
   },
   headerClearText: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.error,
-    fontWeight: FONT_WEIGHT.medium,
-    textAlign: 'right',
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
   },
 
-  // Canvas area
+  // Instruction
+  instructionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.md,
+  },
+  instructionText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+
+  // Canvas
   canvasOuter: {
     flex: 1,
-    padding: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
   },
   canvasCard: {
     flex: 1,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 2,
+    ...SHADOWS.md,
   },
-  signatureLine: {
+  signatureCanvas: {
+    flex: 1,
+  },
+  baselineContainer: {
     position: 'absolute',
-    bottom: '25%',
+    bottom: '22%',
     left: SPACING.xxl,
     right: SPACING.xxl,
+    alignItems: 'center',
+  },
+  baseline: {
+    width: '100%',
     height: 1,
   },
-  canvasHint: {
-    textAlign: 'center',
-    fontSize: FONT_SIZE.sm,
-    marginTop: SPACING.md,
+  baselineLabel: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.medium,
+    marginTop: 6,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 
   // Footer
@@ -290,11 +413,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.sm,
     backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.lg,
-    borderRadius: RADIUS.md,
+    paddingVertical: 16,
+    borderRadius: RADIUS.lg,
+    ...SHADOWS.md,
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
   },
   saveButtonText: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
   },

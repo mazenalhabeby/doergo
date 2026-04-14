@@ -68,3 +68,5 @@ export { taskAttachmentsApi, uploadToPresignedUrl } from './attachments';
 export { attendanceApi } from './attendance';
 export { techniciansApi, timeOffApi, availabilityApi, scheduleApi } from './technicians';
 export { onboardingApi, invitationsApi, pushApi } from './onboarding';
+export { joinRequestsApi, membersApi, adminInvitationsApi, orgSettingsApi } from './admin';
+export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput } from './admin';

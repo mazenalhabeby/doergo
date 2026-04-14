@@ -4,7 +4,7 @@
  * Import from '@hbcfield/shared' instead of redefining in each app.
  */
 
-import { TimeEntryStatus, BreakType, ApprovalStatus } from './index';
+import { TimeEntryStatus, BreakType, ApprovalStatus } from './enums';
 
 // ============================================================================
 // COMPANY LOCATION

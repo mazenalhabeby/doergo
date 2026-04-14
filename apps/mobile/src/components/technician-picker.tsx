@@ -42,16 +42,27 @@ export function TechnicianPicker({
   const { colors } = useTheme();
   const [technicians, setTechnicians] = useState<TechnicianListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const fetchTechnicians = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const result = await techniciansApi.list({ status: 'active', limit: 50 });
       // fetchWithAuth unwraps { data: T } → T, so result may already be the array
-      setTechnicians(Array.isArray(result) ? result : result.data || []);
-    } catch (err) {
+      const all = Array.isArray(result) ? result : (result as any)?.data || [];
+      // Filter out ON_SITE-only workers — they can't be assigned to field tasks
+      const list = all.filter((t: TechnicianListItem) => t.workMode !== 'ON_SITE');
+      setTechnicians(list);
+      if (list.length === 0 && all.length > 0) {
+        setError('No field technicians available (on-site workers cannot be assigned tasks)');
+      } else if (list.length === 0) {
+        setError('No technicians found in your organization');
+      }
+    } catch (err: any) {
       console.error('Failed to load technicians:', err);
+      setError(err?.message || 'Failed to load technicians');
     } finally {
       setIsLoading(false);
     }
@@ -110,12 +121,11 @@ export function TechnicianPicker({
   return (
     <Modal
       visible={visible}
-      transparent
       animationType="slide"
+      presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={[styles.content, { backgroundColor: colors.card }]}>
+      <View style={[styles.content, { backgroundColor: colors.surface }]}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>Select Technician</Text>
@@ -157,30 +167,28 @@ export function TechnicianPicker({
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Ionicons name="people-outline" size={40} color={colors.textMuted} />
-                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                    {search ? 'No technicians match your search' : 'No technicians available'}
+                  <Ionicons name={error ? 'alert-circle-outline' : 'people-outline'} size={40} color={error ? COLORS.error : colors.textMuted} />
+                  <Text style={[styles.emptyText, { color: error ? colors.textSecondary : colors.textMuted }]}>
+                    {error || (search ? 'No technicians match your search' : 'No technicians available')}
                   </Text>
+                  {error && (
+                    <TouchableOpacity onPress={fetchTechnicians} style={styles.retryBtn}>
+                      <Ionicons name="refresh" size={16} color={COLORS.primary} />
+                      <Text style={styles.retryText}>Retry</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               }
             />
           )}
         </View>
-      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
   content: {
-    borderTopLeftRadius: RADIUS.xl,
-    borderTopRightRadius: RADIUS.xl,
-    maxHeight: '75%',
+    flex: 1,
     paddingBottom: SPACING.xxl,
   },
   header: {
@@ -281,6 +289,23 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FONT_SIZE.base,
     marginTop: SPACING.md,
+    textAlign: 'center',
+    paddingHorizontal: SPACING.lg,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.primaryLight,
+  },
+  retryText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
   },
 });
 

@@ -234,9 +234,12 @@ export default function TimeOffScreen() {
     refreshData();
   }, [fetchData]);
 
-  // Fetch availability when range changes
+  // Only admins/dispatchers can fetch availability data
+  const isAdminOrDispatcher = user?.role === 'ADMIN' || user?.role === 'CLIENT' || user?.role === 'DISPATCHER';
+
+  // Fetch availability when range changes (admin/dispatcher only)
   useEffect(() => {
-    if (!rangeStart || !rangeEnd) return;
+    if (!rangeStart || !rangeEnd || !isAdminOrDispatcher) return;
 
     const days: string[] = [];
     const d = new Date(rangeStart);
@@ -252,30 +255,30 @@ export default function TimeOffScreen() {
     setIsLoadingAvailability(true);
     setAvailabilityError(false);
 
-    Promise.all(
-      days.map(date =>
-        availabilityApi.getForDate(date).then(
-          r => ({ date, data: r, ok: true as const }),
-          () => ({ date, data: null, ok: false as const }),
-        )
-      )
-    ).then(results => {
-      if (cancelled) return;
+    // Fetch sequentially to avoid throttle limits (3/sec)
+    (async () => {
       const cache: Record<string, AvailabilityResponse> = {};
       let anySuccess = false;
-      results.forEach(r => {
-        if (r.ok && r.data) {
-          cache[r.date] = r.data;
-          anySuccess = true;
+      for (const date of days) {
+        if (cancelled) return;
+        try {
+          const r = await availabilityApi.getForDate(date);
+          if (r) {
+            cache[date] = r;
+            anySuccess = true;
+          }
+        } catch {
+          // skip failed dates
         }
-      });
+      }
+      if (cancelled) return;
       if (anySuccess) {
         setAvailabilityCache(prev => ({ ...prev, ...cache }));
       } else {
         setAvailabilityError(true);
       }
       setIsLoadingAvailability(false);
-    });
+    })();
 
     return () => { cancelled = true; };
   }, [rangeStart, rangeEnd]);
@@ -315,6 +318,12 @@ export default function TimeOffScreen() {
     // Don't allow past dates
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     if (date < todayStart) return;
+
+    // Don't allow non-scheduled days
+    let dow = date.getDay() - 1;
+    if (dow < 0) dow = 6;
+    const isScheduled = schedule.length === 0 || scheduleDays[dow] === true;
+    if (!isScheduled) return;
 
     if (!isSelecting || !rangeStart) {
       // First tap - set start
@@ -625,17 +634,19 @@ export default function TimeOffScreen() {
                   (rangeEnd && isSameDay(date, rangeEnd));
                 const isOnlyStart = rangeStart && !rangeEnd && isSameDay(date, rangeStart);
 
+                const isDayDisabled = isPast || (!isScheduled && !isPast);
+
                 return (
                   <TouchableOpacity
                     key={colIdx}
                     style={[
                       styles.dayCell,
-                      inRange && [styles.dayCellInRange, { backgroundColor: colors.primaryLight }],
-                      (isRangeEndpoint || isOnlyStart) && styles.dayCellEndpoint,
+                      inRange && isScheduled && [styles.dayCellInRange, { backgroundColor: colors.primaryLight }],
+                      (isRangeEndpoint || isOnlyStart) && isScheduled && styles.dayCellEndpoint,
                       isToday && !inRange && !isRangeEndpoint && !isOnlyStart && styles.dayCellToday,
                     ]}
                     onPress={() => handleDayPress(date)}
-                    disabled={isPast}
+                    disabled={isDayDisabled}
                     activeOpacity={0.6}
                   >
                     <Text
@@ -643,9 +654,9 @@ export default function TimeOffScreen() {
                         styles.dayText,
                         { color: colors.textPrimary },
                         isPast && [styles.dayTextPast, { color: colors.borderLight }],
-                        !isScheduled && !isPast && [styles.dayTextOffDay, { color: colors.textMuted }],
-                        inRange && styles.dayTextInRange,
-                        (isRangeEndpoint || isOnlyStart) && styles.dayTextEndpoint,
+                        !isScheduled && !isPast && [styles.dayTextOffDay, { color: colors.textMuted, opacity: 0.4 }],
+                        inRange && isScheduled && styles.dayTextInRange,
+                        (isRangeEndpoint || isOnlyStart) && isScheduled && styles.dayTextEndpoint,
                       ]}
                     >
                       {date.getDate()}
@@ -690,7 +701,7 @@ export default function TimeOffScreen() {
         {/* ============================================================= */}
         {/* AVAILABILITY INSIGHT PANEL                                    */}
         {/* ============================================================= */}
-        {hasRangeSelected && (
+        {hasRangeSelected && isAdminOrDispatcher && (
           <View style={[styles.insightCard, { backgroundColor: colors.card }]}>
             <View style={styles.insightHeader}>
               <Ionicons name="people" size={18} color={COLORS.primary} />

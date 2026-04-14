@@ -13,8 +13,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { tasksApi, TaskStatus, type Task } from '../../lib/api';
-import { TaskCard, LoadingState, ErrorState } from '../../components';
+import { TaskCard, LoadingState, ErrorState, Skeleton } from '../../components';
 import { ROUTES } from '../../lib/constants';
+import { isSameDay } from '../../lib/utils';
+import { WeekCalendar } from '../week-calendar';
 import { styles, COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, RADIUS, SHADOWS } from './home-styles';
 
 export function AdminDashboard() {
@@ -24,8 +26,38 @@ export function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
+
+  // Build task date set for calendar dots
+  const taskDateSet = useMemo(() => {
+    const dateSet = new Set<string>();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; })();
+    for (const task of tasks) {
+      if (!task.dueDate) {
+        dateSet.add(todayStr);
+      } else {
+        const d = new Date(task.dueDate);
+        dateSet.add(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
+      }
+    }
+    return dateSet;
+  }, [tasks]);
+
+  const handlePrevWeek = useCallback(() => {
+    setCurrentWeekStart(d => { const n = new Date(d); n.setDate(n.getDate() - 7); return n; });
+  }, []);
+  const handleNextWeek = useCallback(() => {
+    setCurrentWeekStart(d => { const n = new Date(d); n.setDate(n.getDate() + 7); return n; });
+  }, []);
+  const handleToday = useCallback(() => {
+    const today = new Date();
+    setCurrentWeekStart(today);
+    setSelectedDate(today);
+  }, []);
 
   const stats = useMemo(() => {
     return {
@@ -39,6 +71,23 @@ export function AdminDashboard() {
       ).length,
     };
   }, [tasks]);
+
+  // Tasks for selected calendar date
+  const selectedDayTasks = useMemo(() => {
+    const sel = new Date(selectedDate);
+    sel.setHours(0, 0, 0, 0);
+    const next = new Date(sel);
+    next.setDate(next.getDate() + 1);
+    return tasks.filter(task => {
+      if (!task.dueDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return sel.getTime() === today.getTime();
+      }
+      const d = new Date(task.dueDate);
+      return d >= sel && d < next;
+    });
+  }, [tasks, selectedDate]);
 
   const recentTasks = useMemo(() => {
     return [...tasks]
@@ -83,7 +132,11 @@ export function AdminDashboard() {
     router.push(ROUTES.taskDetail(task.id));
   };
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return (
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <Skeleton.Dashboard />
+    </View>
+  );
   if (error) return <ErrorState message={error} onRetry={() => fetchTasks()} />;
 
   return (
@@ -108,64 +161,56 @@ export function AdminDashboard() {
           <Text style={[styles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
         </View>
 
-        {/* Stat Cards */}
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <View style={styles.statRow}>
-              <View style={[styles.statIcon, { backgroundColor: colors.primaryLight }]}>
-                <Ionicons name="list" size={18} color={COLORS.primary} />
+        {/* Stats Card */}
+        <View style={[adminStyles.hubCard, { backgroundColor: colors.card }]}>
+          <View style={adminStyles.statsStrip}>
+            {([
+              { n: stats.total, label: 'Total', color: colors.textPrimary },
+              { n: stats.inProgress, label: 'Active', color: COLORS.amber },
+              { n: stats.completed, label: 'Done', color: COLORS.success },
+              { n: stats.pending, label: 'Pending', color: COLORS.purple },
+            ] as const).map((s, i) => (
+              <View key={i} style={adminStyles.statCell}>
+                <Text style={[adminStyles.statNum, { color: s.color }]}>{s.n}</Text>
+                <Text style={[adminStyles.statLbl, { color: colors.textMuted }]}>{s.label}</Text>
               </View>
-              <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.total}</Text>
-            </View>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total Tasks</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <View style={styles.statRow}>
-              <View style={[styles.statIcon, { backgroundColor: colors.amberLight }]}>
-                <Ionicons name="play-circle" size={18} color={COLORS.amber} />
-              </View>
-              <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.inProgress}</Text>
-            </View>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>In Progress</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <View style={styles.statRow}>
-              <View style={[styles.statIcon, { backgroundColor: colors.successLight }]}>
-                <Ionicons name="checkmark-done" size={18} color={COLORS.success} />
-              </View>
-              <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.completed}</Text>
-            </View>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Completed</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <View style={styles.statRow}>
-              <View style={[styles.statIcon, { backgroundColor: colors.purpleLight }]}>
-                <Ionicons name="hourglass-outline" size={18} color={COLORS.purple} />
-              </View>
-              <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{stats.pending}</Text>
-            </View>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Pending</Text>
+            ))}
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={adminStyles.quickActions}>
-          <TouchableOpacity
-            style={adminStyles.quickActionButton}
-            onPress={() => router.push(ROUTES.createTask)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add-circle" size={20} color={COLORS.white} />
-            <Text style={adminStyles.quickActionText}>Create Task</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[adminStyles.quickActionButton, adminStyles.quickActionSecondary, { backgroundColor: colors.card, borderColor: COLORS.primary }]}
-            onPress={() => router.push(ROUTES.tasks)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="clipboard" size={20} color={COLORS.primary} />
-            <Text style={adminStyles.quickActionSecondaryText}>View All</Text>
-          </TouchableOpacity>
+        {/* Week Calendar */}
+        <WeekCalendar
+          taskDates={taskDateSet}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+          currentWeekStart={currentWeekStart}
+          onPrevWeek={handlePrevWeek}
+          onNextWeek={handleNextWeek}
+          onToday={handleToday}
+        />
+
+        {/* Selected Day Tasks */}
+        <View style={adminStyles.dayTasksSection}>
+          <View style={adminStyles.dayTasksHeader}>
+            <Text style={[adminStyles.dayTasksTitle, { color: colors.textPrimary }]}>
+              {isSameDay(selectedDate, new Date()) ? "Today's Tasks" : selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            </Text>
+            <View style={[adminStyles.dayTasksCount, { backgroundColor: colors.surfaceRaised }]}>
+              <Text style={[adminStyles.dayTasksCountText, { color: colors.textSecondary }]}>{selectedDayTasks.length}</Text>
+            </View>
+          </View>
+          {selectedDayTasks.length === 0 ? (
+            <View style={[adminStyles.emptyDay, { backgroundColor: colors.card }]}>
+              <Ionicons name="calendar-outline" size={24} color={colors.textMuted} />
+              <Text style={[adminStyles.emptyDayText, { color: colors.textMuted }]}>No tasks scheduled</Text>
+            </View>
+          ) : (
+            <View style={adminStyles.dayTasksList}>
+              {selectedDayTasks.map(task => (
+                <TaskCard key={task.id} task={task} onPress={() => handleTaskPress(task)} showAssignee showPriority />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Recent Tasks */}
@@ -197,34 +242,30 @@ export function AdminDashboard() {
 }
 
 const adminStyles = StyleSheet.create({
-  quickActions: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    marginTop: SPACING.xl,
-    gap: SPACING.md,
+  // Combined hub card
+  hubCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
   },
-  quickActionButton: {
+  // Stats strip
+  statsStrip: {
+    flexDirection: 'row',
+  },
+  statCell: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: RADIUS.md,
-    gap: SPACING.sm,
   },
-  quickActionSecondary: {
-    borderWidth: 1,
+  statNum: {
+    fontSize: 22,
+    fontWeight: FONT_WEIGHT.bold,
+    lineHeight: 26,
   },
-  quickActionText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-  quickActionSecondaryText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
+  statLbl: {
+    fontSize: 11,
+    fontWeight: FONT_WEIGHT.medium,
+    marginTop: 2,
   },
   recentSection: {
     paddingHorizontal: SPACING.lg,
@@ -241,5 +282,43 @@ const adminStyles = StyleSheet.create({
   emptyRecentText: {
     fontSize: FONT_SIZE.base,
     textAlign: 'center',
+  },
+  // Day tasks (below calendar)
+  dayTasksSection: {
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
+  },
+  dayTasksHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  dayTasksTitle: {
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  dayTasksCount: {
+    paddingHorizontal: 10,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.md,
+  },
+  dayTasksCountText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  emptyDay: {
+    borderRadius: RADIUS.md,
+    padding: SPACING.xxl,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  emptyDayText: {
+    fontSize: FONT_SIZE.base,
+  },
+  dayTasksList: {
+    gap: SPACING.md,
   },
 });

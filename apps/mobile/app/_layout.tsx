@@ -1,5 +1,16 @@
 import 'react-native-gesture-handler';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { LogBox } from 'react-native';
+
+// Suppress noisy "Session expired" unhandled rejections — auth context handles redirect
+const originalHandler = (global as any).ErrorUtils?.getGlobalHandler?.();
+if ((global as any).ErrorUtils) {
+  (global as any).ErrorUtils.setGlobalHandler((error: any, isFatal: boolean) => {
+    if (error?.message?.includes('Session expired')) return;
+    originalHandler?.(error, isFatal);
+  });
+}
+LogBox.ignoreLogs(['Session expired']);
 import { Stack, useRouter, useSegments, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, Platform } from 'react-native';
@@ -11,9 +22,10 @@ import { useFonts, Outfit_400Regular, Outfit_800ExtraBold } from '@expo-google-f
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { AnimatedSplash } from '../src/components';
+import { ErrorBoundary } from '../src/components/error-boundary';
 
 // Keep the native splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading, needsOnboarding } = useAuth();
@@ -25,21 +37,16 @@ function RootLayoutNav() {
   const [splashHidden, setSplashHidden] = useState(false);
 
   // Hide native splash when auth state is loaded (only once)
+  const hidingRef = useRef(false);
   useEffect(() => {
-    async function prepare() {
-      if (!isLoading && !splashHidden) {
-        try {
-          // Hide the native splash screen
-          await SplashScreen.hideAsync();
-        } catch (e) {
-          // Ignore error if splash screen was already hidden
-          console.log('SplashScreen already hidden');
-        }
+    if (isLoading || splashHidden || hidingRef.current) return;
+    hidingRef.current = true;
+    SplashScreen.hideAsync()
+      .catch(() => {}) // Ignore if already hidden or not registered
+      .finally(() => {
         setSplashHidden(true);
         setAppIsReady(true);
-      }
-    }
-    prepare();
+      });
   }, [isLoading, splashHidden]);
 
   // Configure Android navigation bar based on current screen and theme
@@ -116,13 +123,15 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <RootLayoutNav />
-          </AuthProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
+      <ErrorBoundary>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <RootLayoutNav />
+            </AuthProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

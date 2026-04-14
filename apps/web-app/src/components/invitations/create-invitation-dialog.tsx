@@ -249,19 +249,18 @@ export function CreateInvitationDialog({
               </div>
 
               <div className="space-y-2">
-                <Label>Specialty</Label>
-                <Select value={specialty} onValueChange={setSpecialty}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select specialty (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SPECIALTY_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Job Title</Label>
+                <Input
+                  placeholder="e.g. Electrician, Plumber..."
+                  value={specialty}
+                  onChange={(e) => setSpecialty(e.target.value)}
+                  list="invitation-specialty-suggestions"
+                />
+                <datalist id="invitation-specialty-suggestions">
+                  {SPECIALTY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.label} />
+                  ))}
+                </datalist>
               </div>
 
               <div className="space-y-2">

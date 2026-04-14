@@ -9,10 +9,12 @@ export class ClockInDto {
 
   @ApiProperty({ description: 'Current latitude' })
   @IsNumber()
+  @IsNotEmpty()
   lat: number;
 
   @ApiProperty({ description: 'Current longitude' })
   @IsNumber()
+  @IsNotEmpty()
   lng: number;
 
   @ApiPropertyOptional({ description: 'GPS accuracy in meters' })

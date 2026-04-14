@@ -1151,14 +1151,14 @@ export default function TaskDetailScreen() {
                         styles.progressDot,
                         isCompleted && styles.progressDotCompleted,
                         isCurrent && styles.progressDotCurrent,
-                        !isCompleted && !isCurrent && [styles.progressDotPending, { backgroundColor: colors.border }],
+                        !isCompleted && !isCurrent && [styles.progressDotPending, { backgroundColor: colors.borderLight }],
                       ]}
                     />
                     {!isLast && (
                       <View
                         style={[
                           styles.progressLine,
-                          { backgroundColor: colors.border },
+                          { backgroundColor: colors.borderLight },
                           isCompleted && styles.progressLineCompleted,
                         ]}
                       />
@@ -1168,7 +1168,7 @@ export default function TaskDetailScreen() {
               })}
             </View>
             {currentStepLabel && (
-              <Text style={styles.progressCurrentLabel}>{currentStepLabel}</Text>
+              <Text style={[styles.progressCurrentLabel, { color: colors.textPrimary }]}>{currentStepLabel}</Text>
             )}
           </View>
         )}
@@ -1457,8 +1457,8 @@ export default function TaskDetailScreen() {
               {/* Timer for IN_PROGRESS */}
               {showTimer && (
                 <View style={styles.timerContainer}>
-                  <Ionicons name="time-outline" size={20} color={COLORS.slate500} />
-                  <Text style={styles.timerText}>{formatElapsedTime(elapsedTime)}</Text>
+                  <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
+                  <Text style={[styles.timerText, { color: colors.textPrimary }]}>{formatElapsedTime(elapsedTime)}</Text>
                 </View>
               )}
 
@@ -1496,12 +1496,12 @@ export default function TaskDetailScreen() {
                 </View>
               )}
 
-              {/* Future Date Banner — shown when task is accepted but can't start yet */}
-              {task.status === TaskStatus.ACCEPTED && isFutureTask && (
+              {/* Future Date Banner — shown when task can't be accepted/started yet */}
+              {(task.status === TaskStatus.ASSIGNED || task.status === TaskStatus.ACCEPTED) && isFutureTask && (
                 <View style={styles.futureDateBanner}>
                   <Ionicons name="calendar-outline" size={20} color={COLORS.amber} />
                   <Text style={styles.futureDateText}>
-                    This task is scheduled for {new Date(task.dueDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}. You can start it on the due date.
+                    This task is scheduled for {new Date(task.dueDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}. {task.status === TaskStatus.ASSIGNED ? 'You can accept it on the due date.' : 'You can start it on the due date.'}
                   </Text>
                 </View>
               )}
@@ -1531,16 +1531,16 @@ export default function TaskDetailScreen() {
                       <Text style={styles.declineButtonText}>Decline</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.finishButton, { backgroundColor: COLORS.success }]}
+                      style={[styles.finishButton, { backgroundColor: isFutureTask ? COLORS.slate300 : COLORS.success }]}
                       onPress={() => handleStatusUpdate(TaskStatus.ACCEPTED)}
-                      disabled={isUpdating}
+                      disabled={isUpdating || isFutureTask}
                     >
                       {isUpdating ? (
                         <ActivityIndicator size="small" color="white" />
                       ) : (
                         <>
-                          <Ionicons name="checkmark-circle" size={20} color="white" />
-                          <Text style={styles.finishButtonText}>Accept Job</Text>
+                          <Ionicons name={isFutureTask ? 'time-outline' : 'checkmark-circle'} size={20} color="white" />
+                          <Text style={styles.finishButtonText}>{isFutureTask ? 'Scheduled for Later' : 'Accept Job'}</Text>
                         </>
                       )}
                     </TouchableOpacity>

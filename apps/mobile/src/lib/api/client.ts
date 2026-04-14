@@ -238,7 +238,7 @@ export async function fetchApi<T>(
 
     if (!response.ok) {
       throw new ApiError(
-        data.message || 'An error occurred',
+        sanitizeErrorMessage(data.message, response.status),
         response.status
       );
     }
@@ -254,6 +254,15 @@ export async function fetchApi<T>(
     }
     throw new ApiError('Unable to connect to server. Please check if the API is running.', 0);
   }
+}
+
+/** Sanitize server error messages — don't expose internal details to UI */
+function sanitizeErrorMessage(message: string | undefined, status: number): string {
+  if (status === 401) return 'Authentication failed';
+  if (status === 429) return 'Too many requests. Please wait.';
+  // Allow 400/403/404 messages through — they contain useful validation info
+  if (message && (status === 400 || status === 403 || status === 404 || status === 409)) return message;
+  return message || 'An error occurred';
 }
 
 /**
@@ -327,7 +336,7 @@ async function _fetchWithAuthInner<T>(
 
     if (!response.ok) {
       throw new ApiError(
-        data.message || 'An error occurred',
+        sanitizeErrorMessage(data.message, response.status),
         response.status
       );
     }

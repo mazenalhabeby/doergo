@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { tasksApi, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { TechnicianPicker } from '../../../src/components';
 import { LocationSearchPicker } from '../../../src/components/location-search-picker';
+import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import {
   COLORS,
   SPACING,
@@ -35,7 +36,8 @@ export default function CreateTaskScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('MEDIUM');
-  const [dueDateText, setDueDateText] = useState('');
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [locationAddress, setLocationAddress] = useState('');
   const [locationLat, setLocationLat] = useState<number | null>(null);
   const [locationLng, setLocationLng] = useState<number | null>(null);
@@ -53,20 +55,11 @@ export default function CreateTaskScreen() {
     try {
       setIsSubmitting(true);
 
-      // Parse due date if provided (YYYY-MM-DD format)
-      let dueDate: string | undefined;
-      if (dueDateText.trim()) {
-        const parsed = new Date(dueDateText.trim());
-        if (!isNaN(parsed.getTime())) {
-          dueDate = parsed.toISOString();
-        }
-      }
-
       const input: CreateTaskInput = {
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
-        dueDate,
+        dueDate: dueDate?.toISOString(),
         locationAddress: locationAddress.trim() || undefined,
         locationLat: locationLat ?? undefined,
         locationLng: locationLng ?? undefined,
@@ -79,7 +72,7 @@ export default function CreateTaskScreen() {
       setTitle('');
       setDescription('');
       setPriority('MEDIUM');
-      setDueDateText('');
+      setDueDate(null);
       setLocationAddress('');
       setLocationLat(null);
       setLocationLng(null);
@@ -170,24 +163,37 @@ export default function CreateTaskScreen() {
         {/* Due Date */}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textPrimary }]}>Due Date</Text>
-          <View style={[styles.dateButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Ionicons name="calendar-outline" size={20} color={colors.textMuted} />
-            <TextInput
-              style={[styles.dateText, { flex: 1, color: colors.textPrimary }]}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.textMuted}
-              value={dueDateText}
-              onChangeText={setDueDateText}
-              maxLength={10}
-              keyboardType="numbers-and-punctuation"
-            />
-            {dueDateText.length > 0 && (
-              <TouchableOpacity onPress={() => setDueDateText('')}>
+          <TouchableOpacity
+            style={[styles.dateButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar-outline" size={20} color={dueDate ? COLORS.primary : colors.textMuted} />
+            <Text style={[styles.dateText, { flex: 1, color: dueDate ? colors.textPrimary : colors.textMuted }]}>
+              {dueDate
+                ? dueDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Select due date'}
+            </Text>
+            {dueDate && (
+              <TouchableOpacity
+                onPress={(e) => { e.stopPropagation(); setDueDate(null); }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Ionicons name="close-circle" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             )}
-          </View>
+          </TouchableOpacity>
         </View>
+
+        {/* Date Picker Modal */}
+        <DatePickerModal
+          visible={showDatePicker}
+          selectedDate={dueDate}
+          onSelect={setDueDate}
+          onClear={() => setDueDate(null)}
+          onClose={() => setShowDatePicker(false)}
+          title="Due Date"
+        />
 
         {/* Location */}
         <View style={styles.field}>

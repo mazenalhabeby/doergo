@@ -12,16 +12,12 @@ import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/auth-context';
 import { tasksApi, TaskStatus, type Task } from '../../lib/api';
-import { TaskCard, LoadingState, ErrorState } from '../../components';
+import { TaskCard, LoadingState, ErrorState, Skeleton } from '../../components';
 import { ROUTES } from '../../lib/constants';
-import { getWeekDays, isSameDay } from '../../lib/utils';
+import { isSameDay } from '../../lib/utils';
 import { useTheme } from '../../contexts/theme-context';
+import { WeekCalendar } from '../week-calendar';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
 
 export function FreelancerHome() {
   const { user } = useAuth();
@@ -35,9 +31,6 @@ export function FreelancerHome() {
 
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
-
-  // Get week days
-  const weekDays = useMemo(() => getWeekDays(currentWeekStart), [currentWeekStart]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -78,25 +71,33 @@ export function FreelancerHome() {
     });
   }, [tasks, selectedDate]);
 
+  // Helper to get local date string (YYYY-MM-DD) avoiding UTC timezone issues
+  const toLocalDateStr = useCallback((d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }, []);
+
   // Pre-compute task dates into a Set for O(1) lookups
   const taskDateSet = useMemo(() => {
     const dateSet = new Set<string>();
-    const todayStr = new Date().toISOString().split('T')[0]!;
+    const todayStr = toLocalDateStr(new Date());
     for (const task of tasks) {
       if (!task.dueDate) {
         dateSet.add(todayStr);
       } else {
-        const dateStr = new Date(task.dueDate).toISOString().split('T')[0]!;
+        const dateStr = toLocalDateStr(new Date(task.dueDate));
         dateSet.add(dateStr);
       }
     }
     return dateSet;
-  }, [tasks]);
+  }, [tasks, toLocalDateStr]);
 
   const dayHasTasks = useCallback((date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]!;
+    const dateStr = toLocalDateStr(date);
     return taskDateSet.has(dateStr);
-  }, [taskDateSet]);
+  }, [taskDateSet, toLocalDateStr]);
 
   const fetchTasks = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
@@ -162,8 +163,6 @@ export function FreelancerHome() {
     setSelectedDate(today);
   };
 
-  const isSelectedDate = (date: Date) => isSameDay(date, selectedDate);
-
   const listHeader = useMemo(() => (
     <>
       {/* Welcome Section */}
@@ -215,57 +214,15 @@ export function FreelancerHome() {
       </View>
 
       {/* Calendar Section */}
-      <View style={flStyles.calendarSection}>
-        <View style={flStyles.calendarHeader}>
-          <Text style={[flStyles.calendarMonth, { color: colors.textPrimary }]}>
-            {MONTH_NAMES[currentWeekStart.getMonth()]} {currentWeekStart.getFullYear()}
-          </Text>
-          <View style={flStyles.calendarNav}>
-            <TouchableOpacity onPress={handlePrevWeek} style={flStyles.calendarNavButton}>
-              <Ionicons name="chevron-back" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleToday} style={[flStyles.todayButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[flStyles.todayButtonText, { color: colors.textSecondary }]}>Today</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleNextWeek} style={flStyles.calendarNavButton}>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={flStyles.weekDaysRow}>
-          {weekDays.map((weekDay, index) => {
-            const selected = isSelectedDate(weekDay.date);
-            const hasTasks = dayHasTasks(weekDay.date);
-
-            const showDot = hasTasks;
-
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[flStyles.dayBox, { backgroundColor: colors.card, borderColor: colors.border }, selected && flStyles.dayBoxSelected]}
-                onPress={() => setSelectedDate(weekDay.date)}
-                activeOpacity={0.7}
-              >
-                <Text style={[flStyles.dayName, { color: colors.textMuted }, selected && flStyles.dayNameSelected]}>
-                  {weekDay.dayName}
-                </Text>
-                <Text style={[flStyles.dayNumber, { color: colors.textPrimary }, selected && flStyles.dayNumberSelected]}>
-                  {weekDay.dayNumber}
-                </Text>
-                {showDot ? (
-                  <View style={[
-                    flStyles.dayDot,
-                    { backgroundColor: selected ? COLORS.white : COLORS.primary },
-                  ]} />
-                ) : (
-                  <View style={flStyles.dayDotPlaceholder} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
+      <WeekCalendar
+        taskDates={taskDateSet}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        currentWeekStart={currentWeekStart}
+        onPrevWeek={handlePrevWeek}
+        onNextWeek={handleNextWeek}
+        onToday={handleToday}
+      />
 
       {/* Jobs Header */}
       <View style={flStyles.jobsSection}>
@@ -277,7 +234,7 @@ export function FreelancerHome() {
         </View>
       </View>
     </>
-  ), [stats, weekDays, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName, colors]);
+  ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName, colors]);
 
   const renderTask = useCallback(({ item }: { item: Task }) => (
     <View style={flStyles.taskItemWrapper}>
@@ -291,7 +248,11 @@ export function FreelancerHome() {
     </View>
   ), [colors]);
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return (
+    <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>
+      <Skeleton.Dashboard />
+    </View>
+  );
   if (error) return <ErrorState message={error} onRetry={() => fetchTasks()} />;
 
   return (
@@ -319,81 +280,6 @@ export function FreelancerHome() {
 }
 
 const flStyles = StyleSheet.create({
-  // Calendar Section
-  calendarSection: {
-    marginTop: SPACING.xxl,
-    paddingHorizontal: SPACING.lg,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  calendarMonth: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  calendarNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  calendarNavButton: {
-    padding: SPACING.xs,
-  },
-  todayButton: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm - 2,
-    borderRadius: RADIUS.sm - 2,
-    borderWidth: 1,
-  },
-  todayButtonText: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  weekDaysRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: SPACING.xs,
-  },
-  dayBox: {
-    alignItems: 'center',
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.xs,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-  },
-  dayBoxSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  dayName: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  dayNameSelected: {
-    color: 'rgba(255,255,255,0.7)',
-  },
-  dayNumber: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.semibold,
-    marginVertical: 10,
-  },
-  dayNumberSelected: {
-    color: COLORS.white,
-  },
-  dayDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  dayDotPlaceholder: {
-    width: 6,
-    height: 6,
-  },
-
   // Jobs Section
   jobsSection: {
     marginTop: SPACING.xxl,

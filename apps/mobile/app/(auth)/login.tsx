@@ -135,12 +135,10 @@ export default function LoginScreen() {
             <AnimatedLogo size="large" variant="light" />
           </View>
 
-          <Text style={styles.tagline}>Worker Portal</Text>
-
           <View style={styles.divider} />
 
-          <Text style={styles.welcomeText}>Welcome back</Text>
-          <Text style={styles.subtitleText}>Sign in to access your tasks</Text>
+          <Text style={styles.welcomeText}>Sign In</Text>
+          <Text style={styles.subtitleText}>Access your dashboard and manage operations</Text>
         </View>
       </LinearGradient>
 

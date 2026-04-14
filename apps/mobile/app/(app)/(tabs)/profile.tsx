@@ -233,21 +233,13 @@ export default function ProfileScreen() {
         <View style={styles.badgesRow}>
           <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
             <Ionicons name="briefcase-outline" size={13} color={COLORS.primary} />
-            <Text style={styles.badgeText}>{getRoleLabel(user?.role ?? '')}</Text>
+            <Text style={styles.badgeText}>{isTechnician && user?.specialty ? user.specialty : getRoleLabel(user?.role ?? '')}</Text>
           </View>
           {isTechnician && user?.workMode && (
             <View style={[styles.badge, styles.badgeSecondary, { backgroundColor: colors.emeraldLight }]}>
               <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
               <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
                 {getWorkModeLabel(user.workMode)}
-              </Text>
-            </View>
-          )}
-          {isTechnician && user?.technicianType && (
-            <View style={[styles.badge, styles.badgeTertiary, { backgroundColor: colors.surfaceRaised }]}>
-              <Ionicons name="id-card-outline" size={13} color={colors.textSecondary} />
-              <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
-                {getTechnicianTypeLabel(user.technicianType)}
               </Text>
             </View>
           )}

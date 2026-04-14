@@ -143,10 +143,12 @@ export default function TasksPage() {
 
   // Transform to technician data format (add avatarUrl if needed)
   const technicians: TechnicianData[] = useMemo(() => {
-    return (suggestedData?.technicians || []).map((tech: SuggestedTechnician) => ({
-      ...tech,
-      avatarUrl: undefined, // No avatar URL from backend yet
-    }))
+    return (suggestedData?.technicians || [])
+      .filter((tech: SuggestedTechnician) => tech.workMode !== 'ON_SITE')
+      .map((tech: SuggestedTechnician) => ({
+        ...tech,
+        avatarUrl: undefined,
+      }))
   }, [suggestedData])
 
   // Get suggested technician ID from backend

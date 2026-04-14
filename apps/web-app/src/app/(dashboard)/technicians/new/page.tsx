@@ -326,19 +326,22 @@ export default function NewTechnicianPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="specialty">Specialty</Label>
-                  <Select value={specialty} onValueChange={setSpecialty}>
-                    <SelectTrigger id="specialty">
-                      <SelectValue placeholder="Select specialty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SPECIALTY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="specialty">Job Title</Label>
+                  <Input
+                    id="specialty"
+                    placeholder="e.g. Electrician, Plumber, HVAC Tech..."
+                    value={specialty}
+                    onChange={(e) => setSpecialty(e.target.value)}
+                    list="specialty-suggestions"
+                  />
+                  <datalist id="specialty-suggestions">
+                    {SPECIALTY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.label} />
+                    ))}
+                  </datalist>
+                  <p className="text-xs text-slate-500">
+                    Type a custom title or pick a suggestion
+                  </p>
                 </div>
               </div>
 

@@ -8,6 +8,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   TextInput,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -16,7 +18,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
 import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
-import { TaskCard, FilterChip } from '../../../src/components';
+import { TaskCard, FilterChip, Skeleton } from '../../../src/components';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { SocketEvents } from '../../../src/lib/socket';
 import {
@@ -25,6 +27,7 @@ import {
   RADIUS,
   FONT_SIZE,
   FONT_WEIGHT,
+  SHADOWS,
   ROUTES,
 } from '../../../src/lib/constants';
 
@@ -59,6 +62,22 @@ const ADMIN_FILTER_OPTIONS = [
 ] as const;
 
 type FilterKey = string;
+
+type SortKey = 'dueDate' | 'priority' | 'status' | 'title' | 'createdAt';
+
+const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
+  { key: 'dueDate', label: 'Due Date', icon: 'calendar-outline' },
+  { key: 'priority', label: 'Priority', icon: 'flag-outline' },
+  { key: 'status', label: 'Status', icon: 'pulse-outline' },
+  { key: 'title', label: 'Name', icon: 'text-outline' },
+  { key: 'createdAt', label: 'Created', icon: 'time-outline' },
+];
+
+const PRIORITY_ORDER: Record<string, number> = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+const STATUS_ORDER: Record<string, number> = {
+  BLOCKED: 0, IN_PROGRESS: 1, EN_ROUTE: 2, ARRIVED: 3, ACCEPTED: 4,
+  ASSIGNED: 5, NEW: 6, COMPLETED: 7, CLOSED: 8, CANCELED: 9, DRAFT: 10,
+};
 
 // ---------------------------------------------------------------------------
 // Date-range helpers per tab
@@ -117,6 +136,9 @@ export default function TasksScreen() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('current');
   const [filter, setFilter] = useState<FilterKey>('ALL');
+  const [sortBy, setSortBy] = useState<SortKey>('dueDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showSortMenu, setShowSortMenu] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -250,8 +272,34 @@ export default function TasksScreen() {
       }
     }
 
-    return result;
-  }, [tasks, filter]);
+    // Sort
+    const sorted = [...result].sort((a, b) => {
+      let cmp = 0;
+      switch (sortBy) {
+        case 'dueDate': {
+          const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+          const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+          cmp = aDate - bDate;
+          break;
+        }
+        case 'priority':
+          cmp = (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99);
+          break;
+        case 'status':
+          cmp = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
+          break;
+        case 'title':
+          cmp = a.title.localeCompare(b.title);
+          break;
+        case 'createdAt':
+          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+      }
+      return sortOrder === 'desc' ? -cmp : cmp;
+    });
+
+    return sorted;
+  }, [tasks, filter, sortBy, sortOrder]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -260,9 +308,7 @@ export default function TasksScreen() {
   if (isLoading && tasks.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.surface }]}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
+        <Skeleton.TasksList />
       </View>
     );
   }
@@ -337,15 +383,73 @@ export default function TasksScreen() {
         />
       </View>
 
-      {/* Tasks Count */}
+      {/* Tasks Count + Sort */}
       <View style={styles.countContainer}>
-        <Text style={[styles.countText, { color: colors.textMuted }]}>
-          {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
-        </Text>
-        {isLoading && (
-          <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: SPACING.sm }} />
-        )}
+        <View style={styles.countLeft}>
+          <Text style={[styles.countText, { color: colors.textMuted }]}>
+            {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
+          </Text>
+          {isLoading && (
+            <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: SPACING.sm }} />
+          )}
+        </View>
+        <TouchableOpacity
+          style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setShowSortMenu(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="swap-vertical" size={16} color={COLORS.primary} />
+          <Text style={[styles.sortButtonText, { color: colors.textSecondary }]}>
+            {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
+          </Text>
+          <Ionicons name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'} size={12} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
+
+      {/* Sort Menu Modal */}
+      <Modal visible={showSortMenu} transparent animationType="fade" onRequestClose={() => setShowSortMenu(false)}>
+        <Pressable style={styles.sortOverlay} onPress={() => setShowSortMenu(false)}>
+          <View style={[styles.sortMenu, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sortMenuTitle, { color: colors.textPrimary }]}>Sort by</Text>
+            {SORT_OPTIONS.map(option => {
+              const isActive = sortBy === option.key;
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[styles.sortMenuItem, isActive && { backgroundColor: colors.primaryLight }]}
+                  onPress={() => {
+                    if (sortBy === option.key) {
+                      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortBy(option.key);
+                      setSortOrder('asc');
+                    }
+                    setShowSortMenu(false);
+                  }}
+                  activeOpacity={0.6}
+                >
+                  <Ionicons
+                    name={option.icon as any}
+                    size={18}
+                    color={isActive ? COLORS.primary : colors.textMuted}
+                  />
+                  <Text style={[styles.sortMenuItemText, { color: isActive ? COLORS.primary : colors.textPrimary }]}>
+                    {option.label}
+                  </Text>
+                  {isActive && (
+                    <Ionicons
+                      name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                      size={16}
+                      color={COLORS.primary}
+                      style={{ marginLeft: 'auto' }}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Blocked Tasks Banner */}
       {blockedTasks.length > 0 && filter !== 'BLOCKED' && (
@@ -484,15 +588,65 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
 
-  // Count
+  // Count + Sort
   countContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.sm,
   },
+  countLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   countText: {
     fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.xs + 2,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  sortButtonText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  sortOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xxl,
+  },
+  sortMenu: {
+    width: '100%',
+    maxWidth: 300,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    ...SHADOWS.lg,
+  },
+  sortMenuTitle: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.md,
+  },
+  sortMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+  },
+  sortMenuItemText: {
+    fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.medium,
   },
 

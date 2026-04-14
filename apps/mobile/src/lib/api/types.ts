@@ -66,6 +66,7 @@ export interface User {
   // Technician-specific fields
   technicianType?: TechnicianType;
   workMode?: WorkMode;
+  specialty?: string | null;
 }
 
 export interface LoginResponse {

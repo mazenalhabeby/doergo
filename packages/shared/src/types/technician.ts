@@ -5,7 +5,7 @@
  * profiles, statistics, performance metrics, and API inputs.
  */
 
-import { TechnicianType, WorkMode, Role, Platform, TaskStatus } from './index';
+import { TechnicianType, WorkMode, Role, Platform, TaskStatus } from './enums';
 
 // ============================================================================
 // TECHNICIAN PROFILE
@@ -420,15 +420,17 @@ export function formatRating(
 }
 
 /**
- * Get specialty options for dropdown/filter
+ * Common job title suggestions for autocomplete
+ * Admins/dispatchers can type any custom title
  */
 export const SPECIALTY_OPTIONS = [
-  { value: 'electrical', label: 'Electrical' },
-  { value: 'plumbing', label: 'Plumbing' },
-  { value: 'mechanical', label: 'Mechanical' },
-  { value: 'hvac', label: 'HVAC' },
-  { value: 'general', label: 'General' },
-  { value: 'other', label: 'Other' },
+  { value: 'Electrician', label: 'Electrician' },
+  { value: 'Plumber', label: 'Plumber' },
+  { value: 'HVAC Technician', label: 'HVAC Technician' },
+  { value: 'Mechanic', label: 'Mechanic' },
+  { value: 'Fire Inspector', label: 'Fire Inspector' },
+  { value: 'IT Technician', label: 'IT Technician' },
+  { value: 'General Maintenance', label: 'General Maintenance' },
 ] as const;
 
 // ============================================================================

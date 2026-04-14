@@ -592,6 +592,7 @@ export interface SuggestedTechnician {
   lastName: string;
   email: string;
   specialty: string | null | undefined;
+  workMode?: string;
   rating: number;
   ratingCount: number;
   activeTaskCount: number;

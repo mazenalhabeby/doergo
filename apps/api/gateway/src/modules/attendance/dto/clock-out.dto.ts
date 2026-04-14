@@ -1,13 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNumber, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class ClockOutDto {
   @ApiProperty({ description: 'Current latitude' })
   @IsNumber()
+  @IsNotEmpty()
   lat: number;
 
   @ApiProperty({ description: 'Current longitude' })
   @IsNumber()
+  @IsNotEmpty()
   lng: number;
 
   @ApiPropertyOptional({ description: 'GPS accuracy in meters' })
