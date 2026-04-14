@@ -32,7 +32,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#059669"
+        "backgroundColor": "#0f172a"
       },
       "package": "eu.hbcgroup.hbcfield",
       "config": {
