@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, SERVICE_NAMES, haversineDistance } from '@hbcfield/shared';
+import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter } from '@hbcfield/shared';
 import { catchError, of } from 'rxjs';
 
 @Injectable()
@@ -206,14 +206,10 @@ export class LocationService {
   }
 
   async getWorkerHistory(workerId: string, startDate?: string, endDate?: string) {
-    // Build where clause
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
     const where: any = { userId: workerId };
-
-    if (startDate) {
-      where.timestamp = { ...where.timestamp, gte: new Date(startDate) };
-    }
-    if (endDate) {
-      where.timestamp = { ...where.timestamp, lte: new Date(endDate) };
+    if (dateFilter) {
+      where.timestamp = dateFilter;
     }
 
     const history = await this.prisma.locationHistory.findMany({
@@ -249,10 +245,11 @@ export class LocationService {
       return success(null);
     }
 
-    // Get all location points for this task
+    // Get location points for this task (capped to prevent memory issues on long routes)
     const points = await this.prisma.locationHistory.findMany({
       where: { taskId },
       orderBy: { timestamp: 'asc' },
+      take: 5000,
       select: {
         lat: true,
         lng: true,

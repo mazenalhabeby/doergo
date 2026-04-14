@@ -60,8 +60,8 @@ export class LocationsController {
   ) {
     return this.locationsService.findAll({
       organizationId: req.user.organizationId,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
+      page: page ? Math.max(1, Number(page) || 1) : 1,
+      limit: Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500),
       includeInactive: includeInactive === true || includeInactive === 'true' as any,
     });
   }

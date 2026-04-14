@@ -1,10 +1,18 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AttendanceService } from './attendance.service';
+import { BreakService } from './break.service';
+import { AttendanceReportService } from './attendance-report.service';
+import { ApprovalService } from './approval.service';
 
 @Controller()
 export class AttendanceController {
-  constructor(private readonly attendanceService: AttendanceService) {}
+  constructor(
+    private readonly attendanceService: AttendanceService,
+    private readonly breakService: BreakService,
+    private readonly reportService: AttendanceReportService,
+    private readonly approvalService: ApprovalService,
+  ) {}
 
   @MessagePattern({ cmd: 'get_attendance_status' })
   async getStatus(@Payload() data: { userId: string; organizationId: string }) {
@@ -68,7 +76,7 @@ export class AttendanceController {
       endDate: string;
     },
   ) {
-    return this.attendanceService.getAttendanceSummary(data);
+    return this.reportService.getAttendanceSummary(data);
   }
 
   @MessagePattern({ cmd: 'get_weekly_report' })
@@ -80,7 +88,7 @@ export class AttendanceController {
       weekStartDate?: string;
     },
   ) {
-    return this.attendanceService.getWeeklyReport(data);
+    return this.reportService.getWeeklyReport(data);
   }
 
   @MessagePattern({ cmd: 'get_monthly_report' })
@@ -93,7 +101,7 @@ export class AttendanceController {
       month?: number;
     },
   ) {
-    return this.attendanceService.getMonthlyReport(data);
+    return this.reportService.getMonthlyReport(data);
   }
 
   @MessagePattern({ cmd: 'export_attendance_csv' })
@@ -106,7 +114,7 @@ export class AttendanceController {
       userId?: string;
     },
   ) {
-    return this.attendanceService.exportToCSV(data);
+    return this.reportService.exportToCSV(data);
   }
 
   // =========================================================================
@@ -123,7 +131,7 @@ export class AttendanceController {
       notes?: string;
     },
   ) {
-    return this.attendanceService.startBreak(data);
+    return this.breakService.startBreak(data);
   }
 
   @MessagePattern({ cmd: 'end_break' })
@@ -135,7 +143,7 @@ export class AttendanceController {
       notes?: string;
     },
   ) {
-    return this.attendanceService.endBreak(data);
+    return this.breakService.endBreak(data);
   }
 
   @MessagePattern({ cmd: 'get_break_status' })
@@ -146,7 +154,7 @@ export class AttendanceController {
       organizationId: string;
     },
   ) {
-    return this.attendanceService.getBreakStatus(data);
+    return this.breakService.getBreakStatus(data);
   }
 
   @MessagePattern({ cmd: 'get_breaks_for_entry' })
@@ -157,7 +165,7 @@ export class AttendanceController {
       organizationId: string;
     },
   ) {
-    return this.attendanceService.getBreaksForEntry(data);
+    return this.breakService.getBreaksForEntry(data);
   }
 
   @MessagePattern({ cmd: 'get_active_breaks' })
@@ -167,7 +175,7 @@ export class AttendanceController {
       organizationId: string;
     },
   ) {
-    return this.attendanceService.getActiveBreaks(data);
+    return this.breakService.getActiveBreaks(data);
   }
 
   @MessagePattern({ cmd: 'get_break_history' })
@@ -182,7 +190,7 @@ export class AttendanceController {
       limit?: number;
     },
   ) {
-    return this.attendanceService.getBreakHistory(data);
+    return this.breakService.getBreakHistory(data);
   }
 
   @MessagePattern({ cmd: 'end_break_manually' })
@@ -195,7 +203,7 @@ export class AttendanceController {
       notes?: string;
     },
   ) {
-    return this.attendanceService.endBreakManually(data);
+    return this.breakService.endBreakManually(data);
   }
 
   @MessagePattern({ cmd: 'get_break_summary' })
@@ -208,7 +216,7 @@ export class AttendanceController {
       userId?: string;
     },
   ) {
-    return this.attendanceService.getBreakSummary(data);
+    return this.breakService.getBreakSummary(data);
   }
 
   // =========================================================================
@@ -224,7 +232,7 @@ export class AttendanceController {
       limit?: number;
     },
   ) {
-    return this.attendanceService.getPendingApprovals(data);
+    return this.approvalService.getPendingApprovals(data);
   }
 
   @MessagePattern({ cmd: 'approve_entry' })
@@ -237,7 +245,7 @@ export class AttendanceController {
       notes?: string;
     },
   ) {
-    return this.attendanceService.approveEntry(data);
+    return this.approvalService.approveEntry(data);
   }
 
   @MessagePattern({ cmd: 'reject_entry' })
@@ -250,7 +258,7 @@ export class AttendanceController {
       reason: string;
     },
   ) {
-    return this.attendanceService.rejectEntry(data);
+    return this.approvalService.rejectEntry(data);
   }
 
   @MessagePattern({ cmd: 'edit_entry' })
@@ -266,7 +274,7 @@ export class AttendanceController {
       reason: string;
     },
   ) {
-    return this.attendanceService.editEntry(data);
+    return this.approvalService.editEntry(data);
   }
 
   @MessagePattern({ cmd: 'bulk_approve_entries' })
@@ -279,6 +287,6 @@ export class AttendanceController {
       notes?: string;
     },
   ) {
-    return this.attendanceService.bulkApprove(data);
+    return this.approvalService.bulkApprove(data);
   }
 }

@@ -19,8 +19,7 @@ import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto } from './dto';
 import { Public } from '../../common/decorators';
-import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
-import { SkipOnboardingCheck } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData, SkipOnboardingCheck } from '@hbcfield/shared';
 
 @ApiTags('auth')
 @Controller('auth')

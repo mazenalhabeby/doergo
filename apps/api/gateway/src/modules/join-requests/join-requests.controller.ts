@@ -12,12 +12,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import {
-  CurrentUser,
-  CurrentUserData,
-} from '../../common/decorators/current-user.decorator';
 import {
   ListJoinRequestsDto,
   ApproveJoinRequestDto,

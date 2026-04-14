@@ -6,9 +6,6 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 import { Reflector } from '@nestjs/core';
 import { Role, ROLES_KEY } from '@hbcfield/shared';
 
-// Re-export helper functions from shared
-export { hasRole, isClient, isDispatcher, isTechnician } from '@hbcfield/shared';
-
 /**
  * Guard to check if user has required role(s)
  *

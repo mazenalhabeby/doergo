@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+
+const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 import {
   View,
   Text,
@@ -76,7 +78,7 @@ export function LocationSearchPicker({
       setIsSearching(true);
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
+          `${NOMINATIM_BASE}/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
           { headers: { 'Accept-Language': 'en' } }
         );
         const data: NominatimResult[] = await res.json();
@@ -96,7 +98,7 @@ export function LocationSearchPicker({
       onLocationChange('', rlat, rlng);
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${rlat}&lon=${rlng}&addressdetails=1`,
+          `${NOMINATIM_BASE}/reverse?format=json&lat=${rlat}&lon=${rlng}&addressdetails=1`,
           { headers: { 'Accept-Language': 'en' } }
         );
         const data = await res.json();

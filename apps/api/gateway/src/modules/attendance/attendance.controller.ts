@@ -145,12 +145,14 @@ export class AttendanceController {
     @Query('limit') limit?: number,
     @Request() req?: any,
   ) {
+    const parsedPage = page ? Math.max(1, Number(page) || 1) : 1;
+    const parsedLimit = Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500);
     return this.attendanceService.getAllEntries({
       organizationId: req.user.organizationId,
       date,
       status,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
+      page: parsedPage,
+      limit: parsedLimit,
     });
   }
 

@@ -820,7 +820,8 @@ model TimeEntry {
 
   notes String?
 
-  // Approval workflow
+  // Smart auto-approval
+  flagReasons      String[]       @default([])  // e.g. ["OVERTIME", "LATE_ARRIVAL"]
   approvalStatus   ApprovalStatus @default(PENDING)
   approvedById     String?
   approvedBy       User?          @relation("ApprovedTimeEntries", fields: [approvedById], references: [id])

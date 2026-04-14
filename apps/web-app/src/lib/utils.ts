@@ -141,8 +141,3 @@ export function getRequestId(task: { id: string; createdAt: string }): string {
 /**
  * Get initials from a name (e.g., "John Doe" -> "JD")
  */
-export function getInitials(firstName?: string, lastName?: string): string {
-  const first = firstName?.charAt(0)?.toUpperCase() || ""
-  const last = lastName?.charAt(0)?.toUpperCase() || ""
-  return `${first}${last}`
-}

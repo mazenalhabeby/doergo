@@ -157,27 +157,25 @@ export interface Organization extends BaseEntity {
   isActive: boolean;
 }
 
-// Company Location interface (for full-time technician attendance)
-export interface CompanyLocation extends BaseEntity {
-  name: string;
-  address?: string;
-  lat: number;
-  lng: number;
-  geofenceRadius: number;
-  isActive: boolean;
-  organizationId: string;
-}
+// CompanyLocation, Break, TimeEntry, AttendanceStatus
+// are defined in ./attendance.ts and re-exported below via `export * from './attendance'`
 
 // Technician Assignment interface (many-to-many: User ↔ CompanyLocation)
 export interface TechnicianAssignment extends BaseEntity {
   userId: string;
   locationId: string;
-  isPrimary: boolean;       // Main work location
-  schedule: string[];       // Work days: ["MON", "TUE", "WED", "THU", "FRI"]
-  effectiveFrom: Date;      // Assignment start date
-  effectiveTo?: Date;       // Assignment end date (null = indefinite)
-  // Populated relations
-  location?: CompanyLocation;
+  isPrimary: boolean;
+  schedule: string[];
+  effectiveFrom: Date;
+  effectiveTo?: Date;
+  location?: {
+    id: string;
+    name: string;
+    address?: string;
+    lat: number;
+    lng: number;
+    geofenceRadius: number;
+  };
   user?: {
     id: string;
     firstName: string;
@@ -185,82 +183,6 @@ export interface TechnicianAssignment extends BaseEntity {
     email: string;
     technicianType?: TechnicianType;
   };
-}
-
-// Break interface (breaks during a shift)
-export interface Break extends BaseEntity {
-  timeEntryId: string;
-  type: BreakType;
-  startedAt: Date;
-  endedAt?: Date;
-  durationMinutes?: number;
-  notes?: string;
-  // Populated relations (from API response)
-  user?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email?: string;
-  };
-  location?: CompanyLocation;
-}
-
-// Time Entry interface (clock-in/clock-out records)
-export interface TimeEntry extends BaseEntity {
-  userId: string;
-  locationId: string;
-  status: TimeEntryStatus;
-  clockInAt: Date;
-  clockInLat: number;
-  clockInLng: number;
-  clockInAccuracy?: number;
-  clockOutAt?: Date;
-  clockOutLat?: number;
-  clockOutLng?: number;
-  clockOutAccuracy?: number;
-  clockInWithinGeofence: boolean;
-  clockOutWithinGeofence?: boolean;
-  totalMinutes?: number;
-  breakMinutes?: number;
-  notes?: string;
-  organizationId: string;
-  // Approval workflow
-  approvalStatus?: ApprovalStatus;
-  approvedById?: string;
-  approvedAt?: Date;
-  approvalNotes?: string;
-  // Edit tracking
-  isEdited?: boolean;
-  editedById?: string;
-  editedAt?: Date;
-  originalClockIn?: Date;
-  originalClockOut?: Date;
-  editReason?: string;
-  // Populated relations
-  location?: CompanyLocation;
-  user?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  approvedBy?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  editedBy?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  breaks?: Break[];
-}
-
-// Attendance Status (for technician's current clock status)
-export interface AttendanceStatus {
-  isClockedIn: boolean;
-  currentEntry?: TimeEntry;
-  assignedLocations: CompanyLocation[];
 }
 
 // Organization Access (delegation between orgs)

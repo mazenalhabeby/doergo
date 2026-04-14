@@ -13,11 +13,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { SkipOnboardingCheck } from '@hbcfield/shared';
-import {
-  CurrentUser,
-  CurrentUserData,
-} from '../../common/decorators/current-user.decorator';
+import { SkipOnboardingCheck, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import {
   CreateOrganizationDto,
   SubmitJoinRequestDto,

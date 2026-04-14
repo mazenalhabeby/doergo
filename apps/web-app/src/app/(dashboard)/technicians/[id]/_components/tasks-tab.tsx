@@ -61,7 +61,7 @@ export function TasksTab({ tasks }: TasksTabProps) {
                   >
                     <TableCell className="font-medium">{task.title}</TableCell>
                     <TableCell>
-                      <Badge className={statusConfig.bgClass}>
+                      <Badge className={statusConfig.className}>
                         {statusConfig.label}
                       </Badge>
                     </TableCell>

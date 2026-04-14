@@ -20,14 +20,10 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import {
-  CurrentUser,
-  CurrentUserData,
-} from '../../common/decorators/current-user.decorator';
 import {
   CreateTechnicianDto,
   UpdateTechnicianDto,
@@ -72,24 +68,25 @@ export class TechniciansController {
   // ============================================================================
 
   @Get('availability')
-  @ApiOperation({ summary: 'Get all technicians availability for a date' })
+  @ApiOperation({ summary: 'Get all technicians availability for a date or date range' })
   @ApiResponse({ status: 200, description: 'Availability retrieved' })
   @Roles(Role.ADMIN, Role.DISPATCHER)
   async getAvailability(
     @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @CurrentUser() user?: CurrentUserData,
   ) {
-    // Validate date format if provided
-    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      throw new ForbiddenException('Invalid date format. Use YYYY-MM-DD');
-    }
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    const now = new Date();
+    const ninetyDays = 90 * 24 * 60 * 60 * 1000;
 
-    // Restrict date range to ±90 days from today
-    if (date) {
-      const requestedDate = new Date(date);
-      const now = new Date();
-      const ninetyDays = 90 * 24 * 60 * 60 * 1000;
-      if (Math.abs(requestedDate.getTime() - now.getTime()) > ninetyDays) {
+    // Validate and check all provided dates
+    for (const d of [date, startDate, endDate].filter(Boolean) as string[]) {
+      if (!datePattern.test(d)) {
+        throw new ForbiddenException('Invalid date format. Use YYYY-MM-DD');
+      }
+      if (Math.abs(new Date(d).getTime() - now.getTime()) > ninetyDays) {
         throw new ForbiddenException('Date must be within 90 days of today');
       }
     }
@@ -100,6 +97,8 @@ export class TechniciansController {
         {
           organizationId: user?.organizationId,
           date,
+          startDate,
+          endDate,
         },
       ),
     );
@@ -350,8 +349,8 @@ export class TechniciansController {
           id,
           organizationId: user?.organizationId,
           status,
-          page,
-          limit,
+          page: page ? Math.max(1, Number(page) || 1) : 1,
+          limit: Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500),
         },
       ),
     );

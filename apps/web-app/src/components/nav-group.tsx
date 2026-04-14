@@ -172,9 +172,12 @@ function NavSimpleItem({
 export function NavGroup({ label, items }: NavGroupProps) {
   const pathname = usePathname()
 
+  // Collect all nav item URLs to avoid ambiguous prefix matches
+  const allUrls = items.map((item) => item.url.split("?")[0]!)
+
   // Check if a URL is active (exact match including query params for sub-items)
   const isActive = (url: string, isSubItem: boolean = false) => {
-    const basePath = url.split("?")[0]
+    const basePath = url.split("?")[0]!
     const hasQuery = url.includes("?")
 
     // For sub-items with query params, require exact pathname match and no query in current URL
@@ -187,8 +190,16 @@ export function NavGroup({ label, items }: NavGroupProps) {
       return pathname === basePath
     }
 
-    // For parent items, check prefix
-    return pathname === basePath || pathname.startsWith(basePath + "/")
+    // For parent items, check prefix — but not if a sibling nav item has a more specific match
+    if (pathname === basePath) return true
+    if (pathname.startsWith(basePath + "/")) {
+      // Check if another sibling item is a more specific match for this pathname
+      const hasSiblingMatch = allUrls.some(
+        (other) => other !== basePath && other.startsWith(basePath + "/") && pathname.startsWith(other)
+      )
+      return !hasSiblingMatch
+    }
+    return false
   }
 
   // Check if any sub-item is active

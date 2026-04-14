@@ -2213,6 +2213,22 @@ export const techniciansApi = {
 
     return response.data?.data;
   },
+
+  // Get availability for a date range (single API call)
+  getAvailabilityRange: async (startDate: string, endDate: string) => {
+    const endpoint = buildUrlWithQuery('/technicians/availability', { startDate, endDate });
+
+    const response = await api.get<{
+      success: boolean;
+      data: AvailabilityResponse[];
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
 };
 
 // ========================================================================

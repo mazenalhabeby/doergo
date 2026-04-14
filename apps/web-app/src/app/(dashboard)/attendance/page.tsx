@@ -15,8 +15,6 @@ import {
   Settings,
   Play,
   Timer,
-  FileText,
-  Download,
   BarChart3,
   TrendingUp,
   ClipboardCheck,
@@ -31,6 +29,7 @@ import { toast } from "sonner"
 
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi, type TimeEntry, type CompanyLocation, type TimeEntryStatus, type AttendanceSummary, type Break, type BreakType, type BreakSummary } from "@/lib/api"
+import { ReportsTab } from "./_components/reports-tab"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -106,6 +105,39 @@ function GeofenceIndicator({ withinGeofence }: { withinGeofence: boolean }) {
   )
 }
 
+// Flag reason badge for smart auto-approval
+const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
+  OVERTIME: { label: "Overtime", className: "bg-orange-50 text-orange-700 border-orange-200" },
+  MISSED_CLOCK_OUT: { label: "Missed Clock-Out", className: "bg-red-50 text-red-700 border-red-200" },
+  OUTSIDE_GEOFENCE_IN: { label: "Geofence (In)", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  OUTSIDE_GEOFENCE_OUT: { label: "Geofence (Out)", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  LATE_ARRIVAL: { label: "Late Arrival", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  EARLY_DEPARTURE: { label: "Early Departure", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  UNSCHEDULED_DAY: { label: "Unscheduled", className: "bg-purple-50 text-purple-700 border-purple-200" },
+}
+
+function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
+  if (!reasons || reasons.length === 0) return null
+  return (
+    <div className="flex flex-wrap gap-1">
+      {reasons.map((reason) => {
+        const config = FLAG_BADGE_CONFIG[reason] || { label: reason, className: "bg-slate-50 text-slate-600 border-slate-200" }
+        return (
+          <span
+            key={reason}
+            className={cn(
+              "inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full border",
+              config.className
+            )}
+          >
+            {config.label}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 // Parse date input (handles both Date objects and ISO strings)
 function toDate(dateInput: Date | string): Date {
   return dateInput instanceof Date ? dateInput : parseISO(dateInput)
@@ -137,14 +169,14 @@ function StatCard({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/60 p-5 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className={cn("p-2.5 rounded-lg", colorClasses[color])}>
+    <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center gap-4">
+        <div className={cn("p-3 rounded-xl", colorClasses[color])}>
           <Icon className="size-5" />
         </div>
         <div>
-          <p className="text-sm text-slate-500">{title}</p>
-          <p className="text-2xl font-bold text-slate-900">{value}</p>
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{title}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-0.5">{value}</p>
         </div>
       </div>
     </div>
@@ -169,7 +201,7 @@ export default function AttendancePage() {
   const limit = 20
 
   // Reports states
-  const [reportType, setReportType] = useState<"weekly" | "monthly">("weekly")
+  // reportType and reportLocationId moved to ReportsTab component
 
   // Check role - only ADMIN and DISPATCHER can access
   const canAccess = user?.role === "ADMIN" || user?.role === "DISPATCHER"
@@ -231,19 +263,7 @@ export default function AttendancePage() {
     },
   })
 
-  // Fetch weekly report
-  const { data: weeklyReport, isLoading: loadingWeeklyReport } = useQuery({
-    queryKey: ["attendance-report", "weekly"],
-    queryFn: () => attendanceApi.getWeeklyReport(),
-    enabled: canAccess && activeTab === "reports" && reportType === "weekly",
-  })
-
-  // Fetch monthly report
-  const { data: monthlyReport, isLoading: loadingMonthlyReport } = useQuery({
-    queryKey: ["attendance-report", "monthly"],
-    queryFn: () => attendanceApi.getMonthlyReport(),
-    enabled: canAccess && activeTab === "reports" && reportType === "monthly",
-  })
+  // Weekly/monthly reports moved to ReportsTab component
 
   // Fetch pending approvals
   const { data: pendingApprovalsData, isLoading: loadingApprovals, refetch: refetchApprovals } = useQuery({
@@ -299,37 +319,7 @@ export default function AttendancePage() {
     },
   })
 
-  // Export to CSV mutation
-  const exportCSV = useMutation({
-    mutationFn: () => {
-      const currentReport = reportType === "weekly" ? weeklyReport : monthlyReport
-      if (!currentReport?.period) {
-        throw new Error("No report data available")
-      }
-      return attendanceApi.exportToCSV({
-        startDate: currentReport.period.startDate,
-        endDate: currentReport.period.endDate,
-      })
-    },
-    onSuccess: (data) => {
-      if (data) {
-        // Create blob and download
-        const blob = new Blob([data.content], { type: data.mimeType })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = data.filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        window.URL.revokeObjectURL(url)
-        toast.success(`Exported ${data.recordCount} records`)
-      }
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to export")
-    },
-  })
+  // Export CSV moved to ReportsTab component
 
   // Approve entry mutation
   const approveEntry = useMutation({
@@ -416,54 +406,56 @@ export default function AttendancePage() {
     <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">
-              Attendance Management
-            </h1>
-            <p className="mt-1.5 text-slate-500">
-              Track attendance, view reports, and manage approvals
-            </p>
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                Attendance Management
+              </h1>
+              <p className="mt-1.5 text-slate-500">
+                Track attendance, view reports, and manage approvals
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as typeof activeTab)} className="mb-6">
-          <TabsList className="bg-white border border-slate-200/60 rounded-xl p-1 shadow-sm">
+          <TabsList className="bg-white border border-slate-200/60 rounded-xl p-1 shadow-sm h-auto">
             <TabsTrigger
               value="tracking"
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 rounded-lg px-4 py-2"
+              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
-              <Clock className="size-4 mr-2" />
-              Daily Tracking
+              <Clock className="size-3.5 mr-1.5" />
+              Tracking
             </TabsTrigger>
             <TabsTrigger
               value="reports"
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 rounded-lg px-4 py-2"
+              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
-              <BarChart3 className="size-4 mr-2" />
+              <BarChart3 className="size-3.5 mr-1.5" />
               Reports
             </TabsTrigger>
             <TabsTrigger
               value="approvals"
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 rounded-lg px-4 py-2 relative"
+              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
-              <ClipboardCheck className="size-4 mr-2" />
+              <ClipboardCheck className="size-3.5 mr-1.5" />
               Approvals
               {pendingApprovalsData?.meta?.total ? (
-                <span className="ml-2 inline-flex items-center justify-center size-5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
+                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-amber-400 text-white rounded-full px-1">
                   {pendingApprovalsData.meta.total}
                 </span>
               ) : null}
             </TabsTrigger>
             <TabsTrigger
               value="breaks"
-              className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 rounded-lg px-4 py-2 relative"
+              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
-              <Coffee className="size-4 mr-2" />
+              <Coffee className="size-3.5 mr-1.5" />
               Breaks
               {activeBreaks.length > 0 ? (
-                <span className="ml-2 inline-flex items-center justify-center size-5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-orange-400 text-white rounded-full px-1">
                   {activeBreaks.length}
                 </span>
               ) : null}
@@ -473,33 +465,35 @@ export default function AttendancePage() {
           {/* Daily Tracking Tab */}
           <TabsContent value="tracking" className="mt-6">
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            title="Currently Active"
-            value={stats.active}
-            icon={Users}
-            color="green"
-          />
-          <StatCard
-            title="Completed Shifts"
-            value={stats.completed}
-            icon={CheckCircle2}
-            color="blue"
-          />
-          <StatCard
-            title="Auto Clock-Out"
-            value={stats.autoOut}
-            icon={AlertCircle}
-            color="amber"
-          />
-          <StatCard
-            title="Total Hours"
-            value={`${stats.totalHours}h`}
-            icon={Clock}
-            color="slate"
-          />
-        </div>
+        {/* Stats Cards — only show when there's data */}
+        {entries.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <StatCard
+              title="Currently Active"
+              value={stats.active}
+              icon={Users}
+              color="green"
+            />
+            <StatCard
+              title="Completed Shifts"
+              value={stats.completed}
+              icon={CheckCircle2}
+              color="blue"
+            />
+            <StatCard
+              title="Auto Clock-Out"
+              value={stats.autoOut}
+              icon={AlertCircle}
+              color="amber"
+            />
+            <StatCard
+              title="Total Hours"
+              value={`${stats.totalHours}h`}
+              icon={Clock}
+              color="slate"
+            />
+          </div>
+        )}
 
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (
@@ -570,20 +564,20 @@ export default function AttendancePage() {
           </div>
         )}
 
-        {/* Scheduler Section (ADMIN only) */}
+        {/* Scheduler Section (ADMIN only) — compact collapsible */}
         {isAdmin && schedulerInfo && (
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
+          <details className="bg-white rounded-2xl border border-slate-200/60 shadow-sm mb-8 group">
+            <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-slate-50/50 rounded-2xl transition-colors">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg bg-purple-50 text-purple-600">
-                  <Settings className="size-5" />
+                <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
+                  <Settings className="size-4" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-sm font-semibold text-slate-900">
                     Auto Clock-Out Scheduler
                   </h2>
-                  <p className="text-sm text-slate-500">
-                    Automatic clock-out runs hourly and at midnight
+                  <p className="text-xs text-slate-500">
+                    {schedulerInfo.repeatableJobs?.length || 0} jobs · {schedulerInfo.queueStats?.active || 0} active · {schedulerInfo.queueStats?.failed || 0} failed
                   </p>
                 </div>
               </div>
@@ -591,101 +585,61 @@ export default function AttendancePage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => triggerAutoClockOut.mutate("hourly")}
+                  onClick={(e) => { e.preventDefault(); triggerAutoClockOut.mutate("hourly") }}
                   disabled={triggerAutoClockOut.isPending}
-                  className="rounded-lg"
+                  className="rounded-lg h-8 text-xs"
                 >
-                  <Play className="size-4 mr-1.5" />
-                  Run Hourly Check
+                  <Play className="size-3 mr-1" />
+                  Hourly
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => triggerAutoClockOut.mutate("midnight")}
+                  onClick={(e) => { e.preventDefault(); triggerAutoClockOut.mutate("midnight") }}
                   disabled={triggerAutoClockOut.isPending}
-                  className="rounded-lg"
+                  className="rounded-lg h-8 text-xs"
                 >
-                  <Timer className="size-4 mr-1.5" />
-                  Run Midnight Check
+                  <Timer className="size-3 mr-1" />
+                  Midnight
                 </Button>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Scheduled Jobs */}
-              <div className="p-4 bg-slate-50 rounded-xl">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-                  Scheduled Jobs
-                </p>
-                <p className="text-2xl font-bold text-slate-900">
-                  {schedulerInfo.repeatableJobs?.length || 0}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {schedulerInfo.repeatableJobs?.map((j) => j.name).join(", ") || "None"}
-                </p>
+            </summary>
+            <div className="px-4 pb-4 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-1">Scheduled</p>
+                  <p className="text-lg font-bold text-slate-900">{schedulerInfo.repeatableJobs?.length || 0}</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-xl">
+                  <p className="text-[10px] font-medium text-blue-600 uppercase tracking-wide mb-1">Active</p>
+                  <p className="text-lg font-bold text-blue-700">{schedulerInfo.queueStats?.active || 0}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-xl">
+                  <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide mb-1">Completed</p>
+                  <p className="text-lg font-bold text-green-700">{schedulerInfo.queueStats?.completed || 0}</p>
+                </div>
+                <div className="p-3 bg-red-50 rounded-xl">
+                  <p className="text-[10px] font-medium text-red-600 uppercase tracking-wide mb-1">Failed</p>
+                  <p className="text-lg font-bold text-red-700">{schedulerInfo.queueStats?.failed || 0}</p>
+                </div>
               </div>
-
-              {/* Queue Stats */}
-              <div className="p-4 bg-blue-50 rounded-xl">
-                <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-2">
-                  Active Jobs
-                </p>
-                <p className="text-2xl font-bold text-blue-700">
-                  {schedulerInfo.queueStats?.active || 0}
-                </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  {schedulerInfo.queueStats?.waiting || 0} waiting
-                </p>
-              </div>
-
-              <div className="p-4 bg-green-50 rounded-xl">
-                <p className="text-xs font-medium text-green-600 uppercase tracking-wide mb-2">
-                  Completed
-                </p>
-                <p className="text-2xl font-bold text-green-700">
-                  {schedulerInfo.queueStats?.completed || 0}
-                </p>
-                <p className="text-xs text-green-600 mt-1">
-                  Total completed jobs
-                </p>
-              </div>
-
-              <div className="p-4 bg-red-50 rounded-xl">
-                <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-2">
-                  Failed
-                </p>
-                <p className="text-2xl font-bold text-red-700">
-                  {schedulerInfo.queueStats?.failed || 0}
-                </p>
-                <p className="text-xs text-red-600 mt-1">
-                  Check Bull Board for details
-                </p>
-              </div>
-            </div>
-
-            {/* Next scheduled runs */}
-            {schedulerInfo.repeatableJobs && schedulerInfo.repeatableJobs.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-                  Next Scheduled Runs
-                </p>
-                <div className="flex flex-wrap gap-2">
+              {schedulerInfo.repeatableJobs && schedulerInfo.repeatableJobs.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
                   {schedulerInfo.repeatableJobs.map((job, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-lg"
                     >
                       <Clock className="size-3" />
-                      {job.id || job.name}:{" "}
                       {job.next
                         ? format(new Date(job.next), "MMM d, h:mm a")
                         : job.pattern || `Every ${Math.round((job.every || 0) / 60000)}min`}
                     </span>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </details>
         )}
 
         {/* Filters */}
@@ -816,14 +770,14 @@ export default function AttendancePage() {
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/50">
-                    <TableHead className="font-semibold">Technician</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Clock In</TableHead>
-                    <TableHead className="font-semibold">Clock Out</TableHead>
-                    <TableHead className="font-semibold">Duration</TableHead>
-                    <TableHead className="font-semibold">Geofence</TableHead>
-                    <TableHead className="font-semibold">Notes</TableHead>
+                  <TableRow className="bg-slate-50/80">
+                    <TableHead className="font-semibold text-slate-600">Technician</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Clock In</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Clock Out</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Duration</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Approval</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -878,9 +832,30 @@ export default function AttendancePage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <GeofenceIndicator
-                          withinGeofence={entry.clockInWithinGeofence}
-                        />
+                        <div className="space-y-1">
+                          {entry.approvalStatus === "AUTO" ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                              <CheckCircle2 className="size-3.5" />
+                              Auto-Approved
+                            </span>
+                          ) : entry.approvalStatus === "APPROVED" ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
+                              <CheckCircle2 className="size-3.5" />
+                              Approved
+                            </span>
+                          ) : entry.approvalStatus === "REJECTED" ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
+                              <XCircle className="size-3.5" />
+                              Rejected
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
+                              <Clock className="size-3.5" />
+                              Pending
+                            </span>
+                          )}
+                          <FlagReasonBadges reasons={entry.flagReasons} />
+                        </div>
                       </TableCell>
                       <TableCell>
                         {entry.notes ? (
@@ -901,7 +876,7 @@ export default function AttendancePage() {
 
               {/* Pagination */}
               {meta && meta.totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100">
+                <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
                   <p className="text-sm text-slate-500">
                     Showing {(page - 1) * limit + 1} to{" "}
                     {Math.min(page * limit, meta.total)} of {meta.total} entries
@@ -910,17 +885,16 @@ export default function AttendancePage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="rounded-lg"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
                       Previous
                     </Button>
-                    <span className="text-sm text-slate-600 px-3">
-                      Page {page} of {meta.totalPages}
-                    </span>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="rounded-lg"
                       onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
                       disabled={page === meta.totalPages}
                     >
@@ -936,182 +910,7 @@ export default function AttendancePage() {
 
           {/* Reports Tab */}
           <TabsContent value="reports" className="mt-6">
-            {/* Report Type Toggle */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={reportType === "weekly" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setReportType("weekly")}
-                  className="rounded-lg"
-                >
-                  Weekly Report
-                </Button>
-                <Button
-                  variant={reportType === "monthly" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setReportType("monthly")}
-                  className="rounded-lg"
-                >
-                  Monthly Report
-                </Button>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportCSV.mutate()}
-                disabled={exportCSV.isPending || (!weeklyReport && !monthlyReport)}
-                className="rounded-lg"
-              >
-                <Download className="size-4 mr-2" />
-                Export CSV
-              </Button>
-            </div>
-
-            {/* Report Content */}
-            {(loadingWeeklyReport || loadingMonthlyReport) ? (
-              <div className="space-y-4">
-                <Skeleton className="h-32 w-full rounded-xl" />
-                <Skeleton className="h-48 w-full rounded-xl" />
-              </div>
-            ) : (
-              (() => {
-                const report = reportType === "weekly" ? weeklyReport : monthlyReport
-                if (!report) {
-                  return (
-                    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-12 text-center">
-                      <FileText className="size-12 text-slate-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-slate-800">No report data</h3>
-                      <p className="text-slate-500 mt-1">Select a report type to view attendance data</p>
-                    </div>
-                  )
-                }
-
-                return (
-                  <div className="space-y-6">
-                    {/* Period Info */}
-                    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-slate-900">
-                          {reportType === "weekly" ? "Weekly" : "Monthly"} Summary
-                        </h2>
-                        <span className="text-sm text-slate-500">
-                          {report.period.startDate} to {report.period.endDate} ({report.period.workDays} work days)
-                        </span>
-                      </div>
-
-                      {/* Summary Stats */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-4 bg-blue-50 rounded-xl">
-                          <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">Total Hours</p>
-                          <p className="text-2xl font-bold text-blue-700">{report.summary.totalHours}h</p>
-                          <p className="text-xs text-blue-600">Across {report.summary.totalShifts} shifts</p>
-                        </div>
-                        <div className="p-4 bg-green-50 rounded-xl">
-                          <p className="text-xs font-medium text-green-600 uppercase tracking-wide mb-1">Standard Hours</p>
-                          <p className="text-2xl font-bold text-green-700">{report.summary.standardHours}h</p>
-                          <p className="text-xs text-green-600">Expected for period</p>
-                        </div>
-                        <div className="p-4 bg-amber-50 rounded-xl">
-                          <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Overtime</p>
-                          <p className="text-2xl font-bold text-amber-700">{report.summary.overtimeHours}h</p>
-                          <p className="text-xs text-amber-600">Above standard</p>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                          <p className="text-xs font-medium text-slate-600 uppercase tracking-wide mb-1">Avg Shift</p>
-                          <p className="text-2xl font-bold text-slate-700">{report.summary.averageShiftHours}h</p>
-                          <p className="text-xs text-slate-500">{report.summary.autoClockOuts} auto clock-outs</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* By User */}
-                    {report.byUser.length > 0 && (
-                      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
-                        <h3 className="text-md font-semibold text-slate-900 mb-4">By Technician</h3>
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-slate-50/50">
-                              <TableHead className="font-semibold">Technician</TableHead>
-                              <TableHead className="font-semibold">Total Hours</TableHead>
-                              <TableHead className="font-semibold">Shifts</TableHead>
-                              <TableHead className="font-semibold">Avg Shift</TableHead>
-                              <TableHead className="font-semibold">Auto Clock-Outs</TableHead>
-                              <TableHead className="font-semibold">Locations</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {report.byUser.map((item) => (
-                              <TableRow key={item.user.id}>
-                                <TableCell>
-                                  <div className="flex items-center gap-3">
-                                    <div className="size-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-                                      {item.user.firstName?.[0]}{item.user.lastName?.[0]}
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-slate-900">
-                                        {item.user.firstName} {item.user.lastName}
-                                      </p>
-                                      <p className="text-xs text-slate-500">{item.user.email}</p>
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="font-medium">{item.totalHours}h</TableCell>
-                                <TableCell>{item.shifts}</TableCell>
-                                <TableCell>{item.averageShiftHours}h</TableCell>
-                                <TableCell>
-                                  {item.autoClockOuts > 0 ? (
-                                    <span className="text-amber-600">{item.autoClockOuts}</span>
-                                  ) : (
-                                    <span className="text-slate-400">0</span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <span className="text-sm text-slate-600">
-                                    {item.locations.join(", ")}
-                                  </span>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-
-                    {/* By Location */}
-                    {report.byLocation.length > 0 && (
-                      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
-                        <h3 className="text-md font-semibold text-slate-900 mb-4">By Location</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {report.byLocation.map((item) => (
-                            <div key={item.location.id} className="p-4 bg-slate-50 rounded-xl">
-                              <div className="flex items-center gap-2 mb-2">
-                                <MapPin className="size-4 text-slate-500" />
-                                <p className="font-medium text-slate-900">{item.location.name}</p>
-                              </div>
-                              <div className="grid grid-cols-3 gap-2 text-center">
-                                <div>
-                                  <p className="text-lg font-bold text-slate-900">{item.totalHours}h</p>
-                                  <p className="text-xs text-slate-500">Hours</p>
-                                </div>
-                                <div>
-                                  <p className="text-lg font-bold text-slate-900">{item.shifts}</p>
-                                  <p className="text-xs text-slate-500">Shifts</p>
-                                </div>
-                                <div>
-                                  <p className="text-lg font-bold text-slate-900">{item.uniqueTechnicians}</p>
-                                  <p className="text-xs text-slate-500">Technicians</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })()
-            )}
+            <ReportsTab locations={locations} canAccess={canAccess} />
           </TabsContent>
 
           {/* Approvals Tab */}
@@ -1152,14 +951,15 @@ export default function AttendancePage() {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/50">
-                      <TableHead className="font-semibold">Technician</TableHead>
-                      <TableHead className="font-semibold">Location</TableHead>
-                      <TableHead className="font-semibold">Date</TableHead>
-                      <TableHead className="font-semibold">Clock In</TableHead>
-                      <TableHead className="font-semibold">Clock Out</TableHead>
-                      <TableHead className="font-semibold">Duration</TableHead>
-                      <TableHead className="font-semibold text-right">Actions</TableHead>
+                    <TableRow className="bg-slate-50/80">
+                      <TableHead className="font-semibold text-slate-600">Technician</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Location</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Date</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Clock In</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Clock Out</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Duration</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Reason</TableHead>
+                      <TableHead className="font-semibold text-slate-600 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1180,6 +980,9 @@ export default function AttendancePage() {
                         <TableCell>{formatTime(entry.clockInAt)}</TableCell>
                         <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt) : "-"}</TableCell>
                         <TableCell className="font-medium">{formatDurationMinutes(entry.totalMinutes)}</TableCell>
+                        <TableCell>
+                          <FlagReasonBadges reasons={entry.flagReasons} />
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
@@ -1482,13 +1285,13 @@ export default function AttendancePage() {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/50">
-                      <TableHead className="font-semibold">Technician</TableHead>
-                      <TableHead className="font-semibold">Type</TableHead>
-                      <TableHead className="font-semibold">Started</TableHead>
-                      <TableHead className="font-semibold">Ended</TableHead>
-                      <TableHead className="font-semibold">Duration</TableHead>
-                      <TableHead className="font-semibold">Notes</TableHead>
+                    <TableRow className="bg-slate-50/80">
+                      <TableHead className="font-semibold text-slate-600">Technician</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Type</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Started</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Ended</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Duration</TableHead>
+                      <TableHead className="font-semibold text-slate-600">Notes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

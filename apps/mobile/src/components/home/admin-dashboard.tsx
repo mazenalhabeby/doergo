@@ -166,9 +166,9 @@ export function AdminDashboard() {
           <View style={adminStyles.statsStrip}>
             {([
               { n: stats.total, label: 'Total', color: colors.textPrimary },
-              { n: stats.inProgress, label: 'Active', color: COLORS.amber },
-              { n: stats.completed, label: 'Done', color: COLORS.success },
-              { n: stats.pending, label: 'Pending', color: COLORS.purple },
+              { n: stats.inProgress, label: 'Active', color: colors.textPrimary },
+              { n: stats.completed, label: 'Done', color: colors.textPrimary },
+              { n: stats.pending, label: 'Pending', color: colors.textPrimary },
             ] as const).map((s, i) => (
               <View key={i} style={adminStyles.statCell}>
                 <Text style={[adminStyles.statNum, { color: s.color }]}>{s.n}</Text>

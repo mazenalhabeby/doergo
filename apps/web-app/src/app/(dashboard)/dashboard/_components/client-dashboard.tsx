@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   ClipboardList,
@@ -36,24 +37,26 @@ export function ClientDashboard() {
 
   const tasks = tasksData?.data || []
 
-  // Calculate stats
-  const totalTasks = tasks.length
-  const inProgressTasks = tasks.filter(t => t.status === "IN_PROGRESS").length
-  const completedTasks = tasks.filter(t => t.status === "COMPLETED" || t.status === "CLOSED").length
-  const pendingTasks = tasks.filter(t => t.status === "NEW" || t.status === "ASSIGNED").length
-  const blockedTasks = tasks.filter(t => t.status === "BLOCKED").length
+  // Calculate stats (memoized to avoid re-filtering on every render)
+  const { totalTasks, inProgressTasks, completedTasks, pendingTasks, blockedTasks } = useMemo(() => ({
+    totalTasks: tasks.length,
+    inProgressTasks: tasks.filter(t => t.status === "IN_PROGRESS").length,
+    completedTasks: tasks.filter(t => t.status === "COMPLETED" || t.status === "CLOSED").length,
+    pendingTasks: tasks.filter(t => t.status === "NEW" || t.status === "ASSIGNED").length,
+    blockedTasks: tasks.filter(t => t.status === "BLOCKED").length,
+  }), [tasks])
 
   // Task distribution for chart
-  const chartData = [
+  const chartData = useMemo(() => [
     { name: "New", value: tasks.filter(t => t.status === "NEW").length, color: taskStatusColors.NEW },
     { name: "Assigned", value: tasks.filter(t => t.status === "ASSIGNED").length, color: taskStatusColors.ASSIGNED },
     { name: "In Progress", value: inProgressTasks, color: taskStatusColors.IN_PROGRESS },
     { name: "Completed", value: completedTasks, color: taskStatusColors.COMPLETED },
     { name: "Blocked", value: blockedTasks, color: taskStatusColors.BLOCKED },
-  ].filter(d => d.value > 0)
+  ].filter(d => d.value > 0), [tasks, inProgressTasks, completedTasks, blockedTasks])
 
   // Recent tasks
-  const recentTasks: RecentTask[] = tasks.slice(0, 5).map(t => ({
+  const recentTasks: RecentTask[] = useMemo(() => tasks.slice(0, 5).map(t => ({
     id: t.id,
     title: t.title,
     status: t.status,
@@ -62,20 +65,20 @@ export function ClientDashboard() {
     location: t.locationAddress || undefined,
     assignee: t.assignedTo ? { name: `${t.assignedTo.firstName} ${t.assignedTo.lastName}` } : undefined,
     createdAt: new Date(t.createdAt),
-  }))
+  })), [tasks])
 
-  // Mock activity for now (would come from real-time events)
-  const activities: ActivityItem[] = tasks.slice(0, 4).map(t => ({
+  // Activity derived from tasks
+  const activities: ActivityItem[] = useMemo(() => tasks.slice(0, 4).map(t => ({
     id: t.id,
     type: t.status === "COMPLETED" ? "task_completed" : t.status === "IN_PROGRESS" ? "task_started" : "task_created",
     title: t.title,
     description: `Status: ${t.status.replace("_", " ")}`,
     timestamp: new Date(t.updatedAt || t.createdAt),
     user: t.assignedTo ? { name: `${t.assignedTo.firstName} ${t.assignedTo.lastName}` } : undefined,
-  }))
+  })), [tasks])
 
-  // Quick actions for CLIENT
-  const quickActions = [
+  // Quick actions (static)
+  const quickActions = useMemo(() => [
     {
       label: "Create Task",
       description: "Submit a new service request",
@@ -88,7 +91,7 @@ export function ClientDashboard() {
       href: "/tasks",
       icon: ClipboardList,
     },
-  ]
+  ], [])
 
   const greeting = getGreeting()
 

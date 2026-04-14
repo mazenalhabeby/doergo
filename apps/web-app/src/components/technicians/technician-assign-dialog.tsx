@@ -125,17 +125,26 @@ export function TechnicianAssignDialog({
   const [availabilityFilter, setAvailabilityFilter] = useState("all")
 
   // Get suggested technician (highest score from backend)
+  // Only consider ON_ROAD and HYBRID technicians for task assignment
+  const assignableTechnicians = useMemo(
+    () => technicians.filter((t) => t.workMode !== "ON_SITE"),
+    [technicians]
+  )
+
   const suggestedTechnician = useMemo(() => {
     if (suggestedTechnicianId) {
-      return technicians.find((t) => t.id === suggestedTechnicianId)
+      return assignableTechnicians.find((t) => t.id === suggestedTechnicianId)
     }
     // Backend already sorts by score, first one is the best
-    return technicians[0]
-  }, [technicians, suggestedTechnicianId])
+    return assignableTechnicians[0]
+  }, [assignableTechnicians, suggestedTechnicianId])
 
   // Filter technicians
   const filteredTechnicians = useMemo(() => {
     let filtered = technicians.filter((tech) => {
+      // Only show ON_ROAD and HYBRID technicians (not ON_SITE)
+      if (tech.workMode === "ON_SITE") return false
+
       // Name filter
       if (searchName) {
         const fullName = `${tech.firstName} ${tech.lastName}`.toLowerCase()

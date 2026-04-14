@@ -1,7 +1,15 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useAuth } from "@/contexts/auth-context"
-import { ClientDashboard, DispatcherDashboard } from "./_components"
+
+const ClientDashboard = dynamic(
+  () => import("./_components").then((m) => ({ default: m.ClientDashboard })),
+)
+const DispatcherDashboard = dynamic(
+  () =>
+    import("./_components").then((m) => ({ default: m.DispatcherDashboard })),
+)
 
 export default function DashboardPage() {
   const { user } = useAuth()

@@ -7,6 +7,7 @@ import {
   IsArray,
   ValidateNested,
   Min,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -68,6 +69,7 @@ export class CompleteTaskDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(2 * 1024 * 1024, { message: 'Signature must be under 2MB' })
   technicianSignature?: string;
 
   @ApiPropertyOptional({
@@ -76,6 +78,7 @@ export class CompleteTaskDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(2 * 1024 * 1024, { message: 'Signature must be under 2MB' })
   customerSignature?: string;
 
   @ApiPropertyOptional({

@@ -19,7 +19,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { DashboardSkeleton } from '@/components/skeletons';
-import { TokenDisplay } from '@/components/token-display';
+// TokenDisplay hidden — re-enable for debugging: import { TokenDisplay } from '@/components/token-display';
 import { useAuth } from '@/contexts/auth-context';
 import { BreadcrumbProvider, useBreadcrumbOverride } from '@/contexts/breadcrumb-context';
 
@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {children}
           </div>
         </SidebarInset>
-        {process.env.NODE_ENV === 'development' && <TokenDisplay />}
+        {/* <TokenDisplay /> */}
       </SidebarProvider>
     </BreadcrumbProvider>
   );

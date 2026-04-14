@@ -32,8 +32,14 @@ export class CommentsService {
       },
     });
 
+    // Fetch task details for notification targeting
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, title: true, createdById: true, assignedToId: true },
+    });
+
     // Notify
-    this.notificationClient.emit('comment_added', { taskId, comment });
+    this.notificationClient.emit('comment_added', { taskId, comment, task });
 
     return { success: true, data: comment };
   }

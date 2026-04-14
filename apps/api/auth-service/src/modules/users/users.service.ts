@@ -363,7 +363,6 @@ export class UsersService {
         onTimeRate: taskStats.onTimeRate,
         customerRating: technician.rating || 5.0,
         ratingCount: technician.ratingCount || 0,
-        responseTimeMinutes: 0, // TODO: Calculate average response time
       },
       recentActivity,
     };
@@ -643,13 +642,11 @@ export class UsersService {
         summary: {
           completionRate: total > 0 ? (completed / total) * 100 : 0,
           onTimeRate: completed > 0 ? (completedOnTime / completed) * 100 : 0,
-          avgTaskDuration: 0, // TODO: Calculate from task events
           tasksCompleted: completed,
           customerRating: technician.rating || 5.0,
           totalHoursWorked: totalHours,
         },
         trends,
-        comparison: null, // TODO: Calculate comparison with previous period
       },
     };
   }

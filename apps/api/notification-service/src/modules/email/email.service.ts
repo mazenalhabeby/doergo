@@ -2,6 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
+// Escape HTML to prevent XSS in email content
+function esc(str: string | undefined | null): string {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -35,33 +41,33 @@ export class EmailService {
   }
 
   async sendTaskCreatedEmail(task: any, recipientEmail: string) {
-    const subject = `New Task Created: ${task.title}`;
+    const subject = `New Task Created: ${esc(task.title)}`;
     const html = `
       <h2>New Task Created</h2>
-      <p><strong>Title:</strong> ${task.title}</p>
-      <p><strong>Description:</strong> ${task.description || 'N/A'}</p>
-      <p><strong>Priority:</strong> ${task.priority}</p>
+      <p><strong>Title:</strong> ${esc(task.title)}</p>
+      <p><strong>Description:</strong> ${esc(task.description) || 'N/A'}</p>
+      <p><strong>Priority:</strong> ${esc(task.priority)}</p>
     `;
     return this.sendEmail(recipientEmail, subject, html);
   }
 
   async sendTaskAssignedEmail(task: any, workerEmail: string) {
-    const subject = `Task Assigned: ${task.title}`;
+    const subject = `Task Assigned: ${esc(task.title)}`;
     const html = `
       <h2>You have been assigned a new task</h2>
-      <p><strong>Title:</strong> ${task.title}</p>
-      <p><strong>Description:</strong> ${task.description || 'N/A'}</p>
-      <p><strong>Priority:</strong> ${task.priority}</p>
-      <p><strong>Location:</strong> ${task.locationAddress || 'N/A'}</p>
+      <p><strong>Title:</strong> ${esc(task.title)}</p>
+      <p><strong>Description:</strong> ${esc(task.description) || 'N/A'}</p>
+      <p><strong>Priority:</strong> ${esc(task.priority)}</p>
+      <p><strong>Location:</strong> ${esc(task.locationAddress) || 'N/A'}</p>
     `;
     return this.sendEmail(workerEmail, subject, html);
   }
 
   async sendTaskCompletedEmail(task: any, recipientEmail: string) {
-    const subject = `Task Completed: ${task.title}`;
+    const subject = `Task Completed: ${esc(task.title)}`;
     const html = `
       <h2>Task Completed</h2>
-      <p><strong>Title:</strong> ${task.title}</p>
+      <p><strong>Title:</strong> ${esc(task.title)}</p>
       <p>The task has been marked as completed.</p>
     `;
     return this.sendEmail(recipientEmail, subject, html);

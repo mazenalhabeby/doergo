@@ -582,12 +582,27 @@ export class TechniciansService {
    */
   async getAvailability(dto: GetAvailabilityDto) {
     const { organizationId, date, startDate, endDate } = dto;
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    // Default to today if no date provided
-    const queryDate = date ? new Date(date) : new Date();
-    const dayOfWeek = queryDate.getDay();
+    // Build list of dates to query
+    const dates: Date[] = [];
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(new Date(d));
+      }
+    } else {
+      dates.push(date ? new Date(date) : new Date());
+    }
 
-    // Get all technicians in the organization
+    // Collect unique dayOfWeek values needed
+    const daysOfWeek = [...new Set(dates.map(d => d.getDay()))];
+
+    // Get all technicians with schedules for all needed days + time-off covering the range
+    const rangeStart = dates[0]!;
+    const rangeEnd = dates[dates.length - 1]!;
+
     const technicians = await this.prisma.user.findMany({
       where: {
         organizationId,
@@ -601,59 +616,76 @@ export class TechniciansService {
         technicianType: true,
         workMode: true,
         schedules: {
-          where: { dayOfWeek, isActive: true },
+          where: { dayOfWeek: { in: daysOfWeek }, isActive: true },
         },
         timeOffRequests: {
           where: {
             status: 'APPROVED',
-            startDate: { lte: queryDate },
-            endDate: { gte: queryDate },
+            startDate: { lte: rangeEnd },
+            endDate: { gte: rangeStart },
           },
         },
       },
     });
 
-    const availability = technicians.map((tech) => {
-      const schedule = tech.schedules[0] || null;
-      const onTimeOff = tech.timeOffRequests.length > 0;
-      const hasSchedule = schedule !== null;
+    // Build availability for each date
+    const dayResults = dates.map((queryDate) => {
+      const dayOfWeek = queryDate.getDay();
+      const dateStr = queryDate.toISOString().split('T')[0];
+
+      const availability = technicians.map((tech) => {
+        const schedule = tech.schedules.find(s => s.dayOfWeek === dayOfWeek) || null;
+        const timeOffRecord = tech.timeOffRequests.find(
+          t => new Date(t.startDate) <= queryDate && new Date(t.endDate) >= queryDate
+        );
+        const onTimeOff = !!timeOffRecord;
+        const hasSchedule = schedule !== null;
+
+        return {
+          id: tech.id,
+          firstName: tech.firstName,
+          lastName: tech.lastName,
+          technicianType: tech.technicianType,
+          workMode: tech.workMode,
+          isAvailable: hasSchedule && !onTimeOff,
+          onTimeOff,
+          schedule: schedule
+            ? {
+                startTime: schedule.startTime,
+                endTime: schedule.endTime,
+                notes: schedule.notes,
+              }
+            : null,
+          timeOff: timeOffRecord
+            ? {
+                startDate: timeOffRecord.startDate,
+                endDate: timeOffRecord.endDate,
+                reason: timeOffRecord.reason,
+              }
+            : null,
+        };
+      });
 
       return {
-        id: tech.id,
-        firstName: tech.firstName,
-        lastName: tech.lastName,
-        technicianType: tech.technicianType,
-        workMode: tech.workMode,
-        isAvailable: hasSchedule && !onTimeOff,
-        onTimeOff,
-        schedule: schedule
-          ? {
-              startTime: schedule.startTime,
-              endTime: schedule.endTime,
-              notes: schedule.notes,
-            }
-          : null,
-        timeOff: tech.timeOffRequests[0]
-          ? {
-              startDate: tech.timeOffRequests[0].startDate,
-              endDate: tech.timeOffRequests[0].endDate,
-              reason: tech.timeOffRequests[0].reason,
-            }
-          : null,
+        date: dateStr,
+        dayOfWeek,
+        dayName: DAY_NAMES[dayOfWeek],
+        technicians: availability,
+        summary: {
+          total: technicians.length,
+          available: availability.filter((a) => a.isAvailable).length,
+          onTimeOff: availability.filter((a) => a.onTimeOff).length,
+          notScheduled: availability.filter((a) => !a.schedule).length,
+        },
       };
     });
 
-    return success({
-      date: queryDate.toISOString().split('T')[0],
-      dayOfWeek,
-      dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
-      technicians: availability,
-      summary: {
-        total: technicians.length,
-        available: availability.filter((a) => a.isAvailable).length,
-        onTimeOff: availability.filter((a) => a.onTimeOff).length,
-        notScheduled: availability.filter((a) => !a.schedule).length,
-      },
-    });
+    // If single date was requested, return single object (backward compatible)
+    if (!startDate || !endDate) {
+      return success(dayResults[0]);
+    }
+
+    // Range request: return array
+    return success(dayResults);
   }
 }

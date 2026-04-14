@@ -15,11 +15,10 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { IsString, IsOptional } from 'class-validator';
-import { Role, SERVICE_NAMES } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { TasksQueueService } from '../tasks/tasks.queue.service';
 
 class RegisterPushTokenDto {
@@ -157,7 +156,7 @@ export class UsersController {
     return firstValueFrom(
       this.notificationClient.send(
         { cmd: 'remove_push_token' },
-        { token },
+        { token, userId: user.id },
       ),
     );
   }

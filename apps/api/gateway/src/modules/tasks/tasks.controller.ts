@@ -65,9 +65,20 @@ export class TasksController {
     // Normalize query params to handle HTTP parameter pollution (multiple values for same param)
     const normalizedQuery = normalizeQueryParams(query);
 
+    // Sanitize pagination params before forwarding to microservice
+    const page = normalizedQuery.page
+      ? Math.max(1, Number(normalizedQuery.page) || 1)
+      : 1;
+    const limit = Math.min(
+      normalizedQuery.limit ? Math.max(1, Number(normalizedQuery.limit) || 20) : 20,
+      500,
+    );
+
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.findAll({
       ...normalizedQuery,
+      page,
+      limit,
       userId: req.user.id,
       userRole: req.user.role,
       organizationId: req.user.organizationId,

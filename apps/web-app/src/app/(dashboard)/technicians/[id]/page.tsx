@@ -116,219 +116,226 @@ export default function TechnicianDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-        <Skeleton className="h-8 w-32" />
-        <div className="bg-white rounded-xl border p-6">
-          <div className="flex gap-6">
-            <Skeleton className="h-24 w-24 rounded-full" />
-            <div className="space-y-3 flex-1">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-4 w-32" />
+      <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
+          <Skeleton className="h-8 w-40 rounded-lg" />
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6">
+            <div className="flex gap-6">
+              <Skeleton className="h-24 w-24 rounded-full" />
+              <div className="space-y-3 flex-1">
+                <Skeleton className="h-8 w-64 rounded-lg" />
+                <Skeleton className="h-4 w-48 rounded-lg" />
+                <Skeleton className="h-4 w-32 rounded-lg" />
+              </div>
             </div>
           </div>
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
         </div>
-        <Skeleton className="h-[400px]" />
       </div>
     )
   }
 
   if (isError || !technician) {
     return (
-      <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-        <Link href="/technicians">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Technicians
-          </Button>
-        </Link>
-        <div className="bg-white rounded-xl border p-12 text-center">
-          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-800 mb-2">
-            Technician not found
-          </h3>
-          <p className="text-sm text-slate-500 mb-4">
-            {(error as Error)?.message || "The technician you're looking for doesn't exist."}
-          </p>
+      <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
           <Link href="/technicians">
-            <Button>Back to Technicians</Button>
+            <Button variant="ghost" size="sm" className="gap-2 rounded-lg">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Technicians
+            </Button>
           </Link>
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-12 text-center">
+            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-800 mb-2">
+              Technician not found
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {(error as Error)?.message || "The technician you're looking for doesn't exist."}
+            </p>
+            <Link href="/technicians">
+              <Button className="rounded-xl">Back to Technicians</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-      {/* Back button */}
-      <Link href="/technicians">
-        <Button variant="ghost" size="sm" className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Technicians
-        </Button>
-      </Link>
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
+        {/* Back button */}
+        <Link href="/technicians">
+          <Button variant="ghost" size="sm" className="gap-2 rounded-lg hover:bg-white/80">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Technicians
+          </Button>
+        </Link>
 
-      {/* Profile Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex gap-6">
-            {/* Avatar */}
-            <div
-              className={cn(
-                "h-24 w-24 rounded-full flex items-center justify-center text-white text-2xl font-medium",
-                technician.isOnline ? "bg-green-500" : "bg-slate-400"
-              )}
-            >
-              {technician.firstName[0]}
-              {technician.lastName[0]}
-            </div>
+        {/* Profile Header */}
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex gap-6">
+              {/* Avatar */}
+              <div
+                className={cn(
+                  "h-24 w-24 rounded-full flex items-center justify-center text-white text-2xl font-medium shadow-md",
+                  technician.isOnline ? "bg-green-500" : "bg-slate-400"
+                )}
+              >
+                {technician.firstName[0]}
+                {technician.lastName[0]}
+              </div>
 
-            {/* Info */}
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-semibold text-slate-800">
-                  {technician.firstName} {technician.lastName}
-                </h1>
-                {getTypeBadge(technician.technicianType)}
-                {technician.isActive ? (
-                  technician.isOnline ? (
-                    <Badge className="bg-green-100 text-green-700">Online</Badge>
+              {/* Info */}
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                    {technician.firstName} {technician.lastName}
+                  </h1>
+                  {getTypeBadge(technician.technicianType)}
+                  {technician.isActive ? (
+                    technician.isOnline ? (
+                      <Badge className="bg-green-100 text-green-700">Online</Badge>
+                    ) : (
+                      <Badge className="bg-slate-100 text-slate-600">Offline</Badge>
+                    )
                   ) : (
-                    <Badge className="bg-slate-100 text-slate-600">Offline</Badge>
-                  )
-                ) : (
-                  <Badge className="bg-red-100 text-red-700">Inactive</Badge>
-                )}
-              </div>
+                    <Badge className="bg-red-100 text-red-700">Inactive</Badge>
+                  )}
+                </div>
 
-              <div className="flex items-center gap-4 text-sm text-slate-500 mb-3">
-                <span className="flex items-center gap-1">
-                  <Mail className="h-4 w-4" />
-                  {technician.email}
-                </span>
-                {technician.specialty && (
-                  <span className="flex items-center gap-1">
-                    <Building2 className="h-4 w-4" />
-                    {technician.specialty}
+                <div className="flex items-center gap-4 text-sm text-slate-500 mb-3">
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="h-4 w-4" />
+                    {technician.email}
                   </span>
-                )}
-              </div>
+                  {technician.specialty && (
+                    <span className="flex items-center gap-1.5">
+                      <Building2 className="h-4 w-4" />
+                      {technician.specialty}
+                    </span>
+                  )}
+                </div>
 
-              <div className="flex items-center gap-4">
-                {/* Rating */}
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={cn(
-                        "h-5 w-5",
-                        star <= Math.round(technician.rating)
-                          ? "text-amber-400 fill-amber-400"
-                          : "text-slate-200"
-                      )}
-                    />
-                  ))}
-                  <span className="ml-1 text-sm font-medium">
-                    {technician.rating.toFixed(1)}
-                  </span>
-                  <span className="text-sm text-slate-400">
-                    ({technician.ratingCount} reviews)
-                  </span>
+                <div className="flex items-center gap-4">
+                  {/* Rating */}
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={cn(
+                          "h-5 w-5",
+                          star <= Math.round(technician.rating)
+                            ? "text-amber-400 fill-amber-400"
+                            : "text-slate-200"
+                        )}
+                      />
+                    ))}
+                    <span className="ml-1 text-sm font-medium">
+                      {technician.rating.toFixed(1)}
+                    </span>
+                    <span className="text-sm text-slate-400">
+                      ({technician.ratingCount} reviews)
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Actions */}
+            {canManage && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="rounded-lg">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {technician.isActive ? (
+                    <DropdownMenuItem className="text-red-600">
+                      Deactivate
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem className="text-green-600">
+                      Reactivate
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
-
-          {/* Actions */}
-          {canManage && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {technician.isActive ? (
-                  <DropdownMenuItem className="text-red-600">
-                    Deactivate
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem className="text-green-600">
-                    Reactivate
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-white border border-slate-200/80 shadow-sm">
+            <TabsTrigger value="overview" className="gap-2">
+              <Activity className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Tasks
+            </TabsTrigger>
+            <TabsTrigger value="attendance" className="gap-2">
+              <Clock className="h-4 w-4" />
+              Attendance
+            </TabsTrigger>
+            <TabsTrigger value="locations" className="gap-2">
+              <MapPin className="h-4 w-4" />
+              Locations
+            </TabsTrigger>
+            <TabsTrigger value="schedule" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Schedule
+            </TabsTrigger>
+            <TabsTrigger value="time-off" className="gap-2">
+              <Umbrella className="h-4 w-4" />
+              Time Off
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Performance
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <OverviewTab stats={stats} />
+          </TabsContent>
+
+          <TabsContent value="tasks">
+            <TasksTab tasks={tasks} />
+          </TabsContent>
+
+          <TabsContent value="attendance">
+            <AttendanceTab attendance={attendance} />
+          </TabsContent>
+
+          <TabsContent value="locations">
+            <LocationsTab assignments={assignments} />
+          </TabsContent>
+
+          <TabsContent value="schedule">
+            <ScheduleTab technicianId={technicianId} canManage={canManage} />
+          </TabsContent>
+
+          <TabsContent value="time-off">
+            <TimeOffTab technicianId={technicianId} canManage={canManage} />
+          </TabsContent>
+
+          <TabsContent value="performance">
+            <PerformanceTab performance={performance} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-white border">
-          <TabsTrigger value="overview" className="gap-2">
-            <Activity className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="tasks" className="gap-2">
-            <ClipboardList className="h-4 w-4" />
-            Tasks
-          </TabsTrigger>
-          <TabsTrigger value="attendance" className="gap-2">
-            <Clock className="h-4 w-4" />
-            Attendance
-          </TabsTrigger>
-          <TabsTrigger value="locations" className="gap-2">
-            <MapPin className="h-4 w-4" />
-            Locations
-          </TabsTrigger>
-          <TabsTrigger value="schedule" className="gap-2">
-            <Calendar className="h-4 w-4" />
-            Schedule
-          </TabsTrigger>
-          <TabsTrigger value="time-off" className="gap-2">
-            <Umbrella className="h-4 w-4" />
-            Time Off
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Performance
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <OverviewTab stats={stats} />
-        </TabsContent>
-
-        <TabsContent value="tasks">
-          <TasksTab tasks={tasks} />
-        </TabsContent>
-
-        <TabsContent value="attendance">
-          <AttendanceTab attendance={attendance} />
-        </TabsContent>
-
-        <TabsContent value="locations">
-          <LocationsTab assignments={assignments} />
-        </TabsContent>
-
-        <TabsContent value="schedule">
-          <ScheduleTab technicianId={technicianId} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="time-off">
-          <TimeOffTab technicianId={technicianId} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="performance">
-          <PerformanceTab performance={performance} />
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

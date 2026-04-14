@@ -5,6 +5,9 @@ import { EmailModule } from './modules/email/email.module';
 import { PushModule } from './modules/push/push.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { NotificationController } from './notification.controller';
+import { TaskNotificationHandler } from './handlers/task-notification.handler';
+import { AttendanceNotificationHandler } from './handlers/attendance-notification.handler';
+import { JoinRequestNotificationHandler } from './handlers/join-request-notification.handler';
 
 @Module({
   imports: [
@@ -17,6 +20,11 @@ import { NotificationController } from './notification.controller';
     PushModule,
     WebsocketModule,
   ],
-  controllers: [NotificationController],
+  controllers: [
+    NotificationController,
+    TaskNotificationHandler,
+    AttendanceNotificationHandler,
+    JoinRequestNotificationHandler,
+  ],
 })
 export class AppModule {}

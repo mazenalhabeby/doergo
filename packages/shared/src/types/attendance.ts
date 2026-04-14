@@ -45,6 +45,7 @@ export interface TimeEntry {
   totalMinutes: number | null;
   breakMinutes: number;
   notes: string | null;
+  flagReasons: string[];
   approvalStatus: ApprovalStatus;
   approvedById: string | null;
   approvedAt: string | null;

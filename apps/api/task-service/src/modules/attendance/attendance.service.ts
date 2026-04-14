@@ -12,20 +12,10 @@ import {
   paginated,
   WorkMode,
   TimeEntryStatus,
-  BreakType,
-  ApprovalStatus,
   haversineDistance,
   ATTENDANCE_CONSTANTS,
   SERVICE_NAMES,
-  buildDateRangeFilter,
   buildSingleDayFilter,
-  getStartOfDay,
-  getEndOfDay,
-  getStartOfWeek,
-  getEndOfWeek,
-  getStartOfMonth,
-  getEndOfMonth,
-  formatDuration,
 } from '@hbcfield/shared';
 import { format } from 'date-fns';
 
@@ -144,12 +134,42 @@ export class AttendanceService {
 
     const withinGeofence = distance <= location.geofenceRadius;
 
-    // Reject if not within geofence (if required)
+    // Reject if not within geofence (if strict mode enabled)
     if (ATTENDANCE_CONSTANTS.REQUIRE_GEOFENCE_FOR_CLOCK_IN && !withinGeofence) {
       throw new BadRequestException(
         `You must be within ${location.geofenceRadius}m of ${location.name} to clock in. Current distance: ${Math.round(distance)}m`,
       );
     }
+
+    // Smart auto-approval: evaluate clock-in against schedule
+    const clockInTime = new Date();
+    const flagReasons: string[] = [];
+
+    // Check geofence
+    if (!withinGeofence) {
+      flagReasons.push('OUTSIDE_GEOFENCE_IN');
+    }
+
+    // Look up today's schedule
+    const dayOfWeek = clockInTime.getDay();
+    const schedule = await this.prisma.technicianSchedule.findFirst({
+      where: { technicianId: data.userId, dayOfWeek, isActive: true },
+    });
+
+    if (!schedule) {
+      flagReasons.push('UNSCHEDULED_DAY');
+    } else {
+      // Check for late arrival
+      const [schedH, schedM] = schedule.startTime.split(':').map(Number);
+      const scheduledStart = new Date(clockInTime);
+      scheduledStart.setHours(schedH!, schedM!, 0, 0);
+      const lateMinutes = (clockInTime.getTime() - scheduledStart.getTime()) / 60000;
+      if (lateMinutes > ATTENDANCE_CONSTANTS.LATE_ARRIVAL_THRESHOLD_MINUTES) {
+        flagReasons.push('LATE_ARRIVAL');
+      }
+    }
+
+    const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
 
     // Create time entry
     const entry = await this.prisma.timeEntry.create({
@@ -157,11 +177,13 @@ export class AttendanceService {
         userId: data.userId,
         locationId: data.locationId,
         status: TimeEntryStatus.CLOCKED_IN,
-        clockInAt: new Date(),
+        clockInAt: clockInTime,
         clockInLat: data.lat,
         clockInLng: data.lng,
         clockInAccuracy: data.accuracy,
         clockInWithinGeofence: withinGeofence,
+        flagReasons,
+        approvalStatus,
         organizationId: data.organizationId,
       },
       include: {
@@ -170,7 +192,7 @@ export class AttendanceService {
     });
 
     this.logger.log(
-      `Clock in successful: entry=${entry.id}, user=${data.userId}, location=${location.name}, withinGeofence=${withinGeofence}`,
+      `Clock in successful: entry=${entry.id}, user=${data.userId}, location=${location.name}, withinGeofence=${withinGeofence}, flags=[${flagReasons.join(',')}], approval=${approvalStatus}`,
     );
 
     return success(entry, `Clocked in at ${location.name}`);
@@ -221,6 +243,38 @@ export class AttendanceService {
       (clockOutTime.getTime() - entry.clockInAt.getTime()) / (1000 * 60),
     );
 
+    // Smart auto-approval: evaluate clock-out against schedule
+    const flagReasons: string[] = [...(entry.flagReasons || [])];
+
+    // Check geofence on clock-out
+    if (!withinGeofence) {
+      flagReasons.push('OUTSIDE_GEOFENCE_OUT');
+    }
+
+    // Look up today's schedule for overtime/early departure
+    const dayOfWeek = clockOutTime.getDay();
+    const schedule = await this.prisma.technicianSchedule.findFirst({
+      where: { technicianId: data.userId, dayOfWeek, isActive: true },
+    });
+
+    if (schedule) {
+      const [endH, endM] = schedule.endTime.split(':').map(Number);
+      const scheduledEnd = new Date(clockOutTime);
+      scheduledEnd.setHours(endH!, endM!, 0, 0);
+      const diffMinutes = (clockOutTime.getTime() - scheduledEnd.getTime()) / 60000;
+
+      if (diffMinutes > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) {
+        flagReasons.push('OVERTIME');
+      }
+      if (diffMinutes < -ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) {
+        flagReasons.push('EARLY_DEPARTURE');
+      }
+    }
+
+    // Deduplicate flags
+    const uniqueFlags = [...new Set(flagReasons)];
+    const approvalStatus = uniqueFlags.length === 0 ? 'AUTO' : 'PENDING';
+
     // Update time entry
     const updatedEntry = await this.prisma.timeEntry.update({
       where: { id: entry.id },
@@ -233,6 +287,8 @@ export class AttendanceService {
         clockOutWithinGeofence: withinGeofence,
         totalMinutes,
         notes: data.notes,
+        flagReasons: uniqueFlags,
+        approvalStatus,
       },
       include: {
         location: true,
@@ -243,7 +299,7 @@ export class AttendanceService {
     const minutes = totalMinutes % 60;
 
     this.logger.log(
-      `Clock out successful: entry=${entry.id}, user=${data.userId}, duration=${hours}h ${minutes}m`,
+      `Clock out successful: entry=${entry.id}, user=${data.userId}, duration=${hours}h ${minutes}m, flags=[${uniqueFlags.join(',')}], approval=${approvalStatus}`,
     );
 
     // Send geofence alert if clock-out is outside geofence
@@ -463,6 +519,9 @@ export class AttendanceService {
       );
       const totalHours = totalMinutes / 60;
 
+      const existingFlags = (entry as any).flagReasons || [];
+      const mergedFlags = [...new Set([...existingFlags, 'MISSED_CLOCK_OUT'])];
+
       await this.prisma.timeEntry.update({
         where: { id: entry.id },
         data: {
@@ -470,6 +529,8 @@ export class AttendanceService {
           clockOutAt: now,
           totalMinutes,
           notes: `Auto clock-out: exceeded ${ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS} hour limit`,
+          flagReasons: mergedFlags,
+          approvalStatus: 'PENDING',
         },
       });
 
@@ -592,6 +653,9 @@ export class AttendanceService {
       );
       const totalHours = totalMinutes / 60;
 
+      const existingFlags = (entry as any).flagReasons || [];
+      const mergedFlags = [...new Set([...existingFlags, 'MISSED_CLOCK_OUT'])];
+
       await this.prisma.timeEntry.update({
         where: { id: entry.id },
         data: {
@@ -599,6 +663,8 @@ export class AttendanceService {
           clockOutAt: now,
           totalMinutes,
           notes: 'Auto clock-out: end of day',
+          flagReasons: mergedFlags,
+          approvalStatus: 'PENDING',
         },
       });
 
@@ -633,1047 +699,9 @@ export class AttendanceService {
   }
 
   // =========================================================================
-  // ATTENDANCE REPORTS
-  // =========================================================================
-
-  /**
-   * Get attendance summary for a period
-   */
-  async getAttendanceSummary(data: {
-    organizationId: string;
-    userId?: string;
-    startDate: Date | string;
-    endDate: Date | string;
-  }) {
-    const dateFilter = buildDateRangeFilter(data.startDate, data.endDate);
-
-    const where: any = {
-      organizationId: data.organizationId,
-      clockInAt: dateFilter,
-    };
-
-    if (data.userId) {
-      where.userId = data.userId;
-    }
-
-    const entries = await this.prisma.timeEntry.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        location: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: { clockInAt: 'asc' },
-    });
-
-    // Calculate summary statistics
-    const totalMinutes = entries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0);
-    const totalShifts = entries.filter((e) => e.status !== 'CLOCKED_IN').length;
-    const activeShifts = entries.filter((e) => e.status === 'CLOCKED_IN').length;
-    const autoClockOuts = entries.filter((e) => e.status === 'AUTO_OUT').length;
-
-    // Standard hours calculation (8 hours per day for workdays in period)
-    const workDays = this.countWorkDays(new Date(data.startDate), new Date(data.endDate));
-    const standardHours = workDays * 8;
-    const actualHours = totalMinutes / 60;
-    const overtimeHours = Math.max(0, actualHours - standardHours);
-
-    // Group by user for per-employee stats
-    const byUser: Record<string, any> = {};
-    for (const entry of entries) {
-      const userId = entry.user.id;
-      if (!byUser[userId]) {
-        byUser[userId] = {
-          user: entry.user,
-          totalMinutes: 0,
-          shifts: 0,
-          autoClockOuts: 0,
-          locations: new Set<string>(),
-        };
-      }
-      byUser[userId].totalMinutes += entry.totalMinutes || 0;
-      if (entry.status !== 'CLOCKED_IN') byUser[userId].shifts++;
-      if (entry.status === 'AUTO_OUT') byUser[userId].autoClockOuts++;
-      byUser[userId].locations.add(entry.location.name);
-    }
-
-    const userSummaries = Object.values(byUser).map((u: any) => ({
-      user: u.user,
-      totalHours: Math.round((u.totalMinutes / 60) * 10) / 10,
-      shifts: u.shifts,
-      autoClockOuts: u.autoClockOuts,
-      locations: Array.from(u.locations),
-      averageShiftHours:
-        u.shifts > 0 ? Math.round((u.totalMinutes / u.shifts / 60) * 10) / 10 : 0,
-    }));
-
-    // Group by location
-    const byLocation: Record<string, any> = {};
-    for (const entry of entries) {
-      const locId = entry.location.id;
-      if (!byLocation[locId]) {
-        byLocation[locId] = {
-          location: entry.location,
-          totalMinutes: 0,
-          shifts: 0,
-          uniqueUsers: new Set<string>(),
-        };
-      }
-      byLocation[locId].totalMinutes += entry.totalMinutes || 0;
-      if (entry.status !== 'CLOCKED_IN') byLocation[locId].shifts++;
-      byLocation[locId].uniqueUsers.add(entry.userId);
-    }
-
-    const locationSummaries = Object.values(byLocation).map((l: any) => ({
-      location: l.location,
-      totalHours: Math.round((l.totalMinutes / 60) * 10) / 10,
-      shifts: l.shifts,
-      uniqueTechnicians: l.uniqueUsers.size,
-    }));
-
-    return success({
-      period: {
-        startDate: format(new Date(data.startDate), 'yyyy-MM-dd'),
-        endDate: format(new Date(data.endDate), 'yyyy-MM-dd'),
-        workDays,
-      },
-      summary: {
-        totalHours: Math.round(actualHours * 10) / 10,
-        totalShifts,
-        activeShifts,
-        autoClockOuts,
-        standardHours,
-        overtimeHours: Math.round(overtimeHours * 10) / 10,
-        averageShiftHours:
-          totalShifts > 0 ? Math.round((totalMinutes / totalShifts / 60) * 10) / 10 : 0,
-      },
-      byUser: userSummaries,
-      byLocation: locationSummaries,
-    });
-  }
-
-  /**
-   * Get weekly attendance report
-   */
-  async getWeeklyReport(data: {
-    organizationId: string;
-    userId?: string;
-    weekStartDate?: Date | string;
-  }) {
-    // Use shared utilities for week calculation
-    const baseDate = data.weekStartDate ? new Date(data.weekStartDate) : new Date();
-    const startDate = getStartOfWeek(baseDate);
-    const endDate = getEndOfWeek(baseDate);
-
-    return this.getAttendanceSummary({
-      organizationId: data.organizationId,
-      userId: data.userId,
-      startDate,
-      endDate,
-    });
-  }
-
-  /**
-   * Get monthly attendance report
-   */
-  async getMonthlyReport(data: {
-    organizationId: string;
-    userId?: string;
-    year?: number;
-    month?: number; // 1-12
-  }) {
-    const now = new Date();
-    const year = data.year ?? now.getFullYear();
-    const month = data.month ?? now.getMonth() + 1;
-
-    // Create base date for the target month
-    const baseDate = new Date(year, month - 1, 15); // Mid-month to avoid edge cases
-    const startDate = getStartOfMonth(baseDate);
-    const endDate = getEndOfMonth(baseDate);
-
-    return this.getAttendanceSummary({
-      organizationId: data.organizationId,
-      userId: data.userId,
-      startDate,
-      endDate,
-    });
-  }
-
-  /**
-   * Export attendance data to CSV format
-   */
-  async exportToCSV(data: {
-    organizationId: string;
-    startDate: Date | string;
-    endDate: Date | string;
-    userId?: string;
-  }) {
-    const dateFilter = buildDateRangeFilter(data.startDate, data.endDate);
-
-    const where: any = {
-      organizationId: data.organizationId,
-      clockInAt: dateFilter,
-    };
-
-    if (data.userId) {
-      where.userId = data.userId;
-    }
-
-    const entries = await this.prisma.timeEntry.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        location: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: [{ clockInAt: 'asc' }],
-    });
-
-    // Build CSV
-    const headers = [
-      'Date',
-      'Technician',
-      'Email',
-      'Location',
-      'Clock In',
-      'Clock Out',
-      'Status',
-      'Duration (Hours)',
-      'Within Geofence (In)',
-      'Within Geofence (Out)',
-      'Notes',
-    ];
-
-    const rows = entries.map((entry) => [
-      format(entry.clockInAt, 'yyyy-MM-dd'),
-      `${entry.user.firstName} ${entry.user.lastName}`,
-      entry.user.email,
-      entry.location.name,
-      format(entry.clockInAt, 'HH:mm:ss'),
-      entry.clockOutAt ? format(entry.clockOutAt, 'HH:mm:ss') : '',
-      entry.status,
-      entry.totalMinutes ? (entry.totalMinutes / 60).toFixed(2) : '',
-      entry.clockInWithinGeofence ? 'Yes' : 'No',
-      entry.clockOutWithinGeofence === null ? '' : entry.clockOutWithinGeofence ? 'Yes' : 'No',
-      entry.notes || '',
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
-      ),
-    ].join('\n');
-
-    return success({
-      filename: `attendance_${format(new Date(data.startDate), 'yyyy-MM-dd')}_to_${format(new Date(data.endDate), 'yyyy-MM-dd')}.csv`,
-      content: csvContent,
-      mimeType: 'text/csv',
-      recordCount: entries.length,
-    });
-  }
-
-  /**
-   * Count work days (Monday-Friday) in a date range
-   */
-  private countWorkDays(startDate: Date, endDate: Date): number {
-    let count = 0;
-    const current = new Date(startDate);
-
-    while (current <= endDate) {
-      const day = current.getDay();
-      if (day !== 0 && day !== 6) {
-        count++;
-      }
-      current.setDate(current.getDate() + 1);
-    }
-
-    return count;
-  }
-
-  // =========================================================================
-  // BREAK TRACKING
-  // =========================================================================
-
-  /**
-   * Start a break during current shift
-   */
-  async startBreak(data: {
-    userId: string;
-    organizationId: string;
-    type?: string;
-    notes?: string;
-  }) {
-    this.logger.log(`Start break: user=${data.userId}, type=${data.type || 'SHORT'}`);
-
-    // Find active clock-in entry
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        userId: data.userId,
-        organizationId: data.organizationId,
-        status: TimeEntryStatus.CLOCKED_IN,
-      },
-      include: {
-        breaks: {
-          where: { endedAt: null },
-        },
-      },
-    });
-
-    if (!entry) {
-      throw new BadRequestException('You must be clocked in to take a break');
-    }
-
-    // Check if already on break
-    if (entry.breaks && entry.breaks.length > 0) {
-      throw new BadRequestException('You are already on a break. End your current break first.');
-    }
-
-    // Create break record
-    const breakRecord = await this.prisma.break.create({
-      data: {
-        timeEntryId: entry.id,
-        type: (data.type as any) || 'SHORT',
-        startedAt: new Date(),
-        notes: data.notes,
-      },
-    });
-
-    // Get user info for notification
-    const user = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { firstName: true, lastName: true },
-    });
-
-    // Emit break started notification
-    this.notificationClient.emit('break_started', {
-      userId: data.userId,
-      userName: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
-      breakId: breakRecord.id,
-      breakType: breakRecord.type,
-      startedAt: breakRecord.startedAt.toISOString(),
-      organizationId: data.organizationId,
-    });
-
-    this.logger.log(`Break started: break=${breakRecord.id}, entry=${entry.id}`);
-
-    return success(breakRecord, 'Break started');
-  }
-
-  /**
-   * End current break
-   */
-  async endBreak(data: {
-    userId: string;
-    organizationId: string;
-    notes?: string;
-  }) {
-    this.logger.log(`End break: user=${data.userId}`);
-
-    // Find active clock-in entry with active break
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        userId: data.userId,
-        organizationId: data.organizationId,
-        status: TimeEntryStatus.CLOCKED_IN,
-      },
-      include: {
-        breaks: {
-          where: { endedAt: null },
-        },
-      },
-    });
-
-    if (!entry) {
-      throw new BadRequestException('You must be clocked in to end a break');
-    }
-
-    if (!entry.breaks || entry.breaks.length === 0) {
-      throw new BadRequestException('You are not currently on a break');
-    }
-
-    const activeBreak = entry.breaks[0];
-    const now = new Date();
-    const durationMinutes = Math.round(
-      (now.getTime() - activeBreak.startedAt.getTime()) / (1000 * 60),
-    );
-
-    // Update break record
-    const updatedBreak = await this.prisma.break.update({
-      where: { id: activeBreak.id },
-      data: {
-        endedAt: now,
-        durationMinutes,
-        notes: data.notes || activeBreak.notes,
-      },
-    });
-
-    // Update total break minutes on time entry
-    const allBreaks = await this.prisma.break.findMany({
-      where: {
-        timeEntryId: entry.id,
-        endedAt: { not: null },
-      },
-    });
-
-    const totalBreakMinutes = allBreaks.reduce(
-      (sum, b) => sum + (b.durationMinutes || 0),
-      0,
-    );
-
-    await this.prisma.timeEntry.update({
-      where: { id: entry.id },
-      data: { breakMinutes: totalBreakMinutes },
-    });
-
-    // Get user info for notification
-    const user = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { firstName: true, lastName: true },
-    });
-
-    // Emit break ended notification
-    this.notificationClient.emit('break_ended', {
-      userId: data.userId,
-      userName: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
-      breakId: updatedBreak.id,
-      breakType: updatedBreak.type,
-      startedAt: activeBreak.startedAt.toISOString(),
-      endedAt: now.toISOString(),
-      durationMinutes,
-      organizationId: data.organizationId,
-    });
-
-    this.logger.log(
-      `Break ended: break=${updatedBreak.id}, duration=${durationMinutes}min, totalBreakMinutes=${totalBreakMinutes}`,
-    );
-
-    return success(updatedBreak, `Break ended (${durationMinutes} minutes)`);
-  }
-
-  /**
-   * Get current break status
-   */
-  async getBreakStatus(data: { userId: string; organizationId: string }) {
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        userId: data.userId,
-        organizationId: data.organizationId,
-        status: TimeEntryStatus.CLOCKED_IN,
-      },
-      include: {
-        breaks: {
-          orderBy: { startedAt: 'desc' },
-        },
-      },
-    });
-
-    if (!entry) {
-      return success({
-        isClockedIn: false,
-        isOnBreak: false,
-        currentBreak: null,
-        todayBreaks: [],
-        totalBreakMinutes: 0,
-      });
-    }
-
-    const activeBreak = entry.breaks.find((b) => !b.endedAt);
-    const completedBreaks = entry.breaks.filter((b) => b.endedAt);
-    const totalBreakMinutes = completedBreaks.reduce(
-      (sum, b) => sum + (b.durationMinutes || 0),
-      0,
-    );
-
-    return success({
-      isClockedIn: true,
-      isOnBreak: !!activeBreak,
-      currentBreak: activeBreak || null,
-      todayBreaks: entry.breaks,
-      totalBreakMinutes,
-    });
-  }
-
-  /**
-   * Get breaks for a time entry
-   */
-  async getBreaksForEntry(data: { timeEntryId: string; organizationId: string }) {
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        id: data.timeEntryId,
-        organizationId: data.organizationId,
-      },
-    });
-
-    if (!entry) {
-      throw new NotFoundException('Time entry not found');
-    }
-
-    const breaks = await this.prisma.break.findMany({
-      where: { timeEntryId: data.timeEntryId },
-      orderBy: { startedAt: 'asc' },
-    });
-
-    const totalMinutes = breaks.reduce(
-      (sum, b) => sum + (b.durationMinutes || 0),
-      0,
-    );
-
-    return success({
-      breaks,
-      totalBreakMinutes: totalMinutes,
-      breakCount: breaks.length,
-    });
-  }
-
-  /**
-   * Get all active breaks in the organization (admin view)
-   */
-  async getActiveBreaks(data: { organizationId: string }) {
-    const breaks = await this.prisma.break.findMany({
-      where: {
-        endedAt: null, // Active breaks
-        timeEntry: {
-          organizationId: data.organizationId,
-        },
-      },
-      include: {
-        timeEntry: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
-            },
-            location: true,
-          },
-        },
-      },
-      orderBy: { startedAt: 'asc' },
-    });
-
-    // Flatten the structure for easier consumption
-    const flattenedBreaks = breaks.map((b) => ({
-      ...b,
-      user: b.timeEntry?.user,
-      location: b.timeEntry?.location,
-    }));
-
-    return success(flattenedBreaks);
-  }
-
-  /**
-   * Get break history with filters (admin view)
-   */
-  async getBreakHistory(data: {
-    organizationId: string;
-    date?: string;
-    userId?: string;
-    type?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    const page = data.page || 1;
-    const limit = data.limit || 50;
-    const skip = (page - 1) * limit;
-
-    // Build date filter using shared utility
-    const dateFilter = data.date
-      ? { startedAt: buildSingleDayFilter(data.date) }
-      : {};
-
-    // Build where clause
-    const where: any = {
-      ...dateFilter,
-      timeEntry: {
-        organizationId: data.organizationId,
-        ...(data.userId ? { userId: data.userId } : {}),
-      },
-      ...(data.type ? { type: data.type } : {}),
-    };
-
-    const [breaks, total] = await Promise.all([
-      this.prisma.break.findMany({
-        where,
-        include: {
-          timeEntry: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  email: true,
-                },
-              },
-              location: true,
-            },
-          },
-        },
-        orderBy: { startedAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.break.count({ where }),
-    ]);
-
-    // Flatten the structure
-    const flattenedBreaks = breaks.map((b) => ({
-      ...b,
-      user: b.timeEntry?.user,
-      location: b.timeEntry?.location,
-    }));
-
-    return paginated(flattenedBreaks, {
-      total,
-      page,
-      limit,
-    });
-  }
-
-  /**
-   * End a break manually (admin action)
-   */
-  async endBreakManually(data: {
-    breakId: string;
-    adminId: string;
-    organizationId: string;
-    notes?: string;
-  }) {
-    const breakRecord = await this.prisma.break.findFirst({
-      where: {
-        id: data.breakId,
-        endedAt: null, // Must be active
-        timeEntry: {
-          organizationId: data.organizationId,
-        },
-      },
-      include: {
-        timeEntry: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!breakRecord) {
-      throw new NotFoundException('Active break not found');
-    }
-
-    const endedAt = new Date();
-    const durationMinutes = Math.floor(
-      (endedAt.getTime() - new Date(breakRecord.startedAt).getTime()) / 60000,
-    );
-
-    const updatedBreak = await this.prisma.break.update({
-      where: { id: data.breakId },
-      data: {
-        endedAt,
-        durationMinutes,
-        notes: data.notes
-          ? `[Admin ended] ${data.notes}`
-          : `[Admin ended by ${data.adminId}]`,
-      },
-    });
-
-    // Update time entry break minutes
-    const totalBreakMinutes = await this.prisma.break.aggregate({
-      where: {
-        timeEntryId: breakRecord.timeEntryId,
-        durationMinutes: { not: null },
-      },
-      _sum: {
-        durationMinutes: true,
-      },
-    });
-
-    await this.prisma.timeEntry.update({
-      where: { id: breakRecord.timeEntryId },
-      data: {
-        breakMinutes: totalBreakMinutes._sum.durationMinutes || 0,
-      },
-    });
-
-    this.logger.log(
-      `Admin ${data.adminId} ended break ${data.breakId} for user ${breakRecord.timeEntry.user.firstName} ${breakRecord.timeEntry.user.lastName}`,
-    );
-
-    return success(updatedBreak, `Break ended by admin (${durationMinutes} minutes)`);
-  }
-
-  /**
-   * Get break summary statistics for a date range
-   */
-  async getBreakSummary(data: {
-    organizationId: string;
-    startDate: string;
-    endDate: string;
-    userId?: string;
-  }) {
-    const dateFilter = buildDateRangeFilter(data.startDate, data.endDate);
-
-    // Build where clause
-    const where: any = {
-      startedAt: dateFilter,
-      timeEntry: {
-        organizationId: data.organizationId,
-        ...(data.userId ? { userId: data.userId } : {}),
-      },
-      durationMinutes: { not: null }, // Only completed breaks
-    };
-
-    // Get all breaks in the period
-    const breaks = await this.prisma.break.findMany({
-      where,
-      select: {
-        type: true,
-        durationMinutes: true,
-      },
-    });
-
-    // Calculate statistics
-    const totalBreaks = breaks.length;
-    const totalBreakMinutes = breaks.reduce(
-      (sum, b) => sum + (b.durationMinutes || 0),
-      0,
-    );
-    const averageBreakMinutes =
-      totalBreaks > 0 ? Math.round(totalBreakMinutes / totalBreaks) : 0;
-
-    // Group by type
-    const breaksByType = {
-      LUNCH: { count: 0, totalMinutes: 0 },
-      SHORT: { count: 0, totalMinutes: 0 },
-      OTHER: { count: 0, totalMinutes: 0 },
-    };
-
-    for (const b of breaks) {
-      const type = b.type as 'LUNCH' | 'SHORT' | 'OTHER';
-      if (breaksByType[type]) {
-        breaksByType[type].count++;
-        breaksByType[type].totalMinutes += b.durationMinutes || 0;
-      }
-    }
-
-    // Calculate averages per type
-    for (const type of Object.keys(breaksByType) as Array<'LUNCH' | 'SHORT' | 'OTHER'>) {
-      if (breaksByType[type].count > 0) {
-        (breaksByType[type] as any).averageMinutes = Math.round(
-          breaksByType[type].totalMinutes / breaksByType[type].count,
-        );
-      } else {
-        (breaksByType[type] as any).averageMinutes = 0;
-      }
-    }
-
-    return success({
-      period: {
-        startDate: data.startDate,
-        endDate: data.endDate,
-      },
-      totalBreaks,
-      totalBreakMinutes,
-      averageBreakMinutes,
-      breaksByType,
-    });
-  }
-
-  // =========================================================================
-  // APPROVAL WORKFLOW
-  // =========================================================================
-
-  /**
-   * Get entries pending approval
-   */
-  async getPendingApprovals(data: {
-    organizationId: string;
-    page?: number;
-    limit?: number;
-  }) {
-    const page = data.page ?? 1;
-    const limit = data.limit ?? 20;
-    const skip = (page - 1) * limit;
-
-    const where = {
-      organizationId: data.organizationId,
-      approvalStatus: ApprovalStatus.PENDING,
-      status: { not: 'CLOCKED_IN' as any }, // Only completed entries
-    };
-
-    const [entries, total] = await Promise.all([
-      this.prisma.timeEntry.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          user: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-          },
-          location: {
-            select: { id: true, name: true },
-          },
-          breaks: true,
-        },
-        orderBy: { clockInAt: 'desc' },
-      }),
-      this.prisma.timeEntry.count({ where }),
-    ]);
-
-    return paginated(entries, { page, limit, total });
-  }
-
-  /**
-   * Approve a time entry
-   */
-  async approveEntry(data: {
-    entryId: string;
-    approverId: string;
-    organizationId: string;
-    notes?: string;
-  }) {
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        id: data.entryId,
-        organizationId: data.organizationId,
-      },
-    });
-
-    if (!entry) {
-      throw new NotFoundException('Time entry not found');
-    }
-
-    if (entry.approvalStatus !== 'PENDING') {
-      throw new BadRequestException(
-        `Entry is already ${entry.approvalStatus.toLowerCase()}`,
-      );
-    }
-
-    const updated = await this.prisma.timeEntry.update({
-      where: { id: data.entryId },
-      data: {
-        approvalStatus: ApprovalStatus.APPROVED,
-        approvedById: data.approverId,
-        approvedAt: new Date(),
-        approvalNotes: data.notes,
-      },
-      include: {
-        user: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        location: {
-          select: { name: true },
-        },
-      },
-    });
-
-    this.logger.log(
-      `Entry approved: entry=${data.entryId}, approver=${data.approverId}`,
-    );
-
-    return success(updated, 'Time entry approved');
-  }
-
-  /**
-   * Reject a time entry
-   */
-  async rejectEntry(data: {
-    entryId: string;
-    approverId: string;
-    organizationId: string;
-    reason: string;
-  }) {
-    if (!data.reason?.trim()) {
-      throw new BadRequestException('Rejection reason is required');
-    }
-
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        id: data.entryId,
-        organizationId: data.organizationId,
-      },
-    });
-
-    if (!entry) {
-      throw new NotFoundException('Time entry not found');
-    }
-
-    if (entry.approvalStatus !== 'PENDING') {
-      throw new BadRequestException(
-        `Entry is already ${entry.approvalStatus.toLowerCase()}`,
-      );
-    }
-
-    const updated = await this.prisma.timeEntry.update({
-      where: { id: data.entryId },
-      data: {
-        approvalStatus: ApprovalStatus.REJECTED,
-        approvedById: data.approverId,
-        approvedAt: new Date(),
-        approvalNotes: data.reason,
-      },
-      include: {
-        user: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-      },
-    });
-
-    this.logger.log(
-      `Entry rejected: entry=${data.entryId}, approver=${data.approverId}, reason=${data.reason}`,
-    );
-
-    return success(updated, 'Time entry rejected');
-  }
-
-  /**
-   * Edit a time entry (manager correction)
-   */
-  async editEntry(data: {
-    entryId: string;
-    editorId: string;
-    organizationId: string;
-    clockInAt?: string;
-    clockOutAt?: string;
-    notes?: string;
-    reason: string;
-  }) {
-    if (!data.reason?.trim()) {
-      throw new BadRequestException('Edit reason is required');
-    }
-
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        id: data.entryId,
-        organizationId: data.organizationId,
-      },
-    });
-
-    if (!entry) {
-      throw new NotFoundException('Time entry not found');
-    }
-
-    const updateData: any = {
-      isEdited: true,
-      editedById: data.editorId,
-      editedAt: new Date(),
-      editReason: data.reason,
-    };
-
-    // Save original values on first edit
-    if (!entry.isEdited) {
-      updateData.originalClockIn = entry.clockInAt;
-      updateData.originalClockOut = entry.clockOutAt;
-    }
-
-    if (data.clockInAt) {
-      updateData.clockInAt = new Date(data.clockInAt);
-    }
-
-    if (data.clockOutAt) {
-      updateData.clockOutAt = new Date(data.clockOutAt);
-    }
-
-    if (data.notes !== undefined) {
-      updateData.notes = data.notes;
-    }
-
-    // Recalculate total minutes if times changed
-    const newClockIn = updateData.clockInAt || entry.clockInAt;
-    const newClockOut = updateData.clockOutAt || entry.clockOutAt;
-
-    if (newClockOut) {
-      updateData.totalMinutes = Math.round(
-        (new Date(newClockOut).getTime() - new Date(newClockIn).getTime()) /
-          (1000 * 60),
-      );
-    }
-
-    const updated = await this.prisma.timeEntry.update({
-      where: { id: data.entryId },
-      data: updateData,
-      include: {
-        user: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        location: {
-          select: { name: true },
-        },
-        editedBy: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-      },
-    });
-
-    this.logger.log(
-      `Entry edited: entry=${data.entryId}, editor=${data.editorId}, reason=${data.reason}`,
-    );
-
-    return success(updated, 'Time entry updated');
-  }
-
-  /**
-   * Bulk approve entries
-   */
-  async bulkApprove(data: {
-    entryIds: string[];
-    approverId: string;
-    organizationId: string;
-    notes?: string;
-  }) {
-    const results = {
-      approved: [] as string[],
-      failed: [] as { id: string; reason: string }[],
-    };
-
-    for (const entryId of data.entryIds) {
-      try {
-        await this.approveEntry({
-          entryId,
-          approverId: data.approverId,
-          organizationId: data.organizationId,
-          notes: data.notes,
-        });
-        results.approved.push(entryId);
-      } catch (error: any) {
-        results.failed.push({ id: entryId, reason: error.message });
-      }
-    }
-
-    return success(results, `Approved ${results.approved.length} entries`);
-  }
-
-  // =========================================================================
-  // GEOFENCE ALERTS
+  // Report methods → AttendanceReportService
+  // Break methods → BreakService
+  // Approval methods → ApprovalService
   // =========================================================================
 
   /**
@@ -1703,12 +731,11 @@ export class AttendanceService {
           role: { in: ['ADMIN', 'DISPATCHER'] },
           isActive: true,
         },
-        select: { email: true },
+        select: { id: true, email: true },
       });
 
       const dispatcherEmails = managers.map((m) => m.email);
-      // Device tokens for push notifications (to be implemented when push is set up)
-      const dispatcherDeviceTokens: string[] = [];
+      const dispatcherIds = managers.map((m) => m.id);
 
       // Emit notification event
       this.notificationClient.emit('attendance_geofence_alert', {
@@ -1720,7 +747,7 @@ export class AttendanceService {
         allowedRadius: data.allowedRadius,
         action: data.action,
         dispatcherEmails,
-        dispatcherDeviceTokens,
+        dispatcherIds,
         organizationId: data.organizationId,
       });
 

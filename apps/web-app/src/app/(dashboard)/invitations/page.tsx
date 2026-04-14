@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner"
 
 import { useAuth } from "@/contexts/auth-context"
+import { cn } from "@/lib/utils"
 import {
   invitationsApi,
   InvitationStatus,
@@ -174,90 +175,113 @@ export default function InvitationsPage() {
   const endItem = Math.min(page * limit, total)
 
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Invitations</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Create and manage invitation codes for new team members
-          </p>
-        </div>
-        <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
-          <UserPlus className="h-4 w-4" />
-          Create Invitation
-        </Button>
-      </div>
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="max-w-screen-xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                Invitations
+              </h1>
+              <p className="mt-1.5 text-slate-500">
+                Create and manage invitation codes for new team members
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={handleStatusChange}>
+                <SelectTrigger className="w-[160px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex items-center gap-4">
-          <Select value={statusFilter} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              {/* Refresh */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => refetch()}
+                disabled={isLoading}
+                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+              >
+                <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
+              </Button>
 
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-6 space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-800 mb-2">Failed to load invitations</h3>
-            <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
-            <Button variant="outline" onClick={() => refetch()}>
-              Try Again
-            </Button>
-          </div>
-        ) : invitations.length === 0 ? (
-          <div className="p-12 text-center">
-            <Mail className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-800 mb-2">No invitations found</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              {statusFilter !== "all"
-                ? "Try adjusting your filter"
-                : "Create your first invitation to add team members"}
-            </p>
-            {statusFilter === "all" && (
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <UserPlus className="h-4 w-4 mr-2" />
+              {/* Create */}
+              <Button
+                className="h-11 px-5 rounded-xl font-medium gap-2"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                <UserPlus className="size-4" />
                 Create Invitation
               </Button>
-            )}
+            </div>
           </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Used By</TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
-                </TableRow>
-              </TableHeader>
+        </div>
+
+        {/* Summary */}
+        {total > 0 && (
+          <div className="mb-4">
+            <p className="text-sm text-slate-500">
+              Showing {startItem} to {endItem} of {total} invitation{total !== 1 ? "s" : ""}
+            </p>
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+          {isLoading ? (
+            <div className="p-6 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="p-12 text-center">
+              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-800 mb-2">Failed to load invitations</h3>
+              <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
+              <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
+                Try Again
+              </Button>
+            </div>
+          ) : invitations.length === 0 ? (
+            <div className="p-16 text-center">
+              <Mail className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-800 mb-2">No invitations found</h3>
+              <p className="text-sm text-slate-400 mb-4">
+                {statusFilter !== "all"
+                  ? "Try adjusting your filter"
+                  : "Create your first invitation to add team members"}
+              </p>
+              {statusFilter === "all" && (
+                <Button className="rounded-xl" onClick={() => setCreateDialogOpen(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create Invitation
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80">
+                    <TableHead className="font-semibold text-slate-600">Role</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Created By</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Created</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Expires</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Used By</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {invitations.map((inv) => (
                   <TableRow key={inv.id}>
@@ -338,26 +362,25 @@ export default function InvitationsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
-                <div className="text-sm text-slate-500">
-                  Showing {startItem} to {endItem} of {total} invitations
-                </div>
+              <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
+                <p className="text-sm text-slate-500">
+                  Page {page} of {totalPages}
+                </p>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="rounded-lg"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
-                  <span className="text-sm text-slate-600">
-                    Page {page} of {totalPages}
-                  </span>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="rounded-lg"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                   >
@@ -369,6 +392,7 @@ export default function InvitationsPage() {
             )}
           </>
         )}
+        </div>
       </div>
 
       {/* Create Invitation Dialog */}

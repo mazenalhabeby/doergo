@@ -245,160 +245,164 @@ export default function TechniciansPage() {
   const canManage = user?.role === "ADMIN" || user?.role === "DISPATCHER"
 
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Technicians</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage your field technicians and their assignments
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/technicians/availability">
-            <Button variant="outline" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              Availability
-            </Button>
-          </Link>
-          {canManage && (
-            <Link href="/technicians/new">
-              <Button className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                Add Technician
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="max-w-screen-xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                Technicians
+              </h1>
+              <p className="mt-1.5 text-slate-500">
+                Manage your field technicians and their assignments
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10 w-72 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm focus:bg-white focus:shadow-md transition-all"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={handleStatusChange}>
+                <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Type Filter */}
+              <Select value={typeFilter} onValueChange={handleTypeChange}>
+                <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Work Mode Filter */}
+              <Select value={workModeFilter} onValueChange={handleWorkModeChange}>
+                <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                  <SelectValue placeholder="Work Mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WORK_MODE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Refresh */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => refetch()}
+                disabled={isLoading}
+                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+              >
+                <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
               </Button>
-            </Link>
-          )}
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <Select value={statusFilter} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Type Filter */}
-          <Select value={typeFilter} onValueChange={handleTypeChange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {TYPE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Work Mode Filter */}
-          <Select value={workModeFilter} onValueChange={handleWorkModeChange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Work Mode" />
-            </SelectTrigger>
-            <SelectContent>
-              {WORK_MODE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Specialty Filter */}
-          <Select value={specialtyFilter} onValueChange={handleSpecialtyChange}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Specialty" />
-            </SelectTrigger>
-            <SelectContent>
-              {SPECIALTY_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Refresh */}
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-6 space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-800 mb-2">Failed to load technicians</h3>
-            <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
-            <Button variant="outline" onClick={() => refetch()}>
-              Try Again
-            </Button>
-          </div>
-        ) : technicians.length === 0 ? (
-          <div className="p-12 text-center">
-            <User className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-800 mb-2">No technicians found</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              {searchQuery || statusFilter !== "active" || typeFilter !== "all" || specialtyFilter
-                ? "Try adjusting your filters"
-                : "Add your first technician to get started"}
-            </p>
-            {canManage && !searchQuery && (
-              <Link href="/technicians/new">
-                <Button>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add Technician
+              {/* Availability */}
+              <Link href="/technicians/availability">
+                <Button variant="outline" className="h-11 rounded-xl gap-2 bg-white/80 backdrop-blur-sm border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+                  <Calendar className="size-4" />
+                  Availability
                 </Button>
               </Link>
-            )}
+
+              {/* Add Technician */}
+              {canManage && (
+                <Link href="/technicians/new">
+                  <Button className="h-11 px-5 rounded-xl font-medium gap-2">
+                    <UserPlus className="size-4" />
+                    Add Technician
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="w-[250px]">Technician</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Work Mode</TableHead>
-                  <TableHead>Specialty</TableHead>
-                  <TableHead className="text-center">Rating</TableHead>
-                  <TableHead className="text-center">Active Tasks</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
-                </TableRow>
-              </TableHeader>
+        </div>
+
+        {/* Summary */}
+        {total > 0 && (
+          <div className="mb-4">
+            <p className="text-sm text-slate-500">
+              Showing {startItem} to {endItem} of {total} technician{total !== 1 ? "s" : ""}
+            </p>
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+          {isLoading ? (
+            <div className="p-6 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="p-12 text-center">
+              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-800 mb-2">Failed to load technicians</h3>
+              <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
+              <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
+                Try Again
+              </Button>
+            </div>
+          ) : technicians.length === 0 ? (
+            <div className="p-16 text-center">
+              <User className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-800 mb-2">No technicians found</h3>
+              <p className="text-sm text-slate-400 mb-4">
+                {searchQuery || statusFilter !== "active" || typeFilter !== "all" || specialtyFilter
+                  ? "Try adjusting your filters"
+                  : "Add your first technician to get started"}
+              </p>
+              {canManage && !searchQuery && (
+                <Link href="/technicians/new">
+                  <Button className="rounded-xl">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add Technician
+                  </Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80">
+                    <TableHead className="w-[250px] font-semibold text-slate-600">Technician</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Type</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Work Mode</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Specialty</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-600">Rating</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-600">Active Tasks</TableHead>
+                    <TableHead className="font-semibold text-slate-600">Status</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {technicians.map((tech) => {
                   const availStatus = getAvailabilityStatus(tech)
@@ -524,36 +528,38 @@ export default function TechniciansPage() {
             </Table>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
-              <div className="text-sm text-slate-500">
-                Showing {startItem} to {endItem} of {total} technicians
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <span className="text-sm text-slate-600">
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
+                <p className="text-sm text-slate-500">
                   Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
+        </div>
       </div>
 
       {/* Deactivate Confirmation Dialog */}

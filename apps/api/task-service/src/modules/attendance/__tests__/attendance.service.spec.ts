@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AttendanceService } from '../attendance.service';
+import { BreakService } from '../break.service';
+import { ApprovalService } from '../approval.service';
+import { AttendanceReportService } from '../attendance-report.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   TechnicianType,
@@ -11,6 +14,9 @@ import {
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
+  let breakService: BreakService;
+  let approvalService: ApprovalService;
+  let reportService: AttendanceReportService;
 
   const mockLocation = {
     id: 'loc-123',
@@ -101,12 +107,18 @@ describe('AttendanceService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AttendanceService,
+        BreakService,
+        ApprovalService,
+        AttendanceReportService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: mockNotificationClient },
       ],
     }).compile();
 
     service = module.get<AttendanceService>(AttendanceService);
+    breakService = module.get<BreakService>(BreakService);
+    approvalService = module.get<ApprovalService>(ApprovalService);
+    reportService = module.get<AttendanceReportService>(AttendanceReportService);
   });
 
   describe('clockIn', () => {
@@ -399,7 +411,7 @@ describe('AttendanceService', () => {
       mockPrismaService.break.create.mockResolvedValue(newBreak);
       mockPrismaService.user.findUnique.mockResolvedValue(mockTechnician);
 
-      const result = await service.startBreak({
+      const result = await breakService.startBreak({
         userId: 'tech-123',
         organizationId: 'org-123',
         type: 'SHORT',
@@ -416,7 +428,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.startBreak({
+        breakService.startBreak({
           userId: 'tech-123',
           organizationId: 'org-123',
         }),
@@ -431,7 +443,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(entryWithActiveBreak);
 
       await expect(
-        service.startBreak({
+        breakService.startBreak({
           userId: 'tech-123',
           organizationId: 'org-123',
         }),
@@ -457,7 +469,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.update.mockResolvedValue(mockTimeEntry);
       mockPrismaService.user.findUnique.mockResolvedValue(mockTechnician);
 
-      const result = await service.endBreak({
+      const result = await breakService.endBreak({
         userId: 'tech-123',
         organizationId: 'org-123',
       }) as any;
@@ -473,7 +485,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.endBreak({
+        breakService.endBreak({
           userId: 'tech-123',
           organizationId: 'org-123',
         }),
@@ -485,7 +497,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(entryWithNoActiveBreak);
 
       await expect(
-        service.endBreak({
+        breakService.endBreak({
           userId: 'tech-123',
           organizationId: 'org-123',
         }),
@@ -500,7 +512,7 @@ describe('AttendanceService', () => {
 
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(entryWithBreak);
 
-      const result = await service.getBreakStatus({
+      const result = await breakService.getBreakStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
       }) as any;
@@ -515,7 +527,7 @@ describe('AttendanceService', () => {
       const entryWithNoBreaks = { ...mockTimeEntry, breaks: [] };
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(entryWithNoBreaks);
 
-      const result = await service.getBreakStatus({
+      const result = await breakService.getBreakStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
       }) as any;
@@ -528,7 +540,7 @@ describe('AttendanceService', () => {
     it('should return not clocked in status', async () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
 
-      const result = await service.getBreakStatus({
+      const result = await breakService.getBreakStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
       }) as any;
@@ -547,7 +559,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue(pendingEntries);
       mockPrismaService.timeEntry.count.mockResolvedValue(1);
 
-      const result = await service.getPendingApprovals({
+      const result = await approvalService.getPendingApprovals({
         organizationId: 'org-123',
         page: 1,
         limit: 20,
@@ -570,7 +582,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(pendingEntry);
       mockPrismaService.timeEntry.update.mockResolvedValue(approvedEntry);
 
-      const result = await service.approveEntry({
+      const result = await approvalService.approveEntry({
         entryId: 'entry-123',
         approverId: 'admin-123',
         organizationId: 'org-123',
@@ -591,7 +603,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.approveEntry({
+        approvalService.approveEntry({
           entryId: 'non-existent',
           approverId: 'admin-123',
           organizationId: 'org-123',
@@ -607,7 +619,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(approvedEntry);
 
       await expect(
-        service.approveEntry({
+        approvalService.approveEntry({
           entryId: 'entry-123',
           approverId: 'admin-123',
           organizationId: 'org-123',
@@ -628,7 +640,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(pendingEntry);
       mockPrismaService.timeEntry.update.mockResolvedValue(rejectedEntry);
 
-      const result = await service.rejectEntry({
+      const result = await approvalService.rejectEntry({
         entryId: 'entry-123',
         approverId: 'admin-123',
         organizationId: 'org-123',
@@ -640,7 +652,7 @@ describe('AttendanceService', () => {
 
     it('should throw BadRequestException without reason', async () => {
       await expect(
-        service.rejectEntry({
+        approvalService.rejectEntry({
           entryId: 'entry-123',
           approverId: 'admin-123',
           organizationId: 'org-123',
@@ -653,7 +665,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.rejectEntry({
+        approvalService.rejectEntry({
           entryId: 'non-existent',
           approverId: 'admin-123',
           organizationId: 'org-123',
@@ -680,7 +692,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(existingEntry);
       mockPrismaService.timeEntry.update.mockResolvedValue(editedEntry);
 
-      const result = await service.editEntry({
+      const result = await approvalService.editEntry({
         entryId: 'entry-123',
         editorId: 'admin-123',
         organizationId: 'org-123',
@@ -693,7 +705,7 @@ describe('AttendanceService', () => {
 
     it('should throw BadRequestException without reason', async () => {
       await expect(
-        service.editEntry({
+        approvalService.editEntry({
           entryId: 'entry-123',
           editorId: 'admin-123',
           organizationId: 'org-123',
@@ -713,7 +725,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(existingEntry);
       mockPrismaService.timeEntry.update.mockResolvedValue({ ...existingEntry, isEdited: true });
 
-      await service.editEntry({
+      await approvalService.editEntry({
         entryId: 'entry-123',
         editorId: 'admin-123',
         organizationId: 'org-123',
@@ -746,7 +758,7 @@ describe('AttendanceService', () => {
         approvalStatus: ApprovalStatus.APPROVED,
       });
 
-      const result = await service.bulkApprove({
+      const result = await approvalService.bulkApprove({
         entryIds: ['entry-1', 'entry-2', 'entry-3'],
         approverId: 'admin-123',
         organizationId: 'org-123',
@@ -773,7 +785,7 @@ describe('AttendanceService', () => {
         approvalStatus: ApprovalStatus.APPROVED,
       });
 
-      const result = await service.bulkApprove({
+      const result = await approvalService.bulkApprove({
         entryIds: ['entry-1', 'entry-2', 'entry-3'],
         approverId: 'admin-123',
         organizationId: 'org-123',
@@ -807,7 +819,7 @@ describe('AttendanceService', () => {
 
       mockPrismaService.timeEntry.findMany.mockResolvedValue(entries);
 
-      const result = await service.getAttendanceSummary({
+      const result = await reportService.getAttendanceSummary({
         organizationId: 'org-123',
         startDate: '2026-01-01',
         endDate: '2026-01-31',
@@ -835,7 +847,7 @@ describe('AttendanceService', () => {
 
       mockPrismaService.timeEntry.findMany.mockResolvedValue(entries);
 
-      const result = await service.exportToCSV({
+      const result = await reportService.exportToCSV({
         organizationId: 'org-123',
         startDate: '2026-01-01',
         endDate: '2026-01-31',
