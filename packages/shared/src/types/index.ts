@@ -7,7 +7,7 @@ export {
 
 import {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority,
-  TechnicianType, WorkMode, TimeEntryStatus, BreakType, ApprovalStatus,
+  TechnicianType, WorkMode,
   AttachmentType, AssetStatus, ReportAttachmentType, TaskEventType,
 } from './enums';
 
