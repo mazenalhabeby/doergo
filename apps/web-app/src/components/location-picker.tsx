@@ -197,8 +197,8 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
         )}
       </div>
 
-      {/* Map */}
-      <div className="h-[280px] rounded-xl overflow-hidden border border-slate-200">
+      {/* Map - isolate stacking context so Leaflet z-indexes don't bleed out */}
+      <div className="h-[280px] rounded-xl overflow-hidden border border-slate-200" style={{ isolation: "isolate" }}>
         <MapContainer
           center={mapCenter}
           zoom={lat && lng ? 15 : 4}
