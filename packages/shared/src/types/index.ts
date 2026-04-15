@@ -34,7 +34,7 @@ export function getRoleLabel(role: string): string {
     case Role.DISPATCHER:
       return 'Dispatcher';
     case Role.TECHNICIAN:
-      return 'Worker';
+      return 'Technician';
     default:
       return role;
   }
