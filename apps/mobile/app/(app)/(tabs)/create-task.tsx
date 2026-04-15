@@ -8,7 +8,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +16,7 @@ import { tasksApi, type CreateTaskInput, type TechnicianListItem } from '../../.
 import { TechnicianPicker } from '../../../src/components';
 import { LocationSearchPicker } from '../../../src/components/location-search-picker';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
+import { useToast } from '../../../src/contexts/toast-context';
 import {
   COLORS,
   SPACING,
@@ -45,10 +45,11 @@ export default function CreateTaskScreen() {
   const [showTechnicianPicker, setShowTechnicianPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { colors } = useTheme();
+  const toast = useToast();
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      Alert.alert('Required', 'Please enter a task title.');
+      toast.warning('Required', 'Please enter a task title.');
       return;
     }
 
@@ -78,12 +79,10 @@ export default function CreateTaskScreen() {
       setLocationLng(null);
       setSelectedTechnician(null);
 
-      Alert.alert('Success', 'Task created successfully!', [
-        { text: 'View Task', onPress: () => router.push(ROUTES.taskDetail(task.id)) },
-        { text: 'OK' },
-      ]);
+      toast.success('Success', 'Task created successfully!');
+      router.push(ROUTES.taskDetail(task.id));
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to create task');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to create task');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  RefreshControl, ActivityIndicator, Alert,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { techniciansApi, scheduleApi } from '../../../src/lib/api';
 import type { TechnicianListItem, ScheduleEntry } from '../../../src/lib/api/types';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
@@ -20,6 +21,7 @@ interface TechSchedule {
 
 export default function SchedulesScreen() {
   const { colors } = useTheme();
+  const toast = useToast();
   const [data, setData] = useState<TechSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -45,7 +47,7 @@ export default function SchedulesScreen() {
       setData(schedules);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      Alert.alert('Error', err?.message || 'Failed to load schedules');
+      toast.error('Error', err?.message || 'Failed to load schedules');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useFetchData } from '../../../src/hooks/useFetchData';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
@@ -128,6 +129,7 @@ type RequestFilter = 'upcoming' | 'past' | 'all';
 export default function TimeOffScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const toast = useToast();
 
   // Data - fetched via useFetchData
   const fetcher = useCallback(async () => {
@@ -432,10 +434,10 @@ export default function TimeOffScreen() {
         reason: fullReason,
       });
       clearSelection();
-      Alert.alert('Success', 'Time off request submitted.');
+      toast.success('Success', 'Time off request submitted.');
       fetchData();
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to submit request');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to submit request');
     } finally {
       setIsSubmitting(false);
     }
@@ -455,7 +457,7 @@ export default function TimeOffScreen() {
               await timeOffApi.cancel(request.id);
               fetchData();
             } catch (err) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to cancel request');
+              toast.error('Error', err instanceof Error ? err.message : 'Failed to cancel request');
             }
           },
         },

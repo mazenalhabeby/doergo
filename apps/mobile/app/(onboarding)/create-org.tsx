@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CreateOrgIcon } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
+import { useToast } from '../../src/contexts/toast-context';
 import { onboardingApi } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
@@ -16,6 +17,7 @@ export default function CreateOrgScreen() {
   const { refreshUser } = useAuth();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const toast = useToast();
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -38,7 +40,7 @@ export default function CreateOrgScreen() {
       // Navigation guard will redirect to /(app)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create organization';
-      Alert.alert('Error', message);
+      toast.error('Error', message);
     } finally {
       setIsLoading(false);
     }

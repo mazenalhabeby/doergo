@@ -21,6 +21,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Outfit_400Regular, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
+import { ToastProvider } from '../src/contexts/toast-context';
 import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
 
@@ -99,7 +100,7 @@ function RootLayoutNav() {
   }
 
   return (
-    <>
+    <ToastProvider isDark={isDark}>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
@@ -107,7 +108,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(app)" />
       </Stack>
-    </>
+    </ToastProvider>
   );
 }
 

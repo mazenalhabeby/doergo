@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { adminInvitationsApi, type Invitation } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 import { Skeleton } from '../../../src/components';
@@ -19,6 +20,7 @@ const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
 
 export default function InvitationsScreen() {
   const { colors, isDark } = useTheme();
+  const toast = useToast();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -36,7 +38,7 @@ export default function InvitationsScreen() {
       setInvitations(result);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      Alert.alert('Error', err?.message || 'Failed to load invitations');
+      toast.error('Error', err?.message || 'Failed to load invitations');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -56,7 +58,7 @@ export default function InvitationsScreen() {
       setGeneratedCode(result.code);
       await fetchInvitations();
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to create invitation');
+      toast.error('Error', err?.message || 'Failed to create invitation');
     } finally {
       setIsCreating(false);
     }
@@ -82,7 +84,7 @@ export default function InvitationsScreen() {
             await adminInvitationsApi.revoke(inv.id);
             await fetchInvitations();
           } catch (err: any) {
-            Alert.alert('Error', err?.message || 'Failed to revoke');
+            toast.error('Error', err?.message || 'Failed to revoke');
           }
         },
       },

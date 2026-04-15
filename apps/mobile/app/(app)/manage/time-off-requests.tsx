@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { timeOffApi, techniciansApi } from '../../../src/lib/api';
 import type { TimeOffRequest } from '../../../src/lib/api/types';
 import { FilterChip } from '../../../src/components/filter-chip';
@@ -26,6 +27,7 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 
 export default function TimeOffRequestsScreen() {
   const { colors } = useTheme();
+  const toast = useToast();
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -62,7 +64,7 @@ export default function TimeOffRequestsScreen() {
       setRequests(allRequests);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      Alert.alert('Error', err?.message || 'Failed to load time-off requests');
+      toast.error('Error', err?.message || 'Failed to load time-off requests');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -77,7 +79,7 @@ export default function TimeOffRequestsScreen() {
       await timeOffApi.approve(requestId, { approved: true });
       await fetchRequests();
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to approve');
+      toast.error('Error', err?.message || 'Failed to approve');
     } finally {
       setActionLoading(null);
     }
@@ -95,7 +97,7 @@ export default function TimeOffRequestsScreen() {
             await timeOffApi.approve(requestId, { approved: false, rejectionReason: reason });
             await fetchRequests();
           } catch (err: any) {
-            Alert.alert('Error', err?.message || 'Failed to reject');
+            toast.error('Error', err?.message || 'Failed to reject');
           } finally {
             setActionLoading(null);
           }
@@ -112,7 +114,7 @@ export default function TimeOffRequestsScreen() {
             await timeOffApi.approve(requestId, { approved: false });
             await fetchRequests();
           } catch (err: any) {
-            Alert.alert('Error', err?.message || 'Failed to reject');
+            toast.error('Error', err?.message || 'Failed to reject');
           } finally {
             setActionLoading(null);
           }

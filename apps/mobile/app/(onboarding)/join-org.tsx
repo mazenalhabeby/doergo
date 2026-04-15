@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,12 +8,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { JoinOrgIcon } from '../../src/components';
 import { onboardingApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
+import { useToast } from '../../src/contexts/toast-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
 
 export default function JoinOrgScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const toast = useToast();
 
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
@@ -50,7 +52,7 @@ export default function JoinOrgScreen() {
       });
       router.replace(ROUTES.pendingApproval as Href);
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to submit request');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to submit request');
     } finally {
       setIsSubmitting(false);
     }

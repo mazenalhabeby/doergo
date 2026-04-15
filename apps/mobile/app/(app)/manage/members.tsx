@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { membersApi, type OrgMember } from '../../../src/lib/api';
 import { FilterChip } from '../../../src/components/filter-chip';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
@@ -22,6 +23,7 @@ const ROLE_COLORS: Record<string, string> = {
 export default function MembersScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const toast = useToast();
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -35,7 +37,7 @@ export default function MembersScreen() {
       setMembers(result);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      Alert.alert('Error', err?.message || 'Failed to load members');
+      toast.error('Error', err?.message || 'Failed to load members');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -46,7 +48,7 @@ export default function MembersScreen() {
 
   const handleRemove = (member: OrgMember) => {
     if (member.id === user?.id) {
-      Alert.alert('Cannot Remove', 'You cannot remove yourself.');
+      toast.warning('Cannot Remove', 'You cannot remove yourself.');
       return;
     }
     Alert.alert(
@@ -62,7 +64,7 @@ export default function MembersScreen() {
               await membersApi.remove(member.id);
               await fetchMembers();
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Failed to remove member');
+              toast.error('Error', err?.message || 'Failed to remove member');
             }
           },
         },

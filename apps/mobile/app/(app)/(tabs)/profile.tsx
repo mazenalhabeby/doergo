@@ -18,6 +18,7 @@ import { router, Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { useImagePicker } from '../../../src/hooks/useImagePicker';
 import { avatarApi, uploadToPresignedUrl } from '../../../src/lib/api';
@@ -61,6 +62,7 @@ const THEME_MODE_ICONS: Record<ThemeMode, string> = {
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
   const { colors, isDark, mode, setMode } = useTheme();
+  const toast = useToast();
   const { unregisterPushToken } = usePushNotifications();
   const { pickFromGallery, takePhoto } = useImagePicker();
   const insets = useSafeAreaInsets();
@@ -99,7 +101,7 @@ export default function ProfileScreen() {
       // 4. Refresh user data
       await refreshUser();
     } catch (err: any) {
-      Alert.alert('Upload Failed', err?.message || 'Could not upload photo. Please try again.');
+      toast.error('Upload Failed', err?.message || 'Could not upload photo. Please try again.');
     } finally {
       setAvatarLoading(false);
     }
@@ -111,7 +113,7 @@ export default function ProfileScreen() {
       await avatarApi.remove();
       await refreshUser();
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Could not remove photo.');
+      toast.error('Error', err?.message || 'Could not remove photo.');
     } finally {
       setAvatarLoading(false);
     }

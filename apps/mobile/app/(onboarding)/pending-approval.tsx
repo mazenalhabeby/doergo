@@ -5,6 +5,7 @@ import { useRouter, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/auth-context';
+import { useToast } from '../../src/contexts/toast-context';
 import { onboardingApi } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
 
@@ -15,6 +16,7 @@ export default function PendingApprovalScreen() {
   const { refreshUser, logout } = useAuth();
   const insets = useSafeAreaInsets();
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const toast = useToast();
 
   const [orgName, setOrgName] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
@@ -70,7 +72,7 @@ export default function PendingApprovalScreen() {
             await onboardingApi.cancelJoinRequest(requestId);
             router.replace(ROUTES.choosePath as Href);
           } catch (err) {
-            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to cancel request');
+            toast.error('Error', err instanceof Error ? err.message : 'Failed to cancel request');
           } finally {
             setIsCanceling(false);
           }

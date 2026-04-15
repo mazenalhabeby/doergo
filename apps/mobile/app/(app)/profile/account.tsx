@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { passwordApi } from '../../../src/lib/api';
 import {
   COLORS,
@@ -26,6 +26,7 @@ import {
 export default function AccountScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const toast = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,15 +36,15 @@ export default function AccountScreen() {
 
   const handleChangePassword = async () => {
     if (!currentPassword.trim()) {
-      Alert.alert('Required', 'Please enter your current password.');
+      toast.warning('Required', 'Please enter your current password.');
       return;
     }
     if (newPassword.length < 8) {
-      Alert.alert('Invalid', 'New password must be at least 8 characters.');
+      toast.warning('Invalid', 'New password must be at least 8 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Mismatch', 'New passwords do not match.');
+      toast.warning('Mismatch', 'New passwords do not match.');
       return;
     }
 
@@ -56,9 +57,9 @@ export default function AccountScreen() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      Alert.alert('Success', 'Password changed successfully.');
+      toast.success('Success', 'Password changed successfully.');
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to change password');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to change password');
     } finally {
       setIsSubmitting(false);
     }

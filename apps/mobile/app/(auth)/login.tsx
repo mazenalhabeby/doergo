@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../src/contexts/auth-context';
+import { useToast } from '../../src/contexts/toast-context';
 import { AnimatedLogo } from '../../src/components';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -42,6 +42,7 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const { colors, isDark } = useTheme();
+  const toast = useToast();
 
   // Animations
   const { fadeAnim, slideAnim, orb1TranslateY, orb2TranslateY } = useAuthAnimations();
@@ -74,7 +75,7 @@ export default function LoginScreen() {
       router.replace(ROUTES.home as Href);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
-      Alert.alert('Login Failed', message);
+      toast.error('Login Failed', message);
     } finally {
       setIsLoading(false);
     }

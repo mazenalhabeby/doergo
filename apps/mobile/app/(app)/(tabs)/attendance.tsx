@@ -36,6 +36,7 @@ import {
   BreakType,
 } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet } from '../../../src/components';
 import {
@@ -47,6 +48,7 @@ import {
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
+  const toast = useToast();
   const { colors, isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -262,7 +264,7 @@ export default function AttendanceScreen() {
   const handleClockInPress = async () => {
     const location = await getCurrentLocation();
     if (!location) {
-      Alert.alert('Location Required', 'Please enable location services to clock in.');
+      toast.warning('Location Required', 'Please enable location services to clock in.');
       return;
     }
     openLocationModal();
@@ -283,10 +285,10 @@ export default function AttendanceScreen() {
         accuracy: currentLocation.accuracy,
       });
       await fetchAttendanceData();
-      Alert.alert('Success', `Clocked in at ${selectedLocation.name}`);
+      toast.success('Success', `Clocked in at ${selectedLocation.name}`);
     } catch (err) {
       console.error('Clock in error:', err);
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to clock in');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to clock in');
     } finally {
       setIsActionLoading(false);
       setSelectedLocation(null);
@@ -312,10 +314,10 @@ export default function AttendanceScreen() {
                 accuracy: location?.accuracy,
               });
               await fetchAttendanceData();
-              Alert.alert('Success', 'Clocked out successfully');
+              toast.success('Success', 'Clocked out successfully');
             } catch (err) {
               console.error('Clock out error:', err);
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to clock out');
+              toast.error('Error', err instanceof Error ? err.message : 'Failed to clock out');
             } finally {
               setIsActionLoading(false);
             }
@@ -349,10 +351,10 @@ export default function AttendanceScreen() {
     try {
       await attendanceApi.startBreak(pendingBreakType, breakNotes || undefined);
       await fetchAttendanceData();
-      Alert.alert('Break Started', `Your ${pendingBreakType.toLowerCase()} break has started.`);
+      toast.success('Break Started', `Your ${pendingBreakType.toLowerCase()} break has started.`);
     } catch (err) {
       console.error('Start break error:', err);
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to start break');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to start break');
     } finally {
       setIsBreakLoading(false);
       setPendingBreakType(null);
@@ -367,10 +369,10 @@ export default function AttendanceScreen() {
     try {
       await attendanceApi.endBreak(breakNotes || undefined);
       await fetchAttendanceData();
-      Alert.alert('Break Ended', 'Your break has ended. Back to work!');
+      toast.info('Break Ended', 'Your break has ended. Back to work!');
     } catch (err) {
       console.error('End break error:', err);
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to end break');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to end break');
     } finally {
       setIsBreakLoading(false);
       setIsEndingBreak(false);

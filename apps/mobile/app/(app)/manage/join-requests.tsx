@@ -6,12 +6,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { joinRequestsApi, type JoinRequest } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 import { Skeleton } from '../../../src/components';
 
 export default function JoinRequestsScreen() {
   const { colors } = useTheme();
+  const toast = useToast();
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -25,7 +27,7 @@ export default function JoinRequestsScreen() {
       setRequests(result);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      Alert.alert('Error', err?.message || 'Failed to load join requests');
+      toast.error('Error', err?.message || 'Failed to load join requests');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -48,7 +50,7 @@ export default function JoinRequestsScreen() {
               await joinRequestsApi.approve(req.id, { role: 'TECHNICIAN' });
               await fetchRequests();
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Failed to approve');
+              toast.error('Error', err?.message || 'Failed to approve');
             } finally {
               setActionLoading(null);
             }
@@ -73,7 +75,7 @@ export default function JoinRequestsScreen() {
               await joinRequestsApi.reject(req.id);
               await fetchRequests();
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Failed to reject');
+              toast.error('Error', err?.message || 'Failed to reject');
             } finally {
               setActionLoading(null);
             }

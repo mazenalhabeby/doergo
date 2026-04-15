@@ -25,6 +25,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { Role } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { SocketEvents } from '../../../src/lib/socket';
@@ -56,6 +57,7 @@ export default function TaskDetailScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const toast = useToast();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
 
   // Bottom sheet animation
@@ -281,7 +283,7 @@ export default function TaskDetailScreen() {
       setComments(prev => [...prev, comment]);
       setNewComment('');
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to add comment');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to add comment');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -385,7 +387,7 @@ export default function TaskDetailScreen() {
               if (newStatus === TaskStatus.EN_ROUTE) {
                 stopTracking();
               }
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update status');
+              toast.error('Error', err instanceof Error ? err.message : 'Failed to update status');
             } finally {
               setIsUpdating(false);
             }
@@ -436,22 +438,22 @@ export default function TaskDetailScreen() {
     if (!task) return;
 
     if (!completionSummary.trim()) {
-      Alert.alert('Required', 'Please enter a summary of the work completed.');
+      toast.warning('Required', 'Please enter a summary of the work completed.');
       return;
     }
 
     if (!technicianSignature) {
-      Alert.alert('Required', 'Technician signature is required.');
+      toast.warning('Required', 'Technician signature is required.');
       return;
     }
 
     if (!customerSignature) {
-      Alert.alert('Required', 'Customer signature is required.');
+      toast.warning('Required', 'Customer signature is required.');
       return;
     }
 
     if (!customerName.trim()) {
-      Alert.alert('Required', 'Please enter the customer name.');
+      toast.warning('Required', 'Please enter the customer name.');
       return;
     }
 
@@ -499,9 +501,9 @@ export default function TaskDetailScreen() {
       setCustomerName('');
       setUploadProgress(new Map());
 
-      Alert.alert('Success', 'Job completed successfully!');
+      toast.success('Success', 'Job completed successfully!');
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to complete task');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to complete task');
     } finally {
       setIsUpdating(false);
       setIsUploading(false);
@@ -535,7 +537,7 @@ export default function TaskDetailScreen() {
         });
       } catch (err) {
         console.warn(`[Attachments] Failed to upload photo ${i}:`, err);
-        Alert.alert('Error', `Failed to upload ${photo.fileName}`);
+        toast.error('Error', `Failed to upload ${photo.fileName}`);
       }
     }
     // Refresh attachments
@@ -560,7 +562,7 @@ export default function TaskDetailScreen() {
             await taskAttachmentsApi.delete(task.id, attachmentId);
             setTaskAttachments(prev => prev.filter(a => a.id !== attachmentId));
           } catch (err) {
-            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete');
+            toast.error('Error', err instanceof Error ? err.message : 'Failed to delete');
           }
         },
       },
@@ -576,7 +578,7 @@ export default function TaskDetailScreen() {
       setTask(updatedTask);
       setBlockReason('');
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to report issue');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to report issue');
     } finally {
       setIsUpdating(false);
     }
@@ -597,10 +599,10 @@ export default function TaskDetailScreen() {
             try {
               setIsUpdating(true);
               await tasksApi.declineTask(task.id);
-              Alert.alert('Job Declined', 'The job has been returned for reassignment.');
+              toast.info('Job Declined', 'The job has been returned for reassignment.');
               router.back();
             } catch (err) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to decline job');
+              toast.error('Error', err instanceof Error ? err.message : 'Failed to decline job');
             } finally {
               setIsUpdating(false);
             }
@@ -636,9 +638,9 @@ export default function TaskDetailScreen() {
       setShowAssignModal(false);
       const updatedTask = await tasksApi.assign(task.id, technician.id);
       setTask(updatedTask);
-      Alert.alert('Success', `Assigned to ${technician.firstName} ${technician.lastName}`);
+      toast.success('Success', `Assigned to ${technician.firstName} ${technician.lastName}`);
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to assign');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to assign');
     } finally {
       setIsUpdating(false);
     }
@@ -657,7 +659,7 @@ export default function TaskDetailScreen() {
   // Admin: Submit edit
   const handleEditSubmit = async () => {
     if (!task || !editTitle.trim()) {
-      Alert.alert('Required', 'Title is required.');
+      toast.warning('Required', 'Title is required.');
       return;
     }
     try {
@@ -672,7 +674,7 @@ export default function TaskDetailScreen() {
       const updatedTask = await tasksApi.update(task.id, input);
       setTask(updatedTask);
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update');
+      toast.error('Error', err instanceof Error ? err.message : 'Failed to update');
     } finally {
       setIsUpdating(false);
     }
@@ -692,7 +694,7 @@ export default function TaskDetailScreen() {
             const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.CANCELED);
             setTask(updatedTask);
           } catch (err) {
-            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to cancel');
+            toast.error('Error', err instanceof Error ? err.message : 'Failed to cancel');
           } finally {
             setIsUpdating(false);
           }

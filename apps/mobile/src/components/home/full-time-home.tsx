@@ -14,6 +14,7 @@ import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
+import { useToast } from '../../contexts/toast-context';
 import {
   attendanceApi,
   type AttendanceStatus,
@@ -33,6 +34,7 @@ import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT
 export function FullTimeHome() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -132,7 +134,7 @@ export function FullTimeHome() {
     try {
       const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
       if (permStatus !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required for attendance tracking.');
+        toast.warning('Permission Denied', 'Location permission is required for attendance tracking.');
         return null;
       }
 
@@ -148,7 +150,7 @@ export function FullTimeHome() {
       setCurrentLocation(loc);
       return loc;
     } catch (err) {
-      Alert.alert('Location Error', 'Failed to get your current location.');
+      toast.error('Location Error', 'Failed to get your current location.');
       return null;
     } finally {
       setIsGettingLocation(false);
@@ -171,7 +173,7 @@ export function FullTimeHome() {
       setSelectedLocation(null);
       await fetchAttendanceData();
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to clock in');
+      toast.error('Error', err.message || 'Failed to clock in');
     } finally {
       setIsActionLoading(false);
     }
@@ -202,7 +204,7 @@ export function FullTimeHome() {
               });
               await fetchAttendanceData();
             } catch (err: any) {
-              Alert.alert('Error', err.message || 'Failed to clock out');
+              toast.error('Error', err.message || 'Failed to clock out');
             } finally {
               setIsActionLoading(false);
             }
