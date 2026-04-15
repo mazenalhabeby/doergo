@@ -61,8 +61,9 @@ export default function CreateTaskPage() {
       // Invalidate all task-related queries to ensure fresh data
       await queryClient.invalidateQueries({
         queryKey: ["tasks"],
-        refetchType: "all", // Force refetch all matching queries
+        refetchType: "all",
       })
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
       router.push("/tasks")
     },
     onError: (error: Error) => {

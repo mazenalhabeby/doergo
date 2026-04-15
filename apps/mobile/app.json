@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "eu.hbc-group.hbcfield",
       "config": {
-        "googleMapsApiKey": ""
+        "googleMapsApiKey": "AIzaSyB9kTVMPalfoDoW-7V_J8F2ZjOSnApQAqM"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "HBCField needs your location to track task progress",
@@ -32,12 +32,12 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0f172a"
+        "backgroundColor": "#1e293b"
       },
       "package": "eu.hbcgroup.hbcfield",
       "config": {
         "googleMaps": {
-          "apiKey": ""
+          "apiKey": "AIzaSyB9kTVMPalfoDoW-7V_J8F2ZjOSnApQAqM"
         }
       },
       "permissions": [

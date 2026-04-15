@@ -8,7 +8,7 @@ import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-import { Role, WorkMode } from '@hbcfield/shared/client';
+import { Role, WorkMode, TechnicianType } from '@hbcfield/shared/client';
 
 // Logo for header left
 function HeaderLogo() {
@@ -158,7 +158,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   // Work mode determines tab visibility for technicians
   const userWorkMode = user?.workMode || WorkMode.HYBRID;
   const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
-  const showAttendance = isTechnician && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
+  const isFullTime = user?.technicianType === TechnicianType.FULL_TIME;
+  const showAttendance = isTechnician && isFullTime && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
 
   // Filter routes based on role and work mode (profile is in header, not tab bar)
   const visibleRoutes = state.routes.filter((route: any) => {
@@ -232,7 +233,8 @@ export default function TabsLayout() {
   const isTechnician = user?.role === Role.TECHNICIAN;
   const userWorkMode = user?.workMode || WorkMode.HYBRID;
   const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
-  const showAttendance = isTechnician && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
+  const isFullTime = user?.technicianType === TechnicianType.FULL_TIME;
+  const showAttendance = isTechnician && isFullTime && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>

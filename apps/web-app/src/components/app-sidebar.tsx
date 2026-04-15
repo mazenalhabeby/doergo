@@ -20,6 +20,7 @@ import {
   Check,
   UserPlus,
   UserCheck,
+  Umbrella,
 } from "lucide-react"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"

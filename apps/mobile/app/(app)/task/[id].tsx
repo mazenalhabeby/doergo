@@ -21,7 +21,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// MapView removed — opens native maps app instead (no Google Maps API key required)
+import MapView, { Marker } from 'react-native-maps';
 import { tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { Role } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
@@ -1257,15 +1257,28 @@ export default function TaskDetailScreen() {
               }}
               activeOpacity={0.7}
             >
-              <View style={[styles.map, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', justifyContent: 'center', alignItems: 'center' }]}>
-                <Ionicons name="location" size={32} color={COLORS.primary} />
-                <Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm, marginTop: SPACING.xs }}>
-                  {task.locationAddress || `${task.locationLat.toFixed(4)}, ${task.locationLng.toFixed(4)}`}
-                </Text>
-                <Text style={{ color: COLORS.primary, fontSize: FONT_SIZE.xs, marginTop: SPACING.xs, fontWeight: FONT_WEIGHT.medium }}>
-                  Tap to open in Maps
-                </Text>
-              </View>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: task.locationLat,
+                  longitude: task.locationLng,
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                rotateEnabled={false}
+                pitchEnabled={false}
+                userInterfaceStyle={isDark ? 'dark' : 'light'}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: task.locationLat,
+                    longitude: task.locationLng,
+                  }}
+                  title={task.locationAddress || 'Task Location'}
+                />
+              </MapView>
             </TouchableOpacity>
             <Text style={[styles.locationAddress, { color: colors.textSecondary }]}>{task.locationAddress}</Text>
             {!isAdmin && [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE].includes(task.status) && (

@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiResponse,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
@@ -99,6 +100,30 @@ export class TechniciansController {
           date,
           startDate,
           endDate,
+        },
+      ),
+    );
+  }
+
+  // ============================================================================
+  // ORG-WIDE TIME-OFF (must be before /:id routes to avoid conflict)
+  // ============================================================================
+
+  @Get('time-off')
+  @ApiOperation({ summary: 'Get all time-off requests for the organization' })
+  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELED'] })
+  @ApiResponse({ status: 200, description: 'Time-off requests retrieved' })
+  @Roles(Role.ADMIN, Role.DISPATCHER)
+  async getOrgTimeOff(
+    @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
+    @CurrentUser() user?: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'get_org_time_off' },
+        {
+          organizationId: user?.organizationId,
+          status,
         },
       ),
     );

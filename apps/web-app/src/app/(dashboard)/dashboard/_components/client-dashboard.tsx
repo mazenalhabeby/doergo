@@ -9,11 +9,15 @@ import {
   AlertTriangle,
   Plus,
   TrendingUp,
+  Umbrella,
+  ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
+import { format, differenceInCalendarDays, parseISO } from "date-fns"
 
 import { useAuth } from "@/contexts/auth-context"
-import { tasksApi } from "@/lib/api"
+import { tasksApi, techniciansApi } from "@/lib/api"
+import { Badge } from "@/components/ui/badge"
 import {
   StatCard,
   ActivityFeed,
@@ -33,6 +37,12 @@ export function ClientDashboard() {
   const { data: tasksData, isLoading } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => tasksApi.list(),
+  })
+
+  // Fetch pending time-off requests
+  const { data: pendingTimeOff = [] } = useQuery({
+    queryKey: ["orgTimeOff", "PENDING"],
+    queryFn: () => techniciansApi.getOrgTimeOff("PENDING"),
   })
 
   const tasks = tasksData?.data || []
@@ -189,6 +199,61 @@ export function ClientDashboard() {
               )}
             </div>
           </section>
+
+          {/* Pending Time Off */}
+          {pendingTimeOff.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-slate-900">Time Off Requests</h2>
+                <Link
+                  href="/technicians/availability?tab=time-off"
+                  className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  View all
+                </Link>
+              </div>
+              <div className="rounded-2xl border border-amber-200/60 bg-amber-50/30 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-amber-700 mb-1">
+                  <Umbrella className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {pendingTimeOff.length} pending request{pendingTimeOff.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                {pendingTimeOff.slice(0, 3).map((req: any) => (
+                  <div
+                    key={req.id}
+                    className="flex items-center justify-between rounded-lg bg-white p-3 border border-slate-100"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-medium text-slate-600 shrink-0">
+                        {req.technician?.firstName?.[0]}{req.technician?.lastName?.[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">
+                          {req.technician?.firstName} {req.technician?.lastName}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {format(parseISO(req.startDate), "MMM d")}
+                          {req.startDate !== req.endDate && <> &ndash; {format(parseISO(req.endDate), "MMM d")}</>}
+                          {" "}({differenceInCalendarDays(parseISO(req.endDate), parseISO(req.startDate)) + 1}d)
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-amber-100 text-amber-700 text-[11px] shrink-0">Pending</Badge>
+                  </div>
+                ))}
+                {pendingTimeOff.length > 3 && (
+                  <Link
+                    href="/technicians/availability?tab=time-off"
+                    className="flex items-center justify-center gap-1 text-[13px] font-medium text-amber-700 hover:text-amber-800 pt-1"
+                  >
+                    +{pendingTimeOff.length - 3} more
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Activity Feed */}
           <section>

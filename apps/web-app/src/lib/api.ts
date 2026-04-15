@@ -2136,6 +2136,24 @@ export const techniciansApi = {
   // TIME-OFF MANAGEMENT
   // ========================================================================
 
+  // Get all time-off requests for the organization
+  getOrgTimeOff: async (status?: TimeOffStatus) => {
+    const endpoint = buildUrlWithQuery('/technicians/time-off', { status });
+
+    const response = await api.get<{
+      success: boolean;
+      data: (TimeOffRequest & {
+        technician: { id: string; firstName: string; lastName: string; email: string; specialty: string | null };
+      })[];
+    }>(endpoint);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data || [];
+  },
+
   // Get technician time-off requests
   getTimeOff: async (id: string, status?: TimeOffStatus) => {
     const endpoint = buildUrlWithQuery(`/technicians/${id}/time-off`, { status });

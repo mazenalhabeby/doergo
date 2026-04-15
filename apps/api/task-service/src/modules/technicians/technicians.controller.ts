@@ -9,6 +9,7 @@ import {
   GetScheduleDto,
   RequestTimeOffDto,
   GetTimeOffDto,
+  GetOrgTimeOffDto,
   ApproveTimeOffDto,
   CancelTimeOffDto,
   GetAvailabilityDto,
@@ -63,6 +64,11 @@ export class TechniciansController {
   @MessagePattern({ cmd: 'get_time_off' })
   async getTimeOff(@Payload() data: GetTimeOffDto) {
     return this.techniciansService.getTimeOff(data);
+  }
+
+  @MessagePattern({ cmd: 'get_org_time_off' })
+  async getOrgTimeOff(@Payload() data: GetOrgTimeOffDto) {
+    return this.techniciansService.getOrgTimeOff(data);
   }
 
   @MessagePattern({ cmd: 'approve_time_off' })

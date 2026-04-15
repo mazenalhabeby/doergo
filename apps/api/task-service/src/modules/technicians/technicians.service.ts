@@ -8,6 +8,7 @@ import {
   GetScheduleDto,
   RequestTimeOffDto,
   GetTimeOffDto,
+  GetOrgTimeOffDto,
   ApproveTimeOffDto,
   CancelTimeOffDto,
   GetAvailabilityDto,
@@ -481,6 +482,35 @@ export class TechniciansService {
       where,
       orderBy: { startDate: 'desc' },
       include: {
+        approvedBy: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+      },
+    });
+
+    return success(timeOffs);
+  }
+
+  /**
+   * Get all time-off requests for an organization
+   */
+  async getOrgTimeOff(dto: GetOrgTimeOffDto) {
+    const { organizationId, status } = dto;
+
+    const where: any = {
+      technician: { organizationId },
+    };
+    if (status) {
+      where.status = status;
+    }
+
+    const timeOffs = await this.prisma.timeOff.findMany({
+      where,
+      orderBy: [{ status: 'asc' }, { startDate: 'desc' }],
+      include: {
+        technician: {
+          select: { id: true, firstName: true, lastName: true, email: true, specialty: true },
+        },
         approvedBy: {
           select: { id: true, firstName: true, lastName: true },
         },

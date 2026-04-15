@@ -136,16 +136,18 @@ export default function TaskDetailPage({
         refetchType: "all",
       })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
     },
     onError: (e: Error) => toast.error(e.message),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: () => tasksApi.delete(id),
+    mutationFn: () => tasksApi.updateStatus(id, "CANCELED"),
     onSuccess: () => {
       toast.success("Request cancelled")
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-      router.push("/tasks")
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+      queryClient.invalidateQueries({ queryKey: ["task", id] })
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -293,7 +295,7 @@ export default function TaskDetailPage({
                     <AlertDialogTitle>Cancel Request</AlertDialogTitle>
                     <AlertDialogDescription>
                       Are you sure you want to cancel this maintenance request?
-                      This action cannot be undone.
+                      The task will be marked as canceled and no further actions can be taken.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

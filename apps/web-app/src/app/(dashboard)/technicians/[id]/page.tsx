@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   ArrowLeft,
   Star,
@@ -21,20 +21,32 @@ import {
   Umbrella,
 } from "lucide-react"
 import { format } from "date-fns"
+import { toast } from "sonner"
 
 import { useAuth } from "@/contexts/auth-context"
 import {
   techniciansApi,
   type TechnicianProfile,
   type TechnicianStats,
+  type UpdateTechnicianInput,
   type Task,
   type TimeEntry,
   TechnicianType,
+  WorkMode,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +54,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
 
 import {
@@ -54,13 +84,33 @@ import {
   TimeOffTab,
 } from "./_components"
 
+const SPECIALTY_OPTIONS = [
+  { value: "Electrical", label: "Electrical" },
+  { value: "Plumbing", label: "Plumbing" },
+  { value: "Mechanical", label: "Mechanical" },
+  { value: "HVAC", label: "HVAC" },
+  { value: "General", label: "General" },
+  { value: "Other", label: "Other" },
+] as const
+
 export default function TechnicianDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   const technicianId = params.id as string
   const [activeTab, setActiveTab] = useState("overview")
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false)
+
+  // Edit form state
+  const [editFirstName, setEditFirstName] = useState("")
+  const [editLastName, setEditLastName] = useState("")
+  const [editTechnicianType, setEditTechnicianType] = useState<TechnicianType>(TechnicianType.FREELANCER)
+  const [editWorkMode, setEditWorkMode] = useState<WorkMode>(WorkMode.HYBRID)
+  const [editSpecialty, setEditSpecialty] = useState("")
+  const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
 
   // Fetch technician detail
   const { data: technician, isLoading, isError, error } = useQuery({
@@ -96,6 +146,70 @@ export default function TechnicianDetailPage() {
     queryFn: () => techniciansApi.getAssignments(technicianId),
     enabled: !!technicianId && activeTab === "locations",
   })
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (input: UpdateTechnicianInput) => techniciansApi.update(technicianId, input),
+    onSuccess: () => {
+      toast.success("Technician updated successfully")
+      queryClient.invalidateQueries({ queryKey: ["technician", technicianId] })
+      queryClient.invalidateQueries({ queryKey: ["technicians"] })
+      setEditDialogOpen(false)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update technician")
+    },
+  })
+
+  // Deactivate mutation
+  const deactivateMutation = useMutation({
+    mutationFn: () => techniciansApi.deactivate(technicianId),
+    onSuccess: () => {
+      toast.success("Technician deactivated successfully")
+      queryClient.invalidateQueries({ queryKey: ["technician", technicianId] })
+      queryClient.invalidateQueries({ queryKey: ["technicians"] })
+      setDeactivateDialogOpen(false)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to deactivate technician")
+    },
+  })
+
+  // Reactivate mutation
+  const reactivateMutation = useMutation({
+    mutationFn: () => techniciansApi.update(technicianId, { isActive: true }),
+    onSuccess: () => {
+      toast.success("Technician reactivated successfully")
+      queryClient.invalidateQueries({ queryKey: ["technician", technicianId] })
+      queryClient.invalidateQueries({ queryKey: ["technicians"] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to reactivate technician")
+    },
+  })
+
+  const openEditDialog = () => {
+    if (technician) {
+      setEditFirstName(technician.firstName)
+      setEditLastName(technician.lastName)
+      setEditTechnicianType(technician.technicianType)
+      setEditWorkMode(technician.workMode || WorkMode.HYBRID)
+      setEditSpecialty(technician.specialty || "")
+      setEditMaxDailyJobs(technician.maxDailyJobs || 5)
+      setEditDialogOpen(true)
+    }
+  }
+
+  const handleEditSubmit = () => {
+    updateMutation.mutate({
+      firstName: editFirstName.trim(),
+      lastName: editLastName.trim(),
+      technicianType: editTechnicianType,
+      workMode: editWorkMode,
+      specialty: editSpecialty.trim() || undefined,
+      maxDailyJobs: editMaxDailyJobs,
+    })
+  }
 
   const stats = technician?.stats
 
@@ -254,17 +368,23 @@ export default function TechnicianDetailPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={openEditDialog}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {technician.isActive ? (
-                    <DropdownMenuItem className="text-red-600">
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={() => setDeactivateDialogOpen(true)}
+                    >
                       Deactivate
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem className="text-green-600">
+                    <DropdownMenuItem
+                      className="text-green-600"
+                      onClick={() => reactivateMutation.mutate()}
+                    >
                       Reactivate
                     </DropdownMenuItem>
                   )}
@@ -336,6 +456,135 @@ export default function TechnicianDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Technician Profile</DialogTitle>
+            <DialogDescription>
+              Update technician details. Changes will take effect immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-firstName">First Name</Label>
+                <Input
+                  id="edit-firstName"
+                  value={editFirstName}
+                  onChange={(e) => setEditFirstName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-lastName">Last Name</Label>
+                <Input
+                  id="edit-lastName"
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Employment Type</Label>
+                <Select
+                  value={editTechnicianType}
+                  onValueChange={(v) => setEditTechnicianType(v as TechnicianType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TechnicianType.FREELANCER}>Freelancer</SelectItem>
+                    <SelectItem value={TechnicianType.FULL_TIME}>Full-Time</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Work Mode</Label>
+                <Select
+                  value={editWorkMode}
+                  onValueChange={(v) => setEditWorkMode(v as WorkMode)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={WorkMode.HYBRID}>Hybrid</SelectItem>
+                    <SelectItem value={WorkMode.ON_SITE}>On-Site</SelectItem>
+                    <SelectItem value={WorkMode.ON_ROAD}>On-Road</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-specialty">Job Title / Specialty</Label>
+              <Input
+                id="edit-specialty"
+                value={editSpecialty}
+                onChange={(e) => setEditSpecialty(e.target.value)}
+                placeholder="e.g. Electrician, Plumber, HVAC Tech..."
+                list="edit-specialty-suggestions"
+              />
+              <datalist id="edit-specialty-suggestions">
+                {SPECIALTY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.label} />
+                ))}
+              </datalist>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-maxJobs">Max Daily Jobs</Label>
+              <Input
+                id="edit-maxJobs"
+                type="number"
+                min={1}
+                max={20}
+                value={editMaxDailyJobs}
+                onChange={(e) => setEditMaxDailyJobs(parseInt(e.target.value) || 5)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditSubmit}
+              disabled={!editFirstName.trim() || !editLastName.trim() || updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate Confirmation Dialog */}
+      <AlertDialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate Technician</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate {technician?.firstName} {technician?.lastName}?
+              They will no longer be able to log in or receive task assignments.
+              You can reactivate them later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deactivateMutation.mutate()}
+              disabled={deactivateMutation.isPending}
+            >
+              {deactivateMutation.isPending ? "Deactivating..." : "Deactivate"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

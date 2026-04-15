@@ -60,6 +60,11 @@ export class GetTimeOffDto {
   status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 }
 
+export class GetOrgTimeOffDto {
+  organizationId: string;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+}
+
 export class ApproveTimeOffDto {
   timeOffId: string;
   organizationId: string;

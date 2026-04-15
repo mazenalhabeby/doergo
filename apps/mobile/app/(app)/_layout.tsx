@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { Stack, useRouter, Href } from 'expo-router';
 import { AppState, AppStateStatus } from 'react-native';
+import * as Location from 'expo-location';
 import type { NotificationResponse } from 'expo-notifications';
 import {
   usePushNotifications,
@@ -9,13 +10,72 @@ import {
 } from '../../src/hooks/usePushNotifications';
 import { SocketProvider } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
+import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
+import { trackingApi } from '../../src/lib/api';
 import { COLORS } from '../../src/lib/constants';
+import { Role } from '@hbcfield/shared/client';
+
+// Send a lightweight location ping so the web dashboard knows the technician is online.
+// Runs once on mount and every 4 minutes while the app is foregrounded.
+function usePresencePing() {
+  const { user } = useAuth();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const sendPing = useCallback(async () => {
+    try {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const loc = await Location.getLastKnownPositionAsync();
+      if (!loc) return;
+      await trackingApi.updateLocation({
+        lat: loc.coords.latitude,
+        lng: loc.coords.longitude,
+        accuracy: loc.coords.accuracy ?? undefined,
+      });
+    } catch {
+      // Silently ignore — presence is best-effort
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.role !== Role.TECHNICIAN) return;
+
+    // Initial ping
+    sendPing();
+
+    // Repeat every 4 minutes
+    intervalRef.current = setInterval(sendPing, 4 * 60 * 1000);
+
+    // Pause when backgrounded, resume when foregrounded
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        sendPing();
+        if (!intervalRef.current) {
+          intervalRef.current = setInterval(sendPing, 4 * 60 * 1000);
+        }
+      } else {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    });
+
+    return () => {
+      sub.remove();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [user?.role, sendPing]);
+}
 
 export default function AppLayout() {
   const router = useRouter();
   const { colors } = useTheme();
   const hasRegistered = useRef(false);
+
+  // Keep technician presence alive for online status
+  usePresencePing();
 
   // Handle notification tap - navigate to relevant screen
   const handleNotificationResponse = useCallback((response: NotificationResponse) => {

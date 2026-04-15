@@ -112,6 +112,19 @@
   }
 }
 
+/* Route change progress bar */
+@keyframes progress-bar {
+  0% { width: 0%; }
+  20% { width: 30%; }
+  50% { width: 60%; }
+  80% { width: 85%; }
+  100% { width: 95%; }
+}
+
+.animate-progress-bar {
+  animation: progress-bar 2s ease-out forwards;
+}
+
 /* Route tracking animations */
 @keyframes carTravel {
   0% {

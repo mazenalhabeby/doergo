@@ -150,6 +150,18 @@ export default function TechniciansPage() {
     },
   })
 
+  // Reactivate mutation
+  const reactivateMutation = useMutation({
+    mutationFn: (id: string) => techniciansApi.update(id, { isActive: true }),
+    onSuccess: () => {
+      toast.success("Technician reactivated successfully")
+      queryClient.invalidateQueries({ queryKey: ["technicians"] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to reactivate technician")
+    },
+  })
+
   // Handlers
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
@@ -512,7 +524,10 @@ export default function TechniciansPage() {
                                     Deactivate
                                   </DropdownMenuItem>
                                 ) : (
-                                  <DropdownMenuItem className="text-green-600">
+                                  <DropdownMenuItem
+                                    className="text-green-600"
+                                    onClick={() => reactivateMutation.mutate(tech.id)}
+                                  >
                                     Reactivate
                                   </DropdownMenuItem>
                                 )}

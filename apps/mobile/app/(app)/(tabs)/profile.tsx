@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, Href } from 'expo-router';
+import { router, Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
@@ -66,6 +66,17 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const hasRefreshed = useRef(false);
+
+  // Refresh user data when profile screen is focused (picks up admin edits)
+  useFocusEffect(
+    useCallback(() => {
+      if (hasRefreshed.current) {
+        refreshUser();
+      }
+      hasRefreshed.current = true;
+    }, [refreshUser])
+  );
 
   const isTechnician = user?.role === Role.TECHNICIAN;
   const appVersion = Constants.expoConfig?.version || '1.0.0';
@@ -240,6 +251,14 @@ export default function ProfileScreen() {
               <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
               <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
                 {getWorkModeLabel(user.workMode)}
+              </Text>
+            </View>
+          )}
+          {isTechnician && user?.technicianType && (
+            <View style={[styles.badge, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+              <Ionicons name="person-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Text style={[styles.badgeText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                {getTechnicianTypeLabel(user.technicianType)}
               </Text>
             </View>
           )}
