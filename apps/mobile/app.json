@@ -34,6 +34,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1e293b"
       },
+      "googleServicesFile": "./google-services.json",
       "package": "eu.hbcgroup.hbcfield",
       "config": {
         "googleMaps": {
