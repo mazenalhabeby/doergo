@@ -219,6 +219,16 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.server.to(`user:${workerId}`).emit(SocketEvents.TASK_ASSIGNED, task);
   }
 
+  emitTaskUpdated(task: any) {
+    this.logger.log(`[EMIT] task.updated to org:${task.organizationId}`);
+    this.messagesSent++;
+    this.server.to(`org:${task.organizationId}`).emit(SocketEvents.TASK_UPDATED, task);
+    if (task.assignedToId) {
+      this.messagesSent++;
+      this.server.to(`user:${task.assignedToId}`).emit(SocketEvents.TASK_UPDATED, task);
+    }
+  }
+
   emitTaskDeclined(task: any, declinedBy: any) {
     this.logger.log(`[EMIT] task.declined to org:${task.organizationId} (declined by: ${declinedBy?.firstName} ${declinedBy?.lastName})`);
     this.messagesSent += 2;

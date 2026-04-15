@@ -88,8 +88,8 @@ export class PushService {
     data?: Record<string, any>,
   ) {
     if (tokens.length === 0) {
-      this.logger.debug('No tokens provided for push notification');
-      return { success: true, sent: 0 };
+      this.logger.warn(`No push tokens registered for notification: "${title}"`);
+      return { success: true, sent: 0, reason: 'no_tokens_registered' };
     }
 
     // Filter valid tokens

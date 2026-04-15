@@ -273,6 +273,9 @@ export class TasksService {
 
     this.invalidateStatusCountsCache(task.organizationId);
 
+    // Notify via Socket.IO for real-time updates
+    this.notificationClient.emit('task_updated', { task });
+
     return success(task);
   }
 

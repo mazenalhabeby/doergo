@@ -75,17 +75,24 @@ export class NotificationController {
 
   @EventPattern('task_assigned')
   async handleTaskAssigned(@Payload() data: any) {
-    this.logger.log(`Task assigned: ${data.task.id}`);
+    this.logger.log(`Task assigned: task=${data.task?.id}, worker=${data.workerId}`);
     this.websocketGateway.emitTaskAssigned(data.task, data.workerId);
 
     try {
-      await this.pushService.sendTaskAssignedPush(data.workerId, {
+      const result = await this.pushService.sendTaskAssignedPush(data.workerId, {
         id: data.task.id,
         title: data.task.title,
       });
+      this.logger.log(`Push result for worker ${data.workerId}: sent=${result?.sent ?? 0}, reason=${result?.reason ?? 'ok'}`);
     } catch (error) {
       this.logger.error(`Failed to send task assigned push: ${error}`);
     }
+  }
+
+  @EventPattern('task_updated')
+  async handleTaskUpdated(@Payload() data: any) {
+    this.logger.log(`Task updated: ${data.task?.id}`);
+    this.websocketGateway.emitTaskUpdated(data.task);
   }
 
   @EventPattern('task_status_changed')

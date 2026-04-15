@@ -40,6 +40,7 @@ export function useTaskEvents(taskId?: string) {
 
     unsubs.push(subscribe(SocketEvents.TASK_CREATED, invalidateList))
     unsubs.push(subscribe(SocketEvents.TASK_ASSIGNED, invalidateList))
+    unsubs.push(subscribe(SocketEvents.TASK_UPDATED, invalidateList))
     unsubs.push(subscribe(SocketEvents.TASK_STATUS_CHANGED, invalidateList))
 
     return () => unsubs.forEach((fn) => fn())
