@@ -491,9 +491,12 @@ export class ReportsService {
       throw new NotFoundException('Service report not found');
     }
 
-    // Only the technician who completed can add attachments
-    if (report.completedById !== data.userId) {
+    // Technician who completed or ADMIN/DISPATCHER in the same org can add attachments
+    if (report.completedById !== data.userId && data.userRole === Role.TECHNICIAN) {
       throw new ForbiddenException('You can only add attachments to reports you created');
+    }
+    if (report.organizationId !== data.organizationId) {
+      throw new ForbiddenException('You can only add attachments to reports in your organization');
     }
 
     const attachment = await this.prisma.reportAttachment.create({
@@ -577,9 +580,12 @@ export class ReportsService {
       throw new NotFoundException('Service report not found');
     }
 
-    // Only the technician who completed can upload attachments
-    if (report.completedById !== data.userId) {
+    // Technician who completed or ADMIN/DISPATCHER in the same org can upload
+    if (report.completedById !== data.userId && data.userRole === Role.TECHNICIAN) {
       throw new ForbiddenException('You can only upload attachments to reports you created');
+    }
+    if (report.organizationId !== data.organizationId) {
+      throw new ForbiddenException('You can only upload attachments to reports in your organization');
     }
 
     // Sanitize filename: remove path separators and special chars
