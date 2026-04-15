@@ -68,7 +68,7 @@ export default function TasksPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState(
-    searchParams.get("status") || "NEW"
+    searchParams.get("status") || "all"
   )
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [page, setPage] = useState(1)
