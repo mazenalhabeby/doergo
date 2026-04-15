@@ -21,7 +21,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+// MapView removed — opens native maps app instead (no Google Maps API key required)
 import { tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { Role } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
@@ -1242,31 +1242,31 @@ export default function TaskDetailScreen() {
           </View>
         ) : null}
 
-        {/* Section 5: Location Map Card */}
+        {/* Section 5: Location Card */}
         {task.locationLat && task.locationLng ? (
           <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>LOCATION</Text>
-            <View style={styles.mapContainer}>
-              <MapView
-                style={styles.map}
-                provider={PROVIDER_GOOGLE}
-                initialRegion={{
-                  latitude: task.locationLat,
-                  longitude: task.locationLng,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                scrollEnabled={false}
-                zoomEnabled={false}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: task.locationLat,
-                    longitude: task.locationLng,
-                  }}
-                />
-              </MapView>
-            </View>
+            <TouchableOpacity
+              style={styles.mapContainer}
+              onPress={() => {
+                const url = Platform.select({
+                  ios: `maps:0,0?q=${task.locationLat},${task.locationLng}`,
+                  android: `geo:${task.locationLat},${task.locationLng}?q=${task.locationLat},${task.locationLng}`,
+                });
+                if (url) Linking.openURL(url);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.map, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', justifyContent: 'center', alignItems: 'center' }]}>
+                <Ionicons name="location" size={32} color={COLORS.primary} />
+                <Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm, marginTop: SPACING.xs }}>
+                  {task.locationAddress || `${task.locationLat.toFixed(4)}, ${task.locationLng.toFixed(4)}`}
+                </Text>
+                <Text style={{ color: COLORS.primary, fontSize: FONT_SIZE.xs, marginTop: SPACING.xs, fontWeight: FONT_WEIGHT.medium }}>
+                  Tap to open in Maps
+                </Text>
+              </View>
+            </TouchableOpacity>
             <Text style={[styles.locationAddress, { color: colors.textSecondary }]}>{task.locationAddress}</Text>
             {!isAdmin && [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE].includes(task.status) && (
               <TouchableOpacity style={styles.navigationButton} onPress={handleStartNavigation}>
