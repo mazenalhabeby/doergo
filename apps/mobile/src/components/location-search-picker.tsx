@@ -12,7 +12,7 @@ import {
   Keyboard,
   Platform,
 } from 'react-native';
-import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import {
@@ -211,7 +211,6 @@ export function LocationSearchPicker({
           style={styles.map}
           initialRegion={defaultRegion}
           onPress={handleMapPress}
-          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
           showsUserLocation
           showsMyLocationButton={false}
         >
