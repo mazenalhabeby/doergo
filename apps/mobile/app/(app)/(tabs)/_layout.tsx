@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useEffect } from 'react';
@@ -186,21 +185,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const isDark = themeColors.tabBar === '#0a0a10'; // quick dark mode check
 
   return (
-    <View style={[styles.tabBarOuter, { paddingBottom: insets.bottom }]}>
-      <BlurView
-        intensity={isDark ? 40 : 60}
-        tint={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Glass overlay tint */}
-      <View style={[
-        StyleSheet.absoluteFill,
-        {
-          backgroundColor: isDark ? 'rgba(10, 10, 20, 0.65)' : 'rgba(255, 255, 255, 0.7)',
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-        },
-      ]} />
+    <View style={[styles.tabBarOuter, {
+      paddingBottom: insets.bottom,
+      backgroundColor: isDark ? '#0a0a10' : '#ffffff',
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+    }]}>
       <View style={styles.tabBarInner}>
         {visibleRoutes.map((route: any, index: number) => {
           const { options } = descriptors[route.key];
@@ -355,11 +345,6 @@ const styles = StyleSheet.create({
   },
   // Glassmorphism Tab Bar
   tabBarOuter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    overflow: 'hidden',
   },
   tabBarInner: {
     flexDirection: 'row',
