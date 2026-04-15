@@ -19,6 +19,14 @@ export function getSocketUrl(): string {
     return envUrl;
   }
 
+  // In production, derive socket URL from API URL (same host, /socket.io path via nginx)
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (apiUrl && apiUrl.includes('https://')) {
+    // Production: use same origin (nginx proxies /socket.io/ to port 4001)
+    const url = new URL(apiUrl);
+    return `${url.protocol}//${url.host}`;
+  }
+
   // In development, derive from Expo's dev server host
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
   if (debuggerHost) {
