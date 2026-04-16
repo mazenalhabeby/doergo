@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { techniciansApi, type TechnicianListItem } from '../lib/api';
 import {
   COLORS,
@@ -40,6 +41,7 @@ export function TechnicianPicker({
   selectedId,
 }: TechnicianPickerProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [technicians, setTechnicians] = useState<TechnicianListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,13 +58,13 @@ export function TechnicianPicker({
       const list = all.filter((t: TechnicianListItem) => t.workMode !== 'ON_SITE');
       setTechnicians(list);
       if (list.length === 0 && all.length > 0) {
-        setError('No field technicians available (on-site workers cannot be assigned tasks)');
+        setError(t('components.technicianPicker.noFieldTechnicians'));
       } else if (list.length === 0) {
-        setError('No technicians found in your organization');
+        setError(t('components.technicianPicker.noTechnicians'));
       }
     } catch (err: any) {
       console.error('Failed to load technicians:', err);
-      setError(err?.message || 'Failed to load technicians');
+      setError(err?.message || t('components.technicianPicker.failedToLoad'));
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +106,7 @@ export function TechnicianPicker({
               <Text style={[styles.specialty, { color: colors.textSecondary }]}>{item.specialty}</Text>
             )}
             <Text style={[styles.taskCount, { color: colors.textMuted }]}>
-              {item.currentTaskCount ?? 0} active tasks
+              {t('components.technicianPicker.activeTasks', { count: item.currentTaskCount ?? 0 })}
             </Text>
           </View>
         </View>
@@ -128,7 +130,7 @@ export function TechnicianPicker({
       <View style={[styles.content, { backgroundColor: colors.surface }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>Select Technician</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{t('components.technicianPicker.title')}</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -139,7 +141,7 @@ export function TechnicianPicker({
             <Ionicons name="search" size={18} color={colors.textMuted} />
             <TextInput
               style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder="Search by name..."
+              placeholder={t('components.technicianPicker.searchPlaceholder')}
               placeholderTextColor={colors.textMuted}
               value={search}
               onChangeText={setSearch}
@@ -169,12 +171,12 @@ export function TechnicianPicker({
                 <View style={styles.emptyContainer}>
                   <Ionicons name={error ? 'alert-circle-outline' : 'people-outline'} size={40} color={error ? COLORS.error : colors.textMuted} />
                   <Text style={[styles.emptyText, { color: error ? colors.textSecondary : colors.textMuted }]}>
-                    {error || (search ? 'No technicians match your search' : 'No technicians available')}
+                    {error || (search ? t('components.technicianPicker.noMatch') : t('components.technicianPicker.noAvailable'))}
                   </Text>
                   {error && (
                     <TouchableOpacity onPress={fetchTechnicians} style={styles.retryBtn}>
                       <Ionicons name="refresh" size={16} color={COLORS.primary} />
-                      <Text style={styles.retryText}>Retry</Text>
+                      <Text style={styles.retryText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>

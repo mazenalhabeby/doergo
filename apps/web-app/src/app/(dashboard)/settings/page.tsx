@@ -11,6 +11,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import { organizationsApi, JoinPolicy } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -23,28 +24,27 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-const JOIN_POLICY_OPTIONS = [
-  {
-    value: JoinPolicy.OPEN,
-    label: "Open",
-    description: "Anyone with your organization code can join immediately without approval.",
-  },
-  {
-    value: JoinPolicy.INVITE_ONLY,
-    label: "Invite Only",
-    description:
-      "People can request to join using your org code, but an admin must approve each request.",
-  },
-  {
-    value: JoinPolicy.CLOSED,
-    label: "Closed",
-    description:
-      "No one can join via org code. Members can only be added through invitations.",
-  },
-] as const
-
 export default function SettingsPage() {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  const JOIN_POLICY_OPTIONS = [
+    {
+      value: JoinPolicy.OPEN,
+      label: t("settings.joinPolicy.open"),
+      description: t("settings.joinPolicy.openDescription"),
+    },
+    {
+      value: JoinPolicy.INVITE_ONLY,
+      label: t("settings.joinPolicy.inviteOnly"),
+      description: t("settings.joinPolicy.inviteOnlyDescription"),
+    },
+    {
+      value: JoinPolicy.CLOSED,
+      label: t("settings.joinPolicy.closed"),
+      description: t("settings.joinPolicy.closedDescription"),
+    },
+  ] as const
 
   // Join code state
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
@@ -72,10 +72,10 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       setGeneratedCode(data?.code || null)
       queryClient.invalidateQueries({ queryKey: ["organization-join-code"] })
-      toast.success("Join code regenerated successfully")
+      toast.success(t("settings.joinCode.regeneratedSuccessfully"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to regenerate join code")
+      toast.error(error.message || t("common.error"))
     },
   })
 
@@ -85,10 +85,10 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["organization-join-code"] })
       setSelectedPolicy(null)
-      toast.success("Join policy updated successfully")
+      toast.success(t("settings.joinPolicy.updatedSuccessfully"))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update settings")
+      toast.error(error.message || t("common.error"))
     },
   })
 
@@ -96,7 +96,7 @@ export default function SettingsPage() {
     if (!generatedCode) return
     await navigator.clipboard.writeText(generatedCode)
     setCopied(true)
-    toast.success("Code copied to clipboard")
+    toast.success(t("common.codeCopiedToClipboard"))
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -109,9 +109,9 @@ export default function SettingsPage() {
     <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-800">Organization Settings</h1>
+        <h1 className="text-2xl font-semibold text-slate-800">{t("settings.title")}</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Manage your organization's join code and membership policy
+          {t("settings.subtitle")}
         </p>
       </div>
 
@@ -123,9 +123,9 @@ export default function SettingsPage() {
               <Key className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Join Code</CardTitle>
+              <CardTitle className="text-lg">{t("settings.joinCode.title")}</CardTitle>
               <CardDescription>
-                Share this code with people you want to join your organization
+                {t("settings.joinCode.description")}
               </CardDescription>
             </div>
           </div>
@@ -141,8 +141,8 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-slate-600">
                   {joinCodeData?.hasJoinCode
-                    ? "Your organization has an active join code."
-                    : "Your organization does not have a join code yet."}
+                    ? t("settings.joinCode.hasCode")
+                    : t("settings.joinCode.noCode")}
                 </span>
               </div>
 
@@ -169,7 +169,7 @@ export default function SettingsPage() {
 
               {generatedCode && (
                 <p className="text-xs text-amber-600">
-                  This code will only be shown once. Make sure to copy it before leaving.
+                  {t("settings.joinCode.codeOnlyShownOnce")}
                 </p>
               )}
 
@@ -184,12 +184,12 @@ export default function SettingsPage() {
                 ) : (
                   <RefreshCw className="h-4 w-4" />
                 )}
-                {joinCodeData?.hasJoinCode ? "Regenerate Code" : "Generate Code"}
+                {joinCodeData?.hasJoinCode ? t("settings.joinCode.regenerateCode") : t("settings.joinCode.generateCode")}
               </Button>
 
               {joinCodeData?.hasJoinCode && !generatedCode && (
                 <p className="text-xs text-slate-500">
-                  Regenerating will invalidate the previous code. Anyone using the old code will no longer be able to join.
+                  {t("settings.joinCode.regenerateWarning")}
                 </p>
               )}
             </>
@@ -205,9 +205,9 @@ export default function SettingsPage() {
               <Shield className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Join Policy</CardTitle>
+              <CardTitle className="text-lg">{t("settings.joinPolicy.title")}</CardTitle>
               <CardDescription>
-                Control how people can join your organization
+                {t("settings.joinPolicy.description")}
               </CardDescription>
             </div>
           </div>
@@ -272,10 +272,10 @@ export default function SettingsPage() {
                     {updateSettingsMutation.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
+                        {t("common.saving")}
                       </>
                     ) : (
-                      "Save Changes"
+                      t("common.saveChanges")
                     )}
                   </Button>
                   <Button
@@ -283,7 +283,7 @@ export default function SettingsPage() {
                     onClick={() => setSelectedPolicy(null)}
                     disabled={updateSettingsMutation.isPending}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </div>
               )}

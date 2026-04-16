@@ -9,11 +9,15 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  Globe,
+  Check,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { authApi } from "@/lib/api"
+import { changeLanguage, getCurrentLanguage, supportedLanguages } from "@/i18n"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,14 +43,14 @@ function getRoleColor(role: string) {
   }
 }
 
-function getPlatformLabel(platform: string) {
+function getPlatformLabel(platform: string, t: (key: string) => string) {
   switch (platform) {
     case "BOTH":
-      return "Web & Mobile"
+      return t("members.platforms.webAndMobile")
     case "WEB":
-      return "Web Only"
+      return t("members.platforms.webOnly")
     case "MOBILE":
-      return "Mobile Only"
+      return t("members.platforms.mobileOnly")
     default:
       return platform
   }
@@ -54,6 +58,7 @@ function getPlatformLabel(platform: string) {
 
 export default function ProfilePage() {
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   // Change password form state
   const [currentPassword, setCurrentPassword] = useState("")
@@ -65,13 +70,13 @@ export default function ProfilePage() {
   const changePasswordMutation = useMutation({
     mutationFn: () => authApi.changePassword(currentPassword, newPassword),
     onSuccess: () => {
-      toast.success("Password changed successfully")
+      toast.success(t("profile.changePassword.successMessage"))
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
     },
     onError: (e: Error) => {
-      toast.error(e.message || "Failed to change password")
+      toast.error(e.message || t("common.error"))
     },
   })
 
@@ -94,19 +99,19 @@ export default function ProfilePage() {
   const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase()
 
   const permissions = [
-    { label: "Create Tasks", enabled: user.canCreateTasks },
-    { label: "View All Tasks", enabled: user.canViewAllTasks },
-    { label: "Assign Tasks", enabled: user.canAssignTasks },
-    { label: "Manage Users", enabled: user.canManageUsers },
+    { label: t("profile.accountInformation.createTasks"), enabled: user.canCreateTasks },
+    { label: t("profile.accountInformation.viewAllTasks"), enabled: user.canViewAllTasks },
+    { label: t("profile.accountInformation.assignTasks"), enabled: user.canAssignTasks },
+    { label: t("profile.accountInformation.manageUsers"), enabled: user.canManageUsers },
   ]
 
   return (
     <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-800">Profile</h1>
+        <h1 className="text-2xl font-semibold text-slate-800">{t("profile.title")}</h1>
         <p className="text-sm text-slate-500 mt-1">
-          View your account information and manage your password
+          {t("profile.subtitle")}
         </p>
       </div>
 
@@ -118,8 +123,8 @@ export default function ProfilePage() {
               <User className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Account Information</CardTitle>
-              <CardDescription>Your personal details and role</CardDescription>
+              <CardTitle className="text-lg">{t("profile.accountInformation.title")}</CardTitle>
+              <CardDescription>{t("profile.accountInformation.description")}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -135,7 +140,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                    Full Name
+                    {t("profile.accountInformation.fullName")}
                   </p>
                   <p className="text-sm font-medium text-slate-900 mt-0.5">
                     {user.firstName} {user.lastName}
@@ -143,7 +148,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                    Email
+                    {t("profile.accountInformation.email")}
                   </p>
                   <p className="text-sm font-medium text-slate-900 mt-0.5">
                     {user.email}
@@ -151,7 +156,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                    Role
+                    {t("profile.accountInformation.role")}
                   </p>
                   <div className="mt-1">
                     <span
@@ -163,10 +168,10 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                    Platform Access
+                    {t("profile.accountInformation.platformAccess")}
                   </p>
                   <p className="text-sm font-medium text-slate-900 mt-0.5">
-                    {getPlatformLabel(user.platform)}
+                    {getPlatformLabel(user.platform, t)}
                   </p>
                 </div>
               </div>
@@ -174,7 +179,7 @@ export default function ProfilePage() {
               {/* Permissions */}
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-                  Permissions
+                  {t("profile.accountInformation.permissions")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {permissions.map((perm) => (
@@ -207,9 +212,9 @@ export default function ProfilePage() {
               <Lock className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Change Password</CardTitle>
+              <CardTitle className="text-lg">{t("profile.changePassword.title")}</CardTitle>
               <CardDescription>
-                Update your password. Must be at least 8 characters with uppercase, lowercase, and a number.
+                {t("profile.changePassword.description")}
               </CardDescription>
             </div>
           </div>
@@ -219,7 +224,7 @@ export default function ProfilePage() {
             {/* Current Password */}
             <div className="space-y-2">
               <Label htmlFor="current-password" className="text-sm font-medium text-slate-700">
-                Current Password
+                {t("profile.changePassword.currentPasswordLabel")}
               </Label>
               <div className="relative">
                 <Input
@@ -227,7 +232,7 @@ export default function ProfilePage() {
                   type={showCurrentPassword ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
+                  placeholder={t("profile.changePassword.currentPasswordPlaceholder")}
                   disabled={changePasswordMutation.isPending}
                   className="h-10 pr-10"
                 />
@@ -248,7 +253,7 @@ export default function ProfilePage() {
             {/* New Password */}
             <div className="space-y-2">
               <Label htmlFor="new-password" className="text-sm font-medium text-slate-700">
-                New Password
+                {t("profile.changePassword.newPasswordLabel")}
               </Label>
               <div className="relative">
                 <Input
@@ -256,7 +261,7 @@ export default function ProfilePage() {
                   type={showNewPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
+                  placeholder={t("profile.changePassword.newPasswordPlaceholder")}
                   disabled={changePasswordMutation.isPending}
                   className="h-10 pr-10"
                 />
@@ -274,7 +279,7 @@ export default function ProfilePage() {
               </div>
               {newPassword.length > 0 && !isPasswordValid && (
                 <p className="text-xs text-red-500">
-                  Password must be at least 8 characters
+                  {t("profile.changePassword.minLengthError")}
                 </p>
               )}
             </div>
@@ -282,19 +287,19 @@ export default function ProfilePage() {
             {/* Confirm Password */}
             <div className="space-y-2">
               <Label htmlFor="confirm-password" className="text-sm font-medium text-slate-700">
-                Confirm New Password
+                {t("profile.changePassword.confirmPasswordLabel")}
               </Label>
               <Input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
+                placeholder={t("profile.changePassword.confirmPasswordPlaceholder")}
                 disabled={changePasswordMutation.isPending}
                 className="h-10"
               />
               {confirmPassword.length > 0 && !passwordsMatch && (
-                <p className="text-xs text-red-500">Passwords do not match</p>
+                <p className="text-xs text-red-500">{t("profile.changePassword.mismatchError")}</p>
               )}
             </div>
 
@@ -306,13 +311,53 @@ export default function ProfilePage() {
               {changePasswordMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Changing...
+                  {t("common.changing")}
                 </>
               ) : (
-                "Change Password"
+                t("profile.changePassword.submitButton")
               )}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Language Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+              <Globe className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">{t("profile.language.title")}</CardTitle>
+              <CardDescription>{t("profile.language.description")}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            {supportedLanguages.map((lang) => {
+              const isActive = getCurrentLanguage() === lang.code
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    changeLanguage(lang.code)
+                    window.location.reload()
+                  }}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                    isActive
+                      ? "border-blue-300 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="text-lg">{lang.flag}</span>
+                  {lang.label}
+                  {isActive && <Check className="h-4 w-4 text-blue-600" />}
+                </button>
+              )
+            })}
+          </div>
         </CardContent>
       </Card>
     </div>

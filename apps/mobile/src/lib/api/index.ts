@@ -7,6 +7,7 @@ export {
   clearTokens,
   refreshAccessToken,
   setAuthFailureCallback,
+  setUserRefreshedCallback,
   processOfflineQueue,
   fetchApi,
   fetchWithAuth,

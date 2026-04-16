@@ -16,6 +16,7 @@ import { useRouter, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { AnimatedLogo } from '../../src/components';
@@ -42,6 +43,7 @@ export default function RegisterScreen() {
   const router = useRouter();
   const { login } = useAuth();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -61,28 +63,28 @@ export default function RegisterScreen() {
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!firstName.trim()) newErrors.firstName = t('validation.firstNameRequired');
+    if (!lastName.trim()) newErrors.lastName = t('validation.lastNameRequired');
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = t('validation.emailInvalid');
     }
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('validation.passwordRequired');
     } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = t('validation.passwordMinLength');
     } else if (!/[A-Z]/.test(password)) {
-      newErrors.password = 'Must contain an uppercase letter';
+      newErrors.password = t('validation.passwordUppercase');
     } else if (!/[a-z]/.test(password)) {
-      newErrors.password = 'Must contain a lowercase letter';
+      newErrors.password = t('validation.passwordLowercase');
     } else if (!/[0-9]/.test(password)) {
-      newErrors.password = 'Must contain a number';
+      newErrors.password = t('validation.passwordNumber');
     }
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = t('validation.confirmPasswordRequired');
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('validation.passwordsMismatch');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -103,8 +105,8 @@ export default function RegisterScreen() {
       // Auto-login → navigation guard handles routing to onboarding or app
       await login(trimmedEmail, password);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Registration failed';
-      toast.error('Registration Failed', message);
+      const message = error instanceof Error ? error.message : t('auth.register.registrationFailed');
+      toast.error(t('auth.register.registrationFailed'), message);
     } finally {
       setIsLoading(false);
     }
@@ -115,10 +117,10 @@ export default function RegisterScreen() {
   };
 
   const passwordChecks = [
-    { label: '8+ chars', test: password.length >= 8 },
-    { label: 'Uppercase', test: /[A-Z]/.test(password) },
-    { label: 'Lowercase', test: /[a-z]/.test(password) },
-    { label: 'Number', test: /[0-9]/.test(password) },
+    { label: t('auth.register.passwordChecks.minChars'), test: password.length >= 8 },
+    { label: t('auth.register.passwordChecks.uppercase'), test: /[A-Z]/.test(password) },
+    { label: t('auth.register.passwordChecks.lowercase'), test: /[a-z]/.test(password) },
+    { label: t('auth.register.passwordChecks.number'), test: /[0-9]/.test(password) },
   ];
 
   return (
@@ -144,8 +146,8 @@ export default function RegisterScreen() {
             <AnimatedLogo size="default" variant="light" />
           </View>
           <View style={styles.divider} />
-          <Text style={styles.welcomeText}>Create your account</Text>
-          <Text style={styles.subtitleText}>Get started with HBCField</Text>
+          <Text style={styles.welcomeText}>{t('auth.register.title')}</Text>
+          <Text style={styles.subtitleText}>{t('auth.register.subtitle')}</Text>
         </View>
       </LinearGradient>
 
@@ -156,24 +158,24 @@ export default function RegisterScreen() {
             {/* Name Fields */}
             <View style={styles.nameRow}>
               <View style={styles.halfInputGroup}>
-                <Text style={[styles.label, { color: colors.textPrimary }]}>First name</Text>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.register.firstNameLabel')}</Text>
                 <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.firstName && styles.inputError]}>
                   <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                     <Ionicons name="person-outline" size={18} color={colors.textMuted} />
                   </View>
-                  <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="John" placeholderTextColor={colors.textMuted}
+                  <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('auth.register.firstNamePlaceholder')} placeholderTextColor={colors.textMuted}
                     value={firstName} onChangeText={(t) => { setFirstName(t); clearError('firstName'); }} autoCapitalize="words"
                     autoComplete="given-name" textContentType="givenName" />
                 </View>
                 {errors.firstName && <View style={styles.errorContainer}><Ionicons name="alert-circle" size={12} color={COLORS.error} /><Text style={styles.errorText}>{errors.firstName}</Text></View>}
               </View>
               <View style={styles.halfInputGroup}>
-                <Text style={[styles.label, { color: colors.textPrimary }]}>Last name</Text>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.register.lastNameLabel')}</Text>
                 <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.lastName && styles.inputError]}>
                   <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                     <Ionicons name="person-outline" size={18} color={colors.textMuted} />
                   </View>
-                  <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Doe" placeholderTextColor={colors.textMuted}
+                  <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('auth.register.lastNamePlaceholder')} placeholderTextColor={colors.textMuted}
                     value={lastName} onChangeText={(t) => { setLastName(t); clearError('lastName'); }} autoCapitalize="words"
                     autoComplete="family-name" textContentType="familyName" />
                 </View>
@@ -183,12 +185,12 @@ export default function RegisterScreen() {
 
             {/* Email */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Email</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.register.emailLabel')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.email && styles.inputError]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="you@example.com" placeholderTextColor={colors.textMuted}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('auth.register.emailPlaceholder')} placeholderTextColor={colors.textMuted}
                   value={email} onChangeText={(t) => { setEmail(t); clearError('email'); }}
                   keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
                   autoComplete="email" textContentType="emailAddress" />
@@ -198,12 +200,12 @@ export default function RegisterScreen() {
 
             {/* Password */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Password</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.register.passwordLabel')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.password && styles.inputError]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Min. 8 characters" placeholderTextColor={colors.textMuted}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('auth.register.passwordPlaceholder')} placeholderTextColor={colors.textMuted}
                   value={password} onChangeText={(t) => { setPassword(t); clearError('password'); }}
                   secureTextEntry={!showPassword} autoCapitalize="none"
                   autoComplete="new-password" textContentType="newPassword" />
@@ -226,12 +228,12 @@ export default function RegisterScreen() {
 
             {/* Confirm Password */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Confirm password</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.register.confirmPasswordLabel')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.confirmPassword && styles.inputError]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Re-enter password" placeholderTextColor={colors.textMuted}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('auth.register.confirmPasswordPlaceholder')} placeholderTextColor={colors.textMuted}
                   value={confirmPassword} onChangeText={(t) => { setConfirmPassword(t); clearError('confirmPassword'); }}
                   secureTextEntry={!showConfirmPassword} autoCapitalize="none"
                   autoComplete="new-password" textContentType="newPassword" />
@@ -244,9 +246,9 @@ export default function RegisterScreen() {
 
             {/* Terms */}
             <Text style={[styles.termsText, { color: colors.textSecondary }]}>
-              By creating an account, you agree to our{' '}
-              <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
+              {t('auth.register.termsText')}
+              <Text style={styles.termsLink}>{t('auth.register.termsOfService')}</Text>{t('auth.register.and')}
+              <Text style={styles.termsLink}>{t('auth.register.privacyPolicy')}</Text>
             </Text>
 
             {/* Register Button */}
@@ -256,7 +258,7 @@ export default function RegisterScreen() {
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
                   <>
-                    <Text style={styles.registerButtonText}>Create Account</Text>
+                    <Text style={styles.registerButtonText}>{t('auth.register.submitButton')}</Text>
                     <View style={styles.arrowContainer}>
                       <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
                     </View>
@@ -267,9 +269,9 @@ export default function RegisterScreen() {
 
             {/* Sign In Link */}
             <View style={styles.signInContainer}>
-              <Text style={[styles.signInText, { color: colors.textSecondary }]}>Already have an account? </Text>
+              <Text style={[styles.signInText, { color: colors.textSecondary }]}>{t('auth.register.hasAccount')}</Text>
               <TouchableOpacity onPress={() => router.back()}>
-                <Text style={styles.signInLink}>Sign In</Text>
+                <Text style={styles.signInLink}>{t('auth.register.signIn')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

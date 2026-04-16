@@ -12,6 +12,7 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../src/contexts/auth-context';
@@ -37,40 +38,38 @@ import {
 
 type TabKey = 'current' | 'upcoming' | 'history';
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'current', label: 'Current' },
-  { key: 'upcoming', label: 'Upcoming' },
-  { key: 'history', label: 'History' },
-];
+const TAB_KEYS: TabKey[] = ['current', 'upcoming', 'history'];
 
-// Filter options for technicians
-const TECH_FILTER_OPTIONS = [
-  { key: 'ALL', label: 'All' },
-  { key: 'ACTIVE', label: 'Active' },
-  { key: 'COMPLETED', label: 'Completed' },
-  { key: 'BLOCKED', label: 'Blocked' },
-] as const;
+// Filter option keys for technicians
+const TECH_FILTER_KEYS = ['ALL', 'ACTIVE', 'COMPLETED', 'BLOCKED'] as const;
+const TECH_FILTER_I18N: Record<string, string> = {
+  ALL: 'tasks.filters.all',
+  ACTIVE: 'tasks.filters.active',
+  COMPLETED: 'tasks.filters.completed',
+  BLOCKED: 'tasks.filters.blocked',
+};
 
-// Filter options for admin (more granular)
-const ADMIN_FILTER_OPTIONS = [
-  { key: 'ALL', label: 'All' },
-  { key: 'NEW', label: 'New' },
-  { key: 'ASSIGNED', label: 'Assigned' },
-  { key: 'IN_PROGRESS', label: 'Active' },
-  { key: 'COMPLETED', label: 'Done' },
-  { key: 'BLOCKED', label: 'Blocked' },
-] as const;
+// Filter option keys for admin (more granular)
+const ADMIN_FILTER_KEYS = ['ALL', 'NEW', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'BLOCKED'] as const;
+const ADMIN_FILTER_I18N: Record<string, string> = {
+  ALL: 'tasks.filters.all',
+  NEW: 'tasks.filters.new',
+  ASSIGNED: 'tasks.filters.assigned',
+  IN_PROGRESS: 'tasks.filters.inProgress',
+  COMPLETED: 'tasks.filters.done',
+  BLOCKED: 'tasks.filters.blocked',
+};
 
 type FilterKey = string;
 
 type SortKey = 'dueDate' | 'priority' | 'status' | 'title' | 'createdAt';
 
-const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
-  { key: 'dueDate', label: 'Due Date', icon: 'calendar-outline' },
-  { key: 'priority', label: 'Priority', icon: 'flag-outline' },
-  { key: 'status', label: 'Status', icon: 'pulse-outline' },
-  { key: 'title', label: 'Name', icon: 'text-outline' },
-  { key: 'createdAt', label: 'Created', icon: 'time-outline' },
+const SORT_OPTIONS: { key: SortKey; i18nKey: string; icon: string }[] = [
+  { key: 'dueDate', i18nKey: 'tasks.sort.dueDate', icon: 'calendar-outline' },
+  { key: 'priority', i18nKey: 'tasks.sort.priority', icon: 'flag-outline' },
+  { key: 'status', i18nKey: 'tasks.sort.status', icon: 'pulse-outline' },
+  { key: 'title', i18nKey: 'tasks.sort.name', icon: 'text-outline' },
+  { key: 'createdAt', i18nKey: 'tasks.sort.created', icon: 'time-outline' },
 ];
 
 const PRIORITY_ORDER: Record<string, number> = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
@@ -115,10 +114,10 @@ function getTabDateParams(tab: TabKey): Pick<TasksListParams, 'startDate' | 'end
   }
 }
 
-const TAB_EMPTY_MESSAGES: Record<TabKey, string> = {
-  current: 'No tasks this month',
-  upcoming: 'No upcoming tasks',
-  history: 'No past tasks',
+const TAB_EMPTY_I18N: Record<TabKey, string> = {
+  current: 'tasks.empty.current',
+  upcoming: 'tasks.empty.upcoming',
+  history: 'tasks.empty.history',
 };
 
 // ---------------------------------------------------------------------------
@@ -128,6 +127,7 @@ const TAB_EMPTY_MESSAGES: Record<TabKey, string> = {
 export default function TasksScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -145,7 +145,8 @@ export default function TasksScreen() {
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
 
-  const filterOptions = isAdmin ? ADMIN_FILTER_OPTIONS : TECH_FILTER_OPTIONS;
+  const filterKeys = isAdmin ? ADMIN_FILTER_KEYS : TECH_FILTER_KEYS;
+  const filterI18n = isAdmin ? ADMIN_FILTER_I18N : TECH_FILTER_I18N;
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -182,7 +183,7 @@ export default function TasksScreen() {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
         return;
       }
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
+      setError(err instanceof Error ? err.message : t('tasks.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -320,7 +321,7 @@ export default function TasksScreen() {
           <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
           <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => fetchTasks()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -334,7 +335,7 @@ export default function TasksScreen() {
         <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
-          placeholder="Search tasks..."
+          placeholder={t('tasks.searchPlaceholder')}
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
@@ -349,16 +350,16 @@ export default function TasksScreen() {
 
       {/* Tab Bar */}
       <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
-        {TABS.map(tab => {
-          const active = activeTab === tab.key;
+        {TAB_KEYS.map(tabKey => {
+          const active = activeTab === tabKey;
           return (
             <TouchableOpacity
-              key={tab.key}
+              key={tabKey}
               style={[styles.tab, active && styles.tabActive]}
-              onPress={() => handleTabChange(tab.key)}
+              onPress={() => handleTabChange(tabKey)}
             >
               <Text style={[styles.tabText, { color: colors.textMuted }, active && styles.tabTextActive]}>
-                {tab.label}
+                {t(`tasks.tabs.${tabKey}`)}
               </Text>
             </TouchableOpacity>
           );
@@ -368,15 +369,15 @@ export default function TasksScreen() {
       {/* Filter Chips */}
       <View style={styles.filterContainer}>
         <FlatList
-          data={filterOptions as readonly { key: string; label: string }[]}
+          data={filterKeys as readonly string[]}
           horizontal
           showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.key}
+          keyExtractor={(item) => item}
           renderItem={({ item }) => (
             <FilterChip
-              label={item.label}
-              active={filter === item.key}
-              onPress={() => setFilter(item.key)}
+              label={t(filterI18n[item]!)}
+              active={filter === item}
+              onPress={() => setFilter(item)}
             />
           )}
           contentContainerStyle={{ gap: SPACING.sm }}
@@ -387,7 +388,7 @@ export default function TasksScreen() {
       <View style={styles.countContainer}>
         <View style={styles.countLeft}>
           <Text style={[styles.countText, { color: colors.textMuted }]}>
-            {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
+            {filteredTasks.length !== 1 ? t('tasks.taskCountPlural', { count: filteredTasks.length }) : t('tasks.taskCount', { count: filteredTasks.length })}
           </Text>
           {isLoading && (
             <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: SPACING.sm }} />
@@ -400,7 +401,7 @@ export default function TasksScreen() {
         >
           <Ionicons name="swap-vertical" size={16} color={COLORS.primary} />
           <Text style={[styles.sortButtonText, { color: colors.textSecondary }]}>
-            {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
+            {t(SORT_OPTIONS.find(o => o.key === sortBy)?.i18nKey ?? '')}
           </Text>
           <Ionicons name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'} size={12} color={colors.textMuted} />
         </TouchableOpacity>
@@ -410,7 +411,7 @@ export default function TasksScreen() {
       <Modal visible={showSortMenu} transparent animationType="fade" onRequestClose={() => setShowSortMenu(false)}>
         <Pressable style={styles.sortOverlay} onPress={() => setShowSortMenu(false)}>
           <View style={[styles.sortMenu, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sortMenuTitle, { color: colors.textPrimary }]}>Sort by</Text>
+            <Text style={[styles.sortMenuTitle, { color: colors.textPrimary }]}>{t('tasks.sort.title')}</Text>
             {SORT_OPTIONS.map(option => {
               const isActive = sortBy === option.key;
               return (
@@ -434,7 +435,7 @@ export default function TasksScreen() {
                     color={isActive ? COLORS.primary : colors.textMuted}
                   />
                   <Text style={[styles.sortMenuItemText, { color: isActive ? COLORS.primary : colors.textPrimary }]}>
-                    {option.label}
+                    {t(option.i18nKey)}
                   </Text>
                   {isActive && (
                     <Ionicons
@@ -458,7 +459,7 @@ export default function TasksScreen() {
             <Ionicons name="warning" size={20} color={COLORS.error} />
             <View style={{ flex: 1 }}>
               <Text style={styles.blockedBannerTitle}>
-                {blockedTasks.length} blocked task{blockedTasks.length !== 1 ? 's' : ''}
+                {blockedTasks.length !== 1 ? t('tasks.blockedBanner.titlePlural', { count: blockedTasks.length }) : t('tasks.blockedBanner.title', { count: blockedTasks.length })}
               </Text>
               <Text style={[styles.blockedBannerSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
                 {blockedTasks.map(t => t.title).join(', ')}
@@ -468,7 +469,7 @@ export default function TasksScreen() {
               style={styles.blockedBannerAction}
               onPress={() => setFilter('BLOCKED')}
             >
-              <Text style={styles.blockedBannerActionText}>View</Text>
+              <Text style={styles.blockedBannerActionText}>{t('common.view')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -500,7 +501,7 @@ export default function TasksScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="clipboard-outline" size={48} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{TAB_EMPTY_MESSAGES[activeTab]}</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t(TAB_EMPTY_I18N[activeTab])}</Text>
           </View>
         }
       />

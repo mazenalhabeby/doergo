@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, lazy, Suspense } from "react"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -34,6 +35,7 @@ import { toast } from "sonner"
 import { PrioritySelector } from "@/components/tasks"
 
 export default function CreateTaskPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const { user } = useAuth()
   const queryClient = useQueryClient()
@@ -57,7 +59,7 @@ export default function CreateTaskPage() {
   const createMutation = useMutation({
     mutationFn: (input: CreateTaskInput) => tasksApi.create(input),
     onSuccess: async () => {
-      toast.success("Task created successfully!")
+      toast.success(t("tasks.create.successMessage"))
       // Invalidate all task-related queries to ensure fresh data
       await queryClient.invalidateQueries({
         queryKey: ["tasks"],
@@ -67,7 +69,7 @@ export default function CreateTaskPage() {
       router.push("/tasks")
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to create task. Please try again.")
+      toast.error(error.message || t("tasks.create.errorMessage"))
       setIsSubmittingLocal(false)
     },
   })
@@ -88,7 +90,7 @@ export default function CreateTaskPage() {
     }
 
     if (!isFormValid) {
-      toast.error("Please fill in all required fields")
+      toast.error(t("tasks.create.fillRequiredFields"))
       return
     }
 
@@ -151,7 +153,7 @@ export default function CreateTaskPage() {
       <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Page Title */}
         <h1 className="text-2xl font-semibold text-slate-900 mb-8">
-          New Service Request
+          {t("tasks.create.title")}
         </h1>
 
         {/* Form */}
@@ -159,11 +161,11 @@ export default function CreateTaskPage() {
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title" className="text-sm font-medium text-slate-700">
-              Task Title<span className="text-red-500">*</span>
+              {t("tasks.create.taskTitleLabel")}<span className="text-red-500">*</span>
             </Label>
             <Input
               id="title"
-              placeholder="Enter a brief title for your request..."
+              placeholder={t("tasks.create.taskTitlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={isSubmitting}
@@ -174,11 +176,11 @@ export default function CreateTaskPage() {
           {/* Problem Description */}
           <div className="space-y-2">
             <Label htmlFor="description" className="text-sm font-medium text-slate-700">
-              Problem Description<span className="text-red-500">*</span>
+              {t("tasks.create.descriptionLabel")}<span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="description"
-              placeholder="Describe the issue in detail..."
+              placeholder={t("tasks.create.descriptionPlaceholder")}
               rows={5}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -190,7 +192,7 @@ export default function CreateTaskPage() {
           {/* Due Date */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-slate-700">
-              Preferred Date
+              {t("tasks.create.preferredDateLabel")}
             </Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -203,7 +205,7 @@ export default function CreateTaskPage() {
                   disabled={isSubmitting}
                 >
                   <CalendarIcon className="mr-3 size-5 text-slate-400" />
-                  {dueDate ? format(dueDate, "MMM d, yyyy") : "Select date"}
+                  {dueDate ? format(dueDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -221,7 +223,7 @@ export default function CreateTaskPage() {
           {/* Service Location with Map */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-slate-700">
-              Service Location
+              {t("tasks.create.serviceLocationLabel")}
             </Label>
             <Suspense fallback={
               <div className="h-[340px] rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center">
@@ -245,7 +247,7 @@ export default function CreateTaskPage() {
           {/* Attachments */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-slate-700">
-              Attachments
+              {t("tasks.create.attachmentsLabel")}
             </Label>
             <div
               onDrop={handleDrop}
@@ -271,10 +273,10 @@ export default function CreateTaskPage() {
                   <Upload className="size-5 text-slate-400" />
                 </div>
                 <p className="text-sm text-slate-600 font-medium">
-                  Drag & drop files here, or click to select files
+                  {t("tasks.create.dragAndDrop")}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  (Images and PDF files only)
+                  {t("tasks.create.imagesAndPdfOnly")}
                 </p>
               </div>
             </div>
@@ -327,11 +329,11 @@ export default function CreateTaskPage() {
           {/* Additional Notes */}
           <div className="space-y-2">
             <Label htmlFor="notes" className="text-sm font-medium text-slate-700">
-              Additional Notes
+              {t("tasks.create.additionalNotesLabel")}
             </Label>
             <Textarea
               id="notes"
-              placeholder="Add extra information..."
+              placeholder={t("tasks.create.additionalNotesPlaceholder")}
               rows={3}
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
@@ -343,7 +345,7 @@ export default function CreateTaskPage() {
           {/* Priority Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-slate-700">
-              Priority
+              {t("tasks.create.priorityLabel")}
             </Label>
             <PrioritySelector
               value={priority}
@@ -361,10 +363,10 @@ export default function CreateTaskPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-5 animate-spin" />
-                Creating...
+                {t("tasks.create.submitting")}
               </>
             ) : (
-              "Submit Request"
+              t("tasks.create.submitButton")
             )}
           </Button>
         </form>

@@ -88,6 +88,13 @@ export function setAuthFailureCallback(callback: () => void) {
   onAuthFailure = callback;
 }
 
+// Callback to update user data when refresh returns fresh user info
+let onUserRefreshed: ((user: any) => void) | null = null;
+
+export function setUserRefreshedCallback(callback: (user: any) => void) {
+  onUserRefreshed = callback;
+}
+
 // ============================================================================
 // Token Refresh
 // ============================================================================
@@ -98,6 +105,7 @@ let refreshPromise: Promise<string | null> | null = null;
 interface RefreshResponse {
   accessToken: string;
   refreshToken: string;
+  user?: any;
 }
 
 /**
@@ -148,6 +156,11 @@ export function refreshAccessToken(): Promise<string | null> {
       }
 
       await saveTokens(data.accessToken, data.refreshToken);
+
+      // Update user data if returned by refresh (eliminates /auth/me call)
+      if (data.user && onUserRefreshed) {
+        onUserRefreshed(data.user);
+      }
 
       return data.accessToken;
     } catch (error) {

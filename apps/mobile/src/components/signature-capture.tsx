@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import SignatureScreen from 'react-native-signature-canvas';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import {
   COLORS,
@@ -39,6 +40,7 @@ export function SignatureCapture({
   existingSignature,
 }: SignatureCaptureProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const signatureRef = useRef<any>(null);
@@ -135,7 +137,7 @@ export function SignatureCapture({
             </View>
             <View style={styles.triggerTextCol}>
               <Text style={[styles.triggerTitle, { color: colors.textPrimary }]}>{title}</Text>
-              <Text style={[styles.triggerHint, { color: colors.textMuted }]}>Tap to open signature pad</Text>
+              <Text style={[styles.triggerHint, { color: colors.textMuted }]}>{t('components.signatureCapture.tapToOpen')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </View>
@@ -173,7 +175,7 @@ export function SignatureCapture({
             </View>
 
             <TouchableOpacity onPress={handleClear} style={styles.headerBtn} activeOpacity={0.7}>
-              <Text style={[styles.headerClearText, { color: COLORS.error }]}>Clear</Text>
+              <Text style={[styles.headerClearText, { color: COLORS.error }]}>{t('components.signatureCapture.clear')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -185,7 +187,7 @@ export function SignatureCapture({
               color={isSigning ? COLORS.primary : colors.textMuted}
             />
             <Text style={[styles.instructionText, { color: isSigning ? COLORS.primary : colors.textMuted }]}>
-              {isSigning ? 'Signing...' : 'Use your finger to sign below'}
+              {isSigning ? t('components.signatureCapture.signing') : t('components.signatureCapture.useFingerToSign')}
             </Text>
           </View>
 
@@ -214,7 +216,7 @@ export function SignatureCapture({
               <View style={styles.baselineContainer} pointerEvents="none">
                 <View style={[styles.baseline, { backgroundColor: isDark ? '#d0d0d0' : '#cbd5e1' }]} />
                 <Text style={[styles.baselineLabel, { color: isDark ? '#a0a0a0' : '#94a3b8' }]}>
-                  {isTechnician ? 'Technician' : 'Customer'}
+                  {isTechnician ? t('components.signatureCapture.technician') : t('components.signatureCapture.customer')}
                 </Text>
               </View>
             </View>
@@ -236,7 +238,7 @@ export function SignatureCapture({
               activeOpacity={0.8}
             >
               <Ionicons name="checkmark-circle" size={22} color={COLORS.white} />
-              <Text style={styles.saveButtonText}>Confirm Signature</Text>
+              <Text style={styles.saveButtonText}>{t('components.signatureCapture.confirmSignature')}</Text>
             </TouchableOpacity>
           </View>
         </View>

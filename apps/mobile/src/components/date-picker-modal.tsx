@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import {
   COLORS,
@@ -23,11 +24,7 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DAY_SIZE = Math.floor((SCREEN_WIDTH - SPACING.lg * 2 - SPACING.md * 2) / 7);
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+// MONTH_NAMES and DAY_HEADERS are now derived from translations inside the component
 
 interface DatePickerModalProps {
   visible: boolean;
@@ -73,9 +70,13 @@ export function DatePickerModal({
   onClear,
   onClose,
   minDate,
-  title = 'Select Date',
+  title,
 }: DatePickerModalProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
+  const displayTitle = title ?? t('components.datePicker.selectDate');
+  const MONTH_NAMES = t('monthNames', { returnObjects: true }) as string[];
+  const DAY_HEADERS = (t('dayNames.headers', { returnObjects: true }) as string[]);
   const today = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(selectedDate?.getFullYear() ?? today.getFullYear());
   const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth() ?? today.getMonth());
@@ -118,7 +119,7 @@ export function DatePickerModal({
         <View style={[styles.card, { backgroundColor: isDark ? '#1a1a2e' : '#ffffff' }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{displayTitle}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
@@ -196,7 +197,7 @@ export function DatePickerModal({
               activeOpacity={0.7}
             >
               <Ionicons name="today-outline" size={16} color={COLORS.primary} />
-              <Text style={[styles.todayBtnText, { color: COLORS.primary }]}>Today</Text>
+              <Text style={[styles.todayBtnText, { color: COLORS.primary }]}>{t('components.datePicker.today')}</Text>
             </TouchableOpacity>
 
             {selectedDate && (
@@ -205,7 +206,7 @@ export function DatePickerModal({
                 style={styles.clearBtn}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>Clear</Text>
+                <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>{t('components.datePicker.clear')}</Text>
               </TouchableOpacity>
             )}
           </View>

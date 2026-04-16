@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 
@@ -42,6 +43,7 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -52,7 +54,7 @@ export function ErrorState({
         </Text>
         {onRetry ? (
           <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('components.screenStates.retry')}</Text>
           </TouchableOpacity>
         ) : null}
       </View>

@@ -8,6 +8,7 @@ import {
   User,
   Shield,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
@@ -42,6 +43,7 @@ const roleBadgeStyles: Record<string, { bg: string; text: string; border: string
 export function NavUser() {
   const { user, logout } = useAuth()
   const { isMobile } = useSidebar()
+  const { t } = useTranslation()
 
   if (!user) return null
 
@@ -117,8 +119,8 @@ export function NavUser() {
                     <User className="size-4 text-slate-600" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-medium text-base">Profile</span>
-                    <span className="text-sm text-slate-500">View your profile</span>
+                    <span className="font-medium text-base">{t("nav.userMenu.profile")}</span>
+                    <span className="text-sm text-slate-500">{t("nav.userMenu.viewYourProfile")}</span>
                   </div>
                 </Link>
               </DropdownMenuItem>
@@ -128,8 +130,8 @@ export function NavUser() {
                     <Settings className="size-4 text-slate-600" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-medium text-base">Settings</span>
-                    <span className="text-sm text-slate-500">Manage preferences</span>
+                    <span className="font-medium text-base">{t("nav.userMenu.settings")}</span>
+                    <span className="text-sm text-slate-500">{t("nav.userMenu.managePreferences")}</span>
                   </div>
                 </Link>
               </DropdownMenuItem>
@@ -146,8 +148,8 @@ export function NavUser() {
                   <LogOut className="size-4" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-medium text-base">Sign out</span>
-                  <span className="text-sm text-red-400">End your session</span>
+                  <span className="font-medium text-base">{t("nav.userMenu.signOut")}</span>
+                  <span className="text-sm text-red-400">{t("nav.userMenu.endYourSession")}</span>
                 </div>
               </div>
             </DropdownMenuItem>

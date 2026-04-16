@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { format, differenceInCalendarDays, parseISO } from "date-fns"
+import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { tasksApi, usersApi, techniciansApi, type TimeOffRequest } from "@/lib/api"
@@ -36,6 +37,7 @@ import { getGreeting, pluralize } from "./helpers"
 
 export function DispatcherDashboard() {
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   // Fetch tasks
   const { data: tasksData } = useQuery({
@@ -119,26 +121,26 @@ export function DispatcherDashboard() {
   // Quick actions for DISPATCHER
   const quickActions = [
     {
-      label: "Live Map",
-      description: "Track technicians",
+      label: t("dashboard.dispatcher.liveMap"),
+      description: t("dashboard.dispatcher.trackTechnicians"),
       href: "/map",
       icon: Map,
     },
     {
-      label: "All Tasks",
-      description: "Manage all tasks",
+      label: t("dashboard.dispatcher.allTasks"),
+      description: t("dashboard.dispatcher.manageAllTasks"),
       href: "/tasks",
       icon: ClipboardList,
     },
     {
-      label: "Team",
-      description: "Manage technicians",
+      label: t("dashboard.dispatcher.team"),
+      description: t("dashboard.dispatcher.manageTechnicians"),
       href: "/technicians",
       icon: Users,
     },
     {
-      label: "Create Task",
-      description: "Create a new task",
+      label: t("dashboard.dispatcher.createTask"),
+      description: t("dashboard.dispatcher.createANewTask"),
       href: "/tasks/new",
       icon: Plus,
     },
@@ -153,15 +155,15 @@ export function DispatcherDashboard() {
         <div className="flex flex-col gap-1">
           <p className="text-[13px] font-medium text-slate-400">{greeting}</p>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Operations Dashboard
+            {t("dashboard.dispatcher.operationsDashboard")}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            <span className="font-medium text-slate-700">{activeTasks} active {pluralize(activeTasks, "task")}</span>
+            <span className="font-medium text-slate-700">{activeTasks} {t("dashboard.dispatcher.activeTasks").toLowerCase()}</span>
             {onlineWorkers > 0 && (
-              <> · <span className="font-medium text-slate-700">{onlineWorkers} {pluralize(onlineWorkers, "technician")}</span></>
+              <> · <span className="font-medium text-slate-700">{t("dashboard.dispatcher.total", { count: onlineWorkers })} {t("dashboard.dispatcher.technicians").toLowerCase()}</span></>
             )}
             {pendingAssignment > 0 && (
-              <> · <span className="font-medium text-amber-600">{pendingAssignment} unassigned</span></>
+              <> · <span className="font-medium text-amber-600">{t("dashboard.dispatcher.unassigned", { count: pendingAssignment })}</span></>
             )}
           </p>
         </div>
@@ -171,7 +173,7 @@ export function DispatcherDashboard() {
             className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
           >
             <UserCheck className="size-4" />
-            Assign Tasks
+            {t("dashboard.dispatcher.assignTasks")}
           </Link>
         )}
       </div>
@@ -179,30 +181,30 @@ export function DispatcherDashboard() {
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Active Tasks"
+          title={t("dashboard.dispatcher.activeTasks")}
           value={activeTasks}
           icon={ClipboardList}
           trend="up"
-          trendValue="Live"
+          trendValue={t("dashboard.dispatcher.live")}
         />
         <StatCard
-          title="Technicians"
+          title={t("dashboard.dispatcher.technicians")}
           value={onlineWorkers}
           icon={Users}
-          description={`${workers.length} total`}
+          description={t("dashboard.dispatcher.total", { count: workers.length })}
         />
         <StatCard
-          title="Completed Today"
+          title={t("dashboard.dispatcher.completedToday")}
           value={completedToday}
           icon={CheckCircle2}
           trend={completedToday > 0 ? "up" : undefined}
           trendValue={completedToday > 0 ? `+${completedToday}` : undefined}
         />
         <StatCard
-          title="Pending Assignment"
+          title={t("dashboard.dispatcher.pendingAssignment")}
           value={pendingAssignment}
           icon={AlertTriangle}
-          description="Needs attention"
+          description={t("dashboard.dispatcher.needsAttention")}
         />
       </div>
 
@@ -213,12 +215,12 @@ export function DispatcherDashboard() {
           {/* Team Status */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-slate-900">Team Status</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.dispatcher.teamStatus")}</h2>
               <Link
                 href="/technicians"
                 className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
               >
-                Manage team
+                {t("dashboard.dispatcher.manageTeam")}
               </Link>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-5">
@@ -227,8 +229,8 @@ export function DispatcherDashboard() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Users className="mb-3 size-8 text-slate-200" strokeWidth={1.5} />
-                  <p className="text-sm text-slate-500">No technicians found</p>
-                  <p className="text-[13px] text-slate-400 mt-1">Add team members to get started</p>
+                  <p className="text-sm text-slate-500">{t("dashboard.dispatcher.noTechniciansFound")}</p>
+                  <p className="text-[13px] text-slate-400 mt-1">{t("dashboard.dispatcher.addTeamMembersToGetStarted")}</p>
                 </div>
               )}
             </div>
@@ -237,12 +239,12 @@ export function DispatcherDashboard() {
           {/* Recent Tasks */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-slate-900">Recent Tasks</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.dispatcher.recentTasks")}</h2>
               <Link
                 href="/tasks"
                 className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
               >
-                View all
+                {t("dashboard.dispatcher.viewAll")}
               </Link>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-2">
@@ -255,20 +257,20 @@ export function DispatcherDashboard() {
         <div className="space-y-6">
           {/* Quick Actions */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">Quick Actions</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.dispatcher.quickActions")}</h2>
             <QuickActions actions={quickActions} />
           </section>
 
           {/* Task Distribution Chart */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">Distribution</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.dispatcher.distribution")}</h2>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6">
               {chartData.length > 0 ? (
                 <TaskChart data={chartData} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <TrendingUp className="mb-2 size-8 text-slate-200" strokeWidth={1.5} />
-                  <p className="text-sm text-slate-400">No data yet</p>
+                  <p className="text-sm text-slate-400">{t("dashboard.dispatcher.noDataYet")}</p>
                 </div>
               )}
             </div>
@@ -278,19 +280,19 @@ export function DispatcherDashboard() {
           {pendingTimeOff.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-slate-900">Time Off Requests</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.dispatcher.timeOffRequests")}</h2>
                 <Link
                   href="/technicians/availability?tab=time-off"
                   className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
                 >
-                  View all
+                  {t("dashboard.dispatcher.viewAll")}
                 </Link>
               </div>
               <div className="rounded-2xl border border-amber-200/60 bg-amber-50/30 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-amber-700 mb-1">
                   <Umbrella className="h-4 w-4" />
                   <span className="text-sm font-medium">
-                    {pendingTimeOff.length} pending request{pendingTimeOff.length !== 1 ? "s" : ""}
+                    {t("dashboard.dispatcher.pendingRequests", { count: pendingTimeOff.length, plural: pendingTimeOff.length !== 1 ? "s" : "" })}
                   </span>
                 </div>
                 {pendingTimeOff.slice(0, 3).map((req: any) => (
@@ -313,7 +315,7 @@ export function DispatcherDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-700 text-[11px] shrink-0">Pending</Badge>
+                    <Badge className="bg-amber-100 text-amber-700 text-[11px] shrink-0">{t("common.pending")}</Badge>
                   </div>
                 ))}
                 {pendingTimeOff.length > 3 && (
@@ -321,7 +323,7 @@ export function DispatcherDashboard() {
                     href="/technicians/availability?tab=time-off"
                     className="flex items-center justify-center gap-1 text-[13px] font-medium text-amber-700 hover:text-amber-800 pt-1"
                   >
-                    +{pendingTimeOff.length - 3} more
+                    {t("dashboard.dispatcher.more", { count: pendingTimeOff.length - 3 })}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 )}
@@ -331,7 +333,7 @@ export function DispatcherDashboard() {
 
           {/* Activity Feed */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.dispatcher.recentActivity")}</h2>
             <div className="rounded-2xl border border-slate-200/60 bg-white px-5">
               <ActivityFeed activities={activities} maxItems={5} />
             </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { Button, Input, Label } from '@/components/ui';
@@ -27,6 +28,7 @@ const passwordSchema = z.object({
 });
 
 function ResetPasswordContent() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -41,8 +43,8 @@ function ResetPasswordContent() {
 
   useEffect(() => {
     if (!token) {
-      toast.error('Invalid reset link', {
-        description: 'Please request a new password reset link.',
+      toast.error(t('auth.resetPassword.invalidResetLinkTitle'), {
+        description: t('auth.resetPassword.invalidResetLinkDescription'),
       });
     }
   }, [token]);
@@ -63,7 +65,7 @@ function ResetPasswordContent() {
     }
 
     if (!token) {
-      toast.error('Invalid reset link');
+      toast.error(t('auth.resetPassword.invalidResetLinkTitle'));
       return;
     }
 
@@ -73,8 +75,8 @@ function ResetPasswordContent() {
       await authApi.resetPassword(token, password);
 
       setIsSuccess(true);
-      toast.success('Password reset successful!', {
-        description: 'You can now sign in with your new password.',
+      toast.success(t('auth.resetPassword.successToastTitle'), {
+        description: t('auth.resetPassword.successToastDescription'),
       });
 
       // Redirect to login after 3 seconds
@@ -82,8 +84,8 @@ function ResetPasswordContent() {
         router.push('/login');
       }, 3000);
     } catch (err) {
-      toast.error('Failed to reset password', {
-        description: err instanceof Error ? err.message : 'Please try again or request a new reset link.',
+      toast.error(t('auth.resetPassword.errorTitle'), {
+        description: err instanceof Error ? err.message : t('auth.resetPassword.errorDescription'),
       });
     } finally {
       setIsLoading(false);
@@ -96,9 +98,9 @@ function ResetPasswordContent() {
         <div className="bg-white rounded-2xl shadow-modal p-8">
           <div className="flex flex-col items-center mb-8">
             <AnimatedLogo size="default" className="mb-4" />
-            <h1 className="text-2xl font-semibold text-slate-900">Invalid Link</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">{t('auth.resetPassword.invalidLinkTitle')}</h1>
             <p className="text-sm text-slate-500 mt-2 text-center">
-              This password reset link is invalid or has expired.
+              {t('auth.resetPassword.invalidLinkSubtitle')}
             </p>
           </div>
           <div className="mt-8 text-center">
@@ -106,7 +108,7 @@ function ResetPasswordContent() {
               href="/forgot-password"
               className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors"
             >
-              Request a new reset link
+              {t('auth.resetPassword.requestNewLink')}
             </Link>
           </div>
           <div className="mt-4 text-center">
@@ -130,12 +132,12 @@ function ResetPasswordContent() {
         <div className="flex flex-col items-center mb-8">
           <AnimatedLogo size="default" className="mb-4" />
           <h1 className="text-2xl font-semibold text-slate-900">
-            {isSuccess ? 'Password Reset!' : 'Reset your password'}
+            {isSuccess ? t('auth.resetPassword.successTitle') : t('auth.resetPassword.title')}
           </h1>
           <p className="text-sm text-slate-500 mt-2 text-center">
             {isSuccess
-              ? 'Your password has been successfully reset.'
-              : 'Enter your new password below.'}
+              ? t('auth.resetPassword.successSubtitle')
+              : t('auth.resetPassword.subtitle')}
           </p>
         </div>
 
@@ -164,7 +166,7 @@ function ResetPasswordContent() {
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to sign in
+            {t('auth.resetPassword.backToSignIn')}
           </Link>
         </div>
       </div>
@@ -211,6 +213,7 @@ function ResetPasswordForm({
   isLoading,
   onSubmit,
 }: ResetPasswordFormProps) {
+  const { t } = useTranslation();
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [confirmFocused, setConfirmFocused] = useState(false);
 
@@ -219,7 +222,7 @@ function ResetPasswordForm({
       {/* New Password */}
       <div className="space-y-2">
         <Label htmlFor="password" className="text-sm font-medium text-slate-700">
-          New password
+          {t('auth.resetPassword.newPasswordLabel')}
         </Label>
         <div
           className={cn(
@@ -236,7 +239,7 @@ function ResetPasswordForm({
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
-            placeholder="Enter new password"
+            placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onFocus={() => setPasswordFocused(true)}
@@ -264,7 +267,7 @@ function ResetPasswordForm({
       {/* Confirm Password */}
       <div className="space-y-2">
         <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
-          Confirm password
+          {t('auth.resetPassword.confirmPasswordLabel')}
         </Label>
         <div
           className={cn(
@@ -281,7 +284,7 @@ function ResetPasswordForm({
           <Input
             id="confirmPassword"
             type={showConfirmPassword ? 'text' : 'password'}
-            placeholder="Confirm new password"
+            placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             onFocus={() => setConfirmFocused(true)}
@@ -308,12 +311,12 @@ function ResetPasswordForm({
 
       {/* Password Requirements */}
       <div className="text-xs text-slate-500 space-y-1">
-        <p className="font-medium">Password must:</p>
+        <p className="font-medium">{t('auth.resetPassword.passwordMust')}</p>
         <ul className="list-disc list-inside space-y-0.5">
-          <li>Be at least 8 characters long</li>
-          <li>Contain at least one uppercase letter</li>
-          <li>Contain at least one lowercase letter</li>
-          <li>Contain at least one number</li>
+          <li>{t('auth.resetPassword.atLeast8Chars')}</li>
+          <li>{t('auth.resetPassword.atLeastOneUppercase')}</li>
+          <li>{t('auth.resetPassword.atLeastOneLowercase')}</li>
+          <li>{t('auth.resetPassword.atLeastOneNumber')}</li>
         </ul>
       </div>
 
@@ -330,7 +333,7 @@ function ResetPasswordForm({
         ) : (
           <>
             <KeyRound className="w-4 h-4 mr-2" />
-            Reset password
+            {t('auth.resetPassword.submitButton')}
           </>
         )}
       </Button>
@@ -343,6 +346,7 @@ function ResetPasswordForm({
 // ============================================================================
 
 function SuccessState() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       {/* Success Icon */}
@@ -355,17 +359,17 @@ function SuccessState() {
       {/* Success Message */}
       <div className="bg-slate-50 rounded-lg p-4 text-center">
         <p className="text-sm text-slate-600">
-          Your password has been reset successfully.
+          {t('auth.resetPassword.successMessage')}
         </p>
         <p className="text-sm text-slate-500 mt-2">
-          You will be redirected to the login page in a few seconds...
+          {t('auth.resetPassword.redirectMessage')}
         </p>
       </div>
 
       {/* Manual Login Button */}
       <Link href="/login">
         <Button variant="outline" className="w-full h-11">
-          Sign in now
+          {t('auth.resetPassword.signInNow')}
         </Button>
       </Link>
     </div>

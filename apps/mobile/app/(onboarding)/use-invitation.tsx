@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { InvitationIcon } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -18,6 +19,7 @@ export default function UseInvitationScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const toast = useToast();
+  const { t } = useTranslation();
 
   const [code, setCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
@@ -27,16 +29,16 @@ export default function UseInvitationScreen() {
 
   const handleValidate = async () => {
     const trimmedCode = code.trim().toUpperCase();
-    if (trimmedCode.length < 6) { setError('Code must be at least 6 characters'); return; }
+    if (trimmedCode.length < 6) { setError(t('onboarding.useInvitation.codeMustBe6Chars')); return; }
 
     setIsValidating(true);
     setError('');
     try {
       const result = await invitationsApi.validate(trimmedCode);
       setValidation(result);
-      if (!result.valid) setError(result.message || 'Invalid or expired code');
+      if (!result.valid) setError(result.message || t('onboarding.useInvitation.invalidOrExpired'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to validate code');
+      setError(err instanceof Error ? err.message : t('onboarding.useInvitation.failedToValidate'));
       setValidation(null);
     } finally {
       setIsValidating(false);
@@ -51,7 +53,7 @@ export default function UseInvitationScreen() {
       await refreshUser();
       // Navigation guard will redirect to /(app)
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to accept invitation');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('onboarding.useInvitation.failedToAccept'));
     } finally {
       setIsAccepting(false);
     }
@@ -72,17 +74,17 @@ export default function UseInvitationScreen() {
             </LinearGradient>
           </View>
 
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Use Invitation Code</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Enter the code shared by your organization admin</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('onboarding.useInvitation.title')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('onboarding.useInvitation.subtitle')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Invitation code</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.useInvitation.codeLabel')}</Text>
               <View style={styles.codeRow}>
                 <View style={[styles.inputContainer, styles.codeInputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }, error ? styles.inputError : null]}>
                   <TextInput
                     style={[styles.codeInput, { color: colors.textPrimary }]}
-                    placeholder="XK7M2P"
+                    placeholder={t('onboarding.useInvitation.codePlaceholder')}
                     placeholderTextColor={colors.textMuted}
                     value={code}
                     onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); }}
@@ -96,7 +98,7 @@ export default function UseInvitationScreen() {
                   onPress={handleValidate}
                   disabled={isValidating || code.trim().length < 6}
                 >
-                  {isValidating ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={styles.verifyButtonText}>Verify</Text>}
+                  {isValidating ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={styles.verifyButtonText}>{t('common.verify')}</Text>}
                 </TouchableOpacity>
               </View>
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -107,7 +109,7 @@ export default function UseInvitationScreen() {
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
                 <View style={styles.validInfo}>
                   <Text style={[styles.validOrg, { color: colors.textPrimary }]}>{validation.organizationName}</Text>
-                  <Text style={[styles.validRole, { color: colors.textSecondary }]}>Joining as {validation.targetRole?.toLowerCase()}</Text>
+                  <Text style={[styles.validRole, { color: colors.textSecondary }]}>{t('onboarding.useInvitation.joiningAs', { role: validation.targetRole?.toLowerCase() })}</Text>
                 </View>
               </View>
             )}
@@ -116,7 +118,7 @@ export default function UseInvitationScreen() {
           {validation?.valid && (
             <TouchableOpacity style={[styles.button, isAccepting && styles.buttonDisabled]} onPress={handleAccept} disabled={isAccepting} activeOpacity={0.9}>
               <LinearGradient colors={isAccepting ? [COLORS.slate400, COLORS.slate500] : [COLORS.emerald, COLORS.emeraldDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buttonGradient}>
-                {isAccepting ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Accept & Join</Text>}
+                {isAccepting ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>{t('onboarding.useInvitation.submitButton')}</Text>}
               </LinearGradient>
             </TouchableOpacity>
           )}

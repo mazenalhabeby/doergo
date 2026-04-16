@@ -27,7 +27,7 @@ export class TrackingController {
   }
 
   @Get('workers')
-  @Roles(Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get all active technician locations (DISPATCHER only)' })
   async getActiveWorkers(@Request() req: any) {
     return firstValueFrom(
@@ -39,7 +39,7 @@ export class TrackingController {
   }
 
   @Get('workers/:id')
-  @Roles(Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get technician location by ID (DISPATCHER only)' })
   async getWorkerLocation(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
@@ -52,7 +52,7 @@ export class TrackingController {
   }
 
   @Get('workers/:id/history')
-  @Roles(Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get technician location history (DISPATCHER only)' })
   async getWorkerHistory(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
@@ -65,7 +65,7 @@ export class TrackingController {
   }
 
   @Get('workers/:id/current-route')
-  @Roles(Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get technician current EN_ROUTE journey (DISPATCHER only)' })
   async getWorkerCurrentRoute(@Param('id') id: string) {
     return firstValueFrom(
@@ -76,7 +76,7 @@ export class TrackingController {
   }
 
   @Get('tasks/:taskId/route')
-  @Roles(Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({ summary: 'Get full route for a task (DISPATCHER only)' })
   async getTaskRoute(@Param('taskId') taskId: string) {
     return firstValueFrom(

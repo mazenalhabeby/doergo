@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button, Input, Label, Spinner } from '@/components/ui';
@@ -24,6 +25,7 @@ interface ValidationErrors {
 export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -45,8 +47,8 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
         if (err.path[0] === 'password') fieldErrors.password = err.message;
       });
       setValidationErrors(fieldErrors);
-      toast.error('Please fix the errors', {
-        description: result.error.errors[0]?.message || 'Please fill all required fields correctly',
+      toast.error(t('auth.login.validationErrorTitle'), {
+        description: result.error.errors[0]?.message || t('auth.login.validationErrorDescription'),
       });
       setIsLoading(false);
       return;
@@ -54,13 +56,13 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
 
     try {
       await login(email, password);
-      toast.success('Welcome back!', {
-        description: 'You have been signed in successfully.',
+      toast.success(t('auth.login.successTitle'), {
+        description: t('auth.login.successDescription'),
       });
       router.push('/dashboard');
     } catch (err) {
-      toast.error('Sign in failed', {
-        description: err instanceof Error ? err.message : 'Invalid email or password',
+      toast.error(t('auth.login.errorTitle'), {
+        description: err instanceof Error ? err.message : t('auth.login.errorDescription'),
       });
     } finally {
       setIsLoading(false);
@@ -83,10 +85,10 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
           style={{ transitionDelay: '0.1s' }}
         >
           <h1 className="text-xl lg:text-2xl font-semibold tracking-tight text-slate-900">
-            Welcome back
+            {t('auth.login.title')}
           </h1>
           <p className="text-xs lg:text-sm text-slate-500">
-            Sign in to access your dashboard
+            {t('auth.login.subtitle')}
           </p>
         </div>
       )}
@@ -136,7 +138,7 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
               !isLoading && 'active:scale-[0.98]'
             )}
           >
-            {isLoading ? <Spinner size="sm" /> : 'Sign in to Dashboard'}
+            {isLoading ? <Spinner size="sm" /> : t('auth.login.submitButton')}
           </Button>
         </div>
 
@@ -179,6 +181,7 @@ function EmailField({
   onFocusChange,
   transitionDelay,
 }: EmailFieldProps) {
+  const { t } = useTranslation();
   const isFocused = focusedField === 'email';
 
   return (
@@ -190,7 +193,7 @@ function EmailField({
       style={{ transitionDelay }}
     >
       <Label htmlFor="login-email" className="text-xs sm:text-sm font-medium text-slate-700">
-        Email
+        {t('auth.login.emailLabel')}
       </Label>
       <div
         className={cn(
@@ -207,7 +210,7 @@ function EmailField({
         <Input
           id="login-email"
           type="email"
-          placeholder="you@company.com"
+          placeholder={t('auth.login.emailPlaceholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => onFocusChange('email')}
@@ -252,6 +255,7 @@ function PasswordField({
   onFocusChange,
   transitionDelay,
 }: PasswordFieldProps) {
+  const { t } = useTranslation();
   const isFocused = focusedField === 'password';
 
   return (
@@ -264,13 +268,13 @@ function PasswordField({
     >
       <div className="flex items-center justify-between">
         <Label htmlFor="login-password" className="text-xs sm:text-sm font-medium text-slate-700">
-          Password
+          {t('auth.login.passwordLabel')}
         </Label>
         <Link
           href="/forgot-password"
           className="text-xs text-brand-600 hover:text-brand-700 font-medium hover:underline transition-all"
         >
-          Forgot password?
+          {t('auth.login.forgotPassword')}
         </Link>
       </div>
       <div
@@ -288,7 +292,7 @@ function PasswordField({
         <Input
           id="login-password"
           type={showPassword ? 'text' : 'password'}
-          placeholder="Your password"
+          placeholder={t('auth.login.passwordPlaceholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => onFocusChange('password')}

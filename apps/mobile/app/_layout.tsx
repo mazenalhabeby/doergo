@@ -1,3 +1,4 @@
+import { i18nReady } from '../src/i18n';
 import 'react-native-gesture-handler';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { LogBox } from 'react-native';
@@ -117,8 +118,13 @@ export default function RootLayout() {
     Outfit_400Regular,
     Outfit_800ExtraBold,
   });
+  const [langLoaded, setLangLoaded] = useState(false);
 
-  if (!fontsLoaded) {
+  useEffect(() => {
+    i18nReady.then(() => setLangLoaded(true));
+  }, []);
+
+  if (!fontsLoaded || !langLoaded) {
     return null;
   }
 

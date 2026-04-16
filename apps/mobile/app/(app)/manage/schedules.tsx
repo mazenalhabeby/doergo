@@ -4,6 +4,7 @@ import {
   RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -12,7 +13,7 @@ import type { TechnicianListItem, ScheduleEntry } from '../../../src/lib/api/typ
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 import { Skeleton } from '../../../src/components';
 
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// DAY_NAMES will be resolved via t() inside the component
 
 interface TechSchedule {
   tech: TechnicianListItem;
@@ -21,7 +22,9 @@ interface TechSchedule {
 
 export default function SchedulesScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
+  const dayNames = t('dayNames.short', { returnObjects: true }) as string[];
   const [data, setData] = useState<TechSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -47,7 +50,7 @@ export default function SchedulesScreen() {
       setData(schedules);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      toast.error('Error', err?.message || 'Failed to load schedules');
+      toast.error(t('common.error'), err?.message || t('manage.schedulesScreen.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -79,7 +82,7 @@ export default function SchedulesScreen() {
         </View>
 
         <View style={s.daysRow}>
-          {DAY_NAMES.map((day, idx) => {
+          {dayNames.map((day, idx) => {
             const entry = scheduleMap.get(idx);
             const isActive = entry?.isActive;
             return (
@@ -126,7 +129,7 @@ export default function SchedulesScreen() {
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="calendar-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>No technicians found</Text>
+            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.schedulesScreen.noTechnicians')}</Text>
           </View>
         }
       />

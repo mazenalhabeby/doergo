@@ -15,6 +15,7 @@ import {
 import MapView, { Marker, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { useTranslation } from 'react-i18next';
 import {
   COLORS,
   SPACING,
@@ -52,6 +53,7 @@ export function LocationSearchPicker({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapRef = useRef<MapView>(null);
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   // Default region (Berlin)
   const defaultRegion: Region = {
@@ -165,7 +167,7 @@ export function LocationSearchPicker({
         <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
-          placeholder="Search for an address..."
+          placeholder={t('components.locationPicker.searchPlaceholder')}
           placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={(t) => {

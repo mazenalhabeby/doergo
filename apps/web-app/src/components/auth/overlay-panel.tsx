@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { TeamCollaborationIllustration, DashboardAnalyticsIllustration } from '@/components/illustrations';
 import { FloatingParticles } from './floating-particles';
@@ -52,6 +53,7 @@ interface LoginPanelContentProps extends PanelContentProps {
 }
 
 function LoginPanelContent({ isActive, onCreateAccount }: LoginPanelContentProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -69,13 +71,13 @@ function LoginPanelContent({ isActive, onCreateAccount }: LoginPanelContentProps
           className="text-2xl lg:text-3xl font-bold mb-2 animate-fade-in-up"
           style={{ animationDelay: '0.1s' }}
         >
-          Start Your Journey
+          {t('auth.overlay.startYourJourney')}
         </h2>
         <p
           className="text-sm lg:text-base text-slate-400 animate-fade-in-up"
           style={{ animationDelay: '0.15s' }}
         >
-          Join thousands of partners managing field operations effortlessly
+          {t('auth.overlay.joinThousands')}
         </p>
 
         {/* Illustration - Team collaboration */}
@@ -90,7 +92,7 @@ function LoginPanelContent({ isActive, onCreateAccount }: LoginPanelContentProps
           onClick={onCreateAccount}
           className="w-full h-11 lg:h-12 rounded-xl border border-white/30 bg-white/5 text-white font-semibold text-sm tracking-widest uppercase hover:bg-white/10 hover:border-white/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
         >
-          Create Account
+          {t('auth.overlay.createAccount')}
         </button>
       </div>
     </div>
@@ -102,6 +104,7 @@ interface RegisterPanelContentProps extends PanelContentProps {
 }
 
 function RegisterPanelContent({ isActive, onSignIn }: RegisterPanelContentProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -115,9 +118,9 @@ function RegisterPanelContent({ isActive, onSignIn }: RegisterPanelContentProps)
           <AnimatedLogo variant="light" size="large" />
         </div>
 
-        <h2 className="text-2xl lg:text-3xl font-bold mb-2">Welcome Back!</h2>
+        <h2 className="text-2xl lg:text-3xl font-bold mb-2">{t('auth.overlay.welcomeBack')}</h2>
         <p className="text-sm lg:text-base text-slate-400">
-          Your dashboard is waiting with real-time insights
+          {t('auth.overlay.dashboardWaiting')}
         </p>
 
         {/* Illustration - Dashboard analytics */}
@@ -129,7 +132,7 @@ function RegisterPanelContent({ isActive, onSignIn }: RegisterPanelContentProps)
           onClick={onSignIn}
           className="w-full h-11 lg:h-12 rounded-xl border border-white/30 bg-white/5 text-white font-semibold text-sm tracking-widest uppercase hover:bg-white/10 hover:border-white/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
         >
-          Sign In
+          {t('auth.overlay.signIn')}
         </button>
       </div>
     </div>

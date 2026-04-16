@@ -200,6 +200,7 @@ export class UsersService {
         rating: true,
         ratingCount: true,
         maxDailyJobs: true,
+        canCreateTasks: true,
         createdAt: true,
         lastLocation: {
           select: {
@@ -245,6 +246,7 @@ export class UsersService {
       rating: tech.rating || 5.0,
       ratingCount: tech.ratingCount || 0,
       maxDailyJobs: tech.maxDailyJobs || 5,
+      canCreateTasks: tech.canCreateTasks,
       currentTaskCount: tech._count.assignedTasks,
       todayTaskCount: tech._count.assignedTasks, // Will be refined if needed
       isOnline: this.isOnline(tech.lastLocation?.updatedAt),
@@ -290,6 +292,7 @@ export class UsersService {
         rating: true,
         ratingCount: true,
         maxDailyJobs: true,
+        canCreateTasks: true,
         organizationId: true,
         platform: true,
         organization: {
@@ -336,6 +339,7 @@ export class UsersService {
       rating: technician.rating || 5.0,
       ratingCount: technician.ratingCount || 0,
       maxDailyJobs: technician.maxDailyJobs || 5,
+      canCreateTasks: technician.canCreateTasks,
       organizationId: technician.organizationId,
       platform: technician.platform,
       organization: technician.organization,
@@ -485,6 +489,7 @@ export class UsersService {
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         ...(dto.rating !== undefined && { rating: dto.rating }),
         ...(dto.ratingCount !== undefined && { ratingCount: dto.ratingCount }),
+        ...(dto.canCreateTasks !== undefined && { canCreateTasks: dto.canCreateTasks }),
       },
       select: {
         id: true,
@@ -499,6 +504,7 @@ export class UsersService {
         maxDailyJobs: true,
         rating: true,
         ratingCount: true,
+        canCreateTasks: true,
         organizationId: true,
         platform: true,
         updatedAt: true,

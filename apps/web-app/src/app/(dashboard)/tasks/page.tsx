@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -42,22 +43,14 @@ const PRIORITY_ORDER: Record<string, number> = {
   LOW: 3,
 }
 
-// Status tabs configuration with icons
-const STATUS_TABS = [
-  { value: "all", label: "All Tasks" },
-  { value: "NEW", label: "New" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "ACCEPTED", label: "Accepted" },
-  { value: "EN_ROUTE", label: "On The Way" },
-  { value: "ARRIVED", label: "Arrived" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "BLOCKED", label: "Blocked" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "CANCELED", label: "Canceled" },
-  { value: "CLOSED", label: "Closed" },
+// Status tab values
+const STATUS_TAB_VALUES = [
+  "all", "NEW", "ASSIGNED", "ACCEPTED", "EN_ROUTE", "ARRIVED",
+  "IN_PROGRESS", "BLOCKED", "COMPLETED", "CANCELED", "CLOSED",
 ] as const
 
 export default function TasksPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
@@ -161,7 +154,7 @@ export default function TasksPage() {
       return tasksApi.assign(selectedTaskId, workerId)
     },
     onSuccess: () => {
-      toast.success("Technician assigned successfully")
+      toast.success(t("tasks.list.technicianAssignedSuccessfully"))
       setAssignDialogOpen(false)
       setSelectedTaskId(null)
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
@@ -228,10 +221,10 @@ export default function TasksPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                Service Requests
+                {t("tasks.list.title")}
               </h1>
               <p className="mt-1.5 text-slate-500">
-                Track, assign, and monitor all maintenance operations in real-time
+                {t("tasks.list.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -239,7 +232,7 @@ export default function TasksPage() {
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  placeholder="Search by name or ID..."
+                  placeholder={t("tasks.list.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 w-72 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm focus:bg-white focus:shadow-md transition-all"
@@ -250,7 +243,7 @@ export default function TasksPage() {
               <Select value={priorityFilter} onValueChange={handlePriorityChange}>
                 <SelectTrigger className="w-[140px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
                   <Filter className="size-4 mr-2 text-slate-400" />
-                  <SelectValue placeholder="Priority" />
+                  <SelectValue placeholder={t("tasks.list.priority")} />
                 </SelectTrigger>
                 <SelectContent>
                   {PRIORITY_FILTER_OPTIONS.map((option) => (
@@ -283,7 +276,7 @@ export default function TasksPage() {
                   )}
                 >
                   <Plus className="size-4 mr-2" />
-                  Create Task
+                  {t("tasks.list.createTask")}
                 </Button>
               </Link>
             </div>
@@ -322,15 +315,16 @@ export default function TasksPage() {
             ref={tabsContainerRef}
             className="flex items-center overflow-x-auto scrollbar-hide px-2"
           >
-            {STATUS_TABS.map((tab) => {
-              const isActive = statusFilter === tab.value
-              const statusConfig = tab.value !== "all" ? getStatusConfig(tab.value) : null
-              const count = statusCounts?.[tab.value] ?? 0
+            {STATUS_TAB_VALUES.map((tabValue) => {
+              const isActive = statusFilter === tabValue
+              const statusConfig = tabValue !== "all" ? getStatusConfig(tabValue) : null
+              const count = statusCounts?.[tabValue] ?? 0
+              const tabLabel = tabValue === "all" ? t("tasks.statusTabs.all") : t(`tasks.statusTabs.${tabValue}`)
 
               return (
                 <button
-                  key={tab.value}
-                  onClick={() => handleStatusChange(tab.value)}
+                  key={tabValue}
+                  onClick={() => handleStatusChange(tabValue)}
                   className={cn(
                     "relative flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap transition-all duration-200",
                     "hover:bg-slate-50/80",
@@ -348,7 +342,7 @@ export default function TasksPage() {
                       style={{ backgroundColor: isActive ? "#2563eb" : statusConfig.hex }}
                     />
                   )}
-                  {tab.label}
+                  {tabLabel}
 
                   {/* Count badge */}
                   {count > 0 && (
@@ -403,8 +397,7 @@ export default function TasksPage() {
         {!isLoading && !isError && meta && (
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-slate-500">
-              Showing <span className="font-medium text-slate-700">{filteredTasks.length}</span> of{" "}
-              <span className="font-medium text-slate-700">{meta.total}</span> tasks
+              {t("common.showingCount", { count: filteredTasks.length, total: meta.total, item: t("nav.sidebar.tasks").toLowerCase() })}
             </p>
           </div>
         )}
@@ -417,12 +410,12 @@ export default function TasksPage() {
                 <ClipboardList className="size-8 text-red-500" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-slate-800">Failed to load tasks</p>
-                <p className="text-slate-500 mt-1">{(error as Error)?.message || "Please try again later"}</p>
+                <p className="text-lg font-semibold text-slate-800">{t("tasks.list.failedToLoad")}</p>
+                <p className="text-slate-500 mt-1">{(error as Error)?.message}</p>
               </div>
               <Button onClick={handleRefresh} className="mt-2 rounded-xl">
                 <RefreshCw className="mr-2 size-4" />
-                Try Again
+                {t("common.tryAgain")}
               </Button>
             </div>
           </div>
@@ -462,11 +455,11 @@ export default function TasksPage() {
                 <ClipboardList className="size-10 text-slate-300" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-slate-800">No tasks found</p>
+                <p className="text-lg font-semibold text-slate-800">{t("tasks.list.noTasksFound")}</p>
                 <p className="text-slate-500 mt-1 max-w-sm mx-auto">
                   {statusFilter !== "all" || priorityFilter !== "all" || searchQuery
-                    ? "Try adjusting your filters or search query"
-                    : "Create your first task to get started"}
+                    ? t("tasks.list.noTasksHint")
+                    : t("tasks.list.createFirstTask")}
                 </p>
               </div>
             </div>

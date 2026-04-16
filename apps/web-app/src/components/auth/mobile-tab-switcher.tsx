@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface MobileTabSwitcherProps {
@@ -8,6 +9,7 @@ interface MobileTabSwitcherProps {
 }
 
 export function MobileTabSwitcher({ isLoginActive, onTabChange }: MobileTabSwitcherProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex md:hidden bg-slate-100 p-1 rounded-xl mb-6">
       <button
@@ -19,7 +21,7 @@ export function MobileTabSwitcher({ isLoginActive, onTabChange }: MobileTabSwitc
             : 'text-slate-500 hover:text-slate-700'
         )}
       >
-        Sign In
+        {t('auth.mobile.signInTab')}
       </button>
       <button
         onClick={() => onTabChange(false)}
@@ -30,7 +32,7 @@ export function MobileTabSwitcher({ isLoginActive, onTabChange }: MobileTabSwitc
             : 'text-slate-500 hover:text-slate-700'
         )}
       >
-        Create Account
+        {t('auth.mobile.createAccountTab')}
       </button>
     </div>
   );

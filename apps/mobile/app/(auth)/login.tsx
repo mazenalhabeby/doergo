@@ -16,6 +16,7 @@ import { useRouter, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { AnimatedLogo } from '../../src/components';
@@ -34,6 +35,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,15 +53,15 @@ export default function LoginScreen() {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = t('validation.emailInvalid');
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('validation.passwordRequired');
     } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = t('validation.passwordMinLength');
     }
 
     setErrors(newErrors);
@@ -74,8 +76,8 @@ export default function LoginScreen() {
       await login(email.toLowerCase().trim(), password);
       router.replace(ROUTES.home as Href);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login failed';
-      toast.error('Login Failed', message);
+      const message = error instanceof Error ? error.message : t('auth.login.loginFailed');
+      toast.error(t('auth.login.loginFailed'), message);
     } finally {
       setIsLoading(false);
     }
@@ -138,8 +140,8 @@ export default function LoginScreen() {
 
           <View style={styles.divider} />
 
-          <Text style={styles.welcomeText}>Sign In</Text>
-          <Text style={styles.subtitleText}>Access your dashboard and manage operations</Text>
+          <Text style={styles.welcomeText}>{t('auth.login.title')}</Text>
+          <Text style={styles.subtitleText}>{t('auth.login.subtitle')}</Text>
         </View>
       </LinearGradient>
 
@@ -156,14 +158,14 @@ export default function LoginScreen() {
           >
             {/* Email Input */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Email address</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.login.emailLabel')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.email && styles.inputError]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="mail-outline" size={20} color={colors.textMuted} />
                 </View>
                 <TextInput
                   style={[styles.input, { color: colors.textPrimary }]}
-                  placeholder="you@company.com"
+                  placeholder={t('auth.login.emailPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -185,14 +187,14 @@ export default function LoginScreen() {
 
             {/* Password Input */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Password</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.login.passwordLabel')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.password && styles.inputError]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
                 </View>
                 <TextInput
                   style={[styles.input, { color: colors.textPrimary }]}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry={!showPassword}
                   value={password}
@@ -238,7 +240,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color={COLORS.white} size="small" />
                 ) : (
                   <>
-                    <Text style={styles.loginButtonText}>Sign in</Text>
+                    <Text style={styles.loginButtonText}>{t('auth.login.submitButton')}</Text>
                     <View style={styles.arrowContainer}>
                       <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
                     </View>
@@ -251,20 +253,20 @@ export default function LoginScreen() {
             <View style={styles.securityContainer}>
               <View style={styles.securityBadge}>
                 <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
-                <Text style={[styles.securityText, { color: colors.textMuted }]}>Enterprise protected</Text>
+                <Text style={[styles.securityText, { color: colors.textMuted }]}>{t('auth.login.enterpriseProtected')}</Text>
               </View>
               <View style={[styles.securityDot, { backgroundColor: colors.border }]} />
               <View style={styles.securityBadge}>
                 <Ionicons name="shield-checkmark" size={14} color={colors.textMuted} />
-                <Text style={[styles.securityText, { color: colors.textMuted }]}>Secure</Text>
+                <Text style={[styles.securityText, { color: colors.textMuted }]}>{t('auth.login.secure')}</Text>
               </View>
             </View>
 
             {/* Create Account Link */}
             <View style={styles.createAccountContainer}>
-              <Text style={[styles.createAccountText, { color: colors.textSecondary }]}>Don't have an account? </Text>
+              <Text style={[styles.createAccountText, { color: colors.textSecondary }]}>{t('auth.login.noAccount')}</Text>
               <TouchableOpacity onPress={() => router.push(ROUTES.register as Href)}>
-                <Text style={styles.createAccountLink}>Create one</Text>
+                <Text style={styles.createAccountLink}>{t('auth.login.createOne')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -274,7 +276,7 @@ export default function LoginScreen() {
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING.xl) }]}>
         <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          Need help? <Text style={styles.footerLink}>Contact support</Text>
+          {t('auth.login.needHelp')}<Text style={styles.footerLink}>{t('auth.login.contactSupport')}</Text>
         </Text>
       </View>
     </Animated.View>

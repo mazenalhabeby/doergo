@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User, Building2, Check } from 'lucide-react';
 import { Button, Input, Label, Checkbox, Spinner } from '@/components/ui';
@@ -22,6 +23,7 @@ type ValidationErrors = Partial<Record<keyof RegisterFormData, string>>;
 export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -60,8 +62,8 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
         }
       });
       setValidationErrors(fieldErrors);
-      toast.error('Please fix the errors', {
-        description: result.error.errors[0]?.message || 'Please fill all required fields correctly',
+      toast.error(t('auth.register.validationErrorTitle'), {
+        description: result.error.errors[0]?.message || t('auth.register.validationErrorDescription'),
       });
       setIsLoading(false);
       return;
@@ -77,13 +79,13 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
       });
 
       await login(formData.email, formData.password);
-      toast.success('Welcome to HBCField!', {
-        description: 'Your account has been created successfully.',
+      toast.success(t('auth.register.successTitle'), {
+        description: t('auth.register.successDescription'),
       });
       router.push('/dashboard');
     } catch (err) {
-      toast.error('Registration failed', {
-        description: err instanceof Error ? err.message : 'Could not create your account. Please try again.',
+      toast.error(t('auth.register.errorTitle'), {
+        description: err instanceof Error ? err.message : t('auth.register.errorDescription'),
       });
     } finally {
       setIsLoading(false);
@@ -113,9 +115,9 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
           )}
         >
           <h1 className="text-xl lg:text-2xl font-semibold tracking-tight text-slate-900">
-            Create your account
+            {t('auth.register.title')}
           </h1>
-          <p className="text-xs lg:text-sm text-slate-500">Get started with HBCField</p>
+          <p className="text-xs lg:text-sm text-slate-500">{t('auth.register.subtitle')}</p>
         </div>
       )}
 
@@ -207,13 +209,13 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
             htmlFor="reg-terms"
             className="text-[10px] sm:text-[11px] text-slate-600 cursor-pointer leading-tight hover:text-slate-900 transition-colors"
           >
-            I agree to the{' '}
+            {t('auth.register.termsPrefix')}{' '}
             <Link href="/terms" className="text-brand-600 hover:text-brand-700 hover:underline">
-              Terms of Service
+              {t('auth.register.termsOfService')}
             </Link>{' '}
-            and{' '}
+            {t('auth.register.termsAnd')}{' '}
             <Link href="/privacy" className="text-brand-600 hover:text-brand-700 hover:underline">
-              Privacy Policy
+              {t('auth.register.privacyPolicy')}
             </Link>
           </Label>
         </div>
@@ -234,7 +236,7 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
               !isLoading && 'active:scale-[0.98]'
             )}
           >
-            {isLoading ? <Spinner size="sm" /> : 'Get Started Free'}
+            {isLoading ? <Spinner size="sm" /> : t('auth.register.submitButton')}
           </Button>
         </div>
 
@@ -285,6 +287,7 @@ function NameFields({
   inputClass,
   transitionDelay,
 }: NameFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -295,7 +298,7 @@ function NameFields({
     >
       <div className="space-y-1">
         <Label htmlFor="reg-firstName" className="text-xs font-medium text-slate-700">
-          First name
+          {t('auth.register.firstNameLabel')}
         </Label>
         <div className="relative">
           <User
@@ -307,7 +310,7 @@ function NameFields({
           <Input
             id="reg-firstName"
             type="text"
-            placeholder="John"
+            placeholder={t('auth.register.firstNamePlaceholder')}
             value={firstName}
             onChange={(e) => onFirstNameChange(e.target.value)}
             onFocus={() => onFocusChange('firstName')}
@@ -319,12 +322,12 @@ function NameFields({
       </div>
       <div className="space-y-1">
         <Label htmlFor="reg-lastName" className="text-xs font-medium text-slate-700">
-          Last name
+          {t('auth.register.lastNameLabel')}
         </Label>
         <Input
           id="reg-lastName"
           type="text"
-          placeholder="Doe"
+          placeholder={t('auth.register.lastNamePlaceholder')}
           value={lastName}
           onChange={(e) => onLastNameChange(e.target.value)}
           onFocus={() => onFocusChange('lastName')}
@@ -360,6 +363,7 @@ function CompanyField({
   inputClass,
   transitionDelay,
 }: CompanyFieldProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -369,7 +373,7 @@ function CompanyField({
       style={{ transitionDelay }}
     >
       <Label htmlFor="reg-company" className="text-xs font-medium text-slate-700">
-        Company name
+        {t('auth.register.companyNameLabel')}
       </Label>
       <div className="relative">
         <Building2
@@ -381,7 +385,7 @@ function CompanyField({
         <Input
           id="reg-company"
           type="text"
-          placeholder="Your company name"
+          placeholder={t('auth.register.companyNamePlaceholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => onFocusChange('company')}
@@ -417,6 +421,7 @@ function EmailField({
   inputClass,
   transitionDelay,
 }: EmailFieldProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -426,7 +431,7 @@ function EmailField({
       style={{ transitionDelay }}
     >
       <Label htmlFor="reg-email" className="text-xs font-medium text-slate-700">
-        Work email
+        {t('auth.register.workEmailLabel')}
       </Label>
       <div className="relative">
         <Mail
@@ -438,7 +443,7 @@ function EmailField({
         <Input
           id="reg-email"
           type="email"
-          placeholder="john@company.com"
+          placeholder={t('auth.register.workEmailPlaceholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => onFocusChange('reg-email')}
@@ -478,6 +483,15 @@ function PasswordField({
   inputClass,
   transitionDelay,
 }: PasswordFieldProps) {
+  const { t } = useTranslation();
+
+  const passwordRequirementLabels: Record<string, string> = {
+    '8+ chars': t('auth.passwordRequirements.minChars'),
+    'Upper': t('auth.passwordRequirements.uppercase'),
+    'Lower': t('auth.passwordRequirements.lowercase'),
+    'Number': t('auth.passwordRequirements.number'),
+  };
+
   return (
     <div
       className={cn(
@@ -487,7 +501,7 @@ function PasswordField({
       style={{ transitionDelay }}
     >
       <Label htmlFor="reg-password" className="text-xs font-medium text-slate-700">
-        Password
+        {t('auth.register.passwordLabel')}
       </Label>
       <div className="relative">
         <Lock
@@ -499,7 +513,7 @@ function PasswordField({
         <Input
           id="reg-password"
           type={showPassword ? 'text' : 'password'}
-          placeholder="Min. 8 characters"
+          placeholder={t('auth.register.passwordPlaceholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => onFocusChange('reg-password')}
@@ -532,7 +546,7 @@ function PasswordField({
                   req.test(value) && 'animate-bounce-once'
                 )}
               />
-              {req.label}
+              {passwordRequirementLabels[req.label] || req.label}
             </span>
           ))}
         </div>
@@ -564,6 +578,7 @@ function ConfirmPasswordField({
   inputClass,
   transitionDelay,
 }: ConfirmPasswordFieldProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -573,7 +588,7 @@ function ConfirmPasswordField({
       style={{ transitionDelay }}
     >
       <Label htmlFor="reg-confirmPassword" className="text-xs font-medium text-slate-700">
-        Confirm password
+        {t('auth.register.confirmPasswordLabel')}
       </Label>
       <div className="relative">
         <Lock
@@ -585,7 +600,7 @@ function ConfirmPasswordField({
         <Input
           id="reg-confirmPassword"
           type="password"
-          placeholder="Re-enter your password"
+          placeholder={t('auth.register.confirmPasswordPlaceholder')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => onFocusChange('confirmPassword')}

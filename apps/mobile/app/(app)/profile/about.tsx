@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/contexts/theme-context';
 import {
   COLORS,
@@ -12,6 +13,7 @@ import {
 
 export default function AboutScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
   return (
@@ -25,10 +27,10 @@ export default function AboutScreen() {
         <View style={[styles.logoContainer, { backgroundColor: colors.primaryLight }]}>
           <Ionicons name="construct" size={36} color={COLORS.primary} />
         </View>
-        <Text style={[styles.appName, { color: colors.textPrimary }]}>HBCField</Text>
-        <Text style={[styles.tagline, { color: colors.textSecondary }]}>Dispatch · Track · Deliver</Text>
+        <Text style={[styles.appName, { color: colors.textPrimary }]}>{t('common.appName')}</Text>
+        <Text style={[styles.tagline, { color: colors.textSecondary }]}>{t('profile.about.tagline')}</Text>
         <View style={[styles.versionBadge, { backgroundColor: colors.surfaceRaised }]}>
-          <Text style={[styles.versionText, { color: colors.textMuted }]}>Version {appVersion}</Text>
+          <Text style={[styles.versionText, { color: colors.textMuted }]}>{t('common.version', { version: appVersion })}</Text>
         </View>
       </View>
 
@@ -36,14 +38,14 @@ export default function AboutScreen() {
       <View style={styles.section}>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
-            HBCField is a field service management platform that helps teams dispatch tasks, track progress in real-time, and deliver exceptional service.
+            {t('profile.about.description')}
           </Text>
         </View>
       </View>
 
       {/* Footer */}
       <Text style={[styles.copyright, { color: colors.textMuted }]}>
-        {'\u00A9'} {new Date().getFullYear()} HBCField. All rights reserved.
+        {t('common.copyrightYear', { year: new Date().getFullYear() })}
       </Text>
     </ScrollView>
   );

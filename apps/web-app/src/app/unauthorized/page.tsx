@@ -1,10 +1,12 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui';
 
 export default function UnauthorizedPage() {
   const { logout, user } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 flex items-center justify-center p-4">
@@ -24,11 +26,11 @@ export default function UnauthorizedPage() {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">Access Denied</h1>
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('unauthorized.title')}</h1>
         <p className="text-slate-600 mb-6">
-          You don&apos;t have permission to access this portal.
+          {t('unauthorized.description')}
           {user?.role === 'TECHNICIAN' && (
-            <> Technicians should use the mobile app.</>
+            <> {t('unauthorized.technicianHint')}</>
           )}
         </p>
         <div className="space-y-3">
@@ -36,7 +38,7 @@ export default function UnauthorizedPage() {
             onClick={logout}
             className="w-full"
           >
-            Sign out and try another account
+            {t('unauthorized.signOutButton')}
           </Button>
         </div>
       </div>

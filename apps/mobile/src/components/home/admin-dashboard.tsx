@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { tasksApi, TaskStatus, type Task } from '../../lib/api';
@@ -22,6 +23,7 @@ import { styles, COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, RADIUS, SHADOWS } from
 export function AdminDashboard() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -106,7 +108,7 @@ export function AdminDashboard() {
       setTasks(fetchedTasks || []);
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
+      setError(err instanceof Error ? err.message : t('tasks.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -156,7 +158,7 @@ export function AdminDashboard() {
         {/* Welcome */}
         <View style={styles.welcomeSection}>
           <Text style={[styles.welcomeGreeting, { color: colors.textMuted }]}>
-            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},
+            {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
           </Text>
           <Text style={[styles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
         </View>
@@ -165,10 +167,10 @@ export function AdminDashboard() {
         <View style={[adminStyles.hubCard, { backgroundColor: colors.card }]}>
           <View style={adminStyles.statsStrip}>
             {([
-              { n: stats.total, label: 'Total', color: colors.textPrimary },
-              { n: stats.inProgress, label: 'Active', color: colors.textPrimary },
-              { n: stats.completed, label: 'Done', color: colors.textPrimary },
-              { n: stats.pending, label: 'Pending', color: colors.textPrimary },
+              { n: stats.total, label: t('home.admin.statsTotal'), color: colors.textPrimary },
+              { n: stats.inProgress, label: t('home.admin.statsActive'), color: colors.textPrimary },
+              { n: stats.completed, label: t('home.admin.statsDone'), color: colors.textPrimary },
+              { n: stats.pending, label: t('home.admin.statsPending'), color: colors.textPrimary },
             ] as const).map((s, i) => (
               <View key={i} style={adminStyles.statCell}>
                 <Text style={[adminStyles.statNum, { color: s.color }]}>{s.n}</Text>
@@ -193,7 +195,7 @@ export function AdminDashboard() {
         <View style={adminStyles.dayTasksSection}>
           <View style={adminStyles.dayTasksHeader}>
             <Text style={[adminStyles.dayTasksTitle, { color: colors.textPrimary }]}>
-              {isSameDay(selectedDate, new Date()) ? "Today's Tasks" : selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+              {isSameDay(selectedDate, new Date()) ? t('home.admin.todaysTasks') : selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </Text>
             <View style={[adminStyles.dayTasksCount, { backgroundColor: colors.surfaceRaised }]}>
               <Text style={[adminStyles.dayTasksCountText, { color: colors.textSecondary }]}>{selectedDayTasks.length}</Text>
@@ -202,7 +204,7 @@ export function AdminDashboard() {
           {selectedDayTasks.length === 0 ? (
             <View style={[adminStyles.emptyDay, { backgroundColor: colors.card }]}>
               <Ionicons name="calendar-outline" size={24} color={colors.textMuted} />
-              <Text style={[adminStyles.emptyDayText, { color: colors.textMuted }]}>No tasks scheduled</Text>
+              <Text style={[adminStyles.emptyDayText, { color: colors.textMuted }]}>{t('home.admin.noTasksScheduled')}</Text>
             </View>
           ) : (
             <View style={adminStyles.dayTasksList}>
@@ -215,10 +217,10 @@ export function AdminDashboard() {
 
         {/* Recent Tasks */}
         <View style={adminStyles.recentSection}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Tasks</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('home.admin.recentTasks')}</Text>
           {recentTasks.length === 0 ? (
             <View style={[adminStyles.emptyRecent, { backgroundColor: colors.card }]}>
-              <Text style={[adminStyles.emptyRecentText, { color: colors.textMuted }]}>No tasks yet. Create one to get started!</Text>
+              <Text style={[adminStyles.emptyRecentText, { color: colors.textMuted }]}>{t('home.admin.noTasksYet')}</Text>
             </View>
           ) : (
             <View style={adminStyles.recentList}>

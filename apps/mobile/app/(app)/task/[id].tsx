@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -22,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
+import { useTranslation } from 'react-i18next';
 import { tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { Role } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
@@ -33,7 +33,7 @@ import { useLocationTrackingContext } from '../../../src/contexts/location-track
 import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
 import { PhotoGrid } from '../../../src/components/photo-grid';
 import { SignatureCapture } from '../../../src/components/signature-capture';
-import { TechnicianPicker, LoadingState, ErrorState } from '../../../src/components';
+import { TechnicianPicker, LoadingState, ErrorState, ConfirmSheet } from '../../../src/components';
 import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
 import { getJobId, formatRelativeDate, formatTimeAgo } from '../../../src/lib/utils';
 import {
@@ -57,6 +57,7 @@ export default function TaskDetailScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
 
@@ -108,6 +109,15 @@ export default function TaskDetailScreen() {
   // Comment input state
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  // Confirm sheet states
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [pendingStatusReason, setPendingStatusReason] = useState<string | undefined>(undefined);
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
+  const [showDeleteAttachmentConfirm, setShowDeleteAttachmentConfirm] = useState(false);
+  const [deleteAttachmentTarget, setDeleteAttachmentTarget] = useState<{ id: string; fileName: string } | null>(null);
+  const [showCancelTaskConfirm, setShowCancelTaskConfirm] = useState(false);
 
   // Location tracking from app-level context (survives screen navigation)
   const {
@@ -219,7 +229,7 @@ export default function TaskDetailScreen() {
         if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
           return;
         }
-        setError(err instanceof Error ? err.message : 'Failed to load task');
+        setError(err instanceof Error ? err.message : t('taskDetail.failedToLoad'));
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -283,7 +293,7 @@ export default function TaskDetailScreen() {
       setComments(prev => [...prev, comment]);
       setNewComment('');
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to add comment');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAddComment'));
     } finally {
       setIsSubmittingComment(false);
     }
@@ -327,7 +337,7 @@ export default function TaskDetailScreen() {
         lastFetchedIdRef.current = id!;
       } catch (err: any) {
         if (err?.statusCode === 401) return;
-        setError(err instanceof Error ? err.message : 'Failed to load task');
+        setError(err instanceof Error ? err.message : t('taskDetail.failedToLoad'));
       } finally {
         setIsLoading(false);
         fetchingRef.current = false;
@@ -353,48 +363,42 @@ export default function TaskDetailScreen() {
       return;
     }
 
-    Alert.alert(
-      'Update Status',
-      `Change status to ${newStatus.replace('_', ' ')}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            try {
-              setIsUpdating(true);
+    setPendingStatus(newStatus);
+    setPendingStatusReason(reason);
+    setShowStatusConfirm(true);
+  };
 
-              // Stop tracking IMMEDIATELY when transitioning away from EN_ROUTE
-              // This prevents extra location requests while waiting for API response
-              if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
-                stopTracking();
-              }
+  const confirmStatusUpdate = async () => {
+    if (!task || !pendingStatus) return;
+    const newStatus = pendingStatus;
+    const reason = pendingStatusReason;
+    setShowStatusConfirm(false);
+    setPendingStatus(null);
+    setPendingStatusReason(undefined);
+    try {
+      setIsUpdating(true);
 
-              // Start tracking IMMEDIATELY when transitioning to EN_ROUTE
-              // This ensures tracking starts without waiting for API response
-              if (newStatus === TaskStatus.EN_ROUTE) {
-                startTracking(task.id);
-              }
+      if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
+        stopTracking();
+      }
 
-              const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason);
-              setTask(updatedTask);
-            } catch (err) {
-              // If API fails while transitioning to ARRIVED, restart tracking
-              if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
-                startTracking(task.id);
-              }
-              // If API fails while starting EN_ROUTE, stop tracking
-              if (newStatus === TaskStatus.EN_ROUTE) {
-                stopTracking();
-              }
-              toast.error('Error', err instanceof Error ? err.message : 'Failed to update status');
-            } finally {
-              setIsUpdating(false);
-            }
-          },
-        },
-      ]
-    );
+      if (newStatus === TaskStatus.EN_ROUTE) {
+        startTracking(task.id);
+      }
+
+      const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason);
+      setTask(updatedTask);
+    } catch (err) {
+      if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
+        startTracking(task.id);
+      }
+      if (newStatus === TaskStatus.EN_ROUTE) {
+        stopTracking();
+      }
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToUpdateStatus'));
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   // Upload photos to report after completion
@@ -438,22 +442,22 @@ export default function TaskDetailScreen() {
     if (!task) return;
 
     if (!completionSummary.trim()) {
-      toast.warning('Required', 'Please enter a summary of the work completed.');
+      toast.warning(t('common.required'), t('taskDetail.completeTask.summaryRequired'));
       return;
     }
 
     if (!technicianSignature) {
-      toast.warning('Required', 'Technician signature is required.');
+      toast.warning(t('common.required'), t('taskDetail.completeTask.techSignatureRequired'));
       return;
     }
 
     if (!customerSignature) {
-      toast.warning('Required', 'Customer signature is required.');
+      toast.warning(t('common.required'), t('taskDetail.completeTask.customerSignatureRequired'));
       return;
     }
 
     if (!customerName.trim()) {
-      toast.warning('Required', 'Please enter the customer name.');
+      toast.warning(t('common.required'), t('taskDetail.completeTask.customerNameRequired'));
       return;
     }
 
@@ -501,9 +505,9 @@ export default function TaskDetailScreen() {
       setCustomerName('');
       setUploadProgress(new Map());
 
-      toast.success('Success', 'Job completed successfully!');
+      toast.success(t('common.success'), t('taskDetail.completeTask.successMessage'));
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to complete task');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToComplete'));
     } finally {
       setIsUpdating(false);
       setIsUploading(false);
@@ -537,7 +541,7 @@ export default function TaskDetailScreen() {
         });
       } catch (err) {
         console.warn(`[Attachments] Failed to upload photo ${i}:`, err);
-        toast.error('Error', `Failed to upload ${photo.fileName}`);
+        toast.error(t('common.error'), t('taskDetail.failedToDelete'));
       }
     }
     // Refresh attachments
@@ -552,21 +556,21 @@ export default function TaskDetailScreen() {
   // Delete a task attachment
   const handleDeleteTaskAttachment = (attachmentId: string, fileName: string) => {
     if (!task) return;
-    Alert.alert('Delete Attachment', `Delete "${fileName}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await taskAttachmentsApi.delete(task.id, attachmentId);
-            setTaskAttachments(prev => prev.filter(a => a.id !== attachmentId));
-          } catch (err) {
-            toast.error('Error', err instanceof Error ? err.message : 'Failed to delete');
-          }
-        },
-      },
-    ]);
+    setDeleteAttachmentTarget({ id: attachmentId, fileName });
+    setShowDeleteAttachmentConfirm(true);
+  };
+
+  const confirmDeleteAttachment = async () => {
+    if (!task || !deleteAttachmentTarget) return;
+    const { id: attachmentId } = deleteAttachmentTarget;
+    setShowDeleteAttachmentConfirm(false);
+    setDeleteAttachmentTarget(null);
+    try {
+      await taskAttachmentsApi.delete(task.id, attachmentId);
+      setTaskAttachments(prev => prev.filter(a => a.id !== attachmentId));
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDelete'));
+    }
   };
 
   const handleBlockSubmit = async () => {
@@ -578,7 +582,7 @@ export default function TaskDetailScreen() {
       setTask(updatedTask);
       setBlockReason('');
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to report issue');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToReportIssue'));
     } finally {
       setIsUpdating(false);
     }
@@ -586,30 +590,22 @@ export default function TaskDetailScreen() {
 
   const handleDeclineTask = () => {
     if (!task) return;
+    setShowDeclineConfirm(true);
+  };
 
-    Alert.alert(
-      'Decline Job',
-      'Are you sure you want to decline this job? It will be returned to the dispatcher for reassignment.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Decline',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsUpdating(true);
-              await tasksApi.declineTask(task.id);
-              toast.info('Job Declined', 'The job has been returned for reassignment.');
-              router.back();
-            } catch (err) {
-              toast.error('Error', err instanceof Error ? err.message : 'Failed to decline job');
-            } finally {
-              setIsUpdating(false);
-            }
-          },
-        },
-      ]
-    );
+  const confirmDeclineTask = async () => {
+    if (!task) return;
+    setShowDeclineConfirm(false);
+    try {
+      setIsUpdating(true);
+      await tasksApi.declineTask(task.id);
+      toast.info(t('taskDetail.declineTask.successTitle'), t('taskDetail.declineTask.successMessage'));
+      router.back();
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDecline'));
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleOpenMaps = () => {
@@ -638,9 +634,9 @@ export default function TaskDetailScreen() {
       setShowAssignModal(false);
       const updatedTask = await tasksApi.assign(task.id, technician.id);
       setTask(updatedTask);
-      toast.success('Success', `Assigned to ${technician.firstName} ${technician.lastName}`);
+      toast.success(t('common.success'), t('taskDetail.assignedSuccess', { firstName: technician.firstName, lastName: technician.lastName }));
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to assign');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAssign'));
     } finally {
       setIsUpdating(false);
     }
@@ -659,7 +655,7 @@ export default function TaskDetailScreen() {
   // Admin: Submit edit
   const handleEditSubmit = async () => {
     if (!task || !editTitle.trim()) {
-      toast.warning('Required', 'Title is required.');
+      toast.warning(t('common.required'), t('taskDetail.titleRequired'));
       return;
     }
     try {
@@ -674,7 +670,7 @@ export default function TaskDetailScreen() {
       const updatedTask = await tasksApi.update(task.id, input);
       setTask(updatedTask);
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to update');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToUpdate'));
     } finally {
       setIsUpdating(false);
     }
@@ -683,24 +679,21 @@ export default function TaskDetailScreen() {
   // Admin: Cancel task
   const handleCancelTask = () => {
     if (!task) return;
-    Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Cancel Task',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            setIsUpdating(true);
-            const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.CANCELED);
-            setTask(updatedTask);
-          } catch (err) {
-            toast.error('Error', err instanceof Error ? err.message : 'Failed to cancel');
-          } finally {
-            setIsUpdating(false);
-          }
-        },
-      },
-    ]);
+    setShowCancelTaskConfirm(true);
+  };
+
+  const confirmCancelTask = async () => {
+    if (!task) return;
+    setShowCancelTaskConfirm(false);
+    try {
+      setIsUpdating(true);
+      const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.CANCELED);
+      setTask(updatedTask);
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToCancel'));
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   if (isLoading) {
@@ -736,12 +729,12 @@ export default function TaskDetailScreen() {
             <View style={[styles.errorContainer, { backgroundColor: colors.surface }]}>
               <Stack.Screen options={{ headerShown: false }} />
               <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-              <Text style={[styles.errorText, { color: colors.textMuted }]}>{error || 'Task not found'}</Text>
+              <Text style={[styles.errorText, { color: colors.textMuted }]}>{error || t('taskDetail.taskNotFound')}</Text>
               <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-                <Text style={styles.retryButtonText}>Retry</Text>
+                <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.backButton} onPress={handleClose}>
-                <Text style={styles.backButtonText}>Go Back</Text>
+                <Text style={styles.backButtonText}>{t('taskDetail.goBack')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -783,7 +776,7 @@ export default function TaskDetailScreen() {
     >
       {/* Header */}
       <View style={[styles.sheetHeader, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>Task Details</Text>
+        <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>{t('taskDetail.title')}</Text>
         <TouchableOpacity onPress={handleClose}>
           <Ionicons name="close" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -797,11 +790,11 @@ export default function TaskDetailScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Report Issue</Text>
-            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>What's blocking this task? (optional)</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('taskDetail.blockTask.title')}</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>{t('taskDetail.blockTask.subtitle')}</Text>
             <TextInput
               style={[styles.reasonInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="e.g., Waiting for parts, Customer unavailable..."
+              placeholder={t('taskDetail.blockTask.placeholder')}
               placeholderTextColor={colors.textMuted}
               value={blockReason}
               onChangeText={setBlockReason}
@@ -817,7 +810,7 @@ export default function TaskDetailScreen() {
                   setBlockReason('');
                 }}
               >
-                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalSubmitButton, isUpdating && styles.buttonDisabled]}
@@ -827,7 +820,7 @@ export default function TaskDetailScreen() {
                 {isUpdating ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Text style={styles.modalSubmitText}>Report Issue</Text>
+                  <Text style={styles.modalSubmitText}>{t('taskDetail.blockTask.submitButton')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -857,9 +850,9 @@ export default function TaskDetailScreen() {
                 setCustomerName('');
               }}
             >
-              <Text style={styles.completionSheetCancelText}>Cancel</Text>
+              <Text style={styles.completionSheetCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={[styles.completionSheetTitle, { color: colors.textPrimary }]}>Complete Job</Text>
+            <Text style={[styles.completionSheetTitle, { color: colors.textPrimary }]}>{t('taskDetail.completeTask.title')}</Text>
             <View style={{ width: 60 }} />
           </View>
 
@@ -875,17 +868,17 @@ export default function TaskDetailScreen() {
                 <Ionicons name="time-outline" size={22} color={COLORS.primary} />
               </View>
               <View>
-                <Text style={[styles.completionDurationLabel, { color: colors.textMuted }]}>Work Duration</Text>
+                <Text style={[styles.completionDurationLabel, { color: colors.textMuted }]}>{t('taskDetail.completeTask.workDuration')}</Text>
                 <Text style={[styles.completionDurationValue, { color: colors.textPrimary }]}>{formatElapsedTime(elapsedTime)}</Text>
               </View>
             </View>
 
             {/* Summary Section */}
             <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
-              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Summary *</Text>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>{t('taskDetail.completeTask.summaryLabel')}</Text>
               <TextInput
                 style={[styles.completionTextInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
-                placeholder="Brief summary of work completed..."
+                placeholder={t('taskDetail.completeTask.summaryPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 value={completionSummary}
                 onChangeText={setCompletionSummary}
@@ -896,10 +889,10 @@ export default function TaskDetailScreen() {
 
             {/* Work Details Section */}
             <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
-              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Work Details</Text>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>{t('taskDetail.completeTask.workDetailsLabel')}</Text>
               <TextInput
                 style={[styles.completionTextInput, { minHeight: 100, backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
-                placeholder="Detailed description of work performed..."
+                placeholder={t('taskDetail.completeTask.workDetailsPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 value={completionDetails}
                 onChangeText={setCompletionDetails}
@@ -910,7 +903,7 @@ export default function TaskDetailScreen() {
 
             {/* Photos Section */}
             <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
-              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Photos</Text>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>{t('taskDetail.completeTask.photosLabel')}</Text>
               <PhotoGrid
                 photos={beforePhotos}
                 type="BEFORE"
@@ -956,25 +949,25 @@ export default function TaskDetailScreen() {
 
             {/* Signatures Section */}
             <View style={[styles.completionSection, { backgroundColor: colors.card }]}>
-              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Signatures</Text>
+              <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>{t('taskDetail.completeTask.signaturesLabel')}</Text>
               <SignatureCapture
-                title="Technician Signature *"
+                title={t('taskDetail.completeTask.technicianSignature')}
                 onSave={setTechnicianSignature}
                 onClear={() => setTechnicianSignature('')}
                 existingSignature={technicianSignature}
               />
               <View style={{ height: SPACING.md }} />
               <SignatureCapture
-                title="Customer Signature *"
+                title={t('taskDetail.completeTask.customerSignature')}
                 onSave={setCustomerSignature}
                 onClear={() => setCustomerSignature('')}
                 existingSignature={customerSignature}
               />
               <View style={{ marginTop: SPACING.md }}>
-                <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>Customer Name *</Text>
+                <Text style={[styles.completionSectionTitle, { color: colors.textMuted }]}>{t('taskDetail.completeTask.customerNameLabel')}</Text>
                 <TextInput
                   style={[styles.completionTextInput, { minHeight: 44, backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="Customer name..."
+                  placeholder={t('taskDetail.completeTask.customerNamePlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   value={customerName}
                   onChangeText={setCustomerName}
@@ -998,7 +991,7 @@ export default function TaskDetailScreen() {
               ) : (
                 <>
                   <Ionicons name="checkmark-circle" size={22} color="white" />
-                  <Text style={styles.completionSheetSubmitText}>Complete Job</Text>
+                  <Text style={styles.completionSheetSubmitText}>{t('taskDetail.completeTask.submitButton')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -1023,30 +1016,30 @@ export default function TaskDetailScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.completionModalContent, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Task</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('taskDetail.editTask.title')}</Text>
 
-            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Title *</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>{t('taskDetail.editTask.titleLabel')}</Text>
             <TextInput
               style={[styles.summaryInput, { borderColor: colors.border, color: colors.textPrimary }]}
               value={editTitle}
               onChangeText={setEditTitle}
-              placeholder="Task title"
+              placeholder={t('taskDetail.editTask.titlePlaceholder')}
               placeholderTextColor={colors.textMuted}
               maxLength={200}
             />
 
-            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Description</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>{t('taskDetail.editTask.descriptionLabel')}</Text>
             <TextInput
               style={[styles.detailsInput, { borderColor: colors.border, color: colors.textPrimary }]}
               value={editDescription}
               onChangeText={setEditDescription}
-              placeholder="Task description"
+              placeholder={t('taskDetail.editTask.descriptionPlaceholder')}
               placeholderTextColor={colors.textMuted}
               multiline
               maxLength={1000}
             />
 
-            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Priority</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>{t('taskDetail.editTask.priorityLabel')}</Text>
             <View style={adminDetailStyles.editPriorityRow}>
               {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((p) => {
                 const pStyle = getPriorityStyle(p, colors);
@@ -1074,12 +1067,12 @@ export default function TaskDetailScreen() {
               })}
             </View>
 
-            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>Location</Text>
+            <Text style={[adminDetailStyles.editLabel, { color: colors.textSecondary }]}>{t('taskDetail.editTask.locationLabel')}</Text>
             <TextInput
               style={[styles.summaryInput, { minHeight: 44, borderColor: colors.border, color: colors.textPrimary }]}
               value={editLocation}
               onChangeText={setEditLocation}
-              placeholder="Address"
+              placeholder={t('taskDetail.editTask.locationPlaceholder')}
               placeholderTextColor={colors.textMuted}
               maxLength={300}
             />
@@ -1089,7 +1082,7 @@ export default function TaskDetailScreen() {
                 style={[styles.modalCancelButton, { backgroundColor: colors.surfaceRaised }]}
                 onPress={() => setShowEditModal(false)}
               >
-                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.completionSubmitButton, { backgroundColor: COLORS.primary }, isUpdating && styles.buttonDisabled]}
@@ -1099,7 +1092,7 @@ export default function TaskDetailScreen() {
                 {isUpdating ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Text style={styles.completionSubmitText}>Save Changes</Text>
+                  <Text style={styles.completionSubmitText}>{t('taskDetail.editTask.saveButton')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -1113,7 +1106,7 @@ export default function TaskDetailScreen() {
         {/* Section 1: Hero Status Card */}
         <View style={[styles.heroCard, { backgroundColor: colors.card }]}>
           <View style={styles.heroHeader}>
-            <Text style={[styles.heroJobId, { color: colors.textMuted }]}>JOB #{jobId}</Text>
+            <Text style={[styles.heroJobId, { color: colors.textMuted }]}>{t('taskDetail.jobId', { id: jobId })}</Text>
             <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
               <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
                 {statusStyle.label}
@@ -1140,7 +1133,7 @@ export default function TaskDetailScreen() {
         {/* Section 2: Compact Progress Dots (Technician only) */}
         {!isAdmin && progressIndex >= 0 && (
           <View style={[styles.progressCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.progressLabel, { color: colors.textMuted }]}>PROGRESS</Text>
+            <Text style={[styles.progressLabel, { color: colors.textMuted }]}>{t('taskDetail.progress')}</Text>
             <View style={styles.progressDotsRow}>
               {PROGRESS_STEPS.map((step, index) => {
                 const isCompleted = index < progressIndex;
@@ -1177,7 +1170,7 @@ export default function TaskDetailScreen() {
 
         {/* Section 3: Info Rows Card */}
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>DETAILS</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('taskDetail.details')}</Text>
 
           {/* Created by */}
           {task.createdBy && (
@@ -1186,7 +1179,7 @@ export default function TaskDetailScreen() {
                 <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
               </View>
               <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Created by</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('taskDetail.infoLabels.createdBy')}</Text>
                 <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
                   {task.createdBy.firstName} {task.createdBy.lastName}
                 </Text>
@@ -1206,11 +1199,11 @@ export default function TaskDetailScreen() {
                 <Ionicons name="person" size={16} color={task.assignedTo ? COLORS.primary : COLORS.warning} />
               </View>
               <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Assigned to</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('taskDetail.infoLabels.assignedTo')}</Text>
                 <Text style={[styles.infoValue, { color: colors.textPrimary }, !task.assignedTo && { color: COLORS.warning }]}>
                   {task.assignedTo
                     ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
-                    : 'Unassigned'}
+                    : t('common.unassigned')}
                 </Text>
               </View>
             </View>
@@ -1223,11 +1216,11 @@ export default function TaskDetailScreen() {
                 <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
               </View>
               <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Location</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('taskDetail.infoLabels.location')}</Text>
                 <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{task.locationAddress}</Text>
                 <TouchableOpacity onPress={handleOpenMaps}>
                   <View style={styles.openMapsLink}>
-                    <Text style={styles.openMapsText}>Open in Maps</Text>
+                    <Text style={styles.openMapsText}>{t('taskDetail.openInMaps')}</Text>
                     <Ionicons name="open-outline" size={14} color={COLORS.primary} />
                   </View>
                 </TouchableOpacity>
@@ -1239,7 +1232,7 @@ export default function TaskDetailScreen() {
         {/* Section 4: Description Card */}
         {task.description ? (
           <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>DESCRIPTION</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('taskDetail.description')}</Text>
             <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{task.description}</Text>
           </View>
         ) : null}
@@ -1247,7 +1240,7 @@ export default function TaskDetailScreen() {
         {/* Section 5: Location Card */}
         {task.locationLat && task.locationLng ? (
           <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>LOCATION</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('taskDetail.location')}</Text>
             <TouchableOpacity
               style={styles.mapContainer}
               onPress={() => {
@@ -1278,7 +1271,7 @@ export default function TaskDetailScreen() {
                     latitude: task.locationLat,
                     longitude: task.locationLng,
                   }}
-                  title={task.locationAddress || 'Task Location'}
+                  title={task.locationAddress || t('taskDetail.infoLabels.location')}
                 />
               </MapView>
             </TouchableOpacity>
@@ -1286,7 +1279,7 @@ export default function TaskDetailScreen() {
             {!isAdmin && [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE].includes(task.status) && (
               <TouchableOpacity style={styles.navigationButton} onPress={handleStartNavigation}>
                 <Ionicons name="navigate" size={20} color="white" />
-                <Text style={styles.navigationButtonText}>Start Navigation</Text>
+                <Text style={styles.navigationButtonText}>{t('taskDetail.startNavigation')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -1296,7 +1289,7 @@ export default function TaskDetailScreen() {
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <View style={styles.attachmentsHeader}>
             <Text style={[styles.sectionTitleInline, { color: colors.textMuted }]}>
-              ATTACHMENTS{taskAttachments.length > 0 ? ` (${taskAttachments.length})` : ''}
+              {taskAttachments.length > 0 ? t('taskDetail.attachmentsCount', { count: taskAttachments.length }) : t('taskDetail.attachments')}
             </Text>
             <View style={styles.attachmentUploadRow}>
               <TouchableOpacity
@@ -1325,7 +1318,7 @@ export default function TaskDetailScreen() {
           {isUploadingTaskAttachment && (
             <View style={styles.attachmentUploadProgress}>
               <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.attachmentUploadText}>Uploading...</Text>
+              <Text style={styles.attachmentUploadText}>{t('common.uploading')}</Text>
             </View>
           )}
 
@@ -1361,8 +1354,8 @@ export default function TaskDetailScreen() {
           ) : (
             <View style={styles.attachmentEmptyState}>
               <Ionicons name="cloud-upload-outline" size={28} color={colors.textMuted} />
-              <Text style={[styles.attachmentEmptyText, { color: colors.textMuted }]}>No attachments yet</Text>
-              <Text style={[styles.attachmentEmptyHint, { color: colors.textMuted }]}>Tap camera or gallery to add</Text>
+              <Text style={[styles.attachmentEmptyText, { color: colors.textMuted }]}>{t('taskDetail.attachmentActions.noAttachments')}</Text>
+              <Text style={[styles.attachmentEmptyHint, { color: colors.textMuted }]}>{t('taskDetail.attachmentActions.tapToAdd')}</Text>
             </View>
           )}
         </View>
@@ -1370,7 +1363,7 @@ export default function TaskDetailScreen() {
         {/* Section 7: Comments */}
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
-            COMMENTS{comments.length > 0 ? ` (${comments.length})` : ''}
+            {comments.length > 0 ? t('taskDetail.commentsCount', { count: comments.length }) : t('taskDetail.comments')}
           </Text>
 
           {comments.length > 0 ? (
@@ -1397,14 +1390,14 @@ export default function TaskDetailScreen() {
             })
           ) : (
             <View style={styles.commentsEmpty}>
-              <Text style={[styles.commentsEmptyText, { color: colors.textMuted }]}>No comments yet</Text>
+              <Text style={[styles.commentsEmptyText, { color: colors.textMuted }]}>{t('taskDetail.commentInput.noComments')}</Text>
             </View>
           )}
 
           <View style={[styles.commentInputRow, { borderTopColor: colors.border }]}>
             <TextInput
               style={[styles.commentInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="Add a comment..."
+              placeholder={t('taskDetail.commentInput.placeholder')}
               placeholderTextColor={colors.textMuted}
               value={newComment}
               onChangeText={setNewComment}
@@ -1444,7 +1437,7 @@ export default function TaskDetailScreen() {
               >
                 <Ionicons name="person-add" size={18} color={COLORS.primary} />
                 <Text style={adminDetailStyles.adminActionBtnText}>
-                  {task.assignedToId ? 'Reassign' : 'Assign'}
+                  {task.assignedToId ? t('taskDetail.adminActions.reassign') : t('taskDetail.adminActions.assign')}
                 </Text>
               </TouchableOpacity>
 
@@ -1454,7 +1447,7 @@ export default function TaskDetailScreen() {
                 disabled={isUpdating}
               >
                 <Ionicons name="create" size={18} color={COLORS.white} />
-                <Text style={[adminDetailStyles.adminActionBtnText, { color: COLORS.white }]}>Edit</Text>
+                <Text style={[adminDetailStyles.adminActionBtnText, { color: COLORS.white }]}>{t('taskDetail.adminActions.edit')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1463,7 +1456,7 @@ export default function TaskDetailScreen() {
                 disabled={isUpdating}
               >
                 <Ionicons name="close-circle" size={18} color={COLORS.error} />
-                <Text style={[adminDetailStyles.adminActionBtnText, { color: COLORS.error }]}>Cancel</Text>
+                <Text style={[adminDetailStyles.adminActionBtnText, { color: COLORS.error }]}>{t('taskDetail.adminActions.cancel')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -1497,7 +1490,7 @@ export default function TaskDetailScreen() {
                         isTracking && styles.trackingIndicatorTextActive,
                       ]}
                     >
-                      {isTracking ? 'Location Tracking Active' : 'Starting Tracking...'}
+                      {isTracking ? t('taskDetail.tracking.locationTrackingActive') : t('taskDetail.tracking.startingTracking')}
                     </Text>
                     {isTracking && (
                       <View style={styles.trackingPulse} />
@@ -1505,7 +1498,7 @@ export default function TaskDetailScreen() {
                   </View>
                   {locationError && (
                     <TouchableOpacity onPress={() => task && startTracking(task.id)} style={styles.retryTrackingButton}>
-                      <Text style={styles.retryTrackingText}>Retry</Text>
+                      <Text style={styles.retryTrackingText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1516,7 +1509,7 @@ export default function TaskDetailScreen() {
                 <View style={styles.futureDateBanner}>
                   <Ionicons name="calendar-outline" size={20} color={COLORS.amber} />
                   <Text style={styles.futureDateText}>
-                    This task is scheduled for {new Date(task.dueDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}. {task.status === TaskStatus.ASSIGNED ? 'You can accept it on the due date.' : 'You can start it on the due date.'}
+                    {t('taskDetail.futureTask.scheduledFor', { date: new Date(task.dueDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })} {task.status === TaskStatus.ASSIGNED ? t('taskDetail.futureTask.canAcceptOnDueDate') : t('taskDetail.futureTask.canStartOnDueDate')}
                   </Text>
                 </View>
               )}
@@ -1543,7 +1536,7 @@ export default function TaskDetailScreen() {
                       disabled={isUpdating}
                     >
                       <Ionicons name="close-circle-outline" size={20} color={COLORS.error} />
-                      <Text style={styles.declineButtonText}>Decline</Text>
+                      <Text style={styles.declineButtonText}>{t('taskDetail.statusActions.declineJob')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.finishButton, { backgroundColor: isFutureTask ? COLORS.slate300 : COLORS.success }]}
@@ -1555,7 +1548,7 @@ export default function TaskDetailScreen() {
                       ) : (
                         <>
                           <Ionicons name={isFutureTask ? 'time-outline' : 'checkmark-circle'} size={20} color="white" />
-                          <Text style={styles.finishButtonText}>{isFutureTask ? 'Scheduled for Later' : 'Accept Job'}</Text>
+                          <Text style={styles.finishButtonText}>{isFutureTask ? t('taskDetail.statusActions.scheduledForLater') : t('taskDetail.statusActions.acceptJob')}</Text>
                         </>
                       )}
                     </TouchableOpacity>
@@ -1572,7 +1565,7 @@ export default function TaskDetailScreen() {
                       <>
                         <Ionicons name={(isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE) ? 'time-outline' : statusAction.icon} size={20} color="white" />
                         <Text style={styles.finishButtonText}>
-                          {(isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE) ? 'Not Yet Available' : statusAction.label}
+                          {(isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE) ? t('taskDetail.statusActions.notYetAvailable') : statusAction.label}
                         </Text>
                       </>
                     )}
@@ -1585,6 +1578,52 @@ export default function TaskDetailScreen() {
       )}
     </KeyboardAvoidingView>
     </Animated.View>
+
+    <ConfirmSheet
+      visible={showStatusConfirm}
+      onClose={() => { setShowStatusConfirm(false); setPendingStatus(null); setPendingStatusReason(undefined); }}
+      onConfirm={confirmStatusUpdate}
+      title={t('taskDetail.updateStatus.confirmTitle')}
+      message={pendingStatus ? t('taskDetail.updateStatus.confirmMessage', { status: pendingStatus.replace('_', ' ') }) : ''}
+      confirmLabel={t('common.confirm')}
+      cancelLabel={t('common.cancel')}
+      variant={pendingStatus === 'CANCELED' ? 'danger' : 'info'}
+      icon={pendingStatus === 'CANCELED' ? 'close-circle' : 'swap-horizontal'}
+    />
+
+    <ConfirmSheet
+      visible={showDeclineConfirm}
+      onClose={() => setShowDeclineConfirm(false)}
+      onConfirm={confirmDeclineTask}
+      title={t('taskDetail.declineTask.title')}
+      message={t('taskDetail.declineTask.message')}
+      confirmLabel={t('taskDetail.declineTask.confirmButton')}
+      cancelLabel={t('common.cancel')}
+      variant="danger"
+    />
+
+    <ConfirmSheet
+      visible={showDeleteAttachmentConfirm}
+      onClose={() => { setShowDeleteAttachmentConfirm(false); setDeleteAttachmentTarget(null); }}
+      onConfirm={confirmDeleteAttachment}
+      title={t('taskDetail.attachmentActions.deleteTitle')}
+      message={deleteAttachmentTarget ? t('taskDetail.attachmentActions.deleteMessage', { fileName: deleteAttachmentTarget.fileName }) : ''}
+      confirmLabel={t('common.delete')}
+      cancelLabel={t('common.cancel')}
+      variant="danger"
+    />
+
+    <ConfirmSheet
+      visible={showCancelTaskConfirm}
+      onClose={() => setShowCancelTaskConfirm(false)}
+      onConfirm={confirmCancelTask}
+      title={t('taskDetail.cancelTask.title')}
+      message={t('taskDetail.cancelTask.message')}
+      confirmLabel={t('taskDetail.cancelTask.confirmButton')}
+      cancelLabel={t('common.no')}
+      variant="danger"
+    />
+
     </View>
   );
 }

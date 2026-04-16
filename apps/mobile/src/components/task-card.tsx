@@ -6,6 +6,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../lib/constants';
 import { getStatusStyle, getPriorityStyle } from '../lib/styles';
 import { formatTimeRange, formatRelativeDate } from '../lib/utils';
@@ -60,6 +61,7 @@ export function TaskCard({
   compact = false,
 }: TaskCardProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const statusStyle = getStatusStyle(task.status);
   const priorityStyle = task.priority ? getPriorityStyle(task.priority) : null;
 
@@ -135,7 +137,7 @@ export function TaskCard({
           >
             {task.assignedTo
               ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
-              : 'Unassigned'}
+              : t('components.taskCard.unassigned')}
           </Text>
         </View>
       )}

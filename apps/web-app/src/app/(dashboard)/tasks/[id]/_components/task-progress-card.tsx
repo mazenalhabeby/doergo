@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import {
   Check,
@@ -41,12 +42,12 @@ interface TaskProgressCardProps {
 
 // Step configuration with icons - 6 steps for clear visibility
 const STEPS = [
-  { key: "submitted", label: "Submitted", icon: ClipboardList },
-  { key: "assigned", label: "Assigned", icon: UserPlus },
-  { key: "confirmed", label: "Confirmed", icon: UserCheck },
-  { key: "en_route", label: "On The Way", icon: Car },
-  { key: "working", label: "Working", icon: Wrench },
-  { key: "completed", label: "Completed", icon: CircleCheck },
+  { key: "submitted", labelKey: "tasks.progress.steps.submitted", icon: ClipboardList },
+  { key: "assigned", labelKey: "tasks.progress.steps.assigned", icon: UserPlus },
+  { key: "confirmed", labelKey: "tasks.progress.steps.confirmed", icon: UserCheck },
+  { key: "en_route", labelKey: "tasks.progress.steps.enRoute", icon: Car },
+  { key: "working", labelKey: "tasks.progress.steps.working", icon: Wrench },
+  { key: "completed", labelKey: "tasks.progress.steps.completed", icon: CircleCheck },
 ]
 
 // Map task status to step index
@@ -142,6 +143,8 @@ export function TaskProgressCard({
   routeEndedAt,
   routeDistance,
 }: TaskProgressCardProps) {
+  const { t } = useTranslation()
+
   // Fetch timeline for real timestamps
   const { data: events } = useQuery({
     queryKey: ["taskTimeline", taskId],
@@ -157,8 +160,8 @@ export function TaskProgressCard({
     switch (taskStatus) {
       case "ASSIGNED":
         return {
-          label: "Pending",
-          sublabel: "Waiting for acceptance",
+          label: t("tasks.progress.status.pending"),
+          sublabel: t("tasks.progress.status.waitingForAcceptance"),
           color: "text-amber-600",
           bgColor: "bg-amber-50",
           dotColor: "bg-amber-500",
@@ -166,8 +169,8 @@ export function TaskProgressCard({
         }
       case "ACCEPTED":
         return {
-          label: "Accepted",
-          sublabel: "Ready to start",
+          label: t("tasks.progress.status.accepted"),
+          sublabel: t("tasks.progress.status.readyToStart"),
           color: "text-blue-600",
           bgColor: "bg-blue-50",
           dotColor: "bg-blue-500",
@@ -175,8 +178,8 @@ export function TaskProgressCard({
         }
       case "EN_ROUTE":
         return {
-          label: "On the way",
-          sublabel: "Heading to location",
+          label: t("tasks.progress.status.onTheWay"),
+          sublabel: t("tasks.progress.status.headingToLocation"),
           color: "text-blue-600",
           bgColor: "bg-blue-50",
           dotColor: "bg-blue-500",
@@ -184,8 +187,8 @@ export function TaskProgressCard({
         }
       case "ARRIVED":
         return {
-          label: "On site",
-          sublabel: "Has arrived",
+          label: t("tasks.progress.status.onSite"),
+          sublabel: t("tasks.progress.status.hasArrived"),
           color: "text-green-600",
           bgColor: "bg-green-50",
           dotColor: "bg-green-500",
@@ -193,8 +196,8 @@ export function TaskProgressCard({
         }
       case "IN_PROGRESS":
         return {
-          label: "Working",
-          sublabel: "In progress",
+          label: t("tasks.progress.status.working"),
+          sublabel: t("tasks.progress.status.inProgress"),
           color: "text-amber-600",
           bgColor: "bg-amber-50",
           dotColor: "bg-amber-500",
@@ -203,8 +206,8 @@ export function TaskProgressCard({
       case "COMPLETED":
       case "CLOSED":
         return {
-          label: "Completed",
-          sublabel: "Job finished",
+          label: t("tasks.progress.status.completed"),
+          sublabel: t("tasks.progress.status.jobFinished"),
           color: "text-green-600",
           bgColor: "bg-green-50",
           dotColor: "bg-green-500",
@@ -212,8 +215,8 @@ export function TaskProgressCard({
         }
       case "BLOCKED":
         return {
-          label: "Blocked",
-          sublabel: "Needs attention",
+          label: t("tasks.progress.status.blocked"),
+          sublabel: t("tasks.progress.status.needsAttention"),
           color: "text-red-600",
           bgColor: "bg-red-50",
           dotColor: "bg-red-500",
@@ -221,8 +224,8 @@ export function TaskProgressCard({
         }
       default:
         return {
-          label: "Assigned",
-          sublabel: "Waiting to start",
+          label: t("tasks.progress.status.assigned"),
+          sublabel: t("tasks.progress.status.waitingToStart"),
           color: "text-slate-600",
           bgColor: "bg-slate-50",
           dotColor: "bg-slate-400",
@@ -253,13 +256,13 @@ export function TaskProgressCard({
 
   // Get title based on status
   const getTitle = () => {
-    if (isCompleted) return "Service Completed Successfully"
-    if (taskStatus === "BLOCKED") return "Service Requires Attention"
-    if (taskStatus === "ASSIGNED") return "Awaiting Technician Acceptance"
-    if (taskStatus === "ACCEPTED") return "Technician Accepted - Ready to Start"
-    if (taskStatus === "EN_ROUTE") return "Technician is On The Way"
-    if (taskStatus === "ARRIVED" || taskStatus === "IN_PROGRESS") return "Work in Progress"
-    return "Your Service Request is Active"
+    if (isCompleted) return t("tasks.progress.serviceCompletedSuccessfully")
+    if (taskStatus === "BLOCKED") return t("tasks.progress.serviceRequiresAttention")
+    if (taskStatus === "ASSIGNED") return t("tasks.progress.awaitingTechnicianAcceptance")
+    if (taskStatus === "ACCEPTED") return t("tasks.progress.technicianAcceptedReadyToStart")
+    if (taskStatus === "EN_ROUTE") return t("tasks.progress.technicianIsOnTheWay")
+    if (taskStatus === "ARRIVED" || taskStatus === "IN_PROGRESS") return t("tasks.progress.workInProgress")
+    return t("tasks.progress.yourServiceRequestIsActive")
   }
 
   return (
@@ -341,7 +344,7 @@ export function TaskProgressCard({
                         isComplete || isActive ? "text-slate-900" : "text-slate-400"
                       )}
                     >
-                      {step.label}
+                      {t(step.labelKey)}
                     </span>
 
                     {/* Timestamp */}
@@ -359,7 +362,7 @@ export function TaskProgressCard({
           {/* Technician Card - 30% */}
           <div className="w-[30%] border-l border-slate-100 pl-6">
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-4">
-              Assigned Technician
+              {t("tasks.progress.assignedTechnician")}
             </p>
 
             {/* Two column layout */}
@@ -378,7 +381,7 @@ export function TaskProgressCard({
                       {assignedTo.firstName} {assignedTo.lastName}
                     </p>
                     <p className="text-[11px] text-slate-500 truncate">
-                      {assignedTo.specialty || "Field Technician"}
+                      {assignedTo.specialty || t("tasks.progress.fieldTechnician")}
                     </p>
                   </div>
                 </div>
@@ -410,22 +413,22 @@ export function TaskProgressCard({
                 {estimatedArrival ? (
                   <div className="flex items-center gap-1 text-[11px] text-slate-500">
                     <Clock className="size-3" />
-                    <span>Arrives in {estimatedArrival}</span>
+                    <span>{estimatedArrival === "Any moment" ? t("tasks.progress.eta.anyMoment") : t("tasks.progress.eta.arrivesIn", { time: estimatedArrival })}</span>
                   </div>
                 ) : taskStatus === "ASSIGNED" ? (
                   <div className="flex items-center gap-1 text-[11px] text-amber-600">
                     <Clock className="size-3" />
-                    <span>Awaiting response</span>
+                    <span>{t("tasks.progress.eta.awaitingResponse")}</span>
                   </div>
                 ) : taskStatus === "ARRIVED" || taskStatus === "IN_PROGRESS" ? (
                   <div className="flex items-center gap-1 text-[11px] text-green-600">
                     <MapPin className="size-3" />
-                    <span>At your location</span>
+                    <span>{t("tasks.progress.eta.atYourLocation")}</span>
                   </div>
                 ) : taskStatus === "COMPLETED" || taskStatus === "CLOSED" ? (
                   <div className="flex items-center gap-1 text-[11px] text-slate-500">
                     <CircleCheck className="size-3" />
-                    <span>Job completed</span>
+                    <span>{t("tasks.progress.eta.jobCompleted")}</span>
                   </div>
                 ) : (
                   <p className="text-[11px] text-slate-400">{statusInfo.sublabel}</p>
@@ -449,7 +452,7 @@ export function TaskProgressCard({
                 )}
               >
                 <Phone className="size-4" />
-                <span className="text-sm font-medium">Call</span>
+                <span className="text-sm font-medium">{t("tasks.progress.call")}</span>
               </button>
               <button
                 onClick={() => {
@@ -465,7 +468,7 @@ export function TaskProgressCard({
                 )}
               >
                 <MessageSquare className="size-4" />
-                <span className="text-sm font-medium">Message</span>
+                <span className="text-sm font-medium">{t("tasks.progress.message")}</span>
               </button>
             </div>
           </div>

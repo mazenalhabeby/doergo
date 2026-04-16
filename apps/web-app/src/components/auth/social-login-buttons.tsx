@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface SocialLoginButtonsProps {
@@ -15,6 +16,7 @@ export function SocialLoginButtons({
   isMobile = false,
   transitionDelay = '0s',
 }: SocialLoginButtonsProps) {
+  const { t } = useTranslation();
   const buttonHeight = isMobile ? 'h-9 sm:h-10' : 'h-10 sm:h-11';
 
   return (
@@ -32,7 +34,7 @@ export function SocialLoginButtons({
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-white px-3 text-slate-400 font-medium">
-            or continue with
+            {t('common.orContinueWith')}
           </span>
         </div>
       </div>
@@ -54,7 +56,7 @@ export function SocialLoginButtons({
           )}
         >
           <GoogleIcon />
-          <span className="hidden sm:inline">Google</span>
+          <span className="hidden sm:inline">{t('common.google')}</span>
         </button>
         <button
           type="button"
@@ -65,7 +67,7 @@ export function SocialLoginButtons({
           )}
         >
           <GitHubIcon />
-          <span className="hidden sm:inline">GitHub</span>
+          <span className="hidden sm:inline">{t('common.github')}</span>
         </button>
       </div>
     </>

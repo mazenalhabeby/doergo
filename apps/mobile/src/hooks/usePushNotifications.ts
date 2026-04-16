@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { pushApi } from '../lib/api';
+
+const PUSH_TOKEN_CACHE_KEY = 'hbcfield_push_token_registered';
 
 // Configure how notifications appear when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -103,6 +106,18 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       // Determine platform
       const platform = Platform.OS as 'ios' | 'android';
 
+      // Skip registration if token hasn't changed (avoid redundant API call)
+      const cachedToken = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
+      if (cachedToken === token && currentTokenRef.current === token) {
+        setState((prev) => ({
+          ...prev,
+          expoPushToken: token,
+          isRegistered: true,
+          error: null,
+        }));
+        return token;
+      }
+
       // Register token with backend
       try {
         await pushApi.registerToken({
@@ -112,6 +127,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
         });
 
         currentTokenRef.current = token;
+        await AsyncStorage.setItem(PUSH_TOKEN_CACHE_KEY, token);
         setState((prev) => ({
           ...prev,
           expoPushToken: token,
@@ -150,6 +166,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     }
 
     currentTokenRef.current = null;
+    await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY);
     setState((prev) => ({
       ...prev,
       expoPushToken: null,

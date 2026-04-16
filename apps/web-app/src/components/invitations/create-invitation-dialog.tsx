@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Copy, Check } from "lucide-react"
 import { toast } from "sonner"
@@ -26,12 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const EXPIRY_OPTIONS = [
-  { value: "24", label: "24 hours" },
-  { value: "48", label: "48 hours" },
-  { value: "72", label: "3 days" },
-  { value: "168", label: "7 days" },
-  { value: "720", label: "30 days" },
+const EXPIRY_OPTIONS_KEYS = [
+  { value: "24", labelKey: "invitations.createDialog.expiry.24hours" },
+  { value: "48", labelKey: "invitations.createDialog.expiry.48hours" },
+  { value: "72", labelKey: "invitations.createDialog.expiry.3days" },
+  { value: "168", labelKey: "invitations.createDialog.expiry.7days" },
+  { value: "720", labelKey: "invitations.createDialog.expiry.30days" },
 ] as const
 
 const SPECIALTY_OPTIONS = [
@@ -52,6 +53,7 @@ export function CreateInvitationDialog({
   open,
   onOpenChange,
 }: CreateInvitationDialogProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
@@ -74,7 +76,7 @@ export function CreateInvitationDialog({
     onSuccess: (data) => {
       setGeneratedCode(data?.code || null)
       queryClient.invalidateQueries({ queryKey: ["invitations"] })
-      toast.success("Invitation created successfully")
+      toast.success(t("invitations.createDialog.createdSuccessfully"))
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create invitation")
@@ -101,7 +103,7 @@ export function CreateInvitationDialog({
     if (!generatedCode) return
     await navigator.clipboard.writeText(generatedCode)
     setCopied(true)
-    toast.success("Code copied to clipboard")
+    toast.success(t("common.codeCopiedToClipboard"))
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -127,10 +129,9 @@ export function CreateInvitationDialog({
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Invitation Created</DialogTitle>
+            <DialogTitle>{t("invitations.createDialog.successTitle")}</DialogTitle>
             <DialogDescription>
-              Share this code with the person you want to invite. They will use it
-              during registration on the mobile app.
+              {t("invitations.createDialog.successDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -153,13 +154,13 @@ export function CreateInvitationDialog({
               </Button>
             </div>
             <p className="text-sm text-slate-500 text-center">
-              This code will only be shown once. Make sure to copy it now.
+              {t("invitations.createDialog.codeOnlyShownOnce")}
             </p>
           </div>
 
           <DialogFooter>
             <Button onClick={handleClose} className="w-full">
-              Done
+              {t("common.done")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -171,19 +172,19 @@ export function CreateInvitationDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Invitation</DialogTitle>
+          <DialogTitle>{t("invitations.createDialog.title")}</DialogTitle>
           <DialogDescription>
-            Generate an invitation code to add a new member to your organization.
+            {t("invitations.createDialog.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Target Role */}
           <div className="space-y-2">
-            <Label>Role</Label>
+            <Label>{t("invitations.createDialog.roleLabel")}</Label>
             {isDispatcher ? (
               <div className="flex items-center h-9 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-700">
-                Technician
+                {t("members.roles.technician")}
               </div>
             ) : (
               <Select
@@ -194,8 +195,8 @@ export function CreateInvitationDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="TECHNICIAN">Technician</SelectItem>
-                  <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
+                  <SelectItem value="TECHNICIAN">{t("members.roles.technician")}</SelectItem>
+                  <SelectItem value="DISPATCHER">{t("members.roles.dispatcher")}</SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -203,15 +204,15 @@ export function CreateInvitationDialog({
 
           {/* Expiry */}
           <div className="space-y-2">
-            <Label>Expires In</Label>
+            <Label>{t("invitations.createDialog.expiresInLabel")}</Label>
             <Select value={expiresInHours} onValueChange={setExpiresInHours}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {EXPIRY_OPTIONS.map((option) => (
+                {EXPIRY_OPTIONS_KEYS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -222,36 +223,36 @@ export function CreateInvitationDialog({
           {targetRole === "TECHNICIAN" && (
             <>
               <div className="space-y-2">
-                <Label>Employment Type</Label>
+                <Label>{t("invitations.createDialog.employmentTypeLabel")}</Label>
                 <Select value={technicianType} onValueChange={setTechnicianType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type (optional)" />
+                    <SelectValue placeholder={t("invitations.createDialog.selectTypePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={TechnicianType.FULL_TIME}>Full-Time</SelectItem>
-                    <SelectItem value={TechnicianType.FREELANCER}>Freelancer</SelectItem>
+                    <SelectItem value={TechnicianType.FULL_TIME}>{t("technicians.types.fullTime")}</SelectItem>
+                    <SelectItem value={TechnicianType.FREELANCER}>{t("technicians.types.freelancer")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Work Mode</Label>
+                <Label>{t("invitations.createDialog.workModeLabel")}</Label>
                 <Select value={workMode} onValueChange={setWorkMode}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select work mode (optional)" />
+                    <SelectValue placeholder={t("invitations.createDialog.selectWorkModePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={WorkMode.HYBRID}>Hybrid</SelectItem>
-                    <SelectItem value={WorkMode.ON_SITE}>On-Site</SelectItem>
-                    <SelectItem value={WorkMode.ON_ROAD}>On-Road</SelectItem>
+                    <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                    <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>
+                    <SelectItem value={WorkMode.ON_ROAD}>{t("technicians.workModes.onRoad")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Job Title</Label>
+                <Label>{t("invitations.createDialog.jobTitleLabel")}</Label>
                 <Input
-                  placeholder="e.g. Electrician, Plumber..."
+                  placeholder={t("invitations.createDialog.jobTitlePlaceholder")}
                   value={specialty}
                   onChange={(e) => setSpecialty(e.target.value)}
                   list="invitation-specialty-suggestions"
@@ -264,10 +265,10 @@ export function CreateInvitationDialog({
               </div>
 
               <div className="space-y-2">
-                <Label>Max Daily Jobs</Label>
+                <Label>{t("invitations.createDialog.maxDailyJobsLabel")}</Label>
                 <Input
                   type="number"
-                  placeholder="e.g. 5 (optional)"
+                  placeholder={t("invitations.createDialog.maxDailyJobsPlaceholder")}
                   value={maxDailyJobs}
                   onChange={(e) => setMaxDailyJobs(e.target.value)}
                   min={1}
@@ -280,13 +281,13 @@ export function CreateInvitationDialog({
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={createMutation.isPending}
           >
-            {createMutation.isPending ? "Creating..." : "Create Invitation"}
+            {createMutation.isPending ? t("common.creating") : t("invitations.createDialog.createButton")}
           </Button>
         </DialogFooter>
       </DialogContent>

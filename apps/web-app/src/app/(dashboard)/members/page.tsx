@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import {
@@ -95,6 +96,7 @@ const DEFAULT_PERMISSIONS: Record<
 }
 
 export default function MembersPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
@@ -141,7 +143,7 @@ export default function MembersPage() {
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setEditTarget(null)
       setTempPassword(null)
-      toast.success("Member updated successfully")
+      toast.success(t("members.editDialog.updatedSuccessfully"))
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to update member")
@@ -167,7 +169,7 @@ export default function MembersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setRemoveTarget(null)
-      toast.success("Member removed from organization")
+      toast.success(t("members.removeDialog.removedSuccessfully"))
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to remove member")
@@ -222,7 +224,7 @@ export default function MembersPage() {
     if (!tempPassword) return
     await navigator.clipboard.writeText(tempPassword)
     setCopied(true)
-    toast.success("Password copied to clipboard")
+    toast.success(t("common.passwordCopiedToClipboard"))
     setTimeout(() => setCopied(false), 3000)
   }
 
@@ -237,10 +239,10 @@ export default function MembersPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                Organization Members
+                {t("members.title")}
               </h1>
               <p className="mt-1.5 text-slate-500">
-                Manage your team members, roles, and permissions
+                {t("members.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -248,7 +250,7 @@ export default function MembersPage() {
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder={t("members.searchPlaceholder")}
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value)
@@ -270,10 +272,10 @@ export default function MembersPage() {
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
-                  <SelectItem value="TECHNICIAN">Technician</SelectItem>
+                  <SelectItem value="all">{t("common.allRoles")}</SelectItem>
+                  <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
+                  <SelectItem value="DISPATCHER">{t("members.roles.dispatcher")}</SelectItem>
+                  <SelectItem value="TECHNICIAN">{t("members.roles.technician")}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -292,7 +294,7 @@ export default function MembersPage() {
               <Link href="/invitations">
                 <Button className="h-11 px-5 rounded-xl font-medium">
                   <UserPlus className="size-4 mr-2" />
-                  Invite Member
+                  {t("members.inviteMember")}
                 </Button>
               </Link>
             </div>
@@ -302,7 +304,7 @@ export default function MembersPage() {
         {/* Summary */}
         <div className="mb-4">
           <p className="text-sm text-slate-500">
-            {meta ? `Showing ${members.length} of ${meta.total} member${meta.total !== 1 ? "s" : ""}` : ""}
+            {meta ? t("members.showingCount", { count: members.length, total: meta.total, plural: meta.total !== 1 ? "s" : "" }) : ""}
           </p>
         </div>
 
@@ -318,11 +320,11 @@ export default function MembersPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/80">
-                  <TableHead className="w-[35%] font-semibold text-slate-600">Member</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Role</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Platform</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Status</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Joined</TableHead>
+                  <TableHead className="w-[35%] font-semibold text-slate-600">{t("members.table.member")}</TableHead>
+                  <TableHead className="font-semibold text-slate-600">{t("members.table.role")}</TableHead>
+                  <TableHead className="font-semibold text-slate-600">{t("members.table.platform")}</TableHead>
+                  <TableHead className="font-semibold text-slate-600">{t("members.table.status")}</TableHead>
+                  <TableHead className="font-semibold text-slate-600">{t("members.table.joined")}</TableHead>
                   {isAdmin && <TableHead className="w-[60px]"></TableHead>}
                 </TableRow>
               </TableHeader>
@@ -338,7 +340,7 @@ export default function MembersPage() {
                           <p className="font-medium text-slate-800">
                             {member.firstName} {member.lastName}
                             {isSelf && (
-                              <span className="ml-2 text-xs text-slate-400">(you)</span>
+                              <span className="ml-2 text-xs text-slate-400">{t("common.you")}</span>
                             )}
                           </p>
                           <p className="text-sm text-slate-500">{member.email}</p>
@@ -356,9 +358,9 @@ export default function MembersPage() {
                       </TableCell>
                       <TableCell>
                         {member.isActive ? (
-                          <Badge className="bg-green-100 text-green-700">Active</Badge>
+                          <Badge className="bg-green-100 text-green-700">{t("common.active")}</Badge>
                         ) : (
-                          <Badge className="bg-slate-100 text-slate-500">Inactive</Badge>
+                          <Badge className="bg-slate-100 text-slate-500">{t("common.inactive")}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-slate-500">
@@ -376,14 +378,14 @@ export default function MembersPage() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => openEditDialog(member)}>
                                   <Pencil className="h-4 w-4 mr-2" />
-                                  Edit Member
+                                  {t("members.actions.editMember")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-red-600"
                                   onClick={() => setRemoveTarget(member)}
                                 >
                                   <UserMinus className="h-4 w-4 mr-2" />
-                                  Remove
+                                  {t("members.actions.remove")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -398,8 +400,8 @@ export default function MembersPage() {
           ) : (
             <div className="text-center py-16 text-slate-500">
               <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-              <p className="font-medium">No members found</p>
-              <p className="text-sm text-slate-400 mt-1">Try adjusting your search or filters</p>
+              <p className="font-medium">{t("members.noMembersFound")}</p>
+              <p className="text-sm text-slate-400 mt-1">{t("members.noMembersHint")}</p>
             </div>
           )}
 
@@ -407,7 +409,7 @@ export default function MembersPage() {
           {meta && meta.totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
               <p className="text-sm text-slate-500">
-                Page {meta.page} of {meta.totalPages} ({meta.total} total)
+                {t("common.pageWithTotal", { page: meta.page, totalPages: meta.totalPages, total: meta.total })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -417,7 +419,7 @@ export default function MembersPage() {
                   onClick={() => setPage((p) => p - 1)}
                   className="rounded-lg"
                 >
-                  Previous
+                  {t("common.previous")}
                 </Button>
                 <Button
                   variant="outline"
@@ -426,7 +428,7 @@ export default function MembersPage() {
                   onClick={() => setPage((p) => p + 1)}
                   className="rounded-lg"
                 >
-                  Next
+                  {t("common.next")}
                 </Button>
               </div>
             </div>
@@ -446,19 +448,18 @@ export default function MembersPage() {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Member</DialogTitle>
+            <DialogTitle>{t("members.editDialog.title")}</DialogTitle>
             <DialogDescription>
-              Update profile, role, and permissions for{" "}
-              {editTarget && `${editTarget.firstName} ${editTarget.lastName}`}.
+              {editTarget && t("members.editDialog.description", { name: `${editTarget.firstName} ${editTarget.lastName}` })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
             {/* Profile Section */}
             <div>
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Profile</h4>
+              <h4 className="text-sm font-medium text-slate-700 mb-3">{t("members.editDialog.profileSection")}</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="editFirstName">First Name</Label>
+                  <Label htmlFor="editFirstName">{t("members.editDialog.firstNameLabel")}</Label>
                   <Input
                     id="editFirstName"
                     value={editFirstName}
@@ -466,7 +467,7 @@ export default function MembersPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="editLastName">Last Name</Label>
+                  <Label htmlFor="editLastName">{t("members.editDialog.lastNameLabel")}</Label>
                   <Input
                     id="editLastName"
                     value={editLastName}
@@ -480,38 +481,38 @@ export default function MembersPage() {
 
             {/* Role & Permissions Section */}
             <div>
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Role & Permissions</h4>
+              <h4 className="text-sm font-medium text-slate-700 mb-3">{t("members.editDialog.roleAndPermissions")}</h4>
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label>Role</Label>
+                  <Label>{t("members.editDialog.roleLabel")}</Label>
                   <Select value={editRole} onValueChange={handleRoleChange}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
-                      <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
-                      <SelectItem value="TECHNICIAN">Technician</SelectItem>
+                      <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
+                      <SelectItem value="DISPATCHER">{t("members.roles.dispatcher")}</SelectItem>
+                      <SelectItem value="TECHNICIAN">{t("members.roles.technician")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label>Platform</Label>
+                  <Label>{t("members.editDialog.platformLabel")}</Label>
                   <Select value={editPlatform} onValueChange={setEditPlatform}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="WEB">Web Only</SelectItem>
-                      <SelectItem value="MOBILE">Mobile Only</SelectItem>
-                      <SelectItem value="BOTH">Both</SelectItem>
+                      <SelectItem value="WEB">{t("members.platforms.webOnly")}</SelectItem>
+                      <SelectItem value="MOBILE">{t("members.platforms.mobileOnly")}</SelectItem>
+                      <SelectItem value="BOTH">{t("members.platforms.both")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Permissions</Label>
+                  <Label>{t("members.editDialog.permissionsLabel")}</Label>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -522,7 +523,7 @@ export default function MembersPage() {
                         }
                       />
                       <label htmlFor="canCreateTasks" className="text-sm">
-                        Can create tasks
+                        {t("members.editDialog.canCreateTasks")}
                       </label>
                     </div>
                     <div className="flex items-center gap-2">
@@ -534,7 +535,7 @@ export default function MembersPage() {
                         }
                       />
                       <label htmlFor="canViewAllTasks" className="text-sm">
-                        Can view all tasks
+                        {t("members.editDialog.canViewAllTasks")}
                       </label>
                     </div>
                     <div className="flex items-center gap-2">
@@ -546,7 +547,7 @@ export default function MembersPage() {
                         }
                       />
                       <label htmlFor="canAssignTasks" className="text-sm">
-                        Can assign tasks
+                        {t("members.editDialog.canAssignTasks")}
                       </label>
                     </div>
                     <div className="flex items-center gap-2">
@@ -558,7 +559,7 @@ export default function MembersPage() {
                         }
                       />
                       <label htmlFor="canManageUsers" className="text-sm">
-                        Can manage users
+                        {t("members.editDialog.canManageUsers")}
                       </label>
                     </div>
                   </div>
@@ -570,13 +571,13 @@ export default function MembersPage() {
 
             {/* Password Reset Section */}
             <div>
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Password Reset</h4>
+              <h4 className="text-sm font-medium text-slate-700 mb-3">{t("members.editDialog.passwordReset")}</h4>
               {tempPassword ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
                     <p className="text-xs text-amber-700">
-                      Copy this password now. It won&apos;t be shown again.
+                      {t("members.editDialog.copyPasswordWarning")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -602,7 +603,7 @@ export default function MembersPage() {
               ) : (
                 <div className="space-y-2">
                   <p className="text-xs text-slate-500">
-                    Generate a temporary password for this member. They should change it after logging in.
+                    {t("members.editDialog.passwordResetDescription")}
                   </p>
                   <Button
                     variant="outline"
@@ -611,7 +612,7 @@ export default function MembersPage() {
                     disabled={resetPasswordMutation.isPending}
                   >
                     <KeyRound className="h-4 w-4 mr-2" />
-                    {resetPasswordMutation.isPending ? "Generating..." : "Reset Password"}
+                    {resetPasswordMutation.isPending ? t("common.generating") : t("members.editDialog.resetPassword")}
                   </Button>
                 </div>
               )}
@@ -625,13 +626,13 @@ export default function MembersPage() {
                 setTempPassword(null)
               }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSave}
               disabled={updateMemberMutation.isPending || !editFirstName.trim() || !editLastName.trim()}
             >
-              {updateMemberMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateMemberMutation.isPending ? t("common.saving") : t("common.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -644,19 +645,13 @@ export default function MembersPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Member</AlertDialogTitle>
+            <AlertDialogTitle>{t("members.removeDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove{" "}
-              <strong>
-                {removeTarget &&
-                  `${removeTarget.firstName} ${removeTarget.lastName}`}
-              </strong>{" "}
-              from the organization? They will lose access and need to be
-              re-invited.
+              {removeTarget && t("members.removeDialog.description", { name: `${removeTarget.firstName} ${removeTarget.lastName}` })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() =>
@@ -664,7 +659,7 @@ export default function MembersPage() {
               }
               disabled={removeMutation.isPending}
             >
-              {removeMutation.isPending ? "Removing..." : "Remove Member"}
+              {removeMutation.isPending ? t("common.removing") : t("members.removeDialog.removeButton")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

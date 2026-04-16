@@ -33,6 +33,9 @@ export interface TechnicianProfile {
   ratingCount: number;
   maxDailyJobs: number;
 
+  // Permissions
+  canCreateTasks: boolean;
+
   // Organization
   organizationId: string;
   organization?: {
@@ -74,6 +77,7 @@ export interface TechnicianListItem {
   rating: number;
   ratingCount: number;
   maxDailyJobs: number;
+  canCreateTasks: boolean;
   currentTaskCount: number;
   todayTaskCount: number;
   isOnline: boolean;
@@ -220,6 +224,7 @@ export interface UpdateTechnicianInput {
   isActive?: boolean;
   rating?: number;
   ratingCount?: number;
+  canCreateTasks?: boolean;
 }
 
 /**

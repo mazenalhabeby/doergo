@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   ChevronLeft,
@@ -58,12 +59,12 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
-const STATUS_OPTIONS = [
-  { value: "all", label: "All Statuses" },
-  { value: JoinRequestStatus.PENDING, label: "Pending" },
-  { value: JoinRequestStatus.APPROVED, label: "Approved" },
-  { value: JoinRequestStatus.REJECTED, label: "Rejected" },
-  { value: JoinRequestStatus.CANCELED, label: "Canceled" },
+const STATUS_OPTIONS_KEYS = [
+  { value: "all", labelKey: "common.allStatuses" },
+  { value: JoinRequestStatus.PENDING, labelKey: "joinRequests.status.pending" },
+  { value: JoinRequestStatus.APPROVED, labelKey: "joinRequests.status.approved" },
+  { value: JoinRequestStatus.REJECTED, labelKey: "joinRequests.status.rejected" },
+  { value: JoinRequestStatus.CANCELED, labelKey: "joinRequests.status.canceled" },
 ] as const
 
 const SPECIALTY_OPTIONS = [
@@ -75,16 +76,16 @@ const SPECIALTY_OPTIONS = [
   { value: "other", label: "Other" },
 ] as const
 
-function getStatusBadge(status: JoinRequestStatus) {
+function getStatusBadge(status: JoinRequestStatus, t: (key: string) => string) {
   switch (status) {
     case JoinRequestStatus.PENDING:
-      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Pending</Badge>
+      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">{t("joinRequests.status.pending")}</Badge>
     case JoinRequestStatus.APPROVED:
-      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Approved</Badge>
+      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t("joinRequests.status.approved")}</Badge>
     case JoinRequestStatus.REJECTED:
-      return <Badge className="bg-red-100 text-red-600 hover:bg-red-100">Rejected</Badge>
+      return <Badge className="bg-red-100 text-red-600 hover:bg-red-100">{t("joinRequests.status.rejected")}</Badge>
     case JoinRequestStatus.CANCELED:
-      return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100">Canceled</Badge>
+      return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100">{t("joinRequests.status.canceled")}</Badge>
     default:
       return <Badge variant="outline">{status}</Badge>
   }
@@ -101,6 +102,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function JoinRequestsPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   // Filter & pagination
@@ -142,7 +144,7 @@ export default function JoinRequestsPage() {
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof joinRequestsApi.approve>[1] }) =>
       joinRequestsApi.approve(id, data),
     onSuccess: () => {
-      toast.success("Join request approved")
+      toast.success(t("joinRequests.approveDialog.approvedSuccessfully"))
       queryClient.invalidateQueries({ queryKey: ["join-requests"] })
       closeApproveDialog()
     },
@@ -156,7 +158,7 @@ export default function JoinRequestsPage() {
     mutationFn: ({ id, data }: { id: string; data?: { reason?: string } }) =>
       joinRequestsApi.reject(id, data),
     onSuccess: () => {
-      toast.success("Join request rejected")
+      toast.success(t("joinRequests.rejectDialog.rejectedSuccessfully"))
       queryClient.invalidateQueries({ queryKey: ["join-requests"] })
       closeRejectDialog()
     },
@@ -242,22 +244,22 @@ export default function JoinRequestsPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                Join Requests
+                {t("joinRequests.title")}
               </h1>
               <p className="mt-1.5 text-slate-500">
-                Review and manage requests from people wanting to join your organization
+                {t("joinRequests.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-[160px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Filter by status" />
+                  <SelectValue placeholder={t("common.filterByStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
+                  {STATUS_OPTIONS_KEYS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -281,7 +283,7 @@ export default function JoinRequestsPage() {
         {total > 0 && (
           <div className="mb-4">
             <p className="text-sm text-slate-500">
-              Showing {startItem} to {endItem} of {total} request{total !== 1 ? "s" : ""}
+              {t("joinRequests.showingRange", { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
             </p>
           </div>
         )}
@@ -297,20 +299,20 @@ export default function JoinRequestsPage() {
           ) : isError ? (
             <div className="p-12 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">Failed to load join requests</h3>
+              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("joinRequests.failedToLoad")}</h3>
               <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
               <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
-                Try Again
+                {t("common.tryAgain")}
               </Button>
             </div>
           ) : requests.length === 0 ? (
             <div className="p-16 text-center">
               <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">No join requests found</h3>
+              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("joinRequests.noRequestsFound")}</h3>
               <p className="text-sm text-slate-400">
                 {statusFilter !== "all"
-                  ? "Try adjusting your filter"
-                  : "No one has requested to join your organization yet"}
+                  ? t("joinRequests.noRequestsFilterHint")
+                  : t("joinRequests.noRequestsHint")}
               </p>
             </div>
           ) : (
@@ -318,11 +320,11 @@ export default function JoinRequestsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/80">
-                    <TableHead className="font-semibold text-slate-600">Name</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Email</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Message</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Status</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Requested At</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.name")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.email")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.message")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.status")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.requestedAt")}</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -350,7 +352,7 @@ export default function JoinRequestsPage() {
                         <span className="text-slate-400">-</span>
                       )}
                     </TableCell>
-                    <TableCell>{getStatusBadge(req.status)}</TableCell>
+                    <TableCell>{getStatusBadge(req.status, t)}</TableCell>
                     <TableCell>
                       <span className="text-sm text-slate-600">
                         {formatDate(req.createdAt)}
@@ -367,14 +369,14 @@ export default function JoinRequestsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleApproveClick(req)}>
                               <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
-                              Approve
+                              {t("joinRequests.approveDialog.approveButton")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => handleRejectClick(req)}
                             >
                               <XCircle className="h-4 w-4 mr-2" />
-                              Reject
+                              {t("joinRequests.rejectDialog.rejectButton")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -389,7 +391,7 @@ export default function JoinRequestsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
                 <p className="text-sm text-slate-500">
-                  Page {page} of {totalPages}
+                  {t("common.page", { page, totalPages })}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -400,7 +402,7 @@ export default function JoinRequestsPage() {
                     disabled={page === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Previous
+                    {t("common.previous")}
                   </Button>
                   <Button
                     variant="outline"
@@ -409,7 +411,7 @@ export default function JoinRequestsPage() {
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                   >
-                    Next
+                    {t("common.next")}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -424,21 +426,19 @@ export default function JoinRequestsPage() {
       <Dialog open={approveDialogOpen} onOpenChange={closeApproveDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Approve Join Request</DialogTitle>
+            <DialogTitle>{t("joinRequests.approveDialog.title")}</DialogTitle>
             <DialogDescription>
-              {selectedRequest?.user && (
-                <>
-                  Approve <strong>{selectedRequest.user.firstName} {selectedRequest.user.lastName}</strong> ({selectedRequest.user.email}) to join your organization.
-                  Choose the role and settings for this user.
-                </>
-              )}
+              {selectedRequest?.user && t("joinRequests.approveDialog.description", {
+                name: `${selectedRequest.user.firstName} ${selectedRequest.user.lastName}`,
+                email: selectedRequest.user.email,
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Role */}
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>{t("joinRequests.approveDialog.roleLabel")}</Label>
               <Select
                 value={approveRole}
                 onValueChange={(v) => setApproveRole(v as "DISPATCHER" | "TECHNICIAN")}
@@ -447,8 +447,8 @@ export default function JoinRequestsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="TECHNICIAN">Technician</SelectItem>
-                  <SelectItem value="DISPATCHER">Dispatcher</SelectItem>
+                  <SelectItem value="TECHNICIAN">{t("members.roles.technician")}</SelectItem>
+                  <SelectItem value="DISPATCHER">{t("members.roles.dispatcher")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -457,50 +457,50 @@ export default function JoinRequestsPage() {
             {approveRole === "TECHNICIAN" && (
               <>
                 <div className="space-y-2">
-                  <Label>Platform</Label>
+                  <Label>{t("joinRequests.approveDialog.platformLabel")}</Label>
                   <Select value={approvePlatform} onValueChange={setApprovePlatform}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select platform (optional)" />
+                      <SelectValue placeholder={t("joinRequests.approveDialog.platformPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MOBILE">Mobile</SelectItem>
-                      <SelectItem value="BOTH">Both (Web & Mobile)</SelectItem>
+                      <SelectItem value="MOBILE">{t("members.platforms.mobile")}</SelectItem>
+                      <SelectItem value="BOTH">{t("members.platforms.webAndMobile")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Employment Type</Label>
+                  <Label>{t("joinRequests.approveDialog.employmentTypeLabel")}</Label>
                   <Select value={approveTechnicianType} onValueChange={setApproveTechnicianType}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select type (optional)" />
+                      <SelectValue placeholder={t("joinRequests.approveDialog.employmentTypePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={TechnicianType.FULL_TIME}>Full-Time</SelectItem>
-                      <SelectItem value={TechnicianType.FREELANCER}>Freelancer</SelectItem>
+                      <SelectItem value={TechnicianType.FULL_TIME}>{t("technicians.types.fullTime")}</SelectItem>
+                      <SelectItem value={TechnicianType.FREELANCER}>{t("technicians.types.freelancer")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Work Mode</Label>
+                  <Label>{t("joinRequests.approveDialog.workModeLabel")}</Label>
                   <Select value={approveWorkMode} onValueChange={setApproveWorkMode}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select work mode (optional)" />
+                      <SelectValue placeholder={t("joinRequests.approveDialog.workModePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={WorkMode.HYBRID}>Hybrid</SelectItem>
-                      <SelectItem value={WorkMode.ON_SITE}>On-Site</SelectItem>
-                      <SelectItem value={WorkMode.ON_ROAD}>On-Road</SelectItem>
+                      <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                      <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>
+                      <SelectItem value={WorkMode.ON_ROAD}>{t("technicians.workModes.onRoad")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Specialty</Label>
+                  <Label>{t("joinRequests.approveDialog.specialtyLabel")}</Label>
                   <Select value={approveSpecialty} onValueChange={setApproveSpecialty}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select specialty (optional)" />
+                      <SelectValue placeholder={t("joinRequests.approveDialog.specialtyPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {SPECIALTY_OPTIONS.map((option) => (
@@ -513,10 +513,10 @@ export default function JoinRequestsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Max Daily Jobs</Label>
+                  <Label>{t("joinRequests.approveDialog.maxDailyJobsLabel")}</Label>
                   <Input
                     type="number"
-                    placeholder="e.g. 5 (optional)"
+                    placeholder={t("joinRequests.approveDialog.maxDailyJobsPlaceholder")}
                     value={approveMaxDailyJobs}
                     onChange={(e) => setApproveMaxDailyJobs(e.target.value)}
                     min={1}
@@ -529,14 +529,14 @@ export default function JoinRequestsPage() {
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={closeApproveDialog}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={confirmApprove}
               disabled={approveMutation.isPending}
               className="bg-green-600 hover:bg-green-700"
             >
-              {approveMutation.isPending ? "Approving..." : "Approve"}
+              {approveMutation.isPending ? t("common.approving") : t("joinRequests.approveDialog.approveButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -546,22 +546,20 @@ export default function JoinRequestsPage() {
       <Dialog open={rejectDialogOpen} onOpenChange={closeRejectDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reject Join Request</DialogTitle>
+            <DialogTitle>{t("joinRequests.rejectDialog.title")}</DialogTitle>
             <DialogDescription>
-              {selectedRequest?.user && (
-                <>
-                  Reject the request from <strong>{selectedRequest.user.firstName} {selectedRequest.user.lastName}</strong> ({selectedRequest.user.email}).
-                  You can optionally provide a reason.
-                </>
-              )}
+              {selectedRequest?.user && t("joinRequests.rejectDialog.description", {
+                name: `${selectedRequest.user.firstName} ${selectedRequest.user.lastName}`,
+                email: selectedRequest.user.email,
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Reason (optional)</Label>
+              <Label>{t("joinRequests.rejectDialog.reasonLabel")}</Label>
               <Textarea
-                placeholder="Provide a reason for rejection..."
+                placeholder={t("joinRequests.rejectDialog.reasonPlaceholder")}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows={3}
@@ -571,14 +569,14 @@ export default function JoinRequestsPage() {
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={closeRejectDialog}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={confirmReject}
               disabled={rejectMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {rejectMutation.isPending ? "Rejecting..." : "Reject"}
+              {rejectMutation.isPending ? t("common.rejecting") : t("joinRequests.rejectDialog.rejectButton")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -4,6 +4,7 @@ import {
   authApi,
   userApi,
   setAuthFailureCallback,
+  setUserRefreshedCallback,
   getAccessToken as getStoredAccessToken,
   clearTokens,
   type User,
@@ -36,10 +37,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  // Set up auth failure callback
+  // Handle user data from token refresh (eliminates /auth/me call)
+  const handleUserRefreshed = useCallback(async (userData: User) => {
+    console.log('[AuthContext] User data refreshed from token refresh');
+    setUser(userData);
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+  }, []);
+
+  // Set up callbacks
   useEffect(() => {
     setAuthFailureCallback(handleAuthFailure);
-  }, [handleAuthFailure]);
+    setUserRefreshedCallback(handleUserRefreshed);
+  }, [handleAuthFailure, handleUserRefreshed]);
 
   // Load stored auth state on mount
   useEffect(() => {

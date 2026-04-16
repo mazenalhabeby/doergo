@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { onboardingApi } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
+import { ConfirmSheet } from '../../src/components';
 
 const POLL_INTERVAL = 30000; // 30 seconds
 
@@ -17,11 +19,13 @@ export default function PendingApprovalScreen() {
   const insets = useSafeAreaInsets();
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const toast = useToast();
+  const { t } = useTranslation();
 
   const [orgName, setOrgName] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
   const [requestId, setRequestId] = useState('');
   const [isCanceling, setIsCanceling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -59,26 +63,22 @@ export default function PendingApprovalScreen() {
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     if (!requestId) return;
-    Alert.alert('Cancel Request', 'Are you sure you want to cancel your join request?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          setIsCanceling(true);
-          try {
-            await onboardingApi.cancelJoinRequest(requestId);
-            router.replace(ROUTES.choosePath as Href);
-          } catch (err) {
-            toast.error('Error', err instanceof Error ? err.message : 'Failed to cancel request');
-          } finally {
-            setIsCanceling(false);
-          }
-        },
-      },
-    ]);
+    setShowCancelConfirm(true);
+  };
+
+  const confirmCancel = async () => {
+    setShowCancelConfirm(false);
+    setIsCanceling(true);
+    try {
+      await onboardingApi.cancelJoinRequest(requestId);
+      router.replace(ROUTES.choosePath as Href);
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('onboarding.pendingApproval.failedToCancel'));
+    } finally {
+      setIsCanceling(false);
+    }
   };
 
   return (
@@ -93,13 +93,13 @@ export default function PendingApprovalScreen() {
         </View>
 
         <Text style={styles.title}>
-          {status === 'rejected' ? 'Request Rejected' : 'Waiting for Approval'}
+          {status === 'rejected' ? t('onboarding.pendingApproval.rejectedTitle') : t('onboarding.pendingApproval.waitingTitle')}
         </Text>
 
         <Text style={styles.subtitle}>
           {status === 'rejected'
-            ? 'Your request to join was rejected'
-            : 'Your request to join has been submitted'
+            ? t('onboarding.pendingApproval.rejectedSubtitle')
+            : t('onboarding.pendingApproval.waitingSubtitle')
           }
         </Text>
 
@@ -112,7 +112,7 @@ export default function PendingApprovalScreen() {
 
         {requestMessage ? (
           <View style={styles.messageBadge}>
-            <Text style={styles.messageLabel}>Your message:</Text>
+            <Text style={styles.messageLabel}>{t('onboarding.pendingApproval.yourMessage')}</Text>
             <Text style={styles.messageText}>{requestMessage}</Text>
           </View>
         ) : null}
@@ -127,7 +127,7 @@ export default function PendingApprovalScreen() {
         {status === 'pending' && (
           <View style={styles.pollIndicator}>
             <ActivityIndicator size="small" color={COLORS.primary} />
-            <Text style={styles.pollText}>Checking every 30 seconds...</Text>
+            <Text style={styles.pollText}>{t('onboarding.pendingApproval.checkingEvery30Seconds')}</Text>
           </View>
         )}
       </View>
@@ -135,21 +135,33 @@ export default function PendingApprovalScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.md }]}>
         {status === 'rejected' && (
           <TouchableOpacity style={styles.retryButton} onPress={() => router.replace(ROUTES.choosePath as Href)}>
-            <Text style={styles.retryButtonText}>Try a Different Path</Text>
+            <Text style={styles.retryButtonText}>{t('onboarding.pendingApproval.tryDifferentPath')}</Text>
           </TouchableOpacity>
         )}
 
         {status === 'pending' && (
           <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} disabled={isCanceling}>
-            {isCanceling ? <ActivityIndicator color={COLORS.error} size="small" /> : <Text style={styles.cancelButtonText}>Cancel Request</Text>}
+            {isCanceling ? <ActivityIndicator color={COLORS.error} size="small" /> : <Text style={styles.cancelButtonText}>{t('onboarding.pendingApproval.cancelRequest')}</Text>}
           </TouchableOpacity>
         )}
 
         <TouchableOpacity style={styles.logoutRow} onPress={logout}>
           <Ionicons name="log-out-outline" size={18} color={COLORS.slate500} />
-          <Text style={styles.logoutText}>Log out</Text>
+          <Text style={styles.logoutText}>{t('common.logOut')}</Text>
         </TouchableOpacity>
       </View>
+
+      <ConfirmSheet
+        visible={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={confirmCancel}
+        title={t('onboarding.pendingApproval.cancelRequestConfirmTitle')}
+        message={t('onboarding.pendingApproval.cancelRequestConfirmMessage')}
+        confirmLabel={t('onboarding.pendingApproval.cancelRequestConfirmYes')}
+        cancelLabel={t('common.no')}
+        variant="warning"
+        isLoading={isCanceling}
+      />
     </View>
   );
 }

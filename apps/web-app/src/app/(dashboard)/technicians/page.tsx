@@ -68,41 +68,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
-
-// Status filter options
-const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-  { value: "all", label: "All" },
-] as const
-
-// Type filter options
-const TYPE_OPTIONS = [
-  { value: "all", label: "All Types" },
-  { value: TechnicianType.FULL_TIME, label: "Full-Time" },
-  { value: TechnicianType.FREELANCER, label: "Freelancer" },
-] as const
-
-// Work mode filter options
-const WORK_MODE_OPTIONS = [
-  { value: "all", label: "All Modes" },
-  { value: WorkMode.ON_SITE, label: "On-Site" },
-  { value: WorkMode.ON_ROAD, label: "On-Road" },
-  { value: WorkMode.HYBRID, label: "Hybrid" },
-] as const
-
-// Specialty filter options
-const SPECIALTY_OPTIONS = [
-  { value: "all", label: "All Specialties" },
-  { value: "electrical", label: "Electrical" },
-  { value: "plumbing", label: "Plumbing" },
-  { value: "mechanical", label: "Mechanical" },
-  { value: "hvac", label: "HVAC" },
-  { value: "general", label: "General" },
-] as const
+import { useTranslation } from "react-i18next"
 
 export default function TechniciansPage() {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -140,13 +110,13 @@ export default function TechniciansPage() {
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => techniciansApi.deactivate(id),
     onSuccess: () => {
-      toast.success("Technician deactivated successfully")
+      toast.success(t('technicians.list.deactivatedSuccessfully'))
       queryClient.invalidateQueries({ queryKey: ["technicians"] })
       setDeactivateDialogOpen(false)
       setSelectedTechnician(null)
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to deactivate technician")
+      toast.error(error.message || t('technicians.detail.failedToDeactivate'))
     },
   })
 
@@ -154,11 +124,11 @@ export default function TechniciansPage() {
   const reactivateMutation = useMutation({
     mutationFn: (id: string) => techniciansApi.update(id, { isActive: true }),
     onSuccess: () => {
-      toast.success("Technician reactivated successfully")
+      toast.success(t('technicians.list.reactivatedSuccessfully'))
       queryClient.invalidateQueries({ queryKey: ["technicians"] })
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to reactivate technician")
+      toast.error(error.message || t('technicians.detail.failedToReactivate'))
     },
   })
 
@@ -219,11 +189,11 @@ export default function TechniciansPage() {
   const getAvailabilityBadge = (status: string) => {
     switch (status) {
       case "available":
-        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Available</Badge>
+        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t('technicians.availability.available')}</Badge>
       case "busy":
-        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Busy</Badge>
+        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">{t('technicians.availability.busy')}</Badge>
       case "at_capacity":
-        return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">At Capacity</Badge>
+        return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">{t('technicians.availability.atCapacity')}</Badge>
       default:
         return null
     }
@@ -232,9 +202,9 @@ export default function TechniciansPage() {
   const getTypeBadge = (type: TechnicianType) => {
     switch (type) {
       case TechnicianType.FULL_TIME:
-        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Full-Time</Badge>
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{t('technicians.types.fullTime')}</Badge>
       case TechnicianType.FREELANCER:
-        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Freelancer</Badge>
+        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">{t('technicians.types.freelancer')}</Badge>
       default:
         return null
     }
@@ -243,11 +213,11 @@ export default function TechniciansPage() {
   const getWorkModeBadge = (mode: WorkMode) => {
     switch (mode) {
       case WorkMode.ON_SITE:
-        return <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100">On-Site</Badge>
+        return <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100">{t('technicians.workModes.onSite')}</Badge>
       case WorkMode.ON_ROAD:
-        return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">On-Road</Badge>
+        return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">{t('technicians.workModes.onRoad')}</Badge>
       case WorkMode.HYBRID:
-        return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">Hybrid</Badge>
+        return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">{t('technicians.workModes.hybrid')}</Badge>
       default:
         return null
     }
@@ -264,10 +234,10 @@ export default function TechniciansPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                Technicians
+                {t('technicians.list.title')}
               </h1>
               <p className="mt-1.5 text-slate-500">
-                Manage your field technicians and their assignments
+                {t('technicians.list.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -275,7 +245,7 @@ export default function TechniciansPage() {
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder={t('technicians.list.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-72 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm focus:bg-white focus:shadow-md transition-all"
@@ -285,42 +255,37 @@ export default function TechniciansPage() {
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t('common.status')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="active">{t('common.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+                  <SelectItem value="all">{t('common.all')}</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Type Filter */}
               <Select value={typeFilter} onValueChange={handleTypeChange}>
                 <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Type" />
+                  <SelectValue placeholder={t('technicians.table.type')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">{t('common.allTypes')}</SelectItem>
+                  <SelectItem value={TechnicianType.FULL_TIME}>{t('technicians.types.fullTime')}</SelectItem>
+                  <SelectItem value={TechnicianType.FREELANCER}>{t('technicians.types.freelancer')}</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Work Mode Filter */}
               <Select value={workModeFilter} onValueChange={handleWorkModeChange}>
                 <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Work Mode" />
+                  <SelectValue placeholder={t('technicians.table.workMode')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {WORK_MODE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">{t('common.allModes')}</SelectItem>
+                  <SelectItem value={WorkMode.ON_SITE}>{t('technicians.workModes.onSite')}</SelectItem>
+                  <SelectItem value={WorkMode.ON_ROAD}>{t('technicians.workModes.onRoad')}</SelectItem>
+                  <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -339,7 +304,7 @@ export default function TechniciansPage() {
               <Link href="/technicians/availability">
                 <Button variant="outline" className="h-11 rounded-xl gap-2 bg-white/80 backdrop-blur-sm border-slate-200/80 shadow-sm hover:shadow-md transition-all">
                   <Calendar className="size-4" />
-                  Availability
+                  {t('technicians.list.availability')}
                 </Button>
               </Link>
 
@@ -348,7 +313,7 @@ export default function TechniciansPage() {
                 <Link href="/technicians/new">
                   <Button className="h-11 px-5 rounded-xl font-medium gap-2">
                     <UserPlus className="size-4" />
-                    Add Technician
+                    {t('technicians.list.addTechnician')}
                   </Button>
                 </Link>
               )}
@@ -360,7 +325,7 @@ export default function TechniciansPage() {
         {total > 0 && (
           <div className="mb-4">
             <p className="text-sm text-slate-500">
-              Showing {startItem} to {endItem} of {total} technician{total !== 1 ? "s" : ""}
+              {t('technicians.list.showingRange', { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
             </p>
           </div>
         )}
@@ -376,26 +341,26 @@ export default function TechniciansPage() {
           ) : isError ? (
             <div className="p-12 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">Failed to load technicians</h3>
+              <h3 className="text-lg font-medium text-slate-800 mb-2">{t('technicians.list.failedToLoad')}</h3>
               <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
               <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
-                Try Again
+                {t('common.tryAgain')}
               </Button>
             </div>
           ) : technicians.length === 0 ? (
             <div className="p-16 text-center">
               <User className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">No technicians found</h3>
+              <h3 className="text-lg font-medium text-slate-800 mb-2">{t('technicians.list.noTechniciansFound')}</h3>
               <p className="text-sm text-slate-400 mb-4">
                 {searchQuery || statusFilter !== "active" || typeFilter !== "all" || specialtyFilter
-                  ? "Try adjusting your filters"
-                  : "Add your first technician to get started"}
+                  ? t('technicians.list.noTechniciansHint')
+                  : t('technicians.list.addFirstTechnician')}
               </p>
               {canManage && !searchQuery && (
                 <Link href="/technicians/new">
                   <Button className="rounded-xl">
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Add Technician
+                    {t('technicians.list.addTechnician')}
                   </Button>
                 </Link>
               )}
@@ -405,13 +370,13 @@ export default function TechniciansPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/80">
-                    <TableHead className="w-[250px] font-semibold text-slate-600">Technician</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Type</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Work Mode</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Specialty</TableHead>
-                    <TableHead className="text-center font-semibold text-slate-600">Rating</TableHead>
-                    <TableHead className="text-center font-semibold text-slate-600">Active Tasks</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Status</TableHead>
+                    <TableHead className="w-[250px] font-semibold text-slate-600">{t('technicians.table.technician')}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.type')}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.workMode')}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.specialty')}</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-600">{t('technicians.table.rating')}</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-600">{t('technicians.table.activeTasks')}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.status')}</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -456,7 +421,7 @@ export default function TechniciansPage() {
                         <div className="flex items-center justify-center gap-1">
                           <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
                           <span className="font-medium">
-                            {tech.ratingCount > 0 ? tech.rating.toFixed(1) : "N/A"}
+                            {tech.ratingCount > 0 ? tech.rating.toFixed(1) : t('common.notAvailable')}
                           </span>
                           {tech.ratingCount > 0 && (
                             <span className="text-sm text-slate-400">({tech.ratingCount})</span>
@@ -484,13 +449,13 @@ export default function TechniciansPage() {
                             getAvailabilityBadge(availStatus)
                           ) : (
                             <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">
-                              Inactive
+                              {t('common.inactive')}
                             </Badge>
                           )}
                           {tech.isOnline && (
                             <span className="flex items-center text-xs text-green-600">
                               <span className="h-2 w-2 rounded-full bg-green-500 mr-1" />
-                              Online
+                              {t('common.online')}
                             </span>
                           )}
                         </div>
@@ -506,14 +471,14 @@ export default function TechniciansPage() {
                             <DropdownMenuItem
                               onClick={() => router.push(`/technicians/${tech.id}`)}
                             >
-                              View Details
+                              {t('technicians.actions.viewDetails')}
                             </DropdownMenuItem>
                             {canManage && (
                               <>
                                 <DropdownMenuItem
                                   onClick={() => router.push(`/technicians/${tech.id}?edit=true`)}
                                 >
-                                  Edit
+                                  {t('technicians.actions.edit')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {tech.isActive ? (
@@ -521,14 +486,14 @@ export default function TechniciansPage() {
                                     className="text-red-600"
                                     onClick={() => handleDeactivateClick(tech)}
                                   >
-                                    Deactivate
+                                    {t('technicians.actions.deactivate')}
                                   </DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem
                                     className="text-green-600"
                                     onClick={() => reactivateMutation.mutate(tech.id)}
                                   >
-                                    Reactivate
+                                    {t('technicians.actions.reactivate')}
                                   </DropdownMenuItem>
                                 )}
                               </>
@@ -546,7 +511,7 @@ export default function TechniciansPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
                 <p className="text-sm text-slate-500">
-                  Page {page} of {totalPages}
+                  {t('common.page', { page, totalPages })}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -557,7 +522,7 @@ export default function TechniciansPage() {
                     disabled={page === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Previous
+                    {t('common.previous')}
                   </Button>
                   <Button
                     variant="outline"
@@ -566,7 +531,7 @@ export default function TechniciansPage() {
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                   >
-                    Next
+                    {t('common.next')}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -581,23 +546,19 @@ export default function TechniciansPage() {
       <AlertDialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate Technician</AlertDialogTitle>
+            <AlertDialogTitle>{t('technicians.deactivateDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to deactivate{" "}
-              <span className="font-medium text-slate-800">
-                {selectedTechnician?.firstName} {selectedTechnician?.lastName}
-              </span>
-              ? They will no longer be able to receive new task assignments.
+              {t('technicians.deactivateDialog.description', { name: `${selectedTechnician?.firstName} ${selectedTechnician?.lastName}` })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeactivate}
               className="bg-red-600 hover:bg-red-700"
               disabled={deactivateMutation.isPending}
             >
-              {deactivateMutation.isPending ? "Deactivating..." : "Deactivate"}
+              {deactivateMutation.isPending ? t('common.deactivating') : t('technicians.actions.deactivate')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

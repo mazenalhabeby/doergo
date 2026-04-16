@@ -1,9 +1,10 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  RefreshControl, ActivityIndicator, Alert,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -13,26 +14,23 @@ import { FilterChip } from '../../../src/components/filter-chip';
 import {
   COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS,
 } from '../../../src/lib/constants';
-import { Skeleton } from '../../../src/components';
+import { Skeleton, ConfirmSheet } from '../../../src/components';
 import { getTimeOffStatusStyle } from '../../../src/lib/styles';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
 
-const FILTERS: { key: StatusFilter; label: string }[] = [
-  { key: 'PENDING', label: 'Pending' },
-  { key: 'APPROVED', label: 'Approved' },
-  { key: 'REJECTED', label: 'Rejected' },
-  { key: 'ALL', label: 'All' },
-];
+const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 
 export default function TimeOffRequestsScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filter, setFilter] = useState<StatusFilter>('PENDING');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{ techId: string; requestId: string } | null>(null);
 
   const fetchRequests = useCallback(async (showRefresh = false) => {
     try {
@@ -64,7 +62,7 @@ export default function TimeOffRequestsScreen() {
       setRequests(allRequests);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      toast.error('Error', err?.message || 'Failed to load time-off requests');
+      toast.error(t('common.error'), err?.message || t('manage.timeOffRequestsScreen.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -79,48 +77,29 @@ export default function TimeOffRequestsScreen() {
       await timeOffApi.approve(requestId, { approved: true });
       await fetchRequests();
     } catch (err: any) {
-      toast.error('Error', err?.message || 'Failed to approve');
+      toast.error(t('common.error'), err?.message || t('manage.timeOffRequestsScreen.failedToApprove'));
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleReject = (techId: string, requestId: string) => {
-    Alert.prompt?.('Reject Request', 'Reason (optional):', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reject',
-        style: 'destructive',
-        onPress: async (reason?: string) => {
-          setActionLoading(requestId);
-          try {
-            await timeOffApi.approve(requestId, { approved: false, rejectionReason: reason });
-            await fetchRequests();
-          } catch (err: any) {
-            toast.error('Error', err?.message || 'Failed to reject');
-          } finally {
-            setActionLoading(null);
-          }
-        },
-      },
-    ]) || Alert.alert('Reject Request', 'Reject this time-off request?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reject',
-        style: 'destructive',
-        onPress: async () => {
-          setActionLoading(requestId);
-          try {
-            await timeOffApi.approve(requestId, { approved: false });
-            await fetchRequests();
-          } catch (err: any) {
-            toast.error('Error', err?.message || 'Failed to reject');
-          } finally {
-            setActionLoading(null);
-          }
-        },
-      },
-    ]);
+    setRejectTarget({ techId, requestId });
+  };
+
+  const confirmReject = async () => {
+    if (!rejectTarget) return;
+    const { requestId } = rejectTarget;
+    setRejectTarget(null);
+    setActionLoading(requestId);
+    try {
+      await timeOffApi.approve(requestId, { approved: false });
+      await fetchRequests();
+    } catch (err: any) {
+      toast.error(t('common.error'), err?.message || t('manage.timeOffRequestsScreen.failedToReject'));
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const filtered = useMemo(() => filter === 'ALL' ? requests : requests.filter(r => r.status === filter), [requests, filter]);
@@ -145,7 +124,7 @@ export default function TimeOffRequestsScreen() {
             )}
           </View>
           <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[s.statusText, { color: statusStyle.color }]}>{item.status}</Text>
+            <Text style={[s.statusText, { color: statusStyle.color }]}>{t(`timeOffStatus.${item.status}`)}</Text>
           </View>
         </View>
         {isPending && (
@@ -158,7 +137,7 @@ export default function TimeOffRequestsScreen() {
               {isActioning ? <ActivityIndicator size="small" color={COLORS.error} /> : (
                 <>
                   <Ionicons name="close" size={16} color={COLORS.error} />
-                  <Text style={[s.actionBtnText, { color: COLORS.error }]}>Reject</Text>
+                  <Text style={[s.actionBtnText, { color: COLORS.error }]}>{t('common.reject')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -170,7 +149,7 @@ export default function TimeOffRequestsScreen() {
               {isActioning ? <ActivityIndicator size="small" color={COLORS.white} /> : (
                 <>
                   <Ionicons name="checkmark" size={16} color={COLORS.white} />
-                  <Text style={[s.actionBtnText, { color: COLORS.white }]}>Approve</Text>
+                  <Text style={[s.actionBtnText, { color: COLORS.white }]}>{t('common.approve')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -191,8 +170,8 @@ export default function TimeOffRequestsScreen() {
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <View style={s.filterRow}>
-        {FILTERS.map(f => (
-          <FilterChip key={f.key} label={f.label} active={filter === f.key} onPress={() => setFilter(f.key)} />
+        {FILTER_KEYS.map(f => (
+          <FilterChip key={f} label={t(`manage.timeOffRequestsScreen.filters.${f.toLowerCase()}`)} active={filter === f} onPress={() => setFilter(f)} />
         ))}
       </View>
       <FlatList
@@ -205,9 +184,20 @@ export default function TimeOffRequestsScreen() {
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="calendar-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>No {filter !== 'ALL' ? filter.toLowerCase() : ''} requests</Text>
+            <Text style={[s.emptyText, { color: colors.textMuted }]}>{filter !== 'ALL' ? t('manage.timeOffRequestsScreen.noRequests', { filter: t(`manage.timeOffRequestsScreen.filters.${filter.toLowerCase()}`) }) : t('manage.timeOffRequestsScreen.noRequestsAll')}</Text>
           </View>
         }
+      />
+
+      <ConfirmSheet
+        visible={!!rejectTarget}
+        onClose={() => setRejectTarget(null)}
+        onConfirm={confirmReject}
+        title={t('manage.timeOffRequestsScreen.rejectConfirmTitle')}
+        message={t('manage.timeOffRequestsScreen.rejectConfirmMessage')}
+        confirmLabel={t('common.reject')}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
       />
     </View>
   );

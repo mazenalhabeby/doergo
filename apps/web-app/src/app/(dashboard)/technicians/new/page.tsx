@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, UserPlus, Eye, EyeOff, Copy, Check } from "lucide-react"
 import { toast } from "sonner"
 
+import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import {
   techniciansApi,
@@ -53,6 +54,7 @@ const SPECIALTY_OPTIONS = [
 
 export default function NewTechnicianPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
@@ -84,12 +86,12 @@ export default function NewTechnicianPage() {
         setGeneratedPassword(response.generatedPassword)
         setSuccessDialog(true)
       } else {
-        toast.success("Technician created successfully")
+        toast.success(t('technicians.create.successMessage'))
         router.push("/technicians")
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to create technician")
+      toast.error(error.message || t('technicians.create.failedToCreate'))
       setIsSubmitting(false)
     },
   })
@@ -105,7 +107,7 @@ export default function NewTechnicianPage() {
     e.preventDefault()
 
     if (!isFormValid) {
-      toast.error("Please fill in all required fields")
+      toast.error(t('validation.fillRequiredFields'))
       return
     }
 
@@ -145,16 +147,16 @@ export default function NewTechnicianPage() {
         <Link href="/technicians">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to Technicians
+            {t('technicians.create.backToTechnicians')}
           </Button>
         </Link>
         <Card>
           <CardContent className="py-12 text-center">
             <h3 className="text-lg font-medium text-slate-800 mb-2">
-              Access Denied
+              {t('technicians.create.accessDenied')}
             </h3>
             <p className="text-sm text-slate-500">
-              You don't have permission to create technicians.
+              {t('technicians.create.noPermission')}
             </p>
           </CardContent>
         </Card>
@@ -168,7 +170,7 @@ export default function NewTechnicianPage() {
       <Link href="/technicians">
         <Button variant="ghost" size="sm" className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back to Technicians
+          {t('technicians.create.backToTechnicians')}
         </Button>
       </Link>
 
@@ -177,11 +179,10 @@ export default function NewTechnicianPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Add New Technician
+            {t('technicians.create.title')}
           </CardTitle>
           <CardDescription>
-            Create a new technician account. They will receive login credentials
-            to access the mobile app.
+            {t('technicians.create.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -189,13 +190,13 @@ export default function NewTechnicianPage() {
             {/* Basic Info */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-slate-700">
-                Basic Information
+                {t('technicians.create.basicInformation')}
               </h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">
-                    First Name <span className="text-red-500">*</span>
+                    {t('technicians.create.firstNameLabel')} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="firstName"
@@ -207,7 +208,7 @@ export default function NewTechnicianPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">
-                    Last Name <span className="text-red-500">*</span>
+                    {t('technicians.create.lastNameLabel')} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="lastName"
@@ -221,7 +222,7 @@ export default function NewTechnicianPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  Email Address <span className="text-red-500">*</span>
+                  {t('technicians.create.emailLabel')} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="email"
@@ -232,19 +233,19 @@ export default function NewTechnicianPage() {
                   required
                 />
                 <p className="text-xs text-slate-500">
-                  This will be used as their login username
+                  {t('technicians.create.emailHint')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password (Optional)</Label>
+                <Label htmlFor="password">{t('technicians.create.passwordLabel')}</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Leave blank to auto-generate"
+                    placeholder={t('technicians.create.passwordPlaceholder')}
                   />
                   <Button
                     type="button"
@@ -261,8 +262,7 @@ export default function NewTechnicianPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-slate-500">
-                  If left blank, a secure password will be generated and shown
-                  after creation
+                  {t('technicians.create.passwordHint')}
                 </p>
               </div>
             </div>
@@ -270,66 +270,66 @@ export default function NewTechnicianPage() {
             {/* Work Details */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-slate-700">
-                Work Details
+                {t('technicians.create.workDetails')}
               </h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">Employment Type</Label>
+                  <Label htmlFor="type">{t('technicians.create.employmentTypeLabel')}</Label>
                   <Select
                     value={technicianType}
                     onValueChange={(v) => setTechnicianType(v as TechnicianType)}
                   >
                     <SelectTrigger id="type">
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder={t('technicians.create.employmentTypeLabel')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={TechnicianType.FREELANCER}>
-                        Freelancer
+                        {t('technicians.types.freelancer')}
                       </SelectItem>
                       <SelectItem value={TechnicianType.FULL_TIME}>
-                        Full-Time Employee
+                        {t('technicians.types.fullTimeEmployee')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-slate-500">
-                    Determines billing and expense coverage
+                    {t('technicians.create.employmentTypeHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="workMode">Work Mode</Label>
+                  <Label htmlFor="workMode">{t('technicians.create.workModeLabel')}</Label>
                   <Select
                     value={workMode}
                     onValueChange={(v) => setWorkMode(v as WorkMode)}
                   >
                     <SelectTrigger id="workMode">
-                      <SelectValue placeholder="Select work mode" />
+                      <SelectValue placeholder={t('technicians.create.workModeLabel')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={WorkMode.HYBRID}>
-                        Hybrid (On-Site + On-Road)
+                        {t('technicians.workModes.hybridDescription')}
                       </SelectItem>
                       <SelectItem value={WorkMode.ON_SITE}>
-                        On-Site (Company Locations)
+                        {t('technicians.workModes.onSiteDescription')}
                       </SelectItem>
                       <SelectItem value={WorkMode.ON_ROAD}>
-                        On-Road (Field Tasks Only)
+                        {t('technicians.workModes.onRoadDescription')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-slate-500">
-                    On-Site: attendance tracking, On-Road: task-based, Hybrid: both
+                    {t('technicians.create.workModeHint')}
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="specialty">Job Title</Label>
+                  <Label htmlFor="specialty">{t('technicians.create.jobTitleLabel')}</Label>
                   <Input
                     id="specialty"
-                    placeholder="e.g. Electrician, Plumber, HVAC Tech..."
+                    placeholder={t('technicians.create.jobTitlePlaceholder')}
                     value={specialty}
                     onChange={(e) => setSpecialty(e.target.value)}
                     list="specialty-suggestions"
@@ -340,13 +340,13 @@ export default function NewTechnicianPage() {
                     ))}
                   </datalist>
                   <p className="text-xs text-slate-500">
-                    Type a custom title or pick a suggestion
+                    {t('technicians.create.jobTitleHint')}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="maxJobs">Max Daily Jobs</Label>
+                <Label htmlFor="maxJobs">{t('technicians.create.maxDailyJobsLabel')}</Label>
                 <Input
                   id="maxJobs"
                   type="number"
@@ -356,8 +356,7 @@ export default function NewTechnicianPage() {
                   onChange={(e) => setMaxDailyJobs(parseInt(e.target.value) || 5)}
                 />
                 <p className="text-xs text-slate-500">
-                  Maximum number of tasks this technician can be assigned per
-                  day (1-20)
+                  {t('technicians.create.maxDailyJobsHint')}
                 </p>
               </div>
             </div>
@@ -366,7 +365,7 @@ export default function NewTechnicianPage() {
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Link href="/technicians">
                 <Button type="button" variant="outline">
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </Link>
               <Button
@@ -375,11 +374,11 @@ export default function NewTechnicianPage() {
                 className="gap-2"
               >
                 {isSubmitting ? (
-                  "Creating..."
+                  t('common.creating')
                 ) : (
                   <>
                     <UserPlus className="h-4 w-4" />
-                    Create Technician
+                    {t('technicians.create.createButton')}
                   </>
                 )}
               </Button>
@@ -394,20 +393,19 @@ export default function NewTechnicianPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-green-600">
               <Check className="h-5 w-5" />
-              Technician Created Successfully
+              {t('technicians.createSuccess.title')}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
               <p>
-                The technician account has been created. Please share the
-                following login credentials with them:
+                {t('technicians.createSuccess.description')}
               </p>
               <div className="bg-slate-50 rounded-lg p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Email:</span>
+                  <span className="text-sm text-slate-600">{t('technicians.createSuccess.emailLabel')}</span>
                   <span className="font-mono text-sm">{email}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Password:</span>
+                  <span className="text-sm text-slate-600">{t('technicians.createSuccess.passwordLabel')}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm">{generatedPassword}</span>
                     <Button
@@ -426,13 +424,13 @@ export default function NewTechnicianPage() {
                 </div>
               </div>
               <p className="text-amber-600 text-sm">
-                Make sure to save this password now. It won't be shown again.
+                {t('technicians.createSuccess.saveWarning')}
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={handleCloseSuccess}>
-              Done
+              {t('common.done')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

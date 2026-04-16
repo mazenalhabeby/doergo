@@ -2,6 +2,7 @@
 
 import { format, parseISO } from "date-fns"
 import { BarChart3 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import {
   LineChart,
   Line,
@@ -28,6 +29,8 @@ interface PerformanceTabProps {
 }
 
 export function PerformanceTab({ performance }: PerformanceTabProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="space-y-6">
       {/* Performance Summary */}
@@ -35,7 +38,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-slate-500 mb-1">Completion Rate</p>
+              <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.completionRate')}</p>
               <p className="text-3xl font-bold text-green-600">
                 {performance?.summary.completionRate?.toFixed(0) || 0}%
               </p>
@@ -45,7 +48,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-slate-500 mb-1">On-Time Rate</p>
+              <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
               <p className="text-3xl font-bold text-blue-600">
                 {performance?.summary.onTimeRate?.toFixed(0) || 0}%
               </p>
@@ -55,7 +58,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-slate-500 mb-1">Tasks Completed</p>
+              <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
               <p className="text-3xl font-bold text-purple-600">
                 {performance?.summary.tasksCompleted || 0}
               </p>
@@ -69,9 +72,9 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         {/* Tasks Completed Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Tasks Completed</CardTitle>
+            <CardTitle>{t('technicians.performanceTab.tasksCompletedChart')}</CardTitle>
             <CardDescription>
-              Daily task completion over the period
+              {t('technicians.performanceTab.dailyTaskCompletion')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -104,7 +107,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                       stroke="#8b5cf6"
                       strokeWidth={2}
                       dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
-                      name="Tasks Completed"
+                      name={t('technicians.performanceTab.tasksCompletedChart')}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -113,7 +116,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
               <div className="h-64 flex items-center justify-center text-slate-500 bg-slate-50 rounded-lg">
                 <div className="text-center">
                   <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p>No performance data available</p>
+                  <p>{t('technicians.performanceTab.noPerformanceData')}</p>
                 </div>
               </div>
             )}
@@ -123,9 +126,9 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         {/* On-Time Rate & Hours Worked Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
+            <CardTitle>{t('technicians.performanceTab.performanceMetrics')}</CardTitle>
             <CardDescription>
-              On-time rate and hours worked trends
+              {t('technicians.performanceTab.onTimeRateAndHours')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -169,7 +172,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                       stroke="#2563eb"
                       strokeWidth={2}
                       dot={{ fill: "#2563eb", strokeWidth: 2 }}
-                      name="On-Time Rate (%)"
+                      name={t('technicians.performanceTab.onTimeRatePercent')}
                     />
                     <Line
                       yAxisId="right"
@@ -178,7 +181,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                       stroke="#16a34a"
                       strokeWidth={2}
                       dot={{ fill: "#16a34a", strokeWidth: 2 }}
-                      name="Hours Worked"
+                      name={t('technicians.performanceTab.hoursWorked')}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -187,7 +190,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
               <div className="h-64 flex items-center justify-center text-slate-500 bg-slate-50 rounded-lg">
                 <div className="text-center">
                   <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p>No performance data available</p>
+                  <p>{t('technicians.performanceTab.noPerformanceData')}</p>
                 </div>
               </div>
             )}
@@ -199,15 +202,15 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
       {performance?.comparison && (
         <Card>
           <CardHeader>
-            <CardTitle>Period Comparison</CardTitle>
+            <CardTitle>{t('technicians.performanceTab.periodComparison')}</CardTitle>
             <CardDescription>
-              Changes compared to previous period
+              {t('technicians.performanceTab.changeComparedToPrevious')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">Completion Rate</p>
+                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.completionRate')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
@@ -221,7 +224,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                 </p>
               </div>
               <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">On-Time Rate</p>
+                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
@@ -235,7 +238,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                 </p>
               </div>
               <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">Rating</p>
+                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.rating')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
@@ -249,7 +252,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                 </p>
               </div>
               <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">Tasks Completed</p>
+                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",

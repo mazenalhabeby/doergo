@@ -13,6 +13,7 @@ import { useRouter, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { CreateOrgIcon, JoinOrgIcon, InvitationIcon } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -27,13 +28,13 @@ import {
   ROUTES,
 } from '../../src/lib/constants';
 
-const PATHS = [
+const PATH_CONFIGS = [
   {
     id: 'create',
-    title: 'Create Organization',
-    description: 'Set up your company workspace and invite your team to collaborate',
+    titleKey: 'onboarding.choosePath.createOrg.title',
+    descriptionKey: 'onboarding.choosePath.createOrg.description',
     IconComponent: CreateOrgIcon,
-    tag: 'For Admins',
+    tagKey: 'onboarding.choosePath.createOrg.tag',
     route: ROUTES.createOrg,
     accentColors: [COLORS.primary, COLORS.inProgress] as [string, string],
     iconBg: COLORS.primaryLight,
@@ -42,10 +43,10 @@ const PATHS = [
   },
   {
     id: 'join',
-    title: 'Join Organization',
-    description: "Enter your organization's code to request access as a team member",
+    titleKey: 'onboarding.choosePath.joinOrg.title',
+    descriptionKey: 'onboarding.choosePath.joinOrg.description',
     IconComponent: JoinOrgIcon,
-    tag: 'Have a Code',
+    tagKey: 'onboarding.choosePath.joinOrg.tag',
     route: ROUTES.joinOrg,
     accentColors: [COLORS.purple, COLORS.purple] as [string, string],
     iconBg: COLORS.purpleLight,
@@ -54,10 +55,10 @@ const PATHS = [
   },
   {
     id: 'invitation',
-    title: 'Use Invitation',
-    description: 'Accept a personal invitation code from your employer or team lead',
+    titleKey: 'onboarding.choosePath.useInvitation.title',
+    descriptionKey: 'onboarding.choosePath.useInvitation.description',
     IconComponent: InvitationIcon,
-    tag: 'Invited',
+    tagKey: 'onboarding.choosePath.useInvitation.tag',
     route: ROUTES.useInvitation,
     accentColors: [COLORS.emerald, COLORS.success] as [string, string],
     iconBg: COLORS.emeraldLight,
@@ -71,6 +72,7 @@ export default function ChoosePathScreen() {
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const [isChecking, setIsChecking] = useState(true);
 
   // Animations (autoStart=false because we start after checking pending request)
@@ -81,7 +83,7 @@ export default function ChoosePathScreen() {
     orb2TranslateY,
     startAnimations: startAuthAnimations,
   } = useAuthAnimations({ slideOffset: 20, duration: 600, orb1Offset: -15, orb2Offset: 12, autoStart: false });
-  const cardAnims = useRef(PATHS.map(() => new Animated.Value(0))).current;
+  const cardAnims = useRef(PATH_CONFIGS.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     checkPendingRequest();
@@ -164,10 +166,10 @@ export default function ChoosePathScreen() {
               </View>
 
               <Text style={styles.welcomeText}>
-                Welcome, {user?.firstName}!
+                {t('onboarding.choosePath.welcome', { name: user?.firstName })}
               </Text>
               <Text style={styles.subtitleText}>
-                Choose how you'd like to get started
+                {t('onboarding.choosePath.subtitle')}
               </Text>
             </View>
           </LinearGradient>
@@ -175,7 +177,7 @@ export default function ChoosePathScreen() {
 
         {/* Path Cards */}
         <View style={styles.cardsContainer}>
-          {PATHS.map((path, index) => {
+          {PATH_CONFIGS.map((path, index) => {
             const cardOpacity = cardAnims[index]!;
             const cardTranslateY = cardOpacity.interpolate({
               inputRange: [0, 1],
@@ -207,17 +209,17 @@ export default function ChoosePathScreen() {
                         <path.IconComponent size={30} color={path.accentColor} />
                       </View>
                       <View style={[styles.tagBadge, { backgroundColor: path.tagBg }]}>
-                        <Text style={[styles.tagText, { color: path.accentColor }]}>{path.tag}</Text>
+                        <Text style={[styles.tagText, { color: path.accentColor }]}>{t(path.tagKey)}</Text>
                       </View>
                     </View>
 
                     {/* Title + description */}
-                    <Text style={[styles.pathTitle, { color: colors.textPrimary }]}>{path.title}</Text>
-                    <Text style={[styles.pathDescription, { color: colors.textSecondary }]}>{path.description}</Text>
+                    <Text style={[styles.pathTitle, { color: colors.textPrimary }]}>{t(path.titleKey)}</Text>
+                    <Text style={[styles.pathDescription, { color: colors.textSecondary }]}>{t(path.descriptionKey)}</Text>
 
                     {/* CTA row */}
                     <View style={styles.ctaRow}>
-                      <Text style={[styles.ctaText, { color: path.accentColor }]}>Get started</Text>
+                      <Text style={[styles.ctaText, { color: path.accentColor }]}>{t('common.getStarted')}</Text>
                       <View style={[styles.ctaArrow, { backgroundColor: path.tagBg }]}>
                         <Ionicons name="arrow-forward" size={14} color={path.accentColor} />
                       </View>
@@ -234,7 +236,7 @@ export default function ChoosePathScreen() {
       <Animated.View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.sm, opacity: fadeAnim, borderTopColor: colors.border, backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Ionicons name="log-out-outline" size={16} color={colors.textMuted} />
-          <Text style={[styles.logoutText, { color: colors.textMuted }]}>Sign out</Text>
+          <Text style={[styles.logoutText, { color: colors.textMuted }]}>{t('onboarding.choosePath.signOut')}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>

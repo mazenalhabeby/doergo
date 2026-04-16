@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -169,9 +170,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       if (route.name === 'time-off') return false;
       return true;
     }
-    // TECHNICIAN: no manage or create-task
+    // TECHNICIAN: no manage, create-task only if permitted
     if (route.name === 'manage') return false;
-    if (route.name === 'create-task') return false;
+    if (route.name === 'create-task') return !!user?.canCreateTasks;
     if (route.name === 'tasks') return showTechTasks;
     if (route.name === 'attendance') return showAttendance;
     return true;
@@ -229,6 +230,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 export default function TabsLayout() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
   const isTechnician = user?.role === Role.TECHNICIAN;
   const userWorkMode = user?.workMode || WorkMode.HYBRID;
@@ -266,30 +268,30 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: isAdmin ? 'Dashboard' : 'Home',
+            title: isAdmin ? t('tabs.dashboard') : t('tabs.home'),
           }}
         />
         {/* Tasks tab - ADMIN always sees, TECHNICIAN based on workMode */}
         <Tabs.Screen
           name="tasks"
           options={{
-            title: 'Tasks',
+            title: t('tabs.tasks'),
             href: isAdmin || showTechTasks ? '/tasks' : null,
           }}
         />
-        {/* Create Task tab - ADMIN only */}
+        {/* Create Task tab - ADMIN or technicians with canCreateTasks */}
         <Tabs.Screen
           name="create-task"
           options={{
-            title: 'Create Task',
-            href: isAdmin ? '/create-task' : null,
+            title: t('tabs.createTask'),
+            href: (isAdmin || user?.canCreateTasks) ? '/create-task' : null,
           }}
         />
         {/* Manage tab - ADMIN only */}
         <Tabs.Screen
           name="manage"
           options={{
-            title: 'Manage',
+            title: t('tabs.manage'),
             href: isAdmin ? '/manage' : null,
           }}
         />
@@ -297,7 +299,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="attendance"
           options={{
-            title: 'Attendance',
+            title: t('tabs.attendance'),
             href: showAttendance ? '/attendance' : null,
           }}
         />
@@ -305,14 +307,14 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="time-off"
           options={{
-            title: 'Time Off',
+            title: t('tabs.timeOff'),
             href: isTechnician ? '/time-off' : null,
           }}
         />
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'Profile',
+            title: t('tabs.profile'),
             headerRight: () => null,
           }}
         />

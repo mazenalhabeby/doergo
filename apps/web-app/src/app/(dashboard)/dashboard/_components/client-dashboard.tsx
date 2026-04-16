@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { format, differenceInCalendarDays, parseISO } from "date-fns"
+import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { tasksApi, techniciansApi } from "@/lib/api"
@@ -32,6 +33,7 @@ import { getGreeting, pluralize } from "./helpers"
 
 export function ClientDashboard() {
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   // Fetch tasks
   const { data: tasksData, isLoading } = useQuery({
@@ -90,18 +92,18 @@ export function ClientDashboard() {
   // Quick actions (static)
   const quickActions = useMemo(() => [
     {
-      label: "Create Task",
-      description: "Submit a new service request",
+      label: t("dashboard.admin.createTask"),
+      description: t("dashboard.admin.submitNewServiceRequest"),
       href: "/tasks/new",
       icon: Plus,
     },
     {
-      label: "View All Tasks",
-      description: "See all your tasks",
+      label: t("dashboard.admin.viewAllTasks"),
+      description: t("dashboard.admin.seeAllYourTasks"),
       href: "/tasks",
       icon: ClipboardList,
     },
-  ], [])
+  ], [t])
 
   const greeting = getGreeting()
 
@@ -111,17 +113,17 @@ export function ClientDashboard() {
       <div className="flex flex-col gap-1">
         <p className="text-[13px] font-medium text-slate-400">{greeting}</p>
         <h1 className="text-2xl font-semibold text-slate-900">
-          Welcome back, {user?.firstName}
+          {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           {pendingTasks > 0 || inProgressTasks > 0 ? (
             <>
-              You have {pendingTasks > 0 && <span className="font-medium text-slate-700">{pendingTasks} {pluralize(pendingTasks, "task")} pending</span>}
-              {pendingTasks > 0 && inProgressTasks > 0 && " and "}
-              {inProgressTasks > 0 && <span className="font-medium text-slate-700">{inProgressTasks} in progress</span>}
+              {pendingTasks > 0 && <span className="font-medium text-slate-700">{t("dashboard.admin.tasksPending", { count: pendingTasks, taskWord: pluralize(pendingTasks, "task") })}</span>}
+              {pendingTasks > 0 && inProgressTasks > 0 && ` ${t("common.and")} `}
+              {inProgressTasks > 0 && <span className="font-medium text-slate-700">{t("dashboard.admin.tasksInProgress", { count: inProgressTasks })}</span>}
             </>
           ) : (
-            "All caught up!"
+            t("dashboard.admin.allCaughtUp")
           )}
         </p>
       </div>
@@ -129,30 +131,30 @@ export function ClientDashboard() {
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Tasks"
+          title={t("dashboard.admin.totalTasks")}
           value={totalTasks}
           icon={ClipboardList}
-          description="All time"
+          description={t("dashboard.admin.allTime")}
         />
         <StatCard
-          title="In Progress"
+          title={t("dashboard.admin.inProgress")}
           value={inProgressTasks}
           icon={Clock}
           trend={inProgressTasks > 0 ? "up" : undefined}
-          trendValue="Active"
+          trendValue={t("common.active")}
         />
         <StatCard
-          title="Completed"
+          title={t("dashboard.admin.completed")}
           value={completedTasks}
           icon={CheckCircle2}
           trend="up"
           trendValue={`${totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%`}
         />
         <StatCard
-          title="Pending"
+          title={t("dashboard.admin.pendingLabel")}
           value={pendingTasks}
           icon={AlertTriangle}
-          description="Awaiting action"
+          description={t("dashboard.admin.awaitingAction")}
         />
       </div>
 
@@ -163,12 +165,12 @@ export function ClientDashboard() {
           {/* Recent Tasks */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-slate-900">Recent Tasks</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.admin.recentTasks")}</h2>
               <Link
                 href="/tasks"
                 className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
               >
-                View all
+                {t("dashboard.admin.viewAll")}
               </Link>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-2">
@@ -178,7 +180,7 @@ export function ClientDashboard() {
 
           {/* Quick Actions */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">Quick Actions</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.admin.quickActions")}</h2>
             <QuickActions actions={quickActions} />
           </section>
         </div>
@@ -187,14 +189,14 @@ export function ClientDashboard() {
         <div className="space-y-6">
           {/* Task Distribution Chart */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">Distribution</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.admin.distribution")}</h2>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6">
               {chartData.length > 0 ? (
                 <TaskChart data={chartData} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <TrendingUp className="mb-2 size-8 text-slate-200" strokeWidth={1.5} />
-                  <p className="text-sm text-slate-400">No data yet</p>
+                  <p className="text-sm text-slate-400">{t("dashboard.admin.noDataYet")}</p>
                 </div>
               )}
             </div>
@@ -204,19 +206,19 @@ export function ClientDashboard() {
           {pendingTimeOff.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-slate-900">Time Off Requests</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.admin.timeOffRequests")}</h2>
                 <Link
                   href="/technicians/availability?tab=time-off"
                   className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
                 >
-                  View all
+                  {t("dashboard.admin.viewAll")}
                 </Link>
               </div>
               <div className="rounded-2xl border border-amber-200/60 bg-amber-50/30 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-amber-700 mb-1">
                   <Umbrella className="h-4 w-4" />
                   <span className="text-sm font-medium">
-                    {pendingTimeOff.length} pending request{pendingTimeOff.length !== 1 ? "s" : ""}
+                    {t("dashboard.admin.pendingRequests", { count: pendingTimeOff.length, plural: pendingTimeOff.length !== 1 ? "s" : "" })}
                   </span>
                 </div>
                 {pendingTimeOff.slice(0, 3).map((req: any) => (
@@ -239,7 +241,7 @@ export function ClientDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-700 text-[11px] shrink-0">Pending</Badge>
+                    <Badge className="bg-amber-100 text-amber-700 text-[11px] shrink-0">{t("common.pending")}</Badge>
                   </div>
                 ))}
                 {pendingTimeOff.length > 3 && (
@@ -247,7 +249,7 @@ export function ClientDashboard() {
                     href="/technicians/availability?tab=time-off"
                     className="flex items-center justify-center gap-1 text-[13px] font-medium text-amber-700 hover:text-amber-800 pt-1"
                   >
-                    +{pendingTimeOff.length - 3} more
+                    {t("dashboard.admin.more", { count: pendingTimeOff.length - 3 })}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 )}
@@ -257,7 +259,7 @@ export function ClientDashboard() {
 
           {/* Activity Feed */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.admin.recentActivity")}</h2>
             <div className="rounded-2xl border border-slate-200/60 bg-white px-5">
               <ActivityFeed activities={activities} maxItems={4} />
             </div>

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Calendar, Pencil, Save, X } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import {
   techniciansApi,
@@ -31,14 +32,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-const DAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+const DAY_NAME_KEYS = [
+  "technicians.scheduleTab.days.sunday",
+  "technicians.scheduleTab.days.monday",
+  "technicians.scheduleTab.days.tuesday",
+  "technicians.scheduleTab.days.wednesday",
+  "technicians.scheduleTab.days.thursday",
+  "technicians.scheduleTab.days.friday",
+  "technicians.scheduleTab.days.saturday",
 ]
 
 function formatTime12h(time: string): string {
@@ -87,6 +88,7 @@ interface ScheduleTabProps {
 }
 
 export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [editRows, setEditRows] = useState<EditableScheduleRow[]>(
@@ -107,10 +109,10 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
         queryKey: ["technicianSchedule", technicianId],
       })
       setIsEditing(false)
-      toast.success("Schedule saved successfully")
+      toast.success(t('technicians.scheduleTab.savedSuccessfully'))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to save schedule")
+      toast.error(error.message || t('technicians.scheduleTab.failedToSave'))
     },
   })
 
@@ -174,13 +176,13 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
           <div className="text-center text-slate-500">
             <Calendar className="h-12 w-12 mx-auto mb-4 text-slate-300" />
             <h3 className="text-lg font-medium text-slate-700 mb-2">
-              No schedule configured
+              {t('technicians.scheduleTab.noSchedule')}
             </h3>
             <p className="text-sm mb-4">
-              Set up a weekly work schedule for this technician.
+              {t('technicians.scheduleTab.noScheduleDescription')}
             </p>
             {canManage && (
-              <Button onClick={startEditing}>Set Schedule</Button>
+              <Button onClick={startEditing}>{t('technicians.scheduleTab.setSchedule')}</Button>
             )}
           </div>
         </CardContent>
@@ -193,17 +195,17 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Weekly Schedule</CardTitle>
+            <CardTitle>{t('technicians.scheduleTab.title')}</CardTitle>
             <CardDescription>
               {isEditing
-                ? "Edit the weekly work schedule"
-                : "Regular work hours for each day of the week"}
+                ? t('technicians.scheduleTab.descriptionEdit')
+                : t('technicians.scheduleTab.descriptionView')}
             </CardDescription>
           </div>
           {canManage && !isEditing && (
             <Button variant="outline" size="sm" onClick={startEditing}>
               <Pencil className="h-4 w-4 mr-2" />
-              Edit Schedule
+              {t('technicians.scheduleTab.editSchedule')}
             </Button>
           )}
         </div>
@@ -212,10 +214,10 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-36">Day</TableHead>
-              <TableHead>Hours</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="w-24 text-center">Status</TableHead>
+              <TableHead className="w-36">{t('technicians.scheduleTab.dayColumn')}</TableHead>
+              <TableHead>{t('technicians.scheduleTab.hoursColumn')}</TableHead>
+              <TableHead>{t('technicians.scheduleTab.notesColumn')}</TableHead>
+              <TableHead className="w-24 text-center">{t('technicians.scheduleTab.statusColumn')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -223,7 +225,7 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
               ? editRows.map((row) => (
                   <TableRow key={row.dayOfWeek}>
                     <TableCell className="font-medium">
-                      {DAY_NAMES[row.dayOfWeek]}
+                      {t(DAY_NAME_KEYS[row.dayOfWeek]!)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -236,7 +238,7 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
                           className="w-32"
                           disabled={!row.isActive}
                         />
-                        <span className="text-slate-400">to</span>
+                        <span className="text-slate-400">{t('technicians.scheduleTab.to')}</span>
                         <Input
                           type="time"
                           value={row.endTime}
@@ -250,7 +252,7 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
                     </TableCell>
                     <TableCell>
                       <Input
-                        placeholder="Optional notes"
+                        placeholder={t('technicians.scheduleTab.optionalNotes')}
                         value={row.notes}
                         onChange={(e) =>
                           updateRow(row.dayOfWeek, "notes", e.target.value)
@@ -269,11 +271,11 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
                     </TableCell>
                   </TableRow>
                 ))
-              : DAY_NAMES.map((name, i) => {
+              : DAY_NAME_KEYS.map((nameKey, i) => {
                   const entry = schedule.find((s) => s.dayOfWeek === i)
                   return (
                     <TableRow key={i}>
-                      <TableCell className="font-medium">{name}</TableCell>
+                      <TableCell className="font-medium">{t(nameKey)}</TableCell>
                       <TableCell>
                         {entry && entry.isActive
                           ? `${formatTime12h(entry.startTime)} - ${formatTime12h(entry.endTime)}`
@@ -285,11 +287,11 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
                       <TableCell className="text-center">
                         {entry?.isActive ? (
                           <Badge className="bg-green-100 text-green-700">
-                            Active
+                            {t('technicians.scheduleTab.activeBadge')}
                           </Badge>
                         ) : (
                           <Badge className="bg-slate-100 text-slate-500">
-                            Off
+                            {t('technicians.scheduleTab.offBadge')}
                           </Badge>
                         )}
                       </TableCell>
@@ -307,14 +309,14 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
               disabled={saveMutation.isPending}
             >
               <X className="h-4 w-4 mr-2" />
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={saveMutation.isPending}
             >
               <Save className="h-4 w-4 mr-2" />
-              {saveMutation.isPending ? "Saving..." : "Save Schedule"}
+              {saveMutation.isPending ? t('common.saving') : t('technicians.scheduleTab.saveSchedule')}
             </Button>
           </div>
         )}

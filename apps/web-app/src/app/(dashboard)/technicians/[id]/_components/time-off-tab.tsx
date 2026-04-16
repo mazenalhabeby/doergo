@@ -13,6 +13,7 @@ import {
   CalendarDays,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import {
   techniciansApi,
@@ -81,12 +82,12 @@ import {
 
 const STATUS_BADGES: Record<
   TimeOffStatus,
-  { label: string; className: string }
+  { labelKey: string; className: string }
 > = {
-  PENDING: { label: "Pending", className: "bg-amber-100 text-amber-700" },
-  APPROVED: { label: "Approved", className: "bg-green-100 text-green-700" },
-  REJECTED: { label: "Rejected", className: "bg-red-100 text-red-700" },
-  CANCELED: { label: "Canceled", className: "bg-slate-100 text-slate-500" },
+  PENDING: { labelKey: "common.pending", className: "bg-amber-100 text-amber-700" },
+  APPROVED: { labelKey: "common.approved", className: "bg-green-100 text-green-700" },
+  REJECTED: { labelKey: "common.rejected", className: "bg-red-100 text-red-700" },
+  CANCELED: { labelKey: "common.canceled", className: "bg-slate-100 text-slate-500" },
 }
 
 function getDurationDays(start: string, end: string): number {
@@ -99,6 +100,7 @@ interface TimeOffTabProps {
 }
 
 export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -142,10 +144,10 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
       setCreateOpen(false)
       setDateRange(undefined)
       setReason("")
-      toast.success("Time-off request submitted")
+      toast.success(t('technicians.timeOffTab.submittedSuccessfully'))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to submit request")
+      toast.error(error.message || t('technicians.timeOffTab.failedToSubmit'))
     },
   })
 
@@ -157,10 +159,10 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
         queryKey: ["technicianTimeOff", technicianId],
       })
       setApproveTarget(null)
-      toast.success("Time-off request approved")
+      toast.success(t('technicians.timeOffTab.approvedSuccessfully'))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to approve request")
+      toast.error(error.message || t('technicians.timeOffTab.failedToApprove'))
     },
   })
 
@@ -178,10 +180,10 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
       })
       setRejectTarget(null)
       setRejectionReason("")
-      toast.success("Time-off request rejected")
+      toast.success(t('technicians.timeOffTab.rejectedSuccessfully'))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to reject request")
+      toast.error(error.message || t('technicians.timeOffTab.failedToReject'))
     },
   })
 
@@ -192,16 +194,16 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
       queryClient.invalidateQueries({
         queryKey: ["technicianTimeOff", technicianId],
       })
-      toast.success("Time-off request canceled")
+      toast.success(t('technicians.timeOffTab.canceledSuccessfully'))
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to cancel request")
+      toast.error(error.message || t('technicians.timeOffTab.failedToCancel'))
     },
   })
 
   const handleCreateSubmit = () => {
     if (!dateRange?.from || !dateRange?.to) {
-      toast.error("Please select a date range")
+      toast.error(t('validation.pleaseSelectDateRange'))
       return
     }
     requestMutation.mutate({
@@ -235,22 +237,22 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Time Off</CardTitle>
+              <CardTitle>{t('technicians.timeOffTab.title')}</CardTitle>
               <CardDescription>
-                Manage time-off requests for this technician
+                {t('technicians.timeOffTab.description')}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-36">
-                  <SelectValue placeholder="Filter status" />
+                  <SelectValue placeholder={t('common.filterByStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
-                  <SelectItem value="CANCELED">Canceled</SelectItem>
+                  <SelectItem value="all">{t('common.all')}</SelectItem>
+                  <SelectItem value="PENDING">{t('common.pending')}</SelectItem>
+                  <SelectItem value="APPROVED">{t('common.approved')}</SelectItem>
+                  <SelectItem value="REJECTED">{t('common.rejected')}</SelectItem>
+                  <SelectItem value="CANCELED">{t('common.canceled')}</SelectItem>
                 </SelectContent>
               </Select>
               {canManage && (
@@ -258,19 +260,19 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                   <DialogTrigger asChild>
                     <Button size="sm">
                       <Plus className="h-4 w-4 mr-2" />
-                      Request Time Off
+                      {t('technicians.timeOffTab.requestTimeOff')}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Request Time Off</DialogTitle>
+                      <DialogTitle>{t('technicians.timeOffTab.requestDialog.title')}</DialogTitle>
                       <DialogDescription>
-                        Select dates and optionally provide a reason.
+                        {t('technicians.timeOffTab.requestDialog.description')}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label>Date Range</Label>
+                        <Label>{t('technicians.timeOffTab.requestDialog.dateRangeLabel')}</Label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -289,7 +291,7 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                                 )
                               ) : (
                                 <span className="text-muted-foreground">
-                                  Select dates
+                                  {t('technicians.timeOffTab.requestDialog.selectDates')}
                                 </span>
                               )}
                             </Button>
@@ -305,9 +307,9 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                         </Popover>
                       </div>
                       <div className="space-y-2">
-                        <Label>Reason (optional)</Label>
+                        <Label>{t('technicians.timeOffTab.requestDialog.reasonLabel')}</Label>
                         <Textarea
-                          placeholder="Vacation, personal, medical, etc."
+                          placeholder={t('technicians.timeOffTab.requestDialog.reasonPlaceholder')}
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
                           rows={3}
@@ -319,7 +321,7 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                         variant="outline"
                         onClick={() => setCreateOpen(false)}
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                       <Button
                         onClick={handleCreateSubmit}
@@ -330,8 +332,8 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                         }
                       >
                         {requestMutation.isPending
-                          ? "Submitting..."
-                          : "Submit Request"}
+                          ? t('common.submitting')
+                          : t('technicians.timeOffTab.requestDialog.submitButton')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -345,11 +347,11 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dates</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reviewed By</TableHead>
+                  <TableHead>{t('technicians.timeOffTab.datesColumn')}</TableHead>
+                  <TableHead>{t('technicians.timeOffTab.durationColumn')}</TableHead>
+                  <TableHead>{t('technicians.timeOffTab.reasonColumn')}</TableHead>
+                  <TableHead>{t('technicians.timeOffTab.statusColumn')}</TableHead>
+                  <TableHead>{t('technicians.timeOffTab.reviewedByColumn')}</TableHead>
                   <TableHead className="w-16"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -365,14 +367,14 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                       </TableCell>
                       <TableCell>
                         {getDurationDays(request.startDate, request.endDate)}{" "}
-                        day(s)
+                        {t('technicians.timeOffTab.days')}
                       </TableCell>
                       <TableCell className="max-w-xs truncate text-slate-500">
                         {request.reason || "—"}
                       </TableCell>
                       <TableCell>
                         <Badge className={badge.className}>
-                          {badge.label}
+                          {t(badge.labelKey)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-slate-500">
@@ -393,20 +395,20 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                                 onClick={() => setApproveTarget(request)}
                               >
                                 <Check className="h-4 w-4 mr-2 text-green-600" />
-                                Approve
+                                {t('common.approved')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => setRejectTarget(request)}
                               >
                                 <X className="h-4 w-4 mr-2 text-red-600" />
-                                Reject
+                                {t('common.rejected')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
                                   cancelMutation.mutate(request.id)
                                 }
                               >
-                                Cancel Request
+                                {t('technicians.timeOffTab.cancelRequest')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -420,7 +422,7 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
           ) : (
             <div className="text-center py-12 text-slate-500">
               <Umbrella className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-              <p>No time-off requests found</p>
+              <p>{t('technicians.timeOffTab.noRequests')}</p>
             </div>
           )}
         </CardContent>
@@ -433,23 +435,22 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve Time Off</AlertDialogTitle>
+            <AlertDialogTitle>{t('technicians.timeOffTab.approveDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Approve this time-off request for{" "}
-              {approveTarget &&
-                `${format(new Date(approveTarget.startDate), "MMM d")} - ${format(new Date(approveTarget.endDate), "MMM d, yyyy")}`}
-              ?
+              {approveTarget && t('technicians.timeOffTab.approveDialog.description', {
+                dates: `${format(new Date(approveTarget.startDate), "MMM d")} - ${format(new Date(approveTarget.endDate), "MMM d, yyyy")}`
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 approveTarget && approveMutation.mutate(approveTarget.id)
               }
               disabled={approveMutation.isPending}
             >
-              {approveMutation.isPending ? "Approving..." : "Approve"}
+              {approveMutation.isPending ? t('common.approving') : t('common.approved')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -467,18 +468,17 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Time Off</DialogTitle>
+            <DialogTitle>{t('technicians.timeOffTab.rejectDialog.title')}</DialogTitle>
             <DialogDescription>
-              Reject the time-off request for{" "}
-              {rejectTarget &&
-                `${format(new Date(rejectTarget.startDate), "MMM d")} - ${format(new Date(rejectTarget.endDate), "MMM d, yyyy")}`}
-              .
+              {rejectTarget && t('technicians.timeOffTab.rejectDialog.description', {
+                dates: `${format(new Date(rejectTarget.startDate), "MMM d")} - ${format(new Date(rejectTarget.endDate), "MMM d, yyyy")}`
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label>Reason (optional)</Label>
+            <Label>{t('technicians.timeOffTab.rejectDialog.reasonLabel')}</Label>
             <Textarea
-              placeholder="Provide a reason for rejection"
+              placeholder={t('technicians.timeOffTab.rejectDialog.reasonPlaceholder')}
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               rows={3}
@@ -493,7 +493,7 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                 setRejectionReason("")
               }}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -506,7 +506,7 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
               }
               disabled={rejectMutation.isPending}
             >
-              {rejectMutation.isPending ? "Rejecting..." : "Reject"}
+              {rejectMutation.isPending ? t('common.rejecting') : t('common.rejected')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Mail, ArrowLeft, CheckCircle, Send } from 'lucide-react';
 import { Button, Input, Label } from '@/components/ui';
@@ -15,6 +16,7 @@ const emailSchema = z.object({
 });
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -36,12 +38,12 @@ export default function ForgotPasswordPage() {
       await authApi.forgotPassword(email);
 
       setIsSubmitted(true);
-      toast.success('Reset link sent!', {
-        description: 'Check your email for password reset instructions.',
+      toast.success(t('auth.forgotPassword.resetLinkSentTitle'), {
+        description: t('auth.forgotPassword.resetLinkSentDescription'),
       });
     } catch (err) {
-      toast.error('Failed to send reset link', {
-        description: err instanceof Error ? err.message : 'Please try again later.',
+      toast.error(t('auth.forgotPassword.errorTitle'), {
+        description: err instanceof Error ? err.message : t('auth.forgotPassword.errorDescription'),
       });
     } finally {
       setIsLoading(false);
@@ -55,12 +57,12 @@ export default function ForgotPasswordPage() {
         <div className="flex flex-col items-center mb-8">
           <AnimatedLogo size="default" className="mb-4" />
           <h1 className="text-2xl font-semibold text-slate-900">
-            {isSubmitted ? 'Check your email' : 'Forgot password?'}
+            {isSubmitted ? t('auth.forgotPassword.successTitle') : t('auth.forgotPassword.title')}
           </h1>
           <p className="text-sm text-slate-500 mt-2 text-center">
             {isSubmitted
-              ? `We've sent a password reset link to ${email}`
-              : "No worries, we'll send you reset instructions."}
+              ? t('auth.forgotPassword.successSubtitle', { email })
+              : t('auth.forgotPassword.subtitle')}
           </p>
         </div>
 
@@ -83,7 +85,7 @@ export default function ForgotPasswordPage() {
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to sign in
+            {t('auth.forgotPassword.backToSignIn')}
           </Link>
         </div>
       </div>
@@ -110,13 +112,14 @@ function ForgotPasswordForm({
   isLoading,
   onSubmit,
 }: ForgotPasswordFormProps) {
+  const { t } = useTranslation();
   const [isFocused, setIsFocused] = useState(false);
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-          Email address
+          {t('auth.forgotPassword.emailLabel')}
         </Label>
         <div
           className={cn(
@@ -133,7 +136,7 @@ function ForgotPasswordForm({
           <Input
             id="email"
             type="email"
-            placeholder="you@company.com"
+            placeholder={t('auth.forgotPassword.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onFocus={() => setIsFocused(true)}
@@ -164,7 +167,7 @@ function ForgotPasswordForm({
         ) : (
           <>
             <Send className="w-4 h-4 mr-2" />
-            Send reset link
+            {t('auth.forgotPassword.submitButton')}
           </>
         )}
       </Button>
@@ -182,6 +185,7 @@ interface SuccessStateProps {
 }
 
 function SuccessState({ email, onResend }: SuccessStateProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       {/* Success Icon */}
@@ -194,7 +198,7 @@ function SuccessState({ email, onResend }: SuccessStateProps) {
       {/* Email Preview */}
       <div className="bg-slate-50 rounded-lg p-4 text-center">
         <p className="text-sm text-slate-600">
-          We sent a reset link to
+          {t('auth.forgotPassword.sentTo')}
         </p>
         <p className="text-sm font-medium text-slate-900 mt-1">{email}</p>
       </div>
@@ -202,12 +206,12 @@ function SuccessState({ email, onResend }: SuccessStateProps) {
       {/* Instructions */}
       <div className="space-y-3 text-sm text-slate-600">
         <p>
-          Click the link in the email to reset your password. If you don't see the email:
+          {t('auth.forgotPassword.instructions')}
         </p>
         <ul className="list-disc list-inside space-y-1 text-slate-500">
-          <li>Check your spam folder</li>
-          <li>Make sure you entered the correct email</li>
-          <li>Wait a few minutes and try again</li>
+          <li>{t('auth.forgotPassword.checkSpam')}</li>
+          <li>{t('auth.forgotPassword.correctEmail')}</li>
+          <li>{t('auth.forgotPassword.waitAndRetry')}</li>
         </ul>
       </div>
 
@@ -218,7 +222,7 @@ function SuccessState({ email, onResend }: SuccessStateProps) {
         className="w-full h-11"
       >
         <Mail className="w-4 h-4 mr-2" />
-        Try a different email
+        {t('auth.forgotPassword.tryDifferentEmail')}
       </Button>
     </div>
   );

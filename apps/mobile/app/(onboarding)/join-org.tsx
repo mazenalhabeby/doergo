@@ -5,6 +5,7 @@ import { useRouter, Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { JoinOrgIcon } from '../../src/components';
 import { onboardingApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -16,6 +17,7 @@ export default function JoinOrgScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const toast = useToast();
+  const { t } = useTranslation();
 
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
@@ -26,16 +28,16 @@ export default function JoinOrgScreen() {
 
   const handleValidate = async () => {
     const trimmedCode = code.trim().toUpperCase();
-    if (trimmedCode.length !== 8) { setError('Code must be 8 characters'); return; }
+    if (trimmedCode.length !== 8) { setError(t('onboarding.joinOrg.codeMustBe8Chars')); return; }
 
     setIsValidating(true);
     setError('');
     try {
       const result = await onboardingApi.validateOrgCode(trimmedCode);
       setValidation(result);
-      if (!result.valid) setError(result.message || 'Invalid code');
+      if (!result.valid) setError(result.message || t('onboarding.joinOrg.invalidCode'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to validate code');
+      setError(err instanceof Error ? err.message : t('onboarding.joinOrg.failedToValidate'));
       setValidation(null);
     } finally {
       setIsValidating(false);
@@ -52,7 +54,7 @@ export default function JoinOrgScreen() {
       });
       router.replace(ROUTES.pendingApproval as Href);
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to submit request');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('onboarding.joinOrg.failedToSubmit'));
     } finally {
       setIsSubmitting(false);
     }
@@ -73,18 +75,18 @@ export default function JoinOrgScreen() {
             </LinearGradient>
           </View>
 
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Join Organization</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Enter the organization code shared by your employer</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('onboarding.joinOrg.title')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('onboarding.joinOrg.subtitle')}</Text>
 
           <View style={styles.form}>
             {/* Code Input */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Organization code</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.joinOrg.codeLabel')}</Text>
               <View style={styles.codeRow}>
                 <View style={[styles.inputContainer, styles.codeInputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }, error ? styles.inputError : null]}>
                   <TextInput
                     style={[styles.codeInput, { color: colors.textPrimary }]}
-                    placeholder="ABCD1234"
+                    placeholder={t('onboarding.joinOrg.codePlaceholder')}
                     placeholderTextColor={colors.textMuted}
                     value={code}
                     onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); }}
@@ -98,7 +100,7 @@ export default function JoinOrgScreen() {
                   onPress={handleValidate}
                   disabled={isValidating || code.trim().length !== 8}
                 >
-                  {isValidating ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={styles.verifyButtonText}>Verify</Text>}
+                  {isValidating ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={styles.verifyButtonText}>{t('common.verify')}</Text>}
                 </TouchableOpacity>
               </View>
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -115,11 +117,11 @@ export default function JoinOrgScreen() {
             {/* Message */}
             {validation?.valid && (
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.textPrimary }]}>Message (optional)</Text>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.joinOrg.messageLabel')}</Text>
                 <View style={[styles.inputContainer, styles.textAreaContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
                   <TextInput
                     style={[styles.textArea, { color: colors.textPrimary }]}
-                    placeholder="Introduce yourself..."
+                    placeholder={t('onboarding.joinOrg.messagePlaceholder')}
                     placeholderTextColor={colors.textMuted}
                     value={message}
                     onChangeText={setMessage}
@@ -136,7 +138,7 @@ export default function JoinOrgScreen() {
           {validation?.valid && (
             <TouchableOpacity style={[styles.button, isSubmitting && styles.buttonDisabled]} onPress={handleSubmit} disabled={isSubmitting} activeOpacity={0.9}>
               <LinearGradient colors={isSubmitting ? [COLORS.slate400, COLORS.slate500] : [COLORS.purple, COLORS.purpleDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buttonGradient}>
-                {isSubmitting ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Request to Join</Text>}
+                {isSubmitting ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>{t('onboarding.joinOrg.submitButton')}</Text>}
               </LinearGradient>
             </TouchableOpacity>
           )}

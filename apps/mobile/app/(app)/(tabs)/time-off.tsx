@@ -7,16 +7,17 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Alert,
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useFetchData } from '../../../src/hooks/useFetchData';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
+import { ConfirmSheet } from '../../../src/components';
 import {
   timeOffApi,
   availabilityApi,
@@ -41,13 +42,7 @@ import { FilterChip } from '../../../src/components/filter-chip';
 // HELPERS
 // =============================================================================
 
-const DAY_NAMES_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-const REASON_TYPES = ['Vacation', 'Sick Leave', 'Personal', 'Other'] as const;
+const REASON_TYPE_KEYS = ['vacation', 'sickLeave', 'personal', 'other'] as const;
 
 function getDayCount(startDate: string, endDate: string): number {
   const start = new Date(startDate);
@@ -64,13 +59,13 @@ function getTypeIcon(reason?: string): keyof typeof Ionicons.glyphMap {
   return 'sunny-outline';
 }
 
-function getTypeLabel(reason?: string): string {
-  if (!reason) return 'Time Off';
+function getTypeLabelKey(reason?: string): string {
+  if (!reason) return 'timeOff.typeLabels.timeOff';
   const lower = reason.toLowerCase();
-  if (lower.includes('sick') || lower.includes('medical')) return 'Sick Leave';
-  if (lower.includes('personal') || lower.includes('family')) return 'Personal';
-  if (lower.includes('vacation') || lower.includes('holiday')) return 'Vacation';
-  return 'Time Off';
+  if (lower.includes('sick') || lower.includes('medical')) return 'timeOff.typeLabels.sickLeave';
+  if (lower.includes('personal') || lower.includes('family')) return 'timeOff.typeLabels.personal';
+  if (lower.includes('vacation') || lower.includes('holiday')) return 'timeOff.typeLabels.vacation';
+  return 'timeOff.typeLabels.timeOff';
 }
 
 function toDateString(d: Date): string {
@@ -130,6 +125,7 @@ export default function TimeOffScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const toast = useToast();
+  const { t } = useTranslation();
 
   // Data - fetched via useFetchData
   const fetcher = useCallback(async () => {
@@ -176,12 +172,15 @@ export default function TimeOffScreen() {
   const [availabilityError, setAvailabilityError] = useState(false);
 
   // Request form
-  const [reasonType, setReasonType] = useState<string>('Vacation');
+  const [reasonType, setReasonType] = useState<string>('vacation');
   const [reasonNotes, setReasonNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Request list filter
   const [requestFilter, setRequestFilter] = useState<RequestFilter>('upcoming');
+
+  // Confirm sheet state
+  const [cancelTarget, setCancelTarget] = useState<TimeOffRequest | null>(null);
 
   // Schedule day lookup: dayOfWeek (0=Mon..6=Sun) → isActive
   const scheduleDays = useMemo(() => {
@@ -346,7 +345,7 @@ export default function TimeOffScreen() {
     setRangeStart(null);
     setRangeEnd(null);
     setIsSelecting(false);
-    setReasonType('Vacation');
+    setReasonType('vacation');
     setReasonNotes('');
   };
 
@@ -422,9 +421,10 @@ export default function TimeOffScreen() {
 
     const startStr = toDateString(rangeStart);
     const endStr = toDateString(rangeEnd);
+    const reasonLabel = t(`timeOff.reasonTypes.${reasonType}`);
     const fullReason = reasonNotes.trim()
-      ? `${reasonType}: ${reasonNotes.trim()}`
-      : reasonType;
+      ? `${reasonLabel}: ${reasonNotes.trim()}`
+      : reasonLabel;
 
     try {
       setIsSubmitting(true);
@@ -434,35 +434,29 @@ export default function TimeOffScreen() {
         reason: fullReason,
       });
       clearSelection();
-      toast.success('Success', 'Time off request submitted.');
+      toast.success(t('common.success'), t('timeOff.requestForm.successMessage'));
       fetchData();
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to submit request');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('timeOff.requestForm.failedToSubmit'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = (request: TimeOffRequest) => {
-    Alert.alert(
-      'Cancel Request',
-      'Are you sure you want to cancel this time off request?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Cancel Request',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await timeOffApi.cancel(request.id);
-              fetchData();
-            } catch (err) {
-              toast.error('Error', err instanceof Error ? err.message : 'Failed to cancel request');
-            }
-          },
-        },
-      ],
-    );
+    setCancelTarget(request);
+  };
+
+  const confirmCancelTimeOff = async () => {
+    if (!cancelTarget) return;
+    const request = cancelTarget;
+    setCancelTarget(null);
+    try {
+      await timeOffApi.cancel(request.id);
+      fetchData();
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('timeOff.failedToCancel'));
+    }
   };
 
   // =========================================================================
@@ -546,28 +540,28 @@ export default function TimeOffScreen() {
               <Ionicons name="checkmark-done" size={18} color={COLORS.primary} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.primary }]}>{stats.daysUsed}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Days Used</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.daysUsed')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.successLight }]}>
               <Ionicons name="sunny" size={18} color={COLORS.success} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.success }]}>{stats.upcoming}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Upcoming</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.upcoming')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.amberLight }]}>
               <Ionicons name="hourglass" size={18} color={COLORS.amber} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.amber }]}>{stats.pending}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Pending</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.pending')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.errorLight }]}>
               <Ionicons name="ban" size={18} color={COLORS.error} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.error }]}>{stats.rejected}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Rejected</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.rejected')}</Text>
           </View>
         </View>
 
@@ -576,7 +570,7 @@ export default function TimeOffScreen() {
           <View style={[styles.infoBanner, { backgroundColor: colors.primaryLight }]}>
             <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
             <Text style={styles.infoBannerText}>
-              Schedule not set up — contact your admin to configure your work schedule.
+              {t('timeOff.scheduleNotSet')}
             </Text>
           </View>
         )}
@@ -592,7 +586,7 @@ export default function TimeOffScreen() {
             </TouchableOpacity>
             <TouchableOpacity onPress={goToToday}>
               <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
-                {MONTH_NAMES[viewMonth]} {viewYear}
+                {t(`monthNames.${viewMonth}`)} {viewYear}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={goToNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -602,9 +596,9 @@ export default function TimeOffScreen() {
 
           {/* Day headers */}
           <View style={styles.dayHeaderRow}>
-            {DAY_NAMES_SHORT.map(name => (
-              <View key={name} style={styles.dayHeaderCell}>
-                <Text style={[styles.dayHeaderText, { color: colors.textMuted }]}>{name}</Text>
+            {[0, 1, 2, 3, 4, 5, 6].map(i => (
+              <View key={i} style={styles.dayHeaderCell}>
+                <Text style={[styles.dayHeaderText, { color: colors.textMuted }]}>{t(`dayNames.short.${i}`)}</Text>
               </View>
             ))}
           </View>
@@ -681,21 +675,21 @@ export default function TimeOffScreen() {
           <View style={[styles.legendRow, { borderTopColor: colors.border }]}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: COLORS.success }]} />
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Approved</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('timeOff.calendar.legend.approved')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: COLORS.amber }]} />
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Pending</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('timeOff.calendar.legend.pending')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: COLORS.slate300 }]} />
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Off Day</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('timeOff.calendar.legend.offDay')}</Text>
             </View>
           </View>
 
           {isSelecting && rangeStart && !rangeEnd && (
             <Text style={styles.selectionHint}>
-              Tap another date to complete the range
+              {t('timeOff.calendar.selectionHint')}
             </Text>
           )}
         </View>
@@ -707,20 +701,20 @@ export default function TimeOffScreen() {
           <View style={[styles.insightCard, { backgroundColor: colors.card }]}>
             <View style={styles.insightHeader}>
               <Ionicons name="people" size={18} color={COLORS.primary} />
-              <Text style={[styles.insightTitle, { color: colors.textPrimary }]}>Team Availability</Text>
+              <Text style={[styles.insightTitle, { color: colors.textPrimary }]}>{t('timeOff.teamAvailability.title')}</Text>
             </View>
 
             {isLoadingAvailability ? (
               <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: SPACING.md }} />
             ) : availabilityError ? (
-              <Text style={[styles.insightMuted, { color: colors.textMuted }]}>Unable to load team availability</Text>
+              <Text style={[styles.insightMuted, { color: colors.textMuted }]}>{t('timeOff.teamAvailability.unableToLoad')}</Text>
             ) : availabilityInsights ? (
               <View style={styles.insightContent}>
                 <Text style={[styles.insightSummary, { color: colors.textPrimary }]}>
-                  {availabilityInsights.worstAvailable} of {availabilityInsights.worstTotal} technicians available
+                  {t('timeOff.teamAvailability.techsAvailable', { available: availabilityInsights.worstAvailable, total: availabilityInsights.worstTotal })}
                   {availabilityInsights.worstDay && (
                     <Text style={[styles.insightMuted, { color: colors.textMuted }]}>
-                      {' '}(worst: {formatShortDate(availabilityInsights.worstDay)})
+                      {' '}{t('timeOff.teamAvailability.worst', { date: formatShortDate(availabilityInsights.worstDay) })}
                     </Text>
                   )}
                 </Text>
@@ -729,7 +723,7 @@ export default function TimeOffScreen() {
                   <View style={[styles.warningRow, { backgroundColor: colors.amberLight }]}>
                     <Ionicons name="warning" size={16} color={COLORS.amber} />
                     <Text style={styles.warningText}>
-                      Low coverage on {formatShortDate(availabilityInsights.worstDay)}
+                      {t('timeOff.teamAvailability.lowCoverage', { date: formatShortDate(availabilityInsights.worstDay) })}
                     </Text>
                   </View>
                 )}
@@ -738,21 +732,22 @@ export default function TimeOffScreen() {
                   <View style={[styles.warningRow, { backgroundColor: colors.amberLight }]}>
                     <Ionicons name="information-circle" size={16} color={COLORS.primary} />
                     <Text style={styles.warningText}>
-                      You're not scheduled on {availabilityInsights.userNotScheduledDays.length} selected day
-                      {availabilityInsights.userNotScheduledDays.length > 1 ? 's' : ''}
+                      {availabilityInsights.userNotScheduledDays.length > 1
+                        ? t('timeOff.teamAvailability.notScheduledPlural', { count: availabilityInsights.userNotScheduledDays.length })
+                        : t('timeOff.teamAvailability.notScheduled', { count: availabilityInsights.userNotScheduledDays.length })}
                     </Text>
                   </View>
                 )}
 
                 {availabilityInsights.teamOnTimeOff.length > 0 && (
                   <View style={styles.teamOffSection}>
-                    <Text style={[styles.teamOffLabel, { color: colors.textSecondary }]}>Also on time off:</Text>
+                    <Text style={[styles.teamOffLabel, { color: colors.textSecondary }]}>{t('timeOff.teamAvailability.alsoOnTimeOff')}</Text>
                     {availabilityInsights.teamOnTimeOff.slice(0, 5).map((name, i) => (
                       <Text key={i} style={[styles.teamOffName, { color: colors.textSecondary }]}>{name}</Text>
                     ))}
                     {availabilityInsights.teamOnTimeOff.length > 5 && (
                       <Text style={[styles.teamOffMore, { color: colors.textMuted }]}>
-                        +{availabilityInsights.teamOnTimeOff.length - 5} more
+                        {t('common.more', { count: availabilityInsights.teamOnTimeOff.length - 5 })}
                       </Text>
                     )}
                   </View>
@@ -769,36 +764,36 @@ export default function TimeOffScreen() {
         {/* ============================================================= */}
         {hasRangeSelected && (
           <View style={[styles.formCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.formTitle, { color: colors.textPrimary }]}>Request Time Off</Text>
+            <Text style={[styles.formTitle, { color: colors.textPrimary }]}>{t('timeOff.requestForm.title')}</Text>
 
             {/* Date range display */}
             <View style={[styles.formDateRow, { backgroundColor: colors.primaryLight }]}>
               <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
               <Text style={styles.formDateText}>
-                {formatLongDate(rangeStart!)} – {formatLongDate(rangeEnd!)} ({rangeDays} day{rangeDays > 1 ? 's' : ''})
+                {formatLongDate(rangeStart!)} – {formatLongDate(rangeEnd!)} ({rangeDays} {rangeDays > 1 ? t('common.days') : t('common.day')})
               </Text>
             </View>
 
             {/* Reason type chips */}
-            <Text style={[styles.formLabel, { color: colors.textPrimary }]}>Reason</Text>
+            <Text style={[styles.formLabel, { color: colors.textPrimary }]}>{t('timeOff.requestForm.reasonLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
               <View style={styles.chipRow}>
-                {REASON_TYPES.map(type => (
+                {REASON_TYPE_KEYS.map(key => (
                   <FilterChip
-                    key={type}
-                    label={type}
-                    active={reasonType === type}
-                    onPress={() => setReasonType(type)}
+                    key={key}
+                    label={t(`timeOff.reasonTypes.${key}`)}
+                    active={reasonType === key}
+                    onPress={() => setReasonType(key)}
                   />
                 ))}
               </View>
             </ScrollView>
 
             {/* Optional notes */}
-            <Text style={[styles.formLabel, { color: colors.textPrimary }]}>Notes (optional)</Text>
+            <Text style={[styles.formLabel, { color: colors.textPrimary }]}>{t('timeOff.requestForm.notesLabel')}</Text>
             <TextInput
               style={[styles.notesInput, { borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="Additional details..."
+              placeholder={t('timeOff.requestForm.notesPlaceholder')}
               placeholderTextColor={colors.textMuted}
               value={reasonNotes}
               onChangeText={setReasonNotes}
@@ -809,7 +804,7 @@ export default function TimeOffScreen() {
             {/* Action buttons */}
             <View style={styles.formButtons}>
               <TouchableOpacity style={[styles.clearButton, { borderColor: colors.border }]} onPress={clearSelection}>
-                <Text style={[styles.clearButtonText, { color: colors.textSecondary }]}>Clear Selection</Text>
+                <Text style={[styles.clearButtonText, { color: colors.textSecondary }]}>{t('timeOff.requestForm.clearSelection')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
@@ -821,7 +816,7 @@ export default function TimeOffScreen() {
                 ) : (
                   <>
                     <Ionicons name="paper-plane" size={16} color={COLORS.white} />
-                    <Text style={styles.submitButtonText}>Submit Request</Text>
+                    <Text style={styles.submitButtonText}>{t('timeOff.requestForm.submitRequest')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -833,23 +828,23 @@ export default function TimeOffScreen() {
         {/* REQUESTS LIST                                                 */}
         {/* ============================================================= */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>My Requests</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('timeOff.myRequests')}</Text>
 
           {/* Segmented filter */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
             <View style={styles.filterRow}>
               <FilterChip
-                label="Upcoming"
+                label={t('timeOff.filters.upcoming')}
                 active={requestFilter === 'upcoming'}
                 onPress={() => setRequestFilter('upcoming')}
               />
               <FilterChip
-                label="Past"
+                label={t('timeOff.filters.past')}
                 active={requestFilter === 'past'}
                 onPress={() => setRequestFilter('past')}
               />
               <FilterChip
-                label="All"
+                label={t('timeOff.filters.all')}
                 active={requestFilter === 'all'}
                 onPress={() => setRequestFilter('all')}
               />
@@ -860,15 +855,11 @@ export default function TimeOffScreen() {
             <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
               <Ionicons name="calendar-outline" size={48} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {requestFilter === 'upcoming'
-                  ? 'No upcoming time off requests'
-                  : requestFilter === 'past'
-                  ? 'No past time off requests'
-                  : 'No time off requests yet'}
+                {t(`timeOff.empty.${requestFilter}`)}
               </Text>
               {requestFilter === 'upcoming' && (
                 <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>
-                  Tap dates on the calendar above to request time off
+                  {t('timeOff.empty.hint')}
                 </Text>
               )}
             </View>
@@ -876,7 +867,7 @@ export default function TimeOffScreen() {
             filteredRequests.map(request => {
               const statusStyle = getTimeOffStatusStyle(request.status, colors);
               const days = getDayCount(request.startDate, request.endDate);
-              const typeLabel = getTypeLabel(request.reason);
+              const typeLabel = t(getTypeLabelKey(request.reason));
               const typeIcon = getTypeIcon(request.reason);
 
               return (
@@ -888,7 +879,7 @@ export default function TimeOffScreen() {
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
                       <Text style={[styles.statusText, { color: statusStyle.text }]}>
-                        {statusStyle.label}
+                        {t(`timeOffStatus.${request.status}`)}
                       </Text>
                     </View>
                   </View>
@@ -903,7 +894,7 @@ export default function TimeOffScreen() {
                     </View>
                     <View style={styles.detailRow}>
                       <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-                      <Text style={[styles.detailText, { color: colors.textSecondary }]}>{days} day{days > 1 ? 's' : ''}</Text>
+                      <Text style={[styles.detailText, { color: colors.textSecondary }]}>{days} {days > 1 ? t('common.days') : t('common.day')}</Text>
                     </View>
                   </View>
 
@@ -915,7 +906,7 @@ export default function TimeOffScreen() {
                     <View style={[styles.approvedRow, { borderTopColor: colors.border }]}>
                       <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
                       <Text style={styles.approvedText}>
-                        Approved by {request.approvedBy.firstName} {request.approvedBy.lastName}
+                        {t('timeOff.approvedBy', { firstName: request.approvedBy.firstName, lastName: request.approvedBy.lastName })}
                       </Text>
                     </View>
                   )}
@@ -933,7 +924,7 @@ export default function TimeOffScreen() {
                       onPress={() => handleCancel(request)}
                     >
                       <Ionicons name="close-circle-outline" size={16} color={COLORS.error} />
-                      <Text style={styles.cancelButtonText}>Cancel Request</Text>
+                      <Text style={styles.cancelButtonText}>{t('timeOff.cancelRequest')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -945,6 +936,17 @@ export default function TimeOffScreen() {
         {/* Bottom spacing */}
         <View style={{ height: SPACING.xxxl }} />
       </ScrollView>
+
+      <ConfirmSheet
+        visible={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={confirmCancelTimeOff}
+        title={t('timeOff.cancelConfirmTitle')}
+        message={t('timeOff.cancelConfirmMessage')}
+        confirmLabel={t('timeOff.cancelRequest')}
+        cancelLabel={t('common.no')}
+        variant="warning"
+      />
     </View>
   );
 }

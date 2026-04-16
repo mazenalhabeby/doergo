@@ -9,6 +9,7 @@ import {
   Param,
   Query,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
@@ -40,9 +41,13 @@ export class TasksController {
   ) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'Create a new task (CLIENT or DISPATCHER)' })
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Create a new task' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
+    if (!req.user.canCreateTasks) {
+      throw new ForbiddenException('You do not have permission to create tasks');
+    }
+
     return this.tasksQueueService.createTask({
       ...createTaskDto,
       userId: req.user.id,

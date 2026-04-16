@@ -1,23 +1,27 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  RefreshControl, ActivityIndicator, Alert,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { joinRequestsApi, type JoinRequest } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton } from '../../../src/components';
+import { Skeleton, ConfirmSheet } from '../../../src/components';
 
 export default function JoinRequestsScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [approveTarget, setApproveTarget] = useState<JoinRequest | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<JoinRequest | null>(null);
 
   const fetchRequests = useCallback(async (showRefresh = false) => {
     try {
@@ -27,7 +31,7 @@ export default function JoinRequestsScreen() {
       setRequests(result);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      toast.error('Error', err?.message || 'Failed to load join requests');
+      toast.error(t('common.error'), err?.message || t('manage.joinRequestsScreen.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -37,52 +41,41 @@ export default function JoinRequestsScreen() {
   useFocusEffect(useCallback(() => { fetchRequests(); }, [fetchRequests]));
 
   const handleApprove = (req: JoinRequest) => {
-    Alert.alert(
-      'Approve Request',
-      `Approve ${req.user.firstName} ${req.user.lastName} as Technician?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Approve',
-          onPress: async () => {
-            setActionLoading(req.id);
-            try {
-              await joinRequestsApi.approve(req.id, { role: 'TECHNICIAN' });
-              await fetchRequests();
-            } catch (err: any) {
-              toast.error('Error', err?.message || 'Failed to approve');
-            } finally {
-              setActionLoading(null);
-            }
-          },
-        },
-      ]
-    );
+    setApproveTarget(req);
+  };
+
+  const confirmApprove = async () => {
+    if (!approveTarget) return;
+    const req = approveTarget;
+    setApproveTarget(null);
+    setActionLoading(req.id);
+    try {
+      await joinRequestsApi.approve(req.id, { role: 'TECHNICIAN' });
+      await fetchRequests();
+    } catch (err: any) {
+      toast.error(t('common.error'), err?.message || t('manage.joinRequestsScreen.failedToApprove'));
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleReject = (req: JoinRequest) => {
-    Alert.alert(
-      'Reject Request',
-      `Reject ${req.user.firstName} ${req.user.lastName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: async () => {
-            setActionLoading(req.id);
-            try {
-              await joinRequestsApi.reject(req.id);
-              await fetchRequests();
-            } catch (err: any) {
-              toast.error('Error', err?.message || 'Failed to reject');
-            } finally {
-              setActionLoading(null);
-            }
-          },
-        },
-      ]
-    );
+    setRejectTarget(req);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectTarget) return;
+    const req = rejectTarget;
+    setRejectTarget(null);
+    setActionLoading(req.id);
+    try {
+      await joinRequestsApi.reject(req.id);
+      await fetchRequests();
+    } catch (err: any) {
+      toast.error(t('common.error'), err?.message || t('manage.joinRequestsScreen.failedToReject'));
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const renderItem = ({ item }: { item: JoinRequest }) => {
@@ -99,7 +92,7 @@ export default function JoinRequestsScreen() {
             </Text>
             <Text style={[s.email, { color: colors.textMuted }]}>{item.user.email}</Text>
             <Text style={[s.date, { color: colors.textMuted }]}>
-              Requested {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {t('manage.joinRequestsScreen.requested', { date: new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })}
             </Text>
           </View>
         </View>
@@ -112,7 +105,7 @@ export default function JoinRequestsScreen() {
             {isActioning ? <ActivityIndicator size="small" color={COLORS.error} /> : (
               <>
                 <Ionicons name="close" size={16} color={COLORS.error} />
-                <Text style={[s.actionText, { color: COLORS.error }]}>Reject</Text>
+                <Text style={[s.actionText, { color: COLORS.error }]}>{t('common.reject')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -124,7 +117,7 @@ export default function JoinRequestsScreen() {
             {isActioning ? <ActivityIndicator size="small" color={COLORS.white} /> : (
               <>
                 <Ionicons name="checkmark" size={16} color={COLORS.white} />
-                <Text style={[s.actionText, { color: COLORS.white }]}>Approve</Text>
+                <Text style={[s.actionText, { color: COLORS.white }]}>{t('common.approve')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -153,10 +146,32 @@ export default function JoinRequestsScreen() {
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="checkmark-done-circle-outline" size={48} color={colors.textMuted} />
-            <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>All caught up</Text>
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>No pending join requests</Text>
+            <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>{t('manage.joinRequestsScreen.allCaughtUp')}</Text>
+            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.joinRequestsScreen.noPendingRequests')}</Text>
           </View>
         }
+      />
+
+      <ConfirmSheet
+        visible={!!approveTarget}
+        onClose={() => setApproveTarget(null)}
+        onConfirm={confirmApprove}
+        title={t('manage.joinRequestsScreen.approveTitle')}
+        message={approveTarget ? t('manage.joinRequestsScreen.approveMessage', { firstName: approveTarget.user.firstName, lastName: approveTarget.user.lastName }) : ''}
+        confirmLabel={t('common.approve')}
+        cancelLabel={t('common.cancel')}
+        variant="success"
+      />
+
+      <ConfirmSheet
+        visible={!!rejectTarget}
+        onClose={() => setRejectTarget(null)}
+        onConfirm={confirmReject}
+        title={t('manage.joinRequestsScreen.rejectTitle')}
+        message={rejectTarget ? t('manage.joinRequestsScreen.rejectMessage', { firstName: rejectTarget.user.firstName, lastName: rejectTarget.user.lastName }) : ''}
+        confirmLabel={t('common.reject')}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
       />
     </View>
   );

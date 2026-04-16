@@ -11,6 +11,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/contexts/theme-context';
 import {
   COLORS,
@@ -36,6 +37,7 @@ const defaultPrefs: NotificationPrefs = {
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs);
   const [permissionStatus, setPermissionStatus] = useState<string>('undetermined');
 
@@ -86,14 +88,14 @@ export default function NotificationsScreen() {
               color={permissionStatus === 'granted' ? COLORS.success : COLORS.warning}
             />
             <View style={styles.permissionContent}>
-              <Text style={[styles.permissionTitle, { color: colors.textPrimary }]}>Push Notifications</Text>
+              <Text style={[styles.permissionTitle, { color: colors.textPrimary }]}>{t('profile.notifications.pushNotifications')}</Text>
               <Text style={[styles.permissionStatus, { color: colors.textSecondary }]}>
-                {permissionStatus === 'granted' ? 'Enabled' : 'Disabled'}
+                {permissionStatus === 'granted' ? t('profile.notifications.enabled') : t('profile.notifications.disabled')}
               </Text>
             </View>
             {permissionStatus !== 'granted' && (
               <TouchableOpacity style={[styles.settingsButton, { backgroundColor: colors.primaryLight }]} onPress={openSettings}>
-                <Text style={styles.settingsButtonText}>Settings</Text>
+                <Text style={styles.settingsButtonText}>{t('profile.notifications.settings')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -102,14 +104,14 @@ export default function NotificationsScreen() {
 
       {/* Notification Categories */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Categories</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('profile.notifications.categories')}</Text>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.toggleRow}>
             <View style={styles.toggleInfo}>
               <Ionicons name="clipboard-outline" size={20} color={COLORS.primary} />
               <View style={styles.toggleTextContainer}>
-                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>Tasks</Text>
-                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>New assignments, status changes, comments</Text>
+                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>{t('profile.notifications.tasks')}</Text>
+                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>{t('profile.notifications.tasksDescription')}</Text>
               </View>
             </View>
             <Switch
@@ -126,8 +128,8 @@ export default function NotificationsScreen() {
             <View style={styles.toggleInfo}>
               <Ionicons name="time-outline" size={20} color={COLORS.success} />
               <View style={styles.toggleTextContainer}>
-                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>Attendance</Text>
-                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>Clock-in/out reminders</Text>
+                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>{t('profile.notifications.attendance')}</Text>
+                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>{t('profile.notifications.attendanceDescription')}</Text>
               </View>
             </View>
             <Switch
@@ -144,8 +146,8 @@ export default function NotificationsScreen() {
             <View style={styles.toggleInfo}>
               <Ionicons name="calendar-outline" size={20} color={COLORS.warning} />
               <View style={styles.toggleTextContainer}>
-                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>Time Off</Text>
-                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>Request approvals and updates</Text>
+                <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>{t('profile.notifications.timeOff')}</Text>
+                <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>{t('profile.notifications.timeOffDescription')}</Text>
               </View>
             </View>
             <Switch
@@ -159,7 +161,7 @@ export default function NotificationsScreen() {
       </View>
 
       <Text style={[styles.footerNote, { color: colors.textMuted }]}>
-        Notification preferences are stored locally. Push notification permissions are managed in your device settings.
+        {t('profile.notifications.footerNote')}
       </Text>
     </View>
   );

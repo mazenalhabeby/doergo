@@ -13,10 +13,12 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
@@ -30,6 +32,7 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../../../src/lib/constants';
+import { ConfirmSheet } from '../../../src/components';
 import {
   getRoleLabel,
   getWorkModeLabel,
@@ -43,10 +46,10 @@ function getInitials(firstName?: string, lastName?: string): string {
   return f + l || '?';
 }
 
-const THEME_MODE_LABELS: Record<ThemeMode, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
+const THEME_MODE_I18N: Record<ThemeMode, string> = {
+  system: 'profile.theme.system',
+  light: 'profile.theme.light',
+  dark: 'profile.theme.dark',
 };
 
 const THEME_MODE_ICONS: Record<ThemeMode, string> = {
@@ -63,11 +66,13 @@ export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
   const { colors, isDark, mode, setMode } = useTheme();
   const toast = useToast();
+  const { t } = useTranslation();
   const { unregisterPushToken } = usePushNotifications();
   const { pickFromGallery, takePhoto } = useImagePicker();
   const insets = useSafeAreaInsets();
 
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const hasRefreshed = useRef(false);
 
   // Refresh user data when profile screen is focused (picks up admin edits)
@@ -101,7 +106,7 @@ export default function ProfileScreen() {
       // 4. Refresh user data
       await refreshUser();
     } catch (err: any) {
-      toast.error('Upload Failed', err?.message || 'Could not upload photo. Please try again.');
+      toast.error(t('profile.uploadFailed'), err?.message || t('profile.couldNotUpload'));
     } finally {
       setAvatarLoading(false);
     }
@@ -113,7 +118,7 @@ export default function ProfileScreen() {
       await avatarApi.remove();
       await refreshUser();
     } catch (err: any) {
-      toast.error('Error', err?.message || 'Could not remove photo.');
+      toast.error(t('common.error'), err?.message || t('profile.couldNotRemove'));
     } finally {
       setAvatarLoading(false);
     }
@@ -123,8 +128,8 @@ export default function ProfileScreen() {
     if (avatarLoading) return;
 
     const options = hasAvatar
-      ? ['Take Photo', 'Choose from Gallery', 'Remove Photo', 'Cancel']
-      : ['Take Photo', 'Choose from Gallery', 'Cancel'];
+      ? [t('profile.takePhoto'), t('profile.chooseFromGallery'), t('profile.removePhoto'), t('common.cancel')]
+      : [t('profile.takePhoto'), t('profile.chooseFromGallery'), t('common.cancel')];
     const cancelIndex = options.length - 1;
     const destructiveIndex = hasAvatar ? 2 : undefined;
 
@@ -149,11 +154,11 @@ export default function ProfileScreen() {
     } else {
       // Android fallback using Alert
       const buttons: any[] = [
-        { text: 'Take Photo', onPress: async () => {
+        { text: t('profile.takePhoto'), onPress: async () => {
           const photo = await takePhoto();
           if (photo) uploadAvatar(photo.uri, photo.fileName, photo.mimeType);
         }},
-        { text: 'Choose from Gallery', onPress: async () => {
+        { text: t('profile.chooseFromGallery'), onPress: async () => {
           const images = await pickFromGallery();
           if (images.length > 0) {
             const img = images[0]!;
@@ -162,10 +167,10 @@ export default function ProfileScreen() {
         }},
       ];
       if (hasAvatar) {
-        buttons.push({ text: 'Remove Photo', style: 'destructive', onPress: handleRemoveAvatar });
+        buttons.push({ text: t('profile.removePhoto'), style: 'destructive', onPress: handleRemoveAvatar });
       }
-      buttons.push({ text: 'Cancel', style: 'cancel' });
-      Alert.alert('Profile Photo', 'Choose an option', buttons);
+      buttons.push({ text: t('common.cancel'), style: 'cancel' });
+      Alert.alert(t('profile.profilePhoto'), t('profile.chooseOption'), buttons);
     }
   }, [avatarLoading, hasAvatar, takePhoto, pickFromGallery, uploadAvatar, handleRemoveAvatar]);
 
@@ -173,7 +178,7 @@ export default function ProfileScreen() {
 
   const handleAppearancePress = useCallback(() => {
     const modes: ThemeMode[] = ['system', 'light', 'dark'];
-    const options = [...modes.map((m) => THEME_MODE_LABELS[m]), 'Cancel'];
+    const options = [...modes.map((m) => t(THEME_MODE_I18N[m])), t('common.cancel')];
     const cancelIndex = options.length - 1;
 
     if (Platform.OS === 'ios') {
@@ -184,25 +189,21 @@ export default function ProfileScreen() {
         },
       );
     } else {
-      Alert.alert('Appearance', 'Choose a theme', [
-        ...modes.map((m) => ({ text: THEME_MODE_LABELS[m], onPress: () => setMode(m) })),
-        { text: 'Cancel', style: 'cancel' as const },
+      Alert.alert(t('profile.theme.title'), t('profile.theme.chooseTheme'), [
+        ...modes.map((m) => ({ text: t(THEME_MODE_I18N[m]), onPress: () => setMode(m) })),
+        { text: t('common.cancel'), style: 'cancel' as const },
       ]);
     }
   }, [setMode]);
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          await unregisterPushToken();
-          await logout();
-        },
-      },
-    ]);
+    setShowSignOutConfirm(true);
+  };
+
+  const confirmSignOut = async () => {
+    setShowSignOutConfirm(false);
+    await unregisterPushToken();
+    await logout();
   };
 
   return (
@@ -269,13 +270,13 @@ export default function ProfileScreen() {
 
       {/* ── 2. Settings Menu ──────────────────────────────────────────── */}
       <View style={styles.section}>
-        <Text style={[styles.menuGroupLabel, { color: colors.textMuted }]}>GENERAL</Text>
+        <Text style={[styles.menuGroupLabel, { color: colors.textMuted }]}>{t('profile.menu.general')}</Text>
         <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <MenuItem
             icon="notifications-outline"
             iconColor={COLORS.primary}
             iconBg={colors.primaryLight}
-            label="Notifications"
+            label={t('profile.menu.notifications')}
             onPress={() => router.push('/profile/notifications' as Href)}
             themeColors={colors}
           />
@@ -284,11 +285,11 @@ export default function ProfileScreen() {
             icon={THEME_MODE_ICONS[mode] as any}
             iconColor={COLORS.amber}
             iconBg={colors.amberLight}
-            label="Appearance"
+            label={t('profile.menu.appearance')}
             onPress={handleAppearancePress}
             trailing={
               <View style={styles.menuTrailingRow}>
-                <Text style={[styles.menuTrailingText, { color: colors.textMuted }]}>{THEME_MODE_LABELS[mode]}</Text>
+                <Text style={[styles.menuTrailingText, { color: colors.textMuted }]}>{t(THEME_MODE_I18N[mode])}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
             }
@@ -299,19 +300,37 @@ export default function ProfileScreen() {
             icon="lock-closed-outline"
             iconColor={colors.textSecondary}
             iconBg={colors.surfaceRaised}
-            label="Account & Security"
+            label={t('profile.menu.accountSecurity')}
             onPress={() => router.push('/profile/account' as Href)}
+            themeColors={colors}
+          />
+          <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+          <MenuItem
+            icon="language-outline"
+            iconColor="#6366f1"
+            iconBg={isDark ? '#312e81' : '#e0e7ff'}
+            label={t('profile.menu.language')}
+            onPress={() => router.push('/profile/language' as Href)}
+            trailing={
+              <View style={styles.menuTrailingRow}>
+                <Text style={[styles.menuTrailingText, { color: colors.textMuted }]}>
+                  {supportedLanguages.find(l => l.code === getCurrentLanguage())?.flag}{' '}
+                  {supportedLanguages.find(l => l.code === getCurrentLanguage())?.label}
+                </Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </View>
+            }
             themeColors={colors}
           />
         </View>
 
-        <Text style={[styles.menuGroupLabel, { marginTop: SPACING.xl, color: colors.textMuted }]}>SUPPORT</Text>
+        <Text style={[styles.menuGroupLabel, { marginTop: SPACING.xl, color: colors.textMuted }]}>{t('profile.menu.support')}</Text>
         <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <MenuItem
             icon="help-circle-outline"
             iconColor={COLORS.primary}
             iconBg={colors.primaryLight}
-            label="Help Center"
+            label={t('profile.menu.helpCenter')}
             onPress={() => Linking.openURL('https://hbcfield.com/help').catch(() => {})}
             themeColors={colors}
           />
@@ -320,7 +339,7 @@ export default function ProfileScreen() {
             icon="chatbubble-ellipses-outline"
             iconColor={COLORS.cyan}
             iconBg={colors.cyanLight}
-            label="Contact Support"
+            label={t('profile.menu.contactSupport')}
             onPress={() => Linking.openURL('mailto:support@hbcfield.com').catch(() => {})}
             themeColors={colors}
           />
@@ -329,19 +348,19 @@ export default function ProfileScreen() {
             icon="star-outline"
             iconColor={COLORS.warning}
             iconBg={colors.warningLight}
-            label="Rate the App"
+            label={t('profile.menu.rateApp')}
             onPress={() => Linking.openURL('https://apps.apple.com').catch(() => {})}
             themeColors={colors}
           />
         </View>
 
-        <Text style={[styles.menuGroupLabel, { marginTop: SPACING.xl, color: colors.textMuted }]}>LEGAL</Text>
+        <Text style={[styles.menuGroupLabel, { marginTop: SPACING.xl, color: colors.textMuted }]}>{t('profile.menu.legal')}</Text>
         <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <MenuItem
             icon="document-text-outline"
             iconColor={colors.textSecondary}
             iconBg={colors.surfaceRaised}
-            label="Terms of Service"
+            label={t('profile.menu.termsOfService')}
             onPress={() => Linking.openURL('https://hbcfield.com/terms').catch(() => {})}
             themeColors={colors}
           />
@@ -350,7 +369,7 @@ export default function ProfileScreen() {
             icon="shield-checkmark-outline"
             iconColor={colors.textSecondary}
             iconBg={colors.surfaceRaised}
-            label="Privacy Policy"
+            label={t('profile.menu.privacyPolicy')}
             onPress={() => Linking.openURL('https://hbcfield.com/privacy').catch(() => {})}
             themeColors={colors}
           />
@@ -359,7 +378,7 @@ export default function ProfileScreen() {
             icon="information-circle-outline"
             iconColor={colors.textSecondary}
             iconBg={colors.surfaceRaised}
-            label="About"
+            label={t('profile.menu.about')}
             onPress={() => router.push('/profile/about' as Href)}
             trailing={
               <View style={styles.menuTrailingRow}>
@@ -379,11 +398,23 @@ export default function ProfileScreen() {
         activeOpacity={0.8}
       >
         <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-        <Text style={styles.logoutText}>Sign Out</Text>
+        <Text style={styles.logoutText}>{t('profile.signOutButton')}</Text>
       </TouchableOpacity>
 
       {/* ── 4. Version Footer ─────────────────────────────────────────── */}
-      <Text style={[styles.version, { color: colors.textMuted }]}>HBCField v{appVersion}</Text>
+      <Text style={[styles.version, { color: colors.textMuted }]}>{t('profile.versionFooter', { version: appVersion })}</Text>
+
+      <ConfirmSheet
+        visible={showSignOutConfirm}
+        onClose={() => setShowSignOutConfirm(false)}
+        onConfirm={confirmSignOut}
+        title={t('profile.signOutConfirmTitle')}
+        message={t('profile.signOutConfirmMessage')}
+        confirmLabel={t('profile.signOutButton')}
+        cancelLabel={t('common.cancel')}
+        variant="warning"
+        icon="log-out-outline"
+      />
     </ScrollView>
   );
 }
@@ -582,3 +613,4 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
   },
 });
+

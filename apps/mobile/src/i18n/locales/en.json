@@ -1,0 +1,883 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "search": "Search",
+    "loading": "Loading",
+    "error": "Error",
+    "success": "Success",
+    "retry": "Retry",
+    "done": "Done",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "clear": "Clear",
+    "edit": "Edit",
+    "remove": "Remove",
+    "add": "Add",
+    "view": "View",
+    "approve": "Approve",
+    "reject": "Reject",
+    "revoke": "Revoke",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "all": "All",
+    "none": "None",
+    "today": "Today",
+    "required": "Required",
+    "optional": "Optional",
+    "uploading": "Uploading...",
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "logOut": "Log out",
+    "getStarted": "Get started",
+    "verify": "Verify",
+    "unassigned": "Unassigned",
+    "unknown": "Unknown",
+    "unknownLocation": "Unknown Location",
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "expired": "Expired",
+    "member": "member",
+    "members": "members",
+    "task": "task",
+    "tasks": "tasks",
+    "day": "day",
+    "days": "days",
+    "characters": "characters",
+    "more": "+{{count}} more",
+    "version": "Version {{version}}",
+    "appName": "HBCField",
+    "copyrightYear": "\u00A9 {{year}} HBCField. All rights reserved.",
+    "greeting": {
+      "morning": "Good morning,",
+      "afternoon": "Good afternoon,",
+      "evening": "Good evening,"
+    }
+  },
+
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Access your dashboard and manage operations",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "submitButton": "Sign in",
+      "enterpriseProtected": "Enterprise protected",
+      "secure": "Secure",
+      "noAccount": "Don't have an account? ",
+      "createOne": "Create one",
+      "needHelp": "Need help? ",
+      "contactSupport": "Contact support",
+      "loginFailed": "Login Failed"
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Get started with HBCField",
+      "firstNameLabel": "First name",
+      "firstNamePlaceholder": "John",
+      "lastNameLabel": "Last name",
+      "lastNamePlaceholder": "Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Min. 8 characters",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "submitButton": "Create Account",
+      "termsText": "By creating an account, you agree to our ",
+      "termsOfService": "Terms of Service",
+      "and": " and ",
+      "privacyPolicy": "Privacy Policy",
+      "hasAccount": "Already have an account? ",
+      "signIn": "Sign In",
+      "registrationFailed": "Registration Failed",
+      "passwordChecks": {
+        "minChars": "8+ chars",
+        "uppercase": "Uppercase",
+        "lowercase": "Lowercase",
+        "number": "Number"
+      }
+    }
+  },
+
+  "onboarding": {
+    "choosePath": {
+      "welcome": "Welcome, {{name}}!",
+      "subtitle": "Choose how you'd like to get started",
+      "createOrg": {
+        "title": "Create Organization",
+        "description": "Set up your company workspace and invite your team to collaborate",
+        "tag": "For Admins"
+      },
+      "joinOrg": {
+        "title": "Join Organization",
+        "description": "Enter your organization's code to request access as a team member",
+        "tag": "Have a Code"
+      },
+      "useInvitation": {
+        "title": "Use Invitation",
+        "description": "Accept a personal invitation code from your employer or team lead",
+        "tag": "Invited"
+      },
+      "signOut": "Sign out"
+    },
+    "createOrg": {
+      "title": "Create Organization",
+      "subtitle": "Set up your company on HBCField",
+      "nameLabel": "Organization name *",
+      "namePlaceholder": "Acme Inc.",
+      "addressLabel": "Address (optional)",
+      "addressPlaceholder": "123 Business Ave",
+      "submitButton": "Create Organization",
+      "failedToCreate": "Failed to create organization"
+    },
+    "joinOrg": {
+      "title": "Join Organization",
+      "subtitle": "Enter the organization code shared by your employer",
+      "codeLabel": "Organization code",
+      "codePlaceholder": "ABCD1234",
+      "messageLabel": "Message (optional)",
+      "messagePlaceholder": "Introduce yourself...",
+      "submitButton": "Request to Join",
+      "codeMustBe8Chars": "Code must be 8 characters",
+      "invalidCode": "Invalid code",
+      "failedToValidate": "Failed to validate code",
+      "failedToSubmit": "Failed to submit request"
+    },
+    "useInvitation": {
+      "title": "Use Invitation Code",
+      "subtitle": "Enter the code shared by your organization admin",
+      "codeLabel": "Invitation code",
+      "codePlaceholder": "XK7M2P",
+      "submitButton": "Accept & Join",
+      "joiningAs": "Joining as {{role}}",
+      "codeMustBe6Chars": "Code must be at least 6 characters",
+      "invalidOrExpired": "Invalid or expired code",
+      "failedToValidate": "Failed to validate code",
+      "failedToAccept": "Failed to accept invitation"
+    },
+    "pendingApproval": {
+      "waitingTitle": "Waiting for Approval",
+      "rejectedTitle": "Request Rejected",
+      "waitingSubtitle": "Your request to join has been submitted",
+      "rejectedSubtitle": "Your request to join was rejected",
+      "yourMessage": "Your message:",
+      "checkingEvery30Seconds": "Checking every 30 seconds...",
+      "cancelRequest": "Cancel Request",
+      "cancelRequestConfirmTitle": "Cancel Request",
+      "cancelRequestConfirmMessage": "Are you sure you want to cancel your join request?",
+      "cancelRequestConfirmYes": "Yes, Cancel",
+      "tryDifferentPath": "Try a Different Path",
+      "failedToCancel": "Failed to cancel request"
+    }
+  },
+
+  "tabs": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "tasks": "Tasks",
+    "createTask": "Create Task",
+    "manage": "Manage",
+    "attendance": "Attendance",
+    "timeOff": "Time Off",
+    "profile": "Profile"
+  },
+
+  "home": {
+    "admin": {
+      "statsTotal": "Total",
+      "statsActive": "Active",
+      "statsDone": "Done",
+      "statsPending": "Pending",
+      "todaysTasks": "Today's Tasks",
+      "noTasksScheduled": "No tasks scheduled",
+      "recentTasks": "Recent Tasks",
+      "noTasksYet": "No tasks yet. Create one to get started!"
+    },
+    "fullTime": {
+      "clockedIn": "Clocked In",
+      "clockedOut": "Clocked Out",
+      "startedAt": "Started at {{time}}",
+      "onBreak": "On Break",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "clockOutConfirmTitle": "Clock Out",
+      "clockOutConfirmMessage": "Are you sure you want to clock out?",
+      "netWork": "Net Work",
+      "breakTime": "Break Time",
+      "thisWeek": "This Week",
+      "yourLocations": "Your Locations",
+      "recentActivity": "Recent Activity",
+      "withinRange": "(within range)",
+      "awayMeters": "{{distance}}m away",
+      "awayKm": "{{distance}}km away",
+      "loadingAttendance": "Loading attendance...",
+      "failedToLoadAttendance": "Failed to load attendance data",
+      "permissionDenied": "Permission Denied",
+      "locationPermissionRequired": "Location permission is required for attendance tracking.",
+      "locationError": "Location Error",
+      "failedToGetLocation": "Failed to get your current location.",
+      "failedToClockIn": "Failed to clock in",
+      "failedToClockOut": "Failed to clock out"
+    },
+    "freelancer": {
+      "todaysTasks": "Today's Tasks",
+      "urgentTasks": "Urgent Tasks",
+      "completed": "Completed",
+      "pending": "Pending",
+      "todaysJobs": "Today's Jobs",
+      "noJobsScheduled": "No jobs scheduled for this day"
+    }
+  },
+
+  "tasks": {
+    "searchPlaceholder": "Search tasks...",
+    "tabs": {
+      "current": "Current",
+      "upcoming": "Upcoming",
+      "history": "History"
+    },
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "completed": "Completed",
+      "blocked": "Blocked",
+      "new": "New",
+      "assigned": "Assigned",
+      "inProgress": "Active",
+      "done": "Done"
+    },
+    "sort": {
+      "title": "Sort by",
+      "dueDate": "Due Date",
+      "priority": "Priority",
+      "status": "Status",
+      "name": "Name",
+      "created": "Created"
+    },
+    "taskCount": "{{count}} task",
+    "taskCountPlural": "{{count}} tasks",
+    "blockedBanner": {
+      "title": "{{count}} blocked task",
+      "titlePlural": "{{count}} blocked tasks"
+    },
+    "empty": {
+      "current": "No tasks this month",
+      "upcoming": "No upcoming tasks",
+      "history": "No past tasks"
+    },
+    "failedToLoad": "Failed to load tasks"
+  },
+
+  "taskDetail": {
+    "title": "Task Details",
+    "jobId": "JOB #{{id}}",
+    "progress": "PROGRESS",
+    "details": "DETAILS",
+    "description": "DESCRIPTION",
+    "location": "LOCATION",
+    "attachments": "ATTACHMENTS",
+    "attachmentsCount": "ATTACHMENTS ({{count}})",
+    "comments": "COMMENTS",
+    "commentsCount": "COMMENTS ({{count}})",
+    "taskNotFound": "Task not found",
+    "goBack": "Go Back",
+
+    "infoLabels": {
+      "createdBy": "Created by",
+      "assignedTo": "Assigned to",
+      "location": "Location"
+    },
+    "openInMaps": "Open in Maps",
+    "startNavigation": "Start Navigation",
+
+    "statusActions": {
+      "acceptJob": "Accept Job",
+      "startDriving": "Start Driving",
+      "arrived": "I've Arrived",
+      "startWork": "Start Work",
+      "finishJob": "Finish Job",
+      "resumeJob": "Resume Job",
+      "scheduledForLater": "Scheduled for Later",
+      "notYetAvailable": "Not Yet Available",
+      "declineJob": "Decline"
+    },
+
+    "progressSteps": {
+      "assigned": "Assigned",
+      "accepted": "Accepted",
+      "onTheWay": "On The Way",
+      "arrived": "Arrived",
+      "inProgress": "In Progress",
+      "completed": "Completed"
+    },
+
+    "updateStatus": {
+      "confirmTitle": "Update Status",
+      "confirmMessage": "Change status to {{status}}?"
+    },
+
+    "blockTask": {
+      "title": "Report Issue",
+      "subtitle": "What's blocking this task? (optional)",
+      "placeholder": "e.g., Waiting for parts, Customer unavailable...",
+      "submitButton": "Report Issue"
+    },
+
+    "declineTask": {
+      "title": "Decline Job",
+      "message": "Are you sure you want to decline this job? It will be returned to the dispatcher for reassignment.",
+      "confirmButton": "Decline",
+      "successTitle": "Job Declined",
+      "successMessage": "The job has been returned for reassignment."
+    },
+
+    "cancelTask": {
+      "title": "Cancel Task",
+      "message": "Are you sure you want to cancel this task?",
+      "confirmButton": "Cancel Task"
+    },
+
+    "completeTask": {
+      "title": "Complete Job",
+      "workDuration": "Work Duration",
+      "summaryLabel": "Summary *",
+      "summaryPlaceholder": "Brief summary of work completed...",
+      "workDetailsLabel": "Work Details",
+      "workDetailsPlaceholder": "Detailed description of work performed...",
+      "photosLabel": "Photos",
+      "signaturesLabel": "Signatures",
+      "technicianSignature": "Technician Signature *",
+      "customerSignature": "Customer Signature *",
+      "customerNameLabel": "Customer Name *",
+      "customerNamePlaceholder": "Customer name...",
+      "submitButton": "Complete Job",
+      "successMessage": "Job completed successfully!",
+      "summaryRequired": "Please enter a summary of the work completed.",
+      "techSignatureRequired": "Technician signature is required.",
+      "customerSignatureRequired": "Customer signature is required.",
+      "customerNameRequired": "Please enter the customer name."
+    },
+
+    "editTask": {
+      "title": "Edit Task",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "Task title",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Task description",
+      "priorityLabel": "Priority",
+      "locationLabel": "Location",
+      "locationPlaceholder": "Address",
+      "saveButton": "Save Changes"
+    },
+
+    "adminActions": {
+      "assign": "Assign",
+      "reassign": "Reassign",
+      "edit": "Edit",
+      "cancel": "Cancel"
+    },
+
+    "attachmentActions": {
+      "noAttachments": "No attachments yet",
+      "tapToAdd": "Tap camera or gallery to add",
+      "deleteTitle": "Delete Attachment",
+      "deleteMessage": "Delete \"{{fileName}}\"?"
+    },
+
+    "commentInput": {
+      "placeholder": "Add a comment...",
+      "noComments": "No comments yet"
+    },
+
+    "tracking": {
+      "locationTrackingActive": "Location Tracking Active",
+      "startingTracking": "Starting Tracking..."
+    },
+
+    "futureTask": {
+      "scheduledFor": "This task is scheduled for {{date}}.",
+      "canAcceptOnDueDate": "You can accept it on the due date.",
+      "canStartOnDueDate": "You can start it on the due date."
+    },
+
+    "assignedSuccess": "Assigned to {{firstName}} {{lastName}}",
+    "titleRequired": "Title is required.",
+    "failedToLoad": "Failed to load task",
+    "failedToUpdateStatus": "Failed to update status",
+    "failedToReportIssue": "Failed to report issue",
+    "failedToDecline": "Failed to decline job",
+    "failedToCancel": "Failed to cancel",
+    "failedToUpdate": "Failed to update",
+    "failedToAssign": "Failed to assign",
+    "failedToComplete": "Failed to complete task",
+    "failedToAddComment": "Failed to add comment",
+    "failedToDelete": "Failed to delete"
+  },
+
+  "createTask": {
+    "titleLabel": "Title *",
+    "titlePlaceholder": "What needs to be done?",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Add details about the task...",
+    "priorityLabel": "Priority",
+    "dueDateLabel": "Due Date",
+    "dueDatePlaceholder": "Select due date",
+    "locationLabel": "Location",
+    "assignTechnicianLabel": "Assign Technician",
+    "technicianPlaceholder": "Select technician (optional)",
+    "submitButton": "Create Task",
+    "titleRequired": "Please enter a task title.",
+    "successMessage": "Task created successfully!",
+    "failedToCreate": "Failed to create task"
+  },
+
+  "attendance": {
+    "clockedIn": "Clocked In",
+    "clockedOut": "Clocked Out",
+    "startedAt": "Started at {{time}}",
+    "timeOnShift": "Time on shift",
+    "clockIn": "Clock In",
+    "clockOut": "Clock Out",
+    "clockOutConfirmTitle": "Clock Out",
+    "clockOutConfirmMessage": "Are you sure you want to clock out?",
+    "clockedInAt": "Clocked in at {{location}}",
+    "clockedOutSuccess": "Clocked out successfully",
+    "locationRequired": "Location Required",
+    "enableLocationServices": "Please enable location services to clock in.",
+    "locationPermissionDenied": "Location permission denied",
+    "failedToGetLocation": "Failed to get location",
+    "failedToClockIn": "Failed to clock in",
+    "failedToClockOut": "Failed to clock out",
+    "loadingAttendance": "Loading attendance...",
+    "failedToLoadAttendance": "Failed to load attendance data",
+
+    "notAvailable": {
+      "title": "Not Available",
+      "message": "Clock-in/clock-out is only available for full-time technicians."
+    },
+
+    "breaks": {
+      "takeABreak": "Take a Break",
+      "lunch": "Lunch",
+      "short": "Short",
+      "other": "Other",
+      "endBreak": "End Break",
+      "startBreak": "Start Break",
+      "onBreak": "On {{type}} break",
+      "breakDuration": "Break Duration",
+      "totalBreakTime": "Total break time: {{duration}}",
+      "totalBreakTimeToday": "Total break time today",
+      "breakStarted": "Break Started",
+      "breakStartedMessage": "Your {{type}} break has started.",
+      "breakEnded": "Break Ended",
+      "breakEndedMessage": "Your break has ended. Back to work!",
+      "failedToStartBreak": "Failed to start break",
+      "failedToEndBreak": "Failed to end break",
+      "notesTitle": "End Break",
+      "startBreakTitle": "Start {{type}} Break",
+      "notesSubtitle": "Add any notes about your break (optional)",
+      "notesPlaceholder": "Enter notes (optional)...",
+      "charCount": "{{count}}/500 characters"
+    },
+
+    "assignedLocations": "Assigned Locations",
+    "away": "{{distance}} away",
+    "withinRange": "(within range)",
+    "clockedInOutsideGeofence": "Clocked in outside geofence",
+
+    "todaysBreaks": "Today's Breaks",
+
+    "history": {
+      "title": "Recent History",
+      "noRecords": "No attendance records yet",
+      "in": "In",
+      "out": "Out",
+      "total": "Total",
+      "statusActive": "Active",
+      "statusAuto": "Auto",
+      "statusDone": "Done"
+    }
+  },
+
+  "timeOff": {
+    "stats": {
+      "daysUsed": "Days Used",
+      "upcoming": "Upcoming",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "scheduleNotSet": "Schedule not set up — contact your admin to configure your work schedule.",
+    "calendar": {
+      "legend": {
+        "approved": "Approved",
+        "pending": "Pending",
+        "offDay": "Off Day"
+      },
+      "selectionHint": "Tap another date to complete the range"
+    },
+    "teamAvailability": {
+      "title": "Team Availability",
+      "unableToLoad": "Unable to load team availability",
+      "techsAvailable": "{{available}} of {{total}} technicians available",
+      "worst": "(worst: {{date}})",
+      "lowCoverage": "Low coverage on {{date}}",
+      "notScheduled": "You're not scheduled on {{count}} selected day",
+      "notScheduledPlural": "You're not scheduled on {{count}} selected days",
+      "alsoOnTimeOff": "Also on time off:"
+    },
+    "requestForm": {
+      "title": "Request Time Off",
+      "reasonLabel": "Reason",
+      "notesLabel": "Notes (optional)",
+      "notesPlaceholder": "Additional details...",
+      "clearSelection": "Clear Selection",
+      "submitRequest": "Submit Request",
+      "successMessage": "Time off request submitted.",
+      "failedToSubmit": "Failed to submit request"
+    },
+    "reasonTypes": {
+      "vacation": "Vacation",
+      "sickLeave": "Sick Leave",
+      "personal": "Personal",
+      "other": "Other"
+    },
+    "myRequests": "My Requests",
+    "filters": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "all": "All"
+    },
+    "empty": {
+      "upcoming": "No upcoming time off requests",
+      "past": "No past time off requests",
+      "all": "No time off requests yet",
+      "hint": "Tap dates on the calendar above to request time off"
+    },
+    "approvedBy": "Approved by {{firstName}} {{lastName}}",
+    "cancelRequest": "Cancel Request",
+    "cancelConfirmTitle": "Cancel Request",
+    "cancelConfirmMessage": "Are you sure you want to cancel this time off request?",
+    "failedToCancel": "Failed to cancel request",
+    "typeLabels": {
+      "vacation": "Vacation",
+      "sickLeave": "Sick Leave",
+      "personal": "Personal",
+      "timeOff": "Time Off"
+    }
+  },
+
+  "profile": {
+    "profilePhoto": "Profile Photo",
+    "chooseOption": "Choose an option",
+    "takePhoto": "Take Photo",
+    "chooseFromGallery": "Choose from Gallery",
+    "removePhoto": "Remove Photo",
+    "uploadFailed": "Upload Failed",
+    "couldNotUpload": "Could not upload photo. Please try again.",
+    "couldNotRemove": "Could not remove photo.",
+
+    "menu": {
+      "general": "GENERAL",
+      "support": "SUPPORT",
+      "legal": "LEGAL",
+      "notifications": "Notifications",
+      "appearance": "Appearance",
+      "accountSecurity": "Account & Security",
+      "helpCenter": "Help Center",
+      "contactSupport": "Contact Support",
+      "rateApp": "Rate the App",
+      "termsOfService": "Terms of Service",
+      "privacyPolicy": "Privacy Policy",
+      "about": "About",
+      "language": "Language"
+    },
+
+    "language": {
+      "choosePreferred": "Choose your preferred language",
+      "appliedImmediately": "Language changes are applied immediately across the app."
+    },
+
+    "theme": {
+      "title": "Appearance",
+      "chooseTheme": "Choose a theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+
+    "signOutConfirmTitle": "Sign Out",
+    "signOutConfirmMessage": "Are you sure you want to sign out?",
+    "signOutButton": "Sign Out",
+    "versionFooter": "HBCField v{{version}}",
+
+    "account": {
+      "title": "Account & Security",
+      "accountInfo": "Account Information",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "changePassword": "Change Password",
+      "currentPasswordLabel": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "Min. 8 characters",
+      "confirmPasswordLabel": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Re-enter new password",
+      "submitButton": "Change Password",
+      "currentPasswordRequired": "Please enter your current password.",
+      "newPasswordTooShort": "New password must be at least 8 characters.",
+      "passwordsMismatch": "New passwords do not match.",
+      "passwordChanged": "Password changed successfully.",
+      "failedToChange": "Failed to change password"
+    },
+
+    "notifications": {
+      "title": "Notifications",
+      "pushNotifications": "Push Notifications",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "settings": "Settings",
+      "categories": "Categories",
+      "tasks": "Tasks",
+      "tasksDescription": "New assignments, status changes, comments",
+      "attendance": "Attendance",
+      "attendanceDescription": "Clock-in/out reminders",
+      "timeOff": "Time Off",
+      "timeOffDescription": "Request approvals and updates",
+      "footerNote": "Notification preferences are stored locally. Push notification permissions are managed in your device settings."
+    },
+
+    "about": {
+      "title": "About",
+      "tagline": "Dispatch \u00B7 Track \u00B7 Deliver",
+      "description": "HBCField is a field service management platform that helps teams dispatch tasks, track progress in real-time, and deliver exceptional service."
+    }
+  },
+
+  "manage": {
+    "timeOff": {
+      "label": "Time Off",
+      "desc": "Approve requests"
+    },
+    "members": {
+      "label": "Members",
+      "desc": "Manage team"
+    },
+    "joinRequests": {
+      "label": "Join Requests",
+      "desc": "Review & approve"
+    },
+    "invitations": {
+      "label": "Invitations",
+      "desc": "Create invite codes"
+    },
+    "schedules": {
+      "label": "Schedules",
+      "desc": "Work schedules"
+    },
+
+    "membersScreen": {
+      "filterAll": "All",
+      "filterAdmin": "Admin",
+      "filterDispatcher": "Dispatcher",
+      "filterTechnician": "Technician",
+      "memberCount": "{{count}} member",
+      "memberCountPlural": "{{count}} members",
+      "you": "(you)",
+      "removeTitle": "Remove Member",
+      "removeMessage": "Remove {{firstName}} {{lastName}} from the organization?",
+      "cannotRemoveSelf": "You cannot remove yourself.",
+      "failedToLoad": "Failed to load members",
+      "failedToRemove": "Failed to remove member",
+      "noMembers": "No members found",
+      "roleLabels": {
+        "admin": "Admin",
+        "dispatcher": "Dispatcher",
+        "technician": "Technician"
+      }
+    },
+
+    "invitationsScreen": {
+      "createButton": "Create Invitation",
+      "noInvitations": "No invitations yet",
+      "revokeTitle": "Revoke Invitation",
+      "revokeMessage": "This invitation will no longer be usable.",
+      "failedToLoad": "Failed to load invitations",
+      "failedToRevoke": "Failed to revoke",
+      "failedToCreate": "Failed to create invitation",
+      "created": "Created {{date}}",
+      "expires": "Expires {{date}}",
+      "acceptedBy": "Accepted by {{firstName}} {{lastName}}",
+      "createModal": {
+        "title": "New Invitation",
+        "successTitle": "Invitation Created",
+        "roleLabel": "Role",
+        "technician": "Technician",
+        "dispatcher": "Dispatcher",
+        "jobTitleLabel": "Job Title (optional)",
+        "jobTitlePlaceholder": "e.g. Electrician",
+        "generateButton": "Generate Code",
+        "tapToCopy": "Tap to copy \u00B7 Expires in 3 days",
+        "shareMessage": "Join with invitation code: {{code}}"
+      }
+    },
+
+    "joinRequestsScreen": {
+      "approveTitle": "Approve Request",
+      "approveMessage": "Approve {{firstName}} {{lastName}} as Technician?",
+      "rejectTitle": "Reject Request",
+      "rejectMessage": "Reject {{firstName}} {{lastName}}?",
+      "requested": "Requested {{date}}",
+      "failedToLoad": "Failed to load join requests",
+      "failedToApprove": "Failed to approve",
+      "failedToReject": "Failed to reject",
+      "allCaughtUp": "All caught up",
+      "noPendingRequests": "No pending join requests"
+    },
+
+    "schedulesScreen": {
+      "noTechnicians": "No technicians found",
+      "failedToLoad": "Failed to load schedules"
+    },
+
+    "timeOffRequestsScreen": {
+      "filters": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "all": "All"
+      },
+      "rejectReasonPrompt": "Reason (optional):",
+      "rejectConfirmTitle": "Reject Request",
+      "rejectConfirmMessage": "Reject this time-off request?",
+      "failedToLoad": "Failed to load time-off requests",
+      "failedToApprove": "Failed to approve",
+      "failedToReject": "Failed to reject",
+      "noRequests": "No {{filter}} requests",
+      "noRequestsAll": "No requests"
+    }
+  },
+
+  "components": {
+    "taskCard": {
+      "unassigned": "Unassigned"
+    },
+    "datePicker": {
+      "selectDate": "Select Date",
+      "today": "Today",
+      "clear": "Clear"
+    },
+    "locationPicker": {
+      "searchPlaceholder": "Search for an address...",
+      "useCurrentLocation": "Use current location"
+    },
+    "technicianPicker": {
+      "title": "Select Technician",
+      "searchPlaceholder": "Search by name...",
+      "activeTasks": "{{count}} active tasks",
+      "noFieldTechnicians": "No field technicians available (on-site workers cannot be assigned tasks)",
+      "noTechnicians": "No technicians found in your organization",
+      "noMatch": "No technicians match your search",
+      "noAvailable": "No technicians available",
+      "failedToLoad": "Failed to load technicians"
+    },
+    "signatureCapture": {
+      "tapToOpen": "Tap to open signature pad",
+      "signing": "Signing...",
+      "useFingerToSign": "Use your finger to sign below",
+      "clear": "Clear",
+      "confirmSignature": "Confirm Signature",
+      "technician": "Technician",
+      "customer": "Customer"
+    },
+    "photoGrid": {
+      "beforePhotos": "Before Photos",
+      "afterPhotos": "After Photos",
+      "removeTitle": "Remove Photo",
+      "removeMessage": "Remove this photo?",
+      "addTitle": "Add Photo",
+      "addChooseSource": "Choose source",
+      "camera": "Camera",
+      "gallery": "Gallery",
+      "add": "Add"
+    },
+    "screenStates": {
+      "retry": "Retry"
+    }
+  },
+
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordUppercase": "Must contain an uppercase letter",
+    "passwordLowercase": "Must contain a lowercase letter",
+    "passwordNumber": "Must contain a number",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordsMismatch": "Passwords do not match",
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "organizationNameRequired": "Organization name is required",
+    "organizationNameMinLength": "Name must be at least 2 characters"
+  },
+
+  "status": {
+    "DRAFT": "Draft",
+    "NEW": "New",
+    "ASSIGNED": "Assigned",
+    "ACCEPTED": "Accepted",
+    "EN_ROUTE": "En Route",
+    "ARRIVED": "Arrived",
+    "IN_PROGRESS": "In Progress",
+    "BLOCKED": "Blocked",
+    "COMPLETED": "Completed",
+    "CANCELED": "Canceled",
+    "CLOSED": "Closed"
+  },
+
+  "priority": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High",
+    "URGENT": "Urgent"
+  },
+
+  "roles": {
+    "ADMIN": "Admin",
+    "DISPATCHER": "Dispatcher",
+    "TECHNICIAN": "Technician"
+  },
+
+  "invitationStatus": {
+    "PENDING": "Pending",
+    "ACCEPTED": "Accepted",
+    "EXPIRED": "Expired",
+    "REVOKED": "Revoked"
+  },
+
+  "timeOffStatus": {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "CANCELED": "Canceled"
+  },
+
+  "dayNames": {
+    "short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "headers": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+  },
+
+  "monthNames": [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ]
+}

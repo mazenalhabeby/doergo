@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { tasksApi, TaskStatus, type Task } from '../../lib/api';
 import { TaskCard, LoadingState, ErrorState, Skeleton } from '../../components';
@@ -22,6 +23,7 @@ import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT
 export function FreelancerHome() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -117,7 +119,7 @@ export function FreelancerHome() {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
         return;
       }
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
+      setError(err instanceof Error ? err.message : t('tasks.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -168,7 +170,7 @@ export function FreelancerHome() {
       {/* Welcome Section */}
       <View style={sharedStyles.welcomeSection}>
         <Text style={[sharedStyles.welcomeGreeting, { color: colors.textMuted }]}>
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},
+          {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
         </Text>
         <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
       </View>
@@ -182,7 +184,7 @@ export function FreelancerHome() {
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.todaysTasks}</Text>
           </View>
-          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>Today's Tasks</Text>
+          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>{t('home.freelancer.todaysTasks')}</Text>
         </View>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
@@ -191,7 +193,7 @@ export function FreelancerHome() {
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.urgentTasks}</Text>
           </View>
-          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>Urgent Tasks</Text>
+          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>{t('home.freelancer.urgentTasks')}</Text>
         </View>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
@@ -200,7 +202,7 @@ export function FreelancerHome() {
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.completed}</Text>
           </View>
-          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>Completed</Text>
+          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>{t('home.freelancer.completed')}</Text>
         </View>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
@@ -209,7 +211,7 @@ export function FreelancerHome() {
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.pending}</Text>
           </View>
-          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>Pending</Text>
+          <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>{t('home.freelancer.pending')}</Text>
         </View>
       </View>
 
@@ -227,14 +229,14 @@ export function FreelancerHome() {
       {/* Jobs Header */}
       <View style={flStyles.jobsSection}>
         <View style={flStyles.jobsHeader}>
-          <Text style={[flStyles.jobsTitle, { color: colors.textPrimary }]}>Today's Jobs</Text>
+          <Text style={[flStyles.jobsTitle, { color: colors.textPrimary }]}>{t('home.freelancer.todaysJobs')}</Text>
           <View style={[flStyles.jobsCount, { backgroundColor: colors.surfaceRaised }]}>
             <Text style={[flStyles.jobsCountText, { color: colors.textSecondary }]}>{filteredTasks.length}</Text>
           </View>
         </View>
       </View>
     </>
-  ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName, colors]);
+  ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName, colors, t]);
 
   const renderTask = useCallback(({ item }: { item: Task }) => (
     <View style={flStyles.taskItemWrapper}>
@@ -244,9 +246,9 @@ export function FreelancerHome() {
 
   const listEmpty = useMemo(() => (
     <View style={[flStyles.emptyJobsInList, { backgroundColor: colors.card }]}>
-      <Text style={[flStyles.emptyJobsText, { color: colors.textMuted }]}>No jobs scheduled for this day</Text>
+      <Text style={[flStyles.emptyJobsText, { color: colors.textMuted }]}>{t('home.freelancer.noJobsScheduled')}</Text>
     </View>
-  ), [colors]);
+  ), [colors, t]);
 
   if (isLoading) return (
     <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>

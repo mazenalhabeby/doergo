@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, use, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -58,6 +59,7 @@ export default function TaskDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
+  const { t } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -88,7 +90,7 @@ export default function TaskDetailPage({
   const { data: routeData, isLoading: loadingRoute } = useQuery({
     queryKey: ["task-route", id],
     queryFn: () => trackingApi.getTaskRoute(id),
-    enabled: isDispatcher && !!task,
+    enabled: (isDispatcher || isAdmin) && !!task,
   })
 
   useEffect(() => {
@@ -108,7 +110,7 @@ export default function TaskDetailPage({
   const commentMutation = useMutation({
     mutationFn: (content: string) => tasksApi.addComment(id, content),
     onSuccess: () => {
-      toast.success("Comment added")
+      toast.success(t("tasks.detail.commentAdded"))
       setNewComment("")
       queryClient.invalidateQueries({
         queryKey: ["task", id],
@@ -125,7 +127,7 @@ export default function TaskDetailPage({
   const assignMutation = useMutation({
     mutationFn: (workerId: string) => tasksApi.assign(id, workerId),
     onSuccess: () => {
-      toast.success("Technician assigned")
+      toast.success(t("tasks.detail.technicianAssigned"))
       setShowAssignModal(false)
       queryClient.invalidateQueries({
         queryKey: ["task", id],
@@ -144,7 +146,7 @@ export default function TaskDetailPage({
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.updateStatus(id, "CANCELED"),
     onSuccess: () => {
-      toast.success("Request cancelled")
+      toast.success(t("tasks.detail.requestCancelled"))
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
       queryClient.invalidateQueries({ queryKey: ["task", id] })
@@ -186,16 +188,16 @@ export default function TaskDetailPage({
     return (
       <div className="min-h-full bg-slate-50 p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Task Details
+          {t("tasks.detail.title")}
         </h1>
         <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
           <AlertCircle className="mx-auto size-12 text-red-400 mb-4" />
-          <p className="font-semibold text-lg mb-2">Failed to load task</p>
+          <p className="font-semibold text-lg mb-2">{t("tasks.detail.failedToLoad")}</p>
           <p className="text-gray-500 mb-4">
-            {(error as Error)?.message || "Not found"}
+            {(error as Error)?.message || t("tasks.detail.notFound")}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="mr-2 size-4" /> Retry
+            <RefreshCw className="mr-2 size-4" /> {t("common.retry")}
           </Button>
         </div>
       </div>
@@ -231,7 +233,7 @@ export default function TaskDetailPage({
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 mb-3">
-              Task Details
+              {t("tasks.detail.title")}
             </h1>
             <div className="flex items-center gap-3 mb-2">
               <StatusBadge status={task.status} />
@@ -240,7 +242,7 @@ export default function TaskDetailPage({
               </span>
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span>Request: {requestId}</span>
+              <span>{t("tasks.detail.request", { id: requestId })}</span>
               <span className="flex items-center gap-1.5">
                 <Calendar className="size-4" />
                 {taskDate}
@@ -255,7 +257,7 @@ export default function TaskDetailPage({
                 onClick={() => setShowAssignModal(true)}
               >
                 <User className="size-4 mr-1.5" />
-                Assign
+                {t("tasks.detail.assign")}
               </Button>
             )}
             {!isCompleted && !isCanceled && (
@@ -264,7 +266,7 @@ export default function TaskDetailPage({
                 onClick={() => setShowEditDialog(true)}
               >
                 <Pencil className="size-4 mr-2" />
-                Edit task
+                {t("tasks.detail.editTask")}
               </Button>
             )}
 
@@ -278,33 +280,32 @@ export default function TaskDetailPage({
                       className="h-9 w-9 p-0"
                     >
                       <MoreHorizontal className="size-4" />
-                      <span className="sr-only">More actions</span>
+                      <span className="sr-only">{t("common.moreActions")}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
                         <Trash2 className="size-4 mr-2" />
-                        Cancel request
+                        {t("tasks.detail.cancelRequest")}
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel Request</AlertDialogTitle>
+                    <AlertDialogTitle>{t("tasks.detail.cancelRequestTitle")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to cancel this maintenance request?
-                      The task will be marked as canceled and no further actions can be taken.
+                      {t("tasks.detail.cancelRequestDescription")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Keep Request</AlertDialogCancel>
+                    <AlertDialogCancel>{t("tasks.detail.keepRequest")}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => deleteMutation.mutate()}
                       className="bg-red-600 hover:bg-red-700"
                     >
-                      Cancel Request
+                      {t("tasks.detail.cancelRequestConfirm")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -327,8 +328,8 @@ export default function TaskDetailPage({
           />
         )}
 
-        {/* Route Tracking Section (Dispatcher only) */}
-        {isDispatcher && (
+        {/* Route Tracking Section */}
+        {(isDispatcher || isAdmin) && (
           <RouteTrackingSection
             routeData={routeData}
             isLoading={loadingRoute}

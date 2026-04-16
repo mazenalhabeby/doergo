@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { Clock, MapPin, User, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -28,6 +29,7 @@ export function TaskCard({
   onAssign,
   className,
 }: TaskCardProps) {
+  const { t } = useTranslation()
   const priorityConfig = getPriorityConfig(task.priority)
   const taskRequestId = getRequestId(task)
   const isHigh = task.priority === "HIGH"
@@ -149,13 +151,13 @@ export function TaskCard({
                         <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
                         <span className="relative inline-flex size-1.5 rounded-full bg-amber-500" />
                       </span>
-                      Awaiting acceptance
+                      {t("tasks.card.awaitingAcceptance")}
                     </span>
                   )}
                   {task.status === "ACCEPTED" && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-50 text-green-600 ring-1 ring-green-200/50">
                       <CheckCircle2 className="size-3" />
-                      Confirmed
+                      {t("tasks.card.confirmed")}
                     </span>
                   )}
                 </div>
@@ -203,7 +205,7 @@ export function TaskCard({
                     "transition-all duration-300"
                   )}
                 >
-                  View Details
+                  {t("tasks.card.viewDetails")}
                   <ArrowRight className="size-4 ml-1.5" />
                 </Button>
               </Link>
@@ -223,7 +225,7 @@ export function TaskCard({
                     )}
                   >
                     <User className="size-4 mr-1.5" />
-                    Assign
+                    {t("tasks.card.assign")}
                   </Button>
                 ) : (
                   <Link href={`/tasks/${task.id}?assign=true`}>
@@ -238,7 +240,7 @@ export function TaskCard({
                       )}
                     >
                       <User className="size-4 mr-1.5" />
-                      Assign
+                      {t("tasks.card.assign")}
                     </Button>
                   </Link>
                 )

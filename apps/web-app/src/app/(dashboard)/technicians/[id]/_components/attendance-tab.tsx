@@ -2,6 +2,7 @@
 
 import { format } from "date-fns"
 import { Clock } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { type TimeEntry } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -26,12 +27,14 @@ interface AttendanceTabProps {
 }
 
 export function AttendanceTab({ attendance }: AttendanceTabProps) {
+  const { t } = useTranslation()
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Attendance History</CardTitle>
+        <CardTitle>{t('technicians.attendanceTab.title')}</CardTitle>
         <CardDescription>
-          Clock-in/out records for this technician
+          {t('technicians.attendanceTab.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -39,12 +42,12 @@ export function AttendanceTab({ attendance }: AttendanceTabProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Clock In</TableHead>
-                <TableHead>Clock Out</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t('technicians.attendanceTab.dateColumn')}</TableHead>
+                <TableHead>{t('technicians.attendanceTab.clockInColumn')}</TableHead>
+                <TableHead>{t('technicians.attendanceTab.clockOutColumn')}</TableHead>
+                <TableHead>{t('technicians.attendanceTab.durationColumn')}</TableHead>
+                <TableHead>{t('technicians.attendanceTab.locationColumn')}</TableHead>
+                <TableHead>{t('technicians.attendanceTab.statusColumn')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -69,10 +72,10 @@ export function AttendanceTab({ attendance }: AttendanceTabProps) {
                   <TableCell>{entry.location?.name || "—"}</TableCell>
                   <TableCell>
                     {entry.clockInWithinGeofence ? (
-                      <Badge className="bg-green-100 text-green-700">In Zone</Badge>
+                      <Badge className="bg-green-100 text-green-700">{t('technicians.attendanceTab.inZone')}</Badge>
                     ) : (
                       <Badge className="bg-amber-100 text-amber-700">
-                        Out of Zone
+                        {t('technicians.attendanceTab.outOfZone')}
                       </Badge>
                     )}
                   </TableCell>
@@ -83,7 +86,7 @@ export function AttendanceTab({ attendance }: AttendanceTabProps) {
         ) : (
           <div className="text-center py-12 text-slate-500">
             <Clock className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-            <p>No attendance records found</p>
+            <p>{t('technicians.attendanceTab.noRecords')}</p>
           </div>
         )}
       </CardContent>

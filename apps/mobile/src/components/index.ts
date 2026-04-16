@@ -11,3 +11,5 @@ export { TechnicianPicker } from './technician-picker';
 export { LoadingState, ErrorState } from './screen-states';
 export { LocationPickerSheet } from './location-picker-sheet';
 export { Skeleton } from './skeleton';
+export { ConfirmSheet } from './confirm-sheet';
+export type { ConfirmSheetVariant } from './confirm-sheet';

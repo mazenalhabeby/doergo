@@ -8,6 +8,7 @@ import {
   Timer,
   Activity,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { type TechnicianStats } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +25,8 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ stats }: OverviewTabProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -32,7 +35,7 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Completion Rate</p>
+                <p className="text-sm text-slate-500">{t('technicians.overview.completionRate')}</p>
                 <p className="text-2xl font-semibold text-slate-800">
                   {stats?.performance.completionRate?.toFixed(0) || 0}%
                 </p>
@@ -48,7 +51,7 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">On-Time Rate</p>
+                <p className="text-sm text-slate-500">{t('technicians.overview.onTimeRate')}</p>
                 <p className="text-2xl font-semibold text-slate-800">
                   {stats?.performance.onTimeRate?.toFixed(0) || 0}%
                 </p>
@@ -64,7 +67,7 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Tasks Completed</p>
+                <p className="text-sm text-slate-500">{t('technicians.overview.tasksCompleted')}</p>
                 <p className="text-2xl font-semibold text-slate-800">
                   {stats?.tasks.completed || 0}
                 </p>
@@ -80,7 +83,7 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Hours This Week</p>
+                <p className="text-sm text-slate-500">{t('technicians.overview.hoursThisWeek')}</p>
                 <p className="text-2xl font-semibold text-slate-800">
                   {stats?.attendance.totalHoursThisWeek?.toFixed(1) || 0}h
                 </p>
@@ -98,16 +101,15 @@ export function OverviewTab({ stats }: OverviewTabProps) {
         {/* Active Tasks */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Active Tasks</CardTitle>
+            <CardTitle className="text-lg">{t('technicians.overview.activeTasks')}</CardTitle>
             <CardDescription>
-              Currently assigned tasks: {stats?.tasks.inProgress || 0} in progress,{" "}
-              {stats?.tasks.assigned || 0} assigned
+              {t('technicians.overview.activeTasksDescription', { inProgress: stats?.tasks.inProgress || 0, assigned: stats?.tasks.assigned || 0 })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-slate-500">
               <ClipboardList className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-              <p>Task details available in Tasks tab</p>
+              <p>{t('technicians.overview.taskDetailsInTab')}</p>
             </div>
           </CardContent>
         </Card>
@@ -115,8 +117,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
-            <CardDescription>Latest actions by this technician</CardDescription>
+            <CardTitle className="text-lg">{t('technicians.overview.recentActivity')}</CardTitle>
+            <CardDescription>{t('technicians.overview.latestActions')}</CardDescription>
           </CardHeader>
           <CardContent>
             {stats?.recentActivity && stats.recentActivity.length > 0 ? (
@@ -141,7 +143,7 @@ export function OverviewTab({ stats }: OverviewTabProps) {
             ) : (
               <div className="text-center py-8 text-slate-500">
                 <Activity className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-                <p>No recent activity</p>
+                <p>{t('technicians.overview.noRecentActivity')}</p>
               </div>
             )}
           </CardContent>

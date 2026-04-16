@@ -4,12 +4,13 @@ import {
   RefreshControl, ActivityIndicator, Alert, TextInput, Modal, Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { adminInvitationsApi, type Invitation } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton } from '../../../src/components';
+import { Skeleton, ConfirmSheet } from '../../../src/components';
 
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   PENDING: { color: COLORS.amber, bg: COLORS.amber + '20' },
@@ -20,6 +21,7 @@ const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
 
 export default function InvitationsScreen() {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +31,7 @@ export default function InvitationsScreen() {
   const [newRole, setNewRole] = useState<'TECHNICIAN' | 'DISPATCHER'>('TECHNICIAN');
   const [newSpecialty, setNewSpecialty] = useState('');
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<Invitation | null>(null);
 
   const fetchInvitations = useCallback(async (showRefresh = false) => {
     try {
@@ -38,7 +41,7 @@ export default function InvitationsScreen() {
       setInvitations(result);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      toast.error('Error', err?.message || 'Failed to load invitations');
+      toast.error(t('common.error'), err?.message || t('manage.invitationsScreen.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -58,7 +61,7 @@ export default function InvitationsScreen() {
       setGeneratedCode(result.code);
       await fetchInvitations();
     } catch (err: any) {
-      toast.error('Error', err?.message || 'Failed to create invitation');
+      toast.error(t('common.error'), err?.message || t('manage.invitationsScreen.failedToCreate'));
     } finally {
       setIsCreating(false);
     }
@@ -67,28 +70,26 @@ export default function InvitationsScreen() {
   const handleCopy = async (code: string) => {
     try {
       const { Share } = require('react-native');
-      await Share.share({ message: `Join with invitation code: ${code}` });
+      await Share.share({ message: t('manage.invitationsScreen.createModal.shareMessage', { code }) });
     } catch {
       Alert.alert('Code', code);
     }
   };
 
   const handleRevoke = (inv: Invitation) => {
-    Alert.alert('Revoke Invitation', 'This invitation will no longer be usable.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Revoke',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await adminInvitationsApi.revoke(inv.id);
-            await fetchInvitations();
-          } catch (err: any) {
-            toast.error('Error', err?.message || 'Failed to revoke');
-          }
-        },
-      },
-    ]);
+    setRevokeTarget(inv);
+  };
+
+  const confirmRevoke = async () => {
+    if (!revokeTarget) return;
+    const inv = revokeTarget;
+    setRevokeTarget(null);
+    try {
+      await adminInvitationsApi.revoke(inv.id);
+      await fetchInvitations();
+    } catch (err: any) {
+      toast.error(t('common.error'), err?.message || t('manage.invitationsScreen.failedToRevoke'));
+    }
   };
 
   const renderItem = ({ item }: { item: Invitation }) => {
@@ -101,22 +102,22 @@ export default function InvitationsScreen() {
           <View style={s.cardInfo}>
             <View style={s.roleRow}>
               <Text style={[s.role, { color: colors.textPrimary }]}>
-                {item.targetRole === 'TECHNICIAN' ? 'Technician' : 'Dispatcher'}
+                {item.targetRole === 'TECHNICIAN' ? t('manage.invitationsScreen.createModal.technician') : t('manage.invitationsScreen.createModal.dispatcher')}
               </Text>
               {item.specialty && <Text style={[s.specialty, { color: colors.textMuted }]}> · {item.specialty}</Text>}
             </View>
             <Text style={[s.date, { color: colors.textMuted }]}>
-              Created {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              {' · '}Expires {new Date(item.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {t('manage.invitationsScreen.created', { date: new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })}
+              {' · '}{t('manage.invitationsScreen.expires', { date: new Date(item.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })}
             </Text>
             {item.acceptedBy && (
               <Text style={[s.acceptedBy, { color: colors.textSecondary }]}>
-                Accepted by {item.acceptedBy.firstName} {item.acceptedBy.lastName}
+                {t('manage.invitationsScreen.acceptedBy', { firstName: item.acceptedBy.firstName, lastName: item.acceptedBy.lastName })}
               </Text>
             )}
           </View>
           <View style={[s.statusBadge, { backgroundColor: sc.bg }]}>
-            <Text style={[s.statusText, { color: sc.color }]}>{item.status}</Text>
+            <Text style={[s.statusText, { color: sc.color }]}>{t(`invitationStatus.${item.status}`)}</Text>
           </View>
         </View>
         {isPending && (
@@ -125,7 +126,7 @@ export default function InvitationsScreen() {
               style={[s.revokeBtn, { borderColor: COLORS.error }]}
               onPress={() => handleRevoke(item)}
             >
-              <Text style={[s.revokeBtnText, { color: COLORS.error }]}>Revoke</Text>
+              <Text style={[s.revokeBtnText, { color: COLORS.error }]}>{t('common.revoke')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -150,7 +151,7 @@ export default function InvitationsScreen() {
         activeOpacity={0.8}
       >
         <Ionicons name="add-circle" size={20} color={COLORS.white} />
-        <Text style={s.createBtnText}>Create Invitation</Text>
+        <Text style={s.createBtnText}>{t('manage.invitationsScreen.createButton')}</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -163,9 +164,20 @@ export default function InvitationsScreen() {
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="mail-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>No invitations yet</Text>
+            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.invitationsScreen.noInvitations')}</Text>
           </View>
         }
+      />
+
+      <ConfirmSheet
+        visible={!!revokeTarget}
+        onClose={() => setRevokeTarget(null)}
+        onConfirm={confirmRevoke}
+        title={t('manage.invitationsScreen.revokeTitle')}
+        message={t('manage.invitationsScreen.revokeMessage')}
+        confirmLabel={t('common.revoke')}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
       />
 
       {/* Create Modal */}
@@ -175,21 +187,21 @@ export default function InvitationsScreen() {
             {generatedCode ? (
               <>
                 <Ionicons name="checkmark-circle" size={48} color={COLORS.success} style={{ alignSelf: 'center' }} />
-                <Text style={[s.modalTitle, { color: colors.textPrimary, textAlign: 'center', marginTop: SPACING.md }]}>Invitation Created</Text>
+                <Text style={[s.modalTitle, { color: colors.textPrimary, textAlign: 'center', marginTop: SPACING.md }]}>{t('manage.invitationsScreen.createModal.successTitle')}</Text>
                 <TouchableOpacity style={s.codeBox} onPress={() => handleCopy(generatedCode)} activeOpacity={0.7}>
                   <Text style={s.codeText}>{generatedCode}</Text>
                   <Ionicons name="copy-outline" size={18} color={COLORS.primary} />
                 </TouchableOpacity>
-                <Text style={[s.codeHint, { color: colors.textMuted }]}>Tap to copy · Expires in 3 days</Text>
+                <Text style={[s.codeHint, { color: colors.textMuted }]}>{t('manage.invitationsScreen.createModal.tapToCopy')}</Text>
                 <TouchableOpacity style={s.doneBtn} onPress={() => setShowCreate(false)}>
-                  <Text style={s.doneBtnText}>Done</Text>
+                  <Text style={s.doneBtnText}>{t('common.done')}</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <Text style={[s.modalTitle, { color: colors.textPrimary }]}>New Invitation</Text>
+                <Text style={[s.modalTitle, { color: colors.textPrimary }]}>{t('manage.invitationsScreen.createModal.title')}</Text>
 
-                <Text style={[s.label, { color: colors.textSecondary }]}>Role</Text>
+                <Text style={[s.label, { color: colors.textSecondary }]}>{t('manage.invitationsScreen.createModal.roleLabel')}</Text>
                 <View style={s.roleToggle}>
                   {(['TECHNICIAN', 'DISPATCHER'] as const).map(r => (
                     <TouchableOpacity
@@ -198,7 +210,7 @@ export default function InvitationsScreen() {
                       onPress={() => setNewRole(r)}
                     >
                       <Text style={[s.roleOptionText, { color: newRole === r ? COLORS.white : colors.textSecondary }]}>
-                        {r === 'TECHNICIAN' ? 'Technician' : 'Dispatcher'}
+                        {r === 'TECHNICIAN' ? t('manage.invitationsScreen.createModal.technician') : t('manage.invitationsScreen.createModal.dispatcher')}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -206,10 +218,10 @@ export default function InvitationsScreen() {
 
                 {newRole === 'TECHNICIAN' && (
                   <>
-                    <Text style={[s.label, { color: colors.textSecondary, marginTop: SPACING.md }]}>Job Title (optional)</Text>
+                    <Text style={[s.label, { color: colors.textSecondary, marginTop: SPACING.md }]}>{t('manage.invitationsScreen.createModal.jobTitleLabel')}</Text>
                     <TextInput
                       style={[s.input, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.textPrimary }]}
-                      placeholder="e.g. Electrician"
+                      placeholder={t('manage.invitationsScreen.createModal.jobTitlePlaceholder')}
                       placeholderTextColor={colors.textMuted}
                       value={newSpecialty}
                       onChangeText={setNewSpecialty}
@@ -219,7 +231,7 @@ export default function InvitationsScreen() {
 
                 <TouchableOpacity style={s.submitBtn} onPress={handleCreate} disabled={isCreating} activeOpacity={0.8}>
                   {isCreating ? <ActivityIndicator size="small" color={COLORS.white} /> : (
-                    <Text style={s.submitBtnText}>Generate Code</Text>
+                    <Text style={s.submitBtnText}>{t('manage.invitationsScreen.createModal.generateButton')}</Text>
                   )}
                 </TouchableOpacity>
               </>

@@ -7,11 +7,11 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../contexts/toast-context';
@@ -22,7 +22,7 @@ import {
   type CompanyLocation,
   type BreakStatus,
 } from '../../lib/api';
-import { LoadingState, ErrorState, LocationPickerSheet } from '../../components';
+import { LoadingState, ErrorState, LocationPickerSheet, ConfirmSheet } from '../../components';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
@@ -34,6 +34,7 @@ import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT
 export function FullTimeHome() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -56,6 +57,9 @@ export function FullTimeHome() {
   // Modal state
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<CompanyLocation | null>(null);
+
+  // Confirm sheet state
+  const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
 
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
@@ -83,7 +87,7 @@ export function FullTimeHome() {
       }
     } catch (err) {
       console.error('Error fetching attendance:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load attendance data');
+      setError(err instanceof Error ? err.message : t('home.fullTime.failedToLoadAttendance'));
     }
   }, []);
 
@@ -134,7 +138,7 @@ export function FullTimeHome() {
     try {
       const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
       if (permStatus !== 'granted') {
-        toast.warning('Permission Denied', 'Location permission is required for attendance tracking.');
+        toast.warning(t('home.fullTime.permissionDenied'), t('home.fullTime.locationPermissionRequired'));
         return null;
       }
 
@@ -150,7 +154,7 @@ export function FullTimeHome() {
       setCurrentLocation(loc);
       return loc;
     } catch (err) {
-      toast.error('Location Error', 'Failed to get your current location.');
+      toast.error(t('home.fullTime.locationError'), t('home.fullTime.failedToGetLocation'));
       return null;
     } finally {
       setIsGettingLocation(false);
@@ -173,45 +177,38 @@ export function FullTimeHome() {
       setSelectedLocation(null);
       await fetchAttendanceData();
     } catch (err: any) {
-      toast.error('Error', err.message || 'Failed to clock in');
+      toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockIn'));
     } finally {
       setIsActionLoading(false);
     }
   };
 
   // Handle clock out
-  const handleClockOut = async () => {
-    Alert.alert(
-      'Clock Out',
-      'Are you sure you want to clock out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clock Out',
-          onPress: async () => {
-            setIsActionLoading(true);
-            try {
-              const location = await getCurrentLocation();
-              if (!location) {
-                setIsActionLoading(false);
-                return;
-              }
+  const handleClockOut = () => {
+    setShowClockOutConfirm(true);
+  };
 
-              await attendanceApi.clockOut({
-                lat: location.lat,
-                lng: location.lng,
-                accuracy: location.accuracy,
-              });
-              await fetchAttendanceData();
-            } catch (err: any) {
-              toast.error('Error', err.message || 'Failed to clock out');
-            } finally {
-              setIsActionLoading(false);
-            }
-          },
-        },
-      ]
-    );
+  const confirmClockOut = async () => {
+    setShowClockOutConfirm(false);
+    setIsActionLoading(true);
+    try {
+      const location = await getCurrentLocation();
+      if (!location) {
+        setIsActionLoading(false);
+        return;
+      }
+
+      await attendanceApi.clockOut({
+        lat: location.lat,
+        lng: location.lng,
+        accuracy: location.accuracy,
+      });
+      await fetchAttendanceData();
+    } catch (err: any) {
+      toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockOut'));
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   // Open location selection modal
@@ -240,7 +237,7 @@ export function FullTimeHome() {
     return distance <= location.geofenceRadius;
   };
 
-  if (isLoading) return <LoadingState message="Loading attendance..." />;
+  if (isLoading) return <LoadingState message={t('home.fullTime.loadingAttendance')} />;
   if (error) return <ErrorState message={error} onRetry={fetchAttendanceData} />;
 
   const isClockedIn = status?.isClockedIn || false;
@@ -262,7 +259,7 @@ export function FullTimeHome() {
         {/* Welcome Section */}
         <View style={sharedStyles.welcomeSection}>
           <Text style={[sharedStyles.welcomeGreeting, { color: colors.textMuted }]}>
-            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},
+            {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
           </Text>
           <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
         </View>
@@ -272,7 +269,7 @@ export function FullTimeHome() {
           <View style={ftStyles.statusHeader}>
             <View style={[ftStyles.statusIndicator, isClockedIn ? ftStyles.indicatorActive : ftStyles.indicatorInactive]} />
             <Text style={[ftStyles.statusText, isClockedIn ? ftStyles.statusTextActive : { color: colors.textPrimary }]}>
-              {isClockedIn ? 'Clocked In' : 'Clocked Out'}
+              {isClockedIn ? t('home.fullTime.clockedIn') : t('home.fullTime.clockedOut')}
             </Text>
           </View>
 
@@ -281,13 +278,13 @@ export function FullTimeHome() {
               <View style={ftStyles.shiftRow}>
                 <Ionicons name="location" size={16} color={COLORS.primary} />
                 <Text style={ftStyles.shiftLocation}>
-                  {status.currentEntry.location?.name || 'Unknown Location'}
+                  {status.currentEntry.location?.name || t('common.unknownLocation')}
                 </Text>
               </View>
               <View style={ftStyles.shiftRow}>
                 <Ionicons name="time" size={16} color={COLORS.primary} />
                 <Text style={ftStyles.shiftTime}>
-                  Started at {formatTime(status.currentEntry.clockInAt)}
+                  {t('home.fullTime.startedAt', { time: formatTime(status.currentEntry.clockInAt) })}
                 </Text>
               </View>
               <View style={ftStyles.durationBadge}>
@@ -298,7 +295,7 @@ export function FullTimeHome() {
               {breakStatus?.isOnBreak && (
                 <View style={ftStyles.breakBadge}>
                   <Ionicons name="cafe" size={14} color={COLORS.white} />
-                  <Text style={ftStyles.breakText}>On Break</Text>
+                  <Text style={ftStyles.breakText}>{t('home.fullTime.onBreak')}</Text>
                 </View>
               )}
             </View>
@@ -324,7 +321,7 @@ export function FullTimeHome() {
                   color={COLORS.white}
                 />
                 <Text style={ftStyles.clockButtonText}>
-                  {isClockedIn ? 'Clock Out' : 'Clock In'}
+                  {isClockedIn ? t('home.fullTime.clockOut') : t('home.fullTime.clockIn')}
                 </Text>
               </>
             )}
@@ -338,14 +335,14 @@ export function FullTimeHome() {
             <Text style={[ftStyles.quickStatValue, { color: colors.textPrimary }]}>
               {formatDuration(Math.max(0, elapsedMinutes - (breakStatus?.totalBreakMinutes || 0)))}
             </Text>
-            <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>Net Work</Text>
+            <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>{t('home.fullTime.netWork')}</Text>
           </View>
           <View style={[ftStyles.quickStatCard, { backgroundColor: colors.card }]}>
             <Ionicons name="cafe-outline" size={24} color={COLORS.amber} />
             <Text style={[ftStyles.quickStatValue, { color: colors.textPrimary }]}>
               {breakStatus?.totalBreakMinutes ? formatDuration(breakStatus.totalBreakMinutes) : '0m'}
             </Text>
-            <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>Break Time</Text>
+            <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>{t('home.fullTime.breakTime')}</Text>
           </View>
           <View style={[ftStyles.quickStatCard, { backgroundColor: colors.card }]}>
             <Ionicons name="calendar-outline" size={24} color={COLORS.success} />
@@ -367,14 +364,14 @@ export function FullTimeHome() {
                 return count;
               })()}
             </Text>
-            <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>This Week</Text>
+            <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>{t('home.fullTime.thisWeek')}</Text>
           </View>
         </View>
 
         {/* Assigned Locations (when clocked out) */}
         {!isClockedIn && status?.assignedLocations && status.assignedLocations.length > 0 && (
           <View style={ftStyles.locationsSection}>
-            <Text style={[sharedStyles.sectionTitle, { color: colors.textPrimary }]}>Your Locations</Text>
+            <Text style={[sharedStyles.sectionTitle, { color: colors.textPrimary }]}>{t('home.fullTime.yourLocations')}</Text>
             {status.assignedLocations.map((location) => {
               const distance = getDistanceToLocation(location);
               const withinFence = isWithinGeofence(location);
@@ -393,9 +390,9 @@ export function FullTimeHome() {
                         />
                         <Text style={[ftStyles.distanceText, withinFence ? ftStyles.withinFenceText : { color: colors.textSecondary }]}>
                           {distance < 1000
-                            ? `${Math.round(distance)}m away`
-                            : `${(distance / 1000).toFixed(1)}km away`}
-                          {withinFence && ' (within range)'}
+                            ? t('home.fullTime.awayMeters', { distance: Math.round(distance) })
+                            : t('home.fullTime.awayKm', { distance: (distance / 1000).toFixed(1) })}
+                          {withinFence && ` ${t('home.fullTime.withinRange')}`}
                         </Text>
                       </View>
                     )}
@@ -409,16 +406,16 @@ export function FullTimeHome() {
         {/* Recent History */}
         {history.length > 0 && (
           <View style={ftStyles.historySection}>
-            <Text style={[sharedStyles.sectionTitle, { color: colors.textPrimary }]}>Recent Activity</Text>
+            <Text style={[sharedStyles.sectionTitle, { color: colors.textPrimary }]}>{t('home.fullTime.recentActivity')}</Text>
             {history.slice(0, 3).map((entry) => (
               <View key={entry.id} style={[ftStyles.historyCard, { backgroundColor: colors.card }]}>
                 <View style={ftStyles.historyLeft}>
                   <Text style={[ftStyles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt)}</Text>
-                  <Text style={[ftStyles.historyLocation, { color: colors.textSecondary }]}>{entry.location?.name || 'Unknown'}</Text>
+                  <Text style={[ftStyles.historyLocation, { color: colors.textSecondary }]}>{entry.location?.name || t('common.unknown')}</Text>
                 </View>
                 <View style={ftStyles.historyRight}>
                   <Text style={[ftStyles.historyTime, { color: colors.textSecondary }]}>
-                    {formatTime(entry.clockInAt)} - {entry.clockOutAt ? formatTime(entry.clockOutAt) : 'Active'}
+                    {formatTime(entry.clockInAt)} - {entry.clockOutAt ? formatTime(entry.clockOutAt) : t('common.active')}
                   </Text>
                   {entry.totalMinutes && (
                     <Text style={ftStyles.historyDuration}>{formatDuration(entry.totalMinutes)}</Text>
@@ -442,8 +439,20 @@ export function FullTimeHome() {
         onConfirm={handleClockIn}
         onClose={() => setLocationModalVisible(false)}
         getDistance={getDistanceToLocation}
-        confirmLabel="Clock In"
+        confirmLabel={t('home.fullTime.clockIn')}
         confirmDisabled={isActionLoading}
+      />
+
+      <ConfirmSheet
+        visible={showClockOutConfirm}
+        onClose={() => setShowClockOutConfirm(false)}
+        onConfirm={confirmClockOut}
+        title={t('home.fullTime.clockOutConfirmTitle')}
+        message={t('home.fullTime.clockOutConfirmMessage')}
+        confirmLabel={t('home.fullTime.clockOut')}
+        cancelLabel={t('common.cancel')}
+        variant="warning"
+        icon="log-out"
       />
     </View>
   );

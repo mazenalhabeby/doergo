@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -152,6 +153,7 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
    ═══════════════════════════════════════════════════════════ */
 
 export default function Home() {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
@@ -242,11 +244,11 @@ export default function Home() {
             <AnimatedLogo size="small" variant="light" />
             <div className="flex items-center gap-5">
               <Link href="/login" className="text-sm text-zinc-500 hover:text-white transition-colors hidden sm:block">
-                Sign In
+                {t('landing.nav.signIn')}
               </Link>
               <Magnetic>
                 <Link href="/login" className="text-sm px-5 py-2.5 rounded-full bg-white/[.08] hover:bg-white/[.14] text-white font-medium transition-all duration-300 border border-white/[.08] hover:border-white/[.16]">
-                  Get Started
+                  {t('landing.nav.getStarted')}
                 </Link>
               </Magnetic>
             </div>
@@ -303,16 +305,16 @@ export default function Home() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
               </span>
               <span className="text-[11px] text-emerald-300/70 font-medium tracking-[.18em] uppercase">
-                Field Service Management
+                {t('landing.hero.badge')}
               </span>
             </motion.div>
 
             {/* headline — masked reveal */}
             <h1 className="fd font-extrabold text-[clamp(3rem,9vw,8.5rem)] leading-[.88] tracking-[-.045em] mb-10">
-              <RevealLine delay={0.4}>Field Operations,</RevealLine>
+              <RevealLine delay={0.4}>{t('landing.hero.headline1')}</RevealLine>
               <br />
               <span className="tg">
-                <RevealLine delay={0.6}>Orchestrated.</RevealLine>
+                <RevealLine delay={0.6}>{t('landing.hero.headline2')}</RevealLine>
               </span>
             </h1>
 
@@ -323,8 +325,7 @@ export default function Home() {
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.85 }}
               className="text-[clamp(1rem,2vw,1.25rem)] text-zinc-400 max-w-2xl mx-auto mb-16 leading-relaxed"
             >
-              Dispatch tasks, track your team in real time, and close jobs faster
-              with photos, signatures, and service reports — all from one platform.
+              {t('landing.hero.subtitle')}
             </motion.p>
 
             {/* CTAs */}
@@ -339,7 +340,7 @@ export default function Home() {
                   href="/login"
                   className="group relative inline-flex items-center justify-center gap-3 px-10 py-[18px] rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-lg transition-all duration-400 hover:shadow-[0_0_60px_rgba(16,185,129,0.35)]"
                 >
-                  Start Free
+                  {t('landing.hero.ctaPrimary')}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />
                 </Link>
               </Magnetic>
@@ -348,7 +349,7 @@ export default function Home() {
                   href="/login"
                   className="inline-flex items-center justify-center px-10 py-[18px] rounded-2xl border border-zinc-700/60 hover:border-zinc-500 text-zinc-300 hover:text-white font-semibold text-lg transition-all duration-400"
                 >
-                  Sign In
+                  {t('landing.hero.ctaSecondary')}
                 </Link>
               </Magnetic>
             </motion.div>
@@ -371,12 +372,12 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <Reveal className="text-center mb-24">
               <span className="text-[11px] text-emerald-400/50 font-medium tracking-[.2em] uppercase mb-5 block">
-                Capabilities
+                {t('landing.features.sectionLabel')}
               </span>
               <h2 className="fd font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight leading-tight">
-                Everything you need to
+                {t('landing.features.sectionTitle1')}
                 <br />
-                <span className="tg">run the field</span>
+                <span className="tg">{t('landing.features.sectionTitle2')}</span>
               </h2>
             </Reveal>
 
@@ -390,10 +391,9 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
                         <Radio className="w-7 h-7 text-emerald-400" />
                       </div>
-                      <h3 className="fd font-bold text-2xl mb-3">Real-Time Tracking</h3>
+                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.realTimeTracking')}</h3>
                       <p className="text-zinc-500 leading-relaxed max-w-md text-[15px]">
-                        Follow your team on a live map with GPS routes, distance tracking,
-                        and instant status updates. Know exactly where everyone is.
+                        {t('landing.features.realTimeTrackingDesc')}
                       </p>
                     </div>
                   </div>
@@ -409,10 +409,9 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
                         <Zap className="w-7 h-7 text-blue-400" />
                       </div>
-                      <h3 className="fd font-bold text-2xl mb-3">Smart Dispatch</h3>
+                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.smartDispatch')}</h3>
                       <p className="text-zinc-500 leading-relaxed text-[15px]">
-                        Assign the right technician based on skills, location, and
-                        availability. Prevent double-booking automatically.
+                        {t('landing.features.smartDispatchDesc')}
                       </p>
                     </div>
                   </div>
@@ -428,10 +427,9 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
                         <ClipboardCheck className="w-7 h-7 text-violet-400" />
                       </div>
-                      <h3 className="fd font-bold text-2xl mb-3">Service Reports</h3>
+                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.serviceReports')}</h3>
                       <p className="text-zinc-500 leading-relaxed text-[15px]">
-                        Document work with before/after photos, parts used, and
-                        digital signatures. No more paperwork.
+                        {t('landing.features.serviceReportsDesc')}
                       </p>
                     </div>
                   </div>
@@ -447,10 +445,9 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
                         <Users className="w-7 h-7 text-amber-400" />
                       </div>
-                      <h3 className="fd font-bold text-2xl mb-3">Team Management</h3>
+                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.teamManagement')}</h3>
                       <p className="text-zinc-500 leading-relaxed max-w-md text-[15px]">
-                        Weekly schedules, time-off approvals, role permissions, performance
-                        metrics, and availability — all in one place.
+                        {t('landing.features.teamManagementDesc')}
                       </p>
                     </div>
                   </div>
@@ -467,10 +464,10 @@ export default function Home() {
           <div className="max-w-5xl mx-auto relative">
             <Reveal className="text-center mb-24">
               <span className="text-[11px] text-blue-400/50 font-medium tracking-[.2em] uppercase mb-5 block">
-                Workflow
+                {t('landing.workflow.sectionLabel')}
               </span>
               <h2 className="fd font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight">
-                Four steps to done
+                {t('landing.workflow.sectionTitle')}
               </h2>
             </Reveal>
 
@@ -492,10 +489,10 @@ export default function Home() {
               </Reveal>
 
               {([
-                { n: '01', title: 'Create', desc: 'Define the job with location, priority, attachments, and due date.', bg: 'bg-emerald-500', glow: '#10b981' },
-                { n: '02', title: 'Assign', desc: 'Dispatch to the best-fit technician in one click.', bg: 'bg-blue-500', glow: '#3b82f6' },
-                { n: '03', title: 'Track', desc: 'Follow real-time progress on the live map.', bg: 'bg-violet-500', glow: '#8b5cf6' },
-                { n: '04', title: 'Report', desc: 'Submit service reports with photos and signatures.', bg: 'bg-amber-500', glow: '#f59e0b' },
+                { n: '01', titleKey: 'landing.workflow.step1Title', descKey: 'landing.workflow.step1Desc', bg: 'bg-emerald-500', glow: '#10b981' },
+                { n: '02', titleKey: 'landing.workflow.step2Title', descKey: 'landing.workflow.step2Desc', bg: 'bg-blue-500', glow: '#3b82f6' },
+                { n: '03', titleKey: 'landing.workflow.step3Title', descKey: 'landing.workflow.step3Desc', bg: 'bg-violet-500', glow: '#8b5cf6' },
+                { n: '04', titleKey: 'landing.workflow.step4Title', descKey: 'landing.workflow.step4Desc', bg: 'bg-amber-500', glow: '#f59e0b' },
               ] as const).map((s, i) => (
                 <Reveal key={s.n} delay={0.15 + i * 0.12} className="text-center">
                   <motion.div
@@ -506,8 +503,8 @@ export default function Home() {
                   >
                     {s.n}
                   </motion.div>
-                  <h3 className="fd font-semibold text-xl mb-2">{s.title}</h3>
-                  <p className="text-sm text-zinc-500 leading-relaxed max-w-[200px] mx-auto">{s.desc}</p>
+                  <h3 className="fd font-semibold text-xl mb-2">{t(s.titleKey)}</h3>
+                  <p className="text-sm text-zinc-500 leading-relaxed max-w-[200px] mx-auto">{t(s.descKey)}</p>
                 </Reveal>
               ))}
             </div>
@@ -519,12 +516,12 @@ export default function Home() {
           <div className="max-w-5xl mx-auto">
             <Reveal className="text-center mb-24">
               <span className="text-[11px] text-violet-400/50 font-medium tracking-[.2em] uppercase mb-5 block">
-                Platform
+                {t('landing.platform.sectionLabel')}
               </span>
               <h2 className="fd font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight leading-tight">
-                One platform,
+                {t('landing.platform.sectionTitle1')}
                 <br />
-                <span className="tg">three perspectives</span>
+                <span className="tg">{t('landing.platform.sectionTitle2')}</span>
               </h2>
             </Reveal>
 
@@ -532,23 +529,23 @@ export default function Home() {
               {([
                 {
                   icon: ShieldCheck,
-                  role: 'Admin',
-                  tag: 'Web + Mobile',
-                  desc: 'Full control. Create tasks, manage your team, set permissions, and oversee everything from anywhere.',
+                  roleKey: 'landing.platform.adminRole',
+                  tagKey: 'landing.platform.adminTag',
+                  descKey: 'landing.platform.adminDesc',
                   accent: 'emerald' as const,
                 },
                 {
                   icon: Monitor,
-                  role: 'Dispatcher',
-                  tag: 'Web',
-                  desc: 'Your operations command center. Assign tasks, track technicians on the live map, and optimize daily routes.',
+                  roleKey: 'landing.platform.dispatcherRole',
+                  tagKey: 'landing.platform.dispatcherTag',
+                  descKey: 'landing.platform.dispatcherDesc',
                   accent: 'blue' as const,
                 },
                 {
                   icon: Smartphone,
-                  role: 'Technician',
-                  tag: 'Mobile',
-                  desc: 'Everything for the field. Accept tasks, navigate to jobs, capture photos, and submit reports on the go.',
+                  roleKey: 'landing.platform.technicianRole',
+                  tagKey: 'landing.platform.technicianTag',
+                  descKey: 'landing.platform.technicianDesc',
                   accent: 'violet' as const,
                 },
               ] as const).map((r, i) => {
@@ -561,7 +558,7 @@ export default function Home() {
                 const c = map[r.accent];
 
                 return (
-                  <Reveal key={r.role} delay={0.1 + i * 0.12}>
+                  <Reveal key={r.roleKey} delay={0.1 + i * 0.12}>
                     <TiltCard>
                       <div className={`gl rounded-3xl p-8 sm:p-10 h-full border ${c.border} transition-all duration-500 group relative overflow-hidden`}>
                         {/* accent orb */}
@@ -570,13 +567,13 @@ export default function Home() {
                         <div className="relative">
                           <Icon className={`w-12 h-12 ${c.icon} mb-7 group-hover:scale-110 transition-transform duration-500`} style={{ transform: 'translateZ(25px)' }} />
                           <div className="flex items-center gap-3 mb-5" style={{ transform: 'translateZ(18px)' }}>
-                            <h3 className="fd font-bold text-[1.7rem] leading-none">{r.role}</h3>
+                            <h3 className="fd font-bold text-[1.7rem] leading-none">{t(r.roleKey)}</h3>
                             <span className={`text-[10px] px-2.5 py-1 rounded-full border ${c.pill} font-medium tracking-wider`}>
-                              {r.tag}
+                              {t(r.tagKey)}
                             </span>
                           </div>
                           <p className="text-[15px] text-zinc-500 leading-relaxed" style={{ transform: 'translateZ(10px)' }}>
-                            {r.desc}
+                            {t(r.descKey)}
                           </p>
                         </div>
                       </div>
@@ -593,21 +590,21 @@ export default function Home() {
           <div className="max-w-5xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {([
-                { icon: BarChart3, value: 10, suffix: '+', label: 'Task Statuses', desc: 'Full lifecycle tracking', accent: 'text-emerald-400' },
-                { icon: MapPin, value: 3, suffix: '', label: 'User Roles', desc: 'Admin, Dispatcher, Tech', accent: 'text-blue-400' },
-                { icon: FileCheck, value: 100, suffix: '%', label: 'Paperless', desc: 'Digital service reports', accent: 'text-violet-400' },
-                { icon: Bell, value: 24, suffix: '/7', label: 'Real-Time', desc: 'Push + WebSocket updates', accent: 'text-amber-400' },
+                { icon: BarChart3, value: 10, suffix: '+', labelKey: 'landing.stats.taskStatuses', descKey: 'landing.stats.taskStatusesDesc', accent: 'text-emerald-400' },
+                { icon: MapPin, value: 3, suffix: '', labelKey: 'landing.stats.userRoles', descKey: 'landing.stats.userRolesDesc', accent: 'text-blue-400' },
+                { icon: FileCheck, value: 100, suffix: '%', labelKey: 'landing.stats.paperless', descKey: 'landing.stats.paperlessDesc', accent: 'text-violet-400' },
+                { icon: Bell, value: 24, suffix: '/7', labelKey: 'landing.stats.realTime', descKey: 'landing.stats.realTimeDesc', accent: 'text-amber-400' },
               ] as const).map((s, i) => {
                 const Icon = s.icon;
                 return (
-                  <Reveal key={s.label} delay={i * 0.1}>
+                  <Reveal key={s.labelKey} delay={i * 0.1}>
                     <div className="text-center py-8">
                       <Icon className={`w-6 h-6 ${s.accent} mx-auto mb-4 opacity-60`} />
                       <div className="fd font-extrabold text-5xl sm:text-6xl tracking-tight mb-2">
                         <Counter to={s.value} suffix={s.suffix} />
                       </div>
-                      <div className="text-sm text-zinc-300 font-medium mb-1">{s.label}</div>
-                      <div className="text-xs text-zinc-600">{s.desc}</div>
+                      <div className="text-sm text-zinc-300 font-medium mb-1">{t(s.labelKey)}</div>
+                      <div className="text-xs text-zinc-600">{t(s.descKey)}</div>
                     </div>
                   </Reveal>
                 );
@@ -625,19 +622,19 @@ export default function Home() {
 
           <Reveal className="relative max-w-3xl mx-auto text-center">
             <h2 className="fd font-bold text-[clamp(2rem,6vw,4rem)] tracking-tight leading-[1.05] mb-8">
-              Ready to modernize
+              {t('landing.cta.title1')}
               <br />
-              your field operations?
+              {t('landing.cta.title2')}
             </h2>
             <p className="text-zinc-500 mb-14 text-lg max-w-xl mx-auto">
-              Join teams already using HBCField to dispatch, track, and deliver.
+              {t('landing.cta.subtitle')}
             </p>
             <Magnetic strength={0.2}>
               <Link
                 href="/login"
                 className="group inline-flex items-center gap-3 px-12 py-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xl transition-all duration-400 hover:shadow-[0_0_80px_rgba(16,185,129,0.3)]"
               >
-                Get Started — Free
+                {t('landing.cta.button')}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
               </Link>
             </Magnetic>
@@ -648,10 +645,10 @@ export default function Home() {
         <footer className="border-t border-white/[.04] py-12 px-6">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
             <AnimatedLogo size="small" variant="light" />
-            <span className="text-xs text-zinc-700">&copy; {new Date().getFullYear()} HBCField. All rights reserved.</span>
+            <span className="text-xs text-zinc-700">&copy; {t('common.allRightsReserved', { year: new Date().getFullYear() })}</span>
             <div className="flex gap-6 text-xs text-zinc-700">
-              <span className="hover:text-zinc-400 cursor-pointer transition-colors">Privacy</span>
-              <span className="hover:text-zinc-400 cursor-pointer transition-colors">Terms</span>
+              <span className="hover:text-zinc-400 cursor-pointer transition-colors">{t('landing.footer.privacy')}</span>
+              <span className="hover:text-zinc-400 cursor-pointer transition-colors">{t('landing.footer.terms')}</span>
             </div>
           </div>
         </footer>

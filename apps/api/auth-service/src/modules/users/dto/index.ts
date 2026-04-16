@@ -32,6 +32,7 @@ export interface UpdateTechnicianDto {
   isActive?: boolean;
   rating?: number;
   ratingCount?: number;
+  canCreateTasks?: boolean;
 }
 
 /**

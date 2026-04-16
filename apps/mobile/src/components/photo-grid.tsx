@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import type { PickedImage } from '../hooks/useImagePicker';
 import {
   COLORS,
@@ -36,27 +37,28 @@ export function PhotoGrid({
   maxPhotos = 5,
   uploadProgress,
 }: PhotoGridProps) {
+  const { t } = useTranslation();
   const canAdd = photos.length < maxPhotos;
 
   const handleRemove = (index: number) => {
-    Alert.alert('Remove Photo', 'Remove this photo?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => onRemovePhoto(index) },
+    Alert.alert(t('components.photoGrid.removeTitle'), t('components.photoGrid.removeMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.remove'), style: 'destructive', onPress: () => onRemovePhoto(index) },
     ]);
   };
 
   const handleAdd = () => {
-    Alert.alert('Add Photo', 'Choose source', [
-      { text: 'Camera', onPress: onAddFromCamera },
-      { text: 'Gallery', onPress: onAddFromGallery },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('components.photoGrid.addTitle'), t('components.photoGrid.addChooseSource'), [
+      { text: t('components.photoGrid.camera'), onPress: onAddFromCamera },
+      { text: t('components.photoGrid.gallery'), onPress: onAddFromGallery },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.label}>{type === 'BEFORE' ? 'Before Photos' : 'After Photos'}</Text>
+        <Text style={styles.label}>{type === 'BEFORE' ? t('components.photoGrid.beforePhotos') : t('components.photoGrid.afterPhotos')}</Text>
         <Text style={styles.count}>{photos.length}/{maxPhotos}</Text>
       </View>
 
@@ -84,7 +86,7 @@ export function PhotoGrid({
         {canAdd && (
           <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
             <Ionicons name="camera-outline" size={24} color={COLORS.slate400} />
-            <Text style={styles.addText}>Add</Text>
+            <Text style={styles.addText}>{t('components.photoGrid.add')}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

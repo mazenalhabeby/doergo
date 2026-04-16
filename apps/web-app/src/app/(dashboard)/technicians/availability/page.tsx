@@ -77,17 +77,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 
 type ViewMode = "month" | "week"
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const WEEKDAY_KEYS = ["common.weekdaysShort.sun", "common.weekdaysShort.mon", "common.weekdaysShort.tue", "common.weekdaysShort.wed", "common.weekdaysShort.thu", "common.weekdaysShort.fri", "common.weekdaysShort.sat"]
 
-const STATUS_CONFIG: Record<TimeOffStatus, { label: string; className: string }> = {
-  PENDING: { label: "Pending", className: "bg-amber-100 text-amber-700" },
-  APPROVED: { label: "Approved", className: "bg-green-100 text-green-700" },
-  REJECTED: { label: "Rejected", className: "bg-red-100 text-red-700" },
-  CANCELED: { label: "Canceled", className: "bg-slate-100 text-slate-500" },
+const STATUS_CONFIG: Record<TimeOffStatus, { labelKey: string; className: string }> = {
+  PENDING: { labelKey: "common.pending", className: "bg-amber-100 text-amber-700" },
+  APPROVED: { labelKey: "common.approved", className: "bg-green-100 text-green-700" },
+  REJECTED: { labelKey: "common.rejected", className: "bg-red-100 text-red-700" },
+  CANCELED: { labelKey: "common.canceled", className: "bg-slate-100 text-slate-500" },
 }
 
 type OrgTimeOffRequest = TimeOffRequest & {
@@ -99,6 +100,7 @@ type OrgTimeOffRequest = TimeOffRequest & {
 // ============================================================================
 
 function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<TimeOffStatus | "all">("PENDING")
   const [actionDialog, setActionDialog] = useState<{
@@ -117,14 +119,14 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
     mutationFn: ({ id, approved, reason }: { id: string; approved: boolean; reason?: string }) =>
       techniciansApi.approveTimeOff(id, approved, reason),
     onSuccess: (_, variables) => {
-      toast.success(variables.approved ? "Time-off request approved" : "Time-off request rejected")
+      toast.success(variables.approved ? t('technicians.availabilityPage.approvedSuccessfully') : t('technicians.availabilityPage.rejectedSuccessfully'))
       queryClient.invalidateQueries({ queryKey: ["orgTimeOff"] })
       queryClient.invalidateQueries({ queryKey: ["technicians-availability"] })
       setActionDialog({ open: false, type: "approve", request: null })
       setRejectionReason("")
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to process request")
+      toast.error(error.message || t('technicians.availabilityPage.failedToProcess'))
     },
   })
 
@@ -158,9 +160,9 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-slate-500">
           {pendingCount > 0 ? (
-            <><span className="font-medium text-amber-600">{pendingCount} pending</span> request{pendingCount !== 1 ? "s" : ""} need{pendingCount === 1 ? "s" : ""} review</>
+            t('technicians.availabilityPage.pendingNeedReview', { count: pendingCount, plural: pendingCount !== 1 ? "s" : "", verb: pendingCount === 1 ? "s" : "" })
           ) : (
-            "No pending requests"
+            t('technicians.availabilityPage.noPendingRequests')
           )}
         </p>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as TimeOffStatus | "all")}>
@@ -169,11 +171,11 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Requests</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="APPROVED">Approved</SelectItem>
-            <SelectItem value="REJECTED">Rejected</SelectItem>
-            <SelectItem value="CANCELED">Canceled</SelectItem>
+            <SelectItem value="all">{t('technicians.availabilityPage.allRequests')}</SelectItem>
+            <SelectItem value="PENDING">{t('common.pending')}</SelectItem>
+            <SelectItem value="APPROVED">{t('common.approved')}</SelectItem>
+            <SelectItem value="REJECTED">{t('common.rejected')}</SelectItem>
+            <SelectItem value="CANCELED">{t('common.canceled')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -189,24 +191,24 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
         ) : requests.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Umbrella className="h-10 w-10 text-slate-200 mb-3" strokeWidth={1.5} />
-            <p className="text-sm font-medium text-slate-600">No time-off requests</p>
+            <p className="text-sm font-medium text-slate-600">{t('technicians.availabilityPage.noTimeOffRequests')}</p>
             <p className="text-[13px] text-slate-400 mt-1">
               {statusFilter !== "all"
-                ? `No ${statusFilter.toLowerCase()} requests found`
-                : "Requests from technicians will appear here"}
+                ? t('technicians.availabilityPage.noRequestsFound', { status: statusFilter.toLowerCase() })
+                : t('technicians.availabilityPage.requestsFromTechnicians')}
             </p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50/50">
-                <TableHead className="font-medium">Technician</TableHead>
-                <TableHead className="font-medium">Dates</TableHead>
-                <TableHead className="font-medium">Duration</TableHead>
-                <TableHead className="font-medium">Reason</TableHead>
-                <TableHead className="font-medium">Status</TableHead>
-                <TableHead className="font-medium">Submitted</TableHead>
-                {canManage && <TableHead className="font-medium text-right">Actions</TableHead>}
+                <TableHead className="font-medium">{t('technicians.availabilityPage.technicianColumn')}</TableHead>
+                <TableHead className="font-medium">{t('technicians.availabilityPage.datesColumn')}</TableHead>
+                <TableHead className="font-medium">{t('technicians.availabilityPage.durationColumn')}</TableHead>
+                <TableHead className="font-medium">{t('technicians.availabilityPage.reasonColumn')}</TableHead>
+                <TableHead className="font-medium">{t('technicians.availabilityPage.statusColumn')}</TableHead>
+                <TableHead className="font-medium">{t('technicians.availabilityPage.submittedColumn')}</TableHead>
+                {canManage && <TableHead className="font-medium text-right">{t('technicians.availabilityPage.actionsColumn')}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -246,12 +248,12 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-slate-500 max-w-[200px] truncate block">
-                      {request.reason || <span className="text-slate-300 italic">No reason</span>}
+                      {request.reason || <span className="text-slate-300 italic">{t('common.noReason')}</span>}
                     </span>
                   </TableCell>
                   <TableCell>
                     <Badge className={cn("font-medium", STATUS_CONFIG[request.status].className)}>
-                      {STATUS_CONFIG[request.status].label}
+                      {t(STATUS_CONFIG[request.status].labelKey)}
                     </Badge>
                     {request.status === "REJECTED" && request.rejectionReason && (
                       <p className="text-xs text-red-400 mt-1 max-w-[160px] truncate" title={request.rejectionReason}>
@@ -260,7 +262,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                     )}
                     {request.approvedBy && (
                       <p className="text-xs text-slate-400 mt-1">
-                        by {request.approvedBy.firstName} {request.approvedBy.lastName}
+                        {t('technicians.availabilityPage.byReviewer', { name: `${request.approvedBy.firstName} ${request.approvedBy.lastName}` })}
                       </p>
                     )}
                   </TableCell>
@@ -278,7 +280,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                             onClick={() => openAction("approve", request)}
                           >
                             <Check className="h-3.5 w-3.5" />
-                            Approve
+                            {t('technicians.availabilityPage.approve')}
                           </Button>
                           <Button
                             size="sm"
@@ -287,7 +289,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                             onClick={() => openAction("reject", request)}
                           >
                             <X className="h-3.5 w-3.5" />
-                            Reject
+                            {t('technicians.availabilityPage.reject')}
                           </Button>
                         </div>
                       ) : (
@@ -312,42 +314,41 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {actionDialog.type === "approve" ? "Approve" : "Reject"} Time Off Request
+              {actionDialog.type === "approve" ? t('technicians.availabilityPage.approveTimeOffTitle') : t('technicians.availabilityPage.rejectTimeOffTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  {actionDialog.type === "approve" ? "Approve" : "Reject"} time-off request from{" "}
-                  <span className="font-medium text-slate-700">
-                    {actionDialog.request?.technician.firstName} {actionDialog.request?.technician.lastName}
-                  </span>?
+                  {actionDialog.type === "approve"
+                    ? t('technicians.availabilityPage.approveTimeOffDescription', { name: `${actionDialog.request?.technician.firstName} ${actionDialog.request?.technician.lastName}` })
+                    : t('technicians.availabilityPage.rejectTimeOffDescription', { name: `${actionDialog.request?.technician.firstName} ${actionDialog.request?.technician.lastName}` })}
                 </p>
                 {actionDialog.request && (
                   <div className="bg-slate-50 rounded-lg p-3 text-sm space-y-1">
                     <p className="text-slate-600">
-                      <span className="font-medium">Dates:</span>{" "}
+                      <span className="font-medium">{t('technicians.availabilityPage.datesColumn')}:</span>{" "}
                       {format(parseISO(actionDialog.request.startDate), "MMM d, yyyy")}
                       {actionDialog.request.startDate !== actionDialog.request.endDate && (
                         <> &ndash; {format(parseISO(actionDialog.request.endDate), "MMM d, yyyy")}</>
                       )}
                     </p>
                     <p className="text-slate-600">
-                      <span className="font-medium">Duration:</span>{" "}
+                      <span className="font-medium">{t('technicians.availabilityPage.durationColumn')}:</span>{" "}
                       {getDuration(actionDialog.request.startDate, actionDialog.request.endDate)}
                     </p>
                     {actionDialog.request.reason && (
                       <p className="text-slate-600">
-                        <span className="font-medium">Reason:</span> {actionDialog.request.reason}
+                        <span className="font-medium">{t('technicians.availabilityPage.reasonColumn')}:</span> {actionDialog.request.reason}
                       </p>
                     )}
                   </div>
                 )}
                 {actionDialog.type === "reject" && (
                   <div className="space-y-2">
-                    <Label htmlFor="rejection-reason">Reason for rejection (optional)</Label>
+                    <Label htmlFor="rejection-reason">{t('technicians.availabilityPage.reasonForRejection')}</Label>
                     <Textarea
                       id="rejection-reason"
-                      placeholder="Explain why this request is being rejected..."
+                      placeholder={t('technicians.availabilityPage.explainRejection')}
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
                       rows={3}
@@ -358,7 +359,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className={cn(
                 actionDialog.type === "approve"
@@ -369,8 +370,8 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
               disabled={approveMutation.isPending}
             >
               {approveMutation.isPending
-                ? "Processing..."
-                : actionDialog.type === "approve" ? "Approve" : "Reject"}
+                ? t('common.processing')
+                : actionDialog.type === "approve" ? t('technicians.availabilityPage.approve') : t('technicians.availabilityPage.reject')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -390,6 +391,7 @@ function CalendarTab({
   availabilityByDate,
   isInitialLoad,
   isFetchingNew,
+  t,
 }: {
   currentDate: Date
   viewMode: ViewMode
@@ -397,6 +399,7 @@ function CalendarTab({
   availabilityByDate: Map<string, TechnicianAvailability[]>
   isInitialLoad: boolean
   isFetchingNew: boolean
+  t: (key: string, options?: Record<string, unknown>) => string
 }) {
   const [selectedDay, setSelectedDay] = useState<{ date: Date; technicians: TechnicianAvailability[] } | null>(null)
 
@@ -441,15 +444,15 @@ function CalendarTab({
       )}>
         {/* Weekday Headers */}
         <div className="grid grid-cols-7 border-b border-slate-100">
-          {WEEKDAYS.map((day, i) => (
+          {WEEKDAY_KEYS.map((dayKey, i) => (
             <div
-              key={day}
+              key={dayKey}
               className={cn(
                 "text-center text-xs font-semibold uppercase tracking-wider py-3.5",
                 i === 0 || i === 6 ? "text-slate-400" : "text-slate-500"
               )}
             >
-              {day}
+              {t(dayKey)}
             </div>
           ))}
         </div>
@@ -501,7 +504,7 @@ function CalendarTab({
                       {format(day, "d")}
                     </span>
                     {isTodayDate && (
-                      <span className="text-[10px] font-medium text-blue-600 uppercase tracking-wide">Today</span>
+                      <span className="text-[10px] font-medium text-blue-600 uppercase tracking-wide">{t('common.today')}</span>
                     )}
                   </div>
 
@@ -542,7 +545,7 @@ function CalendarTab({
                         </div>
                       )}
                       <p className="text-[10px] text-slate-400 pt-0.5">
-                        {data.total} technician{data.total !== 1 ? "s" : ""}
+                        {data.total} {data.total !== 1 ? t('technicians.availabilityPage.techniciansPlural') : t('technicians.availabilityPage.technicians')}
                       </p>
                     </div>
                   )}
@@ -563,7 +566,7 @@ function CalendarTab({
                 {format(selectedDay.date, "EEEE, MMMM d, yyyy")}
               </h3>
               <Badge variant="secondary" className="text-xs">
-                {selectedDay.technicians.length} technician{selectedDay.technicians.length !== 1 ? "s" : ""}
+                {selectedDay.technicians.length} {selectedDay.technicians.length !== 1 ? t('technicians.availabilityPage.techniciansPlural') : t('technicians.availabilityPage.technicians')}
               </Badge>
             </div>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedDay(null)}>
@@ -595,10 +598,10 @@ function CalendarTab({
                         : "text-slate-400"
                     )}>
                       {tech.onTimeOff
-                        ? `Time Off${tech.timeOff?.reason ? ` — ${tech.timeOff.reason}` : ""}`
+                        ? `${t('technicians.availabilityPage.timeOffLabel')}${tech.timeOff?.reason ? ` — ${tech.timeOff.reason}` : ""}`
                         : tech.schedule
                         ? `${tech.schedule.startTime} - ${tech.schedule.endTime}${tech.schedule.notes ? ` · ${tech.schedule.notes}` : ""}`
-                        : "Not scheduled"}
+                        : t('technicians.availabilityPage.notScheduled')}
                     </p>
                   </div>
                 </div>
@@ -608,7 +611,7 @@ function CalendarTab({
                     : tech.isAvailable ? "bg-emerald-100 text-emerald-700"
                     : "bg-slate-100 text-slate-500"
                 )}>
-                  {tech.onTimeOff ? "Time Off" : tech.isAvailable ? "Available" : "Unavailable"}
+                  {tech.onTimeOff ? t('technicians.availability.timeOff') : tech.isAvailable ? t('technicians.availability.available') : t('technicians.availability.unavailable')}
                 </Badge>
               </Link>
             ))}
@@ -625,6 +628,7 @@ function CalendarTab({
 
 export default function ScheduleAndTimeOffPage() {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const initialTab = searchParams.get("tab") === "time-off" ? "time-off" : "calendar"
   const [activeTab, setActiveTab] = useState(initialTab)
@@ -723,8 +727,8 @@ export default function ScheduleAndTimeOffPage() {
         <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-12 text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-800 mb-2">Access Denied</h3>
-            <p className="text-sm text-slate-500">You don&apos;t have permission to view this page.</p>
+            <h3 className="text-lg font-medium text-slate-800 mb-2">{t('technicians.availabilityPage.accessDenied')}</h3>
+            <p className="text-sm text-slate-500">{t('technicians.availabilityPage.noPermission')}</p>
           </div>
         </div>
       </div>
@@ -742,10 +746,10 @@ export default function ScheduleAndTimeOffPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
-                  Schedule & Time Off
+                  {t('technicians.availabilityPage.title')}
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  Manage technician availability, schedules, and time-off requests
+                  {t('technicians.availabilityPage.subtitle')}
                 </p>
               </div>
               {activeTab === "calendar" && (
@@ -755,16 +759,16 @@ export default function ScheduleAndTimeOffPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="week">Week</SelectItem>
-                      <SelectItem value="month">Month</SelectItem>
+                      <SelectItem value="week">{t('technicians.availabilityPage.weekView')}</SelectItem>
+                      <SelectItem value="month">{t('technicians.availabilityPage.monthView')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
                     <SelectTrigger className="w-[180px] h-10 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                      <SelectValue placeholder="All technicians" />
+                      <SelectValue placeholder={t('technicians.availabilityPage.allTechnicians')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Technicians</SelectItem>
+                      <SelectItem value="all">{t('technicians.availabilityPage.allTechnicians')}</SelectItem>
                       {allTechnicians.map((tech) => (
                         <SelectItem key={tech.id} value={tech.id}>
                           {tech.firstName} {tech.lastName}
@@ -773,7 +777,7 @@ export default function ScheduleAndTimeOffPage() {
                     </SelectContent>
                   </Select>
                   <Button variant="outline" size="sm" onClick={handleToday} className="h-10 px-4 rounded-xl bg-white/80 shadow-sm">
-                    Today
+                    {t('common.today')}
                   </Button>
                   <Button variant="outline" size="icon" onClick={handlePrevious} className="h-10 w-10 rounded-xl bg-white/80 shadow-sm">
                     <ChevronLeft className="h-4 w-4" />
@@ -795,7 +799,7 @@ export default function ScheduleAndTimeOffPage() {
                   <Users className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Total Technicians</p>
+                  <p className="text-sm text-slate-500">{t('technicians.availabilityPage.totalTechnicians')}</p>
                   <p className="text-2xl font-bold text-slate-900">{todaySummary.total}</p>
                 </div>
               </div>
@@ -806,7 +810,7 @@ export default function ScheduleAndTimeOffPage() {
                   <Check className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Available Today</p>
+                  <p className="text-sm text-slate-500">{t('technicians.availabilityPage.availableToday')}</p>
                   <p className="text-2xl font-bold text-slate-900">{todaySummary.available}</p>
                 </div>
               </div>
@@ -817,7 +821,7 @@ export default function ScheduleAndTimeOffPage() {
                   <Umbrella className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">On Time-Off Today</p>
+                  <p className="text-sm text-slate-500">{t('technicians.availabilityPage.onTimeOffToday')}</p>
                   <p className="text-2xl font-bold text-slate-900">{todaySummary.onTimeOff}</p>
                 </div>
               </div>
@@ -829,11 +833,11 @@ export default function ScheduleAndTimeOffPage() {
             <TabsList className="bg-white border border-slate-200/80 shadow-sm mb-6">
               <TabsTrigger value="calendar" className="gap-2">
                 <CalendarIcon className="h-4 w-4" />
-                Calendar
+                {t('technicians.availabilityPage.calendarTab')}
               </TabsTrigger>
               <TabsTrigger value="time-off" className="gap-2">
                 <Umbrella className="h-4 w-4" />
-                Time Off Requests
+                {t('technicians.availabilityPage.timeOffTab')}
                 {pendingCount > 0 && (
                   <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-amber-500 text-white text-[11px] font-bold px-1.5">
                     {pendingCount}
@@ -850,20 +854,21 @@ export default function ScheduleAndTimeOffPage() {
                 availabilityByDate={availabilityByDate}
                 isInitialLoad={availabilityQuery.isLoading}
                 isFetchingNew={availabilityQuery.isFetching && !availabilityQuery.isLoading}
+                t={t}
               />
               {/* Legend */}
               <div className="flex items-center justify-center gap-8 text-xs text-slate-500 py-2">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  <span>Available</span>
+                  <span>{t('technicians.availabilityPage.legend.available')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                  <span>Time Off</span>
+                  <span>{t('technicians.availabilityPage.legend.timeOff')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                  <span>Not Scheduled</span>
+                  <span>{t('technicians.availabilityPage.legend.notScheduled')}</span>
                 </div>
               </div>
             </TabsContent>

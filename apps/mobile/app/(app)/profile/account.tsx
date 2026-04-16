@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -26,6 +27,7 @@ import {
 export default function AccountScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -36,15 +38,15 @@ export default function AccountScreen() {
 
   const handleChangePassword = async () => {
     if (!currentPassword.trim()) {
-      toast.warning('Required', 'Please enter your current password.');
+      toast.warning(t('common.required'), t('profile.account.currentPasswordRequired'));
       return;
     }
     if (newPassword.length < 8) {
-      toast.warning('Invalid', 'New password must be at least 8 characters.');
+      toast.warning(t('common.error'), t('profile.account.newPasswordTooShort'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.warning('Mismatch', 'New passwords do not match.');
+      toast.warning(t('common.error'), t('profile.account.passwordsMismatch'));
       return;
     }
 
@@ -57,9 +59,9 @@ export default function AccountScreen() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      toast.success('Success', 'Password changed successfully.');
+      toast.success(t('common.success'), t('profile.account.passwordChanged'));
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Failed to change password');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('profile.account.failedToChange'));
     } finally {
       setIsSubmitting(false);
     }
@@ -73,12 +75,12 @@ export default function AccountScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Account Info */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Account Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('profile.account.accountInfo')}</Text>
           <View style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.infoRow}>
               <Ionicons name="person-outline" size={18} color={colors.textMuted} />
               <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Name</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('profile.account.nameLabel')}</Text>
                 <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{user?.firstName} {user?.lastName}</Text>
               </View>
             </View>
@@ -86,7 +88,7 @@ export default function AccountScreen() {
             <View style={styles.infoRow}>
               <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
               <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Email</Text>
+                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('profile.account.emailLabel')}</Text>
                 <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{user?.email}</Text>
               </View>
             </View>
@@ -95,17 +97,17 @@ export default function AccountScreen() {
 
         {/* Change Password */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Change Password</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('profile.account.changePassword')}</Text>
           <View style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Current Password</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile.account.currentPasswordLabel')}</Text>
               <View style={[styles.passwordRow, { borderColor: colors.inputBorder, backgroundColor: colors.input }]}>
                 <TextInput
                   style={[styles.passwordInput, { color: colors.textPrimary }]}
                   value={currentPassword}
                   onChangeText={setCurrentPassword}
                   secureTextEntry={!showCurrentPw}
-                  placeholder="Enter current password"
+                  placeholder={t('profile.account.currentPasswordPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                 />
@@ -120,14 +122,14 @@ export default function AccountScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>New Password</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile.account.newPasswordLabel')}</Text>
               <View style={[styles.passwordRow, { borderColor: colors.inputBorder, backgroundColor: colors.input }]}>
                 <TextInput
                   style={[styles.passwordInput, { color: colors.textPrimary }]}
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry={!showNewPw}
-                  placeholder="Min. 8 characters"
+                  placeholder={t('profile.account.newPasswordPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                 />
@@ -142,13 +144,13 @@ export default function AccountScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Confirm New Password</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('profile.account.confirmPasswordLabel')}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.inputBorder, backgroundColor: colors.input, color: colors.textPrimary }]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
-                placeholder="Re-enter new password"
+                placeholder={t('profile.account.confirmPasswordPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
               />
@@ -162,7 +164,7 @@ export default function AccountScreen() {
               {isSubmitting ? (
                 <ActivityIndicator size="small" color={COLORS.white} />
               ) : (
-                <Text style={styles.submitButtonText}>Change Password</Text>
+                <Text style={styles.submitButtonText}>{t('profile.account.submitButton')}</Text>
               )}
             </TouchableOpacity>
           </View>

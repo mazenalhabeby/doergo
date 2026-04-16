@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -8,16 +9,17 @@ import {
 } from '../../../src/lib/constants';
 
 const SERVICES = [
-  { icon: 'calendar', label: 'Time Off', desc: 'Approve requests', route: '/(app)/manage/time-off-requests', color: '#f59e0b' },
-  { icon: 'people', label: 'Members', desc: 'Manage team', route: '/(app)/manage/members', color: '#8b5cf6' },
-  { icon: 'person-add', label: 'Join Requests', desc: 'Review & approve', route: '/(app)/manage/join-requests', color: '#f97316' },
-  { icon: 'mail', label: 'Invitations', desc: 'Create invite codes', route: '/(app)/manage/invitations', color: '#06b6d4' },
-  { icon: 'time', label: 'Schedules', desc: 'Work schedules', route: '/(app)/manage/schedules', color: '#10b981' },
+  { icon: 'calendar', labelKey: 'manage.timeOff.label', descKey: 'manage.timeOff.desc', route: '/(app)/manage/time-off-requests', color: '#f59e0b' },
+  { icon: 'people', labelKey: 'manage.members.label', descKey: 'manage.members.desc', route: '/(app)/manage/members', color: '#8b5cf6' },
+  { icon: 'person-add', labelKey: 'manage.joinRequests.label', descKey: 'manage.joinRequests.desc', route: '/(app)/manage/join-requests', color: '#f97316' },
+  { icon: 'mail', labelKey: 'manage.invitations.label', descKey: 'manage.invitations.desc', route: '/(app)/manage/invitations', color: '#06b6d4' },
+  { icon: 'time', labelKey: 'manage.schedules.label', descKey: 'manage.schedules.desc', route: '/(app)/manage/schedules', color: '#10b981' },
 ] as const;
 
 export default function ManageScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <ScrollView
@@ -36,8 +38,8 @@ export default function ManageScreen() {
             <Ionicons name={item.icon as any} size={22} color={item.color} />
           </View>
           <View style={s.textCol}>
-            <Text style={[s.label, { color: colors.textPrimary }]}>{item.label}</Text>
-            <Text style={[s.desc, { color: colors.textMuted }]}>{item.desc}</Text>
+            <Text style={[s.label, { color: colors.textPrimary }]}>{t(item.labelKey)}</Text>
+            <Text style={[s.desc, { color: colors.textMuted }]}>{t(item.descKey)}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>

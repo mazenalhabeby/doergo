@@ -165,6 +165,10 @@ export default function AppLayout() {
           name="profile/about"
           options={{ title: 'About' }}
         />
+        <Stack.Screen
+          name="profile/language"
+          options={{ title: '' }}
+        />
       </Stack>
     </LocationTrackingProvider>
     </SocketProvider>

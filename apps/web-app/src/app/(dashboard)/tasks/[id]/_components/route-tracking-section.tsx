@@ -98,7 +98,7 @@ export function RouteTrackingSection({
   isLoading,
   hasAssignee,
 }: RouteTrackingSectionProps) {
-  const [showMap, setShowMap] = useState(false)
+  const [showMap, setShowMap] = useState(true)
   const isLive = routeData?.status === "EN_ROUTE"
   const liveElapsed = useLiveElapsedTime(routeData?.startTime || null, isLive)
 

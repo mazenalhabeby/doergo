@@ -36,6 +36,7 @@ import {
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -72,6 +73,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 
 import {
@@ -97,6 +99,7 @@ export default function TechnicianDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   const technicianId = params.id as string
@@ -111,6 +114,7 @@ export default function TechnicianDetailPage() {
   const [editWorkMode, setEditWorkMode] = useState<WorkMode>(WorkMode.HYBRID)
   const [editSpecialty, setEditSpecialty] = useState("")
   const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
+  const [editCanCreateTasks, setEditCanCreateTasks] = useState(false)
 
   // Fetch technician detail
   const { data: technician, isLoading, isError, error } = useQuery({
@@ -151,13 +155,13 @@ export default function TechnicianDetailPage() {
   const updateMutation = useMutation({
     mutationFn: (input: UpdateTechnicianInput) => techniciansApi.update(technicianId, input),
     onSuccess: () => {
-      toast.success("Technician updated successfully")
+      toast.success(t('technicians.detail.updatedSuccessfully'))
       queryClient.invalidateQueries({ queryKey: ["technician", technicianId] })
       queryClient.invalidateQueries({ queryKey: ["technicians"] })
       setEditDialogOpen(false)
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update technician")
+      toast.error(error.message || t('technicians.detail.failedToUpdate'))
     },
   })
 
@@ -165,13 +169,13 @@ export default function TechnicianDetailPage() {
   const deactivateMutation = useMutation({
     mutationFn: () => techniciansApi.deactivate(technicianId),
     onSuccess: () => {
-      toast.success("Technician deactivated successfully")
+      toast.success(t('technicians.detail.deactivatedSuccessfully'))
       queryClient.invalidateQueries({ queryKey: ["technician", technicianId] })
       queryClient.invalidateQueries({ queryKey: ["technicians"] })
       setDeactivateDialogOpen(false)
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to deactivate technician")
+      toast.error(error.message || t('technicians.detail.failedToDeactivate'))
     },
   })
 
@@ -179,12 +183,12 @@ export default function TechnicianDetailPage() {
   const reactivateMutation = useMutation({
     mutationFn: () => techniciansApi.update(technicianId, { isActive: true }),
     onSuccess: () => {
-      toast.success("Technician reactivated successfully")
+      toast.success(t('technicians.detail.reactivatedSuccessfully'))
       queryClient.invalidateQueries({ queryKey: ["technician", technicianId] })
       queryClient.invalidateQueries({ queryKey: ["technicians"] })
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to reactivate technician")
+      toast.error(error.message || t('technicians.detail.failedToReactivate'))
     },
   })
 
@@ -196,6 +200,7 @@ export default function TechnicianDetailPage() {
       setEditWorkMode(technician.workMode || WorkMode.HYBRID)
       setEditSpecialty(technician.specialty || "")
       setEditMaxDailyJobs(technician.maxDailyJobs || 5)
+      setEditCanCreateTasks(technician.canCreateTasks ?? false)
       setEditDialogOpen(true)
     }
   }
@@ -208,6 +213,7 @@ export default function TechnicianDetailPage() {
       workMode: editWorkMode,
       specialty: editSpecialty.trim() || undefined,
       maxDailyJobs: editMaxDailyJobs,
+      canCreateTasks: editCanCreateTasks,
     })
   }
 
@@ -217,9 +223,9 @@ export default function TechnicianDetailPage() {
   const getTypeBadge = (type: TechnicianType) => {
     switch (type) {
       case TechnicianType.FULL_TIME:
-        return <Badge className="bg-blue-100 text-blue-700">Full-Time</Badge>
+        return <Badge className="bg-blue-100 text-blue-700">{t('technicians.types.fullTime')}</Badge>
       case TechnicianType.FREELANCER:
-        return <Badge className="bg-purple-100 text-purple-700">Freelancer</Badge>
+        return <Badge className="bg-purple-100 text-purple-700">{t('technicians.types.freelancer')}</Badge>
       default:
         return null
     }
@@ -257,19 +263,19 @@ export default function TechnicianDetailPage() {
           <Link href="/technicians">
             <Button variant="ghost" size="sm" className="gap-2 rounded-lg">
               <ArrowLeft className="h-4 w-4" />
-              Back to Technicians
+              {t('technicians.detail.backToTechnicians')}
             </Button>
           </Link>
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-12 text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-800 mb-2">
-              Technician not found
+              {t('technicians.detail.notFound')}
             </h3>
             <p className="text-sm text-slate-500 mb-4">
-              {(error as Error)?.message || "The technician you're looking for doesn't exist."}
+              {(error as Error)?.message || t('technicians.detail.notFoundDescription')}
             </p>
             <Link href="/technicians">
-              <Button className="rounded-xl">Back to Technicians</Button>
+              <Button className="rounded-xl">{t('technicians.detail.backToTechnicians')}</Button>
             </Link>
           </div>
         </div>
@@ -284,7 +290,7 @@ export default function TechnicianDetailPage() {
         <Link href="/technicians">
           <Button variant="ghost" size="sm" className="gap-2 rounded-lg hover:bg-white/80">
             <ArrowLeft className="h-4 w-4" />
-            Back to Technicians
+            {t('technicians.detail.backToTechnicians')}
           </Button>
         </Link>
 
@@ -310,14 +316,17 @@ export default function TechnicianDetailPage() {
                     {technician.firstName} {technician.lastName}
                   </h1>
                   {getTypeBadge(technician.technicianType)}
+                  {technician.canCreateTasks && (
+                    <Badge className="bg-emerald-100 text-emerald-700">{t('technicians.detail.canCreateTasks')}</Badge>
+                  )}
                   {technician.isActive ? (
                     technician.isOnline ? (
-                      <Badge className="bg-green-100 text-green-700">Online</Badge>
+                      <Badge className="bg-green-100 text-green-700">{t('common.online')}</Badge>
                     ) : (
-                      <Badge className="bg-slate-100 text-slate-600">Offline</Badge>
+                      <Badge className="bg-slate-100 text-slate-600">{t('common.offline')}</Badge>
                     )
                   ) : (
-                    <Badge className="bg-red-100 text-red-700">Inactive</Badge>
+                    <Badge className="bg-red-100 text-red-700">{t('common.inactive')}</Badge>
                   )}
                 </div>
 
@@ -352,7 +361,7 @@ export default function TechnicianDetailPage() {
                       {technician.rating.toFixed(1)}
                     </span>
                     <span className="text-sm text-slate-400">
-                      ({technician.ratingCount} reviews)
+                      ({t('technicians.detail.reviews', { count: technician.ratingCount })})
                     </span>
                   </div>
                 </div>
@@ -370,7 +379,7 @@ export default function TechnicianDetailPage() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={openEditDialog}>
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit Profile
+                    {t('technicians.actions.editProfile')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {technician.isActive ? (
@@ -378,14 +387,14 @@ export default function TechnicianDetailPage() {
                       className="text-red-600"
                       onClick={() => setDeactivateDialogOpen(true)}
                     >
-                      Deactivate
+                      {t('technicians.actions.deactivate')}
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem
                       className="text-green-600"
                       onClick={() => reactivateMutation.mutate()}
                     >
-                      Reactivate
+                      {t('technicians.actions.reactivate')}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -399,31 +408,31 @@ export default function TechnicianDetailPage() {
           <TabsList className="bg-white border border-slate-200/80 shadow-sm">
             <TabsTrigger value="overview" className="gap-2">
               <Activity className="h-4 w-4" />
-              Overview
+              {t('technicians.detail.tabs.overview')}
             </TabsTrigger>
             <TabsTrigger value="tasks" className="gap-2">
               <ClipboardList className="h-4 w-4" />
-              Tasks
+              {t('technicians.detail.tabs.tasks')}
             </TabsTrigger>
             <TabsTrigger value="attendance" className="gap-2">
               <Clock className="h-4 w-4" />
-              Attendance
+              {t('technicians.detail.tabs.attendance')}
             </TabsTrigger>
             <TabsTrigger value="locations" className="gap-2">
               <MapPin className="h-4 w-4" />
-              Locations
+              {t('technicians.detail.tabs.locations')}
             </TabsTrigger>
             <TabsTrigger value="schedule" className="gap-2">
               <Calendar className="h-4 w-4" />
-              Schedule
+              {t('technicians.detail.tabs.schedule')}
             </TabsTrigger>
             <TabsTrigger value="time-off" className="gap-2">
               <Umbrella className="h-4 w-4" />
-              Time Off
+              {t('technicians.detail.tabs.timeOff')}
             </TabsTrigger>
             <TabsTrigger value="performance" className="gap-2">
               <BarChart3 className="h-4 w-4" />
-              Performance
+              {t('technicians.detail.tabs.performance')}
             </TabsTrigger>
           </TabsList>
 
@@ -461,15 +470,15 @@ export default function TechnicianDetailPage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Technician Profile</DialogTitle>
+            <DialogTitle>{t('technicians.detail.editDialog.title')}</DialogTitle>
             <DialogDescription>
-              Update technician details. Changes will take effect immediately.
+              {t('technicians.detail.editDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-firstName">First Name</Label>
+                <Label htmlFor="edit-firstName">{t('technicians.detail.editDialog.firstNameLabel')}</Label>
                 <Input
                   id="edit-firstName"
                   value={editFirstName}
@@ -477,7 +486,7 @@ export default function TechnicianDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-lastName">Last Name</Label>
+                <Label htmlFor="edit-lastName">{t('technicians.detail.editDialog.lastNameLabel')}</Label>
                 <Input
                   id="edit-lastName"
                   value={editLastName}
@@ -488,7 +497,7 @@ export default function TechnicianDetailPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Employment Type</Label>
+                <Label>{t('technicians.detail.editDialog.employmentTypeLabel')}</Label>
                 <Select
                   value={editTechnicianType}
                   onValueChange={(v) => setEditTechnicianType(v as TechnicianType)}
@@ -497,13 +506,13 @@ export default function TechnicianDetailPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={TechnicianType.FREELANCER}>Freelancer</SelectItem>
-                    <SelectItem value={TechnicianType.FULL_TIME}>Full-Time</SelectItem>
+                    <SelectItem value={TechnicianType.FREELANCER}>{t('technicians.types.freelancer')}</SelectItem>
+                    <SelectItem value={TechnicianType.FULL_TIME}>{t('technicians.types.fullTime')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Work Mode</Label>
+                <Label>{t('technicians.detail.editDialog.workModeLabel')}</Label>
                 <Select
                   value={editWorkMode}
                   onValueChange={(v) => setEditWorkMode(v as WorkMode)}
@@ -512,21 +521,21 @@ export default function TechnicianDetailPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={WorkMode.HYBRID}>Hybrid</SelectItem>
-                    <SelectItem value={WorkMode.ON_SITE}>On-Site</SelectItem>
-                    <SelectItem value={WorkMode.ON_ROAD}>On-Road</SelectItem>
+                    <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
+                    <SelectItem value={WorkMode.ON_SITE}>{t('technicians.workModes.onSite')}</SelectItem>
+                    <SelectItem value={WorkMode.ON_ROAD}>{t('technicians.workModes.onRoad')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-specialty">Job Title / Specialty</Label>
+              <Label htmlFor="edit-specialty">{t('technicians.detail.editDialog.jobTitleLabel')}</Label>
               <Input
                 id="edit-specialty"
                 value={editSpecialty}
                 onChange={(e) => setEditSpecialty(e.target.value)}
-                placeholder="e.g. Electrician, Plumber, HVAC Tech..."
+                placeholder={t('technicians.detail.editDialog.jobTitlePlaceholder')}
                 list="edit-specialty-suggestions"
               />
               <datalist id="edit-specialty-suggestions">
@@ -537,7 +546,7 @@ export default function TechnicianDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-maxJobs">Max Daily Jobs</Label>
+              <Label htmlFor="edit-maxJobs">{t('technicians.detail.editDialog.maxDailyJobsLabel')}</Label>
               <Input
                 id="edit-maxJobs"
                 type="number"
@@ -547,16 +556,32 @@ export default function TechnicianDetailPage() {
                 onChange={(e) => setEditMaxDailyJobs(parseInt(e.target.value) || 5)}
               />
             </div>
+
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+              <Checkbox
+                id="edit-canCreateTasks"
+                checked={editCanCreateTasks}
+                onCheckedChange={(checked) => setEditCanCreateTasks(!!checked)}
+              />
+              <div>
+                <label htmlFor="edit-canCreateTasks" className="text-sm font-medium cursor-pointer">
+                  {t('technicians.detail.editDialog.canCreateTasksLabel')}
+                </label>
+                <p className="text-xs text-slate-500">
+                  {t('technicians.detail.editDialog.canCreateTasksDescription')}
+                </p>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleEditSubmit}
               disabled={!editFirstName.trim() || !editLastName.trim() || updateMutation.isPending}
             >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateMutation.isPending ? t('common.saving') : t('common.saveChanges')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -566,21 +591,19 @@ export default function TechnicianDetailPage() {
       <AlertDialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate Technician</AlertDialogTitle>
+            <AlertDialogTitle>{t('technicians.deactivateDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to deactivate {technician?.firstName} {technician?.lastName}?
-              They will no longer be able to log in or receive task assignments.
-              You can reactivate them later.
+              {t('technicians.deactivateDialog.descriptionExtended', { name: `${technician?.firstName} ${technician?.lastName}` })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => deactivateMutation.mutate()}
               disabled={deactivateMutation.isPending}
             >
-              {deactivateMutation.isPending ? "Deactivating..." : "Deactivate"}
+              {deactivateMutation.isPending ? t('common.deactivating') : t('technicians.actions.deactivate')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { ClipboardList } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { type Task } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -29,13 +30,14 @@ interface TasksTabProps {
 
 export function TasksTab({ tasks }: TasksTabProps) {
   const router = useRouter()
+  const { t } = useTranslation()
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Task History</CardTitle>
+        <CardTitle>{t('technicians.tasksTab.title')}</CardTitle>
         <CardDescription>
-          All tasks assigned to this technician
+          {t('technicians.tasksTab.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -43,11 +45,11 @@ export function TasksTab({ tasks }: TasksTabProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Task</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>{t('technicians.tasksTab.taskColumn')}</TableHead>
+                <TableHead>{t('technicians.tasksTab.statusColumn')}</TableHead>
+                <TableHead>{t('technicians.tasksTab.priorityColumn')}</TableHead>
+                <TableHead>{t('technicians.tasksTab.dueDateColumn')}</TableHead>
+                <TableHead>{t('technicians.tasksTab.createdColumn')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -82,7 +84,7 @@ export function TasksTab({ tasks }: TasksTabProps) {
         ) : (
           <div className="text-center py-12 text-slate-500">
             <ClipboardList className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-            <p>No tasks found for this technician</p>
+            <p>{t('technicians.tasksTab.noTasks')}</p>
           </div>
         )}
       </CardContent>

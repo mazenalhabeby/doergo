@@ -22,6 +22,8 @@ import {
   UserCheck,
   Umbrella,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
 import { useAuth } from "@/contexts/auth-context"
@@ -47,184 +49,190 @@ import {
 } from "@/components/ui/sidebar"
 
 // Navigation groups for ADMIN role
-const adminNavGroups: { label: string; items: NavItem[] }[] = [
-  {
-    label: "Main",
-    items: [
-      {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: LayoutDashboard,
-      },
-      {
-        title: "Tasks",
-        url: "/tasks",
-        icon: ClipboardList,
-        items: [
-          { title: "View All Tasks", url: "/tasks" },
-          { title: "Create New Task", url: "/tasks/new" },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Resources",
-    items: [
-      {
-        title: "Technicians",
-        url: "/technicians",
-        icon: Users,
-      },
-      {
-        title: "Members",
-        url: "/members",
-        icon: Users,
-      },
-      {
-        title: "Invitations",
-        url: "/invitations",
-        icon: UserPlus,
-      },
-      {
-        title: "Join Requests",
-        url: "/join-requests",
-        icon: UserCheck,
-      },
-      {
-        title: "Schedule",
-        url: "/technicians/availability",
-        icon: Calendar,
-      },
-      {
-        title: "Attendance",
-        url: "/attendance",
-        icon: Clock,
-      },
-    ],
-  },
-  {
-    label: "Billing",
-    items: [
-      {
-        title: "Invoices",
-        url: "/invoices",
-        icon: FileText,
-      },
-      {
-        title: "Payment History",
-        url: "/payments",
-        icon: History,
-      },
-    ],
-  },
-]
+function getAdminNavGroups(t: TFunction): { label: string; items: NavItem[] }[] {
+  return [
+    {
+      label: t("nav.sidebar.mainGroup"),
+      items: [
+        {
+          title: t("nav.sidebar.dashboard"),
+          url: "/dashboard",
+          icon: LayoutDashboard,
+        },
+        {
+          title: t("nav.sidebar.tasks"),
+          url: "/tasks",
+          icon: ClipboardList,
+          items: [
+            { title: t("nav.sidebar.viewAllTasks"), url: "/tasks" },
+            { title: t("nav.sidebar.createNewTask"), url: "/tasks/new" },
+          ],
+        },
+      ],
+    },
+    {
+      label: t("nav.sidebar.resourcesGroup"),
+      items: [
+        {
+          title: t("nav.sidebar.technicians"),
+          url: "/technicians",
+          icon: Users,
+        },
+        {
+          title: t("nav.sidebar.members"),
+          url: "/members",
+          icon: Users,
+        },
+        {
+          title: t("nav.sidebar.invitations"),
+          url: "/invitations",
+          icon: UserPlus,
+        },
+        {
+          title: t("nav.sidebar.joinRequests"),
+          url: "/join-requests",
+          icon: UserCheck,
+        },
+        {
+          title: t("nav.sidebar.schedule"),
+          url: "/technicians/availability",
+          icon: Calendar,
+        },
+        {
+          title: t("nav.sidebar.attendance"),
+          url: "/attendance",
+          icon: Clock,
+        },
+      ],
+    },
+    {
+      label: t("nav.sidebar.billingGroup"),
+      items: [
+        {
+          title: t("nav.sidebar.invoices"),
+          url: "/invoices",
+          icon: FileText,
+        },
+        {
+          title: t("nav.sidebar.paymentHistory"),
+          url: "/payments",
+          icon: History,
+        },
+      ],
+    },
+  ]
+}
 
 // Navigation groups for DISPATCHER role
-const dispatcherNavGroups: { label: string; items: NavItem[] }[] = [
-  {
-    label: "Overview",
-    items: [
-      {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      {
-        title: "Tasks",
-        url: "/tasks",
-        icon: ClipboardList,
-        items: [
-          { title: "View All Tasks", url: "/tasks" },
-          { title: "Create Task", url: "/tasks/new" },
-        ],
-      },
-      {
-        title: "Live Map",
-        url: "/live-map",
-        icon: MapPin,
-      },
-      {
-        title: "Schedule",
-        url: "/technicians/availability",
-        icon: Calendar,
-      },
-    ],
-  },
-  {
-    label: "Resources",
-    items: [
-      {
-        title: "Technicians",
-        url: "/technicians",
-        icon: Users,
-        items: [
-          { title: "View All Technicians", url: "/technicians" },
-          { title: "Add Technician", url: "/technicians/new" },
-          { title: "Manage Availability", url: "/technicians/availability" },
-        ],
-      },
-      {
-        title: "Members",
-        url: "/members",
-        icon: Users,
-      },
-      {
-        title: "Invitations",
-        url: "/invitations",
-        icon: UserPlus,
-      },
-      {
-        title: "Join Requests",
-        url: "/join-requests",
-        icon: UserCheck,
-      },
-      {
-        title: "Attendance",
-        url: "/attendance",
-        icon: Clock,
-      },
-      {
-        title: "Organizations",
-        url: "/organizations",
-        icon: Building2,
-      },
-    ],
-  },
-  {
-    label: "Reports",
-    items: [
-      {
-        title: "Performance",
-        url: "/reports/performance",
-        icon: BarChart3,
-      },
-      {
-        title: "SLA Compliance",
-        url: "/reports/sla",
-        icon: Timer,
-      },
-    ],
-  },
-]
+function getDispatcherNavGroups(t: TFunction): { label: string; items: NavItem[] }[] {
+  return [
+    {
+      label: t("nav.sidebar.overviewGroup"),
+      items: [
+        {
+          title: t("nav.sidebar.dashboard"),
+          url: "/dashboard",
+          icon: LayoutDashboard,
+        },
+      ],
+    },
+    {
+      label: t("nav.sidebar.operationsGroup"),
+      items: [
+        {
+          title: t("nav.sidebar.tasks"),
+          url: "/tasks",
+          icon: ClipboardList,
+          items: [
+            { title: t("nav.sidebar.viewAllTasks"), url: "/tasks" },
+            { title: t("nav.sidebar.createTask"), url: "/tasks/new" },
+          ],
+        },
+        {
+          title: t("nav.sidebar.liveMap"),
+          url: "/live-map",
+          icon: MapPin,
+        },
+        {
+          title: t("nav.sidebar.schedule"),
+          url: "/technicians/availability",
+          icon: Calendar,
+        },
+      ],
+    },
+    {
+      label: t("nav.sidebar.resourcesGroup"),
+      items: [
+        {
+          title: t("nav.sidebar.technicians"),
+          url: "/technicians",
+          icon: Users,
+          items: [
+            { title: t("nav.sidebar.viewAllTechnicians"), url: "/technicians" },
+            { title: t("nav.sidebar.addTechnician"), url: "/technicians/new" },
+            { title: t("nav.sidebar.manageAvailability"), url: "/technicians/availability" },
+          ],
+        },
+        {
+          title: t("nav.sidebar.members"),
+          url: "/members",
+          icon: Users,
+        },
+        {
+          title: t("nav.sidebar.invitations"),
+          url: "/invitations",
+          icon: UserPlus,
+        },
+        {
+          title: t("nav.sidebar.joinRequests"),
+          url: "/join-requests",
+          icon: UserCheck,
+        },
+        {
+          title: t("nav.sidebar.attendance"),
+          url: "/attendance",
+          icon: Clock,
+        },
+        {
+          title: t("nav.sidebar.organizations"),
+          url: "/organizations",
+          icon: Building2,
+        },
+      ],
+    },
+    {
+      label: t("nav.sidebar.reportsGroup"),
+      items: [
+        {
+          title: t("nav.sidebar.performance"),
+          url: "/reports/performance",
+          icon: BarChart3,
+        },
+        {
+          title: t("nav.sidebar.slaCompliance"),
+          url: "/reports/sla",
+          icon: Timer,
+        },
+      ],
+    },
+  ]
+}
 
 // Secondary navigation (same for all roles)
-const navSecondary = [
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
-  {
-    title: "Help Center",
-    url: "/help",
-    icon: HelpCircle,
-  },
-]
+function getNavSecondary(t: TFunction) {
+  return [
+    {
+      title: t("nav.sidebar.settings"),
+      url: "/settings",
+      icon: Settings,
+    },
+    {
+      title: t("nav.sidebar.helpCenter"),
+      url: "/help",
+      icon: HelpCircle,
+    },
+  ]
+}
 
 // Mock organizations for dispatcher
 const organizations = [
@@ -236,10 +244,12 @@ const organizations = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const [selectedOrg, setSelectedOrg] = React.useState(organizations[0])
 
   // Get navigation based on user role
-  const navGroups = user?.role === "DISPATCHER" ? dispatcherNavGroups : adminNavGroups
+  const navGroups = user?.role === "DISPATCHER" ? getDispatcherNavGroups(t) : getAdminNavGroups(t)
+  const navSecondary = getNavSecondary(t)
   const isDispatcher = user?.role === "DISPATCHER"
 
   return (
@@ -252,10 +262,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </Link>
           <div className="mt-3 space-y-0.5">
             <p className="text-[15px] font-semibold text-slate-700">
-              {isDispatcher ? "Dispatcher Portal" : "Admin Portal"}
+              {isDispatcher ? t("nav.sidebar.dispatcherPortal") : t("nav.sidebar.adminPortal")}
             </p>
             <p className="text-[13px] text-slate-400">
-              Dispatch · Track · Deliver
+              {t("nav.sidebar.tagline")}
             </p>
           </div>
         </div>
@@ -273,7 +283,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {selectedOrg.name}
                   </p>
                   <p className="text-[12px] text-slate-400 font-medium">
-                    Switch organization
+                    {t("nav.sidebar.switchOrganization")}
                   </p>
                 </div>
                 <ChevronDown className="size-3.5 text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180" />

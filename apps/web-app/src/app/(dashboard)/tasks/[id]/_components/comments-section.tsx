@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { Send, Loader2, MessageCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,7 @@ export function CommentsSection({
   onSubmit,
   isSubmitting,
 }: CommentsSectionProps) {
+  const { t } = useTranslation()
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey && newComment.trim()) {
       e.preventDefault()
@@ -61,7 +63,7 @@ export function CommentsSection({
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
             <MessageCircle className="size-4 text-gray-500" />
-            Comments
+            {t("tasks.comments.title")}
           </h3>
           {comments.length > 0 && (
             <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
@@ -125,9 +127,9 @@ export function CommentsSection({
             <div className="size-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
               <MessageCircle className="size-6 text-gray-400" />
             </div>
-            <p className="text-sm text-gray-500 font-medium">No comments yet</p>
+            <p className="text-sm text-gray-500 font-medium">{t("tasks.comments.noComments")}</p>
             <p className="text-xs text-gray-400 mt-1">
-              Be the first to leave a comment
+              {t("tasks.comments.beTheFirst")}
             </p>
           </div>
         )}
@@ -140,7 +142,7 @@ export function CommentsSection({
                 value={newComment}
                 onChange={(e) => onCommentChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Write a comment... (Press Enter to send)"
+                placeholder={t("tasks.comments.placeholder")}
                 className={cn(
                   "resize-none text-sm pr-4 min-h-[80px] rounded-xl",
                   "border-gray-200 focus:border-blue-300 focus:ring-blue-200",
@@ -168,7 +170,7 @@ export function CommentsSection({
             </Button>
           </div>
           <p className="text-[10px] text-gray-400 mt-2 ml-1">
-            Press Enter to send, Shift+Enter for new line
+            {t("tasks.comments.hint")}
           </p>
         </div>
       </div>

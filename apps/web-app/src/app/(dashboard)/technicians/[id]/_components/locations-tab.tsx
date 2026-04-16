@@ -2,6 +2,7 @@
 
 import { format } from "date-fns"
 import { MapPin } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
 import {
@@ -32,12 +33,14 @@ interface LocationsTabProps {
 }
 
 export function LocationsTab({ assignments }: LocationsTabProps) {
+  const { t } = useTranslation()
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Location Assignments</CardTitle>
+        <CardTitle>{t('technicians.locationsTab.title')}</CardTitle>
         <CardDescription>
-          Company locations assigned to this technician
+          {t('technicians.locationsTab.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -56,7 +59,7 @@ export function LocationsTab({ assignments }: LocationsTabProps) {
                     {assignment.location.name}
                   </h4>
                   {assignment.isPrimary && (
-                    <Badge className="bg-blue-100 text-blue-700">Primary</Badge>
+                    <Badge className="bg-blue-100 text-blue-700">{t('technicians.locationsTab.primary')}</Badge>
                   )}
                 </div>
                 <p className="text-sm text-slate-500 mb-2">
@@ -64,11 +67,10 @@ export function LocationsTab({ assignments }: LocationsTabProps) {
                 </p>
                 <div className="text-xs text-slate-400">
                   <p>
-                    Schedule: {assignment.schedule?.join(", ") || "All days"}
+                    {t('technicians.locationsTab.schedule', { days: assignment.schedule?.join(", ") || t('technicians.locationsTab.allDays') })}
                   </p>
                   <p>
-                    Effective from:{" "}
-                    {format(new Date(assignment.effectiveFrom), "MMM d, yyyy")}
+                    {t('technicians.locationsTab.effectiveFrom', { date: format(new Date(assignment.effectiveFrom), "MMM d, yyyy") })}
                   </p>
                 </div>
               </div>
@@ -77,7 +79,7 @@ export function LocationsTab({ assignments }: LocationsTabProps) {
         ) : (
           <div className="text-center py-12 text-slate-500">
             <MapPin className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-            <p>No location assignments</p>
+            <p>{t('technicians.locationsTab.noAssignments')}</p>
           </div>
         )}
       </CardContent>

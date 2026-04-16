@@ -185,14 +185,13 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Create a new technician' })
   @ApiResponse({ status: 201, description: 'Technician created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   async createTechnician(
     @Body() dto: CreateTechnicianDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    // Only ADMIN with canManageUsers can create technicians
-    if (!user.canManageUsers) {
-      throw new ForbiddenException('You do not have permission to manage users');
+    if (!user.canManageUsers && !user.canAssignTasks) {
+      throw new ForbiddenException('You do not have permission to manage technicians');
     }
 
     return firstValueFrom(
@@ -265,14 +264,14 @@ export class TechniciansController {
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Technician updated' })
   @ApiResponse({ status: 404, description: 'Technician not found' })
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   async updateTechnician(
     @Param('id') id: string,
     @Body() dto: UpdateTechnicianDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    if (!user.canManageUsers) {
-      throw new ForbiddenException('You do not have permission to manage users');
+    if (!user.canManageUsers && !user.canAssignTasks) {
+      throw new ForbiddenException('You do not have permission to manage technicians');
     }
 
     return firstValueFrom(
@@ -300,13 +299,13 @@ export class TechniciansController {
     status: 400,
     description: 'Cannot deactivate technician with active tasks',
   })
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.DISPATCHER)
   async deactivateTechnician(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    if (!user.canManageUsers) {
-      throw new ForbiddenException('You do not have permission to manage users');
+    if (!user.canManageUsers && !user.canAssignTasks) {
+      throw new ForbiddenException('You do not have permission to manage technicians');
     }
 
     return firstValueFrom(

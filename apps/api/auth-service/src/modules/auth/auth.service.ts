@@ -589,7 +589,30 @@ export class AuthService {
         }, (REFRESH_TOKEN_GRACE_PERIOD_SECONDS + 1) * 1000);
       }
 
-      return { success: true, data: tokens };
+      return {
+        success: true,
+        data: {
+          ...tokens,
+          user: {
+            id: storedToken.user.id,
+            email: storedToken.user.email,
+            firstName: storedToken.user.firstName,
+            lastName: storedToken.user.lastName,
+            role: storedToken.user.role,
+            organizationId: storedToken.user.organizationId,
+            onboardingCompleted: storedToken.user.onboardingCompleted,
+            avatarUrl: storedToken.user.avatarUrl,
+            platform: storedToken.user.platform,
+            canCreateTasks: storedToken.user.canCreateTasks,
+            canViewAllTasks: storedToken.user.canViewAllTasks,
+            canAssignTasks: storedToken.user.canAssignTasks,
+            canManageUsers: storedToken.user.canManageUsers,
+            technicianType: storedToken.user.technicianType,
+            workMode: storedToken.user.workMode,
+            specialty: storedToken.user.specialty,
+          },
+        },
+      };
     } catch (error) {
       this.logger.error('Refresh token error:', error);
       this.logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack');

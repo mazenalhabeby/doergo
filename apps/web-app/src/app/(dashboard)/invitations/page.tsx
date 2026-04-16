@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   ChevronLeft,
@@ -60,35 +61,35 @@ import {
 } from "@/components/ui/alert-dialog"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
 
-const STATUS_OPTIONS = [
-  { value: "all", label: "All Statuses" },
-  { value: InvitationStatus.PENDING, label: "Pending" },
-  { value: InvitationStatus.ACCEPTED, label: "Accepted" },
-  { value: InvitationStatus.EXPIRED, label: "Expired" },
-  { value: InvitationStatus.REVOKED, label: "Revoked" },
+const STATUS_OPTIONS_KEYS = [
+  { value: "all", labelKey: "common.allStatuses" },
+  { value: InvitationStatus.PENDING, labelKey: "invitations.status.pending" },
+  { value: InvitationStatus.ACCEPTED, labelKey: "invitations.status.accepted" },
+  { value: InvitationStatus.EXPIRED, labelKey: "invitations.status.expired" },
+  { value: InvitationStatus.REVOKED, labelKey: "invitations.status.revoked" },
 ] as const
 
-function getStatusBadge(status: InvitationStatus) {
+function getStatusBadge(status: InvitationStatus, t: (key: string) => string) {
   switch (status) {
     case InvitationStatus.PENDING:
-      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Pending</Badge>
+      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">{t("invitations.status.pending")}</Badge>
     case InvitationStatus.ACCEPTED:
-      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Accepted</Badge>
+      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t("invitations.status.accepted")}</Badge>
     case InvitationStatus.EXPIRED:
-      return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100">Expired</Badge>
+      return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100">{t("invitations.status.expired")}</Badge>
     case InvitationStatus.REVOKED:
-      return <Badge className="bg-red-100 text-red-600 hover:bg-red-100">Revoked</Badge>
+      return <Badge className="bg-red-100 text-red-600 hover:bg-red-100">{t("invitations.status.revoked")}</Badge>
     default:
       return <Badge variant="outline">{status}</Badge>
   }
 }
 
-function getRoleBadge(role: string) {
+function getRoleBadge(role: string, t: (key: string) => string) {
   switch (role) {
     case "TECHNICIAN":
-      return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Technician</Badge>
+      return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{t("members.roles.technician")}</Badge>
     case "DISPATCHER":
-      return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Dispatcher</Badge>
+      return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">{t("members.roles.dispatcher")}</Badge>
     default:
       return <Badge variant="outline">{role}</Badge>
   }
@@ -109,6 +110,7 @@ function isExpired(dateStr: string) {
 }
 
 export default function InvitationsPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
@@ -139,7 +141,7 @@ export default function InvitationsPage() {
   const revokeMutation = useMutation({
     mutationFn: (id: string) => invitationsApi.revoke(id),
     onSuccess: () => {
-      toast.success("Invitation revoked")
+      toast.success(t("invitations.revokeDialog.revokedSuccessfully"))
       queryClient.invalidateQueries({ queryKey: ["invitations"] })
       setRevokeDialogOpen(false)
       setSelectedInvitation(null)
@@ -182,22 +184,22 @@ export default function InvitationsPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                Invitations
+                {t("invitations.title")}
               </h1>
               <p className="mt-1.5 text-slate-500">
-                Create and manage invitation codes for new team members
+                {t("invitations.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-[160px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Filter by status" />
+                  <SelectValue placeholder={t("common.filterByStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
+                  {STATUS_OPTIONS_KEYS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -220,7 +222,7 @@ export default function InvitationsPage() {
                 onClick={() => setCreateDialogOpen(true)}
               >
                 <UserPlus className="size-4" />
-                Create Invitation
+                {t("invitations.createInvitation")}
               </Button>
             </div>
           </div>
@@ -230,7 +232,7 @@ export default function InvitationsPage() {
         {total > 0 && (
           <div className="mb-4">
             <p className="text-sm text-slate-500">
-              Showing {startItem} to {endItem} of {total} invitation{total !== 1 ? "s" : ""}
+              {t("invitations.showingRange", { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
             </p>
           </div>
         )}
@@ -246,25 +248,25 @@ export default function InvitationsPage() {
           ) : isError ? (
             <div className="p-12 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">Failed to load invitations</h3>
+              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("invitations.failedToLoad")}</h3>
               <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
               <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
-                Try Again
+                {t("common.tryAgain")}
               </Button>
             </div>
           ) : invitations.length === 0 ? (
             <div className="p-16 text-center">
               <Mail className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">No invitations found</h3>
+              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("invitations.noInvitationsFound")}</h3>
               <p className="text-sm text-slate-400 mb-4">
                 {statusFilter !== "all"
-                  ? "Try adjusting your filter"
-                  : "Create your first invitation to add team members"}
+                  ? t("invitations.noInvitationsHint")
+                  : t("invitations.createFirstInvitation")}
               </p>
               {statusFilter === "all" && (
                 <Button className="rounded-xl" onClick={() => setCreateDialogOpen(true)}>
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Create Invitation
+                  {t("invitations.createInvitation")}
                 </Button>
               )}
             </div>
@@ -273,12 +275,12 @@ export default function InvitationsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/80">
-                    <TableHead className="font-semibold text-slate-600">Role</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Status</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Created By</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Created</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Expires</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Used By</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.role")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.status")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.createdBy")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.created")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.expires")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.usedBy")}</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -287,16 +289,16 @@ export default function InvitationsPage() {
                   <TableRow key={inv.id}>
                     <TableCell>
                       <div className="space-y-1">
-                        {getRoleBadge(inv.targetRole)}
+                        {getRoleBadge(inv.targetRole, t)}
                         {inv.technicianType && (
                           <div className="text-xs text-slate-500">
-                            {inv.technicianType === "FULL_TIME" ? "Full-Time" : "Freelancer"}
+                            {inv.technicianType === "FULL_TIME" ? t("technicians.types.fullTime") : t("technicians.types.freelancer")}
                             {inv.specialty && ` / ${inv.specialty}`}
                           </div>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                    <TableCell>{getStatusBadge(inv.status, t)}</TableCell>
                     <TableCell>
                       {inv.createdBy ? (
                         <span className="text-slate-700">
@@ -349,7 +351,7 @@ export default function InvitationsPage() {
                               onClick={() => handleRevokeClick(inv)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Revoke
+                              {t("invitations.revokeDialog.revokeButton")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -364,7 +366,7 @@ export default function InvitationsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
                 <p className="text-sm text-slate-500">
-                  Page {page} of {totalPages}
+                  {t("common.page", { page, totalPages })}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -375,7 +377,7 @@ export default function InvitationsPage() {
                     disabled={page === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Previous
+                    {t("common.previous")}
                   </Button>
                   <Button
                     variant="outline"
@@ -384,7 +386,7 @@ export default function InvitationsPage() {
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                   >
-                    Next
+                    {t("common.next")}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -405,20 +407,19 @@ export default function InvitationsPage() {
       <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
+            <AlertDialogTitle>{t("invitations.revokeDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to revoke this invitation? The code will no longer
-              be valid for registration.
+              {t("invitations.revokeDialog.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmRevoke}
               className="bg-red-600 hover:bg-red-700"
               disabled={revokeMutation.isPending}
             >
-              {revokeMutation.isPending ? "Revoking..." : "Revoke"}
+              {revokeMutation.isPending ? t("common.revoking") : t("invitations.revokeDialog.revokeButton")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

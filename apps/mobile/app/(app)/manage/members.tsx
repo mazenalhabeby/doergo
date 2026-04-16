@@ -1,9 +1,10 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  RefreshControl, ActivityIndicator, Alert,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -11,7 +12,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { membersApi, type OrgMember } from '../../../src/lib/api';
 import { FilterChip } from '../../../src/components/filter-chip';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton } from '../../../src/components';
+import { Skeleton, ConfirmSheet } from '../../../src/components';
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: COLORS.primary,
@@ -23,11 +24,13 @@ const ROLE_COLORS: Record<string, string> = {
 export default function MembersScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [removeTarget, setRemoveTarget] = useState<OrgMember | null>(null);
 
   const fetchMembers = useCallback(async (showRefresh = false) => {
     try {
@@ -37,7 +40,7 @@ export default function MembersScreen() {
       setMembers(result);
     } catch (err: any) {
       if (err?.statusCode === 401) return;
-      toast.error('Error', err?.message || 'Failed to load members');
+      toast.error(t('common.error'), err?.message || t('manage.membersScreen.failedToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -48,28 +51,22 @@ export default function MembersScreen() {
 
   const handleRemove = (member: OrgMember) => {
     if (member.id === user?.id) {
-      toast.warning('Cannot Remove', 'You cannot remove yourself.');
+      toast.warning(t('common.error'), t('manage.membersScreen.cannotRemoveSelf'));
       return;
     }
-    Alert.alert(
-      'Remove Member',
-      `Remove ${member.firstName} ${member.lastName} from the organization?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await membersApi.remove(member.id);
-              await fetchMembers();
-            } catch (err: any) {
-              toast.error('Error', err?.message || 'Failed to remove member');
-            }
-          },
-        },
-      ]
-    );
+    setRemoveTarget(member);
+  };
+
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
+    const member = removeTarget;
+    setRemoveTarget(null);
+    try {
+      await membersApi.remove(member.id);
+      await fetchMembers();
+    } catch (err: any) {
+      toast.error(t('common.error'), err?.message || t('manage.membersScreen.failedToRemove'));
+    }
   };
 
   const filtered = useMemo(() => roleFilter === 'ALL'
@@ -78,10 +75,10 @@ export default function MembersScreen() {
     [members, roleFilter]);
 
   const getRoleLabel = useCallback((role: string) => {
-    if (role === 'ADMIN' || role === 'CLIENT') return 'Admin';
-    if (role === 'DISPATCHER') return 'Dispatcher';
-    return 'Technician';
-  }, []);
+    if (role === 'ADMIN' || role === 'CLIENT') return t('manage.membersScreen.roleLabels.admin');
+    if (role === 'DISPATCHER') return t('manage.membersScreen.roleLabels.dispatcher');
+    return t('manage.membersScreen.roleLabels.technician');
+  }, [t]);
 
   const renderItem = ({ item }: { item: OrgMember }) => {
     const roleColor = ROLE_COLORS[item.role] || COLORS.slate500;
@@ -100,7 +97,7 @@ export default function MembersScreen() {
               <Text style={[s.name, { color: colors.textPrimary }]}>
                 {item.firstName} {item.lastName}
               </Text>
-              {isSelf && <Text style={[s.youBadge, { color: colors.textMuted }]}>(you)</Text>}
+              {isSelf && <Text style={[s.youBadge, { color: colors.textMuted }]}>{t('manage.membersScreen.you')}</Text>}
             </View>
             <Text style={[s.email, { color: colors.textMuted }]}>{item.email}</Text>
             <View style={s.metaRow}>
@@ -134,10 +131,10 @@ export default function MembersScreen() {
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <View style={s.filterRow}>
         {['ALL', 'ADMIN', 'DISPATCHER', 'TECHNICIAN'].map(r => (
-          <FilterChip key={r} label={r === 'ALL' ? 'All' : getRoleLabel(r)} active={roleFilter === r} onPress={() => setRoleFilter(r)} />
+          <FilterChip key={r} label={r === 'ALL' ? t('manage.membersScreen.filterAll') : getRoleLabel(r)} active={roleFilter === r} onPress={() => setRoleFilter(r)} />
         ))}
       </View>
-      <Text style={[s.count, { color: colors.textMuted }]}>{filtered.length} member{filtered.length !== 1 ? 's' : ''}</Text>
+      <Text style={[s.count, { color: colors.textMuted }]}>{filtered.length !== 1 ? t('manage.membersScreen.memberCountPlural', { count: filtered.length }) : t('manage.membersScreen.memberCount', { count: filtered.length })}</Text>
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
@@ -148,9 +145,21 @@ export default function MembersScreen() {
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="people-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>No members found</Text>
+            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.membersScreen.noMembers')}</Text>
           </View>
         }
+      />
+
+      <ConfirmSheet
+        visible={!!removeTarget}
+        onClose={() => setRemoveTarget(null)}
+        onConfirm={confirmRemove}
+        title={t('manage.membersScreen.removeTitle')}
+        message={removeTarget ? t('manage.membersScreen.removeMessage', { firstName: removeTarget.firstName, lastName: removeTarget.lastName }) : ''}
+        confirmLabel={t('common.remove')}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
+        icon="person-remove"
       />
     </View>
   );

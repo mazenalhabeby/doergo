@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trackingApi, WorkerLocation } from "@/lib/api";
@@ -27,6 +28,7 @@ const TechnicianMap = dynamic(
 );
 
 export default function LiveMapPage() {
+  const { t } = useTranslation();
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -104,17 +106,17 @@ export default function LiveMapPage() {
       {isConnected ? (
         <>
           <Wifi className="w-3.5 h-3.5" />
-          <span>Live</span>
+          <span>{t("liveMap.connectionLive")}</span>
         </>
       ) : connectionError ? (
         <>
           <AlertCircle className="w-3.5 h-3.5" />
-          <span>Disconnected</span>
+          <span>{t("liveMap.connectionDisconnected")}</span>
         </>
       ) : (
         <>
           <WifiOff className="w-3.5 h-3.5" />
-          <span>Connecting...</span>
+          <span>{t("liveMap.connectionConnecting")}</span>
         </>
       )}
     </div>
@@ -126,14 +128,14 @@ export default function LiveMapPage() {
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-slate-900 mb-1">
-            Failed to load map
+            {t("liveMap.failedToLoad")}
           </h3>
           <p className="text-sm text-slate-500 mb-4">
             {error instanceof Error ? error.message : "Unknown error"}
           </p>
           <Button onClick={() => refetch()} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {t("common.tryAgain")}
           </Button>
         </div>
       </div>
@@ -145,9 +147,9 @@ export default function LiveMapPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Live Map</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{t("liveMap.title")}</h1>
           <p className="text-sm text-slate-500">
-            Track technician locations in real-time
+            {t("liveMap.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -161,7 +163,7 @@ export default function LiveMapPage() {
             <RefreshCw
               className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
             />
-            Refresh
+            {t("common.refresh")}
           </Button>
         </div>
       </div>

@@ -96,4 +96,12 @@ export class UpdateTechnicianDto {
   @IsOptional()
   @Min(0)
   ratingCount?: number;
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Whether the technician can create tasks',
+  })
+  @IsBoolean()
+  @IsOptional()
+  canCreateTasks?: boolean;
 }

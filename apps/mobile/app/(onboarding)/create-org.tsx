@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { CreateOrgIcon } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -18,6 +19,7 @@ export default function CreateOrgScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const toast = useToast();
+  const { t } = useTranslation();
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -26,8 +28,8 @@ export default function CreateOrgScreen() {
 
   const handleCreate = async () => {
     const trimmedName = name.trim();
-    if (!trimmedName) { setError('Organization name is required'); return; }
-    if (trimmedName.length < 2) { setError('Name must be at least 2 characters'); return; }
+    if (!trimmedName) { setError(t('validation.organizationNameRequired')); return; }
+    if (trimmedName.length < 2) { setError(t('validation.organizationNameMinLength')); return; }
 
     setIsLoading(true);
     setError('');
@@ -39,8 +41,8 @@ export default function CreateOrgScreen() {
       await refreshUser();
       // Navigation guard will redirect to /(app)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create organization';
-      toast.error('Error', message);
+      const message = err instanceof Error ? err.message : t('onboarding.createOrg.failedToCreate');
+      toast.error(t('common.error'), message);
     } finally {
       setIsLoading(false);
     }
@@ -61,29 +63,29 @@ export default function CreateOrgScreen() {
             </LinearGradient>
           </View>
 
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Create Organization</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Set up your company on HBCField</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('onboarding.createOrg.title')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('onboarding.createOrg.subtitle')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Organization name *</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.createOrg.nameLabel')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }, error ? styles.inputError : null]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="business-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="Acme Inc." placeholderTextColor={colors.textMuted}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('onboarding.createOrg.namePlaceholder')} placeholderTextColor={colors.textMuted}
                   value={name} onChangeText={(t) => { setName(t); setError(''); }} autoCapitalize="words" />
               </View>
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Address (optional)</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.createOrg.addressLabel')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="location-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="123 Business Ave" placeholderTextColor={colors.textMuted}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('onboarding.createOrg.addressPlaceholder')} placeholderTextColor={colors.textMuted}
                   value={address} onChangeText={setAddress} autoCapitalize="words" />
               </View>
             </View>
@@ -91,7 +93,7 @@ export default function CreateOrgScreen() {
 
           <TouchableOpacity style={[styles.button, isLoading && styles.buttonDisabled]} onPress={handleCreate} disabled={isLoading} activeOpacity={0.9}>
             <LinearGradient colors={isLoading ? [COLORS.slate400, COLORS.slate500] : [COLORS.primary, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buttonGradient}>
-              {isLoading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Create Organization</Text>}
+              {isLoading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>{t('onboarding.createOrg.submitButton')}</Text>}
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>

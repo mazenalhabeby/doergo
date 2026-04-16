@@ -426,6 +426,9 @@ function AttachmentDeleteButton({
 }
 
 export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectionProps) {
+  const { user } = useAuth()
+  const isAdmin = user?.role === "ADMIN"
+
   // Only fetch report for completed/closed tasks
   const shouldFetch = taskStatus === "COMPLETED" || taskStatus === "CLOSED"
 
@@ -470,9 +473,6 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       </div>
     )
   }
-
-  const { user } = useAuth()
-  const isAdmin = user?.role === "ADMIN"
 
   const attachments = report.attachments || []
   const partsUsed = report.partsUsed || []
