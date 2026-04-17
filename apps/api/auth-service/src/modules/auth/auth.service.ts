@@ -253,7 +253,7 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { email },
-        include: { organization: { select: { profileBadges: true } } },
+        include: { organization: { select: { name: true, profileBadges: true } } },
       });
 
       if (!user || !user.isActive) {
