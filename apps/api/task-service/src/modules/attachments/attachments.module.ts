@@ -6,7 +6,7 @@ import { AttachmentsService } from './attachments.service';
 
 @Module({
   imports: [
-    ClientsModule.register([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [AttachmentsController],
   providers: [AttachmentsService],

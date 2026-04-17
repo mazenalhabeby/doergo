@@ -6,7 +6,7 @@ import { CommentsService } from './comments.service';
 
 @Module({
   imports: [
-    ClientsModule.register([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [CommentsController],
   providers: [CommentsService],

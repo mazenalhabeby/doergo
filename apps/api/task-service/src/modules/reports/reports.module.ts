@@ -7,7 +7,7 @@ import { ReportsProcessor } from './reports.processor';
 
 @Module({
   imports: [
-    ClientsModule.register([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [ReportsController],
   providers: [

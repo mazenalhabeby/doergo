@@ -8,7 +8,7 @@ import { AttachmentsModule } from '../attachments/attachments.module';
 
 @Module({
   imports: [
-    ClientsModule.register([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
     AttachmentsModule,
   ],
   controllers: [TasksController], // Keep for backwards compatibility (Redis pub/sub)
