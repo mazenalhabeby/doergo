@@ -296,8 +296,9 @@ export class TasksService {
       throw new ForbiddenException('You can only assign tasks in your organization');
     }
 
-    // Verify the task is in a state that can be assigned
-    if (![TaskStatus.NEW, TaskStatus.ASSIGNED].includes(task.status as TaskStatus)) {
+    // Admin/Dispatcher can reassign at any stage except completed/canceled/closed
+    const cannotReassign = [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.CLOSED];
+    if (cannotReassign.includes(task.status as TaskStatus)) {
       throw new BadRequestException(`Cannot assign a task with status ${task.status}`);
     }
 
@@ -314,17 +315,26 @@ export class TasksService {
       throw new NotFoundException('Technician not found or not in your organization');
     }
 
+    const previousAssignee = task.assignedToId;
+    const isReassign = previousAssignee && previousAssignee !== data.workerId;
+
     const updatedTask = await this.prisma.task.update({
       where: { id: data.id },
       data: {
         assignedToId: data.workerId,
-        status: TaskStatus.ASSIGNED,
+        status: TaskStatus.ASSIGNED, // Reset to ASSIGNED on (re)assign
       },
       include: {
         assignedTo: { select: { id: true, firstName: true, lastName: true, email: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
       },
     });
+
+    if (isReassign) {
+      await this.createTaskEvent(data.id, data.userId, TaskEventType.UNASSIGNED, {
+        previousWorkerId: previousAssignee,
+      });
+    }
 
     await this.createTaskEvent(data.id, data.userId, TaskEventType.ASSIGNED, {
       workerId: data.workerId,
