@@ -49,8 +49,14 @@ export default function PendingApprovalScreen() {
         setRequestId(result.pendingRequest.id);
         if (result.pendingRequest.status === 'APPROVED') {
           setStatus('approved');
+          toast.success(t('onboarding.pendingApproval.approvedToast'), orgName || result.pendingRequest.organizationName);
           await refreshUser();
         } else if (result.pendingRequest.status === 'REJECTED') {
+          // Stop polling — user needs to take action
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
+          if (status !== 'rejected') {
+            toast.error(t('onboarding.pendingApproval.rejectedToast'), result.pendingRequest.rejectionReason || t('onboarding.pendingApproval.rejectedSubtitle'));
+          }
           setStatus('rejected');
           setRejectionReason(result.pendingRequest.rejectionReason || '');
         }
@@ -134,7 +140,13 @@ export default function PendingApprovalScreen() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.md }]}>
         {status === 'rejected' && (
-          <TouchableOpacity style={styles.retryButton} onPress={() => router.replace(ROUTES.choosePath as Href)}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
+              router.replace(ROUTES.choosePath as Href);
+            }}
+          >
             <Text style={styles.retryButtonText}>{t('onboarding.pendingApproval.tryDifferentPath')}</Text>
           </TouchableOpacity>
         )}

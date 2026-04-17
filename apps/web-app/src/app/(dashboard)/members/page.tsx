@@ -291,7 +291,7 @@ export default function MembersPage() {
               </Button>
 
               {/* Invite */}
-              <Link href="/invitations">
+              <Link href="/members/invite">
                 <Button className="h-11 px-5 rounded-xl font-medium">
                   <UserPlus className="size-4 mr-2" />
                   {t("members.inviteMember")}

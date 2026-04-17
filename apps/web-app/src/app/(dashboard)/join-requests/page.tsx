@@ -489,7 +489,9 @@ export default function JoinRequestsPage() {
                       <SelectValue placeholder={t("joinRequests.approveDialog.workModePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                      {approveTechnicianType === TechnicianType.FULL_TIME && (
+                        <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                      )}
                       <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>
                       <SelectItem value={WorkMode.ON_ROAD}>{t("technicians.workModes.onRoad")}</SelectItem>
                     </SelectContent>

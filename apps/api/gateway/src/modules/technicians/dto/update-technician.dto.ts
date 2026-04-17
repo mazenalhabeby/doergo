@@ -104,4 +104,11 @@ export class UpdateTechnicianDto {
   @IsBoolean()
   @IsOptional()
   canCreateTasks?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Profile badge visibility override (null to use org defaults)',
+    example: { showRole: true, showWorkMode: true, showType: false, showSpecialty: true },
+  })
+  @IsOptional()
+  profileBadges?: any;
 }

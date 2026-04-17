@@ -308,15 +308,6 @@ export default function TechniciansPage() {
                 </Button>
               </Link>
 
-              {/* Add Technician */}
-              {canManage && (
-                <Link href="/technicians/new">
-                  <Button className="h-11 px-5 rounded-xl font-medium gap-2">
-                    <UserPlus className="size-4" />
-                    {t('technicians.list.addTechnician')}
-                  </Button>
-                </Link>
-              )}
             </div>
           </div>
         </div>
@@ -357,10 +348,10 @@ export default function TechniciansPage() {
                   : t('technicians.list.addFirstTechnician')}
               </p>
               {canManage && !searchQuery && (
-                <Link href="/technicians/new">
+                <Link href="/members/invite">
                   <Button className="rounded-xl">
                     <UserPlus className="h-4 w-4 mr-2" />
-                    {t('technicians.list.addTechnician')}
+                    {t("members.inviteMember")}
                   </Button>
                 </Link>
               )}

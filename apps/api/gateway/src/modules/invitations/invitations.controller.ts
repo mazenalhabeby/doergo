@@ -37,6 +37,7 @@ import {
 export class InvitationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
   ) {}
 
   @Post()
@@ -65,6 +66,17 @@ export class InvitationsController {
         { message: result.message },
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+
+    // Send invitation email if email was provided
+    if (dto.email && result?.data?.code) {
+      this.notificationClient.emit('invitation_created', {
+        recipientEmail: dto.email,
+        organizationName: result.data.organization?.name || 'your organization',
+        invitationCode: result.data.code,
+        targetRole: dto.targetRole,
+        expiresAt: result.data.expiresAt,
+      });
     }
 
     return result;

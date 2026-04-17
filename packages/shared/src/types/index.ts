@@ -151,6 +151,21 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
   },
 };
 
+// Profile badge visibility configuration
+export interface ProfileBadgesConfig {
+  showRole: boolean;
+  showWorkMode: boolean;
+  showType: boolean;
+  showSpecialty: boolean;
+}
+
+export const DEFAULT_PROFILE_BADGES: ProfileBadgesConfig = {
+  showRole: true,
+  showWorkMode: true,
+  showType: true,
+  showSpecialty: true,
+};
+
 // Organization interface
 export interface Organization extends BaseEntity {
   name: string;

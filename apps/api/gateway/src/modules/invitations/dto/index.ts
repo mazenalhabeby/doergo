@@ -26,6 +26,14 @@ export class CreateInvitationDto {
   targetRole: string;
 
   @ApiPropertyOptional({
+    example: 'john@example.com',
+    description: 'Email to send the invitation to',
+  })
+  @IsString()
+  @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional({
     example: 72,
     description: 'Expiry in hours (default: 72, max: 720)',
   })

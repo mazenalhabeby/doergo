@@ -182,4 +182,56 @@ export class EmailService {
     `;
     return this.sendEmail(data.recipientEmail, subject, html);
   }
+
+  async sendInvitationEmail(data: {
+    recipientEmail: string;
+    organizationName: string;
+    invitationCode: string;
+    targetRole: string;
+    expiresAt: string;
+  }) {
+    const subject = `You're invited to join ${esc(data.organizationName)} on HBCField`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="text-align: center; padding: 30px 0;">
+          <h1 style="color: #2563eb; margin: 0;">HBC FIELD</h1>
+          <p style="color: #64748b; margin-top: 4px;">Field Service Management</p>
+        </div>
+
+        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; text-align: center;">
+          <h2 style="color: #1e293b; margin-top: 0;">You've been invited!</h2>
+          <p style="color: #475569;">
+            You've been invited to join <strong>${esc(data.organizationName)}</strong> as a <strong>${esc(data.targetRole)}</strong>.
+          </p>
+
+          <div style="background: linear-gradient(135deg, #eff6ff, #e0e7ff); border: 2px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
+            <p style="color: #64748b; font-size: 14px; margin: 0 0 8px 0;">Your invitation code</p>
+            <p style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 0.3em; color: #1e40af; margin: 0;">
+              ${esc(data.invitationCode)}
+            </p>
+          </div>
+
+          <p style="color: #475569;">
+            To get started:
+          </p>
+          <ol style="color: #475569; text-align: left; padding-left: 20px;">
+            <li>Download the HBCField app</li>
+            <li>Create your account</li>
+            <li>Choose "Use Invitation" during setup</li>
+            <li>Enter the code above</li>
+          </ol>
+
+          <p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">
+            This invitation expires on ${new Date(data.expiresAt).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+          </p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+        <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+          This is an automated email from HBCField. If you didn't expect this invitation, you can safely ignore it.
+        </p>
+      </div>
+    `;
+    return this.sendEmail(data.recipientEmail, subject, html);
+  }
 }

@@ -71,6 +71,13 @@ export interface CurrentUserData {
   // Technician-specific fields
   technicianType?: TechnicianType;
   workMode?: WorkMode;
+  // Profile badge visibility (resolved: user override > org default > system default)
+  profileBadges?: {
+    showRole: boolean;
+    showWorkMode: boolean;
+    showType: boolean;
+    showSpecialty: boolean;
+  };
 }
 
 /**

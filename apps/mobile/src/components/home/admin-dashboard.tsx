@@ -32,6 +32,7 @@ export function AdminDashboard() {
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
 
   // Build task date set for calendar dots
   const taskDateSet = useMemo(() => {
@@ -100,6 +101,7 @@ export function AdminDashboard() {
   const fetchTasks = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
     try {
+      lastFetchTimeRef.current = Date.now();
       fetchingRef.current = true;
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
@@ -126,6 +128,7 @@ export function AdminDashboard() {
   useFocusEffect(
     useCallback(() => {
       if (!initialFetchDoneRef.current) return;
+      if (Date.now() - lastFetchTimeRef.current < 30000) return;
       fetchTasks();
     }, [fetchTasks])
   );

@@ -43,6 +43,7 @@ async function main() {
   const organization = await prisma.organization.create({
     data: {
       name: 'Acme Corporation',
+      joinCode: 'ACME2026',
       joinCodeHash: hashCode('ACME2026'),
       joinPolicy: JoinPolicy.OPEN,
     },

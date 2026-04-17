@@ -176,7 +176,9 @@
       "cancelRequestConfirmMessage": "Are you sure you want to cancel your join request?",
       "cancelRequestConfirmYes": "Yes, Cancel",
       "tryDifferentPath": "Try a Different Path",
-      "failedToCancel": "Failed to cancel request"
+      "failedToCancel": "Failed to cancel request",
+      "approvedToast": "Request Approved!",
+      "rejectedToast": "Request Rejected"
     }
   },
 
@@ -211,6 +213,8 @@
       "clockOut": "Clock Out",
       "clockOutConfirmTitle": "Clock Out",
       "clockOutConfirmMessage": "Are you sure you want to clock out?",
+      "shiftNotesLabel": "What did you do today?",
+      "shiftNotesPlaceholder": "Describe the work you completed during this shift...",
       "netWork": "Net Work",
       "breakTime": "Break Time",
       "thisWeek": "This Week",
@@ -227,6 +231,9 @@
       "failedToGetLocation": "Failed to get your current location.",
       "failedToClockIn": "Failed to clock in",
       "failedToClockOut": "Failed to clock out"
+    },
+    "hybrid": {
+      "tapToStartShift": "Tap to start your shift"
     },
     "freelancer": {
       "todaysTasks": "Today's Tasks",
@@ -449,6 +456,8 @@
     "clockOut": "Clock Out",
     "clockOutConfirmTitle": "Clock Out",
     "clockOutConfirmMessage": "Are you sure you want to clock out?",
+    "shiftNotesLabel": "What did you do today?",
+    "shiftNotesPlaceholder": "Describe the work you completed during this shift...",
     "clockedInAt": "Clocked in at {{location}}",
     "clockedOutSuccess": "Clocked out successfully",
     "locationRequired": "Location Required",
@@ -608,10 +617,11 @@
 
     "theme": {
       "title": "Appearance",
-      "chooseTheme": "Choose a theme",
+      "chooseTheme": "Choose your preferred theme",
       "system": "System",
       "light": "Light",
-      "dark": "Dark"
+      "dark": "Dark",
+      "appliedImmediately": "Theme changes are applied immediately across the app."
     },
 
     "signOutConfirmTitle": "Sign Out",

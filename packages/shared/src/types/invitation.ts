@@ -9,6 +9,7 @@ export enum InvitationStatus {
 // Invitation interface (API response shape)
 export interface Invitation {
   id: string;
+  code?: string | null;
   targetRole: string;
   organizationId: string;
   status: InvitationStatus;
@@ -57,6 +58,7 @@ export interface InvitationValidation {
 export interface CreateInvitationInput {
   targetRole: string;
   expiresInHours?: number;
+  email?: string;
   technicianType?: string;
   workMode?: string;
   specialty?: string;

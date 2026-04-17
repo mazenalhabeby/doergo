@@ -74,11 +74,14 @@ export default function ProfileScreen() {
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const hasRefreshed = useRef(false);
+  const lastFetchTimeRef = useRef(0);
 
   // Refresh user data when profile screen is focused (picks up admin edits)
   useFocusEffect(
     useCallback(() => {
       if (hasRefreshed.current) {
+        if (Date.now() - lastFetchTimeRef.current < 30000) return;
+        lastFetchTimeRef.current = Date.now();
         refreshUser();
       }
       hasRefreshed.current = true;
@@ -177,24 +180,8 @@ export default function ProfileScreen() {
   // ---- handlers -----------------------------------------------------------
 
   const handleAppearancePress = useCallback(() => {
-    const modes: ThemeMode[] = ['system', 'light', 'dark'];
-    const options = [...modes.map((m) => t(THEME_MODE_I18N[m])), t('common.cancel')];
-    const cancelIndex = options.length - 1;
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, cancelButtonIndex: cancelIndex },
-        (idx) => {
-          if (idx !== cancelIndex) setMode(modes[idx]!);
-        },
-      );
-    } else {
-      Alert.alert(t('profile.theme.title'), t('profile.theme.chooseTheme'), [
-        ...modes.map((m) => ({ text: t(THEME_MODE_I18N[m]), onPress: () => setMode(m) })),
-        { text: t('common.cancel'), style: 'cancel' as const },
-      ]);
-    }
-  }, [setMode]);
+    router.push('/profile/appearance' as Href);
+  }, []);
 
   const handleLogout = () => {
     setShowSignOutConfirm(true);
@@ -243,29 +230,52 @@ export default function ProfileScreen() {
         </Text>
         <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email}</Text>
 
-        {/* Badges */}
-        <View style={styles.badgesRow}>
-          <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
-            <Ionicons name="briefcase-outline" size={13} color={COLORS.primary} />
-            <Text style={styles.badgeText}>{isTechnician && user?.specialty ? user.specialty : getRoleLabel(user?.role ?? '')}</Text>
-          </View>
-          {isTechnician && user?.workMode && (
-            <View style={[styles.badge, styles.badgeSecondary, { backgroundColor: colors.emeraldLight }]}>
-              <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
-              <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
-                {getWorkModeLabel(user.workMode)}
-              </Text>
+        {/* Badges — controlled by profileBadges config */}
+        {(() => {
+          const badges = user?.profileBadges;
+          const showRole = badges?.showRole !== false;
+          const showWorkMode = badges?.showWorkMode !== false;
+          const showType = badges?.showType !== false;
+          const showSpecialty = badges?.showSpecialty !== false;
+          const hasBadges = showRole || (isTechnician && showWorkMode && !!user?.workMode)
+            || (isTechnician && showType && !!user?.technicianType)
+            || (isTechnician && showSpecialty && !!user?.specialty);
+
+          if (!hasBadges) return null;
+
+          return (
+            <View style={styles.badgesRow}>
+              {showRole && (
+                <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
+                  <Ionicons name="briefcase-outline" size={13} color={COLORS.primary} />
+                  <Text style={styles.badgeText}>{getRoleLabel(user?.role ?? '')}</Text>
+                </View>
+              )}
+              {isTechnician && showSpecialty && !!user?.specialty && (
+                <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
+                  <Ionicons name="construct-outline" size={13} color={COLORS.primary} />
+                  <Text style={styles.badgeText}>{user.specialty}</Text>
+                </View>
+              )}
+              {isTechnician && showWorkMode && !!user?.workMode && (
+                <View style={[styles.badge, styles.badgeSecondary, { backgroundColor: colors.emeraldLight }]}>
+                  <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
+                  <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
+                    {getWorkModeLabel(user.workMode)}
+                  </Text>
+                </View>
+              )}
+              {isTechnician && showType && !!user?.technicianType && (
+                <View style={[styles.badge, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                  <Ionicons name="person-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+                  <Text style={[styles.badgeText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    {getTechnicianTypeLabel(user.technicianType)}
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
-          {isTechnician && user?.technicianType && (
-            <View style={[styles.badge, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-              <Ionicons name="person-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
-              <Text style={[styles.badgeText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                {getTechnicianTypeLabel(user.technicianType)}
-              </Text>
-            </View>
-          )}
-        </View>
+          );
+        })()}
       </View>
 
       {/* ── 2. Settings Menu ──────────────────────────────────────────── */}

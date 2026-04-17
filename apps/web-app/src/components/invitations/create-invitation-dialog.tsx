@@ -74,9 +74,17 @@ export function CreateInvitationDialog({
   const createMutation = useMutation({
     mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),
     onSuccess: (data) => {
-      setGeneratedCode(data?.code || null)
+      const code = data?.code;
+      if (code) {
+        navigator.clipboard.writeText(code).catch(() => {});
+        toast.success(t("invitations.createDialog.createdSuccessfully"), {
+          description: `${t("invitations.table.code")}: ${code} (${t("common.copied")})`,
+        });
+      } else {
+        toast.success(t("invitations.createDialog.createdSuccessfully"));
+      }
       queryClient.invalidateQueries({ queryKey: ["invitations"] })
-      toast.success(t("invitations.createDialog.createdSuccessfully"))
+      handleClose()
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create invitation")
@@ -237,12 +245,17 @@ export function CreateInvitationDialog({
 
               <div className="space-y-2">
                 <Label>{t("invitations.createDialog.workModeLabel")}</Label>
-                <Select value={workMode} onValueChange={setWorkMode}>
+                <Select
+                  value={workMode === WorkMode.HYBRID && technicianType !== TechnicianType.FULL_TIME ? "" : workMode}
+                  onValueChange={setWorkMode}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t("invitations.createDialog.selectWorkModePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                    {technicianType === TechnicianType.FULL_TIME && (
+                      <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                    )}
                     <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>
                     <SelectItem value={WorkMode.ON_ROAD}>{t("technicians.workModes.onRoad")}</SelectItem>
                   </SelectContent>

@@ -176,7 +176,9 @@
       "cancelRequestConfirmMessage": "Sind Sie sicher, dass Sie Ihre Beitrittsanfrage abbrechen möchten?",
       "cancelRequestConfirmYes": "Ja, abbrechen",
       "tryDifferentPath": "Anderen Weg versuchen",
-      "failedToCancel": "Anfrage konnte nicht abgebrochen werden"
+      "failedToCancel": "Anfrage konnte nicht abgebrochen werden",
+      "approvedToast": "Anfrage genehmigt!",
+      "rejectedToast": "Anfrage abgelehnt"
     }
   },
 
@@ -211,6 +213,8 @@
       "clockOut": "Ausstempeln",
       "clockOutConfirmTitle": "Ausstempeln",
       "clockOutConfirmMessage": "Sind Sie sicher, dass Sie sich ausstempeln möchten?",
+      "shiftNotesLabel": "Was haben Sie heute gemacht?",
+      "shiftNotesPlaceholder": "Beschreiben Sie die Arbeit, die Sie während dieser Schicht erledigt haben...",
       "netWork": "Nettoarbeitszeit",
       "breakTime": "Pausenzeit",
       "thisWeek": "Diese Woche",
@@ -227,6 +231,9 @@
       "failedToGetLocation": "Ihr aktueller Standort konnte nicht ermittelt werden.",
       "failedToClockIn": "Einstempeln fehlgeschlagen",
       "failedToClockOut": "Ausstempeln fehlgeschlagen"
+    },
+    "hybrid": {
+      "tapToStartShift": "Tippen Sie, um Ihre Schicht zu starten"
     },
     "freelancer": {
       "todaysTasks": "Heutige Aufgaben",
@@ -449,6 +456,8 @@
     "clockOut": "Ausstempeln",
     "clockOutConfirmTitle": "Ausstempeln",
     "clockOutConfirmMessage": "Sind Sie sicher, dass Sie sich ausstempeln möchten?",
+    "shiftNotesLabel": "Was haben Sie heute gemacht?",
+    "shiftNotesPlaceholder": "Beschreiben Sie die Arbeit, die Sie während dieser Schicht erledigt haben...",
     "clockedInAt": "Eingestempelt bei {{location}}",
     "clockedOutSuccess": "Erfolgreich ausgestempelt",
     "locationRequired": "Standort erforderlich",
@@ -608,10 +617,11 @@
 
     "theme": {
       "title": "Darstellung",
-      "chooseTheme": "Darstellung wählen",
+      "chooseTheme": "Wählen Sie Ihr bevorzugtes Design",
       "system": "System",
       "light": "Hell",
-      "dark": "Dunkel"
+      "dark": "Dunkel",
+      "appliedImmediately": "Designänderungen werden sofort in der gesamten App übernommen."
     },
 
     "signOutConfirmTitle": "Abmelden",

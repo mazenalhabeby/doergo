@@ -12,7 +12,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { SheetHeader } from '../../../src/components';
 import {
   COLORS,
   SPACING,
@@ -37,6 +39,7 @@ const defaultPrefs: NotificationPrefs = {
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs);
   const [permissionStatus, setPermissionStatus] = useState<string>('undetermined');
@@ -77,7 +80,8 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+    <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
+      <SheetHeader />
       {/* Permission Status */}
       <View style={styles.section}>
         <View style={[styles.permissionCard, { backgroundColor: colors.card }]}>

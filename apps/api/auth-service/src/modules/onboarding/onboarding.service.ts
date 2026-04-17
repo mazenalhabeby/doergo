@@ -213,6 +213,49 @@ export class OnboardingService {
       };
     }
 
+    // OPEN policy: auto-approve immediately
+    if (organization.joinPolicy === 'OPEN') {
+      // Add user to org directly
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          organizationId: organization.id,
+          onboardingCompleted: true,
+          role: 'TECHNICIAN',
+          platform: 'MOBILE',
+        },
+      });
+
+      // Create an approved join request for audit trail
+      const joinRequest = await this.prisma.joinRequest.create({
+        data: {
+          userId,
+          organizationId: organization.id,
+          message: message || null,
+          status: 'APPROVED',
+          reviewedAt: new Date(),
+        },
+        include: {
+          organization: { select: { id: true, name: true } },
+        },
+      });
+
+      this.logger.log(`Join request auto-approved (OPEN policy): user ${userId} → org ${organization.name}`);
+
+      return {
+        success: true,
+        data: {
+          id: joinRequest.id,
+          organizationName: joinRequest.organization.name,
+          message: joinRequest.message,
+          status: 'APPROVED',
+          autoApproved: true,
+          createdAt: joinRequest.createdAt.toISOString(),
+        },
+      };
+    }
+
+    // INVITE_ONLY policy: create pending request for admin approval
     const joinRequest = await this.prisma.joinRequest.create({
       data: {
         userId,
@@ -225,7 +268,7 @@ export class OnboardingService {
       },
     });
 
-    this.logger.log(`Join request created: user ${userId} → org ${organization.name}`);
+    this.logger.log(`Join request created (INVITE_ONLY): user ${userId} → org ${organization.name}`);
 
     return {
       success: true,
@@ -358,10 +401,11 @@ export class OnboardingService {
 
     const needsOnboarding = !user.onboardingCompleted;
 
-    // Check for pending join request
+    // Check for pending or recently rejected join request
     let pendingRequest = null;
     if (needsOnboarding) {
-      const request = await this.prisma.joinRequest.findFirst({
+      // First check for PENDING request
+      let request = await this.prisma.joinRequest.findFirst({
         where: { userId, status: 'PENDING' },
         include: {
           organization: { select: { id: true, name: true } },
@@ -369,12 +413,24 @@ export class OnboardingService {
         orderBy: { createdAt: 'desc' },
       });
 
+      // If no pending, check for recent REJECTED request (so mobile can show rejection reason)
+      if (!request) {
+        request = await this.prisma.joinRequest.findFirst({
+          where: { userId, status: 'REJECTED' },
+          include: {
+            organization: { select: { id: true, name: true } },
+          },
+          orderBy: { updatedAt: 'desc' },
+        });
+      }
+
       if (request) {
         pendingRequest = {
           id: request.id,
           organizationName: request.organization.name,
           message: request.message,
           status: request.status,
+          rejectionReason: request.rejectionReason || null,
           createdAt: request.createdAt.toISOString(),
         };
       }
@@ -384,7 +440,7 @@ export class OnboardingService {
       success: true,
       data: {
         needsOnboarding,
-        hasPendingJoinRequest: !!pendingRequest,
+        hasPendingJoinRequest: !!pendingRequest && pendingRequest.status === 'PENDING',
         pendingRequest,
       },
     };
@@ -572,7 +628,7 @@ export class OnboardingService {
 
     this.logger.log(`Join request ${data.requestId} rejected by ${data.approverId}`);
 
-    return { success: true, message: 'Join request rejected' };
+    return { success: true, message: 'Join request rejected', data: { userId: request.userId } };
   }
 
   /**
@@ -620,25 +676,24 @@ export class OnboardingService {
 
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { joinCodeHash },
+      data: { joinCode, joinCodeHash },
     });
 
     this.logger.log(`Join code regenerated for org ${organizationId}`);
 
     return {
       success: true,
-      data: { joinCode }, // Plain code - only returned at generation time
+      data: { joinCode },
     };
   }
 
   /**
    * Get join code info for an organization.
-   * Note: Cannot recover plain code from hash, just returns whether one is set.
    */
   async getJoinCode(organizationId: string) {
     const org = await this.prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { joinCodeHash: true, joinPolicy: true },
+      select: { joinCode: true, joinCodeHash: true, joinPolicy: true },
     });
 
     if (!org) {
@@ -649,6 +704,7 @@ export class OnboardingService {
       success: true,
       data: {
         hasJoinCode: !!org.joinCodeHash,
+        joinCode: org.joinCode || null,
         joinPolicy: org.joinPolicy,
       },
     };
@@ -671,5 +727,105 @@ export class OnboardingService {
     this.logger.log(`Join policy updated to ${joinPolicy} for org ${organizationId}`);
 
     return { success: true, data: { joinPolicy } };
+  }
+
+  async updateProfileBadges(organizationId: string, profileBadges: any) {
+    // Validate the shape
+    const valid = profileBadges
+      && typeof profileBadges === 'object'
+      && typeof profileBadges.showRole === 'boolean'
+      && typeof profileBadges.showWorkMode === 'boolean'
+      && typeof profileBadges.showType === 'boolean'
+      && typeof profileBadges.showSpecialty === 'boolean';
+
+    if (!valid) {
+      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Invalid profile badges config' };
+    }
+
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: { profileBadges },
+    });
+
+    return { success: true, data: { profileBadges } };
+  }
+
+  async getProfileBadges(organizationId: string) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { profileBadges: true },
+    });
+
+    return { success: true, data: { profileBadges: org?.profileBadges || null } };
+  }
+
+  async getOrgProfile(organizationId: string) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        id: true,
+        name: true,
+        industry: true,
+        address: true,
+        phone: true,
+        email: true,
+        website: true,
+        timezone: true,
+        logoUrl: true,
+        joinPolicy: true,
+        profileBadges: true,
+        notificationPrefs: true,
+        securitySettings: true,
+        createdAt: true,
+        _count: { select: { users: true } },
+      },
+    });
+
+    if (!org) {
+      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Organization not found' };
+    }
+
+    return { success: true, data: { ...org, memberCount: org._count.users } };
+  }
+
+  async updateOrgProfile(organizationId: string, updates: any) {
+    const allowedFields = ['name', 'industry', 'address', 'phone', 'email', 'website', 'timezone', 'logoUrl'];
+    const data: any = {};
+
+    for (const key of allowedFields) {
+      if (updates[key] !== undefined) {
+        data[key] = updates[key];
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'No valid fields to update' };
+    }
+
+    const org = await this.prisma.organization.update({
+      where: { id: organizationId },
+      data,
+      select: { id: true, name: true, industry: true, address: true, phone: true, email: true, website: true, timezone: true, logoUrl: true },
+    });
+
+    return { success: true, data: org };
+  }
+
+  async updateNotificationPrefs(organizationId: string, prefs: any) {
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: { notificationPrefs: prefs },
+    });
+
+    return { success: true, data: { notificationPrefs: prefs } };
+  }
+
+  async updateSecuritySettings(organizationId: string, settings: any) {
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: { securitySettings: settings },
+    });
+
+    return { success: true, data: { securitySettings: settings } };
   }
 }

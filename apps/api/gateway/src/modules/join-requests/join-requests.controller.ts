@@ -26,6 +26,7 @@ import {
 export class JoinRequestsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
   ) {}
 
   @Get()
@@ -71,6 +72,17 @@ export class JoinRequestsController {
       );
     }
 
+    // Emit notification event
+    if (result?.data?.userId) {
+      this.notificationClient.emit('join_request_approved', {
+        userId: result.data.userId,
+        organizationId: user.organizationId,
+        organizationName: result.data.organizationName || '',
+        role: dto.role,
+        approvedByName: `${user.firstName} ${user.lastName}`,
+      });
+    }
+
     return result;
   }
 
@@ -99,6 +111,17 @@ export class JoinRequestsController {
         { message: result.message },
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+
+    // Emit notification event
+    if (result?.data?.userId) {
+      this.notificationClient.emit('join_request_rejected', {
+        userId: result.data.userId,
+        organizationId: user.organizationId,
+        organizationName: result.data.organizationName || '',
+        reason: dto.reason || '',
+        rejectedByName: `${user.firstName} ${user.lastName}`,
+      });
     }
 
     return result;

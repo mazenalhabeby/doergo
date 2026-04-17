@@ -129,6 +129,7 @@ export class InvitationService {
 
     const invitation = await this.prisma.invitation.create({
       data: {
+        code,
         codeHash: codeHashValue,
         targetRole: data.targetRole as any,
         organizationId: data.organizationId,

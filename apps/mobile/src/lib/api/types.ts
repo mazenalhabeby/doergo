@@ -67,6 +67,13 @@ export interface User {
   technicianType?: TechnicianType;
   workMode?: WorkMode;
   specialty?: string | null;
+  // Profile badge visibility (resolved: user override > org default > system default)
+  profileBadges?: {
+    showRole: boolean;
+    showWorkMode: boolean;
+    showType: boolean;
+    showSpecialty: boolean;
+  };
 }
 
 export interface LoginResponse {

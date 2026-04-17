@@ -36,6 +36,14 @@ export interface TechnicianProfile {
   // Permissions
   canCreateTasks: boolean;
 
+  // Profile badge overrides (null = use org defaults)
+  profileBadges?: {
+    showRole: boolean;
+    showWorkMode: boolean;
+    showType: boolean;
+    showSpecialty: boolean;
+  } | null;
+
   // Organization
   organizationId: string;
   organization?: {
@@ -225,6 +233,12 @@ export interface UpdateTechnicianInput {
   rating?: number;
   ratingCount?: number;
   canCreateTasks?: boolean;
+  profileBadges?: {
+    showRole: boolean;
+    showWorkMode: boolean;
+    showType: boolean;
+    showSpecialty: boolean;
+  } | null;
 }
 
 /**

@@ -106,7 +106,7 @@ export default function ChoosePathScreen() {
   const checkPendingRequest = async () => {
     try {
       const status = await onboardingApi.getStatus();
-      if (status.hasPendingJoinRequest) {
+      if (status.hasPendingJoinRequest && status.pendingRequest?.status === 'PENDING') {
         router.replace(ROUTES.pendingApproval as Href);
         return;
       }

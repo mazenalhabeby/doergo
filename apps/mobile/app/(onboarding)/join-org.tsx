@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { JoinOrgIcon } from '../../src/components';
 import { onboardingApi } from '../../src/lib/api';
+import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
@@ -16,6 +17,7 @@ export default function JoinOrgScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const { refreshUser } = useAuth();
   const toast = useToast();
   const { t } = useTranslation();
 
@@ -48,11 +50,17 @@ export default function JoinOrgScreen() {
     if (!validation?.valid) return;
     setIsSubmitting(true);
     try {
-      await onboardingApi.submitJoinRequest({
+      const result = await onboardingApi.submitJoinRequest({
         orgCode: code.trim().toUpperCase(),
         message: message.trim() || undefined,
       });
-      router.replace(ROUTES.pendingApproval as Href);
+      if (result?.autoApproved) {
+        // OPEN policy: auto-approved, refresh user and go to app
+        await refreshUser();
+        router.replace('/(app)' as Href);
+      } else {
+        router.replace(ROUTES.pendingApproval as Href);
+      }
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('onboarding.joinOrg.failedToSubmit'));
     } finally {

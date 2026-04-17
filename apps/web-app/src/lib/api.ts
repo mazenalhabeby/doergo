@@ -2475,7 +2475,7 @@ export const organizationsApi = {
   getJoinCode: async () => {
     const response = await api.get<{
       success: boolean;
-      data: { hasJoinCode: boolean; joinPolicy: string };
+      data: { hasJoinCode: boolean; joinCode: string | null; joinPolicy: string };
     }>('/organizations/join-code');
     if (response.error) throw new Error(response.error);
     return response.data?.data;
@@ -2484,7 +2484,7 @@ export const organizationsApi = {
   regenerateJoinCode: async () => {
     const response = await api.post<{
       success: boolean;
-      data: { code: string; message: string };
+      data: { joinCode: string };
     }>('/organizations/regenerate-join-code');
     if (response.error) throw new Error(response.error);
     return response.data?.data;
@@ -2540,6 +2540,48 @@ export const organizationsApi = {
     }>(`/organizations/members/${memberId}`);
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+
+  getProfileBadges: async () => {
+    const response = await api.get<{
+      success: boolean;
+      data: { profileBadges: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean } | null };
+    }>('/organizations/profile-badges');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateProfileBadges: async (data: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean }) => {
+    const response = await api.patch<{
+      success: boolean;
+      data: { profileBadges: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean } };
+    }>('/organizations/profile-badges', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  getProfile: async () => {
+    const response = await api.get<{ success: boolean; data: any }>('/organizations/profile');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateProfile: async (updates: Record<string, any>) => {
+    const response = await api.patch<{ success: boolean; data: any }>('/organizations/profile', updates);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateNotificationPrefs: async (prefs: Record<string, any>) => {
+    const response = await api.patch<{ success: boolean; data: any }>('/organizations/notification-prefs', prefs);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateSecuritySettings: async (settings: Record<string, any>) => {
+    const response = await api.patch<{ success: boolean; data: any }>('/organizations/security-settings', settings);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
   },
 };
 

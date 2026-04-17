@@ -19,8 +19,9 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { DashboardSkeleton } from '@/components/skeletons';
-// TokenDisplay hidden — re-enable for debugging: import { TokenDisplay } from '@/components/token-display';
+import { NotificationBell } from '@/components/notification-bell';
 import { useAuth } from '@/contexts/auth-context';
+import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider, useBreadcrumbOverride } from '@/contexts/breadcrumb-context';
 
 // ---------------------------------------------------------------------------
@@ -170,6 +171,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
+    <SocketProvider>
     <BreadcrumbProvider>
       <SidebarProvider>
         <RouteChangeIndicator />
@@ -179,6 +181,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <BreadcrumbNav />
+            <div className="ml-auto">
+              <NotificationBell />
+            </div>
           </header>
           <div className="flex flex-1 flex-col overflow-auto bg-slate-50/50">
             <Suspense fallback={<ContentFallback />}>
@@ -189,5 +194,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* <TokenDisplay /> */}
       </SidebarProvider>
     </BreadcrumbProvider>
+    </SocketProvider>
   );
 }

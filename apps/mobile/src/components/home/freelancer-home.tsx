@@ -33,6 +33,7 @@ export function FreelancerHome() {
 
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -105,6 +106,7 @@ export function FreelancerHome() {
     if (fetchingRef.current && !showRefresh) return;
 
     try {
+      lastFetchTimeRef.current = Date.now();
       fetchingRef.current = true;
       if (showRefresh) {
         setIsRefreshing(true);
@@ -137,6 +139,7 @@ export function FreelancerHome() {
   useFocusEffect(
     useCallback(() => {
       if (!initialFetchDoneRef.current) return;
+      if (Date.now() - lastFetchTimeRef.current < 30000) return;
       fetchTasks();
     }, [fetchTasks])
   );

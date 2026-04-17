@@ -215,9 +215,24 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Organization profile
+  industry    String?   // e.g. "HVAC", "Plumbing", "Electrical", "General Contracting"
+  address     String?   // Physical address
+  phone       String?   // Contact phone
+  email       String?   // Contact email (org-level, not user)
+  website     String?   // Website URL
+  timezone    String?   @default("Europe/Vienna")  // IANA timezone
+  logoUrl     String?   // Organization logo
+
   // Join system
+  joinCode     String?              // Plaintext join code (displayed to admin)
   joinCodeHash String?     @unique  // SHA-256 hash of persistent org join code
   joinPolicy   JoinPolicy  @default(INVITE_ONLY)
+
+  // Organization settings (JSON blobs for flexible config)
+  profileBadges     Json?   // { showRole, showWorkMode, showType, showSpecialty }
+  notificationPrefs Json?   // { emailOnTaskCreate, emailOnTaskComplete, emailOnJoinRequest, pushEnabled }
+  securitySettings  Json?   // { sessionTimeoutHours, requireStrongPassword, maxFailedAttempts }
 
   users User[]
   tasks Task[]
@@ -317,6 +332,10 @@ model User {
 
   // Profile avatar
   avatarUrl  String?
+
+  // Profile badge visibility override (null = use org default)
+  // JSON: { showRole, showWorkMode, showType, showSpecialty }
+  profileBadges Json?
 
   // Onboarding flag (false = orphan user needs to complete onboarding wizard)
   onboardingCompleted Boolean @default(true)
@@ -943,7 +962,8 @@ model TimeOff {
 model Invitation {
   id String @id @default(cuid())
 
-  // Short code stored as SHA-256 hash (e.g., "XK7M2P" → hash)
+  // Short code (plaintext for display + SHA-256 hash for validation)
+  code     String?
   codeHash String @unique
 
   // Target role and organization
@@ -1009,7 +1029,7 @@ model JoinRequest {
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
-  @@unique([userId, organizationId, status])
+  @@index([userId, organizationId, status])
   @@index([organizationId, status])
   @@index([userId])
   @@index([reviewedById])

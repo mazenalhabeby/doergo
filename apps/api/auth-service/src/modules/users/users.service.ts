@@ -490,6 +490,7 @@ export class UsersService {
         ...(dto.rating !== undefined && { rating: dto.rating }),
         ...(dto.ratingCount !== undefined && { ratingCount: dto.ratingCount }),
         ...(dto.canCreateTasks !== undefined && { canCreateTasks: dto.canCreateTasks }),
+        ...(dto.profileBadges !== undefined && { profileBadges: dto.profileBadges }),
       },
       select: {
         id: true,

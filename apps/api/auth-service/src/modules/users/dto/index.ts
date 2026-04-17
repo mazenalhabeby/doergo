@@ -33,6 +33,7 @@ export interface UpdateTechnicianDto {
   rating?: number;
   ratingCount?: number;
   canCreateTasks?: boolean;
+  profileBadges?: any;
 }
 
 /**

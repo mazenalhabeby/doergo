@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { Stack, useRouter, Href } from 'expo-router';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform, View } from 'react-native';
 import * as Location from 'expo-location';
 import type { NotificationResponse } from 'expo-notifications';
 import {
@@ -128,6 +128,7 @@ export default function AppLayout() {
   return (
     <SocketProvider>
     <LocationTrackingProvider>
+      <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <Stack
         screenOptions={{
           headerStyle: {
@@ -138,6 +139,8 @@ export default function AppLayout() {
             color: colors.textPrimary,
           },
           headerTintColor: COLORS.primary,
+          contentStyle: { backgroundColor: colors.surface },
+          animation: 'none',
         }}
       >
         <Stack.Screen
@@ -155,21 +158,49 @@ export default function AppLayout() {
         />
         <Stack.Screen
           name="profile/notifications"
-          options={{ title: 'Notifications' }}
+          options={{
+            title: 'Notifications',
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
         />
         <Stack.Screen
           name="profile/account"
-          options={{ title: 'Account' }}
+          options={{
+            title: 'Account',
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
         />
         <Stack.Screen
           name="profile/about"
-          options={{ title: 'About' }}
+          options={{
+            title: 'About',
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
         />
         <Stack.Screen
           name="profile/language"
-          options={{ title: '' }}
+          options={{
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="profile/appearance"
+          options={{
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
         />
       </Stack>
+      </View>
     </LocationTrackingProvider>
     </SocketProvider>
   );

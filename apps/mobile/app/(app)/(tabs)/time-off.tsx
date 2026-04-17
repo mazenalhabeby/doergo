@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -181,6 +181,7 @@ export default function TimeOffScreen() {
 
   // Confirm sheet state
   const [cancelTarget, setCancelTarget] = useState<TimeOffRequest | null>(null);
+  const lastFetchTimeRef = useRef(0);
 
   // Schedule day lookup: dayOfWeek (0=Mon..6=Sun) → isActive
   const scheduleDays = useMemo(() => {
@@ -226,6 +227,8 @@ export default function TimeOffScreen() {
   // Fetch on mount & tab focus
   useFocusEffect(
     useCallback(() => {
+      if (Date.now() - lastFetchTimeRef.current < 30000) return;
+      lastFetchTimeRef.current = Date.now();
       fetchData();
     }, [fetchData])
   );

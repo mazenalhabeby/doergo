@@ -65,4 +65,34 @@ export class OnboardingController {
   async updateJoinPolicy(@Payload() data: { organizationId: string; joinPolicy: string }) {
     return this.onboardingService.updateJoinPolicy(data.organizationId, data.joinPolicy);
   }
+
+  @MessagePattern({ cmd: 'update_profile_badges' })
+  async updateProfileBadges(@Payload() data: { organizationId: string; profileBadges: any }) {
+    return this.onboardingService.updateProfileBadges(data.organizationId, data.profileBadges);
+  }
+
+  @MessagePattern({ cmd: 'get_profile_badges' })
+  async getProfileBadges(@Payload() data: { organizationId: string }) {
+    return this.onboardingService.getProfileBadges(data.organizationId);
+  }
+
+  @MessagePattern({ cmd: 'get_org_profile' })
+  async getOrgProfile(@Payload() data: { organizationId: string }) {
+    return this.onboardingService.getOrgProfile(data.organizationId);
+  }
+
+  @MessagePattern({ cmd: 'update_org_profile' })
+  async updateOrgProfile(@Payload() data: { organizationId: string; updates: any }) {
+    return this.onboardingService.updateOrgProfile(data.organizationId, data.updates);
+  }
+
+  @MessagePattern({ cmd: 'update_notification_prefs' })
+  async updateNotificationPrefs(@Payload() data: { organizationId: string; prefs: any }) {
+    return this.onboardingService.updateNotificationPrefs(data.organizationId, data.prefs);
+  }
+
+  @MessagePattern({ cmd: 'update_security_settings' })
+  async updateSecuritySettings(@Payload() data: { organizationId: string; settings: any }) {
+    return this.onboardingService.updateSecuritySettings(data.organizationId, data.settings);
+  }
 }

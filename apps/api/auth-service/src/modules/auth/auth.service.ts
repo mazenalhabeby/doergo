@@ -17,13 +17,32 @@ import {
   error,
   ErrorCodes,
   DEFAULT_PERMISSIONS,
+  DEFAULT_PROFILE_BADGES,
   Role,
   Platform,
+  type ProfileBadgesConfig,
 } from '@hbcfield/shared';
 
 // Hash a token using SHA-256 for secure storage
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
+}
+
+// Resolve profile badges: user override > org config > defaults
+function resolveProfileBadges(
+  userBadges: any,
+  orgBadges: any,
+): ProfileBadgesConfig {
+  const base = { ...DEFAULT_PROFILE_BADGES };
+  // Apply org-level config
+  if (orgBadges && typeof orgBadges === 'object') {
+    Object.assign(base, orgBadges);
+  }
+  // Apply user-level override
+  if (userBadges && typeof userBadges === 'object') {
+    Object.assign(base, userBadges);
+  }
+  return base;
 }
 
 @Injectable()
@@ -234,6 +253,7 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { email },
+        include: { organization: { select: { profileBadges: true } } },
       });
 
       if (!user || !user.isActive) {
@@ -352,6 +372,8 @@ export class AuthService {
             technicianType: user.technicianType,
             workMode: user.workMode,
             specialty: user.specialty,
+            // Profile badge visibility
+            profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
           },
           ...tokens,
         },
@@ -387,7 +409,7 @@ export class AuthService {
       // Find the stored token by hash
       const storedToken = await this.prisma.refreshToken.findUnique({
         where: { tokenHash },
-        include: { user: true },
+        include: { user: { include: { organization: { select: { profileBadges: true } } } } },
       });
 
       if (!storedToken) {
@@ -610,6 +632,7 @@ export class AuthService {
             technicianType: storedToken.user.technicianType,
             workMode: storedToken.user.workMode,
             specialty: storedToken.user.specialty,
+            profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
           },
         },
       };
@@ -842,6 +865,9 @@ export class AuthService {
           technicianType: true,
           workMode: true,
           specialty: true,
+          // Badge config
+          profileBadges: true,
+          organization: { select: { profileBadges: true } },
         },
       });
 
@@ -849,7 +875,14 @@ export class AuthService {
         return { valid: false };
       }
 
-      return { valid: true, user };
+      const { organization, profileBadges, ...userData } = user;
+      return {
+        valid: true,
+        user: {
+          ...userData,
+          profileBadges: resolveProfileBadges(profileBadges, organization?.profileBadges),
+        },
+      };
     } catch {
       return { valid: false };
     }

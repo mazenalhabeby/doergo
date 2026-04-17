@@ -459,4 +459,20 @@ export class NotificationController {
       timestamp: new Date().toISOString(),
     });
   }
+
+  // =========================================================================
+  // INVITATION EVENTS
+  // =========================================================================
+
+  @EventPattern('invitation_created')
+  async handleInvitationCreated(@Payload() data: {
+    recipientEmail: string;
+    organizationName: string;
+    invitationCode: string;
+    targetRole: string;
+    expiresAt: string;
+  }) {
+    this.logger.log(`Sending invitation email to ${data.recipientEmail} for org ${data.organizationName}`);
+    await this.emailService.sendInvitationEmail(data);
+  }
 }

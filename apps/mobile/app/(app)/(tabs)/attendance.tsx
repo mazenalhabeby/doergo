@@ -13,9 +13,11 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
@@ -38,7 +40,7 @@ import {
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { LoadingState, ErrorState, LocationPickerSheet, ConfirmSheet } from '../../../src/components';
+import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet } from '../../../src/components';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
@@ -50,6 +52,7 @@ export default function AttendanceScreen() {
   const { user } = useAuth();
   const toast = useToast();
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -115,9 +118,12 @@ export default function AttendanceScreen() {
   // Check if user is FULL_TIME technician
   const isFullTimeTechnician = user?.technicianType === 'FULL_TIME';
 
+  const lastFetchTimeRef = useRef(0);
+
   // Fetch attendance data - use allSettled to handle partial failures gracefully
   const fetchAttendanceData = useCallback(async () => {
     try {
+      lastFetchTimeRef.current = Date.now();
       setError(null);
       const results = await Promise.allSettled([
         attendanceApi.getStatus(),
@@ -185,6 +191,7 @@ export default function AttendanceScreen() {
         initialLoadDone.current = true;
         return;
       }
+      if (Date.now() - lastFetchTimeRef.current < 30000) return;
       fetchAttendanceData();
     }, [fetchAttendanceData])
   );
@@ -304,7 +311,7 @@ export default function AttendanceScreen() {
     setShowClockOutConfirm(true);
   };
 
-  const confirmClockOut = async () => {
+  const confirmClockOut = async (notes: string) => {
     setShowClockOutConfirm(false);
     setIsActionLoading(true);
     try {
@@ -313,6 +320,7 @@ export default function AttendanceScreen() {
         lat: location?.lat || 0,
         lng: location?.lng || 0,
         accuracy: location?.accuracy,
+        notes: notes || undefined,
       });
       await fetchAttendanceData();
       toast.success(t('common.success'), t('attendance.clockedOutSuccess'));
@@ -467,7 +475,7 @@ export default function AttendanceScreen() {
               </View>
 
               {/* Break Section */}
-              {breakStatus?.isOnBreak ? (
+              {breakStatus?.isOnBreak === true ? (
                 <View style={[styles.breakSection, { borderTopColor: colors.border }]}>
                   <View style={[styles.breakActiveIndicator, { backgroundColor: colors.amberLight }]}>
                     <Ionicons name="cafe" size={20} color={COLORS.amber} />
@@ -564,7 +572,7 @@ export default function AttendanceScreen() {
             )}
           </TouchableOpacity>
 
-          {locationError && (
+          {!!locationError && (
             <Text style={styles.locationErrorText}>{locationError}</Text>
           )}
         </View>
@@ -612,7 +620,7 @@ export default function AttendanceScreen() {
         )}
 
         {/* Today's Breaks */}
-        {isClockedIn && breakStatus?.todayBreaks && breakStatus.todayBreaks.length > 0 && (
+        {isClockedIn && Array.isArray(breakStatus?.todayBreaks) && breakStatus.todayBreaks.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('attendance.todaysBreaks')}</Text>
             {breakStatus.todayBreaks.map((breakItem: any, index: number) => (
@@ -650,7 +658,7 @@ export default function AttendanceScreen() {
                     {breakItem.endedAt && ` - ${formatTime(breakItem.endedAt)}`}
                   </Text>
                 </View>
-                {breakItem.notes && (
+                {!!breakItem.notes && (
                   <Text style={[styles.breakNotesText, { color: colors.textMuted }]}>{breakItem.notes}</Text>
                 )}
               </View>
@@ -734,7 +742,7 @@ export default function AttendanceScreen() {
                       </Text>
                     </View>
                   )}
-                  {entry.totalMinutes && (
+                  {entry.totalMinutes != null && entry.totalMinutes > 0 && (
                     <View style={styles.historyTimeItem}>
                       <Text style={[styles.historyTimeLabel, { color: colors.textMuted }]}>{t('attendance.history.total')}</Text>
                       <Text style={[styles.historyTimeValue, { color: COLORS.primary }]}>
@@ -772,7 +780,7 @@ export default function AttendanceScreen() {
         getDistance={getDistanceToLocation}
       />
 
-      <ConfirmSheet
+      <ClockOutSheet
         visible={showClockOutConfirm}
         onClose={() => setShowClockOutConfirm(false)}
         onConfirm={confirmClockOut}
@@ -780,26 +788,40 @@ export default function AttendanceScreen() {
         message={t('attendance.clockOutConfirmMessage')}
         confirmLabel={t('attendance.clockOut')}
         cancelLabel={t('common.cancel')}
-        variant="warning"
-        icon="log-out"
+        notesLabel={t('attendance.shiftNotesLabel')}
+        notesPlaceholder={t('attendance.shiftNotesPlaceholder')}
+        isLoading={isActionLoading}
       />
 
       {/* Break Notes Bottom Sheet */}
-      {breakModalVisible && (
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <Modal
+        visible={breakModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeBreakModal}
+        statusBarTranslucent
+      >
+        <KeyboardAvoidingView
+          style={styles.modalContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: breakOverlayAnim }]}>
-            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
-              <Pressable style={StyleSheet.absoluteFill} onPress={closeBreakModal} />
-            </BlurView>
+            {Platform.OS === 'ios' ? (
+              <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={closeBreakModal} />
+              </BlurView>
+            ) : (
+              <Pressable
+                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.65)' }]}
+                onPress={closeBreakModal}
+              />
+            )}
           </Animated.View>
           <Animated.View
             style={[styles.modalSheet, { transform: [{ translateY: breakSlideAnim }] }]}
           >
             <View style={[styles.modalHandle, { backgroundColor: colors.borderLight }]} />
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={[styles.modalContent, { backgroundColor: colors.card }]}
-            >
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                   {isEndingBreak ? t('attendance.breaks.notesTitle') : t('attendance.breaks.startBreakTitle', { type: pendingBreakType?.toLowerCase() })}
@@ -859,10 +881,13 @@ export default function AttendanceScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-            </KeyboardAvoidingView>
+
+              {/* Safe area spacer */}
+              <View style={{ height: insets.bottom }} />
+            </View>
           </Animated.View>
-        </View>
-      )}
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -1241,12 +1266,11 @@ const styles = StyleSheet.create({
   },
 
   // Bottom Sheet
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   modalSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    maxHeight: '80%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,

@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { SheetHeader } from '../../../src/components';
 import { useToast } from '../../../src/contexts/toast-context';
 import { passwordApi } from '../../../src/lib/api';
 import {
@@ -27,6 +29,7 @@ import {
 export default function AccountScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const toast = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
@@ -69,10 +72,11 @@ export default function AccountScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.surface }]}
+      style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <SheetHeader />
         {/* Account Info */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('profile.account.accountInfo')}</Text>

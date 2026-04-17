@@ -158,11 +158,14 @@ export default function TasksScreen() {
   // Fetch tasks with server-side filtering
   // ---------------------------------------------------------------------------
 
+  const lastFetchTimeRef = useRef(0);
+
   const fetchTasks = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
 
     try {
       fetchingRef.current = true;
+      lastFetchTimeRef.current = Date.now();
       if (showRefresh) {
         setIsRefreshing(true);
       } else {
@@ -204,28 +207,39 @@ export default function TasksScreen() {
     fetchTasks();
   }, [activeTab, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refetch when screen regains focus (e.g. navigating back from task detail)
+  // Refetch when screen regains focus — throttled to avoid redundant calls
   useFocusEffect(
     useCallback(() => {
       if (!initialFetchDoneRef.current) return;
+      // Skip if fetched less than 30 seconds ago
+      if (Date.now() - lastFetchTimeRef.current < 30000) return;
       fetchTasks();
     }, [fetchTasks])
   );
 
-  // Real-time updates via Socket.IO
+  // Real-time updates via Socket.IO — debounced to batch multiple events
   const { isConnected, subscribe } = useSocketContext();
+  const socketDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isConnected) return;
 
+    const debouncedFetch = () => {
+      if (socketDebounceRef.current) clearTimeout(socketDebounceRef.current);
+      socketDebounceRef.current = setTimeout(() => fetchTasks(), 2000);
+    };
+
     const unsubs = [
-      subscribe(SocketEvents.TASK_ASSIGNED, () => fetchTasks()),
-      subscribe(SocketEvents.TASK_STATUS_CHANGED, () => fetchTasks()),
-      subscribe(SocketEvents.TASK_CREATED, () => fetchTasks()),
-      subscribe(SocketEvents.TASK_UPDATED, () => fetchTasks()),
+      subscribe(SocketEvents.TASK_ASSIGNED, debouncedFetch),
+      subscribe(SocketEvents.TASK_STATUS_CHANGED, debouncedFetch),
+      subscribe(SocketEvents.TASK_CREATED, debouncedFetch),
+      subscribe(SocketEvents.TASK_UPDATED, debouncedFetch),
     ];
 
-    return () => unsubs.forEach(fn => fn());
+    return () => {
+      unsubs.forEach(fn => fn());
+      if (socketDebounceRef.current) clearTimeout(socketDebounceRef.current);
+    };
   }, [isConnected, subscribe, fetchTasks]);
 
   // Tab switch resets status filter

@@ -25,7 +25,7 @@ import {
   type CompanyLocation,
   type Task,
 } from '../../lib/api';
-import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ConfirmSheet } from '../../components';
+import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet } from '../../components';
 import { WeekCalendar } from '../week-calendar';
 import { ROUTES } from '../../lib/constants';
 import {
@@ -74,6 +74,7 @@ export function HybridHome() {
   const fetchData = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
     fetchingRef.current = true;
+    lastFetchTimeRef.current = Date.now();
 
     try {
       if (showRefresh) setIsRefreshing(true);
@@ -114,10 +115,12 @@ export function HybridHome() {
     fetchData();
   }, [fetchData]);
 
-  // Refetch on focus
+  // Refetch on focus — throttled (skip if fetched < 30s ago)
+  const lastFetchTimeRef = useRef(0);
   useFocusEffect(
     useCallback(() => {
       if (!initialFetchDoneRef.current) return;
+      if (Date.now() - lastFetchTimeRef.current < 30000) return;
       fetchData();
     }, [fetchData])
   );
@@ -225,13 +228,13 @@ export function HybridHome() {
     setShowClockOutConfirm(true);
   };
 
-  const confirmClockOut = async () => {
+  const confirmClockOut = async (notes: string) => {
     setShowClockOutConfirm(false);
     setIsClockLoading(true);
     try {
       const location = await getCurrentLocation();
       if (!location) { setIsClockLoading(false); return; }
-      await attendanceApi.clockOut({ lat: location.lat, lng: location.lng, accuracy: location.accuracy });
+      await attendanceApi.clockOut({ lat: location.lat, lng: location.lng, accuracy: location.accuracy, notes: notes || undefined });
       await fetchData();
     } catch (err: any) {
       toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockOut'));
@@ -269,44 +272,65 @@ export function HybridHome() {
         <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
       </View>
 
-      {/* Compact Attendance Card */}
-      <View style={[
-        hStyles.attendanceCard,
-        isClockedIn ? hStyles.attendanceCardActive : { backgroundColor: colors.card },
-      ]}>
-        <View style={hStyles.attendanceRow}>
-          <View style={hStyles.attendanceLeft}>
-            <View style={[hStyles.statusDot, isClockedIn ? hStyles.dotActive : hStyles.dotInactive]} />
-            <View>
-              <Text style={[hStyles.attendanceStatus, isClockedIn && { color: COLORS.white }]}>
-                {isClockedIn ? t('home.fullTime.clockedIn') : t('home.fullTime.clockedOut')}
-              </Text>
-              {isClockedIn && attendanceStatus?.currentEntry && (
-                <Text style={hStyles.attendanceDetail}>
-                  {attendanceStatus.currentEntry.location?.name || ''} · {formatDuration(elapsedMinutes)}
-                  {breakStatus?.isOnBreak ? ` · ☕ ${t('home.fullTime.onBreak')}` : ''}
+      {/* Attendance Card */}
+      {isClockedIn ? (
+        <View style={[hStyles.attendanceCard, hStyles.attendanceCardActive]}>
+          <View style={hStyles.attendanceRow}>
+            <View style={hStyles.attendanceLeft}>
+              <View style={[hStyles.statusDot, hStyles.dotActive]} />
+              <View>
+                <Text style={[hStyles.attendanceStatus, { color: COLORS.white }]}>
+                  {t('home.fullTime.clockedIn')}
                 </Text>
-              )}
+                {attendanceStatus?.currentEntry && (
+                  <Text style={hStyles.attendanceDetail}>
+                    {attendanceStatus.currentEntry.location?.name || ''} · {formatDuration(elapsedMinutes)}
+                    {breakStatus?.isOnBreak === true ? ` · ☕ ${t('home.fullTime.onBreak')}` : ''}
+                  </Text>
+                )}
+              </View>
             </View>
+            <TouchableOpacity
+              style={[hStyles.clockBtn, hStyles.clockOutBtn]}
+              onPress={handleClockOut}
+              disabled={isClockLoading || isGettingLocation}
+            >
+              {isClockLoading || isGettingLocation ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <>
+                  <Ionicons name="log-out" size={16} color={COLORS.white} />
+                  <Text style={hStyles.clockBtnText}>{t('home.fullTime.clockOut')}</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[hStyles.clockBtn, isClockedIn ? hStyles.clockOutBtn : hStyles.clockInBtn]}
-            onPress={isClockedIn ? handleClockOut : openClockInModal}
-            disabled={isClockLoading || isGettingLocation}
-          >
-            {isClockLoading || isGettingLocation ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : (
-              <>
-                <Ionicons name={isClockedIn ? 'log-out' : 'log-in'} size={16} color={COLORS.white} />
-                <Text style={hStyles.clockBtnText}>
-                  {isClockedIn ? t('home.fullTime.clockOut') : t('home.fullTime.clockIn')}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
-      </View>
+      ) : (
+        <TouchableOpacity
+          style={[hStyles.clockInCard, { backgroundColor: colors.card }]}
+          onPress={openClockInModal}
+          disabled={isClockLoading || isGettingLocation}
+          activeOpacity={0.8}
+        >
+          <View style={hStyles.clockInIconBox}>
+            {isClockLoading || isGettingLocation ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Ionicons name="finger-print" size={28} color={COLORS.primary} />
+            )}
+          </View>
+          <View style={hStyles.clockInTextBox}>
+            <Text style={[hStyles.clockInTitle, { color: colors.textPrimary }]}>
+              {t('home.fullTime.clockIn')}
+            </Text>
+            <Text style={[hStyles.clockInSubtitle, { color: colors.textMuted }]}>
+              {t('home.hybrid.tapToStartShift')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+      )}
 
       {/* Task Stats */}
       <View style={sharedStyles.statsGrid}>
@@ -424,7 +448,7 @@ export function HybridHome() {
         confirmDisabled={isClockLoading}
       />
 
-      <ConfirmSheet
+      <ClockOutSheet
         visible={showClockOutConfirm}
         onClose={() => setShowClockOutConfirm(false)}
         onConfirm={confirmClockOut}
@@ -432,8 +456,9 @@ export function HybridHome() {
         message={t('home.fullTime.clockOutConfirmMessage')}
         confirmLabel={t('home.fullTime.clockOut')}
         cancelLabel={t('common.cancel')}
-        variant="warning"
-        icon="log-out"
+        notesLabel={t('home.fullTime.shiftNotesLabel')}
+        notesPlaceholder={t('home.fullTime.shiftNotesPlaceholder')}
+        isLoading={isClockLoading}
       />
     </View>
   );
@@ -500,6 +525,36 @@ const hStyles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.white,
+  },
+
+  // Clock In Card (when clocked out)
+  clockInCard: {
+    marginHorizontal: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  clockInIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clockInTextBox: {
+    flex: 1,
+  },
+  clockInTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  clockInSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    marginTop: 2,
   },
 
   // Task List

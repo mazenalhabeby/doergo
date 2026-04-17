@@ -1,11 +1,9 @@
-import { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../../src/contexts/theme-context';
+import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { SheetHeader } from '../../../src/components';
-import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 import {
   COLORS,
   SPACING,
@@ -15,17 +13,16 @@ import {
   SHADOWS,
 } from '../../../src/lib/constants';
 
-export default function LanguageScreen() {
-  const { colors, isDark } = useTheme();
+const THEME_OPTIONS: { mode: ThemeMode; icon: string; color: string }[] = [
+  { mode: 'system', icon: 'phone-portrait-outline', color: '#6366f1' },
+  { mode: 'light', icon: 'sunny-outline', color: '#f59e0b' },
+  { mode: 'dark', icon: 'moon-outline', color: '#6366f1' },
+];
+
+export default function AppearanceScreen() {
+  const { colors, isDark, mode, setMode } = useTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const currentLang = getCurrentLanguage();
-
-  const handleSelect = useCallback((code: string) => {
-    if (code !== currentLang) {
-      changeLanguage(code);
-    }
-  }, [currentLang]);
 
   return (
     <ScrollView
@@ -35,56 +32,52 @@ export default function LanguageScreen() {
     >
       <SheetHeader />
 
-      {/* Header Illustration */}
+      {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.globe, { backgroundColor: isDark ? '#312e81' : '#e0e7ff' }]}>
-          <Ionicons name="globe-outline" size={40} color="#6366f1" />
+        <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : '#fffbeb' }]}>
+          <Ionicons name="color-palette-outline" size={40} color="#f59e0b" />
         </View>
         <Text style={[styles.title, { color: colors.textPrimary }]}>
-          {t('profile.menu.language')}
+          {t('profile.theme.title')}
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          {t('profile.language.choosePreferred')}
+          {t('profile.theme.chooseTheme')}
         </Text>
       </View>
 
-      {/* Language Options */}
+      {/* Theme Options */}
       <View style={styles.optionsContainer}>
-        {supportedLanguages.map((lang, index) => {
-          const isActive = currentLang === lang.code;
+        {THEME_OPTIONS.map((option, index) => {
+          const isActive = mode === option.mode;
 
           return (
             <TouchableOpacity
-              key={lang.code}
+              key={option.mode}
               style={[
                 styles.option,
                 { backgroundColor: colors.card },
-                isActive && styles.optionActive,
-                isActive && { borderColor: '#6366f1', backgroundColor: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)' },
+                isActive && { borderColor: option.color, backgroundColor: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)' },
                 index > 0 && { marginTop: SPACING.md },
               ]}
               activeOpacity={0.7}
-              onPress={() => handleSelect(lang.code)}
+              onPress={() => setMode(option.mode)}
             >
               <View style={styles.optionLeft}>
-                <Text style={styles.flag}>{lang.flag}</Text>
-                <View>
-                  <Text style={[
-                    styles.langName,
-                    { color: isActive ? '#6366f1' : colors.textPrimary },
-                  ]}>
-                    {lang.label}
-                  </Text>
-                  <Text style={[styles.langCode, { color: colors.textMuted }]}>
-                    {lang.code.toUpperCase()}
-                  </Text>
+                <View style={[styles.optionIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#f8fafc' }]}>
+                  <Ionicons name={option.icon as any} size={24} color={isActive ? option.color : colors.textSecondary} />
                 </View>
+                <Text style={[
+                  styles.optionLabel,
+                  { color: isActive ? option.color : colors.textPrimary },
+                ]}>
+                  {t(`profile.theme.${option.mode}`)}
+                </Text>
               </View>
 
               <View style={[
                 styles.radio,
                 isActive
-                  ? styles.radioActive
+                  ? [styles.radioActive, { backgroundColor: option.color, borderColor: option.color }]
                   : { borderColor: isDark ? '#4b5563' : '#d1d5db' },
               ]}>
                 {isActive && (
@@ -97,10 +90,10 @@ export default function LanguageScreen() {
       </View>
 
       {/* Info Note */}
-      <View style={[styles.infoCard, { backgroundColor: isDark ? 'rgba(99,102,241,0.08)' : '#f5f3ff' }]}>
-        <Ionicons name="information-circle-outline" size={18} color="#6366f1" />
-        <Text style={[styles.infoText, { color: isDark ? '#a5b4fc' : '#6366f1' }]}>
-          {t('profile.language.appliedImmediately')}
+      <View style={[styles.infoCard, { backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : '#fffbeb' }]}>
+        <Ionicons name="information-circle-outline" size={18} color="#f59e0b" />
+        <Text style={[styles.infoText, { color: isDark ? '#fcd34d' : '#b45309' }]}>
+          {t('profile.theme.appliedImmediately')}
         </Text>
       </View>
     </ScrollView>
@@ -114,14 +107,12 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: SPACING.xxxl + SPACING.lg,
   },
-
-  // Header
   header: {
     alignItems: 'center',
     paddingTop: SPACING.xxxl,
     paddingBottom: SPACING.xl,
   },
-  globe: {
+  iconBox: {
     width: 80,
     height: 80,
     borderRadius: 24,
@@ -137,8 +128,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.base,
     marginTop: SPACING.xs,
   },
-
-  // Options
   optionsContainer: {
     paddingHorizontal: SPACING.lg,
     marginTop: SPACING.lg,
@@ -154,28 +143,22 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     ...SHADOWS.sm,
   },
-  optionActive: {
-    borderWidth: 2,
-  },
   optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.lg,
   },
-  flag: {
-    fontSize: 32,
+  optionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  langName: {
+  optionLabel: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.semibold,
   },
-  langCode: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    marginTop: 2,
-  },
-
-  // Radio
   radio: {
     width: 28,
     height: 28,
@@ -184,12 +167,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  radioActive: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
-  },
-
-  // Info
+  radioActive: {},
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',

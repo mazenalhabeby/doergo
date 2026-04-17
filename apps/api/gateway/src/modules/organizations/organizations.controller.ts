@@ -204,4 +204,110 @@ export class OrganizationsController {
 
     return result;
   }
+
+  // ========== Profile Badges ==========
+
+  @Get('profile-badges')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Get org profile badge visibility config' })
+  async getProfileBadges(@CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'get_profile_badges' }, { organizationId: user.organizationId }),
+    );
+  }
+
+  @Patch('profile-badges')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update org profile badge visibility config' })
+  async updateProfileBadges(
+    @Body() body: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'update_profile_badges' }, {
+        organizationId: user.organizationId,
+        profileBadges: body,
+      }),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+
+    return result;
+  }
+
+  // ========== Organization Profile ==========
+
+  @Get('profile')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Get organization profile and all settings' })
+  async getOrgProfile(@CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'get_org_profile' }, { organizationId: user.organizationId }),
+    );
+  }
+
+  @Patch('profile')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update organization profile (name, industry, address, etc.)' })
+  async updateOrgProfile(
+    @Body() body: Record<string, any>,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'update_org_profile' }, {
+        organizationId: user.organizationId,
+        updates: body,
+      }),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+
+    return result;
+  }
+
+  @Patch('notification-prefs')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update org notification preferences' })
+  async updateNotificationPrefs(
+    @Body() body: Record<string, any>,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'update_notification_prefs' }, {
+        organizationId: user.organizationId,
+        prefs: body,
+      }),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+
+    return result;
+  }
+
+  @Patch('security-settings')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update org security settings' })
+  async updateSecuritySettings(
+    @Body() body: Record<string, any>,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'update_security_settings' }, {
+        organizationId: user.organizationId,
+        settings: body,
+      }),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+
+    return result;
+  }
 }

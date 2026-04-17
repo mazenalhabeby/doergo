@@ -22,7 +22,7 @@ import {
   type CompanyLocation,
   type BreakStatus,
 } from '../../lib/api';
-import { LoadingState, ErrorState, LocationPickerSheet, ConfirmSheet } from '../../components';
+import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet } from '../../components';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
@@ -64,9 +64,12 @@ export function FullTimeHome() {
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
+  const lastFetchTimeRef = useRef(0);
+
   // Fetch attendance data
   const fetchAttendanceData = useCallback(async () => {
     try {
+      lastFetchTimeRef.current = Date.now();
       setError(null);
       const [statusData, historyData, breakData] = await Promise.all([
         attendanceApi.getStatus(),
@@ -109,6 +112,7 @@ export function FullTimeHome() {
         initialLoadDone.current = true;
         return;
       }
+      if (Date.now() - lastFetchTimeRef.current < 30000) return;
       fetchAttendanceData();
     }, [fetchAttendanceData])
   );
@@ -188,7 +192,7 @@ export function FullTimeHome() {
     setShowClockOutConfirm(true);
   };
 
-  const confirmClockOut = async () => {
+  const confirmClockOut = async (notes: string) => {
     setShowClockOutConfirm(false);
     setIsActionLoading(true);
     try {
@@ -202,6 +206,7 @@ export function FullTimeHome() {
         lat: location.lat,
         lng: location.lng,
         accuracy: location.accuracy,
+        notes: notes || undefined,
       });
       await fetchAttendanceData();
     } catch (err: any) {
@@ -417,7 +422,7 @@ export function FullTimeHome() {
                   <Text style={[ftStyles.historyTime, { color: colors.textSecondary }]}>
                     {formatTime(entry.clockInAt)} - {entry.clockOutAt ? formatTime(entry.clockOutAt) : t('common.active')}
                   </Text>
-                  {entry.totalMinutes && (
+                  {entry.totalMinutes != null && entry.totalMinutes > 0 && (
                     <Text style={ftStyles.historyDuration}>{formatDuration(entry.totalMinutes)}</Text>
                   )}
                 </View>
@@ -443,7 +448,7 @@ export function FullTimeHome() {
         confirmDisabled={isActionLoading}
       />
 
-      <ConfirmSheet
+      <ClockOutSheet
         visible={showClockOutConfirm}
         onClose={() => setShowClockOutConfirm(false)}
         onConfirm={confirmClockOut}
@@ -451,8 +456,9 @@ export function FullTimeHome() {
         message={t('home.fullTime.clockOutConfirmMessage')}
         confirmLabel={t('home.fullTime.clockOut')}
         cancelLabel={t('common.cancel')}
-        variant="warning"
-        icon="log-out"
+        notesLabel={t('home.fullTime.shiftNotesLabel')}
+        notesPlaceholder={t('home.fullTime.shiftNotesPlaceholder')}
+        isLoading={isActionLoading}
       />
     </View>
   );

@@ -562,6 +562,12 @@
         "canCreateTasksLabel": "Can create tasks",
         "canCreateTasksDescription": "Allow this technician to create new tasks from the mobile app"
       },
+      "profileBadges": "Profile Badges",
+      "useOrgDefaults": "Use organization defaults",
+      "badgeShowRole": "Show Role",
+      "badgeShowWorkMode": "Show Work Mode",
+      "badgeShowType": "Show Employment Type",
+      "badgeShowSpecialty": "Show Specialty",
       "tabs": {
         "overview": "Overview",
         "tasks": "Tasks",
@@ -756,6 +762,32 @@
     "subtitle": "Manage your team members, roles, and permissions",
     "searchPlaceholder": "Search by name or email...",
     "inviteMember": "Invite Member",
+    "invite": {
+      "title": "Invite Member",
+      "description": "Create an invitation code. The person will use it to register and join your organization.",
+      "backToMembers": "Back to Members",
+      "accessDenied": "You don't have permission to invite members.",
+      "roleSection": "Role",
+      "roleLabel": "Member Role",
+      "contactSection": "Contact",
+      "emailLabel": "Email",
+      "emailHint": "An invitation email with the code will be sent to this address.",
+      "expiresLabel": "Code expires in",
+      "workDetails": "Work Details",
+      "employmentTypeLabel": "Employment Type",
+      "workModeLabel": "Work Mode",
+      "specialtyLabel": "Job Title / Specialty",
+      "specialtyPlaceholder": "e.g. Electrician, Plumber...",
+      "maxDailyJobsLabel": "Max Daily Jobs",
+      "createButton": "Send Invitation",
+      "failedToCreate": "Failed to create invitation",
+      "emailSent": "Invitation email sent",
+      "emailSentTo": "Invitation email sent to {{email}}",
+      "successTitle": "Invitation Created!",
+      "successDescription": "Share this code with the person you want to invite.",
+      "shareCodeHint": "They can enter this code during registration to join your organization.",
+      "inviteAnother": "Invite Another"
+    },
     "showingCount": "Showing {{count}} of {{total}} member{{plural}}",
     "noMembersFound": "No members found",
     "noMembersHint": "Try adjusting your search or filters",
@@ -822,6 +854,7 @@
     "showingRange": "Showing {{start}} to {{end}} of {{total}} invitation{{plural}}",
     "table": {
       "role": "Role",
+      "code": "Code",
       "status": "Status",
       "createdBy": "Created By",
       "created": "Created",
@@ -918,7 +951,50 @@
 
   "settings": {
     "title": "Organization Settings",
-    "subtitle": "Manage your organization's join code and membership policy",
+    "subtitle": "Manage your organization settings, membership, and preferences",
+    "tabs": {
+      "general": "General",
+      "members": "Members & Access",
+      "appearance": "Appearance",
+      "notifications": "Notifications"
+    },
+    "general": {
+      "title": "Organization Profile",
+      "description": "Basic information about your organization",
+      "orgName": "Organization Name",
+      "industry": "Industry",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "website": "Website",
+      "timezone": "Timezone",
+      "saved": "Organization profile saved",
+      "failed": "Failed to save organization profile",
+      "industries": {
+        "hvac": "HVAC",
+        "plumbing": "Plumbing",
+        "electrical": "Electrical",
+        "generalContracting": "General Contracting",
+        "cleaning": "Cleaning",
+        "security": "Security",
+        "itServices": "IT Services",
+        "other": "Other"
+      }
+    },
+    "members": {
+      "defaultPermissions": "Default Permissions",
+      "defaultPermissionsDescription": "New members joining via code or invitation will receive permissions based on their assigned role."
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "description": "Control how and when your organization receives notifications",
+      "emailOnTaskCreate": "Email on task creation",
+      "emailOnTaskComplete": "Email on task completion",
+      "emailOnJoinRequest": "Email on join request",
+      "pushEnabled": "Push notifications enabled",
+      "saved": "Notification preferences saved",
+      "failed": "Failed to save notification preferences"
+    },
     "joinCode": {
       "title": "Join Code",
       "description": "Share this code with people you want to join your organization",
@@ -940,6 +1016,16 @@
       "closed": "Closed",
       "closedDescription": "No one can join via org code. Members can only be added through invitations.",
       "updatedSuccessfully": "Join policy updated successfully"
+    },
+    "profileBadges": {
+      "title": "Profile Badges",
+      "description": "Control which badges are shown on technician profiles across the organization",
+      "showRole": "Show Role",
+      "showWorkMode": "Show Work Mode",
+      "showType": "Show Employment Type",
+      "showSpecialty": "Show Specialty",
+      "updated": "Profile badge settings updated",
+      "failed": "Failed to update profile badge settings"
     }
   },
 
@@ -977,6 +1063,30 @@
       "title": "Language",
       "description": "Choose your preferred language"
     }
+  },
+
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "clearAll": "Clear",
+    "empty": "No notifications yet",
+    "taskCreated": "New task created",
+    "taskAssigned": "Task assigned",
+    "taskCompleted": "Task completed",
+    "taskDeclined": "Task declined",
+    "taskBlocked": "Task blocked",
+    "taskStatusChanged": "Task status: {{status}}",
+    "commentAdded": "New comment",
+    "attachmentAdded": "New attachment",
+    "joinRequest": "New join request",
+    "joinApproved": "Join request approved",
+    "joinRejected": "Join request rejected",
+    "clockIn": "Technician clocked in",
+    "clockOut": "Technician clocked out",
+    "autoClockOut": "Auto clock-out",
+    "geofenceAlert": "Geofence alert",
+    "breakStarted": "Break started",
+    "breakEnded": "Break ended"
   },
 
   "landing": {

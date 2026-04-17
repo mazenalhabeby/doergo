@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trackingApi, WorkerLocation } from "@/lib/api";
-import { useWorkerLocationUpdates, WorkerLocationUpdate, SocketUser } from "@/lib/socket";
+import { SocketEvents, type WorkerLocationUpdate } from "@/lib/socket";
+import { useSocketContext } from "@/contexts/socket-context";
 import { useAuth } from "@/contexts/auth-context";
 import TechnicianList from "@/components/live-map/technician-list";
 import { RefreshCw, Wifi, WifiOff, AlertCircle } from "lucide-react";
@@ -33,14 +34,13 @@ export default function LiveMapPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Create socket user object from auth user
-  const socketUser: SocketUser | null = useMemo(() => {
+  // Socket context — shared connection
+  const { isConnected, subscribe } = useSocketContext();
+
+  // Unused but kept for type reference
+  const socketUser = useMemo(() => {
     if (!user) return null;
-    return {
-      id: user.id,
-      role: user.role,
-      // organizationId is not in the User type, but backend will use 'default' as fallback
-    };
+    return { id: user.id, role: user.role };
   }, [user]);
 
   // Fetch worker locations
@@ -85,12 +85,13 @@ export default function LiveMapPage() {
     [queryClient]
   );
 
-  // Connect to Socket.IO for real-time updates
-  const { isConnected, connectionError } = useWorkerLocationUpdates(
-    handleLocationUpdate,
-    socketUser,
-    true
-  );
+  // Subscribe to location updates via shared socket
+  useEffect(() => {
+    if (!isConnected) return;
+    return subscribe(SocketEvents.WORKER_LOCATION_UPDATED, handleLocationUpdate);
+  }, [isConnected, subscribe, handleLocationUpdate]);
+
+  const connectionError: string | null = null;
 
   // Show connection status
   const ConnectionStatus = () => (

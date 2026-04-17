@@ -205,11 +205,11 @@ function Toast({
 
         {/* Text */}
         <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: titleColor }]} numberOfLines={1}>
+          <Text style={[styles.title, { color: titleColor }]}>
             {config.title}
           </Text>
           {config.message ? (
-            <Text style={[styles.message, { color: messageColor }]} numberOfLines={2}>
+            <Text style={[styles.message, { color: messageColor }]}>
               {config.message}
             </Text>
           ) : null}

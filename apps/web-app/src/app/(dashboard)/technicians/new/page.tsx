@@ -307,9 +307,11 @@ export default function NewTechnicianPage() {
                       <SelectValue placeholder={t('technicians.create.workModeLabel')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={WorkMode.HYBRID}>
-                        {t('technicians.workModes.hybridDescription')}
-                      </SelectItem>
+                      {technicianType === TechnicianType.FULL_TIME && (
+                        <SelectItem value={WorkMode.HYBRID}>
+                          {t('technicians.workModes.hybridDescription')}
+                        </SelectItem>
+                      )}
                       <SelectItem value={WorkMode.ON_SITE}>
                         {t('technicians.workModes.onSiteDescription')}
                       </SelectItem>

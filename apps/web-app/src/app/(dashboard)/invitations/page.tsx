@@ -276,6 +276,7 @@ export default function InvitationsPage() {
                 <TableHeader>
                   <TableRow className="bg-slate-50/80">
                     <TableHead className="font-semibold text-slate-600">{t("invitations.table.role")}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.code")}</TableHead>
                     <TableHead className="font-semibold text-slate-600">{t("invitations.table.status")}</TableHead>
                     <TableHead className="font-semibold text-slate-600">{t("invitations.table.createdBy")}</TableHead>
                     <TableHead className="font-semibold text-slate-600">{t("invitations.table.created")}</TableHead>
@@ -297,6 +298,15 @@ export default function InvitationsPage() {
                           </div>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {inv.code ? (
+                        <span className="font-mono text-sm font-semibold tracking-wider text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                          {inv.code}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
                     </TableCell>
                     <TableCell>{getStatusBadge(inv.status, t)}</TableCell>
                     <TableCell>

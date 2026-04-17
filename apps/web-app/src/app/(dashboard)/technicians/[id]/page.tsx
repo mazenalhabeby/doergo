@@ -115,6 +115,11 @@ export default function TechnicianDetailPage() {
   const [editSpecialty, setEditSpecialty] = useState("")
   const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
   const [editCanCreateTasks, setEditCanCreateTasks] = useState(false)
+  const [editUseOrgBadgeDefaults, setEditUseOrgBadgeDefaults] = useState(true)
+  const [editBadgeShowRole, setEditBadgeShowRole] = useState(true)
+  const [editBadgeShowWorkMode, setEditBadgeShowWorkMode] = useState(true)
+  const [editBadgeShowType, setEditBadgeShowType] = useState(true)
+  const [editBadgeShowSpecialty, setEditBadgeShowSpecialty] = useState(true)
 
   // Fetch technician detail
   const { data: technician, isLoading, isError, error } = useQuery({
@@ -201,6 +206,20 @@ export default function TechnicianDetailPage() {
       setEditSpecialty(technician.specialty || "")
       setEditMaxDailyJobs(technician.maxDailyJobs || 5)
       setEditCanCreateTasks(technician.canCreateTasks ?? false)
+      const badges = technician.profileBadges
+      if (badges == null) {
+        setEditUseOrgBadgeDefaults(true)
+        setEditBadgeShowRole(true)
+        setEditBadgeShowWorkMode(true)
+        setEditBadgeShowType(true)
+        setEditBadgeShowSpecialty(true)
+      } else {
+        setEditUseOrgBadgeDefaults(false)
+        setEditBadgeShowRole(badges.showRole)
+        setEditBadgeShowWorkMode(badges.showWorkMode)
+        setEditBadgeShowType(badges.showType)
+        setEditBadgeShowSpecialty(badges.showSpecialty)
+      }
       setEditDialogOpen(true)
     }
   }
@@ -214,6 +233,14 @@ export default function TechnicianDetailPage() {
       specialty: editSpecialty.trim() || undefined,
       maxDailyJobs: editMaxDailyJobs,
       canCreateTasks: editCanCreateTasks,
+      profileBadges: editUseOrgBadgeDefaults
+        ? null
+        : {
+            showRole: editBadgeShowRole,
+            showWorkMode: editBadgeShowWorkMode,
+            showType: editBadgeShowType,
+            showSpecialty: editBadgeShowSpecialty,
+          },
     })
   }
 
@@ -521,7 +548,9 @@ export default function TechnicianDetailPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
+                    {editTechnicianType === TechnicianType.FULL_TIME && (
+                      <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
+                    )}
                     <SelectItem value={WorkMode.ON_SITE}>{t('technicians.workModes.onSite')}</SelectItem>
                     <SelectItem value={WorkMode.ON_ROAD}>{t('technicians.workModes.onRoad')}</SelectItem>
                   </SelectContent>
@@ -571,6 +600,42 @@ export default function TechnicianDetailPage() {
                   {t('technicians.detail.editDialog.canCreateTasksDescription')}
                 </p>
               </div>
+            </div>
+
+            {/* Profile Badges */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">{t('technicians.detail.profileBadges')}</Label>
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+                <Checkbox
+                  id="edit-useOrgBadgeDefaults"
+                  checked={editUseOrgBadgeDefaults}
+                  onCheckedChange={(checked) => setEditUseOrgBadgeDefaults(!!checked)}
+                />
+                <label htmlFor="edit-useOrgBadgeDefaults" className="text-sm font-medium cursor-pointer">
+                  {t('technicians.detail.useOrgDefaults')}
+                </label>
+              </div>
+              {!editUseOrgBadgeDefaults && (
+                <div className="space-y-2 pl-1">
+                  {[
+                    { id: "edit-badgeShowRole", label: t('technicians.detail.badgeShowRole'), checked: editBadgeShowRole, onChange: setEditBadgeShowRole },
+                    { id: "edit-badgeShowWorkMode", label: t('technicians.detail.badgeShowWorkMode'), checked: editBadgeShowWorkMode, onChange: setEditBadgeShowWorkMode },
+                    { id: "edit-badgeShowType", label: t('technicians.detail.badgeShowType'), checked: editBadgeShowType, onChange: setEditBadgeShowType },
+                    { id: "edit-badgeShowSpecialty", label: t('technicians.detail.badgeShowSpecialty'), checked: editBadgeShowSpecialty, onChange: setEditBadgeShowSpecialty },
+                  ].map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 rounded-lg border border-slate-100 p-2.5">
+                      <Checkbox
+                        id={item.id}
+                        checked={item.checked}
+                        onCheckedChange={(checked) => item.onChange(!!checked)}
+                      />
+                      <label htmlFor={item.id} className="text-sm cursor-pointer">
+                        {item.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

@@ -562,6 +562,12 @@
         "canCreateTasksLabel": "Kann Aufgaben erstellen",
         "canCreateTasksDescription": "Diesem Techniker erlauben, neue Aufgaben über die mobile App zu erstellen"
       },
+      "profileBadges": "Profilabzeichen",
+      "useOrgDefaults": "Organisationsstandards verwenden",
+      "badgeShowRole": "Rolle anzeigen",
+      "badgeShowWorkMode": "Arbeitsmodus anzeigen",
+      "badgeShowType": "Beschäftigungsart anzeigen",
+      "badgeShowSpecialty": "Fachgebiet anzeigen",
       "tabs": {
         "overview": "Übersicht",
         "tasks": "Aufgaben",
@@ -756,6 +762,32 @@
     "subtitle": "Verwalten Sie Ihre Teammitglieder, Rollen und Berechtigungen",
     "searchPlaceholder": "Nach Name oder E-Mail suchen...",
     "inviteMember": "Mitglied einladen",
+    "invite": {
+      "title": "Mitglied einladen",
+      "description": "Erstellen Sie einen Einladungscode. Die Person verwendet ihn zur Registrierung und zum Beitritt Ihrer Organisation.",
+      "backToMembers": "Zurück zu Mitglieder",
+      "accessDenied": "Sie haben keine Berechtigung, Mitglieder einzuladen.",
+      "roleSection": "Rolle",
+      "roleLabel": "Mitgliedsrolle",
+      "contactSection": "Kontakt",
+      "emailLabel": "E-Mail",
+      "emailHint": "Eine Einladungs-E-Mail mit dem Code wird an diese Adresse gesendet.",
+      "expiresLabel": "Code läuft ab in",
+      "workDetails": "Arbeitsdetails",
+      "employmentTypeLabel": "Beschäftigungsart",
+      "workModeLabel": "Arbeitsmodus",
+      "specialtyLabel": "Berufsbezeichnung / Fachgebiet",
+      "specialtyPlaceholder": "z. B. Elektriker, Klempner...",
+      "maxDailyJobsLabel": "Max. tägliche Aufträge",
+      "createButton": "Einladung senden",
+      "failedToCreate": "Einladung konnte nicht erstellt werden",
+      "emailSent": "Einladungs-E-Mail gesendet",
+      "emailSentTo": "Einladungs-E-Mail an {{email}} gesendet",
+      "successTitle": "Einladung erstellt!",
+      "successDescription": "Teilen Sie diesen Code mit der Person, die Sie einladen möchten.",
+      "shareCodeHint": "Der Code kann bei der Registrierung eingegeben werden, um Ihrer Organisation beizutreten.",
+      "inviteAnother": "Weitere einladen"
+    },
     "showingCount": "{{count}} von {{total}} Mitglied{{plural}} angezeigt",
     "noMembersFound": "Keine Mitglieder gefunden",
     "noMembersHint": "Versuchen Sie, Ihre Suche oder Filter anzupassen",
@@ -822,6 +854,7 @@
     "showingRange": "{{start}} bis {{end}} von {{total}} Einladung{{plural}} angezeigt",
     "table": {
       "role": "Rolle",
+      "code": "Code",
       "status": "Status",
       "createdBy": "Erstellt von",
       "created": "Erstellt",
@@ -918,7 +951,50 @@
 
   "settings": {
     "title": "Organisationseinstellungen",
-    "subtitle": "Verwalten Sie den Beitrittscode und die Mitgliedschaftsrichtlinien Ihrer Organisation",
+    "subtitle": "Verwalten Sie die Einstellungen, Mitgliedschaft und Praeferenzen Ihrer Organisation",
+    "tabs": {
+      "general": "Allgemein",
+      "members": "Mitglieder & Zugang",
+      "appearance": "Darstellung",
+      "notifications": "Benachrichtigungen"
+    },
+    "general": {
+      "title": "Organisationsprofil",
+      "description": "Grundlegende Informationen zu Ihrer Organisation",
+      "orgName": "Organisationsname",
+      "industry": "Branche",
+      "address": "Adresse",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "website": "Webseite",
+      "timezone": "Zeitzone",
+      "saved": "Organisationsprofil gespeichert",
+      "failed": "Organisationsprofil konnte nicht gespeichert werden",
+      "industries": {
+        "hvac": "HLK (Heizung, Lueftung, Klima)",
+        "plumbing": "Sanitaer",
+        "electrical": "Elektro",
+        "generalContracting": "Generalunternehmer",
+        "cleaning": "Reinigung",
+        "security": "Sicherheit",
+        "itServices": "IT-Dienstleistungen",
+        "other": "Sonstiges"
+      }
+    },
+    "members": {
+      "defaultPermissions": "Standardberechtigungen",
+      "defaultPermissionsDescription": "Neue Mitglieder, die per Code oder Einladung beitreten, erhalten Berechtigungen basierend auf ihrer zugewiesenen Rolle."
+    },
+    "notifications": {
+      "title": "Benachrichtigungseinstellungen",
+      "description": "Legen Sie fest, wie und wann Ihre Organisation Benachrichtigungen erhaelt",
+      "emailOnTaskCreate": "E-Mail bei Aufgabenerstellung",
+      "emailOnTaskComplete": "E-Mail bei Aufgabenabschluss",
+      "emailOnJoinRequest": "E-Mail bei Beitrittsanfrage",
+      "pushEnabled": "Push-Benachrichtigungen aktiviert",
+      "saved": "Benachrichtigungseinstellungen gespeichert",
+      "failed": "Benachrichtigungseinstellungen konnten nicht gespeichert werden"
+    },
     "joinCode": {
       "title": "Beitrittscode",
       "description": "Teilen Sie diesen Code mit Personen, die Ihrer Organisation beitreten sollen",
@@ -940,6 +1016,16 @@
       "closed": "Geschlossen",
       "closedDescription": "Niemand kann über den Organisationscode beitreten. Mitglieder können nur über Einladungen hinzugefügt werden.",
       "updatedSuccessfully": "Beitrittsrichtlinie erfolgreich aktualisiert"
+    },
+    "profileBadges": {
+      "title": "Profilabzeichen",
+      "description": "Steuern Sie, welche Abzeichen auf Technikerprofilen in der gesamten Organisation angezeigt werden",
+      "showRole": "Rolle anzeigen",
+      "showWorkMode": "Arbeitsmodus anzeigen",
+      "showType": "Beschäftigungsart anzeigen",
+      "showSpecialty": "Fachgebiet anzeigen",
+      "updated": "Profilabzeichen-Einstellungen aktualisiert",
+      "failed": "Profilabzeichen-Einstellungen konnten nicht aktualisiert werden"
     }
   },
 
@@ -977,6 +1063,30 @@
       "title": "Sprache",
       "description": "Wählen Sie Ihre bevorzugte Sprache"
     }
+  },
+
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "markAllRead": "Alle gelesen",
+    "clearAll": "Löschen",
+    "empty": "Noch keine Benachrichtigungen",
+    "taskCreated": "Neue Aufgabe erstellt",
+    "taskAssigned": "Aufgabe zugewiesen",
+    "taskCompleted": "Aufgabe abgeschlossen",
+    "taskDeclined": "Aufgabe abgelehnt",
+    "taskBlocked": "Aufgabe blockiert",
+    "taskStatusChanged": "Aufgabenstatus: {{status}}",
+    "commentAdded": "Neuer Kommentar",
+    "attachmentAdded": "Neuer Anhang",
+    "joinRequest": "Neue Beitrittsanfrage",
+    "joinApproved": "Beitrittsanfrage genehmigt",
+    "joinRejected": "Beitrittsanfrage abgelehnt",
+    "clockIn": "Techniker eingestempelt",
+    "clockOut": "Techniker ausgestempelt",
+    "autoClockOut": "Automatisches Ausstempeln",
+    "geofenceAlert": "Geofence-Alarm",
+    "breakStarted": "Pause begonnen",
+    "breakEnded": "Pause beendet"
   },
 
   "landing": {
