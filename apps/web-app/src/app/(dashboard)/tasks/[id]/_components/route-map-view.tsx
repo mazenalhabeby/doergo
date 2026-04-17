@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useEffect, useState } from "react"
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import { Navigation, Flag, Clock } from "lucide-react"
@@ -20,9 +20,9 @@ interface RouteMapViewProps {
 // Create custom marker icons
 function createMarkerIcon(type: "start" | "end" | "current") {
   const colors = {
-    start: { bg: "#22c55e", border: "#16a34a" }, // green
-    end: { bg: "#3b82f6", border: "#2563eb" }, // blue
-    current: { bg: "#f59e0b", border: "#d97706" }, // amber
+    start: { bg: "#22c55e", border: "#16a34a" },
+    end: { bg: "#3b82f6", border: "#2563eb" },
+    current: { bg: "#f59e0b", border: "#d97706" },
   }
 
   const color = colors[type]
@@ -55,23 +55,83 @@ function createMarkerIcon(type: "start" | "end" | "current") {
   })
 }
 
+/**
+ * Snap GPS points to actual roads using OSRM's free match API.
+ * Falls back to raw points if the API fails.
+ */
+async function snapToRoads(points: RoutePoint[]): Promise<[number, number][]> {
+  if (points.length < 2) return points.map(p => [p.lat, p.lng])
+
+  // OSRM expects max ~100 coordinates per request, sample if needed
+  let sampled = points
+  if (points.length > 100) {
+    const step = Math.ceil(points.length / 100)
+    sampled = points.filter((_, i) => i % step === 0)
+    // Always include last point
+    if (sampled[sampled.length - 1] !== points[points.length - 1]) {
+      sampled.push(points[points.length - 1])
+    }
+  }
+
+  // OSRM uses lng,lat order
+  const coords = sampled.map(p => `${p.lng},${p.lat}`).join(';')
+  const timestamps = sampled.map(p => Math.floor(new Date(p.timestamp).getTime() / 1000)).join(';')
+
+  try {
+    const url = `https://router.project-osrm.org/match/v1/driving/${coords}?overview=full&geometries=geojson&timestamps=${timestamps}`
+    const res = await fetch(url)
+    const data = await res.json()
+
+    if (data.code === 'Ok' && data.matchings?.[0]?.geometry?.coordinates) {
+      // OSRM returns [lng, lat], convert to [lat, lng] for Leaflet
+      return data.matchings[0].geometry.coordinates.map(
+        (c: [number, number]) => [c[1], c[0]] as [number, number]
+      )
+    }
+  } catch (err) {
+    console.warn('OSRM road snap failed, using raw GPS points:', err)
+  }
+
+  // Fallback: raw GPS points
+  return points.map(p => [p.lat, p.lng])
+}
+
 export default function RouteMapView({ points, isLive = false }: RouteMapViewProps) {
-  // Convert points to [lat, lng] format for polyline
-  const polylinePositions = useMemo(() => {
+  const [roadPath, setRoadPath] = useState<[number, number][]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Raw GPS polyline (fallback / shown while loading)
+  const rawPositions = useMemo(() => {
     return points.map((p) => [p.lat, p.lng] as [number, number])
   }, [points])
 
-  // Calculate map bounds to fit all points
-  const bounds = useMemo(() => {
-    if (points.length === 0) return null
-    return L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]))
-  }, [points])
+  // Snap GPS to roads
+  useEffect(() => {
+    if (points.length < 2) {
+      setRoadPath(rawPositions)
+      setLoading(false)
+      return
+    }
 
-  // Get start and end points
+    setLoading(true)
+    snapToRoads(points).then(path => {
+      setRoadPath(path)
+      setLoading(false)
+    })
+  }, [points, rawPositions])
+
+  const displayPath = roadPath.length > 0 ? roadPath : rawPositions
+
+  // Calculate map bounds
+  const bounds = useMemo(() => {
+    if (displayPath.length === 0) return null
+    return L.latLngBounds(displayPath)
+  }, [displayPath])
+
+  // Start and end points
   const startPoint = points.length > 0 ? points[0] : null
   const endPoint = points.length > 1 ? points[points.length - 1] : null
 
-  // Create marker icons
   const startIcon = useMemo(() => createMarkerIcon("start"), [])
   const endIcon = useMemo(() => createMarkerIcon(isLive ? "current" : "end"), [isLive])
 
@@ -83,7 +143,6 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
     )
   }
 
-  // Calculate center from bounds
   const center = bounds ? bounds.getCenter() : { lat: points[0].lat, lng: points[0].lng }
 
   return (
@@ -101,26 +160,15 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Route polyline */}
+        {/* Road-snapped route (main path) */}
         <Polyline
-          positions={polylinePositions}
+          positions={displayPath}
           pathOptions={{
-            color: "#64748b",
-            weight: 4,
-            opacity: 0.8,
+            color: "#2563eb",
+            weight: 5,
+            opacity: 0.85,
             lineCap: "round",
             lineJoin: "round",
-          }}
-        />
-
-        {/* Gradient overlay for route direction */}
-        <Polyline
-          positions={polylinePositions}
-          pathOptions={{
-            color: "#94a3b8",
-            weight: 2,
-            opacity: 0.5,
-            dashArray: "10, 10",
           }}
         />
 
@@ -177,12 +225,12 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
             <span>{isLive ? "Current" : "End"}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-6 h-0.5 bg-slate-500 rounded" />
+            <span className="w-6 h-0.5 bg-blue-600 rounded" />
             <span>Route</span>
           </div>
         </div>
         <p className="text-xs text-slate-400">
-          {points.length} GPS points recorded
+          {points.length} GPS points
         </p>
       </div>
     </div>
