@@ -106,6 +106,8 @@ export class PushService {
       title,
       body,
       data,
+      priority: 'high',
+      channelId: data?.type?.includes('attendance') ? 'attendance' : 'tasks',
     }));
 
     // Chunk and send
