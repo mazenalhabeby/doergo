@@ -130,12 +130,16 @@ export function formatDistance(meters: number): string {
 
 /**
  * Generate a display-friendly request ID from a task
- * e.g., task.id "abc123", createdAt "2024-01-15" -> "REQ-2024-123"
+ * Uses first 3 letters of org name as prefix (e.g., "ACM-2026-K8U")
+ * Falls back to "REQ" if no org name provided
  */
-export function getRequestId(task: { id: string; createdAt: string }): string {
+export function getRequestId(task: { id: string; createdAt: string }, orgName?: string): string {
   const year = new Date(task.createdAt).getFullYear()
   const idPart = task.id.slice(-3).toUpperCase()
-  return `REQ-${year}-${idPart}`
+  const prefix = orgName
+    ? orgName.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase()
+    : 'REQ'
+  return `${prefix}-${year}-${idPart}`
 }
 
 /**

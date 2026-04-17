@@ -205,7 +205,7 @@ export default function TaskDetailPage({
   }
 
   const comments = task.comments || []
-  const requestId = getRequestId(task)
+  const requestId = getRequestId(task, user?.organizationName)
   const taskDate = formatShortDate(task.createdAt)
 
   return (

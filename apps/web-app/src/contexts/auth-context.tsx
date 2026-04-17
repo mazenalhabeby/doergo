@@ -20,6 +20,7 @@ export interface User {
   firstName: string;
   lastName: string;
   organizationId?: string;
+  organizationName?: string;
   // Permission fields
   platform: string;
   canCreateTasks: boolean;

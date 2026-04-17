@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/hover-card"
 import { cn, getRequestId, formatTimeAgo } from "@/lib/utils"
 import { getPriorityConfig } from "@/lib/constants"
+import { useAuth } from "@/contexts/auth-context"
 import { StatusBadge } from "./status-badge"
 import type { Task } from "@/lib/api"
 
@@ -30,8 +31,9 @@ export function TaskCard({
   className,
 }: TaskCardProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const priorityConfig = getPriorityConfig(task.priority)
-  const taskRequestId = getRequestId(task)
+  const taskRequestId = getRequestId(task, user?.organizationName)
   const isHigh = task.priority === "HIGH"
   const isUrgent = task.priority === "URGENT"
   const PriorityIcon = priorityConfig.icon

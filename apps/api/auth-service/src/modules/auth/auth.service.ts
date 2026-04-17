@@ -360,6 +360,7 @@ export class AuthService {
             lastName: user.lastName,
             role: user.role,
             organizationId: user.organizationId,
+            organizationName: user.organization?.name || null,
             onboardingCompleted: user.onboardingCompleted,
             avatarUrl: user.avatarUrl,
             // Permission fields
