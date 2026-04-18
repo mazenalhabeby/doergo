@@ -25,8 +25,11 @@
         "NSCameraUsageDescription": "HBCField needs camera access to take photos for task documentation",
         "UIBackgroundModes": [
           "location",
+          "fetch",
+          "location",
           "fetch"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

@@ -48,6 +48,11 @@ export class CreateTaskDto {
   @IsString()
   @IsOptional()
   assetId?: string;
+
+  @ApiPropertyOptional({ description: 'Technician ID to assign immediately' })
+  @IsString()
+  @IsOptional()
+  assignedToId?: string;
 }
 
 /**

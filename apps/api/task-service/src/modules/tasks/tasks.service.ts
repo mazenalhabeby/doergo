@@ -43,22 +43,28 @@ export class TasksService {
    * Create a new task (CLIENT or DISPATCHER)
    */
   async create(data: any) {
+    const hasAssignment = !!data.assignedToId;
+
     const task = await this.prisma.task.create({
       data: {
         title: data.title,
         description: data.description,
         priority: data.priority || 'MEDIUM',
-        status: TaskStatus.NEW, // New tasks start as NEW
+        status: hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         locationLat: data.locationLat,
         locationLng: data.locationLng,
         locationAddress: data.locationAddress,
         organizationId: data.organizationId,
-        createdById: data.userId, // Map from gateway's userId
+        createdById: data.userId,
+        assignedToId: data.assignedToId || null,
         assetId: data.assetId || null,
       },
       include: {
         createdBy: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        assignedTo: {
           select: { id: true, firstName: true, lastName: true, email: true },
         },
         organization: {
@@ -69,6 +75,19 @@ export class TasksService {
 
     // Create task event
     await this.createTaskEvent(task.id, data.userId, TaskEventType.CREATED);
+
+    // If assigned during creation, also create assignment event and notify
+    if (hasAssignment) {
+      await this.createTaskEvent(task.id, data.userId, TaskEventType.ASSIGNED, {
+        workerId: data.assignedToId,
+        workerName: task.assignedTo ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}` : '',
+      });
+
+      this.notificationClient.emit('task_assigned', {
+        task,
+        workerId: data.assignedToId,
+      });
+    }
 
     // Notify
     this.notificationClient.emit('task_created', task);

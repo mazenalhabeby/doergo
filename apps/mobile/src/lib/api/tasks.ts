@@ -63,7 +63,7 @@ export const tasksApi = {
 
   assign: async (taskId: string, workerId: string): Promise<Task> => {
     return fetchWithAuth<Task>(`/tasks/${taskId}/assign`, {
-      method: 'POST',
+      method: 'PATCH',
       body: JSON.stringify({ workerId }),
     });
   },
