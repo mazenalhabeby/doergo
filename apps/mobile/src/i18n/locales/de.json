@@ -439,6 +439,7 @@
     "dueDateLabel": "Fälligkeitsdatum",
     "dueDatePlaceholder": "Fälligkeitsdatum auswählen",
     "locationLabel": "Standort",
+    "photosLabel": "Fotos",
     "assignTechnicianLabel": "Techniker zuweisen",
     "technicianPlaceholder": "Techniker auswählen (optional)",
     "submitButton": "Aufgabe erstellen",

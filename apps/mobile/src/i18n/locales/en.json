@@ -439,6 +439,7 @@
     "dueDateLabel": "Due Date",
     "dueDatePlaceholder": "Select due date",
     "locationLabel": "Location",
+    "photosLabel": "Photos",
     "assignTechnicianLabel": "Assign Technician",
     "technicianPlaceholder": "Select technician (optional)",
     "submitButton": "Create Task",

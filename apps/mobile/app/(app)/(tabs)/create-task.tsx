@@ -9,12 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import { tasksApi, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
+import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
 import { TechnicianPicker } from '../../../src/components';
 import { LocationSearchPicker } from '../../../src/components/location-search-picker';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
@@ -50,7 +52,9 @@ export default function CreateTaskScreen() {
   const { user } = useAuth();
   const toast = useToast();
   const { t } = useTranslation();
+  const { pickFromGallery, takePhoto } = useImagePicker();
   const canAssign = user?.canAssignTasks ?? false;
+  const [photos, setPhotos] = useState<PickedImage[]>([]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -74,6 +78,26 @@ export default function CreateTaskScreen() {
 
       const task = await tasksApi.create(input);
 
+      // Upload photos if any
+      if (photos.length > 0 && task?.id) {
+        for (const photo of photos) {
+          try {
+            const presign = await taskAttachmentsApi.getPresignedUrl(task.id, photo.fileName, photo.mimeType);
+            if (presign?.uploadUrl) {
+              await uploadToPresignedUrl(presign.uploadUrl, photo.uri, photo.mimeType);
+              await taskAttachmentsApi.confirmUpload(task.id, {
+                fileName: photo.fileName,
+                fileUrl: presign.fileUrl,
+                fileType: photo.mimeType,
+                fileSize: photo.fileSize,
+              });
+            }
+          } catch {
+            // Continue with other photos
+          }
+        }
+      }
+
       // Reset form
       setTitle('');
       setDescription('');
@@ -83,6 +107,7 @@ export default function CreateTaskScreen() {
       setLocationLat(null);
       setLocationLng(null);
       setSelectedTechnician(null);
+      setPhotos([]);
 
       toast.success(t('common.success'), t('createTask.successMessage'));
       router.push(ROUTES.taskDetail(task.id));
@@ -212,6 +237,42 @@ export default function CreateTaskScreen() {
               setLocationLng(lng);
             }}
           />
+        </View>
+
+        {/* Photos */}
+        <View style={styles.field}>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>{t('createTask.photosLabel')}</Text>
+          <View style={{ flexDirection: 'row', gap: SPACING.sm, flexWrap: 'wrap' }}>
+            {photos.map((photo, idx) => (
+              <View key={idx} style={{ position: 'relative' }}>
+                <Image source={{ uri: photo.uri }} style={{ width: 72, height: 72, borderRadius: RADIUS.md }} />
+                <TouchableOpacity
+                  style={{ position: 'absolute', top: -6, right: -6, backgroundColor: colors.card, borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}
+                  onPress={() => setPhotos(prev => prev.filter((_, i) => i !== idx))}
+                >
+                  <Ionicons name="close" size={12} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={[styles.addPhotoBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={async () => {
+                const result = await pickFromGallery();
+                if (result) setPhotos(prev => [...prev, result]);
+              }}
+            >
+              <Ionicons name="image-outline" size={24} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.addPhotoBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={async () => {
+                const result = await takePhoto();
+                if (result) setPhotos(prev => [...prev, result]);
+              }}
+            >
+              <Ionicons name="camera-outline" size={24} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Assign Technician - only for users with assign permission */}
@@ -395,6 +456,15 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     gap: SPACING.sm,
     marginTop: SPACING.md,
+  },
+  addPhotoBtn: {
+    width: 72,
+    height: 72,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonDisabled: {
     opacity: 0.6,
