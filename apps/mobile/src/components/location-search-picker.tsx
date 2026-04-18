@@ -71,7 +71,7 @@ export function LocationSearchPicker({
   // Search with debounce
   const searchAddress = useCallback((q: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.trim().length < 3) {
+    if (q.trim().length < 2) {
       setResults([]);
       setShowResults(false);
       return;
@@ -81,7 +81,7 @@ export function LocationSearchPicker({
       try {
         const res = await fetch(
           `${NOMINATIM_BASE}/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en' } }
+          { headers: { 'Accept-Language': 'en', 'User-Agent': 'HBCField/1.0 (hbcfield.com)' } }
         );
         const data: NominatimResult[] = await res.json();
         setResults(data);
@@ -91,7 +91,7 @@ export function LocationSearchPicker({
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 300);
   }, []);
 
   // Reverse geocode
@@ -101,7 +101,7 @@ export function LocationSearchPicker({
       try {
         const res = await fetch(
           `${NOMINATIM_BASE}/reverse?format=json&lat=${rlat}&lon=${rlng}&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en' } }
+          { headers: { 'Accept-Language': 'en', 'User-Agent': 'HBCField/1.0 (hbcfield.com)' } }
         );
         const data = await res.json();
         if (data.display_name) {
@@ -254,6 +254,7 @@ export function LocationSearchPicker({
 const styles = StyleSheet.create({
   container: {
     gap: SPACING.sm,
+    zIndex: 10,
   },
   searchRow: {
     flexDirection: 'row',
@@ -263,6 +264,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: Platform.OS === 'ios' ? SPACING.md : SPACING.xs,
     gap: SPACING.sm,
+    zIndex: 11,
     ...SHADOWS.sm,
   },
   searchInput: {
@@ -274,6 +276,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: RADIUS.md,
     overflow: 'hidden',
+    zIndex: 12,
+    elevation: 10,
     ...SHADOWS.md,
   },
   resultItem: {
