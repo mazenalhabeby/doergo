@@ -250,14 +250,14 @@ export default function TaskDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!hasAssignee && canAssign && (
+            {canAssign && !isCompleted && !isCanceled && (
               <Button
                 variant="outline"
                 className="h-9 px-4 text-sm border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300"
                 onClick={() => setShowAssignModal(true)}
               >
                 <User className="size-4 mr-1.5" />
-                {t("tasks.detail.assign")}
+                {hasAssignee ? t("tasks.detail.reassign") : t("tasks.detail.assign")}
               </Button>
             )}
             {!isCompleted && !isCanceled && (

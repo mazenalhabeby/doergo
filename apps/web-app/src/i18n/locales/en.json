@@ -366,6 +366,7 @@
       "title": "Task Details",
       "request": "Request: {{id}}",
       "assign": "Assign",
+      "reassign": "Reassign",
       "editTask": "Edit task",
       "cancelRequest": "Cancel request",
       "cancelRequestTitle": "Cancel Request",

@@ -366,6 +366,7 @@
       "title": "Aufgabendetails",
       "request": "Auftrag: {{id}}",
       "assign": "Zuweisen",
+      "reassign": "Neu zuweisen",
       "editTask": "Aufgabe bearbeiten",
       "cancelRequest": "Auftrag stornieren",
       "cancelRequestTitle": "Auftrag stornieren",
