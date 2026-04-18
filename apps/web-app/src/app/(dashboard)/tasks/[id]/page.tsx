@@ -47,6 +47,7 @@ import {
   TaskProgressCard,
   RouteTrackingSection,
   ServiceReportSection,
+  AttachmentsSection,
   RequestDetailsSection,
   CommentsSection,
   ActivitySection,
@@ -337,12 +338,14 @@ export default function TaskDetailPage({
           />
         )}
 
+        {/* Attachments */}
+        <AttachmentsSection taskId={id} />
+
         {/* Service Report (only when completed) */}
         <ServiceReportSection
           taskId={id}
           taskStatus={task.status}
         />
-
 
         {/* Request Details and Activity - 60/40 split */}
         <div className="flex gap-6 mb-6">

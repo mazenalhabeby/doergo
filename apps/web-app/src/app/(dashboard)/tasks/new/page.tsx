@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
-import { tasksApi, type CreateTaskInput } from "@/lib/api"
+import { tasksApi, taskAttachmentsApi, type CreateTaskInput } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -58,13 +58,29 @@ export default function CreateTaskPage() {
   // Create task mutation
   const createMutation = useMutation({
     mutationFn: (input: CreateTaskInput) => tasksApi.create(input),
-    onSuccess: async () => {
+    onSuccess: async (task) => {
+      // Upload attachments if any
+      if (attachments.length > 0 && task?.id) {
+        for (const file of attachments) {
+          try {
+            const presign = await taskAttachmentsApi.getPresignedUrl(task.id, file.name, file.type)
+            if (presign?.uploadUrl) {
+              await fetch(presign.uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+              await taskAttachmentsApi.confirmUpload(task.id, {
+                fileName: file.name,
+                fileUrl: presign.fileUrl,
+                fileType: file.type,
+                fileSize: file.size,
+              })
+            }
+          } catch {
+            console.error(`Failed to upload attachment: ${file.name}`)
+          }
+        }
+      }
+
       toast.success(t("tasks.create.successMessage"))
-      // Invalidate all task-related queries to ensure fresh data
-      await queryClient.invalidateQueries({
-        queryKey: ["tasks"],
-        refetchType: "all",
-      })
+      await queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
       router.push("/tasks")
     },
