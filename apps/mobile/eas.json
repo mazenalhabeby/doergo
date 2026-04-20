@@ -60,9 +60,9 @@
         "track": "internal"
       },
       "ios": {
-        "appleId": "YOUR_APPLE_ID@email.com",
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_TEAM_ID"
+        "appleId": "REPLACE_WITH_APPLE_ID_EMAIL",
+        "ascAppId": "REPLACE_WITH_NUMERIC_ASC_APP_ID",
+        "appleTeamId": "REPLACE_WITH_10_CHAR_TEAM_ID"
       }
     }
   }

@@ -117,3 +117,59 @@ support@hbcfield.com
 
 ## Website
 https://hbcfield.com
+
+---
+
+## App Store Connect — Apple-specific fields
+
+These fields exist on Apple but not Google Play. Use them when filling the
+App Store listing in App Store Connect → My Apps → HBCField → App Store.
+
+### Subtitle (max 30 characters) — shown under the app name
+```
+Field service, in real time
+```
+*(27/30)*
+
+### Promotional Text (max 170 characters) — top of listing, editable without resubmission
+```
+Dispatch tasks, track teams on a live map, capture service reports with photos & signatures — and close field jobs faster, from one secure app.
+```
+*(143/170)*
+
+### Keywords (max 100 characters, comma-separated, no spaces after commas)
+```
+dispatch,technician,jobsite,workorder,scheduling,timesheet,HVAC,plumber,electrician,roofer
+```
+*(90/100)*
+
+### Marketing URL
+https://hbcfield.com
+
+### Support URL
+https://hbcfield.com
+
+### Copyright (in App Information)
+```
+© 2026 HBC GmbH
+```
+
+### Demo / review credentials (App Information → App Review Information)
+Apple **requires** working credentials for any login-gated app. Create a
+dedicated reviewer account on production (do **not** use a personal account)
+with the **DISPATCHER** role so the reviewer can see the full task list, live
+map, and reports.
+
+```
+Username: appreview@hbc-group.eu
+Password: <set in production DB; share via App Review Information form>
+```
+
+### Notes for the reviewer (App Review Information → Notes)
+```
+HBCField is a B2B field-service management platform. The reviewer account
+above is a DISPATCHER role with sample task and technician data. To exercise
+the technician-only flows (clock in/out, complete a task), please contact
+us at support@hbc-group.eu — the technician role is mobile-only and tied to
+a real worker invitation.
+```

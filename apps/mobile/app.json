@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "eu.hbc-group.hbcfield",
+      "buildNumber": "1",
       "config": {
         "googleMapsApiKey": "AIzaSyB9kTVMPalfoDoW-7V_J8F2ZjOSnApQAqM"
       },
@@ -23,9 +24,8 @@
         "NSLocationWhenInUseUsageDescription": "HBCField needs your location to track task progress",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "HBCField needs your location to track task progress even when the app is in the background",
         "NSCameraUsageDescription": "HBCField needs camera access to take photos for task documentation",
+        "NSPhotoLibraryUsageDescription": "HBCField needs photo library access to attach images to tasks and service reports",
         "UIBackgroundModes": [
-          "location",
-          "fetch",
           "location",
           "fetch"
         ],
@@ -39,21 +39,19 @@
       },
       "googleServicesFile": "./google-services.json",
       "package": "eu.hbcgroup.hbcfield",
+      "versionCode": 1,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyB9kTVMPalfoDoW-7V_J8F2ZjOSnApQAqM"
         }
       },
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ]
     },

@@ -53,3 +53,40 @@ Business / Produktivität
 
 ## Schlüsselwörter
 Außendienst, Aufgabenverwaltung, Disposition, Techniker, GPS-Tracking, Servicebericht, Arbeitsauftrag, HLK, Sanitär, Elektro, Außendienstmitarbeiter, Auftragsverwaltung, Teamverwaltung
+
+---
+
+## App Store Connect — Apple-spezifische Felder (Deutsch)
+
+Diese Felder gibt es nur bei Apple, nicht bei Google Play. Im App Store
+Connect unter „Meine Apps → HBCField → App Store" einzutragen, wenn die
+Sprachvariante „Deutsch" aktiviert ist.
+
+### Untertitel (max. 30 Zeichen) — wird unter dem App-Namen angezeigt
+```
+Außendienst in Echtzeit
+```
+*(23/30)*
+
+### Werbetext (max. 170 Zeichen) — oben in der Anzeige, ohne erneute Einreichung änderbar
+```
+Aufträge zuweisen, Teams live verfolgen, Berichte mit Foto & Unterschrift erfassen — und Jobs schneller abschließen, alles in einer App.
+```
+*(136/170)*
+
+### Schlüsselwörter (max. 100 Zeichen, kommagetrennt, ohne Leerzeichen nach Kommas)
+```
+Disposition,Techniker,Wartung,Reparatur,Stundenzettel,HLK,Klempner,Elektriker,Schlosser
+```
+*(87/100)*
+
+### Marketing-URL
+https://hbcfield.com
+
+### Support-URL
+https://hbcfield.com
+
+### Urheberrecht (in „App-Informationen")
+```
+© 2026 HBC GmbH
+```
