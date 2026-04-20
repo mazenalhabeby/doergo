@@ -17,7 +17,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.1.100:4000/api/v1"
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.100:4000/api/v1",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCJEw6XIE8Fnt6HRl8-xTFZF5mgRl17QT4"
       }
     },
     "preview": {
@@ -27,7 +28,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://hbcfield.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://hbcfield.com/api/v1",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCJEw6XIE8Fnt6HRl8-xTFZF5mgRl17QT4"
       }
     },
     "production": {
@@ -36,7 +38,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://hbcfield.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://hbcfield.com/api/v1",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCJEw6XIE8Fnt6HRl8-xTFZF5mgRl17QT4"
       }
     },
     "production-apk": {
@@ -49,7 +52,8 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://hbcfield.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://hbcfield.com/api/v1",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCJEw6XIE8Fnt6HRl8-xTFZF5mgRl17QT4"
       }
     }
   },

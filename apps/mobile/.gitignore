@@ -4,3 +4,7 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# Sensitive credentials
+play-store-key.json
+google-services.json

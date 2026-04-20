@@ -37,7 +37,7 @@ creates the app record in App Store Connect (see step below).
 1. Sign in to <https://appstoreconnect.apple.com>.
 2. **My Apps → ＋ → New App**.
 3. Platform: **iOS**. Name: **HBCField**. Primary language: **English (US)**.
-4. Bundle ID: pick `eu.hbc-group.hbcfield` from the dropdown. If it's not
+4. Bundle ID: pick `com.hbcfield.app` from the dropdown. If it's not
    listed, register it first at
    <https://developer.apple.com/account/resources/identifiers/list>.
 5. SKU: `hbcfield` (any unique internal id is fine).
