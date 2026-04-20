@@ -16,8 +16,9 @@ import { trackingApi } from '../../src/lib/api';
 import { COLORS } from '../../src/lib/constants';
 import { Role } from '@hbcfield/shared/client';
 
-// Send a lightweight location ping so the web dashboard knows the technician is online.
-// Runs once on mount and every 4 minutes while the app is foregrounded.
+// Send a lightweight presence ping using CACHED location (no fresh GPS).
+// Runs once on app start and every 10 minutes — uses getLastKnownPositionAsync
+// which returns the most recent GPS fix without activating the GPS radio.
 function usePresencePing() {
   const { user } = useAuth();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -26,6 +27,7 @@ function usePresencePing() {
     try {
       const { status } = await Location.getForegroundPermissionsAsync();
       if (status !== 'granted') return;
+      // getLastKnownPositionAsync = NO GPS activation, uses cached OS location
       const loc = await Location.getLastKnownPositionAsync();
       if (!loc) return;
       await trackingApi.updateLocation({
@@ -41,18 +43,18 @@ function usePresencePing() {
   useEffect(() => {
     if (user?.role !== Role.TECHNICIAN) return;
 
-    // Initial ping
+    // Initial ping with cached location
     sendPing();
 
-    // Repeat every 4 minutes
-    intervalRef.current = setInterval(sendPing, 4 * 60 * 1000);
+    // Repeat every 10 minutes (was 4 — reduced to save battery/data)
+    intervalRef.current = setInterval(sendPing, 10 * 60 * 1000);
 
-    // Pause when backgrounded, resume when foregrounded
+    // Only ping on foreground resume, not continuously
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
         sendPing();
         if (!intervalRef.current) {
-          intervalRef.current = setInterval(sendPing, 4 * 60 * 1000);
+          intervalRef.current = setInterval(sendPing, 10 * 60 * 1000);
         }
       } else {
         if (intervalRef.current) {

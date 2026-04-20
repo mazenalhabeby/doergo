@@ -45,9 +45,12 @@ export function useLocationTracking() {
 
   const sendLocationUpdate = useCallback(async () => {
     try {
+      // Use Balanced accuracy during tracking — good enough for road tracking,
+      // saves significant battery vs High accuracy. High is only used for
+      // one-time checks (geofence verification in task detail).
       const location = await Promise.race([
         Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
+          accuracy: Location.Accuracy.Balanced,
         }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Location request timed out')), LOCATION_TIMEOUT_MS),
@@ -150,10 +153,35 @@ export function useLocationTracking() {
     };
   }, []);
 
+  // One-time high-accuracy location for actions (clock in/out, geofence check)
+  // Does NOT start continuous tracking — single GPS fix then stops
+  const getOnDemandLocation = useCallback(async (): Promise<LocationData | null> => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return null;
+
+      const location = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('GPS timeout')), LOCATION_TIMEOUT_MS),
+        ),
+      ]);
+
+      return {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+        accuracy: location.coords.accuracy ?? undefined,
+      };
+    } catch {
+      return null;
+    }
+  }, []);
+
   return {
     ...state,
     startTracking,
     stopTracking,
     refreshLocation: sendLocationUpdate,
+    getOnDemandLocation,
   };
 }
