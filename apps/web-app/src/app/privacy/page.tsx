@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
             <ArrowLeft className="size-4" />
             Back to HBCField
           </Link>
-          <span className="text-sm text-slate-400">Last updated: April 20, 2026</span>
+          <span className="text-sm text-slate-400">Last updated: 20 April 2026</span>
         </div>
       </header>
 
@@ -78,7 +78,16 @@ export default function PrivacyPolicyPage() {
             <li>To improve app performance and fix bugs</li>
           </ul>
 
-          <h2>3. Data Sharing</h2>
+          <h2>3. Legal Basis for Processing (GDPR)</h2>
+          <p>Where the General Data Protection Regulation applies, we process your personal data on the following legal bases:</p>
+          <ul>
+            <li><strong>Performance of a contract (Art. 6(1)(b) GDPR)</strong> — to provide the HBCField service to your organization and to you as an authorized user, including task assignment, location-based dispatching, attendance verification, and service reporting.</li>
+            <li><strong>Legitimate interests (Art. 6(1)(f) GDPR)</strong> — to secure our platform, prevent fraud and abuse, maintain service reliability, and improve the product. Our legitimate interests are balanced against your rights and freedoms.</li>
+            <li><strong>Consent (Art. 6(1)(a) GDPR)</strong> — for optional features such as push notifications, which you can disable at any time in your device settings.</li>
+            <li><strong>Legal obligation (Art. 6(1)(c) GDPR)</strong> — where we are required to retain records for tax, labor, or other statutory obligations applicable to your organization.</li>
+          </ul>
+
+          <h2>4. Data Sharing</h2>
           <ul>
             <li>We do <strong>not</strong> sell your personal data to third parties.</li>
             <li>Your data is shared only within your organization — admin and dispatcher users can see technician locations and work activity.</li>
@@ -95,7 +104,7 @@ export default function PrivacyPolicyPage() {
             </li>
           </ul>
 
-          <h2>4. Data Storage &amp; Security</h2>
+          <h2>5. Data Storage &amp; Security</h2>
           <ul>
             <li>All data is stored on servers located in the <strong>European Union</strong> (Hetzner, Helsinki/Falkenstein)</li>
             <li>Data is encrypted in transit using TLS/HTTPS</li>
@@ -108,7 +117,7 @@ export default function PrivacyPolicyPage() {
             <li>File uploads are stored in S3-compatible object storage with presigned URLs</li>
           </ul>
 
-          <h2>5. Data Retention</h2>
+          <h2>6. Data Retention</h2>
           <ul>
             <li>Account data is retained while your account is active</li>
             <li>Location history (route tracking) is retained for 90 days</li>
@@ -117,7 +126,7 @@ export default function PrivacyPolicyPage() {
             <li>You can request complete data deletion at any time</li>
           </ul>
 
-          <h2>6. Your Rights (GDPR)</h2>
+          <h2>7. Your Rights (GDPR)</h2>
           <p>If you are located in the European Union or European Economic Area, you have the following rights under the General Data Protection Regulation (GDPR):</p>
           <ul>
             <li><strong>Right of Access</strong> — Request a copy of your personal data</li>
@@ -127,10 +136,11 @@ export default function PrivacyPolicyPage() {
             <li><strong>Right to Object</strong> — Object to processing of your personal data</li>
             <li><strong>Right to Restrict Processing</strong> — Request limitation of data processing</li>
             <li><strong>Right to Withdraw Consent</strong> — Withdraw your consent at any time</li>
+            <li><strong>Right to Lodge a Complaint</strong> — You have the right to lodge a complaint with your local data protection authority if you believe your rights have been infringed.</li>
           </ul>
           <p>To exercise any of these rights, contact us at <a href="mailto:privacy@hbcfield.com">privacy@hbcfield.com</a>.</p>
 
-          <h2>7. Location Tracking Disclosure</h2>
+          <h2>8. Location Tracking Disclosure</h2>
           <p>HBCField uses location data as a core part of its field service management functionality. Here is exactly when and how location is used:</p>
 
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 not-prose my-6">
@@ -148,6 +158,7 @@ export default function PrivacyPolicyPage() {
             </ul>
           </div>
 
+          <p>Additional safeguards:</p>
           <ul>
             <li>Only dispatchers and admins within your organization can see your location</li>
             <li>Location data is never shared outside your organization</li>
@@ -155,7 +166,7 @@ export default function PrivacyPolicyPage() {
             <li>You can see your own location data in the app</li>
           </ul>
 
-          <h2>8. Push Notifications</h2>
+          <h2>9. Push Notifications</h2>
           <p>HBCField sends push notifications for:</p>
           <ul>
             <li>New task assignments</li>
@@ -166,27 +177,27 @@ export default function PrivacyPolicyPage() {
           </ul>
           <p>You can disable push notifications in your device settings at any time.</p>
 
-          <h2>9. Children&apos;s Privacy</h2>
+          <h2>10. Children&apos;s Privacy</h2>
           <p>
             HBCField is a workplace application designed for professional use. It is not intended for use by
             individuals under 18 years of age. We do not knowingly collect personal information from children.
           </p>
 
-          <h2>10. International Data Transfers</h2>
+          <h2>11. International Data Transfers</h2>
           <p>
             Your data is processed and stored within the European Union. Push notification delivery may involve
             routing through Google (FCM) or Apple (APNs) infrastructure, which may process data outside the EU.
             These transfers are covered by the EU-US Data Privacy Framework and Standard Contractual Clauses.
           </p>
 
-          <h2>11. Changes to This Policy</h2>
+          <h2>12. Changes to This Policy</h2>
           <p>
             We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements.
             We will notify users of material changes via email or in-app notification. The &quot;Last updated&quot; date at the
             top of this page indicates when this policy was last revised.
           </p>
 
-          <h2>12. Contact Us</h2>
+          <h2>13. Contact Us</h2>
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 not-prose my-6">
             <p className="font-semibold text-slate-900 mb-2">HBC Group GmbH</p>
             <ul className="space-y-1 text-slate-600 text-base">
