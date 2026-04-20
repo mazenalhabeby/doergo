@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import * as Location from 'expo-location';
 import { trackingApi } from '../lib/api';
 
-const UPDATE_INTERVAL_MS = 30000; // 30 seconds
+const UPDATE_INTERVAL_MS = 15000; // 15 seconds — more points for accurate route
 const LOCATION_TIMEOUT_MS = 10000; // 10 second timeout for GPS
 
 interface LocationData {
@@ -92,10 +93,8 @@ export function useLocationTracking() {
 
       setState((prev) => ({ ...prev, permissionStatus: 'granted' }));
 
+      // Request background permission for continuous tracking
       const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-      if (backgroundStatus !== 'granted') {
-        // Background permission not granted - tracking will pause when app is backgrounded
-      }
 
       taskIdRef.current = taskId;
       setState((prev) => ({ ...prev, isTracking: true, activeTaskId: taskId, error: null }));
@@ -122,6 +121,25 @@ export function useLocationTracking() {
     taskIdRef.current = null;
     setState((prev) => ({ ...prev, isTracking: false, activeTaskId: null }));
   }, []);
+
+  // Resume tracking when app returns to foreground (setInterval pauses in background)
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'active' && taskIdRef.current && !intervalRef.current) {
+        // App came back to foreground — restart interval and send immediate update
+        sendLocationUpdate();
+        intervalRef.current = setInterval(sendLocationUpdate, UPDATE_INTERVAL_MS);
+      } else if (nextState === 'background' && intervalRef.current) {
+        // App going to background — clear interval (it won't fire anyway)
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        // Send one last location update before backgrounding
+        sendLocationUpdate();
+      }
+    });
+
+    return () => sub.remove();
+  }, [sendLocationUpdate]);
 
   // Cleanup on unmount
   useEffect(() => {
