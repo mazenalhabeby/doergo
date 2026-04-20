@@ -20,6 +20,7 @@ import {
   success,
   paginated,
   buildDateRangeFilter,
+  haversineDistance,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
