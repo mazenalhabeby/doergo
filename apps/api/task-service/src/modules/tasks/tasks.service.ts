@@ -440,6 +440,8 @@ export class TasksService {
     userRole: string;
     organizationId: string;
     reason?: string;
+    lat?: number;
+    lng?: number;
   }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -497,6 +499,31 @@ export class TasksService {
     }
 
     // ── Technician execution enforcement ──
+
+    // (0) Location Verification — tech must be within 20m of task location to arrive/start
+    const GEOFENCE_RADIUS_METERS = 20;
+    const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
+
+    if (
+      data.userRole === Role.TECHNICIAN &&
+      locationRequiredStatuses.includes(data.status as TaskStatus) &&
+      task.locationLat != null &&
+      task.locationLng != null
+    ) {
+      if (data.lat == null || data.lng == null) {
+        throw new BadRequestException(
+          'Location verification required. Please enable GPS and try again.',
+        );
+      }
+
+      const distance = haversineDistance(data.lat, data.lng, task.locationLat, task.locationLng);
+
+      if (distance > GEOFENCE_RADIUS_METERS) {
+        throw new BadRequestException(
+          `You are ${Math.round(distance)}m from the job site. You must be within ${GEOFENCE_RADIUS_METERS}m to ${data.status === TaskStatus.ARRIVED ? 'mark as arrived' : 'start the job'}. Please move closer and try again.`,
+        );
+      }
+    }
 
     // (a) Due Date Gate — cannot start a task whose dueDate is in the future
     if (data.userRole === Role.TECHNICIAN && data.status === TaskStatus.EN_ROUTE) {

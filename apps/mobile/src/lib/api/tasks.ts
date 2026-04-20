@@ -23,10 +23,10 @@ export const tasksApi = {
     return fetchWithAuth<Task>(`/tasks/${id}`, { method: 'GET' });
   },
 
-  updateStatus: async (id: string, status: string, reason?: string): Promise<Task> => {
+  updateStatus: async (id: string, status: string, reason?: string, location?: { lat: number; lng: number }): Promise<Task> => {
     return fetchWithAuth<Task>(`/tasks/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status, reason }),
+      body: JSON.stringify({ status, reason, ...location }),
     });
   },
 

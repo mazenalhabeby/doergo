@@ -76,4 +76,14 @@ export class UpdateStatusDto {
   @IsString()
   @IsOptional()
   reason?: string;
+
+  @ApiPropertyOptional({ description: 'Current latitude for location verification' })
+  @IsNumber()
+  @IsOptional()
+  lat?: number;
+
+  @ApiPropertyOptional({ description: 'Current longitude for location verification' })
+  @IsNumber()
+  @IsOptional()
+  lng?: number;
 }

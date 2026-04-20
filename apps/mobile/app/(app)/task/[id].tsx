@@ -29,6 +29,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { SocketEvents } from '../../../src/lib/socket';
+import * as Location from 'expo-location';
 import { useLocationTrackingContext } from '../../../src/contexts/location-tracking-context';
 import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
 import { PhotoGrid } from '../../../src/components/photo-grid';
@@ -386,7 +387,22 @@ export default function TaskDetailScreen() {
         startTracking(task.id);
       }
 
-      const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason);
+      // Get GPS location for statuses that require location verification
+      let location: { lat: number; lng: number } | undefined;
+      const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
+      if (locationRequiredStatuses.includes(newStatus as any)) {
+        try {
+          const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+          if (permStatus === 'granted') {
+            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+            location = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+          }
+        } catch {
+          // Location will be undefined — backend will reject if task has location set
+        }
+      }
+
+      const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason, location);
       setTask(updatedTask);
     } catch (err) {
       if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
