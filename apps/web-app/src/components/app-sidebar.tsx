@@ -94,6 +94,11 @@ function getAdminNavGroups(t: TFunction): { label: string; items: NavItem[] }[] 
           icon: UserCheck,
         },
         {
+          title: t("nav.sidebar.locations"),
+          url: "/locations",
+          icon: Building2,
+        },
+        {
           title: t("nav.sidebar.schedule"),
           url: "/technicians/availability",
           icon: Calendar,
@@ -187,6 +192,11 @@ function getDispatcherNavGroups(t: TFunction): { label: string; items: NavItem[]
           title: t("nav.sidebar.joinRequests"),
           url: "/join-requests",
           icon: UserCheck,
+        },
+        {
+          title: t("nav.sidebar.locations"),
+          url: "/locations",
+          icon: Building2,
         },
         {
           title: t("nav.sidebar.attendance"),

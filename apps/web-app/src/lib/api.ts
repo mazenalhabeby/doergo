@@ -2585,4 +2585,129 @@ export const organizationsApi = {
   },
 };
 
+// ============================================================================
+// LOCATIONS API
+// ============================================================================
+
+export interface CreateLocationInput {
+  name: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  geofenceRadius?: number;
+}
+
+export interface UpdateLocationInput {
+  name?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+  geofenceRadius?: number;
+  isActive?: boolean;
+}
+
+export interface LocationAssignment {
+  id: string;
+  userId: string;
+  locationId: string;
+  isPrimary: boolean;
+  schedule: string[];
+  effectiveFrom: string;
+  effectiveTo?: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    technicianType?: string;
+    workMode?: string;
+  };
+  location?: CompanyLocation;
+}
+
+export interface AssignTechnicianInput {
+  userId: string;
+  isPrimary?: boolean;
+  schedule?: string[];
+  effectiveFrom?: string;
+  effectiveTo?: string;
+}
+
+export interface UpdateAssignmentInput {
+  isPrimary?: boolean;
+  schedule?: string[];
+  effectiveFrom?: string;
+  effectiveTo?: string;
+}
+
+export const locationsApi = {
+  list: async (params?: { page?: number; limit?: number; includeInactive?: boolean; search?: string }) => {
+    const endpoint = buildUrlWithQuery('/locations', {
+      page: params?.page,
+      limit: params?.limit,
+      includeInactive: params?.includeInactive,
+    });
+
+    const response = await api.get<{
+      success: boolean;
+      data: CompanyLocation[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(endpoint);
+
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: CompanyLocation }>(`/locations/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  create: async (data: CreateLocationInput) => {
+    const response = await api.post<{ success: boolean; data: CompanyLocation }>('/locations', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  update: async (id: string, data: UpdateLocationInput) => {
+    const response = await api.patch<{ success: boolean; data: CompanyLocation }>(`/locations/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean; data: CompanyLocation }>(`/locations/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  // Technician assignments
+  getAssignedTechnicians: async (locationId: string) => {
+    const response = await api.get<{ success: boolean; data: LocationAssignment[] }>(`/locations/${locationId}/technicians`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  assignTechnician: async (locationId: string, data: AssignTechnicianInput) => {
+    const response = await api.post<{ success: boolean; data: LocationAssignment }>(`/locations/${locationId}/technicians`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateAssignment: async (locationId: string, assignmentId: string, data: UpdateAssignmentInput) => {
+    const response = await api.patch<{ success: boolean; data: LocationAssignment }>(`/locations/${locationId}/technicians/${assignmentId}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  removeAssignment: async (locationId: string, assignmentId: string) => {
+    const response = await api.delete<{ success: boolean }>(`/locations/${locationId}/technicians/${assignmentId}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+};
+
 export default api;
