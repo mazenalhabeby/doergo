@@ -134,7 +134,7 @@ export default function LocationPicker({
     debounceRef.current = setTimeout(() => searchAddress(value), 400)
   }
 
-  const selectResult = (result: NominatimResult) => {
+  const selectResult = (result: GeoResult) => {
     const newLat = parseFloat(result.lat)
     const newLng = parseFloat(result.lon)
     onLocationChange(newLat, newLng)
