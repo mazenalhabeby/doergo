@@ -152,55 +152,57 @@ export default function LocationsPage() {
   })
 
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Company Locations</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage work sites, geofence areas, and technician assignments
-          </p>
+    <div className="max-w-screen-xl mx-auto px-6 py-8">
+      {/* Page Header */}
+      <div className="mb-8">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Company Locations</h1>
+            <p className="mt-1.5 text-slate-500">
+              Manage work sites, geofence areas, and technician assignments
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-[140px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border-slate-200/80 shadow-sm" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            {isAdmin && (
+              <Button onClick={() => setCreateOpen(true)} className="h-11 gap-2 rounded-xl shadow-sm">
+                <Plus className="h-4 w-4" />
+                Add Location
+              </Button>
+            )}
+          </div>
         </div>
-        {isAdmin && (
-          <Button onClick={() => setCreateOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Location
-          </Button>
-        )}
-      </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search locations..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        {/* Search + count */}
+        <div className="mt-6 flex items-center justify-between">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search locations..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-11 rounded-xl border-slate-200/80 shadow-sm"
+            />
+          </div>
+          {meta && (
+            <p className="text-sm text-slate-500">
+              Showing {filteredLocations.length} of {meta.total} location{meta.total !== 1 ? "s" : ""}
+            </p>
+          )}
         </div>
-        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="all">All</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" size="icon" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4" />
-        </Button>
       </div>
-
-      {/* Stats */}
-      {meta && (
-        <p className="text-sm text-slate-500">
-          {filteredLocations.length} location{filteredLocations.length !== 1 ? "s" : ""}
-        </p>
-      )}
 
       {/* Location Cards */}
       {isLoading ? (
