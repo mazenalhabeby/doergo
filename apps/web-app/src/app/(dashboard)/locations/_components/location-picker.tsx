@@ -3,8 +3,10 @@
 import { useState, useCallback, useRef, useEffect } from "react"
 import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
-import { Search, Loader2, MapPin } from "lucide-react"
+import { Search, Loader2, MapPin, Keyboard } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 
 import "leaflet/dist/leaflet.css"
 
@@ -32,10 +34,8 @@ interface LocationPickerProps {
   address: string
   onLocationChange: (lat: number, lng: number) => void
   onAddressChange: (address: string) => void
-  googleApiKey?: string
 }
 
-// Component that handles map click events
 function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
@@ -45,7 +45,6 @@ function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => v
   return null
 }
 
-// Component that pans the map to a position
 function MapPanner({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
   useEffect(() => {
@@ -61,16 +60,22 @@ export default function LocationPicker({
   address,
   onLocationChange,
   onAddressChange,
-  googleApiKey,
 }: LocationPickerProps) {
-  const [searchQuery, setSearchQuery] = useState(address)
+  const [searchQuery, setSearchQuery] = useState("")
   const [results, setResults] = useState<GeoResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const [manualLat, setManualLat] = useState(lat?.toString() || "")
+  const [manualLng, setManualLng] = useState(lng?.toString() || "")
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
+  // Sync manual inputs when lat/lng change from map click or search
+  useEffect(() => {
+    if (lat !== null) setManualLat(lat.toFixed(6))
+    if (lng !== null) setManualLng(lng.toFixed(6))
+  }, [lat, lng])
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
@@ -81,6 +86,7 @@ export default function LocationPicker({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Search using both Photon and Nominatim for wider coverage
   const searchAddress = useCallback(async (query: string) => {
     if (query.length < 3) {
       setResults([])
@@ -88,47 +94,63 @@ export default function LocationPicker({
     }
     setIsSearching(true)
     try {
-      let results: GeoResult[] = []
-
-      // Try Google Geocoding first (more accurate)
-      if (googleApiKey) {
-        const gRes = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}`
-        )
-        const gData = await gRes.json()
-        if (gData.results?.length > 0) {
-          results = gData.results.slice(0, 5).map((r: any) => ({
-            display_name: r.formatted_address,
-            lat: r.geometry.location.lat.toString(),
-            lon: r.geometry.location.lng.toString(),
-          }))
-        }
-      }
-
-      // Fallback to Nominatim
-      if (results.length === 0) {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+      // Run Photon and Nominatim in parallel
+      const [photonRes, nominatimRes] = await Promise.allSettled([
+        fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=3`)
+          .then((r) => r.json())
+          .then((data) =>
+            (data.features || []).map((f: any) => ({
+              display_name: [
+                f.properties.name,
+                f.properties.street,
+                f.properties.city,
+                f.properties.state,
+                f.properties.country,
+              ].filter(Boolean).join(", "),
+              lat: f.geometry.coordinates[1].toString(),
+              lon: f.geometry.coordinates[0].toString(),
+            }))
+          ),
+        fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=3`,
           { headers: { "Accept-Language": "en,de" } }
         )
-        const data = await res.json()
-        results = data.map((r: any) => ({
-          display_name: r.display_name,
-          lat: r.lat,
-          lon: r.lon,
-        }))
+          .then((r) => r.json())
+          .then((data) =>
+            data.map((r: any) => ({
+              display_name: r.display_name,
+              lat: r.lat,
+              lon: r.lon,
+            }))
+          ),
+      ])
+
+      // Combine and deduplicate
+      const photonResults = photonRes.status === "fulfilled" ? photonRes.value : []
+      const nominatimResults = nominatimRes.status === "fulfilled" ? nominatimRes.value : []
+      const combined = [...photonResults, ...nominatimResults]
+
+      // Deduplicate by proximity (within ~100m)
+      const unique: GeoResult[] = []
+      for (const r of combined) {
+        const isDupe = unique.some(
+          (u) =>
+            Math.abs(parseFloat(u.lat) - parseFloat(r.lat)) < 0.001 &&
+            Math.abs(parseFloat(u.lon) - parseFloat(r.lon)) < 0.001
+        )
+        if (!isDupe) unique.push(r)
       }
 
-      setResults(results)
+      setResults(unique.slice(0, 5))
       setShowResults(true)
     } catch {
       setResults([])
     } finally {
       setIsSearching(false)
     }
-  }, [googleApiKey])
+  }, [])
 
-  const handleInputChange = (value: string) => {
+  const handleSearchChange = (value: string) => {
     setSearchQuery(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => searchAddress(value), 400)
@@ -139,7 +161,7 @@ export default function LocationPicker({
     const newLng = parseFloat(result.lon)
     onLocationChange(newLat, newLng)
     onAddressChange(result.display_name)
-    setSearchQuery(result.display_name)
+    setSearchQuery("")
     setShowResults(false)
     setResults([])
   }
@@ -147,52 +169,43 @@ export default function LocationPicker({
   const handleMapClick = useCallback(
     async (clickLat: number, clickLng: number) => {
       onLocationChange(clickLat, clickLng)
-      // Reverse geocode
+      // Reverse geocode with Nominatim
       try {
-        let displayName = ""
-
-        if (googleApiKey) {
-          const gRes = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${clickLat},${clickLng}&key=${googleApiKey}`
-          )
-          const gData = await gRes.json()
-          if (gData.results?.[0]?.formatted_address) {
-            displayName = gData.results[0].formatted_address
-          }
-        }
-
-        if (!displayName) {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickLat}&lon=${clickLng}&addressdetails=1`,
-            { headers: { "Accept-Language": "en,de" } }
-          )
-          const data = await res.json()
-          displayName = data.display_name || ""
-        }
-
-        if (displayName) {
-          onAddressChange(displayName)
-          setSearchQuery(displayName)
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickLat}&lon=${clickLng}&addressdetails=1`,
+          { headers: { "Accept-Language": "en,de" } }
+        )
+        const data = await res.json()
+        if (data.display_name) {
+          onAddressChange(data.display_name)
         }
       } catch {
-        // Ignore reverse geocode errors
+        // Ignore
       }
     },
-    [onLocationChange, onAddressChange, googleApiKey]
+    [onLocationChange, onAddressChange]
   )
+
+  const handleManualCoordsBlur = () => {
+    const latNum = parseFloat(manualLat)
+    const lngNum = parseFloat(manualLng)
+    if (!isNaN(latNum) && !isNaN(lngNum) && latNum >= -90 && latNum <= 90 && lngNum >= -180 && lngNum <= 180) {
+      onLocationChange(latNum, lngNum)
+    }
+  }
 
   const mapCenter: [number, number] = lat && lng ? [lat, lng] : [48.1351, 11.582]
 
   return (
     <div className="space-y-3">
-      {/* Address Search */}
+      {/* Search bar */}
       <div ref={wrapperRef} className="relative">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Search address..."
+            placeholder="Search for a city, street, or landmark..."
             value={searchQuery}
-            onChange={(e) => handleInputChange(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => results.length > 0 && setShowResults(true)}
             className="pl-9 pr-9"
           />
@@ -201,7 +214,6 @@ export default function LocationPicker({
           )}
         </div>
 
-        {/* Search Results Dropdown */}
         {showResults && results.length > 0 && (
           <div className="absolute z-[1000] mt-1 w-full rounded-lg border bg-white shadow-lg max-h-48 overflow-y-auto">
             {results.map((result, i) => (
@@ -250,9 +262,47 @@ export default function LocationPicker({
         </MapContainer>
       </div>
 
-      <p className="text-xs text-slate-400">
-        Click on the map or search an address to set the location. The green circle shows the geofence area.
-      </p>
+      {/* Address + Coordinates - manual entry */}
+      <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-slate-500">Address</Label>
+          <Input
+            placeholder="Type the full address manually"
+            value={address}
+            onChange={(e) => onAddressChange(e.target.value)}
+            className="bg-white text-sm"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-500">Latitude</Label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="48.1351"
+              value={manualLat}
+              onChange={(e) => setManualLat(e.target.value)}
+              onBlur={handleManualCoordsBlur}
+              className="bg-white text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-500">Longitude</Label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="11.5820"
+              value={manualLng}
+              onChange={(e) => setManualLng(e.target.value)}
+              onBlur={handleManualCoordsBlur}
+              className="bg-white text-sm"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-slate-400">
+          Search above, click on the map, or enter the address and coordinates manually.
+        </p>
+      </div>
     </div>
   )
 }

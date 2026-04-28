@@ -491,18 +491,7 @@ function CreateLocationDialog({
             address={address}
             onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
             onAddressChange={setAddress}
-            googleApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
           />
-
-          {/* Coordinates display */}
-          {lat !== null && lng !== null && (
-            <div className="flex items-center gap-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
-              <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span className="text-sm text-emerald-700">
-                {lat.toFixed(6)}, {lng.toFixed(6)}
-              </span>
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label htmlFor="radius">Geofence Radius (meters)</Label>
