@@ -69,7 +69,7 @@ services:
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
-      - SMTP_FROM=${SMTP_FROM:-noreply@hbcfield.eu}
+      - SMTP_FROM=${SMTP_FROM:-noreply@hbcfield.com}
       - APP_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
     depends_on:
       postgres:
@@ -140,6 +140,7 @@ services:
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@hbcfield.com}
       - SOCKET_CORS_ORIGINS=https://${DOMAIN:-hbcfield.hbc-solution.io}
       - SOCKET_ADMIN_USER=${SOCKET_ADMIN_USER:-}
       - SOCKET_ADMIN_PASSWORD=${SOCKET_ADMIN_PASSWORD:-}

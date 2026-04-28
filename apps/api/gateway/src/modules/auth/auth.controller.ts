@@ -17,7 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto } from './dto';
+import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto, DeleteAccountDto } from './dto';
 import { Public } from '../../common/decorators';
 import { CurrentUser, CurrentUserData, SkipOnboardingCheck } from '@hbcfield/shared';
 
@@ -252,5 +252,37 @@ export class AuthController {
     return firstValueFrom(
       this.authClient.send({ cmd: 'revoke_all_sessions' }, { userId: user.id }),
     );
+  }
+
+  // =========================================================================
+  // ACCOUNT DELETION
+  // =========================================================================
+
+  @Delete('account')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: 'Permanently delete the current user account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid password or last admin' })
+  async deleteAccount(
+    @Body() dto: DeleteAccountDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'delete_account' }, {
+        userId: user.id,
+        password: dto.password,
+      }),
+    );
+
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return result;
   }
 }

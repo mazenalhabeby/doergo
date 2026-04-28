@@ -64,9 +64,9 @@
         "track": "internal"
       },
       "ios": {
-        "appleId": "REPLACE_WITH_APPLE_ID_EMAIL",
-        "ascAppId": "REPLACE_WITH_NUMERIC_ASC_APP_ID",
-        "appleTeamId": "REPLACE_WITH_10_CHAR_TEAM_ID"
+        "appleId": "a.holub@hbc-group.eu",
+        "ascAppId": "6762745260",
+        "appleTeamId": "2NW5P5LXTH"
       }
     }
   }

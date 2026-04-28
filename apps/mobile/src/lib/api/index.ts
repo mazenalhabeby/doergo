@@ -61,7 +61,7 @@ export {
 } from './types';
 
 // Domain APIs
-export { authApi, userApi, passwordApi, avatarApi } from './auth';
+export { authApi, userApi, passwordApi, avatarApi, accountApi } from './auth';
 export { tasksApi, trackingApi } from './tasks';
 export type { TasksListParams } from './tasks';
 export { reportsApi, reportAttachmentsApi } from './reports';

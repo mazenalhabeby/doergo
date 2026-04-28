@@ -6,6 +6,7 @@ export interface AnimatedLogoProps {
   size?: 'small' | 'default' | 'large';
   variant?: 'light' | 'dark';
   showTagline?: boolean;
+  iconOnly?: boolean;
   /** @deprecated Use variant instead */
   primaryColor?: string;
 }
@@ -20,10 +21,15 @@ export function AnimatedLogo({
   size = 'default',
   variant = 'dark',
   showTagline = false,
+  iconOnly = false,
 }: AnimatedLogoProps) {
   const s = SIZE_MAP[size];
   const textColor = variant === 'light' ? '#fafafa' : '#18181b';
   const taglineColor = variant === 'light' ? '#52525b' : '#a1a1aa';
+
+  if (iconOnly) {
+    return <FieldArrowIcon size={s.icon} variant="color" />;
+  }
 
   return (
     <View style={[styles.container, { gap: s.gap }]}>

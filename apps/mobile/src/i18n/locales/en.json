@@ -76,7 +76,20 @@
       "createOne": "Create one",
       "needHelp": "Need help? ",
       "contactSupport": "Contact support",
-      "loginFailed": "Login Failed"
+      "loginFailed": "Login Failed",
+      "forgotPassword": "Forgot password?"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "We'll send you a reset link",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@company.com",
+      "submitButton": "Send Reset Link",
+      "rememberPassword": "Remember your password? ",
+      "signIn": "Sign In",
+      "sentTitle": "Check Your Email",
+      "sentMessage": "If an account exists with that email, we've sent a password reset link. Please check your inbox and spam folder.",
+      "backToLogin": "Back to Sign In"
     },
     "register": {
       "title": "Create your account",
@@ -647,7 +660,17 @@
       "newPasswordTooShort": "New password must be at least 8 characters.",
       "passwordsMismatch": "New passwords do not match.",
       "passwordChanged": "Password changed successfully.",
-      "failedToChange": "Failed to change password"
+      "failedToChange": "Failed to change password",
+      "deleteAccount": "Delete Account",
+      "deleteWarning": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "deleteButton": "Delete My Account",
+      "deletePasswordLabel": "Confirm Password",
+      "deletePasswordPlaceholder": "Enter your password to confirm",
+      "deletePasswordRequired": "Please enter your password to confirm deletion.",
+      "deleteConfirmTitle": "Delete Account?",
+      "deleteConfirmMessage": "This will permanently delete your account, anonymize your data, and sign you out. This cannot be undone.",
+      "deleteConfirmButton": "Delete Account",
+      "deleteFailed": "Failed to delete account"
     },
 
     "notifications": {

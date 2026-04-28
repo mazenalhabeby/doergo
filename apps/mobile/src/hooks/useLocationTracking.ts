@@ -96,9 +96,6 @@ export function useLocationTracking() {
 
       setState((prev) => ({ ...prev, permissionStatus: 'granted' }));
 
-      // Request background permission for continuous tracking
-      const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-
       taskIdRef.current = taskId;
       setState((prev) => ({ ...prev, isTracking: true, activeTaskId: taskId, error: null }));
 

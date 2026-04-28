@@ -28,7 +28,7 @@ export class EmailService {
   async sendEmail(to: string, subject: string, html: string) {
     try {
       await this.transporter.sendMail({
-        from: this.configService.get('SMTP_FROM', 'noreply@hbcfield.eu'),
+        from: this.configService.get('SMTP_FROM', 'noreply@hbcfield.com'),
         to,
         subject,
         html,

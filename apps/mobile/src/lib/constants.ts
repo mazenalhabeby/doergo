@@ -261,6 +261,7 @@ export const ROUTES = {
   // Auth
   login: '/(auth)/login' as const,
   register: '/(auth)/register' as const,
+  forgotPassword: '/(auth)/forgot-password' as const,
 
   // Onboarding
   choosePath: '/(onboarding)/choose-path' as const,

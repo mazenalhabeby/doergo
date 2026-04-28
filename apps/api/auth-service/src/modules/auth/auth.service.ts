@@ -5,6 +5,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   MAX_SESSIONS_PER_USER,
@@ -1118,6 +1119,113 @@ export class AuthService {
         success: false,
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Failed to change password.',
+      };
+    }
+  }
+
+  /**
+   * Delete a user's account permanently.
+   * Requires password confirmation. Anonymizes personal data and
+   * cascading-deletes related records (tokens, push tokens, location, etc.).
+   */
+  async deleteAccount(data: { userId: string; password: string }) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: data.userId },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'User not found.',
+        };
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
+      if (!isPasswordValid) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Incorrect password.',
+        };
+      }
+
+      // If user is the last ADMIN of their org, block deletion
+      if (user.role === Role.ADMIN && user.organizationId) {
+        const otherAdmins = await this.prisma.user.count({
+          where: {
+            organizationId: user.organizationId,
+            role: Role.ADMIN,
+            isActive: true,
+            id: { not: user.id },
+          },
+        });
+
+        if (otherAdmins === 0) {
+          return {
+            success: false,
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'You are the last admin of your organization. Transfer admin role to another member before deleting your account.',
+          };
+        }
+      }
+
+      // Anonymize and deactivate within a transaction
+      const deletedEmail = `deleted_${user.id}@deleted.hbcfield.local`;
+
+      await this.prisma.$transaction(async (tx) => {
+        // 1. Delete cascading records that reference the user
+        await Promise.all([
+          tx.refreshToken.deleteMany({ where: { userId: user.id } }),
+          tx.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+          tx.userPushToken.deleteMany({ where: { userId: user.id } }),
+          tx.workerLastLocation.deleteMany({ where: { userId: user.id } }),
+          tx.locationHistory.deleteMany({ where: { userId: user.id } }),
+          tx.comment.deleteMany({ where: { userId: user.id } }),
+          tx.technicianSchedule.deleteMany({ where: { technicianId: user.id } }),
+          tx.timeOff.deleteMany({ where: { technicianId: user.id } }),
+          tx.joinRequest.deleteMany({ where: { userId: user.id } }),
+        ]);
+
+        // 2. Unassign tasks (don't delete them)
+        await tx.task.updateMany({
+          where: { assignedToId: user.id },
+          data: { assignedToId: null, status: 'NEW' },
+        });
+
+        // 3. Anonymize user record
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            email: deletedEmail,
+            firstName: 'Deleted',
+            lastName: 'User',
+            passwordHash: '', // Invalidate login
+            isActive: false,
+            avatarUrl: null,
+            organizationId: null,
+            onboardingCompleted: false,
+            specialty: null,
+            profileBadges: Prisma.DbNull,
+          },
+        });
+      });
+
+      this.logger.log(`Account deleted for user ${data.userId}`);
+
+      return {
+        success: true,
+        data: null,
+        message: 'Account deleted successfully.',
+      };
+    } catch (error) {
+      this.logger.error(`Delete account error: ${error}`);
+      return {
+        success: false,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to delete account.',
       };
     }
   }

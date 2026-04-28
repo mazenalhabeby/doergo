@@ -72,6 +72,23 @@ export const passwordApi = {
       body: JSON.stringify(data),
     });
   },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    return fetchApi<void>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+};
+
+// Account API
+export const accountApi = {
+  deleteAccount: async (password: string): Promise<void> => {
+    return fetchWithAuth<void>('/auth/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ password }),
+    });
+  },
 };
 
 // Avatar API - profile picture upload

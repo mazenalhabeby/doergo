@@ -27,14 +27,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
-          'HBCField needs your location to track task progress',
-        NSLocationAlwaysAndWhenInUseUsageDescription:
-          'HBCField needs your location to track task progress even when the app is in the background',
+          'HBCField needs your location to track task routes and verify attendance',
         NSCameraUsageDescription:
           'HBCField needs camera access to take photos for task documentation',
         NSPhotoLibraryUsageDescription:
           'HBCField needs photo library access to attach images to tasks and service reports',
-        UIBackgroundModes: ['location', 'fetch'],
+        UIBackgroundModes: ['remote-notification'],
         ITSAppUsesNonExemptEncryption: false,
       },
     },
@@ -43,9 +41,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#1e293b',
       },
-      googleServicesFile: './google-services.json',
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
       package: 'com.hbcfield.app',
-      versionCode: 1,
+      versionCode: 2,
       config: {
         googleMaps: {
           apiKey: googleMapsApiKey,
@@ -54,16 +52,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       permissions: [
         'android.permission.ACCESS_COARSE_LOCATION',
         'android.permission.ACCESS_FINE_LOCATION',
-        'android.permission.ACCESS_BACKGROUND_LOCATION',
         'android.permission.CAMERA',
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.WRITE_EXTERNAL_STORAGE',
-        'android.permission.RECORD_AUDIO',
       ],
     },
     plugins: [
       'expo-router',
-      'expo-location',
+      ['expo-location', { isIosBackgroundLocationEnabled: false, isAndroidBackgroundLocationEnabled: false }],
       'expo-camera',
       [
         'expo-notifications',

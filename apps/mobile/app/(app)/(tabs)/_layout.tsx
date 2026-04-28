@@ -11,12 +11,11 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
 import { Role, WorkMode, TechnicianType } from '@hbcfield/shared/client';
 
-// Logo for header left
+// Logo icon for header left
 function HeaderLogo() {
-  const { isDark } = useTheme();
   return (
     <View style={styles.headerLeft}>
-      <AnimatedLogo size="small" variant={isDark ? 'light' : undefined} />
+      <AnimatedLogo size="small" iconOnly />
     </View>
   );
 }

@@ -1,3 +1,12 @@
 {
-  "expo": {}
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "13fe918a-1150-4ea4-bac5-08138ff97ef2"
+      }
+    },
+    "android": {
+      "package": "com.amd07dev.hbcfield"
+    }
+  }
 }

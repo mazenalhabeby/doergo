@@ -97,3 +97,12 @@ export class ChangePasswordDto {
   @StrongPasswordField()
   newPassword: string;
 }
+
+/**
+ * Delete account request DTO (authenticated, requires password confirmation)
+ */
+export class DeleteAccountDto {
+  @ApiProperty({ example: 'Password123', description: 'Current password to confirm account deletion' })
+  @PasswordField()
+  password: string;
+}
