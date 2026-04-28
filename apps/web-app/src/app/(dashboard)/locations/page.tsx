@@ -152,6 +152,7 @@ export default function LocationsPage() {
   })
 
   return (
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
     <div className="max-w-screen-xl mx-auto px-6 py-8">
       {/* Page Header */}
       <div className="mb-8">
@@ -307,6 +308,7 @@ export default function LocationsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
     </div>
   )
 }
