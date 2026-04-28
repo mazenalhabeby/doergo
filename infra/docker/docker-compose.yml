@@ -237,6 +237,7 @@ services:
       dockerfile: apps/web-app/Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}/api/v1
+        - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
     container_name: hbcfield-web-app
     restart: unless-stopped
     ports:

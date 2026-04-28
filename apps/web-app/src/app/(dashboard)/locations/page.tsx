@@ -491,6 +491,7 @@ function CreateLocationDialog({
             address={address}
             onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
             onAddressChange={setAddress}
+            googleApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
           />
 
           {/* Coordinates display */}

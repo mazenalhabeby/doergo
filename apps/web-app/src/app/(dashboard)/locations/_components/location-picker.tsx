@@ -19,11 +19,10 @@ const markerIcon = new L.Icon({
   shadowSize: [41, 41],
 })
 
-interface NominatimResult {
+interface GeoResult {
   display_name: string
   lat: string
   lon: string
-  address?: Record<string, string>
 }
 
 interface LocationPickerProps {
@@ -33,6 +32,7 @@ interface LocationPickerProps {
   address: string
   onLocationChange: (lat: number, lng: number) => void
   onAddressChange: (address: string) => void
+  googleApiKey?: string
 }
 
 // Component that handles map click events
@@ -61,9 +61,10 @@ export default function LocationPicker({
   address,
   onLocationChange,
   onAddressChange,
+  googleApiKey,
 }: LocationPickerProps) {
   const [searchQuery, setSearchQuery] = useState(address)
-  const [results, setResults] = useState<NominatimResult[]>([])
+  const [results, setResults] = useState<GeoResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
@@ -87,19 +88,45 @@ export default function LocationPicker({
     }
     setIsSearching(true)
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-        { headers: { "Accept-Language": "en,de" } }
-      )
-      const data: NominatimResult[] = await res.json()
-      setResults(data)
+      let results: GeoResult[] = []
+
+      // Try Google Geocoding first (more accurate)
+      if (googleApiKey) {
+        const gRes = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}`
+        )
+        const gData = await gRes.json()
+        if (gData.results?.length > 0) {
+          results = gData.results.slice(0, 5).map((r: any) => ({
+            display_name: r.formatted_address,
+            lat: r.geometry.location.lat.toString(),
+            lon: r.geometry.location.lng.toString(),
+          }))
+        }
+      }
+
+      // Fallback to Nominatim
+      if (results.length === 0) {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+          { headers: { "Accept-Language": "en,de" } }
+        )
+        const data = await res.json()
+        results = data.map((r: any) => ({
+          display_name: r.display_name,
+          lat: r.lat,
+          lon: r.lon,
+        }))
+      }
+
+      setResults(results)
       setShowResults(true)
     } catch {
       setResults([])
     } finally {
       setIsSearching(false)
     }
-  }, [])
+  }, [googleApiKey])
 
   const handleInputChange = (value: string) => {
     setSearchQuery(value)
@@ -122,20 +149,36 @@ export default function LocationPicker({
       onLocationChange(clickLat, clickLng)
       // Reverse geocode
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickLat}&lon=${clickLng}&addressdetails=1`,
-          { headers: { "Accept-Language": "en,de" } }
-        )
-        const data = await res.json()
-        if (data.display_name) {
-          onAddressChange(data.display_name)
-          setSearchQuery(data.display_name)
+        let displayName = ""
+
+        if (googleApiKey) {
+          const gRes = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${clickLat},${clickLng}&key=${googleApiKey}`
+          )
+          const gData = await gRes.json()
+          if (gData.results?.[0]?.formatted_address) {
+            displayName = gData.results[0].formatted_address
+          }
+        }
+
+        if (!displayName) {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickLat}&lon=${clickLng}&addressdetails=1`,
+            { headers: { "Accept-Language": "en,de" } }
+          )
+          const data = await res.json()
+          displayName = data.display_name || ""
+        }
+
+        if (displayName) {
+          onAddressChange(displayName)
+          setSearchQuery(displayName)
         }
       } catch {
         // Ignore reverse geocode errors
       }
     },
-    [onLocationChange, onAddressChange]
+    [onLocationChange, onAddressChange, googleApiKey]
   )
 
   const mapCenter: [number, number] = lat && lng ? [lat, lng] : [48.1351, 11.582]
