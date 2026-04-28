@@ -186,12 +186,22 @@ export default function LocationPicker({
     [onLocationChange, onAddressChange]
   )
 
-  const handleManualCoordsBlur = () => {
-    const latNum = parseFloat(manualLat)
-    const lngNum = parseFloat(manualLng)
+  const applyManualCoords = (newLat: string, newLng: string) => {
+    const latNum = parseFloat(newLat)
+    const lngNum = parseFloat(newLng)
     if (!isNaN(latNum) && !isNaN(lngNum) && latNum >= -90 && latNum <= 90 && lngNum >= -180 && lngNum <= 180) {
       onLocationChange(latNum, lngNum)
     }
+  }
+
+  const handleLatChange = (value: string) => {
+    setManualLat(value)
+    applyManualCoords(value, manualLng)
+  }
+
+  const handleLngChange = (value: string) => {
+    setManualLng(value)
+    applyManualCoords(manualLat, value)
   }
 
   const mapCenter: [number, number] = lat && lng ? [lat, lng] : [48.1351, 11.582]
@@ -281,8 +291,7 @@ export default function LocationPicker({
               step="any"
               placeholder="48.1351"
               value={manualLat}
-              onChange={(e) => setManualLat(e.target.value)}
-              onBlur={handleManualCoordsBlur}
+              onChange={(e) => handleLatChange(e.target.value)}
               className="bg-white text-sm"
             />
           </div>
@@ -293,8 +302,7 @@ export default function LocationPicker({
               step="any"
               placeholder="11.5820"
               value={manualLng}
-              onChange={(e) => setManualLng(e.target.value)}
-              onBlur={handleManualCoordsBlur}
+              onChange={(e) => handleLngChange(e.target.value)}
               className="bg-white text-sm"
             />
           </div>
