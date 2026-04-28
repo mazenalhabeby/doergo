@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import dynamic from "next/dynamic"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import {
@@ -18,6 +19,7 @@ import {
   ToggleRight,
   UserPlus,
   X,
+  Loader2,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -68,6 +70,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+
+// Dynamically import map to avoid SSR issues with Leaflet
+const LocationPicker = dynamic(
+  () => import("./_components/location-picker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-[340px] rounded-lg border border-dashed border-slate-200 bg-slate-50">
+        <div className="text-center">
+          <Loader2 className="h-6 w-6 text-slate-400 animate-spin mx-auto mb-2" />
+          <p className="text-sm text-slate-400">Loading map...</p>
+        </div>
+      </div>
+    ),
+  }
+)
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const
 const DAY_LABELS: Record<string, string> = {
@@ -419,8 +437,8 @@ function CreateLocationDialog({
 }) {
   const [name, setName] = useState("")
   const [address, setAddress] = useState("")
-  const [lat, setLat] = useState("")
-  const [lng, setLng] = useState("")
+  const [lat, setLat] = useState<number | null>(null)
+  const [lng, setLng] = useState<number | null>(null)
   const [radius, setRadius] = useState("50")
 
   const mutation = useMutation({
@@ -434,33 +452,29 @@ function CreateLocationDialog({
   })
 
   const resetForm = () => {
-    setName(""); setAddress(""); setLat(""); setLng(""); setRadius("50")
+    setName(""); setAddress(""); setLat(null); setLng(null); setRadius("50")
   }
 
   const handleSubmit = () => {
     if (!name.trim()) return toast.error("Name is required")
-    if (!lat || !lng) return toast.error("Coordinates are required")
-    const latNum = parseFloat(lat)
-    const lngNum = parseFloat(lng)
-    if (isNaN(latNum) || latNum < -90 || latNum > 90) return toast.error("Latitude must be between -90 and 90")
-    if (isNaN(lngNum) || lngNum < -180 || lngNum > 180) return toast.error("Longitude must be between -180 and 180")
+    if (lat === null || lng === null) return toast.error("Select a location on the map or search an address")
 
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
-      lat: latNum,
-      lng: lngNum,
+      lat,
+      lng,
       geofenceRadius: parseInt(radius) || 50,
     })
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v) }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Location</DialogTitle>
           <DialogDescription>
-            Create a company location where technicians can clock in and out.
+            Search for an address or click on the map to set the location.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -468,20 +482,27 @@ function CreateLocationDialog({
             <Label htmlFor="name">Location Name *</Label>
             <Input id="name" placeholder="e.g. Main Office" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" placeholder="e.g. Leopoldstraße 15, München" value={address} onChange={(e) => setAddress(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="lat">Latitude *</Label>
-              <Input id="lat" type="number" step="any" placeholder="48.1351" value={lat} onChange={(e) => setLat(e.target.value)} />
+
+          {/* Map Picker */}
+          <LocationPicker
+            lat={lat}
+            lng={lng}
+            radius={parseInt(radius) || 50}
+            address={address}
+            onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
+            onAddressChange={setAddress}
+          />
+
+          {/* Coordinates display */}
+          {lat !== null && lng !== null && (
+            <div className="flex items-center gap-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
+              <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span className="text-sm text-emerald-700">
+                {lat.toFixed(6)}, {lng.toFixed(6)}
+              </span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="lng">Longitude *</Label>
-              <Input id="lng" type="number" step="any" placeholder="11.5820" value={lng} onChange={(e) => setLng(e.target.value)} />
-            </div>
-          </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="radius">Geofence Radius (meters)</Label>
             <div className="flex items-center gap-3">
@@ -504,7 +525,6 @@ function CreateLocationDialog({
               />
               <span className="text-sm text-slate-500 w-12 text-right">{radius}m</span>
             </div>
-            <p className="text-xs text-slate-400">Technicians must be within this radius to clock in (5-500m)</p>
           </div>
         </div>
         <DialogFooter>
@@ -535,8 +555,8 @@ function EditLocationDialog({
 }) {
   const [name, setName] = useState(location.name)
   const [address, setAddress] = useState(location.address || "")
-  const [lat, setLat] = useState(location.lat.toString())
-  const [lng, setLng] = useState(location.lng.toString())
+  const [lat, setLat] = useState<number | null>(location.lat)
+  const [lng, setLng] = useState<number | null>(location.lng)
   const [radius, setRadius] = useState(location.geofenceRadius.toString())
 
   const mutation = useMutation({
@@ -550,46 +570,49 @@ function EditLocationDialog({
 
   const handleSubmit = () => {
     if (!name.trim()) return toast.error("Name is required")
-    const latNum = parseFloat(lat)
-    const lngNum = parseFloat(lng)
-    if (isNaN(latNum) || latNum < -90 || latNum > 90) return toast.error("Latitude must be between -90 and 90")
-    if (isNaN(lngNum) || lngNum < -180 || lngNum > 180) return toast.error("Longitude must be between -180 and 180")
+    if (lat === null || lng === null) return toast.error("Location is required")
 
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
-      lat: latNum,
-      lng: lngNum,
+      lat,
+      lng,
       geofenceRadius: parseInt(radius) || 50,
     })
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Location</DialogTitle>
-          <DialogDescription>Update the details of this company location.</DialogDescription>
+          <DialogDescription>Update the details or move the pin on the map.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="edit-name">Location Name *</Label>
             <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-address">Address</Label>
-            <Input id="edit-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="edit-lat">Latitude *</Label>
-              <Input id="edit-lat" type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} />
+
+          {/* Map Picker */}
+          <LocationPicker
+            lat={lat}
+            lng={lng}
+            radius={parseInt(radius) || 50}
+            address={address}
+            onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
+            onAddressChange={setAddress}
+          />
+
+          {lat !== null && lng !== null && (
+            <div className="flex items-center gap-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
+              <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span className="text-sm text-emerald-700">
+                {lat.toFixed(6)}, {lng.toFixed(6)}
+              </span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-lng">Longitude *</Label>
-              <Input id="edit-lng" type="number" step="any" value={lng} onChange={(e) => setLng(e.target.value)} />
-            </div>
-          </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="edit-radius">Geofence Radius (meters)</Label>
             <div className="flex items-center gap-3">
