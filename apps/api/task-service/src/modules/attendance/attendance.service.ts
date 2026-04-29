@@ -6,6 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
@@ -15,6 +17,8 @@ import {
   haversineDistance,
   ATTENDANCE_CONSTANTS,
   SERVICE_NAMES,
+  QUEUE_NAMES,
+  OVERTIME_JOB_TYPES,
   buildSingleDayFilter,
 } from '@hbcfield/shared';
 import { format } from 'date-fns';
@@ -27,6 +31,8 @@ export class AttendanceService {
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
     private readonly notificationClient: ClientProxy,
+    @InjectQueue(QUEUE_NAMES.OVERTIME)
+    private readonly overtimeQueue: Queue,
   ) {}
 
   /**
@@ -587,6 +593,7 @@ export class AttendanceService {
       }
 
       // 3. Check if shift has ended (schedule-based) with grace period
+      //    Instead of immediate clock-out, initiate overtime request flow
       if (!reason) {
         const schedule = await this.prisma.technicianSchedule.findFirst({
           where: {
@@ -604,7 +611,22 @@ export class AttendanceService {
           const gracePeriod = ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES;
 
           if (nowMinutes >= endMinutes + gracePeriod) {
-            reason = 'shift_ended';
+            // Check if overtime request already exists
+            const existingOT = await this.prisma.overtimeRequest.findUnique({
+              where: { timeEntryId: entry.id },
+            });
+            if (!existingOT) {
+              // Initiate overtime flow instead of clock-out
+              await this.overtimeQueue.add(OVERTIME_JOB_TYPES.INITIATE, {
+                userId: entry.userId,
+                timeEntryId: entry.id,
+                locationId: entry.locationId,
+                organizationId: entry.organizationId,
+              }, { removeOnComplete: true });
+              this.logger.log(`Shift ended for entry ${entry.id}: initiated overtime flow instead of auto-clock-out`);
+            }
+            // Skip clock-out — overtime timeout checker handles it
+            continue;
           }
         }
       }

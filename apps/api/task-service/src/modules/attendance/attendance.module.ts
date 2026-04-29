@@ -14,6 +14,7 @@ import { AttendanceScheduler } from './attendance.scheduler';
   imports: [
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
     BullModule.registerQueue({ name: QUEUE_NAMES.ATTENDANCE }),
+    BullModule.registerQueue({ name: QUEUE_NAMES.OVERTIME }),
   ],
   controllers: [AttendanceController],
   providers: [

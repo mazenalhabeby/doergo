@@ -17,6 +17,7 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { OvertimeModule } from './modules/overtime/overtime.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
@@ -66,6 +67,7 @@ import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.gua
     ReportsModule,
     LocationsModule,
     AttendanceModule,
+    OvertimeModule,
     TechniciansModule,
     InvitationsModule,
     OnboardingModule,

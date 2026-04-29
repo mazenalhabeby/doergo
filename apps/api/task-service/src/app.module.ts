@@ -16,6 +16,7 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { OvertimeModule } from './modules/overtime/overtime.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
 
 @Module({
@@ -53,6 +54,7 @@ import { TechniciansModule } from './modules/technicians/technicians.module';
     ReportsModule,
     LocationsModule,
     AttendanceModule,
+    OvertimeModule,
     TechniciansModule,
   ],
 })
