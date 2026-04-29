@@ -516,6 +516,8 @@
     "away": "{{distance}} away",
     "withinRange": "(within range)",
     "clockedInOutsideGeofence": "Clocked in outside geofence",
+    "outsideGeofence": "You're outside the work area",
+    "outsideGeofenceDistance": "You are {{distance}}m away from your location",
 
     "todaysBreaks": "Today's Breaks",
 

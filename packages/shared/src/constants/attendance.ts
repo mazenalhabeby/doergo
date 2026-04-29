@@ -19,7 +19,7 @@ export const ATTENDANCE_CONSTANTS = {
   GRACE_PERIOD_MINUTES: 5,         // Allow 5 min early clock-in
 
   // Validation rules
-  REQUIRE_GEOFENCE_FOR_CLOCK_IN: false, // Flag but don't block clock-in outside geofence
+  REQUIRE_GEOFENCE_FOR_CLOCK_IN: true,  // Block clock-in if outside geofence
   ALLOW_CLOCK_OUT_ANYWHERE: true,       // Allow clock-out from anywhere
   ALERT_ON_GEOFENCE_VIOLATION: true,    // Send alerts when clock-out is outside geofence
 

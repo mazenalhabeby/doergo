@@ -516,6 +516,8 @@
     "away": "{{distance}} entfernt",
     "withinRange": "(in Reichweite)",
     "clockedInOutsideGeofence": "Außerhalb des Geofence eingestempelt",
+    "outsideGeofence": "Sie sind außerhalb des Arbeitsbereichs",
+    "outsideGeofenceDistance": "Sie sind {{distance}}m von Ihrem Standort entfernt",
 
     "todaysBreaks": "Heutige Pausen",
 

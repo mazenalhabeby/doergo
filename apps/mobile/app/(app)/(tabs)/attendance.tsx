@@ -85,6 +85,10 @@ export default function AttendanceScreen() {
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
 
+  // Geofence warning state
+  const [isOutsideGeofence, setIsOutsideGeofence] = useState(false);
+  const [geofenceDistance, setGeofenceDistance] = useState(0);
+
   // Break bottom sheet animation
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
   const breakSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -195,6 +199,46 @@ export default function AttendanceScreen() {
       fetchAttendanceData();
     }, [fetchAttendanceData])
   );
+
+  // Check geofence when clocked in
+  useEffect(() => {
+    if (!status?.isClockedIn || !status?.currentEntry?.location) {
+      setIsOutsideGeofence(false);
+      return;
+    }
+
+    let cancelled = false;
+    const checkGeofence = async () => {
+      try {
+        const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+        if (permStatus !== 'granted' || cancelled) return;
+
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (cancelled) return;
+
+        const loc = status.currentEntry!.location!;
+        const dist = haversineDistance(
+          pos.coords.latitude,
+          pos.coords.longitude,
+          loc.lat,
+          loc.lng
+        );
+        const radius = loc.geofenceRadius || 50;
+        setIsOutsideGeofence(dist > radius);
+        setGeofenceDistance(Math.round(dist));
+      } catch {
+        // Ignore location errors for passive check
+      }
+    };
+
+    checkGeofence();
+    const interval = setInterval(checkGeofence, 120000); // Check every 2 minutes
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [status?.isClockedIn, status?.currentEntry?.location]);
 
   // Update elapsed time every minute
   useEffect(() => {
@@ -454,6 +498,27 @@ export default function AttendanceScreen() {
               {isClockedIn ? t('attendance.clockedIn') : t('attendance.clockedOut')}
             </Text>
           </View>
+
+          {/* Geofence Warning Banner */}
+          {isClockedIn && isOutsideGeofence && (
+            <View style={styles.geofenceWarning}>
+              <Ionicons name="warning" size={20} color={COLORS.amber} />
+              <View style={styles.geofenceWarningTextContainer}>
+                <Text style={styles.geofenceWarningTitle}>
+                  {t('attendance.outsideGeofence')}
+                </Text>
+                <Text style={styles.geofenceWarningSubtitle}>
+                  {t('attendance.outsideGeofenceDistance', { distance: geofenceDistance })}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.geofenceClockOutButton}
+                onPress={handleClockOut}
+              >
+                <Text style={styles.geofenceClockOutText}>{t('attendance.clockOut')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {isClockedIn && currentEntry && (
             <View style={[styles.currentShiftInfo, { borderTopColor: colors.border }]}>
@@ -939,6 +1004,41 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
+  },
+  geofenceWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: '#FEF3C7',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  geofenceWarningTextContainer: {
+    flex: 1,
+  },
+  geofenceWarningTitle: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: '#92400E',
+  },
+  geofenceWarningSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: '#A16207',
+    marginTop: 2,
+  },
+  geofenceClockOutButton: {
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  geofenceClockOutText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: '#FFFFFF',
   },
   currentShiftInfo: {
     marginTop: SPACING.lg,
