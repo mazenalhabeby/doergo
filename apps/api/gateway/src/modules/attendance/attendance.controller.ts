@@ -18,7 +18,7 @@ import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
-import { ClockInDto, ClockOutDto, StartBreakDto, EndBreakDto } from './dto';
+import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto } from './dto';
 
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -45,6 +45,17 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Clock out from current shift' })
   async clockOut(@Body() dto: ClockOutDto, @Request() req: any) {
     return this.attendanceQueueService.clockOut({
+      ...dto,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post('heartbeat')
+  @Roles(Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Send location heartbeat while clocked in' })
+  async heartbeat(@Body() dto: HeartbeatDto, @Request() req: any) {
+    return this.attendanceQueueService.heartbeat({
       ...dto,
       userId: req.user.id,
       organizationId: req.user.organizationId,

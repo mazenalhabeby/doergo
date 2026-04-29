@@ -23,6 +23,17 @@ export const attendanceApi = {
     });
   },
 
+  heartbeat: async (input: { lat: number; lng: number; accuracy?: number }): Promise<{
+    withinGeofence: boolean;
+    distance: number;
+    autoClockedOut: boolean;
+  }> => {
+    return fetchWithAuth('/attendance/heartbeat', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
   getHistory: async (params?: AttendanceHistoryParams): Promise<PaginatedResponse<TimeEntry>> => {
     const endpoint = buildUrlWithQuery('/attendance/history', params ?? {});
     return fetchWithAuth<PaginatedResponse<TimeEntry>>(endpoint, { method: 'GET' });

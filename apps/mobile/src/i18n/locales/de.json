@@ -518,6 +518,8 @@
     "clockedInOutsideGeofence": "Außerhalb des Geofence eingestempelt",
     "outsideGeofence": "Sie sind außerhalb des Arbeitsbereichs",
     "outsideGeofenceDistance": "Sie sind {{distance}}m von Ihrem Standort entfernt",
+    "autoClockOutTitle": "Automatisches Ausstempeln",
+    "autoClockOutDistance": "Sie wurden automatisch ausgestempelt, weil Sie {{distance}}m von Ihrem Arbeitsort entfernt sind.",
 
     "todaysBreaks": "Heutige Pausen",
 

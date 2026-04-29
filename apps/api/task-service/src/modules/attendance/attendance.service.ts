@@ -321,6 +321,81 @@ export class AttendanceService {
   }
 
   /**
+   * Process location heartbeat while clocked in.
+   * Checks geofence distance and auto-clocks out if too far.
+   */
+  async heartbeat(data: {
+    userId: string;
+    lat: number;
+    lng: number;
+    accuracy?: number;
+    organizationId: string;
+  }) {
+    this.logger.log(`Heartbeat from user ${data.userId} at ${data.lat},${data.lng}`);
+
+    // Find active clock-in entry
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: {
+        userId: data.userId,
+        status: TimeEntryStatus.CLOCKED_IN,
+      },
+      include: { location: true },
+    });
+
+    if (!entry || !entry.location) {
+      return success({ withinGeofence: true, distance: 0, autoClockedOut: false }, 'No active entry');
+    }
+
+    const distance = haversineDistance(data.lat, data.lng, entry.location.lat, entry.location.lng);
+    const withinGeofence = distance <= entry.location.geofenceRadius;
+    const autoClockOutDistance = ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_DISTANCE_METERS;
+
+    // Auto clock-out if beyond the maximum distance
+    if (distance >= autoClockOutDistance) {
+      this.logger.warn(
+        `User ${data.userId} is ${Math.round(distance)}m from location (limit: ${autoClockOutDistance}m). Auto-clocking out.`,
+      );
+
+      await this.clockOut({
+        userId: data.userId,
+        lat: data.lat,
+        lng: data.lng,
+        accuracy: data.accuracy,
+        organizationId: data.organizationId,
+        notes: `Auto clock-out: ${Math.round(distance)}m from work area (limit: ${autoClockOutDistance}m)`,
+      });
+
+      // Send push notification
+      this.notificationClient.emit('push_notification', {
+        userId: data.userId,
+        title: 'Auto Clock-Out',
+        body: `You were automatically clocked out because you are ${Math.round(distance)}m away from your work location.`,
+        data: { type: 'attendance.auto_clock_out', distance: Math.round(distance) },
+      });
+
+      return success(
+        { withinGeofence: false, distance: Math.round(distance), autoClockedOut: true },
+        'Auto-clocked out due to distance',
+      );
+    }
+
+    // Send warning push notification if outside geofence but within auto-clock-out range
+    if (!withinGeofence) {
+      this.notificationClient.emit('push_notification', {
+        userId: data.userId,
+        title: 'Geofence Warning',
+        body: `You are ${Math.round(distance)}m from your work area. Please return or clock out.`,
+        data: { type: 'attendance.geofence_warning', distance: Math.round(distance) },
+      });
+    }
+
+    return success(
+      { withinGeofence, distance: Math.round(distance), autoClockedOut: false },
+      withinGeofence ? 'Within geofence' : 'Outside geofence',
+    );
+  }
+
+  /**
    * Get current attendance status for a technician
    */
   async getStatus(data: { userId: string; organizationId: string }) {

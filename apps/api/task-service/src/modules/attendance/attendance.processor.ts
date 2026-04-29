@@ -42,6 +42,9 @@ export class AttendanceProcessor extends WorkerHost {
       case ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT:
         return this.attendanceService.autoClockOut(data);
 
+      case ATTENDANCE_JOB_TYPES.HEARTBEAT:
+        return this.attendanceService.heartbeat(data);
+
       default:
         throw new Error(`Unknown job type: ${job.name}`);
     }

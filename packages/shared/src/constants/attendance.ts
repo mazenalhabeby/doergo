@@ -22,6 +22,8 @@ export const ATTENDANCE_CONSTANTS = {
   REQUIRE_GEOFENCE_FOR_CLOCK_IN: true,  // Block clock-in if outside geofence
   ALLOW_CLOCK_OUT_ANYWHERE: true,       // Allow clock-out from anywhere
   ALERT_ON_GEOFENCE_VIOLATION: true,    // Send alerts when clock-out is outside geofence
+  AUTO_CLOCK_OUT_DISTANCE_METERS: 150,  // Auto clock-out if technician is this far from location
+  HEARTBEAT_INTERVAL_MS: 5 * 60 * 1000, // Mobile sends heartbeat every 5 minutes
 
   // Smart auto-approval thresholds
   LATE_ARRIVAL_THRESHOLD_MINUTES: 30,     // Flag if >30 min after schedule start

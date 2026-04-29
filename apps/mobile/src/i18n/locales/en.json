@@ -518,6 +518,8 @@
     "clockedInOutsideGeofence": "Clocked in outside geofence",
     "outsideGeofence": "You're outside the work area",
     "outsideGeofenceDistance": "You are {{distance}}m away from your location",
+    "autoClockOutTitle": "Auto Clock-Out",
+    "autoClockOutDistance": "You were automatically clocked out because you are {{distance}}m away from your work location.",
 
     "todaysBreaks": "Today's Breaks",
 

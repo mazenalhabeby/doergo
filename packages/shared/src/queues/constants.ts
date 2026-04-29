@@ -75,6 +75,7 @@ export const ATTENDANCE_JOB_TYPES = {
   CLOCK_IN: 'attendance.clockIn',
   CLOCK_OUT: 'attendance.clockOut',
   AUTO_CLOCK_OUT: 'attendance.autoClockOut',
+  HEARTBEAT: 'attendance.heartbeat',
 } as const;
 
 export type AttendanceJobType = (typeof ATTENDANCE_JOB_TYPES)[keyof typeof ATTENDANCE_JOB_TYPES];

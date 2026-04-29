@@ -33,6 +33,13 @@ export class AttendanceQueueService extends BaseQueueService {
   }
 
   /**
+   * Send location heartbeat while clocked in
+   */
+  async heartbeat(data: Record<string, any>) {
+    return this.addJobAndWait(ATTENDANCE_JOB_TYPES.HEARTBEAT, data);
+  }
+
+  /**
    * Trigger auto clock-out for overdue entries
    */
   async autoClockOut(type: 'hourly' | 'midnight' = 'hourly') {

@@ -200,9 +200,10 @@ export default function AttendanceScreen() {
     }, [fetchAttendanceData])
   );
 
-  // Check geofence once when clocked in and screen is focused
-  const checkGeofence = useCallback(async () => {
-    if (!status?.isClockedIn || !status?.currentEntry?.location) {
+  // Heartbeat: send location to server every 5 min while clocked in
+  // Server checks geofence and auto-clocks out if >150m away
+  const sendHeartbeat = useCallback(async () => {
+    if (!status?.isClockedIn) {
       setIsOutsideGeofence(false);
       return;
     }
@@ -211,27 +212,40 @@ export default function AttendanceScreen() {
       if (permStatus !== 'granted') return;
 
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const loc = status.currentEntry!.location!;
-      const dist = haversineDistance(
-        pos.coords.latitude,
-        pos.coords.longitude,
-        loc.lat,
-        loc.lng
-      );
-      const radius = loc.geofenceRadius || 50;
-      setIsOutsideGeofence(dist > radius);
-      setGeofenceDistance(Math.round(dist));
-    } catch {
-      // Ignore location errors for passive check
-    }
-  }, [status?.isClockedIn, status?.currentEntry?.location]);
+      const result = await attendanceApi.heartbeat({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy || undefined,
+      });
 
-  // Run geofence check on tab focus
+      if (result.autoClockedOut) {
+        // Server auto-clocked us out — refresh data
+        toast.warning(t('attendance.autoClockOutTitle'), t('attendance.autoClockOutDistance', { distance: result.distance }));
+        await fetchAttendanceData();
+        return;
+      }
+
+      setIsOutsideGeofence(!result.withinGeofence);
+      setGeofenceDistance(result.distance);
+    } catch {
+      // Ignore heartbeat errors silently
+    }
+  }, [status?.isClockedIn, fetchAttendanceData, toast, t]);
+
+  // Send heartbeat on tab focus
   useFocusEffect(
     useCallback(() => {
-      checkGeofence();
-    }, [checkGeofence])
+      sendHeartbeat();
+    }, [sendHeartbeat])
   );
+
+  // Send heartbeat every 5 minutes while clocked in
+  useEffect(() => {
+    if (!status?.isClockedIn) return;
+
+    const interval = setInterval(sendHeartbeat, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [status?.isClockedIn, sendHeartbeat]);
 
   // Update elapsed time every minute
   useEffect(() => {
