@@ -2712,4 +2712,68 @@ export const locationsApi = {
   },
 };
 
+// ============================================================================
+// OVERTIME API
+// ============================================================================
+
+export interface OvertimeRequest {
+  id: string;
+  technicianId: string;
+  timeEntryId: string;
+  locationId: string;
+  status: string;
+  technicianRespondedAt?: string;
+  technicianReason?: string;
+  approvalMethod?: string;
+  approvedById?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  leaderName?: string;
+  leaderSignature?: string;
+  maxDurationMinutes?: number;
+  overtimeStartAt?: string;
+  overtimeEndAt?: string;
+  actualEndAt?: string;
+  overtimeMinutes?: number;
+  organizationId: string;
+  createdAt: string;
+  updatedAt: string;
+  technician?: { id: string; firstName: string; lastName: string; email?: string };
+  location?: { id: string; name: string };
+  approvedBy?: { id: string; firstName: string; lastName: string };
+}
+
+export const overtimeApi = {
+  getPendingApprovals: async () => {
+    const response = await api.get<{ success: boolean; data: OvertimeRequest[] }>('/overtime/pending-approvals');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  approve: async (id: string, data: { maxDurationMinutes: number; notes?: string }) => {
+    const response = await api.post<{ success: boolean; data: any }>(`/overtime/${id}/approve`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  reject: async (id: string, data: { reason: string }) => {
+    const response = await api.post<{ success: boolean; data: any }>(`/overtime/${id}/reject`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  getHistory: async (params?: { technicianId?: string; status?: string; page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery('/overtime/history', {
+      technicianId: params?.technicianId,
+      status: params?.status,
+      page: params?.page,
+      limit: params?.limit,
+    });
+    const response = await api.get<{ success: boolean; data: { data: OvertimeRequest[]; meta: any } }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+};
+
 export default api;

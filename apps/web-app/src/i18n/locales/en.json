@@ -236,6 +236,7 @@
       "schedule": "Schedule",
       "attendance": "Attendance",
       "locations": "Locations",
+      "overtime": "Overtime",
       "invoices": "Invoices",
       "paymentHistory": "Payment History",
       "liveMap": "Live Map",

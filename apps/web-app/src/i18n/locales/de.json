@@ -236,6 +236,7 @@
       "schedule": "Zeitplan",
       "attendance": "Anwesenheit",
       "locations": "Standorte",
+      "overtime": "Überstunden",
       "invoices": "Rechnungen",
       "paymentHistory": "Zahlungsverlauf",
       "liveMap": "Live-Karte",
