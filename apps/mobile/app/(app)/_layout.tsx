@@ -83,8 +83,16 @@ export default function AppLayout() {
   const handleNotificationResponse = useCallback((response: NotificationResponse) => {
     const taskId = getTaskIdFromNotification(response);
     const type = getNotificationType(response);
+    const data = response.notification?.request?.content?.data as Record<string, any> | undefined;
 
     console.log('[AppLayout] Notification tapped, type:', type, 'taskId:', taskId);
+
+    // Overtime notifications
+    if (type?.startsWith('overtime.')) {
+      const overtimeId = data?.overtimeRequestId || 'active';
+      router.push(`/overtime/${overtimeId}` as Href);
+      return;
+    }
 
     if (taskId) {
       // Navigate to task detail

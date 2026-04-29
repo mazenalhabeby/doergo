@@ -71,3 +71,5 @@ export { techniciansApi, timeOffApi, availabilityApi, scheduleApi } from './tech
 export { onboardingApi, invitationsApi, pushApi } from './onboarding';
 export { joinRequestsApi, membersApi, adminInvitationsApi, orgSettingsApi } from './admin';
 export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput } from './admin';
+export { overtimeApi } from './overtime';
+export type { OvertimeRequest } from './overtime';

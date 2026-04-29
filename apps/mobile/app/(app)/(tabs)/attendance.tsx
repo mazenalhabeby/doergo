@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter, Href } from 'expo-router';
 import {
   COLORS,
   SPACING,
@@ -42,6 +43,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet } from '../../../src/components';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
+import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
@@ -51,6 +53,7 @@ import {
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const toast = useToast();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -89,6 +92,9 @@ export default function AttendanceScreen() {
   // Geofence warning state
   const [isOutsideGeofence, setIsOutsideGeofence] = useState(false);
   const [geofenceDistance, setGeofenceDistance] = useState(0);
+
+  // Overtime state
+  const [activeOvertime, setActiveOvertime] = useState<OvertimeRequest | null>(null);
 
   // Break bottom sheet animation
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -134,6 +140,7 @@ export default function AttendanceScreen() {
         attendanceApi.getStatus(),
         attendanceApi.getHistory({ limit: 10 }),
         attendanceApi.getBreakStatus(),
+        overtimeApi.getActive(),
       ]);
 
       const statusData = results[0].status === 'fulfilled' ? results[0].value : null;
@@ -147,6 +154,9 @@ export default function AttendanceScreen() {
         setHistory(entries);
       }
       if (breakData) setBreakStatus(breakData);
+
+      const overtimeData = results[3].status === 'fulfilled' ? results[3].value : null;
+      setActiveOvertime(overtimeData);
 
       // Calculate elapsed time if clocked in
       if (statusData?.isClockedIn && statusData?.currentEntry) {
@@ -535,6 +545,35 @@ export default function AttendanceScreen() {
                 <Text style={styles.geofenceClockOutText}>{t('attendance.clockOut')}</Text>
               </TouchableOpacity>
             </View>
+          )}
+
+          {/* Overtime Banner */}
+          {activeOvertime && ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'].includes(activeOvertime.status) && (
+            <TouchableOpacity
+              style={[styles.overtimeBanner, {
+                backgroundColor: activeOvertime.status === 'APPROVED' ? '#ECFDF5' : '#FEF3C7',
+                borderColor: activeOvertime.status === 'APPROVED' ? '#A7F3D0' : '#FDE68A',
+              }]}
+              onPress={() => router.push(`/overtime/${activeOvertime.id}` as Href)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={activeOvertime.status === 'APPROVED' ? 'time' : 'alarm'}
+                size={22}
+                color={activeOvertime.status === 'APPROVED' ? '#059669' : '#D97706'}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.overtimeBannerTitle, { color: activeOvertime.status === 'APPROVED' ? '#065F46' : '#92400E' }]}>
+                  {activeOvertime.status === 'PENDING_TECHNICIAN' ? t('overtime.promptTitle') :
+                   activeOvertime.status === 'PENDING_APPROVAL' ? t('overtime.waitingApproval') :
+                   t('overtime.overtimeActive')}
+                </Text>
+                <Text style={[styles.overtimeBannerSub, { color: activeOvertime.status === 'APPROVED' ? '#047857' : '#A16207' }]}>
+                  {t('overtime.tapToView')}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={activeOvertime.status === 'APPROVED' ? '#059669' : '#D97706'} />
+            </TouchableOpacity>
           )}
 
           {isClockedIn && currentEntry && (
@@ -1021,6 +1060,23 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
+  },
+  overtimeBanner: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  overtimeBannerTitle: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  overtimeBannerSub: {
+    fontSize: FONT_SIZE.sm,
+    marginTop: 2,
   },
   geofenceWarning: {
     flexDirection: 'row',
