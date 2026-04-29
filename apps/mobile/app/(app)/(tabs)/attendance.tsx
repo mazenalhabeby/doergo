@@ -200,45 +200,38 @@ export default function AttendanceScreen() {
     }, [fetchAttendanceData])
   );
 
-  // Check geofence when clocked in
-  useEffect(() => {
+  // Check geofence once when clocked in and screen is focused
+  const checkGeofence = useCallback(async () => {
     if (!status?.isClockedIn || !status?.currentEntry?.location) {
       setIsOutsideGeofence(false);
       return;
     }
+    try {
+      const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+      if (permStatus !== 'granted') return;
 
-    let cancelled = false;
-    const checkGeofence = async () => {
-      try {
-        const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
-        if (permStatus !== 'granted' || cancelled) return;
-
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (cancelled) return;
-
-        const loc = status.currentEntry!.location!;
-        const dist = haversineDistance(
-          pos.coords.latitude,
-          pos.coords.longitude,
-          loc.lat,
-          loc.lng
-        );
-        const radius = loc.geofenceRadius || 50;
-        setIsOutsideGeofence(dist > radius);
-        setGeofenceDistance(Math.round(dist));
-      } catch {
-        // Ignore location errors for passive check
-      }
-    };
-
-    checkGeofence();
-    const interval = setInterval(checkGeofence, 120000); // Check every 2 minutes
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const loc = status.currentEntry!.location!;
+      const dist = haversineDistance(
+        pos.coords.latitude,
+        pos.coords.longitude,
+        loc.lat,
+        loc.lng
+      );
+      const radius = loc.geofenceRadius || 50;
+      setIsOutsideGeofence(dist > radius);
+      setGeofenceDistance(Math.round(dist));
+    } catch {
+      // Ignore location errors for passive check
+    }
   }, [status?.isClockedIn, status?.currentEntry?.location]);
+
+  // Run geofence check on tab focus
+  useFocusEffect(
+    useCallback(() => {
+      checkGeofence();
+    }, [checkGeofence])
+  );
 
   // Update elapsed time every minute
   useEffect(() => {
