@@ -1,5 +1,7 @@
 import { i18nReady } from '../src/i18n';
 import 'react-native-gesture-handler';
+// Register background tasks (must be at top level before any component renders)
+import '../src/services/background-heartbeat';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { LogBox } from 'react-native';
 

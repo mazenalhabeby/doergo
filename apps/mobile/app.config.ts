@@ -27,12 +27,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
-          'HBCField needs your location to track task routes and verify attendance',
+          'HBCField needs your location to verify you are at your assigned work site when clocking in.',
+        NSLocationAlwaysAndWhenInUseUsageDescription:
+          'HBCField uses your location in the background while you are clocked in to verify you remain at your assigned work site. Location tracking stops automatically when you clock out.',
         NSCameraUsageDescription:
           'HBCField needs camera access to take photos for task documentation',
         NSPhotoLibraryUsageDescription:
           'HBCField needs photo library access to attach images to tasks and service reports',
-        UIBackgroundModes: ['remote-notification'],
+        UIBackgroundModes: ['remote-notification', 'location'],
         ITSAppUsesNonExemptEncryption: false,
       },
     },
@@ -52,6 +54,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       permissions: [
         'android.permission.ACCESS_COARSE_LOCATION',
         'android.permission.ACCESS_FINE_LOCATION',
+        'android.permission.ACCESS_BACKGROUND_LOCATION',
         'android.permission.CAMERA',
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.WRITE_EXTERNAL_STORAGE',
@@ -59,7 +62,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     plugins: [
       'expo-router',
-      ['expo-location', { isIosBackgroundLocationEnabled: false, isAndroidBackgroundLocationEnabled: false }],
+      ['expo-location', { isIosBackgroundLocationEnabled: true, isAndroidBackgroundLocationEnabled: true }],
       'expo-camera',
       [
         'expo-notifications',

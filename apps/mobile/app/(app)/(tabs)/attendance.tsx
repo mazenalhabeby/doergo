@@ -41,6 +41,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet } from '../../../src/components';
+import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
@@ -219,7 +220,8 @@ export default function AttendanceScreen() {
       });
 
       if (result.autoClockedOut) {
-        // Server auto-clocked us out — refresh data
+        // Server auto-clocked us out — stop background tracking and refresh
+        await stopBackgroundHeartbeat();
         toast.warning(t('attendance.autoClockOutTitle'), t('attendance.autoClockOutDistance', { distance: result.distance }));
         await fetchAttendanceData();
         return;
@@ -232,11 +234,15 @@ export default function AttendanceScreen() {
     }
   }, [status?.isClockedIn, fetchAttendanceData, toast, t]);
 
-  // Send heartbeat on tab focus
+  // Send heartbeat on tab focus + ensure background tracking is running
   useFocusEffect(
     useCallback(() => {
       sendHeartbeat();
-    }, [sendHeartbeat])
+      // Resume background tracking if clocked in but tracking stopped (e.g. app restart)
+      if (status?.isClockedIn) {
+        startBackgroundHeartbeat();
+      }
+    }, [sendHeartbeat, status?.isClockedIn])
   );
 
   // Send heartbeat every 5 minutes while clocked in
@@ -347,6 +353,8 @@ export default function AttendanceScreen() {
         accuracy: currentLocation.accuracy,
       });
       await fetchAttendanceData();
+      // Start background heartbeat for geofence monitoring
+      await startBackgroundHeartbeat();
       toast.success(t('common.success'), t('attendance.clockedInAt', { location: selectedLocation.name }));
     } catch (err) {
       console.error('Clock in error:', err);
@@ -373,6 +381,8 @@ export default function AttendanceScreen() {
         accuracy: location?.accuracy,
         notes: notes || undefined,
       });
+      // Stop background heartbeat
+      await stopBackgroundHeartbeat();
       await fetchAttendanceData();
       toast.success(t('common.success'), t('attendance.clockedOutSuccess'));
     } catch (err) {
