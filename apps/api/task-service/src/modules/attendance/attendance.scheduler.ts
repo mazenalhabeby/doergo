@@ -10,9 +10,11 @@ import {
 /**
  * Attendance Scheduler Service
  *
- * Registers repeatable jobs for automatic clock-out:
- * 1. Hourly check for entries exceeding max duration (16 hours)
- * 2. Midnight job to close any remaining open entries
+ * Registers a single repeatable job that runs every 15 minutes.
+ * The job checks ALL open clock-in entries and auto-clocks out based on:
+ * 1. Max shift duration (16 hours)
+ * 2. Midnight in the location's timezone
+ * 3. Technician schedule end time + grace period
  */
 @Injectable()
 export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
@@ -28,102 +30,61 @@ export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    // Clean up repeatable jobs on shutdown (optional, they persist in Redis)
     this.logger.log('Attendance scheduler shutting down');
   }
 
-  /**
-   * Set up repeatable jobs for auto clock-out
-   */
   private async setupScheduledJobs() {
     try {
       // Remove existing repeatable jobs to avoid duplicates on restart
       await this.removeExistingRepeatableJobs();
 
-      // 1. Hourly auto clock-out check (for entries exceeding max duration)
+      // Single job that runs every 15 minutes — handles all auto-clock-out scenarios
       await this.attendanceQueue.add(
         ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT,
-        { type: 'hourly', triggeredAt: new Date().toISOString() },
+        { triggeredAt: new Date().toISOString() },
         {
           repeat: {
             every: ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_INTERVAL_MS,
           },
           jobId: ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_JOB_ID,
           removeOnComplete: true,
-          removeOnFail: { age: 86400 }, // Keep failed for 24 hours
-        },
-      );
-
-      this.logger.log(
-        `Scheduled hourly auto clock-out job (every ${ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_INTERVAL_MS / 60000} minutes)`,
-      );
-
-      // 2. Midnight auto clock-out (close all remaining entries at end of day)
-      await this.attendanceQueue.add(
-        ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT,
-        { type: 'midnight', triggeredAt: new Date().toISOString() },
-        {
-          repeat: {
-            pattern: ATTENDANCE_CONSTANTS.MIDNIGHT_CLOCK_OUT_CRON,
-          },
-          jobId: ATTENDANCE_CONSTANTS.MIDNIGHT_CLOCK_OUT_JOB_ID,
-          removeOnComplete: true,
           removeOnFail: { age: 86400 },
         },
       );
 
       this.logger.log(
-        `Scheduled midnight auto clock-out job (cron: ${ATTENDANCE_CONSTANTS.MIDNIGHT_CLOCK_OUT_CRON})`,
+        `Scheduled auto clock-out job (every ${ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_INTERVAL_MS / 60000} minutes) — timezone-aware`,
       );
 
-      // Log current repeatable jobs
       const repeatableJobs = await this.attendanceQueue.getRepeatableJobs();
       this.logger.log(
-        `Active repeatable jobs: ${repeatableJobs.map((j) => j.name).join(', ')}`,
+        `Active repeatable jobs: ${repeatableJobs.map((j) => `${j.name}(${j.every || j.pattern})`).join(', ')}`,
       );
     } catch (error) {
       this.logger.error('Failed to setup scheduled jobs', error);
     }
   }
 
-  /**
-   * Remove existing repeatable jobs to avoid duplicates
-   */
   private async removeExistingRepeatableJobs() {
     const repeatableJobs = await this.attendanceQueue.getRepeatableJobs();
-
     for (const job of repeatableJobs) {
-      if (
-        job.name === ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT ||
-        job.id === ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_JOB_ID ||
-        job.id === ATTENDANCE_CONSTANTS.MIDNIGHT_CLOCK_OUT_JOB_ID
-      ) {
+      if (job.name === ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT) {
         await this.attendanceQueue.removeRepeatableByKey(job.key);
         this.logger.debug(`Removed existing repeatable job: ${job.key}`);
       }
     }
   }
 
-  /**
-   * Manually trigger auto clock-out (for testing or admin actions)
-   */
-  async triggerAutoClockOut(type: 'hourly' | 'midnight' = 'hourly') {
+  async triggerAutoClockOut() {
     const job = await this.attendanceQueue.add(
       ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT,
-      { type, triggeredAt: new Date().toISOString(), manual: true },
-      {
-        removeOnComplete: true,
-        removeOnFail: { age: 3600 },
-      },
+      { triggeredAt: new Date().toISOString(), manual: true },
+      { removeOnComplete: true, removeOnFail: { age: 3600 } },
     );
-
     this.logger.log(`Manually triggered auto clock-out job: ${job.id}`);
     return job.id;
   }
 
-  /**
-   * Get info about scheduled jobs
-   */
   async getScheduledJobsInfo() {
     const repeatableJobs = await this.attendanceQueue.getRepeatableJobs();
     const waiting = await this.attendanceQueue.getWaitingCount();
@@ -138,11 +99,7 @@ export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
         every: job.every,
         next: job.next,
       })),
-      queueStats: {
-        waiting,
-        active,
-        delayed,
-      },
+      queueStats: { waiting, active, delayed },
     };
   }
 }

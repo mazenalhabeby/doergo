@@ -24,6 +24,7 @@ export const ATTENDANCE_CONSTANTS = {
   ALERT_ON_GEOFENCE_VIOLATION: true,    // Send alerts when clock-out is outside geofence
   AUTO_CLOCK_OUT_DISTANCE_METERS: 150,  // Auto clock-out if technician is this far from location
   HEARTBEAT_INTERVAL_MS: 5 * 60 * 1000, // Mobile sends heartbeat every 5 minutes
+  SCHEDULE_GRACE_PERIOD_MINUTES: 30,    // Minutes after shift end before auto-clock-out
 
   // Smart auto-approval thresholds
   LATE_ARRIVAL_THRESHOLD_MINUTES: 30,     // Flag if >30 min after schedule start
@@ -31,8 +32,8 @@ export const ATTENDANCE_CONSTANTS = {
   OVERTIME_THRESHOLD_MINUTES: 30,         // Flag if >30 min past schedule end
 
   // Scheduler settings
-  AUTO_CLOCK_OUT_INTERVAL_MS: 60 * 60 * 1000,    // Run every hour (3600000ms)
-  MIDNIGHT_CLOCK_OUT_CRON: '0 0 * * *',          // Run at midnight daily (00:00)
+  AUTO_CLOCK_OUT_INTERVAL_MS: 15 * 60 * 1000,    // Run every 15 minutes (timezone-aware checks)
+  MIDNIGHT_CLOCK_OUT_CRON: '0 0 * * *',          // Legacy: kept for reference
   AUTO_CLOCK_OUT_JOB_ID: 'auto-clock-out-hourly',
   MIDNIGHT_CLOCK_OUT_JOB_ID: 'auto-clock-out-midnight',
 } as const;

@@ -57,4 +57,13 @@ export class CreateLocationDto {
   @Min(ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS)
   @Max(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS)
   geofenceRadius?: number;
+
+  @ApiPropertyOptional({
+    example: 'America/New_York',
+    description: 'IANA timezone for this location (e.g. Europe/Berlin, America/New_York)',
+    default: 'Europe/Berlin',
+  })
+  @IsString()
+  @IsOptional()
+  timezone?: string;
 }

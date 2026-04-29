@@ -2595,6 +2595,7 @@ export interface CreateLocationInput {
   lat: number;
   lng: number;
   geofenceRadius?: number;
+  timezone?: string;
 }
 
 export interface UpdateLocationInput {
@@ -2603,6 +2604,7 @@ export interface UpdateLocationInput {
   lat?: number;
   lng?: number;
   geofenceRadius?: number;
+  timezone?: string;
   isActive?: boolean;
 }
 

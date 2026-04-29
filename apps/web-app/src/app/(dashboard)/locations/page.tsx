@@ -88,6 +88,33 @@ const LocationPicker = dynamic(
 )
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const
+
+const TIMEZONES = [
+  { value: "Europe/Berlin", label: "Europe/Berlin (CET)" },
+  { value: "Europe/Vienna", label: "Europe/Vienna (CET)" },
+  { value: "Europe/Zurich", label: "Europe/Zurich (CET)" },
+  { value: "Europe/London", label: "Europe/London (GMT)" },
+  { value: "Europe/Paris", label: "Europe/Paris (CET)" },
+  { value: "Europe/Amsterdam", label: "Europe/Amsterdam (CET)" },
+  { value: "Europe/Rome", label: "Europe/Rome (CET)" },
+  { value: "Europe/Madrid", label: "Europe/Madrid (CET)" },
+  { value: "Europe/Warsaw", label: "Europe/Warsaw (CET)" },
+  { value: "Europe/Istanbul", label: "Europe/Istanbul (TRT)" },
+  { value: "America/New_York", label: "America/New_York (EST)" },
+  { value: "America/Chicago", label: "America/Chicago (CST)" },
+  { value: "America/Denver", label: "America/Denver (MST)" },
+  { value: "America/Los_Angeles", label: "America/Los_Angeles (PST)" },
+  { value: "America/Toronto", label: "America/Toronto (EST)" },
+  { value: "America/Sao_Paulo", label: "America/Sao_Paulo (BRT)" },
+  { value: "Asia/Dubai", label: "Asia/Dubai (GST)" },
+  { value: "Asia/Riyadh", label: "Asia/Riyadh (AST)" },
+  { value: "Asia/Tokyo", label: "Asia/Tokyo (JST)" },
+  { value: "Asia/Shanghai", label: "Asia/Shanghai (CST)" },
+  { value: "Asia/Kolkata", label: "Asia/Kolkata (IST)" },
+  { value: "Australia/Sydney", label: "Australia/Sydney (AEST)" },
+  { value: "Pacific/Auckland", label: "Pacific/Auckland (NZST)" },
+  { value: "UTC", label: "UTC" },
+]
 const DAY_LABELS: Record<string, string> = {
   MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun",
 }
@@ -367,6 +394,11 @@ function LocationCard({
                 <MapPin className="h-3.5 w-3.5" />
                 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </span>
+              {location.timezone && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                  🕐 {location.timezone}
+                </span>
+              )}
               {assignments && assignments.length > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
                   <Users className="h-3.5 w-3.5" />
@@ -444,6 +476,7 @@ function CreateLocationDialog({
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
   const [radius, setRadius] = useState("50")
+  const [timezone, setTimezone] = useState("Europe/Berlin")
 
   const mutation = useMutation({
     mutationFn: (data: CreateLocationInput) => locationsApi.create(data),
@@ -456,7 +489,7 @@ function CreateLocationDialog({
   })
 
   const resetForm = () => {
-    setName(""); setAddress(""); setLat(null); setLng(null); setRadius("50")
+    setName(""); setAddress(""); setLat(null); setLng(null); setRadius("50"); setTimezone("Europe/Berlin")
   }
 
   const handleSubmit = () => {
@@ -469,6 +502,7 @@ function CreateLocationDialog({
       lat,
       lng,
       geofenceRadius: parseInt(radius) || 50,
+      timezone,
     })
   }
 
@@ -520,6 +554,20 @@ function CreateLocationDialog({
               <span className="text-sm text-slate-500 w-12 text-right">{radius}m</span>
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="timezone">Timezone</Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONES.map((tz) => (
+                  <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-400">Used for shift schedules and auto clock-out timing</p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -552,6 +600,7 @@ function EditLocationDialog({
   const [lat, setLat] = useState<number | null>(location.lat)
   const [lng, setLng] = useState<number | null>(location.lng)
   const [radius, setRadius] = useState(location.geofenceRadius.toString())
+  const [timezone, setTimezone] = useState(location.timezone || "Europe/Berlin")
 
   const mutation = useMutation({
     mutationFn: (data: UpdateLocationInput) => locationsApi.update(location.id, data),
@@ -572,6 +621,7 @@ function EditLocationDialog({
       lat,
       lng,
       geofenceRadius: parseInt(radius) || 50,
+      timezone,
     })
   }
 
@@ -614,6 +664,19 @@ function EditLocationDialog({
               <input type="range" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="flex-1 accent-emerald-600" />
               <span className="text-sm text-slate-500 w-12 text-right">{radius}m</span>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-timezone">Timezone</Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONES.map((tz) => (
+                  <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>

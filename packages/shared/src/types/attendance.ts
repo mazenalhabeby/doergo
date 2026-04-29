@@ -17,6 +17,7 @@ export interface CompanyLocation {
   lat: number;
   lng: number;
   geofenceRadius: number;
+  timezone: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

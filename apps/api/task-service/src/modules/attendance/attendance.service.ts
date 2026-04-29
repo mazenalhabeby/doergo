@@ -544,58 +544,84 @@ export class AttendanceService {
    * @param type - 'hourly' checks only overdue entries, 'midnight' closes all open entries
    */
   async autoClockOut(data?: { type?: 'hourly' | 'midnight'; manual?: boolean }) {
-    const type = data?.type ?? 'hourly';
     const isManual = data?.manual ?? false;
+    this.logger.log(`Auto clock-out triggered: manual=${isManual}`);
 
-    this.logger.log(`Auto clock-out triggered: type=${type}, manual=${isManual}`);
-
-    if (type === 'midnight') {
-      return this.midnightClockOut();
-    }
-
-    return this.hourlyClockOut();
-  }
-
-  /**
-   * Hourly check: Clock out entries that exceeded max duration
-   */
-  private async hourlyClockOut() {
-    const maxDurationMs =
-      ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS * 60 * 60 * 1000;
-    const cutoffTime = new Date(Date.now() - maxDurationMs);
-
-    const overdueEntries = await this.prisma.timeEntry.findMany({
-      where: {
-        status: TimeEntryStatus.CLOCKED_IN,
-        clockInAt: { lt: cutoffTime },
-      },
+    // Find all open entries with their location timezone and user schedule
+    const openEntries = await this.prisma.timeEntry.findMany({
+      where: { status: TimeEntryStatus.CLOCKED_IN },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
-        location: { select: { name: true } },
+        location: { select: { name: true, timezone: true } },
       },
     });
 
-    if (overdueEntries.length === 0) {
-      this.logger.debug('Hourly auto clock-out: No overdue entries found');
-      return success({
-        type: 'hourly',
-        processedCount: 0,
-        entryIds: [],
-        message: 'No overdue entries found',
-      });
+    if (openEntries.length === 0) {
+      this.logger.debug('Auto clock-out: No open entries found');
+      return success({ processedCount: 0, entryIds: [], reasons: {} });
     }
 
-    const results = [];
+    const results: string[] = [];
+    const reasons: Record<string, string> = {};
     const now = new Date();
+    const maxDurationMs = ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS * 60 * 60 * 1000;
 
-    for (const entry of overdueEntries) {
-      const totalMinutes = Math.round(
-        (now.getTime() - entry.clockInAt.getTime()) / (1000 * 60),
-      );
+    for (const entry of openEntries) {
+      const tz = entry.location?.timezone || 'UTC';
+      let reason: string | null = null;
+
+      // 1. Check max duration (16h) — universal, no timezone needed
+      const durationMs = now.getTime() - entry.clockInAt.getTime();
+      if (durationMs > maxDurationMs) {
+        reason = 'exceeded_duration';
+      }
+
+      // 2. Check if it's past midnight in the LOCATION's timezone
+      if (!reason) {
+        const localTime = this.getLocalTime(now, tz);
+        const clockInLocal = this.getLocalTime(entry.clockInAt, tz);
+        // If the local date has changed since clock-in, it's past midnight
+        if (localTime.date !== clockInLocal.date) {
+          reason = 'end_of_day';
+        }
+      }
+
+      // 3. Check if shift has ended (schedule-based) with grace period
+      if (!reason) {
+        const schedule = await this.prisma.technicianSchedule.findFirst({
+          where: {
+            technicianId: entry.userId,
+            dayOfWeek: this.getLocalDayOfWeek(entry.clockInAt, tz),
+            isActive: true,
+          },
+        });
+
+        if (schedule?.endTime) {
+          const localNow = this.getLocalTime(now, tz);
+          const [endH, endM] = schedule.endTime.split(':').map(Number);
+          const endMinutes = endH! * 60 + endM!;
+          const nowMinutes = localNow.hours * 60 + localNow.minutes;
+          const gracePeriod = ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES;
+
+          if (nowMinutes >= endMinutes + gracePeriod) {
+            reason = 'shift_ended';
+          }
+        }
+      }
+
+      if (!reason) continue;
+
+      // Auto clock-out this entry
+      const totalMinutes = Math.round(durationMs / (1000 * 60));
       const totalHours = totalMinutes / 60;
-
       const existingFlags = (entry as any).flagReasons || [];
       const mergedFlags = [...new Set([...existingFlags, 'MISSED_CLOCK_OUT'])];
+
+      const reasonNotes: Record<string, string> = {
+        exceeded_duration: `Auto clock-out: exceeded ${ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS}h limit`,
+        end_of_day: `Auto clock-out: end of day (midnight in ${tz})`,
+        shift_ended: `Auto clock-out: shift ended + ${ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES}min grace period`,
+      };
 
       await this.prisma.timeEntry.update({
         where: { id: entry.id },
@@ -603,38 +629,83 @@ export class AttendanceService {
           status: TimeEntryStatus.AUTO_OUT,
           clockOutAt: now,
           totalMinutes,
-          notes: `Auto clock-out: exceeded ${ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS} hour limit`,
+          notes: reasonNotes[reason] || 'Auto clock-out',
           flagReasons: mergedFlags,
           approvalStatus: 'PENDING',
         },
       });
 
       results.push(entry.id);
+      reasons[entry.id] = reason;
 
-      // Emit notification event
       this.notificationClient.emit('attendance_auto_clock_out', {
         userId: entry.user.id,
         userEmail: entry.user.email,
         userName: `${entry.user.firstName} ${entry.user.lastName}`,
-        locationName: entry.location.name,
+        locationName: entry.location?.name || 'Unknown',
         clockInTime: format(entry.clockInAt, 'MMM d, yyyy h:mm a'),
         clockOutTime: format(now, 'MMM d, yyyy h:mm a'),
         totalHours,
-        reason: 'exceeded_duration',
+        reason,
         organizationId: entry.organizationId,
       });
 
       this.logger.warn(
-        `Auto clock-out (overdue): entry=${entry.id}, user=${entry.user.firstName} ${entry.user.lastName}, location=${entry.location.name}, duration=${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
+        `Auto clock-out (${reason}): entry=${entry.id}, user=${entry.user.firstName} ${entry.user.lastName}, tz=${tz}, duration=${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
       );
     }
 
     return success({
-      type: 'hourly',
       processedCount: results.length,
       entryIds: results,
-      message: `Processed ${results.length} overdue entries`,
+      reasons,
+      message: `Processed ${results.length} entries`,
     });
+  }
+
+  /**
+   * Get local time components in a specific timezone
+   */
+  private getLocalTime(date: Date, timezone: string): { hours: number; minutes: number; date: string } {
+    try {
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone: timezone,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      };
+      const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date);
+      const get = (type: string) => parts.find((p) => p.type === type)?.value || '0';
+      return {
+        hours: parseInt(get('hour')),
+        minutes: parseInt(get('minute')),
+        date: `${get('year')}-${get('month')}-${get('day')}`,
+      };
+    } catch {
+      // Fallback to UTC if timezone is invalid
+      return {
+        hours: date.getUTCHours(),
+        minutes: date.getUTCMinutes(),
+        date: date.toISOString().split('T')[0]!,
+      };
+    }
+  }
+
+  /**
+   * Get day of week (0=Sunday) in a specific timezone
+   */
+  private getLocalDayOfWeek(date: Date, timezone: string): number {
+    try {
+      const options: Intl.DateTimeFormatOptions = { timeZone: timezone, weekday: 'short' };
+      const dayStr = new Intl.DateTimeFormat('en-US', options).format(date);
+      const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      return dayMap[dayStr] ?? date.getUTCDay();
+    } catch {
+      return date.getUTCDay();
+    }
   }
 
   /**
@@ -695,83 +766,7 @@ export class AttendanceService {
     return paginated(entries, { page, limit, total });
   }
 
-  /**
-   * Midnight check: Clock out ALL remaining open entries
-   */
-  private async midnightClockOut() {
-    const openEntries = await this.prisma.timeEntry.findMany({
-      where: {
-        status: TimeEntryStatus.CLOCKED_IN,
-      },
-      include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
-        location: { select: { name: true } },
-      },
-    });
-
-    if (openEntries.length === 0) {
-      this.logger.debug('Midnight auto clock-out: No open entries found');
-      return success({
-        type: 'midnight',
-        processedCount: 0,
-        entryIds: [],
-        message: 'No open entries found',
-      });
-    }
-
-    const results = [];
-    const now = new Date();
-
-    for (const entry of openEntries) {
-      const totalMinutes = Math.round(
-        (now.getTime() - entry.clockInAt.getTime()) / (1000 * 60),
-      );
-      const totalHours = totalMinutes / 60;
-
-      const existingFlags = (entry as any).flagReasons || [];
-      const mergedFlags = [...new Set([...existingFlags, 'MISSED_CLOCK_OUT'])];
-
-      await this.prisma.timeEntry.update({
-        where: { id: entry.id },
-        data: {
-          status: TimeEntryStatus.AUTO_OUT,
-          clockOutAt: now,
-          totalMinutes,
-          notes: 'Auto clock-out: end of day',
-          flagReasons: mergedFlags,
-          approvalStatus: 'PENDING',
-        },
-      });
-
-      results.push(entry.id);
-
-      // Emit notification event
-      this.notificationClient.emit('attendance_auto_clock_out', {
-        userId: entry.user.id,
-        userEmail: entry.user.email,
-        userName: `${entry.user.firstName} ${entry.user.lastName}`,
-        locationName: entry.location.name,
-        clockInTime: format(entry.clockInAt, 'MMM d, yyyy h:mm a'),
-        clockOutTime: format(now, 'MMM d, yyyy h:mm a'),
-        totalHours,
-        reason: 'end_of_day',
-        organizationId: entry.organizationId,
-      });
-
-      this.logger.warn(
-        `Auto clock-out (midnight): entry=${entry.id}, user=${entry.user.firstName} ${entry.user.lastName}, location=${entry.location.name}, duration=${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
-      );
-    }
-
-    this.logger.log(`Midnight auto clock-out complete: ${results.length} entries processed`);
-
-    return success({
-      type: 'midnight',
-      processedCount: results.length,
-      entryIds: results,
-      message: `End of day: closed ${results.length} open entries`,
-    });
-  }
+  // midnightClockOut removed — replaced by timezone-aware autoClockOut that runs every 15 min
 
   // =========================================================================
   // Report methods → AttendanceReportService

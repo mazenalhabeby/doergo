@@ -759,6 +759,7 @@ model CompanyLocation {
   lat            Float   // Latitude
   lng            Float   // Longitude
   geofenceRadius Int     @default(15) // Radius in meters for clock-in zone
+  timezone       String  @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   isActive       Boolean @default(true)
 
   createdAt DateTime @default(now())
