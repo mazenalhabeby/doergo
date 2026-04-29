@@ -573,6 +573,15 @@ export class AttendanceService {
     const maxDurationMs = ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS * 60 * 60 * 1000;
 
     for (const entry of openEntries) {
+      // Skip entries that are in the overtime flow (pending, approved, or waiting approval)
+      const activeOvertimeRequest = await this.prisma.overtimeRequest.findUnique({
+        where: { timeEntryId: entry.id },
+      });
+      if (activeOvertimeRequest && ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'].includes(activeOvertimeRequest.status)) {
+        this.logger.debug(`Skipping entry ${entry.id}: active overtime request (${activeOvertimeRequest.status})`);
+        continue;
+      }
+
       const tz = entry.location?.timezone || 'UTC';
       let reason: string | null = null;
 
