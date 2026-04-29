@@ -9,5 +9,6 @@ export * from './auth';
 export * from './task';
 export * from './design';
 export * from './attendance';
+export * from './overtime';
 export * from './invitation';
 export * from './onboarding';

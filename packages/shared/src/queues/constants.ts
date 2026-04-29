@@ -14,6 +14,7 @@ export const QUEUE_NAMES = {
   TRACKING: 'tracking',
   LOCATIONS: 'locations',
   ATTENDANCE: 'attendance',
+  OVERTIME: 'overtime',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -77,6 +78,18 @@ export const ATTENDANCE_JOB_TYPES = {
   AUTO_CLOCK_OUT: 'attendance.autoClockOut',
   HEARTBEAT: 'attendance.heartbeat',
 } as const;
+
+export const OVERTIME_JOB_TYPES = {
+  INITIATE: 'overtime.initiate',
+  TECHNICIAN_RESPOND: 'overtime.technicianRespond',
+  LEADER_APPROVE: 'overtime.leaderApprove',
+  LEADER_APPROVE_SIGNATURE: 'overtime.leaderApproveSignature',
+  LEADER_REJECT: 'overtime.leaderReject',
+  CHECK_TIMEOUTS: 'overtime.checkTimeouts',
+  END_OVERTIME: 'overtime.endOvertime',
+} as const;
+
+export type OvertimeJobType = (typeof OVERTIME_JOB_TYPES)[keyof typeof OVERTIME_JOB_TYPES];
 
 export type AttendanceJobType = (typeof ATTENDANCE_JOB_TYPES)[keyof typeof ATTENDANCE_JOB_TYPES];
 

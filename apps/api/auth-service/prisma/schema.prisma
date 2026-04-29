@@ -207,6 +207,22 @@ enum NotificationStatus {
   BOUNCED
 }
 
+enum OvertimeRequestStatus {
+  PENDING_TECHNICIAN  // Notification sent, waiting for tech to respond
+  PENDING_APPROVAL    // Technician said YES, waiting for team leader
+  APPROVED            // Team leader approved, overtime active
+  REJECTED            // Team leader rejected
+  EXPIRED_NO_RESPONSE // Technician didn't respond in time
+  EXPIRED_NO_APPROVAL // Team leader didn't respond in time
+  COMPLETED           // Overtime ended normally
+  CANCELED            // Technician declined
+}
+
+enum OvertimeApprovalMethod {
+  REMOTE    // Team leader approved via push notification on their device
+  SIGNATURE // Team leader signed on the technician's phone
+}
+
 // Models
 model Organization {
   id        String   @id @default(cuid())
@@ -265,6 +281,7 @@ model Organization {
   notificationDeliveries NotificationDelivery[]
   alerts                Alert[]
   dailyMetrics          DailyMetric[]
+  overtimeRequests      OvertimeRequest[]
 
   @@map("organizations")
 }
@@ -378,6 +395,10 @@ model User {
   // Join requests
   joinRequests         JoinRequest[]         @relation("UserJoinRequests")    // Join requests submitted by this user
   reviewedJoinRequests JoinRequest[]         @relation("JoinRequestReviewer") // Join requests reviewed by this user
+
+  // Overtime
+  overtimeRequests         OvertimeRequest[] @relation("TechnicianOvertime")
+  approvedOvertimeRequests OvertimeRequest[] @relation("OvertimeApprover")
 
   @@index([organizationId])
   @@index([role])
@@ -774,6 +795,9 @@ model CompanyLocation {
   // Time entries at this location
   timeEntries TimeEntry[]
 
+  // Overtime requests at this location
+  overtimeRequests OvertimeRequest[]
+
   @@index([organizationId])
   @@index([isActive])
   @@map("company_locations")
@@ -865,6 +889,9 @@ model TimeEntry {
 
   // Breaks taken during this shift
   breaks Break[]
+
+  // Overtime extension
+  overtimeRequest OvertimeRequest?
 
   @@index([userId, clockInAt])
   @@index([locationId])
@@ -1201,4 +1228,68 @@ model DailyMetric {
   @@unique([date, organizationId])
   @@index([organizationId, date])
   @@map("daily_metrics")
+}
+
+// Overtime request when technician's shift ends
+model OvertimeRequest {
+  id String @id @default(cuid())
+
+  // Who is requesting overtime
+  technicianId String
+  technician   User @relation("TechnicianOvertime", fields: [technicianId], references: [id], onDelete: Cascade)
+
+  // Which time entry this overtime extends
+  timeEntryId String @unique
+  timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+
+  // Which location
+  locationId String
+  location   CompanyLocation @relation(fields: [locationId], references: [id])
+
+  // Status tracking
+  status OvertimeRequestStatus @default(PENDING_TECHNICIAN)
+
+  // Technician response
+  technicianRespondedAt DateTime?
+  technicianReason      String?   // Why tech needs overtime
+
+  // Approval details
+  approvalMethod  OvertimeApprovalMethod?
+  approvedById    String?
+  approvedBy      User?    @relation("OvertimeApprover", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  approverNotes   String?
+
+  // Signature (Path B - team leader signs on tech's phone)
+  leaderName      String?
+  leaderSignature String?  @db.Text  // base64 PNG
+
+  // Overtime parameters
+  maxDurationMinutes Int?       // Max overtime allowed (set by leader)
+  overtimeStartAt    DateTime?  // When overtime period began
+  overtimeEndAt      DateTime?  // When overtime should end (scheduled)
+  actualEndAt        DateTime?  // When overtime actually ended
+
+  // Calculated
+  overtimeMinutes Int?  // Actual overtime worked
+
+  // Timeout tracking
+  technicianTimeoutAt DateTime?  // When 15-min window expires
+  approvalTimeoutAt   DateTime?  // When 10-min approval window expires
+
+  // Organization scope
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([technicianId, status])
+  @@index([organizationId, status])
+  @@index([timeEntryId])
+  @@index([status, technicianTimeoutAt])
+  @@index([status, approvalTimeoutAt])
+  @@map("overtime_requests")
 }
