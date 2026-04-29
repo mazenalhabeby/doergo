@@ -21,7 +21,6 @@ import {
   UserPlus,
   UserCheck,
   Umbrella,
-  Timer,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
