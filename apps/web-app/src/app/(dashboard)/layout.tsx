@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { DashboardSkeleton } from '@/components/skeletons';
 import { NotificationBell } from '@/components/notification-bell';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuth } from '@/contexts/auth-context';
 import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider, useBreadcrumbOverride } from '@/contexts/breadcrumb-context';
@@ -181,11 +182,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <BreadcrumbNav />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
+              <ThemeToggle />
               <NotificationBell />
             </div>
           </header>
-          <div className="flex flex-1 flex-col overflow-auto bg-slate-50/50">
+          <div className="flex flex-1 flex-col overflow-auto bg-slate-50/50 dark:bg-background">
             <Suspense fallback={<ContentFallback />}>
               {children}
             </Suspense>
