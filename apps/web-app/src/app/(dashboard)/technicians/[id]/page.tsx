@@ -32,7 +32,7 @@ import {
   type Task,
   type TimeEntry,
   TechnicianType,
-  WorkMode,
+
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -111,7 +111,7 @@ export default function TechnicianDetailPage() {
   const [editFirstName, setEditFirstName] = useState("")
   const [editLastName, setEditLastName] = useState("")
   const [editTechnicianType, setEditTechnicianType] = useState<TechnicianType>(TechnicianType.FREELANCER)
-  const [editWorkMode, setEditWorkMode] = useState<WorkMode>(WorkMode.HYBRID)
+  const [editWorkMode, setEditWorkMode] = useState<string>("position")
   const [editSpecialty, setEditSpecialty] = useState("")
   const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
   const [editCanCreateTasks, setEditCanCreateTasks] = useState(false)
@@ -202,7 +202,7 @@ export default function TechnicianDetailPage() {
       setEditFirstName(technician.firstName)
       setEditLastName(technician.lastName)
       setEditTechnicianType(technician.technicianType)
-      setEditWorkMode(technician.workMode || WorkMode.HYBRID)
+      setEditWorkMode(technician.position || "technician")
       setEditSpecialty(technician.specialty || "")
       setEditMaxDailyJobs(technician.maxDailyJobs || 5)
       setEditCanCreateTasks(technician.canCreateTasks ?? false)
@@ -216,7 +216,7 @@ export default function TechnicianDetailPage() {
       } else {
         setEditUseOrgBadgeDefaults(false)
         setEditBadgeShowRole(badges.showRole)
-        setEditBadgeShowWorkMode(badges.showWorkMode)
+        setEditBadgeShowWorkMode(true)
         setEditBadgeShowType(badges.showType)
         setEditBadgeShowSpecialty(badges.showSpecialty)
       }
@@ -229,7 +229,7 @@ export default function TechnicianDetailPage() {
       firstName: editFirstName.trim(),
       lastName: editLastName.trim(),
       technicianType: editTechnicianType,
-      workMode: editWorkMode,
+      position: editWorkMode,
       specialty: editSpecialty.trim() || undefined,
       maxDailyJobs: editMaxDailyJobs,
       canCreateTasks: editCanCreateTasks,
@@ -237,7 +237,7 @@ export default function TechnicianDetailPage() {
         ? null
         : {
             showRole: editBadgeShowRole,
-            showWorkMode: editBadgeShowWorkMode,
+            
             showType: editBadgeShowType,
             showSpecialty: editBadgeShowSpecialty,
           },
@@ -542,17 +542,17 @@ export default function TechnicianDetailPage() {
                 <Label>{t('technicians.detail.editDialog.workModeLabel')}</Label>
                 <Select
                   value={editWorkMode}
-                  onValueChange={(v) => setEditWorkMode(v as WorkMode)}
+                  onValueChange={(v) => setEditWorkMode(v)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {editTechnicianType === TechnicianType.FULL_TIME && (
-                      <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
+                      <SelectItem value={"HYBRID"}>{t('technicians.workModes.hybrid')}</SelectItem>
                     )}
-                    <SelectItem value={WorkMode.ON_SITE}>{t('technicians.workModes.onSite')}</SelectItem>
-                    <SelectItem value={WorkMode.ON_ROAD}>{t('technicians.workModes.onRoad')}</SelectItem>
+                    <SelectItem value={"ON_SITE"}>{t('technicians.workModes.onSite')}</SelectItem>
+                    <SelectItem value={"ON_ROAD"}>{t('technicians.workModes.onRoad')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

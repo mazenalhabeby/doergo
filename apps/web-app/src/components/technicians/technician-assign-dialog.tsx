@@ -127,7 +127,7 @@ export function TechnicianAssignDialog({
   // Get suggested technician (highest score from backend)
   // Only consider ON_ROAD and HYBRID technicians for task assignment
   const assignableTechnicians = useMemo(
-    () => technicians.filter((t) => t.workMode !== "ON_SITE"),
+    () => technicians,
     [technicians]
   )
 
@@ -143,7 +143,7 @@ export function TechnicianAssignDialog({
   const filteredTechnicians = useMemo(() => {
     let filtered = technicians.filter((tech) => {
       // Only show ON_ROAD and HYBRID technicians (not ON_SITE)
-      if (tech.workMode === "ON_SITE") return false
+      
 
       // Name filter
       if (searchName) {

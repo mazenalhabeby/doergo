@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, TechnicianType, WorkMode, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@prisma/client';
+import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, TechnicianType, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy, ContractType, OvertimePolicy } from '@prisma/client';
 import { createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 
@@ -110,7 +110,8 @@ async function main() {
       canManageUsers: false,
       // Full-time employee - assigned to company locations
       technicianType: TechnicianType.FULL_TIME,
-      workMode: WorkMode.ON_SITE,
+      position: 'technician',
+      enabledModules: ['clock', 'time_off'],
     },
   });
 
@@ -131,7 +132,8 @@ async function main() {
       canManageUsers: false,
       // Freelancer - task-based work, no fixed location
       technicianType: TechnicianType.FREELANCER,
-      workMode: WorkMode.ON_ROAD,
+      position: 'technician',
+      enabledModules: ['tasks', 'time_off'],
     },
   });
 
@@ -151,7 +153,8 @@ async function main() {
       canAssignTasks: false,
       canManageUsers: false,
       technicianType: TechnicianType.FULL_TIME,
-      workMode: WorkMode.HYBRID,
+      position: 'technician',
+      enabledModules: ['tasks', 'clock', 'time_off'],
     },
   });
 
@@ -1496,7 +1499,8 @@ async function main() {
       expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), // 3 days
       status: InvitationStatus.PENDING,
       technicianType: TechnicianType.FULL_TIME,
-      workMode: WorkMode.ON_SITE,
+      position: 'technician',
+      enabledModules: ['clock', 'time_off'],
       specialty: 'Electrical',
       maxDailyJobs: 5,
     },

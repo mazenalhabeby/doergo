@@ -5,7 +5,7 @@
  * profiles, statistics, performance metrics, and API inputs.
  */
 
-import { TechnicianType, WorkMode, Role, Platform, TaskStatus } from './enums';
+import { TechnicianType, Role, Platform, TaskStatus } from './enums';
 
 // ============================================================================
 // TECHNICIAN PROFILE
@@ -27,8 +27,9 @@ export interface TechnicianProfile {
 
   // Technician-specific fields
   technicianType: TechnicianType;
-  workMode: WorkMode;
   specialty: string | null;
+  position?: string | null;
+  enabledModules?: string[] | null;
   rating: number;
   ratingCount: number;
   maxDailyJobs: number;
@@ -39,7 +40,7 @@ export interface TechnicianProfile {
   // Profile badge overrides (null = use org defaults)
   profileBadges?: {
     showRole: boolean;
-    showWorkMode: boolean;
+
     showType: boolean;
     showSpecialty: boolean;
   } | null;
@@ -80,8 +81,9 @@ export interface TechnicianListItem {
   lastName: string;
   isActive: boolean;
   technicianType: TechnicianType;
-  workMode: WorkMode;
   specialty: string | null;
+  position?: string | null;
+  enabledModules?: string[] | null;
   rating: number;
   ratingCount: number;
   maxDailyJobs: number;
@@ -214,7 +216,8 @@ export interface CreateTechnicianInput {
   lastName: string;
   password?: string; // Optional - system can generate
   technicianType?: TechnicianType;
-  workMode?: WorkMode;
+  position?: string;
+  enabledModules?: string[];
   specialty?: string;
   maxDailyJobs?: number;
 }
@@ -226,7 +229,8 @@ export interface UpdateTechnicianInput {
   firstName?: string;
   lastName?: string;
   technicianType?: TechnicianType;
-  workMode?: WorkMode;
+  position?: string;
+  enabledModules?: string[];
   specialty?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
@@ -235,7 +239,6 @@ export interface UpdateTechnicianInput {
   canCreateTasks?: boolean;
   profileBadges?: {
     showRole: boolean;
-    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   } | null;
@@ -248,7 +251,7 @@ export interface TechniciansQueryParams {
   // Filters
   status?: 'active' | 'inactive' | 'all';
   type?: TechnicianType | 'all';
-  workMode?: WorkMode | 'all';
+  position?: string;
   specialty?: string;
   search?: string; // Search by name or email
 
@@ -453,53 +456,33 @@ export const SPECIALTY_OPTIONS = [
 ] as const;
 
 // ============================================================================
-// WORK MODE HELPERS
+// POSITION HELPERS
 // ============================================================================
 
 /**
- * Get display label for work mode
+ * Get display label for a position
  */
-export function getWorkModeLabel(mode: WorkMode): string {
-  switch (mode) {
-    case WorkMode.ON_SITE:
-      return 'On-Site';
-    case WorkMode.ON_ROAD:
-      return 'On-Road';
-    case WorkMode.HYBRID:
-      return 'Hybrid';
-    default:
-      return mode;
-  }
+export function getPositionLabel(position?: string | null): string {
+  if (!position) return 'Worker';
+  return position.charAt(0).toUpperCase() + position.slice(1).replace(/_/g, ' ');
 }
 
 /**
- * Get color class for work mode badge
+ * Get color class for position badge
  */
-export function getWorkModeColor(mode: WorkMode): string {
-  switch (mode) {
-    case WorkMode.ON_SITE:
-      return 'bg-teal-100 text-teal-700';
-    case WorkMode.ON_ROAD:
+export function getPositionColor(position?: string | null): string {
+  switch (position) {
+    case 'technician':
+      return 'bg-blue-100 text-blue-700';
+    case 'driver':
       return 'bg-orange-100 text-orange-700';
-    case WorkMode.HYBRID:
+    case 'office_manager':
+      return 'bg-teal-100 text-teal-700';
+    case 'sales':
+      return 'bg-purple-100 text-purple-700';
+    case 'accountant':
       return 'bg-indigo-100 text-indigo-700';
     default:
       return 'bg-gray-100 text-gray-700';
   }
-}
-
-/**
- * Check if a technician's work mode allows attendance (clock in/out)
- * ON_SITE and HYBRID can use attendance, ON_ROAD cannot
- */
-export function canUseAttendance(workMode: WorkMode): boolean {
-  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
-}
-
-/**
- * Check if a technician's work mode allows location assignment
- * ON_SITE and HYBRID can be assigned to locations, ON_ROAD cannot
- */
-export function canBeAssignedToLocation(workMode: WorkMode): boolean {
-  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
 }

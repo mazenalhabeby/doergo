@@ -35,7 +35,7 @@ import {
 import { ConfirmSheet } from '../../../src/components';
 import {
   getRoleLabel,
-  getWorkModeLabel,
+  getPositionLabel,
   getTechnicianTypeLabel,
   Role,
 } from '@hbcfield/shared/client';
@@ -234,10 +234,9 @@ export default function ProfileScreen() {
         {(() => {
           const badges = user?.profileBadges;
           const showRole = badges?.showRole !== false;
-          const showWorkMode = badges?.showWorkMode !== false;
           const showType = badges?.showType !== false;
           const showSpecialty = badges?.showSpecialty !== false;
-          const hasBadges = showRole || (isTechnician && showWorkMode && !!user?.workMode)
+          const hasBadges = showRole || (isTechnician && !!user?.position)
             || (isTechnician && showType && !!user?.technicianType)
             || (isTechnician && showSpecialty && !!user?.specialty);
 
@@ -248,7 +247,7 @@ export default function ProfileScreen() {
               {showRole && (
                 <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
                   <Ionicons name="briefcase-outline" size={13} color={COLORS.primary} />
-                  <Text style={styles.badgeText}>{getRoleLabel(user?.role ?? '')}</Text>
+                  <Text style={styles.badgeText}>{getRoleLabel(user?.role ?? '', user?.position)}</Text>
                 </View>
               )}
               {isTechnician && showSpecialty && !!user?.specialty && (
@@ -257,11 +256,11 @@ export default function ProfileScreen() {
                   <Text style={styles.badgeText}>{user.specialty}</Text>
                 </View>
               )}
-              {isTechnician && showWorkMode && !!user?.workMode && (
+              {isTechnician && !!user?.position && (
                 <View style={[styles.badge, styles.badgeSecondary, { backgroundColor: colors.emeraldLight }]}>
                   <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
                   <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
-                    {getWorkModeLabel(user.workMode)}
+                    {getPositionLabel(user.position)}
                   </Text>
                 </View>
               )}

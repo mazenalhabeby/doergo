@@ -716,13 +716,13 @@ function AssignTechnicianDialog({
 
   const { data: techData } = useQuery({
     queryKey: ["technicians-for-assign"],
-    queryFn: () => techniciansApi.list({ limit: 100, status: "active", workMode: "all" }),
+    queryFn: () => techniciansApi.list({ limit: 100, status: "active",  }),
   })
 
   // Filter to only ON_SITE/HYBRID technicians not already assigned
   const assignedIds = new Set((assignments || []).map((a) => a.userId))
   const availableTechs = (techData?.data || []).filter(
-    (t) => !assignedIds.has(t.id) && (t.workMode === "ON_SITE" || t.workMode === "HYBRID")
+    (t) => !assignedIds.has(t.id) && (true)
   )
 
   const assignMutation = useMutation({
@@ -828,7 +828,7 @@ function AssignTechnicianDialog({
               ) : (
                 availableTechs.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
-                    {t.firstName} {t.lastName} ({t.workMode})
+                    {t.firstName} {t.lastName}
                   </SelectItem>
                 ))
               )}

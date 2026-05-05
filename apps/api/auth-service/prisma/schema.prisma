@@ -86,11 +86,24 @@ enum TechnicianType {
   FULL_TIME   // Company covers trips and expenses
 }
 
-// Where the technician works (decoupled from billing type)
-enum WorkMode {
-  ON_SITE  // Works at company locations (attendance tracking)
-  ON_ROAD  // Works on-the-go (task-based, no attendance)
-  HYBRID   // Both on-site and on-road
+// Contract type for work contracts
+enum ContractType {
+  FIXED_SCHEDULE  // Worker follows a set weekly schedule
+  HOUR_BUDGET     // Worker has a monthly hour budget
+}
+
+// Overtime policy for contracts
+enum OvertimePolicy {
+  PRE_APPROVED    // Auto-approved, no notification needed
+  REAL_TIME       // Push notification to admin in real-time
+  POST_APPROVAL   // Admin reviews later in batch
+}
+
+// Overtime detection source
+enum OvertimeDetectionSource {
+  MANUAL          // Manually requested by technician
+  AUTO_BUDGET     // Auto-detected from budget exhaustion
+  AUTO_SCHEDULE   // Auto-detected from schedule overshoot
 }
 
 // Time entry status for attendance tracking
@@ -283,6 +296,9 @@ model Organization {
   dailyMetrics          DailyMetric[]
   overtimeRequests      OvertimeRequest[]
 
+  // Position templates
+  positionTemplates     PositionTemplate[]
+
   @@map("organizations")
 }
 
@@ -341,8 +357,9 @@ model User {
 
   // Technician-specific fields (only used when role = TECHNICIAN)
   technicianType TechnicianType @default(FREELANCER)  // Billing: who pays for expenses
-  workMode       WorkMode       @default(HYBRID)      // Where they work: on-site, on-road, or both
   specialty      String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
+  position       String?   // e.g., "technician", "driver", "sales", "office_manager"
+  enabledModules Json?     // e.g., ["tasks", "clock", "time_off"]
   rating         Float?    @default(5.0) // Average rating (1-5)
   ratingCount    Int?      @default(0)   // Number of ratings received
   maxDailyJobs   Int?      @default(5)   // Maximum jobs per day
@@ -399,6 +416,10 @@ model User {
   // Overtime
   overtimeRequests         OvertimeRequest[] @relation("TechnicianOvertime")
   approvedOvertimeRequests OvertimeRequest[] @relation("OvertimeApprover")
+
+  // Work contracts
+  workContracts            WorkContract[]
+  monthlyHoursSummaries    MonthlyHoursSummary[]
 
   @@index([organizationId])
   @@index([role])
@@ -1001,9 +1022,10 @@ model Invitation {
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
   technicianType TechnicianType?
-  workMode       WorkMode?
   specialty      String?
   maxDailyJobs   Int?
+  position       String?
+  enabledModules Json?
 
   // Status tracking
   status    InvitationStatus @default(PENDING)
@@ -1249,6 +1271,10 @@ model OvertimeRequest {
   // Status tracking
   status OvertimeRequestStatus @default(PENDING_TECHNICIAN)
 
+  // Auto-detection fields
+  detectionSource OvertimeDetectionSource @default(MANUAL)
+  contractId      String?
+
   // Technician response
   technicianRespondedAt DateTime?
   technicianReason      String?   // Why tech needs overtime
@@ -1292,4 +1318,71 @@ model OvertimeRequest {
   @@index([status, technicianTimeoutAt])
   @@index([status, approvalTimeoutAt])
   @@map("overtime_requests")
+}
+
+// ==================== POSITION TEMPLATES ====================
+
+// Admin-configurable position templates for quick worker setup
+model PositionTemplate {
+  id              String        @id @default(cuid())
+  name            String        // "Technician", "Driver", "Office Manager"
+  description     String?
+  defaultModules  Json          // ["tasks", "clock", "time_off"]
+  defaultContractType ContractType?
+  defaultOvertimePolicy OvertimePolicy?
+  organizationId  String?       // null = system-wide
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  isSystem        Boolean       @default(false)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("position_templates")
+}
+
+// ==================== WORK CONTRACTS ====================
+
+// Explicit contract defining schedule type, hour budget, and overtime policy
+model WorkContract {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contractType    ContractType
+  monthlyHours    Float?          // HOUR_BUDGET only
+  overtimePolicy  OvertimePolicy  @default(REAL_TIME)
+  overtimeBudget  Float?          // Max allowed overtime hours (PRE_APPROVED)
+  effectiveFrom   DateTime        @default(now())
+  effectiveTo     DateTime?       // null = active
+  isActive        Boolean         @default(true)
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId, isActive])
+  @@map("work_contracts")
+}
+
+// ==================== MONTHLY HOURS TRACKING ====================
+
+// Budget tracking for HOUR_BUDGET contracts
+model MonthlyHoursSummary {
+  id                String       @id @default(cuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contractId        String
+  year              Int
+  month             Int          // 1-12
+  budgetHours       Float
+  workedHours       Float        @default(0)
+  overtimeHours     Float        @default(0)
+  lastCalculatedAt  DateTime     @default(now())
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([userId, year, month])
+  @@index([contractId])
+  @@map("monthly_hours_summaries")
 }

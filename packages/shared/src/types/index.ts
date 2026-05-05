@@ -1,13 +1,14 @@
 // Re-export all enums from dedicated file (avoids require cycles with sub-modules)
 export {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority, TaskEventType,
-  AttachmentType, AssetStatus, ReportAttachmentType, TechnicianType, WorkMode,
+  AttachmentType, AssetStatus, ReportAttachmentType, TechnicianType,
+  ContractType, OvertimePolicy, OvertimeDetectionSource,
   TimeEntryStatus, BreakType, ApprovalStatus,
 } from './enums';
 
 import {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority,
-  TechnicianType, WorkMode,
+  TechnicianType,
   AttachmentType, AssetStatus, ReportAttachmentType, TaskEventType,
 } from './enums';
 
@@ -19,14 +20,18 @@ export const LegacyRoleMap = {
   CLIENT: Role.ADMIN,
 } as const;
 
+/** WORKER is a UI alias for TECHNICIAN in the DB */
+export const WORKER_ROLE = 'WORKER' as const;
+
 // Helper to normalize role (handles backward compatibility)
 export function normalizeRole(role: string): Role {
   if (role === 'CLIENT') return Role.ADMIN;
+  if (role === 'WORKER') return Role.TECHNICIAN;
   return role as Role;
 }
 
-// Get display label for a role
-export function getRoleLabel(role: string): string {
+// Get display label for a role, optionally using position name
+export function getRoleLabel(role: string, position?: string | null): string {
   const normalized = normalizeRole(role);
   switch (normalized) {
     case Role.ADMIN:
@@ -34,7 +39,11 @@ export function getRoleLabel(role: string): string {
     case Role.DISPATCHER:
       return 'Dispatcher';
     case Role.TECHNICIAN:
-      return 'Technician';
+      // If user has a position, use it as label (capitalized)
+      if (position) {
+        return position.charAt(0).toUpperCase() + position.slice(1).replace(/_/g, ' ');
+      }
+      return 'Worker';
     default:
       return role;
   }
@@ -109,7 +118,8 @@ export interface User extends BaseEntity {
   canManageUsers: boolean;
   // Technician-specific fields
   technicianType?: TechnicianType;
-  workMode?: WorkMode;
+  position?: string | null;
+  enabledModules?: string[] | null;
 }
 
 // Default permissions by role
@@ -154,14 +164,12 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
 // Profile badge visibility configuration
 export interface ProfileBadgesConfig {
   showRole: boolean;
-  showWorkMode: boolean;
   showType: boolean;
   showSpecialty: boolean;
 }
 
 export const DEFAULT_PROFILE_BADGES: ProfileBadgesConfig = {
   showRole: true,
-  showWorkMode: true,
   showType: true,
   showSpecialty: true,
 };
@@ -397,3 +405,9 @@ export * from './invitation';
 
 // Export onboarding types
 export * from './onboarding';
+
+// Export modules types
+export * from './modules';
+
+// Export contract types
+export * from './contract';

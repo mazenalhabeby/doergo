@@ -19,7 +19,7 @@ import {
   joinRequestsApi,
   JoinRequestStatus,
   TechnicianType,
-  WorkMode,
+
   type JoinRequest,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -209,7 +209,7 @@ export default function JoinRequestsPage() {
     if (approveRole === "TECHNICIAN") {
       if (approvePlatform) data.platform = approvePlatform
       if (approveTechnicianType) data.technicianType = approveTechnicianType
-      if (approveWorkMode) data.workMode = approveWorkMode
+      if (approveWorkMode) (data as any).position = approveWorkMode
       if (approveSpecialty) data.specialty = approveSpecialty
       if (approveMaxDailyJobs) data.maxDailyJobs = parseInt(approveMaxDailyJobs)
     } else if (approveRole === "DISPATCHER") {
@@ -490,10 +490,10 @@ export default function JoinRequestsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {approveTechnicianType === TechnicianType.FULL_TIME && (
-                        <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                        <SelectItem value={"HYBRID"}>{t("technicians.workModes.hybrid")}</SelectItem>
                       )}
-                      <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>
-                      <SelectItem value={WorkMode.ON_ROAD}>{t("technicians.workModes.onRoad")}</SelectItem>
+                      <SelectItem value={"ON_SITE"}>{t("technicians.workModes.onSite")}</SelectItem>
+                      <SelectItem value={"ON_ROAD"}>{t("technicians.workModes.onRoad")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

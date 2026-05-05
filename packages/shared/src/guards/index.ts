@@ -19,9 +19,11 @@ import { Role, Platform } from '../types';
  * Useful for conditional logic within services
  */
 export function hasRole(user: { role: string }, ...roles: Role[]): boolean {
-  // Handle backward compatibility: CLIENT maps to ADMIN
-  const normalizedRole = user.role === 'CLIENT' ? Role.ADMIN : user.role;
-  return roles.some((role) => normalizedRole === role || (role === Role.ADMIN && user.role === 'CLIENT'));
+  // Handle backward compatibility: CLIENT maps to ADMIN, WORKER maps to TECHNICIAN
+  let normalizedRole: string = user.role;
+  if (user.role === 'CLIENT') normalizedRole = Role.ADMIN;
+  if (user.role === 'WORKER') normalizedRole = Role.TECHNICIAN;
+  return roles.some((role) => normalizedRole === role || (role === Role.ADMIN && user.role === 'CLIENT') || (role === Role.TECHNICIAN && user.role === 'WORKER'));
 }
 
 /**
@@ -50,7 +52,14 @@ export function isDispatcher(user: { role: string }): boolean {
  * Helper to check if user is a TECHNICIAN
  */
 export function isTechnician(user: { role: string }): boolean {
-  return user.role === Role.TECHNICIAN;
+  return user.role === Role.TECHNICIAN || user.role === 'WORKER';
+}
+
+/**
+ * Helper to check if user is a WORKER (alias for isTechnician)
+ */
+export function isWorker(user: { role: string }): boolean {
+  return isTechnician(user);
 }
 
 // ============================================

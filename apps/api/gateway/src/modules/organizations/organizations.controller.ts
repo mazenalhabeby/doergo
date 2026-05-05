@@ -220,7 +220,7 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org profile badge visibility config' })
   async updateProfileBadges(
-    @Body() body: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean },
+    @Body() body: { showRole: boolean; showType: boolean; showSpecialty: boolean },
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(

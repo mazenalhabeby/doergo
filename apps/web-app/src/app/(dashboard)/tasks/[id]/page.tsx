@@ -160,10 +160,9 @@ export default function TaskDetailPage({
   const isCompleted = task?.status === "COMPLETED" || task?.status === "CLOSED"
   const hasAssignee = !!task?.assignedTo
 
-  // Transform suggested technicians to dialog format (exclude ON_SITE-only workers)
+  // Transform suggested technicians to dialog format
   const technicians: TechnicianData[] =
     suggestedData?.technicians
-      ?.filter((tech: SuggestedTechnician) => tech.workMode !== 'ON_SITE')
       ?.map((tech: SuggestedTechnician) => ({
         ...tech,
         avatarUrl: undefined,

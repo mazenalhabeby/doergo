@@ -54,13 +54,12 @@ export class CreateInvitationDto {
   technicianType?: string;
 
   @ApiPropertyOptional({
-    enum: ['ON_SITE', 'ON_ROAD', 'HYBRID'],
-    description: 'Work mode (only for TECHNICIAN role)',
+    example: 'technician',
+    description: 'Position (only for TECHNICIAN role)',
   })
   @IsString()
   @IsOptional()
-  @IsEnum(['ON_SITE', 'ON_ROAD', 'HYBRID'])
-  workMode?: string;
+  position?: string;
 
   @ApiPropertyOptional({
     example: 'Electrical',

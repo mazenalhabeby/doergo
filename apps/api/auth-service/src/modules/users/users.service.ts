@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TechnicianType, WorkMode, Platform, TaskStatus } from '@hbcfield/shared';
+import { Role, TechnicianType, Platform, TaskStatus } from '@hbcfield/shared';
 import * as bcrypt from 'bcrypt';
 import {
   CreateTechnicianDto,
@@ -141,9 +141,9 @@ export class UsersService {
       where.technicianType = type;
     }
 
-    // Work mode filter
-    if (dto.workMode && dto.workMode !== 'all') {
-      where.workMode = dto.workMode;
+    // Position filter
+    if (dto.position) {
+      where.position = { contains: dto.position, mode: 'insensitive' };
     }
 
     // Specialty filter
@@ -195,7 +195,8 @@ export class UsersService {
         lastName: true,
         isActive: true,
         technicianType: true,
-        workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         rating: true,
         ratingCount: true,
@@ -241,7 +242,8 @@ export class UsersService {
       lastName: tech.lastName,
       isActive: tech.isActive,
       technicianType: tech.technicianType,
-      workMode: tech.workMode,
+      position: tech.position,
+      enabledModules: tech.enabledModules as string[] | null,
       specialty: tech.specialty,
       rating: tech.rating || 5.0,
       ratingCount: tech.ratingCount || 0,
@@ -287,7 +289,8 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
         technicianType: true,
-        workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         rating: true,
         ratingCount: true,
@@ -334,7 +337,8 @@ export class UsersService {
       createdAt: technician.createdAt.toISOString(),
       updatedAt: technician.updatedAt.toISOString(),
       technicianType: technician.technicianType,
-      workMode: technician.workMode,
+      position: technician.position,
+      enabledModules: technician.enabledModules as string[] | null,
       specialty: technician.specialty,
       rating: technician.rating || 5.0,
       ratingCount: technician.ratingCount || 0,
@@ -390,7 +394,8 @@ export class UsersService {
       lastName,
       password,
       technicianType = TechnicianType.FREELANCER,
-      workMode = WorkMode.HYBRID,
+      position = 'technician',
+      enabledModules,
       specialty,
       maxDailyJobs = 5,
       organizationId,
@@ -409,6 +414,10 @@ export class UsersService {
     const actualPassword = password || this.generateRandomPassword();
     const passwordHash = await bcrypt.hash(actualPassword, BCRYPT_COST_FACTOR);
 
+    // Determine default modules from position if not provided
+    const { getDefaultModules } = await import('@hbcfield/shared');
+    const modules = enabledModules || getDefaultModules(position);
+
     // Create technician
     const technician = await this.prisma.user.create({
       data: {
@@ -418,7 +427,8 @@ export class UsersService {
         passwordHash,
         role: Role.TECHNICIAN,
         technicianType,
-        workMode,
+        position,
+        enabledModules: modules,
         specialty,
         maxDailyJobs,
         organizationId,
@@ -437,7 +447,8 @@ export class UsersService {
         role: true,
         isActive: true,
         technicianType: true,
-        workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         maxDailyJobs: true,
         organizationId: true,
@@ -483,7 +494,8 @@ export class UsersService {
         ...(dto.technicianType !== undefined && {
           technicianType: dto.technicianType,
         }),
-        ...(dto.workMode !== undefined && { workMode: dto.workMode }),
+        ...(dto.position !== undefined && { position: dto.position }),
+        ...(dto.enabledModules !== undefined && { enabledModules: dto.enabledModules }),
         ...(dto.specialty !== undefined && { specialty: dto.specialty }),
         ...(dto.maxDailyJobs !== undefined && { maxDailyJobs: dto.maxDailyJobs }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
@@ -500,7 +512,8 @@ export class UsersService {
         role: true,
         isActive: true,
         technicianType: true,
-        workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         maxDailyJobs: true,
         rating: true,
@@ -696,7 +709,8 @@ export class UsersService {
         isActive: true,
         createdAt: true,
         technicianType: true,
-        workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         canCreateTasks: true,
         canViewAllTasks: true,

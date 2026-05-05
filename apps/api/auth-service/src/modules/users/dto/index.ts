@@ -2,7 +2,7 @@
  * User/Technician DTOs for Auth Service
  */
 
-import { TechnicianType, WorkMode, Role, Platform } from '@hbcfield/shared';
+import { TechnicianType, Role, Platform } from '@hbcfield/shared';
 
 /**
  * DTO for creating a new technician
@@ -13,7 +13,8 @@ export interface CreateTechnicianDto {
   lastName: string;
   password?: string;
   technicianType?: TechnicianType;
-  workMode?: WorkMode;
+  position?: string;
+  enabledModules?: string[];
   specialty?: string;
   maxDailyJobs?: number;
   organizationId: string;
@@ -26,7 +27,8 @@ export interface UpdateTechnicianDto {
   firstName?: string;
   lastName?: string;
   technicianType?: TechnicianType;
-  workMode?: WorkMode;
+  position?: string;
+  enabledModules?: string[];
   specialty?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
@@ -43,7 +45,7 @@ export interface ListTechniciansDto {
   organizationId: string;
   status?: 'active' | 'inactive' | 'all';
   type?: TechnicianType | 'all';
-  workMode?: WorkMode | 'all';
+  position?: string;
   specialty?: string;
   search?: string;
   page?: number;

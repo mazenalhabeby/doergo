@@ -75,10 +75,21 @@ export enum TechnicianType {
   FULL_TIME = 'FULL_TIME',
 }
 
-export enum WorkMode {
-  ON_SITE = 'ON_SITE',
-  ON_ROAD = 'ON_ROAD',
-  HYBRID = 'HYBRID',
+export enum ContractType {
+  FIXED_SCHEDULE = 'FIXED_SCHEDULE',
+  HOUR_BUDGET = 'HOUR_BUDGET',
+}
+
+export enum OvertimePolicy {
+  PRE_APPROVED = 'PRE_APPROVED',
+  REAL_TIME = 'REAL_TIME',
+  POST_APPROVAL = 'POST_APPROVAL',
+}
+
+export enum OvertimeDetectionSource {
+  MANUAL = 'MANUAL',
+  AUTO_BUDGET = 'AUTO_BUDGET',
+  AUTO_SCHEDULE = 'AUTO_SCHEDULE',
 }
 
 export enum TimeEntryStatus {

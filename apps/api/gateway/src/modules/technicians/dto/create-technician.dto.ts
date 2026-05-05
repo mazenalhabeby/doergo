@@ -6,12 +6,13 @@ import {
   IsOptional,
   IsNumber,
   IsEnum,
+  IsArray,
   Min,
   Max,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { TechnicianType, WorkMode } from '@hbcfield/shared';
+import { TechnicianType } from '@hbcfield/shared';
 
 export class CreateTechnicianDto {
   @ApiProperty({
@@ -63,18 +64,26 @@ export class CreateTechnicianDto {
   technicianType?: TechnicianType;
 
   @ApiPropertyOptional({
-    enum: WorkMode,
-    example: WorkMode.HYBRID,
-    description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
-    default: WorkMode.HYBRID,
+    example: 'technician',
+    description: 'Position (e.g., technician, driver, sales, office_manager)',
   })
-  @IsEnum(WorkMode)
+  @IsString()
   @IsOptional()
-  workMode?: WorkMode;
+  @MaxLength(50)
+  position?: string;
+
+  @ApiPropertyOptional({
+    example: ['tasks', 'clock', 'time_off'],
+    description: 'Enabled mobile modules',
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  enabledModules?: string[];
 
   @ApiPropertyOptional({
     example: 'Electrical',
-    description: 'Technician specialty (e.g., Electrical, Plumbing, HVAC)',
+    description: 'Worker specialty (e.g., Electrical, Plumbing, HVAC)',
   })
   @IsString()
   @IsOptional()

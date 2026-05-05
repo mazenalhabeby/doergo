@@ -74,7 +74,7 @@ function getAdminNavGroups(t: TFunction): { label: string; items: NavItem[] }[] 
       label: t("nav.sidebar.resourcesGroup"),
       items: [
         {
-          title: t("nav.sidebar.technicians"),
+          title: t("nav.sidebar.workers", "Workers"),
           url: "/technicians",
           icon: Users,
         },

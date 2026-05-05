@@ -9,7 +9,7 @@ import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-import { Role, WorkMode, TechnicianType } from '@hbcfield/shared/client';
+import { Role, hasModule } from '@hbcfield/shared/client';
 
 // Logo icon for header left
 function HeaderLogo() {
@@ -155,13 +155,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const { user } = useAuth();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
   const isTechnician = user?.role === Role.TECHNICIAN;
-  // Work mode determines tab visibility for technicians
-  const userWorkMode = user?.workMode || WorkMode.HYBRID;
-  const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
-  const isFullTime = user?.technicianType === TechnicianType.FULL_TIME;
-  const showAttendance = isTechnician && isFullTime && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
+  // Module-based tab visibility
+  const showTechTasks = hasModule(user || {}, 'tasks');
+  const showAttendance = isTechnician && hasModule(user || {}, 'clock');
 
-  // Filter routes based on role and work mode (profile is in header, not tab bar)
+  // Filter routes based on role and modules (profile is in header, not tab bar)
   const visibleRoutes = state.routes.filter((route: any) => {
     if (route.name === 'profile') return false;
     if (isAdmin) {
@@ -232,10 +230,8 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
   const isTechnician = user?.role === Role.TECHNICIAN;
-  const userWorkMode = user?.workMode || WorkMode.HYBRID;
-  const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
-  const isFullTime = user?.technicianType === TechnicianType.FULL_TIME;
-  const showAttendance = isTechnician && isFullTime && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
+  const showTechTasks = hasModule(user || {}, 'tasks');
+  const showAttendance = isTechnician && hasModule(user || {}, 'clock');
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -270,7 +266,7 @@ export default function TabsLayout() {
             title: isAdmin ? t('tabs.dashboard') : t('tabs.home'),
           }}
         />
-        {/* Tasks tab - ADMIN always sees, TECHNICIAN based on workMode */}
+        {/* Tasks tab - ADMIN always sees, TECHNICIAN based on enabledModules */}
         <Tabs.Screen
           name="tasks"
           options={{
@@ -294,7 +290,7 @@ export default function TabsLayout() {
             href: isAdmin ? '/manage' : null,
           }}
         />
-        {/* Clock tab - TECHNICIAN only, based on workMode */}
+        {/* Clock tab - TECHNICIAN only, based on enabledModules */}
         <Tabs.Screen
           name="attendance"
           options={{

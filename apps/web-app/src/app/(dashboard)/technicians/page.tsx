@@ -29,8 +29,8 @@ import {
   type TechnicianListItem,
   type TechniciansQueryParams,
   TechnicianType,
-  WorkMode,
 } from "@/lib/api"
+import { getPositionLabel, getPositionColor } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -80,7 +80,6 @@ export default function TechniciansPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active")
   const [typeFilter, setTypeFilter] = useState<TechnicianType | "all">("all")
-  const [workModeFilter, setWorkModeFilter] = useState<WorkMode | "all">("all")
   const [specialtyFilter, setSpecialtyFilter] = useState("all")
   const [page, setPage] = useState(1)
   const limit = 10
@@ -93,12 +92,11 @@ export default function TechniciansPage() {
   const queryParams: TechniciansQueryParams = useMemo(() => ({
     status: statusFilter,
     type: typeFilter,
-    workMode: workModeFilter,
     specialty: specialtyFilter !== "all" ? specialtyFilter : undefined,
     search: searchQuery || undefined,
     page,
     limit,
-  }), [statusFilter, typeFilter, workModeFilter, specialtyFilter, searchQuery, page, limit])
+  }), [statusFilter, typeFilter, specialtyFilter, searchQuery, page, limit])
 
   // Fetch technicians
   const { data: techniciansData, isLoading, isError, error, refetch } = useQuery({
@@ -145,11 +143,6 @@ export default function TechniciansPage() {
 
   const handleTypeChange = (value: string) => {
     setTypeFilter(value as TechnicianType | "all")
-    setPage(1)
-  }
-
-  const handleWorkModeChange = (value: string) => {
-    setWorkModeFilter(value as WorkMode | "all")
     setPage(1)
   }
 
@@ -210,17 +203,9 @@ export default function TechniciansPage() {
     }
   }
 
-  const getWorkModeBadge = (mode: WorkMode) => {
-    switch (mode) {
-      case WorkMode.ON_SITE:
-        return <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100">{t('technicians.workModes.onSite')}</Badge>
-      case WorkMode.ON_ROAD:
-        return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">{t('technicians.workModes.onRoad')}</Badge>
-      case WorkMode.HYBRID:
-        return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">{t('technicians.workModes.hybrid')}</Badge>
-      default:
-        return null
-    }
+  const getPositionBadge = (position?: string | null) => {
+    if (!position) return <span className="text-slate-400">--</span>
+    return <Badge className={getPositionColor(position) + " hover:opacity-80"}>{getPositionLabel(position)}</Badge>
   }
 
   // Check if user can manage technicians (ADMIN or DISPATCHER)
@@ -276,18 +261,7 @@ export default function TechniciansPage() {
                 </SelectContent>
               </Select>
 
-              {/* Work Mode Filter */}
-              <Select value={workModeFilter} onValueChange={handleWorkModeChange}>
-                <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder={t('technicians.table.workMode')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.allModes')}</SelectItem>
-                  <SelectItem value={WorkMode.ON_SITE}>{t('technicians.workModes.onSite')}</SelectItem>
-                  <SelectItem value={WorkMode.ON_ROAD}>{t('technicians.workModes.onRoad')}</SelectItem>
-                  <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Removed WorkMode filter - replaced by position/modules */}
 
               {/* Refresh */}
               <Button
@@ -363,7 +337,7 @@ export default function TechniciansPage() {
                   <TableRow className="bg-slate-50/80">
                     <TableHead className="w-[250px] font-semibold text-slate-600">{t('technicians.table.technician')}</TableHead>
                     <TableHead className="font-semibold text-slate-600">{t('technicians.table.type')}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.workMode')}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.position', 'Position')}</TableHead>
                     <TableHead className="font-semibold text-slate-600">{t('technicians.table.specialty')}</TableHead>
                     <TableHead className="text-center font-semibold text-slate-600">{t('technicians.table.rating')}</TableHead>
                     <TableHead className="text-center font-semibold text-slate-600">{t('technicians.table.activeTasks')}</TableHead>
@@ -400,7 +374,7 @@ export default function TechniciansPage() {
                         </div>
                       </TableCell>
                       <TableCell>{getTypeBadge(tech.technicianType)}</TableCell>
-                      <TableCell>{tech.workMode ? getWorkModeBadge(tech.workMode) : <span className="text-slate-400">—</span>}</TableCell>
+                      <TableCell>{getPositionBadge(tech.position)}</TableCell>
                       <TableCell>
                         {tech.specialty ? (
                           <span className="text-slate-700 capitalize">{tech.specialty}</span>

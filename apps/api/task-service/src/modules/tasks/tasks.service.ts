@@ -939,13 +939,12 @@ export class TasksService {
       throw new ForbiddenException('Task is not in your organization');
     }
 
-    // Get all active technicians in the organization (exclude ON_SITE workers who can't be assigned to tasks)
+    // Get all active technicians in the organization that have the tasks module enabled
     const technicians = await this.prisma.user.findMany({
       where: {
         role: Role.TECHNICIAN,
         organizationId: data.organizationId,
         isActive: true,
-        workMode: { not: 'ON_SITE' },
       },
       take: 100, // Cap to prevent unbounded queries in large orgs
       select: {
@@ -954,7 +953,8 @@ export class TasksService {
         lastName: true,
         email: true,
         specialty: true,
-        workMode: true,
+        position: true,
+        enabledModules: true,
         rating: true,
         ratingCount: true,
         maxDailyJobs: true,
@@ -1029,7 +1029,7 @@ export class TasksService {
           lastName: tech.lastName,
           email: tech.email,
           specialty: tech.specialty,
-          workMode: tech.workMode,
+          position: tech.position,
           rating: tech.rating || 5.0,
           ratingCount: tech.ratingCount || 0,
           activeTaskCount,

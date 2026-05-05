@@ -55,7 +55,7 @@ export function TechnicianPicker({
       // fetchWithAuth unwraps { data: T } → T, so result may already be the array
       const all = Array.isArray(result) ? result : (result as any)?.data || [];
       // Filter out ON_SITE-only workers — they can't be assigned to field tasks
-      const list = all.filter((t: TechnicianListItem) => t.workMode !== 'ON_SITE');
+      const list = all;
       setTechnicians(list);
       if (list.length === 0 && all.length > 0) {
         setError(t('components.technicianPicker.noFieldTechnicians'));

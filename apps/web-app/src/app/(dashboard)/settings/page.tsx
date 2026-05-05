@@ -495,7 +495,7 @@ function AppearanceSection() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
-  const [badges, setBadges] = useState({ showRole: true, showWorkMode: true, showType: true, showSpecialty: true })
+  const [badges, setBadges] = useState({ showRole: true, showType: true, showSpecialty: true })
 
   const { data, isLoading } = useQuery({
     queryKey: ["organization-profile-badges"],
@@ -525,7 +525,6 @@ function AppearanceSection() {
 
   const BADGE_TOGGLES = [
     { key: "showRole" as const, label: t("settings.profileBadges.showRole") },
-    { key: "showWorkMode" as const, label: t("settings.profileBadges.showWorkMode") },
     { key: "showType" as const, label: t("settings.profileBadges.showType") },
     { key: "showSpecialty" as const, label: t("settings.profileBadges.showSpecialty") },
   ]

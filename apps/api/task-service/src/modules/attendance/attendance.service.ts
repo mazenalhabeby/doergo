@@ -12,9 +12,9 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
   paginated,
-  WorkMode,
   TimeEntryStatus,
   haversineDistance,
+  hasModule,
   ATTENDANCE_CONSTANTS,
   SERVICE_NAMES,
   QUEUE_NAMES,
@@ -57,7 +57,7 @@ export class AttendanceService {
       },
       select: {
         id: true,
-        workMode: true,
+        enabledModules: true,
         organizationId: true,
       },
     });
@@ -66,9 +66,9 @@ export class AttendanceService {
       throw new NotFoundException('Technician not found');
     }
 
-    if (user.workMode === WorkMode.ON_ROAD) {
+    if (!hasModule({ enabledModules: user.enabledModules as string[] | null }, 'clock')) {
       throw new BadRequestException(
-        'ON_ROAD technicians cannot use attendance clock-in. Change work mode to ON_SITE or HYBRID.',
+        'This worker does not have the clock module enabled. Enable it in their profile settings.',
       );
     }
 

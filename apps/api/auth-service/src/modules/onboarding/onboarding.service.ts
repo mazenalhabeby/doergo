@@ -4,7 +4,6 @@ import {
   Role,
   Platform,
   TechnicianType,
-  WorkMode,
   DEFAULT_PERMISSIONS,
   ORG_CODE_LENGTH,
   ORG_CODE_CHARSET,
@@ -85,7 +84,8 @@ export class OnboardingService {
           canAssignTasks: true,
           canManageUsers: true,
           technicianType: true,
-          workMode: true,
+          position: true,
+          enabledModules: true,
         },
       });
 
@@ -342,7 +342,8 @@ export class OnboardingService {
           ...(isTechnician
             ? {
                 technicianType: invitation.technicianType || 'FREELANCER',
-                workMode: invitation.workMode || 'HYBRID',
+                position: invitation.position || 'technician',
+                enabledModules: invitation.enabledModules || ['tasks', 'clock', 'time_off'],
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
               }
@@ -362,7 +363,8 @@ export class OnboardingService {
           canAssignTasks: true,
           canManageUsers: true,
           technicianType: true,
-          workMode: true,
+          position: true,
+          enabledModules: true,
         },
       });
 
@@ -509,7 +511,8 @@ export class OnboardingService {
     role: string;
     platform?: string;
     technicianType?: string;
-    workMode?: string;
+    position?: string;
+    enabledModules?: string[];
     specialty?: string;
     maxDailyJobs?: number;
   }) {
@@ -550,7 +553,8 @@ export class OnboardingService {
           ...(isTechnician
             ? {
                 technicianType: (data.technicianType || 'FREELANCER') as TechnicianType,
-                workMode: (data.workMode || 'HYBRID') as WorkMode,
+                position: data.position || 'technician',
+                enabledModules: data.enabledModules || ['tasks', 'clock', 'time_off'],
                 specialty: data.specialty || null,
                 maxDailyJobs: data.maxDailyJobs || 5,
               }
@@ -734,7 +738,7 @@ export class OnboardingService {
     const valid = profileBadges
       && typeof profileBadges === 'object'
       && typeof profileBadges.showRole === 'boolean'
-      && typeof profileBadges.showWorkMode === 'boolean'
+      && typeof profileBadges.showType === 'boolean'
       && typeof profileBadges.showType === 'boolean'
       && typeof profileBadges.showSpecialty === 'boolean';
 

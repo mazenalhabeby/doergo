@@ -5,12 +5,13 @@ import {
   IsNumber,
   IsEnum,
   IsBoolean,
+  IsArray,
   Min,
   Max,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { TechnicianType, WorkMode } from '@hbcfield/shared';
+import { TechnicianType } from '@hbcfield/shared';
 
 export class UpdateTechnicianDto {
   @ApiPropertyOptional({
@@ -43,17 +44,26 @@ export class UpdateTechnicianDto {
   technicianType?: TechnicianType;
 
   @ApiPropertyOptional({
-    enum: WorkMode,
-    example: WorkMode.HYBRID,
-    description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
+    example: 'technician',
+    description: 'Position (e.g., technician, driver, sales)',
   })
-  @IsEnum(WorkMode)
+  @IsString()
   @IsOptional()
-  workMode?: WorkMode;
+  @MaxLength(50)
+  position?: string;
+
+  @ApiPropertyOptional({
+    example: ['tasks', 'clock', 'time_off'],
+    description: 'Enabled mobile modules',
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  enabledModules?: string[];
 
   @ApiPropertyOptional({
     example: 'Electrical',
-    description: 'Technician specialty',
+    description: 'Worker specialty',
   })
   @IsString()
   @IsOptional()
@@ -72,7 +82,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Whether the technician is active',
+    description: 'Whether the worker is active',
   })
   @IsBoolean()
   @IsOptional()
@@ -80,7 +90,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: 4.5,
-    description: 'Technician rating (1-5)',
+    description: 'Worker rating (1-5)',
   })
   @IsNumber()
   @IsOptional()
@@ -99,7 +109,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: false,
-    description: 'Whether the technician can create tasks',
+    description: 'Whether the worker can create tasks',
   })
   @IsBoolean()
   @IsOptional()
@@ -107,7 +117,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     description: 'Profile badge visibility override (null to use org defaults)',
-    example: { showRole: true, showWorkMode: true, showType: false, showSpecialty: true },
+    example: { showRole: true, showType: false, showSpecialty: true },
   })
   @IsOptional()
   profileBadges?: any;

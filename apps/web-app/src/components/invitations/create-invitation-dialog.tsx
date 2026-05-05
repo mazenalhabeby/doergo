@@ -7,7 +7,7 @@ import { Copy, Check } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invitationsApi, type CreateInvitationInput, TechnicianType, WorkMode } from "@/lib/api"
+import { invitationsApi, type CreateInvitationInput, TechnicianType } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -246,7 +246,7 @@ export function CreateInvitationDialog({
               <div className="space-y-2">
                 <Label>{t("invitations.createDialog.workModeLabel")}</Label>
                 <Select
-                  value={workMode === WorkMode.HYBRID && technicianType !== TechnicianType.FULL_TIME ? "" : workMode}
+                  value={workMode === "HYBRID" && technicianType !== TechnicianType.FULL_TIME ? "" : workMode}
                   onValueChange={setWorkMode}
                 >
                   <SelectTrigger>
@@ -254,10 +254,10 @@ export function CreateInvitationDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {technicianType === TechnicianType.FULL_TIME && (
-                      <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+                      <SelectItem value={"HYBRID"}>{t("technicians.workModes.hybrid")}</SelectItem>
                     )}
-                    <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>
-                    <SelectItem value={WorkMode.ON_ROAD}>{t("technicians.workModes.onRoad")}</SelectItem>
+                    <SelectItem value={"ON_SITE"}>{t("technicians.workModes.onSite")}</SelectItem>
+                    <SelectItem value={"ON_ROAD"}>{t("technicians.workModes.onRoad")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

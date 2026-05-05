@@ -644,7 +644,8 @@ export class TechniciansService {
         firstName: true,
         lastName: true,
         technicianType: true,
-        workMode: true,
+        position: true,
+        enabledModules: true,
         schedules: {
           where: { dayOfWeek: { in: daysOfWeek }, isActive: true },
         },
@@ -676,7 +677,7 @@ export class TechniciansService {
           firstName: tech.firstName,
           lastName: tech.lastName,
           technicianType: tech.technicianType,
-          workMode: tech.workMode,
+          position: tech.position,
           isAvailable: hasSchedule && !onTimeOff,
           onTimeOff,
           schedule: schedule

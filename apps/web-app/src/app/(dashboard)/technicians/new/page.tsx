@@ -13,7 +13,7 @@ import {
   techniciansApi,
   type CreateTechnicianInput,
   TechnicianType,
-  WorkMode,
+
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -66,7 +66,7 @@ export default function NewTechnicianPage() {
   const [technicianType, setTechnicianType] = useState<TechnicianType>(
     TechnicianType.FREELANCER
   )
-  const [workMode, setWorkMode] = useState<WorkMode>(WorkMode.HYBRID)
+  const [position, setPosition] = useState<string>("technician")
   const [specialty, setSpecialty] = useState("")
   const [maxDailyJobs, setMaxDailyJobs] = useState(5)
 
@@ -118,7 +118,7 @@ export default function NewTechnicianPage() {
       lastName: lastName.trim(),
       password: password.trim() || undefined,
       technicianType,
-      workMode,
+      
       specialty: specialty || undefined,
       maxDailyJobs,
     })
@@ -298,30 +298,30 @@ export default function NewTechnicianPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="workMode">{t('technicians.create.workModeLabel')}</Label>
+                  <Label htmlFor="position">{t('technicians.create.positionLabel')}</Label>
                   <Select
-                    value={workMode}
-                    onValueChange={(v) => setWorkMode(v as WorkMode)}
+                    value={position}
+                    onValueChange={(v) => setPosition(v)}
                   >
-                    <SelectTrigger id="workMode">
-                      <SelectValue placeholder={t('technicians.create.workModeLabel')} />
+                    <SelectTrigger id="position">
+                      <SelectValue placeholder={t('technicians.create.positionLabel')} />
                     </SelectTrigger>
                     <SelectContent>
                       {technicianType === TechnicianType.FULL_TIME && (
-                        <SelectItem value={WorkMode.HYBRID}>
-                          {t('technicians.workModes.hybridDescription')}
+                        <SelectItem value={"HYBRID"}>
+                          {t('technicians.positions.hybridDescription')}
                         </SelectItem>
                       )}
-                      <SelectItem value={WorkMode.ON_SITE}>
-                        {t('technicians.workModes.onSiteDescription')}
+                      <SelectItem value={"ON_SITE"}>
+                        {t('technicians.positions.onSiteDescription')}
                       </SelectItem>
-                      <SelectItem value={WorkMode.ON_ROAD}>
-                        {t('technicians.workModes.onRoadDescription')}
+                      <SelectItem value={"ON_ROAD"}>
+                        {t('technicians.positions.onRoadDescription')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-slate-500">
-                    {t('technicians.create.workModeHint')}
+                    {t('technicians.create.positionHint')}
                   </p>
                 </div>
               </div>
