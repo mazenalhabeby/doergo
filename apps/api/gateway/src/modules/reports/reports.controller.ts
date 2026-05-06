@@ -34,8 +34,8 @@ export class ReportsController {
   // ============ Task Completion (Main Flow) ============
 
   @Post('tasks/:taskId/complete')
-  @Roles(Role.TECHNICIAN)
-  @ApiOperation({ summary: 'Complete a task with service report (TECHNICIAN only)' })
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Complete a task with service report (assigned user)' })
   @ApiParam({ name: 'taskId', description: 'Task ID to complete' })
   async completeTask(
     @Param('taskId') taskId: string,
@@ -91,8 +91,8 @@ export class ReportsController {
   // ============ Report UPDATE Operations ============
 
   @Patch('reports/:id')
-  @Roles(Role.TECHNICIAN)
-  @ApiOperation({ summary: 'Update a service report (TECHNICIAN only, within 24 hours)' })
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Update a service report (assigned user, within 24 hours)' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async updateReport(
     @Param('id') id: string,
@@ -175,7 +175,7 @@ export class ReportsController {
   // ============ Parts Operations ============
 
   @Post('reports/:id/parts')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Add a part to a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async addPart(
@@ -199,7 +199,7 @@ export class ReportsController {
   }
 
   @Patch('reports/:id/parts/:partId')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Update a part on a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiParam({ name: 'partId', description: 'Part ID' })
@@ -226,7 +226,7 @@ export class ReportsController {
   }
 
   @Delete('reports/:id/parts/:partId')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Delete a part from a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiParam({ name: 'partId', description: 'Part ID' })

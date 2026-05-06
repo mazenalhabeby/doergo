@@ -160,8 +160,13 @@ export class TasksController {
   }
 
   @Post(':id/decline')
+<<<<<<< HEAD
   @Roles(Role.TECHNICIAN)
   @ApiOperation({ summary: 'Decline task assignment (TECHNICIAN only)' })
+=======
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Decline task assignment (assigned user - returns task to dispatcher)' })
+>>>>>>> worktree-agent-a65ee8cf
   async declineTask(@Param('id') id: string, @Request() req: any) {
     return this.tasksQueueService.declineTask({
       id,

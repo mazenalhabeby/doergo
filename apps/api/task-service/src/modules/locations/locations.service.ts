@@ -183,12 +183,12 @@ export class LocationsService {
   }) {
     this.logger.log(`Assigning technician ${data.userId} to location ${data.locationId}`);
 
-    // Verify technician exists and has on-site work mode
+    // Verify user exists in organization with appropriate work mode
     const technician = await this.prisma.user.findFirst({
       where: {
         id: data.userId,
         organizationId: data.organizationId,
-        role: 'TECHNICIAN',
+        isActive: true,
       },
       select: {
         id: true,
@@ -197,7 +197,17 @@ export class LocationsService {
     });
 
     if (!technician) {
+<<<<<<< HEAD
       throw new NotFoundException('Employee not found in organization');
+=======
+      throw new NotFoundException('User not found in organization');
+    }
+
+    if (technician.workMode === WorkMode.ON_ROAD) {
+      throw new BadRequestException(
+        'ON_ROAD technicians cannot be assigned to company locations. Change work mode to ON_SITE or HYBRID.',
+      );
+>>>>>>> worktree-agent-a65ee8cf
     }
 
     // Verify location exists and belongs to organization

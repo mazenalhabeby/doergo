@@ -322,17 +322,17 @@ export class TasksService {
       throw new BadRequestException(`Cannot assign a task with status ${task.status}`);
     }
 
-    // Verify the worker exists and is a TECHNICIAN in the same org
+    // Verify the worker exists and belongs to the same org
     const worker = await this.prisma.user.findFirst({
       where: {
         id: data.workerId,
-        role: Role.TECHNICIAN,
         organizationId: data.organizationId,
+        isActive: true,
       },
     });
 
     if (!worker) {
-      throw new NotFoundException('Technician not found or not in your organization');
+      throw new NotFoundException('Worker not found or not in your organization');
     }
 
     const previousAssignee = task.assignedToId;
@@ -453,42 +453,47 @@ export class TasksService {
     }
 
     // Role-based authorization
-    switch (data.userRole) {
-      case Role.TECHNICIAN:
-        // TECHNICIAN can only update tasks assigned to them
-        if (task.assignedToId !== data.userId) {
-          throw new ForbiddenException('You can only update status of tasks assigned to you');
-        }
-        // TECHNICIAN can only set execution statuses (not CANCELED - that's for CLIENT/DISPATCHER)
-        if (data.status === TaskStatus.CANCELED) {
+    // Any assigned user can set execution statuses on their assigned tasks
+    // ADMIN/DISPATCHER can also cancel tasks they have authority over
+    const isAssignedUser = task.assignedToId === data.userId;
+    const isExecutionStatus = data.status !== TaskStatus.CANCELED && data.status !== TaskStatus.ASSIGNED;
+    const isCancelation = data.status === TaskStatus.CANCELED;
+
+    if (isExecutionStatus) {
+      // Execution statuses (ACCEPTED, EN_ROUTE, ARRIVED, IN_PROGRESS, BLOCKED, COMPLETED)
+      // Only the assigned user can set these
+      if (!isAssignedUser) {
+        throw new ForbiddenException('You can only update execution status of tasks assigned to you');
+      }
+    } else if (isCancelation) {
+      // Cancellation authorization
+      switch (data.userRole) {
+        case Role.ADMIN:
+          if (task.createdById !== data.userId && task.organizationId !== data.organizationId) {
+            throw new ForbiddenException('You can only cancel tasks in your organization');
+          }
+          break;
+        case Role.DISPATCHER:
+          if (task.organizationId !== data.organizationId) {
+            throw new ForbiddenException('You can only cancel tasks in your organization');
+          }
+          break;
+        case Role.TECHNICIAN:
+          // Technicians (non-assigned) cannot cancel
+          if (!isAssignedUser) {
+            throw new ForbiddenException('You can only update status of tasks assigned to you');
+          }
           throw new ForbiddenException('Technicians cannot cancel tasks. Contact the dispatcher.');
-        }
-        break;
-
-      case Role.ADMIN:
-        // CLIENT can only update their own tasks
-        if (task.createdById !== data.userId || task.organizationId !== data.organizationId) {
-          throw new ForbiddenException('You can only update status of your own tasks');
-        }
-        // CLIENT can only cancel (not change execution status)
-        if (data.status !== TaskStatus.CANCELED) {
-          throw new ForbiddenException('Clients can only cancel tasks. Execution status is managed by technicians.');
-        }
-        break;
-
-      case Role.DISPATCHER:
-        // DISPATCHER can update any task in their org
-        if (task.organizationId !== data.organizationId) {
-          throw new ForbiddenException('You can only update tasks in your organization');
-        }
-        // DISPATCHER can only cancel (not change execution status)
-        if (data.status !== TaskStatus.CANCELED) {
-          throw new ForbiddenException('Dispatchers can only cancel tasks. Execution status is managed by technicians.');
-        }
-        break;
-
-      default:
-        throw new ForbiddenException('Access denied');
+        default:
+          // For any other role, check if they are the assigned user
+          if (isAssignedUser) {
+            // Assigned users cannot cancel their own tasks
+            throw new ForbiddenException('You cannot cancel tasks assigned to you. Contact a dispatcher.');
+          }
+          throw new ForbiddenException('Access denied');
+      }
+    } else {
+      throw new ForbiddenException('Access denied');
     }
 
     // Validate status transition
@@ -499,14 +504,14 @@ export class TasksService {
       );
     }
 
-    // ── Technician execution enforcement ──
+    // ── Assigned user execution enforcement ──
 
-    // (0) Location Verification — tech must be within 20m of task location to arrive/start
+    // (0) Location Verification — assigned user must be within 20m of task location to arrive/start
     const GEOFENCE_RADIUS_METERS = 20;
     const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
 
     if (
-      data.userRole === Role.TECHNICIAN &&
+      isAssignedUser &&
       locationRequiredStatuses.includes(data.status as TaskStatus) &&
       task.locationLat != null &&
       task.locationLng != null
@@ -527,7 +532,7 @@ export class TasksService {
     }
 
     // (a) Due Date Gate — cannot start a task whose dueDate is in the future
-    if (data.userRole === Role.TECHNICIAN && data.status === TaskStatus.EN_ROUTE) {
+    if (isAssignedUser && data.status === TaskStatus.EN_ROUTE) {
       if (task.dueDate) {
         const endOfToday = new Date();
         endOfToday.setHours(23, 59, 59, 999);
@@ -541,7 +546,7 @@ export class TasksService {
 
     // (b) Single Active Task — only one task in execution state at a time
     //     BLOCKED is excluded, so blocking a task frees the slot
-    if (data.userRole === Role.TECHNICIAN && data.status === TaskStatus.ACCEPTED) {
+    if (isAssignedUser && data.status === TaskStatus.ACCEPTED) {
       const activeTaskCount = await this.prisma.task.count({
         where: {
           assignedToId: data.userId,
@@ -604,7 +609,7 @@ export class TasksService {
     });
 
     // (c) Blocked Task Reminder — after accepting a new task, remind about blocked ones
-    if (data.userRole === Role.TECHNICIAN && data.status === TaskStatus.ACCEPTED) {
+    if (isAssignedUser && data.status === TaskStatus.ACCEPTED) {
       try {
         const blockedTasks = await this.prisma.task.findMany({
           where: { assignedToId: data.userId, status: TaskStatus.BLOCKED },
@@ -692,10 +697,15 @@ export class TasksService {
     userRole: string,
     organizationId: string,
   ) {
+    // Any user assigned to the task can access it (regardless of role)
+    if (task.assignedToId === userId) {
+      return;
+    }
+
     switch (userRole) {
       case Role.ADMIN:
-        // CLIENT can only access their own tasks
-        if (task.createdById !== userId || task.organizationId !== organizationId) {
+        // ADMIN can access tasks they created or in their org
+        if (task.createdById !== userId && task.organizationId !== organizationId) {
           throw new ForbiddenException('Access denied');
         }
         break;
@@ -708,11 +718,8 @@ export class TasksService {
         break;
 
       case Role.TECHNICIAN:
-        // TECHNICIAN can only access tasks assigned to them
-        if (task.assignedToId !== userId) {
-          throw new ForbiddenException('Access denied');
-        }
-        break;
+        // TECHNICIAN can only access tasks assigned to them (already checked above)
+        throw new ForbiddenException('Access denied');
 
       default:
         throw new ForbiddenException('Access denied');
@@ -829,7 +836,7 @@ export class TasksService {
   }) {
     const { userId, userRole, organizationId } = query;
 
-    if (![Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN].includes(userRole as Role)) {
+    if (!userRole) {
       return success({});
     }
 
@@ -939,12 +946,13 @@ export class TasksService {
       throw new ForbiddenException('Task is not in your organization');
     }
 
-    // Get all active technicians in the organization that have the tasks module enabled
+    // Get all active members in the organization (exclude ON_SITE workers who can't be assigned to tasks, exclude task creator)
     const technicians = await this.prisma.user.findMany({
       where: {
-        role: Role.TECHNICIAN,
         organizationId: data.organizationId,
         isActive: true,
+        workMode: { not: 'ON_SITE' },
+        id: { not: task.createdById ?? undefined },
       },
       take: 100, // Cap to prevent unbounded queries in large orgs
       select: {
@@ -953,8 +961,7 @@ export class TasksService {
         lastName: true,
         email: true,
         specialty: true,
-        position: true,
-        enabledModules: true,
+        workMode: true,
         rating: true,
         ratingCount: true,
         maxDailyJobs: true,
@@ -1029,7 +1036,7 @@ export class TasksService {
           lastName: tech.lastName,
           email: tech.email,
           specialty: tech.specialty,
-          position: tech.position,
+          workMode: tech.workMode,
           rating: tech.rating || 5.0,
           ratingCount: tech.ratingCount || 0,
           activeTaskCount,
