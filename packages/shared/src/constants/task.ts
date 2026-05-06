@@ -76,6 +76,7 @@ export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
   [Role.CLIENT]: [...EXECUTION_STATUSES, TaskStatus.CANCELED], // DEPRECATED: Use ADMIN instead
   [Role.DISPATCHER]: [...EXECUTION_STATUSES, TaskStatus.ASSIGNED, TaskStatus.CANCELED],
   [Role.TECHNICIAN]: EXECUTION_STATUSES,
+  [Role.EMPLOYEE]: EXECUTION_STATUSES,
 };
 
 /**

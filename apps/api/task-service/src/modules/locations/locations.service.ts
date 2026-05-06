@@ -197,17 +197,7 @@ export class LocationsService {
     });
 
     if (!technician) {
-<<<<<<< HEAD
       throw new NotFoundException('Employee not found in organization');
-=======
-      throw new NotFoundException('User not found in organization');
-    }
-
-    if (technician.workMode === WorkMode.ON_ROAD) {
-      throw new BadRequestException(
-        'ON_ROAD technicians cannot be assigned to company locations. Change work mode to ON_SITE or HYBRID.',
-      );
->>>>>>> worktree-agent-a65ee8cf
     }
 
     // Verify location exists and belongs to organization

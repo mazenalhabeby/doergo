@@ -951,7 +951,6 @@ export class TasksService {
       where: {
         organizationId: data.organizationId,
         isActive: true,
-        workMode: { not: 'ON_SITE' },
         id: { not: task.createdById ?? undefined },
       },
       take: 100, // Cap to prevent unbounded queries in large orgs
@@ -961,7 +960,6 @@ export class TasksService {
         lastName: true,
         email: true,
         specialty: true,
-        workMode: true,
         rating: true,
         ratingCount: true,
         maxDailyJobs: true,
@@ -1036,7 +1034,6 @@ export class TasksService {
           lastName: tech.lastName,
           email: tech.email,
           specialty: tech.specialty,
-          workMode: tech.workMode,
           rating: tech.rating || 5.0,
           ratingCount: tech.ratingCount || 0,
           activeTaskCount,
