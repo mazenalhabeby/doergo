@@ -19,11 +19,15 @@ import { Role, Platform } from '../types';
  * Useful for conditional logic within services
  */
 export function hasRole(user: { role: string }, ...roles: Role[]): boolean {
-  // Handle backward compatibility: CLIENT maps to ADMIN, WORKER maps to TECHNICIAN
+  // Handle backward compatibility: CLIENT maps to ADMIN, WORKER/TECHNICIAN maps to EMPLOYEE
   let normalizedRole: string = user.role;
   if (user.role === 'CLIENT') normalizedRole = Role.ADMIN;
-  if (user.role === 'WORKER') normalizedRole = Role.TECHNICIAN;
-  return roles.some((role) => normalizedRole === role || (role === Role.ADMIN && user.role === 'CLIENT') || (role === Role.TECHNICIAN && user.role === 'WORKER'));
+  if (user.role === 'WORKER' || user.role === 'TECHNICIAN') normalizedRole = Role.EMPLOYEE;
+  return roles.some((role) => normalizedRole === role
+    || (role === Role.ADMIN && user.role === 'CLIENT')
+    || (role === Role.EMPLOYEE && (user.role === 'WORKER' || user.role === 'TECHNICIAN'))
+    || (role === Role.TECHNICIAN && (user.role === 'WORKER' || user.role === 'TECHNICIAN' || user.role === 'EMPLOYEE'))
+  );
 }
 
 /**
@@ -49,14 +53,23 @@ export function isDispatcher(user: { role: string }): boolean {
 }
 
 /**
- * Helper to check if user is a TECHNICIAN
+ * Helper to check if user is a TECHNICIAN/EMPLOYEE
+ * Handles TECHNICIAN, EMPLOYEE, and legacy WORKER values
  */
 export function isTechnician(user: { role: string }): boolean {
-  return user.role === Role.TECHNICIAN || user.role === 'WORKER';
+  return user.role === Role.TECHNICIAN || user.role === Role.EMPLOYEE || user.role === 'WORKER';
 }
 
 /**
- * Helper to check if user is a WORKER (alias for isTechnician)
+ * Helper to check if user is an EMPLOYEE (preferred over isTechnician)
+ * Handles TECHNICIAN, EMPLOYEE, and legacy WORKER values
+ */
+export function isEmployee(user: { role: string }): boolean {
+  return isTechnician(user);
+}
+
+/**
+ * Helper to check if user is a WORKER (alias for isTechnician/isEmployee)
  */
 export function isWorker(user: { role: string }): boolean {
   return isTechnician(user);

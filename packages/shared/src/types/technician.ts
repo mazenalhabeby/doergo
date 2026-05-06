@@ -1,8 +1,9 @@
 /**
- * Technician Management Types
+ * Employee Management Types
  *
- * Types for the full technicians management system including
- * profiles, statistics, performance metrics, and API inputs.
+ * These types are used for all employees (formerly "technicians").
+ * The type names (TechnicianProfile, etc.) are retained for backward compatibility
+ * but apply to all users with the EMPLOYEE role (stored as TECHNICIAN in DB).
  */
 
 import { TechnicianType, Role, Platform, TaskStatus } from './enums';
@@ -463,7 +464,7 @@ export const SPECIALTY_OPTIONS = [
  * Get display label for a position
  */
 export function getPositionLabel(position?: string | null): string {
-  if (!position) return 'Worker';
+  if (!position) return 'Employee';
   return position.charAt(0).toUpperCase() + position.slice(1).replace(/_/g, ' ');
 }
 

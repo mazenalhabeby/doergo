@@ -375,14 +375,14 @@
       "workDetailsPlaceholder": "Detailed description of work performed...",
       "photosLabel": "Photos",
       "signaturesLabel": "Signatures",
-      "technicianSignature": "Technician Signature *",
+      "technicianSignature": "Employee Signature *",
       "customerSignature": "Customer Signature *",
       "customerNameLabel": "Customer Name *",
       "customerNamePlaceholder": "Customer name...",
       "submitButton": "Complete Job",
       "successMessage": "Job completed successfully!",
       "summaryRequired": "Please enter a summary of the work completed.",
-      "techSignatureRequired": "Technician signature is required.",
+      "techSignatureRequired": "Employee signature is required.",
       "customerSignatureRequired": "Customer signature is required.",
       "customerNameRequired": "Please enter the customer name."
     },
@@ -453,8 +453,8 @@
     "dueDatePlaceholder": "Select due date",
     "locationLabel": "Location",
     "photosLabel": "Photos",
-    "assignTechnicianLabel": "Assign Technician",
-    "technicianPlaceholder": "Select technician (optional)",
+    "assignTechnicianLabel": "Assign Employee",
+    "technicianPlaceholder": "Select employee (optional)",
     "submitButton": "Create Task",
     "titleRequired": "Please enter a task title.",
     "successMessage": "Task created successfully!",
@@ -485,7 +485,7 @@
 
     "notAvailable": {
       "title": "Not Available",
-      "message": "Clock-in/clock-out is only available for full-time technicians."
+      "message": "Clock-in/clock-out is only available for full-time employees."
     },
 
     "breaks": {
@@ -593,7 +593,7 @@
     "teamAvailability": {
       "title": "Team Availability",
       "unableToLoad": "Unable to load team availability",
-      "techsAvailable": "{{available}} of {{total}} technicians available",
+      "techsAvailable": "{{available}} of {{total}} employees available",
       "worst": "(worst: {{date}})",
       "lowCoverage": "Low coverage on {{date}}",
       "notScheduled": "You're not scheduled on {{count}} selected day",
@@ -765,7 +765,7 @@
       "filterAll": "All",
       "filterAdmin": "Admin",
       "filterDispatcher": "Dispatcher",
-      "filterTechnician": "Technician",
+      "filterTechnician": "Employee",
       "memberCount": "{{count}} member",
       "memberCountPlural": "{{count}} members",
       "you": "(you)",
@@ -778,7 +778,7 @@
       "roleLabels": {
         "admin": "Admin",
         "dispatcher": "Dispatcher",
-        "technician": "Technician"
+        "technician": "Employee"
       }
     },
 
@@ -797,7 +797,7 @@
         "title": "New Invitation",
         "successTitle": "Invitation Created",
         "roleLabel": "Role",
-        "technician": "Technician",
+        "technician": "Employee",
         "dispatcher": "Dispatcher",
         "jobTitleLabel": "Job Title (optional)",
         "jobTitlePlaceholder": "e.g. Electrician",
@@ -809,7 +809,7 @@
 
     "joinRequestsScreen": {
       "approveTitle": "Approve Request",
-      "approveMessage": "Approve {{firstName}} {{lastName}} as Technician?",
+      "approveMessage": "Approve {{firstName}} {{lastName}} as Employee?",
       "rejectTitle": "Reject Request",
       "rejectMessage": "Reject {{firstName}} {{lastName}}?",
       "requested": "Requested {{date}}",
@@ -821,7 +821,7 @@
     },
 
     "schedulesScreen": {
-      "noTechnicians": "No technicians found",
+      "noTechnicians": "No employees found",
       "failedToLoad": "Failed to load schedules"
     },
 
@@ -857,14 +857,14 @@
       "useCurrentLocation": "Use current location"
     },
     "technicianPicker": {
-      "title": "Select Technician",
+      "title": "Select Employee",
       "searchPlaceholder": "Search by name...",
       "activeTasks": "{{count}} active tasks",
-      "noFieldTechnicians": "No field technicians available (on-site workers cannot be assigned tasks)",
-      "noTechnicians": "No technicians found in your organization",
-      "noMatch": "No technicians match your search",
-      "noAvailable": "No technicians available",
-      "failedToLoad": "Failed to load technicians"
+      "noFieldTechnicians": "No field employees available (on-site workers cannot be assigned tasks)",
+      "noTechnicians": "No employees found in your organization",
+      "noMatch": "No employees match your search",
+      "noAvailable": "No employees available",
+      "failedToLoad": "Failed to load employees"
     },
     "signatureCapture": {
       "tapToOpen": "Tap to open signature pad",
@@ -872,7 +872,7 @@
       "useFingerToSign": "Use your finger to sign below",
       "clear": "Clear",
       "confirmSignature": "Confirm Signature",
-      "technician": "Technician",
+      "technician": "Employee",
       "customer": "Customer"
     },
     "photoGrid": {
@@ -931,7 +931,8 @@
   "roles": {
     "ADMIN": "Admin",
     "DISPATCHER": "Dispatcher",
-    "TECHNICIAN": "Technician"
+    "TECHNICIAN": "Employee",
+    "EMPLOYEE": "Employee"
   },
 
   "invitationStatus": {

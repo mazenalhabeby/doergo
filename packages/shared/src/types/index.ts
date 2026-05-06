@@ -16,17 +16,19 @@ import {
 export const LegacyRoleMap = {
   PARTNER: Role.ADMIN,
   OFFICE: Role.DISPATCHER,
-  WORKER: Role.TECHNICIAN,
+  WORKER: Role.EMPLOYEE,
   CLIENT: Role.ADMIN,
+  TECHNICIAN: Role.EMPLOYEE,
 } as const;
 
-/** WORKER is a UI alias for TECHNICIAN in the DB */
+/** WORKER is a legacy alias for EMPLOYEE (stored as TECHNICIAN in DB) */
 export const WORKER_ROLE = 'WORKER' as const;
 
 // Helper to normalize role (handles backward compatibility)
 export function normalizeRole(role: string): Role {
   if (role === 'CLIENT') return Role.ADMIN;
-  if (role === 'WORKER') return Role.TECHNICIAN;
+  if (role === 'WORKER') return Role.EMPLOYEE;
+  if (role === 'TECHNICIAN') return Role.EMPLOYEE;
   return role as Role;
 }
 
@@ -38,12 +40,13 @@ export function getRoleLabel(role: string, position?: string | null): string {
       return 'Administrator';
     case Role.DISPATCHER:
       return 'Dispatcher';
+    case Role.EMPLOYEE:
     case Role.TECHNICIAN:
       // If user has a position, use it as label (capitalized)
       if (position) {
         return position.charAt(0).toUpperCase() + position.slice(1).replace(/_/g, ' ');
       }
-      return 'Worker';
+      return 'Employee';
     default:
       return role;
   }
@@ -153,6 +156,14 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
     canManageUsers: false,
   },
   [Role.TECHNICIAN]: {
+    // Deprecated: Use EMPLOYEE instead
+    platform: Platform.MOBILE,
+    canCreateTasks: false,
+    canViewAllTasks: false,
+    canAssignTasks: false,
+    canManageUsers: false,
+  },
+  [Role.EMPLOYEE]: {
     platform: Platform.MOBILE,
     canCreateTasks: false,
     canViewAllTasks: false,

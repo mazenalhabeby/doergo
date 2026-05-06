@@ -787,7 +787,7 @@ export class UsersService {
     const updated = await this.prisma.user.update({
       where: { id: memberId },
       data: {
-        role: dto.role,
+        role: (dto.role === Role.EMPLOYEE ? Role.TECHNICIAN : dto.role) as any,
         platform,
         canCreateTasks: dto.canCreateTasks ?? (dto.role === Role.ADMIN),
         canViewAllTasks:

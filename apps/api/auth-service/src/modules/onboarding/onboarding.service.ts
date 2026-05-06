@@ -535,15 +535,17 @@ export class OnboardingService {
 
     const role = data.role as Role;
     const defaultPerms = DEFAULT_PERMISSIONS[role];
-    const isTechnician = role === Role.TECHNICIAN;
+    const isTechnician = role === Role.TECHNICIAN || role === Role.EMPLOYEE;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Update user with org membership + role + permissions
+      // Note: DB stores TECHNICIAN even when shared Role is EMPLOYEE (app-level normalization)
+      const dbRole = role === Role.EMPLOYEE ? Role.TECHNICIAN : role;
       const updatedUser = await tx.user.update({
         where: { id: request.userId },
         data: {
           organizationId: data.organizationId,
-          role,
+          role: dbRole as any,
           onboardingCompleted: true,
           platform: (data.platform || defaultPerms.platform) as Platform,
           canCreateTasks: defaultPerms.canCreateTasks,

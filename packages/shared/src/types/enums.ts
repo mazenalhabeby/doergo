@@ -5,6 +5,7 @@ export enum Role {
   CLIENT = 'CLIENT',
   DISPATCHER = 'DISPATCHER',
   TECHNICIAN = 'TECHNICIAN',
+  EMPLOYEE = 'EMPLOYEE',
 }
 
 export enum Platform {

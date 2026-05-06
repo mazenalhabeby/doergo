@@ -931,7 +931,8 @@
   "roles": {
     "ADMIN": "Admin",
     "DISPATCHER": "Disponent",
-    "TECHNICIAN": "Techniker"
+    "TECHNICIAN": "Mitarbeiter",
+    "EMPLOYEE": "Mitarbeiter"
   },
 
   "invitationStatus": {

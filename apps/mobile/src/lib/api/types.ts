@@ -53,7 +53,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
+  role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN' | 'EMPLOYEE';
   organizationId: string | null;
   onboardingCompleted: boolean;
   avatarUrl?: string | null;

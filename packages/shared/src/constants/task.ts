@@ -71,6 +71,14 @@ export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
     TaskStatus.BLOCKED,
     TaskStatus.COMPLETED,
   ],
+  [Role.EMPLOYEE]: [
+    TaskStatus.ACCEPTED,
+    TaskStatus.EN_ROUTE,
+    TaskStatus.ARRIVED,
+    TaskStatus.IN_PROGRESS,
+    TaskStatus.BLOCKED,
+    TaskStatus.COMPLETED,
+  ],
 };
 
 /**
@@ -78,8 +86,11 @@ export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
  * Handles backward compatibility: CLIENT is treated as ADMIN
  */
 export function canRoleSetStatus(role: Role | string, status: TaskStatus): boolean {
-  // Handle backward compatibility: CLIENT maps to ADMIN
-  const normalizedRole = role === 'CLIENT' ? Role.ADMIN : (role as Role);
+  // Handle backward compatibility: CLIENT maps to ADMIN, TECHNICIAN maps to EMPLOYEE
+  let normalizedRole: Role;
+  if (role === 'CLIENT') normalizedRole = Role.ADMIN;
+  else if (role === 'TECHNICIAN' || role === 'WORKER') normalizedRole = Role.EMPLOYEE;
+  else normalizedRole = role as Role;
   return ROLE_STATUS_PERMISSIONS[normalizedRole]?.includes(status) || false;
 }
 
