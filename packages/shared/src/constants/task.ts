@@ -59,18 +59,23 @@ export function getAllowedNextStatuses(currentStatus: TaskStatus): TaskStatus[] 
 /**
  * Statuses that each role can transition TO
  */
+/**
+ * Execution statuses that any assigned user can transition to
+ */
+const EXECUTION_STATUSES: TaskStatus[] = [
+  TaskStatus.ACCEPTED,
+  TaskStatus.EN_ROUTE,
+  TaskStatus.ARRIVED,
+  TaskStatus.IN_PROGRESS,
+  TaskStatus.BLOCKED,
+  TaskStatus.COMPLETED,
+];
+
 export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
-  [Role.ADMIN]: [TaskStatus.CANCELED],
-  [Role.CLIENT]: [TaskStatus.CANCELED], // DEPRECATED: Use ADMIN instead
-  [Role.DISPATCHER]: [TaskStatus.ASSIGNED, TaskStatus.CANCELED],
-  [Role.TECHNICIAN]: [
-    TaskStatus.ACCEPTED,
-    TaskStatus.EN_ROUTE,
-    TaskStatus.ARRIVED,
-    TaskStatus.IN_PROGRESS,
-    TaskStatus.BLOCKED,
-    TaskStatus.COMPLETED,
-  ],
+  [Role.ADMIN]: [...EXECUTION_STATUSES, TaskStatus.CANCELED],
+  [Role.CLIENT]: [...EXECUTION_STATUSES, TaskStatus.CANCELED], // DEPRECATED: Use ADMIN instead
+  [Role.DISPATCHER]: [...EXECUTION_STATUSES, TaskStatus.ASSIGNED, TaskStatus.CANCELED],
+  [Role.TECHNICIAN]: EXECUTION_STATUSES,
 };
 
 /**

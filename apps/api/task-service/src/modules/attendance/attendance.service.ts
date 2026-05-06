@@ -48,12 +48,12 @@ export class AttendanceService {
   }) {
     this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}`);
 
-    // Verify user is a technician with on-site work mode
+    // Verify user exists in the organization with appropriate work mode
     const user = await this.prisma.user.findFirst({
       where: {
         id: data.userId,
         organizationId: data.organizationId,
-        role: 'TECHNICIAN',
+        isActive: true,
       },
       select: {
         id: true,
@@ -63,7 +63,7 @@ export class AttendanceService {
     });
 
     if (!user) {
-      throw new NotFoundException('Technician not found');
+      throw new NotFoundException('User not found in organization');
     }
 
     if (user.workMode === WorkMode.ON_ROAD) {

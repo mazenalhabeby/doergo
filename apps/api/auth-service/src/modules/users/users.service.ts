@@ -62,7 +62,7 @@ export class UsersService {
   }
 
   async getWorkers(organizationId?: string) {
-    const where: any = { role: Role.TECHNICIAN, isActive: true };
+    const where: any = { isActive: true };
 
     if (organizationId) {
       where.organizationId = organizationId;

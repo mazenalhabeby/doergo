@@ -15,8 +15,8 @@ export class TrackingController {
   ) {}
 
   @Post('location')
-  @Roles(Role.TECHNICIAN)
-  @ApiOperation({ summary: 'Update technician location (TECHNICIAN only - Mobile app)' })
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Update user location (any authenticated user on a task)' })
   async updateLocation(@Body() updateLocationDto: UpdateTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'update_location' }, {

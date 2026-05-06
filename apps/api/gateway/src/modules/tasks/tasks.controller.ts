@@ -168,8 +168,8 @@ export class TasksController {
   }
 
   @Post(':id/decline')
-  @Roles(Role.TECHNICIAN)
-  @ApiOperation({ summary: 'Decline task assignment (TECHNICIAN only - returns task to dispatcher)' })
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Decline task assignment (assigned user - returns task to dispatcher)' })
   async declineTask(@Param('id') id: string, @Request() req: any) {
     return this.tasksQueueService.declineTask({
       id,

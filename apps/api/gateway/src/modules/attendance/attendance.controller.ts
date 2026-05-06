@@ -30,7 +30,7 @@ export class AttendanceController {
   ) {}
 
   @Post('clock-in')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Clock in at a company location' })
   async clockIn(@Body() dto: ClockInDto, @Request() req: any) {
     return this.attendanceQueueService.clockIn({
@@ -41,7 +41,7 @@ export class AttendanceController {
   }
 
   @Post('clock-out')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Clock out from current shift' })
   async clockOut(@Body() dto: ClockOutDto, @Request() req: any) {
     return this.attendanceQueueService.clockOut({
@@ -52,7 +52,7 @@ export class AttendanceController {
   }
 
   @Post('heartbeat')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Send location heartbeat while clocked in' })
   async heartbeat(@Body() dto: HeartbeatDto, @Request() req: any) {
     return this.attendanceQueueService.heartbeat({
@@ -63,7 +63,7 @@ export class AttendanceController {
   }
 
   @Get('status')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get current clock-in status' })
   async getStatus(@Request() req: any) {
     return this.attendanceService.getStatus({
@@ -73,7 +73,7 @@ export class AttendanceController {
   }
 
   @Get('history')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get own attendance history' })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
@@ -253,7 +253,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Post('breaks/start')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Start a break during current shift' })
   async startBreak(@Body() dto: StartBreakDto, @Request() req: any) {
     return this.attendanceService.startBreak({
@@ -265,7 +265,7 @@ export class AttendanceController {
   }
 
   @Post('breaks/end')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'End current break' })
   async endBreak(@Body() dto: EndBreakDto, @Request() req: any) {
     return this.attendanceService.endBreak({
@@ -276,7 +276,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/status')
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get current break status' })
   async getBreakStatus(@Request() req: any) {
     return this.attendanceService.getBreakStatus({

@@ -183,12 +183,12 @@ export class LocationsService {
   }) {
     this.logger.log(`Assigning technician ${data.userId} to location ${data.locationId}`);
 
-    // Verify technician exists and has on-site work mode
+    // Verify user exists in organization with appropriate work mode
     const technician = await this.prisma.user.findFirst({
       where: {
         id: data.userId,
         organizationId: data.organizationId,
-        role: 'TECHNICIAN',
+        isActive: true,
       },
       select: {
         id: true,
@@ -198,7 +198,7 @@ export class LocationsService {
     });
 
     if (!technician) {
-      throw new NotFoundException('Technician not found in organization');
+      throw new NotFoundException('User not found in organization');
     }
 
     if (technician.workMode === WorkMode.ON_ROAD) {
