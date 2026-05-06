@@ -21,11 +21,10 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { Public } from '../../common/decorators';
+import { Public, RequirePermission } from '../../common/decorators';
 import {
   CreateInvitationDto,
   AcceptInvitationDto,
@@ -43,9 +42,9 @@ export class InvitationsController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Create an invitation code (ADMIN/DISPATCHER)' })
+  @ApiOperation({ summary: 'Create an invitation code' })
   @ApiResponse({ status: 201, description: 'Invitation created with code' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   async create(
@@ -85,8 +84,8 @@ export class InvitationsController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'List organization invitations (ADMIN/DISPATCHER)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'List organization invitations' })
   @ApiResponse({ status: 200, description: 'Invitations list' })
   async list(
     @Query() query: ListInvitationsDto,
@@ -137,8 +136,8 @@ export class InvitationsController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'Revoke an invitation (ADMIN/DISPATCHER)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Revoke an invitation' })
   @ApiParam({ name: 'id', description: 'Invitation ID to revoke' })
   @ApiResponse({ status: 200, description: 'Invitation revoked' })
   @ApiResponse({ status: 404, description: 'Invitation not found' })

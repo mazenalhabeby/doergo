@@ -25,6 +25,7 @@ import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/sha
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators';
 import {
   CreateTechnicianDto,
   UpdateTechnicianDto,
@@ -48,7 +49,7 @@ export class TechniciansController {
   @Get()
   @ApiOperation({ summary: 'List technicians with filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Technicians list retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async listTechnicians(
     @Query() query: ListTechniciansDto,
     @CurrentUser() user: CurrentUserData,
@@ -71,7 +72,7 @@ export class TechniciansController {
   @Get('availability')
   @ApiOperation({ summary: 'Get all technicians availability for a date or date range' })
   @ApiResponse({ status: 200, description: 'Availability retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getAvailability(
     @Query('date') date?: string,
     @Query('startDate') startDate?: string,
@@ -113,7 +114,7 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Get all time-off requests for the organization' })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELED'] })
   @ApiResponse({ status: 200, description: 'Time-off requests retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getOrgTimeOff(
     @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
     @CurrentUser() user?: CurrentUserData,
@@ -137,7 +138,7 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Approve or reject a time-off request' })
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @ApiResponse({ status: 200, description: 'Time-off request processed' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   async approveTimeOff(
     @Param('timeOffId') timeOffId: string,
     @Body() body: { approved: boolean; rejectionReason?: string },
@@ -185,15 +186,11 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Create a new technician' })
   @ApiResponse({ status: 201, description: 'Technician created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   async createTechnician(
     @Body() dto: CreateTechnicianDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    if (!user.canManageUsers && !user.canAssignTasks) {
-      throw new ForbiddenException('You do not have permission to manage technicians');
-    }
-
     return firstValueFrom(
       this.authClient.send(
         { cmd: 'create_technician' },
@@ -214,7 +211,7 @@ export class TechniciansController {
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Technician detail retrieved' })
   @ApiResponse({ status: 404, description: 'Technician not found' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getTechnicianDetail(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
@@ -238,7 +235,7 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Get technician basic task stats' })
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Stats retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getTechnicianStats(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
@@ -264,16 +261,12 @@ export class TechniciansController {
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Technician updated' })
   @ApiResponse({ status: 404, description: 'Technician not found' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   async updateTechnician(
     @Param('id') id: string,
     @Body() dto: UpdateTechnicianDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    if (!user.canManageUsers && !user.canAssignTasks) {
-      throw new ForbiddenException('You do not have permission to manage technicians');
-    }
-
     return firstValueFrom(
       this.authClient.send(
         { cmd: 'update_technician' },
@@ -299,15 +292,11 @@ export class TechniciansController {
     status: 400,
     description: 'Cannot deactivate technician with active tasks',
   })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   async deactivateTechnician(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    if (!user.canManageUsers && !user.canAssignTasks) {
-      throw new ForbiddenException('You do not have permission to manage technicians');
-    }
-
     return firstValueFrom(
       this.authClient.send(
         { cmd: 'deactivate_technician' },
@@ -328,7 +317,7 @@ export class TechniciansController {
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Performance metrics retrieved' })
   @ApiResponse({ status: 404, description: 'Technician not found' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getTechnicianPerformance(
     @Param('id') id: string,
     @Query('startDate') startDate?: string,
@@ -357,7 +346,7 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Get technician task history' })
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Task history retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getTechnicianTasks(
     @Param('id') id: string,
     @Query('status') status?: string,
@@ -388,7 +377,7 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Get technician attendance history' })
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Attendance history retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getTechnicianAttendance(
     @Param('id') id: string,
     @Query('startDate') startDate?: string,
@@ -416,7 +405,7 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Get technician location assignments' })
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Assignments retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   async getTechnicianAssignments(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
@@ -465,7 +454,7 @@ export class TechniciansController {
   @ApiOperation({ summary: 'Set technician weekly schedule' })
   @ApiParam({ name: 'id', description: 'Technician ID' })
   @ApiResponse({ status: 200, description: 'Schedule updated' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   async setTechnicianSchedule(
     @Param('id') id: string,
     @Body() body: { schedule: Array<{ dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean; notes?: string }> },

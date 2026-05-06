@@ -26,6 +26,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
+import { PermissionsGuard } from './common/guards/permissions.guard';
 
 @Module({
   imports: [
@@ -77,7 +78,7 @@ import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.gua
   controllers: [AppController],
   providers: [
     AppService,
-    // Global guards - Throttler → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard
+    // Global guards - Throttler → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard → PermissionsGuard
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
@@ -93,6 +94,10 @@ import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.gua
     {
       provide: APP_GUARD,
       useClass: OnboardingCompleteGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
     },
   ],
 })

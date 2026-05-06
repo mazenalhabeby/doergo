@@ -103,6 +103,38 @@ export const CurrentUser = createParamDecorator(
 );
 
 // =============================================================================
+// PERMISSIONS
+// =============================================================================
+
+/**
+ * Key for storing required permissions metadata
+ */
+export const PERMISSIONS_KEY = 'required_permissions';
+
+/**
+ * Permission fields available on the user object
+ */
+export type PermissionField = 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canManageUsers';
+
+/**
+ * Decorator to specify required permissions for a route.
+ * The user must have ALL listed permissions set to true.
+ * ADMIN role always passes (has all permissions by default).
+ *
+ * @example
+ * @RequirePermission('canCreateTasks')
+ * @Post('tasks')
+ * createTask() {}
+ *
+ * @example
+ * @RequirePermission('canViewAllTasks', 'canAssignTasks')
+ * @Patch('tasks/:id/assign')
+ * assignTask() {}
+ */
+export const RequirePermission = (...permissions: PermissionField[]) =>
+  SetMetadata(PERMISSIONS_KEY, permissions);
+
+// =============================================================================
 // SKIP ONBOARDING CHECK
 // =============================================================================
 

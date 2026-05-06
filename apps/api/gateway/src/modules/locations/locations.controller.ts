@@ -15,8 +15,7 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';
 import {
@@ -36,7 +35,7 @@ export class LocationsController {
   ) {}
 
   @Post()
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Create a new company location' })
   async create(@Body() dto: CreateLocationDto, @Request() req: any) {
     return this.locationsQueueService.create({
@@ -47,7 +46,7 @@ export class LocationsController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get all company locations for the organization' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -67,7 +66,7 @@ export class LocationsController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a company location by ID' })
   async findOne(@Param('id') id: string, @Request() req: any) {
     return this.locationsService.findOne({
@@ -77,7 +76,7 @@ export class LocationsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a company location' })
   async update(
     @Param('id') id: string,
@@ -93,7 +92,7 @@ export class LocationsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Deactivate a company location' })
   async remove(@Param('id') id: string, @Request() req: any) {
     return this.locationsQueueService.remove({
@@ -106,7 +105,7 @@ export class LocationsController {
   // ==================== TECHNICIAN ASSIGNMENT ENDPOINTS ====================
 
   @Get(':id/technicians')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get technicians assigned to a location' })
   async getLocationTechnicians(@Param('id') id: string, @Request() req: any) {
     return this.locationsService.getLocationAssignments({
@@ -116,7 +115,7 @@ export class LocationsController {
   }
 
   @Post(':id/technicians')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Assign a technician to a location' })
   async assignTechnician(
     @Param('id') locationId: string,
@@ -132,7 +131,7 @@ export class LocationsController {
   }
 
   @Patch(':id/technicians/:assignmentId')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a technician assignment' })
   async updateAssignment(
     @Param('id') _locationId: string,
@@ -148,7 +147,7 @@ export class LocationsController {
   }
 
   @Delete(':id/technicians/:assignmentId')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Remove a technician assignment' })
   async removeAssignment(
     @Param('id') _locationId: string,

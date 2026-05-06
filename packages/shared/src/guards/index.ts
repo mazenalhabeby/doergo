@@ -7,6 +7,7 @@
  */
 
 export { OnboardingCompleteGuard } from './onboarding.guard';
+export { PermissionsGuard } from './permissions.guard';
 
 import { Role } from '../types';
 

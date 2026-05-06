@@ -16,6 +16,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators';
 import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto } from './dto';
 
 @ApiTags('organizations')
@@ -27,8 +28,8 @@ export class OrganizationsController {
   ) {}
 
   @Get('join-code')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'Get organization join code info (ADMIN/DISPATCHER)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Get organization join code info' })
   @ApiResponse({ status: 200, description: 'Join code info' })
   async getJoinCode(@CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
@@ -89,8 +90,8 @@ export class OrganizationsController {
   // ============================================================================
 
   @Get('members')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'List organization members (ADMIN/DISPATCHER)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'List organization members' })
   @ApiResponse({ status: 200, description: 'Members list' })
   async listMembers(
     @Query() query: ListMembersQueryDto,
@@ -117,8 +118,8 @@ export class OrganizationsController {
   }
 
   @Patch('members/:id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Update member profile, role, and permissions (ADMIN only)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Update member profile, role, and permissions' })
   @ApiResponse({ status: 200, description: 'Member updated' })
   async updateMember(
     @Param('id') memberId: string,
@@ -154,8 +155,8 @@ export class OrganizationsController {
   }
 
   @Post('members/:id/reset-password')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Reset member password (ADMIN only)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Reset member password' })
   @ApiResponse({ status: 200, description: 'Temporary password generated' })
   async resetMemberPassword(
     @Param('id') memberId: string,
@@ -180,8 +181,8 @@ export class OrganizationsController {
   }
 
   @Delete('members/:id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Remove member from organization (ADMIN only)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Remove member from organization' })
   @ApiResponse({ status: 200, description: 'Member removed' })
   async removeMember(
     @Param('id') memberId: string,

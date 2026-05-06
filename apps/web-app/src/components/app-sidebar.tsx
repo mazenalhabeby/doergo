@@ -13,20 +13,18 @@ import {
   HelpCircle,
   History,
   Calendar,
-  BarChart3,
   Timer,
   Clock,
   ChevronDown,
   Check,
   UserPlus,
   UserCheck,
-  Umbrella,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth, type User } from "@/contexts/auth-context"
 import { NavGroup, type NavItem } from "@/components/nav-group"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -48,195 +46,100 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar"
 
-// Navigation groups for ADMIN role
-function getAdminNavGroups(t: TFunction): { label: string; items: NavItem[] }[] {
-  return [
+// Unified navigation groups based on user permissions
+function getNavGroups(t: TFunction, user: User | null): { label: string; items: NavItem[] }[] {
+  const groups: { label: string; items: NavItem[] }[] = []
+
+  // Main group - always visible
+  const mainItems: NavItem[] = [
     {
-      label: t("nav.sidebar.mainGroup"),
-      items: [
-        {
-          title: t("nav.sidebar.dashboard"),
-          url: "/dashboard",
-          icon: LayoutDashboard,
-        },
-        {
-          title: t("nav.sidebar.tasks"),
-          url: "/tasks",
-          icon: ClipboardList,
-          items: [
-            { title: t("nav.sidebar.viewAllTasks"), url: "/tasks" },
-            { title: t("nav.sidebar.createNewTask"), url: "/tasks/new" },
-          ],
-        },
-      ],
+      title: t("nav.sidebar.dashboard"),
+      url: "/dashboard",
+      icon: LayoutDashboard,
     },
     {
-      label: t("nav.sidebar.resourcesGroup"),
+      title: t("nav.sidebar.tasks"),
+      url: "/tasks",
+      icon: ClipboardList,
       items: [
-        {
-          title: t("nav.sidebar.members"),
-          url: "/members",
-          icon: Users,
-        },
-        {
-          title: t("nav.sidebar.invitations"),
-          url: "/invitations",
-          icon: UserPlus,
-        },
-        {
-          title: t("nav.sidebar.joinRequests"),
-          url: "/join-requests",
-          icon: UserCheck,
-        },
-        {
-          title: t("nav.sidebar.locations"),
-          url: "/locations",
-          icon: Building2,
-        },
-        {
-          title: t("nav.sidebar.schedule"),
-          url: "/technicians/availability",
-          icon: Calendar,
-        },
-        {
-          title: t("nav.sidebar.attendance"),
-          url: "/attendance",
-          icon: Clock,
-        },
-        {
-          title: t("nav.sidebar.overtime"),
-          url: "/overtime",
-          icon: Timer,
-        },
-      ],
-    },
-    {
-      label: t("nav.sidebar.billingGroup"),
-      items: [
-        {
-          title: t("nav.sidebar.invoices"),
-          url: "/invoices",
-          icon: FileText,
-        },
-        {
-          title: t("nav.sidebar.paymentHistory"),
-          url: "/payments",
-          icon: History,
-        },
+        { title: t("nav.sidebar.viewAllTasks"), url: "/tasks" },
+        ...(user?.canCreateTasks ? [{ title: t("nav.sidebar.createNewTask"), url: "/tasks/new" }] : []),
       ],
     },
   ]
-}
 
-// Navigation groups for DISPATCHER role
-function getDispatcherNavGroups(t: TFunction): { label: string; items: NavItem[] }[] {
-  return [
-    {
-      label: t("nav.sidebar.overviewGroup"),
-      items: [
-        {
-          title: t("nav.sidebar.dashboard"),
-          url: "/dashboard",
-          icon: LayoutDashboard,
-        },
-      ],
-    },
-    {
-      label: t("nav.sidebar.operationsGroup"),
-      items: [
-        {
-          title: t("nav.sidebar.tasks"),
-          url: "/tasks",
-          icon: ClipboardList,
-          items: [
-            { title: t("nav.sidebar.viewAllTasks"), url: "/tasks" },
-            { title: t("nav.sidebar.createTask"), url: "/tasks/new" },
-          ],
-        },
-        {
-          title: t("nav.sidebar.liveMap"),
-          url: "/live-map",
-          icon: MapPin,
-        },
-        {
-          title: t("nav.sidebar.schedule"),
-          url: "/technicians/availability",
-          icon: Calendar,
-        },
-      ],
-    },
-    {
+  // Add live map for users who can view all tasks
+  if (user?.canViewAllTasks) {
+    mainItems.push({
+      title: t("nav.sidebar.liveMap"),
+      url: "/live-map",
+      icon: MapPin,
+    })
+  }
+
+  groups.push({
+    label: t("nav.sidebar.mainGroup"),
+    items: mainItems,
+  })
+
+  // Resources group - permission-gated items
+  const resourceItems: NavItem[] = []
+
+  if (user?.canManageUsers) {
+    resourceItems.push(
+      { title: t("nav.sidebar.members"), url: "/members", icon: Users },
+      { title: t("nav.sidebar.invitations"), url: "/invitations", icon: UserPlus },
+      { title: t("nav.sidebar.joinRequests"), url: "/join-requests", icon: UserCheck },
+      { title: t("nav.sidebar.locations"), url: "/locations", icon: Building2 },
+    )
+  }
+
+  if (user?.canViewAllTasks) {
+    resourceItems.push(
+      { title: t("nav.sidebar.schedule"), url: "/technicians/availability", icon: Calendar },
+      { title: t("nav.sidebar.attendance"), url: "/attendance", icon: Clock },
+      { title: t("nav.sidebar.overtime"), url: "/overtime", icon: Timer },
+    )
+  }
+
+  if (resourceItems.length > 0) {
+    groups.push({
       label: t("nav.sidebar.resourcesGroup"),
-      items: [
-        {
-          title: t("nav.sidebar.members"),
-          url: "/members",
-          icon: Users,
-        },
-        {
-          title: t("nav.sidebar.invitations"),
-          url: "/invitations",
-          icon: UserPlus,
-        },
-        {
-          title: t("nav.sidebar.joinRequests"),
-          url: "/join-requests",
-          icon: UserCheck,
-        },
-        {
-          title: t("nav.sidebar.locations"),
-          url: "/locations",
-          icon: Building2,
-        },
-        {
-          title: t("nav.sidebar.attendance"),
-          url: "/attendance",
-          icon: Clock,
-        },
-        {
-          title: t("nav.sidebar.overtime"),
-          url: "/overtime",
-          icon: Timer,
-        },
-        {
-          title: t("nav.sidebar.organizations"),
-          url: "/organizations",
-          icon: Building2,
-        },
-      ],
-    },
-    {
-      label: t("nav.sidebar.reportsGroup"),
-      items: [
-        {
-          title: t("nav.sidebar.performance"),
-          url: "/reports/performance",
-          icon: BarChart3,
-        },
-        {
-          title: t("nav.sidebar.slaCompliance"),
-          url: "/reports/sla",
-          icon: Timer,
-        },
-      ],
-    },
-  ]
+      items: resourceItems,
+    })
+  }
+
+  // Billing group - always visible
+  groups.push({
+    label: t("nav.sidebar.billingGroup"),
+    items: [
+      { title: t("nav.sidebar.invoices"), url: "/invoices", icon: FileText },
+      { title: t("nav.sidebar.paymentHistory"), url: "/payments", icon: History },
+    ],
+  })
+
+  return groups
 }
 
-// Secondary navigation (same for all roles)
-function getNavSecondary(t: TFunction) {
-  return [
-    {
+// Secondary navigation - permission-gated
+function getNavSecondary(t: TFunction, user: User | null) {
+  const items = []
+
+  if (user?.canManageUsers) {
+    items.push({
       title: t("nav.sidebar.settings"),
       url: "/settings",
       icon: Settings,
-    },
-    {
-      title: t("nav.sidebar.helpCenter"),
-      url: "/help",
-      icon: HelpCircle,
-    },
-  ]
+    })
+  }
+
+  items.push({
+    title: t("nav.sidebar.helpCenter"),
+    url: "/help",
+    icon: HelpCircle,
+  })
+
+  return items
 }
 
 // Mock organizations for dispatcher
@@ -252,9 +155,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation()
   const [selectedOrg, setSelectedOrg] = React.useState(organizations[0])
 
-  // Get navigation based on user role
-  const navGroups = user?.role === "DISPATCHER" ? getDispatcherNavGroups(t) : getAdminNavGroups(t)
-  const navSecondary = getNavSecondary(t)
+  // Get navigation based on user permissions
+  const navGroups = getNavGroups(t, user)
+  const navSecondary = getNavSecondary(t, user)
   const isDispatcher = user?.role === "DISPATCHER"
 
   return (
