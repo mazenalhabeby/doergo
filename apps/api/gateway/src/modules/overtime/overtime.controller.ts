@@ -15,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators';
 import { OvertimeGatewayService } from './overtime.service';
 import { OvertimeQueueService } from './overtime.queue.service';
 import {
@@ -52,7 +53,7 @@ export class OvertimeController {
   }
 
   @Post(':id/approve')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Approve overtime request remotely (Path A)' })
   async approve(
     @Param('id') id: string,
@@ -84,7 +85,7 @@ export class OvertimeController {
   }
 
   @Post(':id/reject')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Reject overtime request' })
   async reject(
     @Param('id') id: string,
@@ -100,7 +101,7 @@ export class OvertimeController {
   }
 
   @Get('pending-approvals')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List pending overtime approval requests' })
   async getPendingApprovals(@Request() req: any) {
     return this.overtimeService.getPendingApprovals({
@@ -109,7 +110,7 @@ export class OvertimeController {
   }
 
   @Get('history')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get overtime history' })
   @ApiQuery({ name: 'technicianId', required: false })
   @ApiQuery({ name: 'status', required: false })

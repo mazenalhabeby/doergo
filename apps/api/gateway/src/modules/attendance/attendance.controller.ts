@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
 import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto } from './dto';
@@ -97,7 +98,7 @@ export class AttendanceController {
   }
 
   @Get('locations/:id/entries')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get time entries for a location (admin view)' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Date in ISO format (defaults to today)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -143,7 +144,7 @@ export class AttendanceController {
   }
 
   @Get('all-entries')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get all time entries for the organization' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Date in ISO format (defaults to today)' })
   @ApiQuery({ name: 'status', required: false, enum: ['CLOCKED_IN', 'CLOCKED_OUT', 'AUTO_OUT'] })
@@ -172,7 +173,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('reports/summary')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get attendance summary for a date range' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -192,7 +193,7 @@ export class AttendanceController {
   }
 
   @Get('reports/weekly')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get weekly attendance report' })
   @ApiQuery({ name: 'weekStartDate', required: false, type: String, description: 'Week start date (defaults to current week)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by specific user' })
@@ -209,7 +210,7 @@ export class AttendanceController {
   }
 
   @Get('reports/monthly')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get monthly attendance report' })
   @ApiQuery({ name: 'year', required: false, type: Number, description: 'Year (defaults to current)' })
   @ApiQuery({ name: 'month', required: false, type: Number, description: 'Month 1-12 (defaults to current)' })
@@ -229,7 +230,7 @@ export class AttendanceController {
   }
 
   @Get('reports/export')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Export attendance data to CSV' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -286,7 +287,6 @@ export class AttendanceController {
   }
 
   @Get('entries/:id/breaks')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get breaks for a specific time entry' })
   async getBreaksForEntry(@Param('id') timeEntryId: string, @Request() req: any) {
     return this.attendanceService.getBreaksForEntry({
@@ -296,7 +296,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/active')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get all active breaks in the organization' })
   async getActiveBreaks(@Request() req: any) {
     return this.attendanceService.getActiveBreaks({
@@ -305,7 +305,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/history')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get break history with filters' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'userId', required: false, type: String })
@@ -331,7 +331,7 @@ export class AttendanceController {
   }
 
   @Post('breaks/:id/end')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'End a break manually (manager action)' })
   async endBreakManually(
     @Param('id') breakId: string,
@@ -347,7 +347,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/summary')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get break summary statistics' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -371,7 +371,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('approvals/pending')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get time entries pending approval' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -388,7 +388,7 @@ export class AttendanceController {
   }
 
   @Post('approvals/:id/approve')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Approve a time entry' })
   async approveEntry(
     @Param('id') entryId: string,
@@ -404,7 +404,7 @@ export class AttendanceController {
   }
 
   @Post('approvals/:id/reject')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Reject a time entry' })
   async rejectEntry(
     @Param('id') entryId: string,
@@ -420,7 +420,7 @@ export class AttendanceController {
   }
 
   @Put('entries/:id/edit')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Edit a time entry (manager correction)' })
   async editEntry(
     @Param('id') entryId: string,
@@ -444,7 +444,7 @@ export class AttendanceController {
   }
 
   @Post('approvals/bulk-approve')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Bulk approve multiple time entries' })
   async bulkApprove(
     @Body() body: { entryIds: string[]; notes?: string },

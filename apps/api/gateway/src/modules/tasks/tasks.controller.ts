@@ -9,11 +9,11 @@ import {
   Param,
   Query,
   Request,
-  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators';
 import { CreateTaskDto, UpdateTaskDto, AssignTaskDto, UpdateStatusDto } from './dto';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
@@ -41,13 +41,9 @@ export class TasksController {
   ) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @RequirePermission('canCreateTasks')
   @ApiOperation({ summary: 'Create a new task' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
-    if (!req.user.canCreateTasks) {
-      throw new ForbiddenException('You do not have permission to create tasks');
-    }
-
     return this.tasksQueueService.createTask({
       ...createTaskDto,
       userId: req.user.id,
@@ -56,7 +52,6 @@ export class TasksController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get all tasks (filtered by role)' })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'priority', required: false })
@@ -91,7 +86,6 @@ export class TasksController {
   }
 
   @Get('counts')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get task counts grouped by status' })
   async getStatusCounts(@Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -103,7 +97,7 @@ export class TasksController {
   }
 
   @Get(':id/suggested-technicians')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canAssignTasks')
   @ApiOperation({ summary: 'Get suggested technicians for a task with scoring' })
   async getSuggestedTechnicians(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -116,7 +110,6 @@ export class TasksController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get a task by ID' })
   async findOne(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -129,8 +122,8 @@ export class TasksController {
   }
 
   @Put(':id')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'Update a task (CLIENT or DISPATCHER)' })
+  @RequirePermission('canCreateTasks')
+  @ApiOperation({ summary: 'Update a task' })
   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
     return this.tasksQueueService.updateTask({
       id,
@@ -142,8 +135,8 @@ export class TasksController {
   }
 
   @Patch(':id/assign')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'Assign a task to a technician (CLIENT or DISPATCHER)' })
+  @RequirePermission('canAssignTasks')
+  @ApiOperation({ summary: 'Assign a task to a technician' })
   async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: any) {
     return this.tasksQueueService.assignTask({
       id,
@@ -155,8 +148,7 @@ export class TasksController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
-  @ApiOperation({ summary: 'Update task status (role-based: TECHNICIAN can start/block/complete, CLIENT/DISPATCHER can cancel)' })
+  @ApiOperation({ summary: 'Update task status (role-based: TECHNICIAN can start/block/complete, others can cancel)' })
   async updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateStatusDto, @Request() req: any) {
     return this.tasksQueueService.updateTaskStatus({
       id,
@@ -169,7 +161,7 @@ export class TasksController {
 
   @Post(':id/decline')
   @Roles(Role.TECHNICIAN)
-  @ApiOperation({ summary: 'Decline task assignment (TECHNICIAN only - returns task to dispatcher)' })
+  @ApiOperation({ summary: 'Decline task assignment (TECHNICIAN only)' })
   async declineTask(@Param('id') id: string, @Request() req: any) {
     return this.tasksQueueService.declineTask({
       id,
@@ -181,7 +173,7 @@ export class TasksController {
 
   @Delete(':id')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Delete a task (CLIENT only - org owner)' })
+  @ApiOperation({ summary: 'Delete a task (ADMIN only)' })
   async remove(@Param('id') id: string, @Request() req: any) {
     return this.tasksQueueService.deleteTask({
       id,
@@ -192,7 +184,6 @@ export class TasksController {
   }
 
   @Get(':id/timeline')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get task timeline/activity' })
   async getTimeline(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -205,7 +196,6 @@ export class TasksController {
   }
 
   @Post(':id/comments')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Add a comment to a task' })
   async addComment(@Param('id') id: string, @Body() body: { content: string }, @Request() req: any) {
     return this.tasksQueueService.addComment({
@@ -218,7 +208,6 @@ export class TasksController {
   }
 
   @Get(':id/comments')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get task comments' })
   async getComments(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -233,7 +222,6 @@ export class TasksController {
   // ============ Attachment Endpoints ============
 
   @Post(':id/attachments/presign')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get presigned URL for uploading an attachment' })
   async getPresignedUrl(
     @Param('id') id: string,
@@ -251,7 +239,6 @@ export class TasksController {
   }
 
   @Post(':id/attachments')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Confirm attachment upload after S3 upload' })
   async addAttachment(
     @Param('id') id: string,
@@ -270,7 +257,6 @@ export class TasksController {
   }
 
   @Get(':id/attachments')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Get task attachments' })
   async getAttachments(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -283,7 +269,6 @@ export class TasksController {
   }
 
   @Delete(':id/attachments/:attachmentId')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
   @ApiOperation({ summary: 'Delete an attachment' })
   async deleteAttachment(
     @Param('id') id: string,

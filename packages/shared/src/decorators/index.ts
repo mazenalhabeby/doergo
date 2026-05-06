@@ -6,7 +6,7 @@
  */
 
 import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Role, Platform, TechnicianType, WorkMode } from '../types';
+import { Role } from '../types/enums';
 
 // =============================================================================
 // METADATA KEYS
@@ -63,18 +63,14 @@ export interface CurrentUserData {
   onboardingCompleted: boolean;
   avatarUrl?: string | null;
   // Permission fields
-  platform: Platform | string;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  technicianType?: TechnicianType;
-  workMode?: WorkMode;
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {
     showRole: boolean;
-    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   };
@@ -105,6 +101,38 @@ export const CurrentUser = createParamDecorator(
     return data ? user[data] : user;
   },
 );
+
+// =============================================================================
+// PERMISSIONS
+// =============================================================================
+
+/**
+ * Key for storing required permissions metadata
+ */
+export const PERMISSIONS_KEY = 'required_permissions';
+
+/**
+ * Permission fields available on the user object
+ */
+export type PermissionField = 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canManageUsers';
+
+/**
+ * Decorator to specify required permissions for a route.
+ * The user must have ALL listed permissions set to true.
+ * ADMIN role always passes (has all permissions by default).
+ *
+ * @example
+ * @RequirePermission('canCreateTasks')
+ * @Post('tasks')
+ * createTask() {}
+ *
+ * @example
+ * @RequirePermission('canViewAllTasks', 'canAssignTasks')
+ * @Patch('tasks/:id/assign')
+ * assignTask() {}
+ */
+export const RequirePermission = (...permissions: PermissionField[]) =>
+  SetMetadata(PERMISSIONS_KEY, permissions);
 
 // =============================================================================
 // SKIP ONBOARDING CHECK

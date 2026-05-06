@@ -7,8 +7,9 @@
  */
 
 export { OnboardingCompleteGuard } from './onboarding.guard';
+export { PermissionsGuard } from './permissions.guard';
 
-import { Role, Platform } from '../types';
+import { Role } from '../types';
 
 // ============================================
 // Role-based helpers
@@ -19,9 +20,15 @@ import { Role, Platform } from '../types';
  * Useful for conditional logic within services
  */
 export function hasRole(user: { role: string }, ...roles: Role[]): boolean {
-  // Handle backward compatibility: CLIENT maps to ADMIN
-  const normalizedRole = user.role === 'CLIENT' ? Role.ADMIN : user.role;
-  return roles.some((role) => normalizedRole === role || (role === Role.ADMIN && user.role === 'CLIENT'));
+  // Handle backward compatibility: CLIENT maps to ADMIN, WORKER/TECHNICIAN maps to EMPLOYEE
+  let normalizedRole: string = user.role;
+  if (user.role === 'CLIENT') normalizedRole = Role.ADMIN;
+  if (user.role === 'WORKER' || user.role === 'TECHNICIAN') normalizedRole = Role.EMPLOYEE;
+  return roles.some((role) => normalizedRole === role
+    || (role === Role.ADMIN && user.role === 'CLIENT')
+    || (role === Role.EMPLOYEE && (user.role === 'WORKER' || user.role === 'TECHNICIAN'))
+    || (role === Role.TECHNICIAN && (user.role === 'WORKER' || user.role === 'TECHNICIAN' || user.role === 'EMPLOYEE'))
+  );
 }
 
 /**
@@ -47,39 +54,26 @@ export function isDispatcher(user: { role: string }): boolean {
 }
 
 /**
- * Helper to check if user is a TECHNICIAN
+ * Helper to check if user is a TECHNICIAN/EMPLOYEE
+ * Handles TECHNICIAN, EMPLOYEE, and legacy WORKER values
  */
 export function isTechnician(user: { role: string }): boolean {
-  return user.role === Role.TECHNICIAN;
-}
-
-// ============================================
-// Platform-based helpers
-// ============================================
-
-/**
- * Check if user can access a specific platform
- */
-export function canAccessPlatform(
-  user: { platform?: string },
-  targetPlatform: 'WEB' | 'MOBILE'
-): boolean {
-  if (!user.platform) return true; // Default allow if platform not set (backward compat)
-  return user.platform === Platform.BOTH || user.platform === targetPlatform;
+  return user.role === Role.TECHNICIAN || user.role === Role.EMPLOYEE || user.role === 'WORKER';
 }
 
 /**
- * Check if user can access web platform
+ * Helper to check if user is an EMPLOYEE (preferred over isTechnician)
+ * Handles TECHNICIAN, EMPLOYEE, and legacy WORKER values
  */
-export function canAccessWeb(user: { platform?: string }): boolean {
-  return canAccessPlatform(user, 'WEB');
+export function isEmployee(user: { role: string }): boolean {
+  return isTechnician(user);
 }
 
 /**
- * Check if user can access mobile platform
+ * Helper to check if user is a WORKER (alias for isTechnician/isEmployee)
  */
-export function canAccessMobile(user: { platform?: string }): boolean {
-  return canAccessPlatform(user, 'MOBILE');
+export function isWorker(user: { role: string }): boolean {
+  return isTechnician(user);
 }
 
 // ============================================

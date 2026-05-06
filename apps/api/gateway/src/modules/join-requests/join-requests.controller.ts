@@ -12,8 +12,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import {
   ListJoinRequestsDto,
   ApproveJoinRequestDto,
@@ -30,8 +30,8 @@ export class JoinRequestsController {
   ) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'List join requests for organization (ADMIN/DISPATCHER)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'List join requests for organization' })
   @ApiResponse({ status: 200, description: 'Join requests list' })
   async list(
     @Query() query: ListJoinRequestsDto,
@@ -46,8 +46,8 @@ export class JoinRequestsController {
   }
 
   @Patch(':id/approve')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'Approve join request with role assignment (ADMIN/DISPATCHER)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Approve join request with role assignment' })
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request approved' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
@@ -87,8 +87,8 @@ export class JoinRequestsController {
   }
 
   @Patch(':id/reject')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
-  @ApiOperation({ summary: 'Reject join request (ADMIN/DISPATCHER)' })
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Reject join request' })
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request rejected' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
