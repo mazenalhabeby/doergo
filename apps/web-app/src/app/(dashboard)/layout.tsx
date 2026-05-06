@@ -150,7 +150,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
+<<<<<<< HEAD
   }, [isLoading, isAuthenticated, router]);
+=======
+    // Allow ADMIN and DISPATCHER roles only (TECHNICIAN uses mobile app)
+    const allowedRoles = ['ADMIN', 'DISPATCHER'];
+    if (!isLoading && isAuthenticated && user?.role && !allowedRoles.includes(user.role)) {
+      router.push('/unauthorized');
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+>>>>>>> worktree-agent-a0600cc7
 
   if (isLoading) {
     return <DashboardSkeleton />;

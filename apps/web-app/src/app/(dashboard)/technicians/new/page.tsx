@@ -12,8 +12,13 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   techniciansApi,
   type CreateTechnicianInput,
+<<<<<<< HEAD
   TechnicianType,
 
+=======
+
+  WorkMode,
+>>>>>>> worktree-agent-a0600cc7
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -63,8 +68,6 @@ export default function NewTechnicianPage() {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [password, setPassword] = useState("")
-  const [technicianType, setTechnicianType] = useState<TechnicianType>(
-    TechnicianType.FREELANCER
   )
   const [position, setPosition] = useState<string>("technician")
   const [specialty, setSpecialty] = useState("")
@@ -117,8 +120,12 @@ export default function NewTechnicianPage() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       password: password.trim() || undefined,
+<<<<<<< HEAD
       technicianType,
       
+=======
+      workMode,
+>>>>>>> worktree-agent-a0600cc7
       specialty: specialty || undefined,
       maxDailyJobs,
     })
@@ -277,17 +284,13 @@ export default function NewTechnicianPage() {
                 <div className="space-y-2">
                   <Label htmlFor="type">{t('technicians.create.employmentTypeLabel')}</Label>
                   <Select
-                    value={technicianType}
-                    onValueChange={(v) => setTechnicianType(v as TechnicianType)}
                   >
                     <SelectTrigger id="type">
                       <SelectValue placeholder={t('technicians.create.employmentTypeLabel')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={TechnicianType.FREELANCER}>
                         {t('technicians.types.freelancer')}
                       </SelectItem>
-                      <SelectItem value={TechnicianType.FULL_TIME}>
                         {t('technicians.types.fullTimeEmployee')}
                       </SelectItem>
                     </SelectContent>
@@ -307,9 +310,14 @@ export default function NewTechnicianPage() {
                       <SelectValue placeholder={t('technicians.create.positionLabel')} />
                     </SelectTrigger>
                     <SelectContent>
+<<<<<<< HEAD
                       {technicianType === TechnicianType.FULL_TIME && (
                         <SelectItem value={"HYBRID"}>
                           {t('technicians.positions.hybridDescription')}
+=======
+                        <SelectItem value={WorkMode.HYBRID}>
+                          {t('technicians.workModes.hybridDescription')}
+>>>>>>> worktree-agent-a0600cc7
                         </SelectItem>
                       )}
                       <SelectItem value={"ON_SITE"}>

@@ -2,8 +2,7 @@ import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   Role,
-  Platform,
-  TechnicianType,
+  WorkMode,
   DEFAULT_PERMISSIONS,
   ORG_CODE_LENGTH,
   ORG_CODE_CHARSET,
@@ -64,7 +63,7 @@ export class OnboardingService {
           organizationId: organization.id,
           role: 'ADMIN',
           onboardingCompleted: true,
-          platform: defaultPerms.platform,
+
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
@@ -78,14 +77,13 @@ export class OnboardingService {
           role: true,
           organizationId: true,
           onboardingCompleted: true,
-          platform: true,
+
           canCreateTasks: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
-          technicianType: true,
-          position: true,
-          enabledModules: true,
+
+          workMode: true,
         },
       });
 
@@ -222,7 +220,6 @@ export class OnboardingService {
           organizationId: organization.id,
           onboardingCompleted: true,
           role: 'TECHNICIAN',
-          platform: 'MOBILE',
         },
       });
 
@@ -334,16 +331,15 @@ export class OnboardingService {
           organizationId: invitation.organizationId,
           role: invitation.targetRole,
           onboardingCompleted: true,
-          platform: defaultPerms.platform,
+
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
           ...(isTechnician
             ? {
-                technicianType: invitation.technicianType || 'FREELANCER',
                 position: invitation.position || 'technician',
-                enabledModules: invitation.enabledModules || ['tasks', 'clock', 'time_off'],
+                workMode: invitation.workMode || 'HYBRID',
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
               }
@@ -357,14 +353,13 @@ export class OnboardingService {
           role: true,
           organizationId: true,
           onboardingCompleted: true,
-          platform: true,
+
           canCreateTasks: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
-          technicianType: true,
-          position: true,
-          enabledModules: true,
+
+          workMode: true,
         },
       });
 
@@ -509,10 +504,9 @@ export class OnboardingService {
     organizationId: string;
     approverId: string;
     role: string;
-    platform?: string;
-    technicianType?: string;
     position?: string;
     enabledModules?: string[];
+    workMode?: string;
     specialty?: string;
     maxDailyJobs?: number;
   }) {
@@ -535,28 +529,25 @@ export class OnboardingService {
 
     const role = data.role as Role;
     const defaultPerms = DEFAULT_PERMISSIONS[role];
-    const isTechnician = role === Role.TECHNICIAN || role === Role.EMPLOYEE;
+    const isTechnician = role === Role.TECHNICIAN;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Update user with org membership + role + permissions
-      // Note: DB stores TECHNICIAN even when shared Role is EMPLOYEE (app-level normalization)
-      const dbRole = role === Role.EMPLOYEE ? Role.TECHNICIAN : role;
       const updatedUser = await tx.user.update({
         where: { id: request.userId },
         data: {
           organizationId: data.organizationId,
-          role: dbRole as any,
+          role,
           onboardingCompleted: true,
-          platform: (data.platform || defaultPerms.platform) as Platform,
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
           ...(isTechnician
             ? {
-                technicianType: (data.technicianType || 'FREELANCER') as TechnicianType,
                 position: data.position || 'technician',
                 enabledModules: data.enabledModules || ['tasks', 'clock', 'time_off'],
+                workMode: (data.workMode || 'HYBRID') as WorkMode,
                 specialty: data.specialty || null,
                 maxDailyJobs: data.maxDailyJobs || 5,
               }
@@ -572,7 +563,6 @@ export class OnboardingService {
           reviewedById: data.approverId,
           reviewedAt: new Date(),
           assignedRole: data.role as any,
-          assignedPlatform: (data.platform || defaultPerms.platform) as any,
         },
       });
 
@@ -740,7 +730,7 @@ export class OnboardingService {
     const valid = profileBadges
       && typeof profileBadges === 'object'
       && typeof profileBadges.showRole === 'boolean'
-      && typeof profileBadges.showType === 'boolean'
+      && typeof profileBadges.showWorkMode === 'boolean'
       && typeof profileBadges.showType === 'boolean'
       && typeof profileBadges.showSpecialty === 'boolean';
 

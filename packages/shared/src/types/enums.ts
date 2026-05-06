@@ -5,7 +5,6 @@ export enum Role {
   CLIENT = 'CLIENT',
   DISPATCHER = 'DISPATCHER',
   TECHNICIAN = 'TECHNICIAN',
-  EMPLOYEE = 'EMPLOYEE',
 }
 
 export enum Platform {
@@ -71,26 +70,10 @@ export enum ReportAttachmentType {
   AFTER = 'AFTER',
 }
 
-export enum TechnicianType {
-  FREELANCER = 'FREELANCER',
-  FULL_TIME = 'FULL_TIME',
-}
-
-export enum ContractType {
-  FIXED_SCHEDULE = 'FIXED_SCHEDULE',
-  HOUR_BUDGET = 'HOUR_BUDGET',
-}
-
-export enum OvertimePolicy {
-  PRE_APPROVED = 'PRE_APPROVED',
-  REAL_TIME = 'REAL_TIME',
-  POST_APPROVAL = 'POST_APPROVAL',
-}
-
-export enum OvertimeDetectionSource {
-  MANUAL = 'MANUAL',
-  AUTO_BUDGET = 'AUTO_BUDGET',
-  AUTO_SCHEDULE = 'AUTO_SCHEDULE',
+export enum WorkMode {
+  ON_SITE = 'ON_SITE',
+  ON_ROAD = 'ON_ROAD',
+  HYBRID = 'HYBRID',
 }
 
 export enum TimeEntryStatus {

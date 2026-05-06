@@ -5,13 +5,12 @@ import {
   IsNumber,
   IsEnum,
   IsBoolean,
-  IsArray,
   Min,
   Max,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { TechnicianType } from '@hbcfield/shared';
+import { WorkMode } from '@hbcfield/shared';
 
 export class UpdateTechnicianDto {
   @ApiPropertyOptional({
@@ -35,35 +34,17 @@ export class UpdateTechnicianDto {
   lastName?: string;
 
   @ApiPropertyOptional({
-    enum: TechnicianType,
-    example: TechnicianType.FULL_TIME,
-    description: 'Employment type',
+    enum: WorkMode,
+    example: WorkMode.HYBRID,
+    description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
   })
-  @IsEnum(TechnicianType)
+  @IsEnum(WorkMode)
   @IsOptional()
-  technicianType?: TechnicianType;
-
-  @ApiPropertyOptional({
-    example: 'technician',
-    description: 'Position (e.g., technician, driver, sales)',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
-  position?: string;
-
-  @ApiPropertyOptional({
-    example: ['tasks', 'clock', 'time_off'],
-    description: 'Enabled mobile modules',
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  enabledModules?: string[];
+  workMode?: WorkMode;
 
   @ApiPropertyOptional({
     example: 'Electrical',
-    description: 'Worker specialty',
+    description: 'Technician specialty',
   })
   @IsString()
   @IsOptional()
@@ -82,7 +63,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Whether the worker is active',
+    description: 'Whether the technician is active',
   })
   @IsBoolean()
   @IsOptional()
@@ -90,7 +71,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: 4.5,
-    description: 'Worker rating (1-5)',
+    description: 'Technician rating (1-5)',
   })
   @IsNumber()
   @IsOptional()
@@ -109,7 +90,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: false,
-    description: 'Whether the worker can create tasks',
+    description: 'Whether the technician can create tasks',
   })
   @IsBoolean()
   @IsOptional()
@@ -117,7 +98,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     description: 'Profile badge visibility override (null to use org defaults)',
-    example: { showRole: true, showType: false, showSpecialty: true },
+    example: { showRole: true, showWorkMode: true, showType: false, showSpecialty: true },
   })
   @IsOptional()
   profileBadges?: any;

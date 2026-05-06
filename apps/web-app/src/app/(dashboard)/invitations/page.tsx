@@ -291,9 +291,13 @@ export default function InvitationsPage() {
                     <TableCell>
                       <div className="space-y-1">
                         {getRoleBadge(inv.targetRole, t)}
+<<<<<<< HEAD
                         {inv.technicianType && (
                           <div className="text-xs text-muted-foreground">
                             {inv.technicianType === "FULL_TIME" ? t("technicians.types.fullTime") : t("technicians.types.freelancer")}
+=======
+                          <div className="text-xs text-slate-500">
+>>>>>>> worktree-agent-a0600cc7
                             {inv.specialty && ` / ${inv.specialty}`}
                           </div>
                         )}

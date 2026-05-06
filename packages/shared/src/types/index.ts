@@ -1,14 +1,13 @@
 // Re-export all enums from dedicated file (avoids require cycles with sub-modules)
 export {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority, TaskEventType,
-  AttachmentType, AssetStatus, ReportAttachmentType, TechnicianType,
-  ContractType, OvertimePolicy, OvertimeDetectionSource,
+  AttachmentType, AssetStatus, ReportAttachmentType, WorkMode,
   TimeEntryStatus, BreakType, ApprovalStatus,
 } from './enums';
 
 import {
-  Role, Platform, AccessLevel, TaskStatus, TaskPriority,
-  TechnicianType,
+  Role, AccessLevel, TaskStatus, TaskPriority,
+  WorkMode,
   AttachmentType, AssetStatus, ReportAttachmentType, TaskEventType,
 } from './enums';
 
@@ -16,37 +15,26 @@ import {
 export const LegacyRoleMap = {
   PARTNER: Role.ADMIN,
   OFFICE: Role.DISPATCHER,
-  WORKER: Role.EMPLOYEE,
+  WORKER: Role.TECHNICIAN,
   CLIENT: Role.ADMIN,
-  TECHNICIAN: Role.EMPLOYEE,
 } as const;
-
-/** WORKER is a legacy alias for EMPLOYEE (stored as TECHNICIAN in DB) */
-export const WORKER_ROLE = 'WORKER' as const;
 
 // Helper to normalize role (handles backward compatibility)
 export function normalizeRole(role: string): Role {
   if (role === 'CLIENT') return Role.ADMIN;
-  if (role === 'WORKER') return Role.EMPLOYEE;
-  if (role === 'TECHNICIAN') return Role.EMPLOYEE;
   return role as Role;
 }
 
-// Get display label for a role, optionally using position name
-export function getRoleLabel(role: string, position?: string | null): string {
+// Get display label for a role
+export function getRoleLabel(role: string): string {
   const normalized = normalizeRole(role);
   switch (normalized) {
     case Role.ADMIN:
       return 'Administrator';
     case Role.DISPATCHER:
       return 'Dispatcher';
-    case Role.EMPLOYEE:
     case Role.TECHNICIAN:
-      // If user has a position, use it as label (capitalized)
-      if (position) {
-        return position.charAt(0).toUpperCase() + position.slice(1).replace(/_/g, ' ');
-      }
-      return 'Employee';
+      return 'Technician';
     default:
       return role;
   }
@@ -114,27 +102,22 @@ export interface User extends BaseEntity {
   isActive: boolean;
   onboardingCompleted: boolean;
   // Permission fields
-  platform: Platform;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  technicianType?: TechnicianType;
-  position?: string | null;
-  enabledModules?: string[] | null;
+  workMode?: WorkMode;
 }
 
 // Default permissions by role
 export const DEFAULT_PERMISSIONS: Record<Role, {
-  platform: Platform;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
 }> = {
   [Role.ADMIN]: {
-    platform: Platform.BOTH,
     canCreateTasks: true,
     canViewAllTasks: true,
     canAssignTasks: true,
@@ -142,29 +125,18 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
   },
   [Role.CLIENT]: {
     // Deprecated, same as ADMIN for backward compatibility
-    platform: Platform.BOTH,
     canCreateTasks: true,
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: true,
   },
   [Role.DISPATCHER]: {
-    platform: Platform.WEB,
     canCreateTasks: false,
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: false,
   },
   [Role.TECHNICIAN]: {
-    // Deprecated: Use EMPLOYEE instead
-    platform: Platform.MOBILE,
-    canCreateTasks: false,
-    canViewAllTasks: false,
-    canAssignTasks: false,
-    canManageUsers: false,
-  },
-  [Role.EMPLOYEE]: {
-    platform: Platform.MOBILE,
     canCreateTasks: false,
     canViewAllTasks: false,
     canAssignTasks: false,
@@ -175,12 +147,14 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
 // Profile badge visibility configuration
 export interface ProfileBadgesConfig {
   showRole: boolean;
+  showWorkMode: boolean;
   showType: boolean;
   showSpecialty: boolean;
 }
 
 export const DEFAULT_PROFILE_BADGES: ProfileBadgesConfig = {
   showRole: true,
+  showWorkMode: true,
   showType: true,
   showSpecialty: true,
 };
@@ -215,7 +189,6 @@ export interface TechnicianAssignment extends BaseEntity {
     firstName: string;
     lastName: string;
     email: string;
-    technicianType?: TechnicianType;
   };
 }
 
@@ -416,9 +389,3 @@ export * from './invitation';
 
 // Export onboarding types
 export * from './onboarding';
-
-// Export modules types
-export * from './modules';
-
-// Export contract types
-export * from './contract';

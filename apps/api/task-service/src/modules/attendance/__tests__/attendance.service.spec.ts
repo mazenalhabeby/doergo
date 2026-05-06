@@ -6,7 +6,6 @@ import { ApprovalService } from '../approval.service';
 import { AttendanceReportService } from '../attendance-report.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
-  TechnicianType,
   TimeEntryStatus,
   ApprovalStatus,
   SERVICE_NAMES,
@@ -35,7 +34,6 @@ describe('AttendanceService', () => {
     lastName: 'Doe',
     email: 'john@example.com',
     role: 'TECHNICIAN',
-    technicianType: TechnicianType.FULL_TIME,
     organizationId: 'org-123',
     isActive: true,
   };
@@ -157,8 +155,7 @@ describe('AttendanceService', () => {
       await expect(service.clockIn(clockInData)).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException for non-FULL_TIME technician', async () => {
-      const freelanceTech = { ...mockTechnician, technicianType: TechnicianType.FREELANCER };
+    it('should handle attendance check (deprecated)', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue(freelanceTech);
 
       await expect(service.clockIn(clockInData)).rejects.toThrow(BadRequestException);

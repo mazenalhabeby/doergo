@@ -11,7 +11,7 @@
 import {
   TimeEntryStatus,
   BreakType,
-  TechnicianType,
+  WorkMode,
   InvitationStatus,
   JoinRequestStatus,
   JoinPolicy,
@@ -62,7 +62,7 @@ export type {
   OnboardingStatus,
   OrgCodeValidation,
 };
-export { TimeEntryStatus, BreakType, TechnicianType, InvitationStatus, JoinRequestStatus, JoinPolicy };
+export { TimeEntryStatus, BreakType, WorkMode, InvitationStatus, JoinRequestStatus, JoinPolicy };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -591,7 +591,7 @@ export interface SuggestedTechnician {
   lastName: string;
   email: string;
   specialty: string | null | undefined;
-  position?: string | null;
+  workMode?: string;
   rating: number;
   ratingCount: number;
   activeTaskCount: number;
@@ -1936,7 +1936,7 @@ export const techniciansApi = {
     const endpoint = buildUrlWithQuery('/technicians', {
       status: params?.status,
       type: params?.type,
-      position: params?.position,
+      workMode: params?.workMode,
       specialty: params?.specialty,
       search: params?.search,
       page: params?.page,
@@ -2293,8 +2293,7 @@ export interface TechnicianAvailability {
   id: string;
   firstName: string;
   lastName: string;
-  technicianType: TechnicianType;
-  position?: string | null;
+  workMode: WorkMode;
   isAvailable: boolean;
   onTimeOff: boolean;
   schedule: {
@@ -2418,9 +2417,7 @@ export const joinRequestsApi = {
 
   approve: async (id: string, data: {
     role: string;
-    platform?: string;
-    technicianType?: string;
-    position?: string;
+    workMode?: string;
     specialty?: string;
     maxDailyJobs?: number;
   }) => {
@@ -2447,11 +2444,9 @@ export interface OrgMember {
   firstName: string;
   lastName: string;
   role: string;
-  platform: string;
   isActive: boolean;
   createdAt: string;
-  technicianType?: string;
-  position?: string | null;
+  workMode?: string;
   specialty?: string;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
@@ -2463,7 +2458,6 @@ export interface UpdateMemberInput {
   firstName?: string;
   lastName?: string;
   role?: string;
-  platform?: string;
   canCreateTasks?: boolean;
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
@@ -2544,16 +2538,16 @@ export const organizationsApi = {
   getProfileBadges: async () => {
     const response = await api.get<{
       success: boolean;
-      data: { profileBadges: { showRole: boolean; showType: boolean; showSpecialty: boolean } | null };
+      data: { profileBadges: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean } | null };
     }>('/organizations/profile-badges');
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
-  updateProfileBadges: async (data: { showRole: boolean; showType: boolean; showSpecialty: boolean }) => {
+  updateProfileBadges: async (data: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean }) => {
     const response = await api.patch<{
       success: boolean;
-      data: { profileBadges: { showRole: boolean; showType: boolean; showSpecialty: boolean } };
+      data: { profileBadges: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean } };
     }>('/organizations/profile-badges', data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
@@ -2622,8 +2616,7 @@ export interface LocationAssignment {
     firstName: string;
     lastName: string;
     email: string;
-    technicianType?: string;
-    position?: string | null;
+    workMode?: string;
   };
   location?: CompanyLocation;
 }

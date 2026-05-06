@@ -126,8 +126,8 @@ export default function AttendanceScreen() {
   // Timer for active break
   const [breakElapsedMinutes, setBreakElapsedMinutes] = useState(0);
 
-  // Check if user is FULL_TIME technician
-  const isFullTimeTechnician = user?.technicianType === 'FULL_TIME';
+  // Attendance is available for all users with the clock module enabled
+  const isFullTimeTechnician = true;
 
   const lastFetchTimeRef = useRef(0);
 

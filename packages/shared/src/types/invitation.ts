@@ -20,7 +20,7 @@ export interface Invitation {
   createdAt: string;
   updatedAt: string;
   // Technician-specific
-  technicianType?: string;
+
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;
@@ -47,7 +47,7 @@ export interface InvitationValidation {
   valid: boolean;
   targetRole?: string;
   organizationName?: string;
-  technicianType?: string;
+
   workMode?: string;
   specialty?: string;
   expiresAt?: string;
@@ -59,7 +59,7 @@ export interface CreateInvitationInput {
   targetRole: string;
   expiresInHours?: number;
   email?: string;
-  technicianType?: string;
+
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;

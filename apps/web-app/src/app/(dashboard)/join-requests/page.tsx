@@ -18,8 +18,13 @@ import { toast } from "sonner"
 import {
   joinRequestsApi,
   JoinRequestStatus,
+<<<<<<< HEAD
   TechnicianType,
 
+=======
+
+  WorkMode,
+>>>>>>> worktree-agent-a0600cc7
   type JoinRequest,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -118,7 +123,6 @@ export default function JoinRequestsPage() {
   // Approve form state
   const [approveRole, setApproveRole] = useState<"DISPATCHER" | "TECHNICIAN">("TECHNICIAN")
   const [approvePlatform, setApprovePlatform] = useState<string>("")
-  const [approveTechnicianType, setApproveTechnicianType] = useState<string>("")
   const [approveWorkMode, setApproveWorkMode] = useState<string>("")
   const [approveSpecialty, setApproveSpecialty] = useState<string>("")
   const [approveMaxDailyJobs, setApproveMaxDailyJobs] = useState("")
@@ -176,7 +180,6 @@ export default function JoinRequestsPage() {
     setSelectedRequest(request)
     setApproveRole("TECHNICIAN")
     setApprovePlatform("")
-    setApproveTechnicianType("")
     setApproveWorkMode("")
     setApproveSpecialty("")
     setApproveMaxDailyJobs("")
@@ -208,8 +211,12 @@ export default function JoinRequestsPage() {
 
     if (approveRole === "TECHNICIAN") {
       if (approvePlatform) data.platform = approvePlatform
+<<<<<<< HEAD
       if (approveTechnicianType) data.technicianType = approveTechnicianType
       if (approveWorkMode) (data as any).position = approveWorkMode
+=======
+      if (approveWorkMode) data.workMode = approveWorkMode
+>>>>>>> worktree-agent-a0600cc7
       if (approveSpecialty) data.specialty = approveSpecialty
       if (approveMaxDailyJobs) data.maxDailyJobs = parseInt(approveMaxDailyJobs)
     } else if (approveRole === "DISPATCHER") {
@@ -471,13 +478,10 @@ export default function JoinRequestsPage() {
 
                 <div className="space-y-2">
                   <Label>{t("joinRequests.approveDialog.employmentTypeLabel")}</Label>
-                  <Select value={approveTechnicianType} onValueChange={setApproveTechnicianType}>
                     <SelectTrigger>
                       <SelectValue placeholder={t("joinRequests.approveDialog.employmentTypePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={TechnicianType.FULL_TIME}>{t("technicians.types.fullTime")}</SelectItem>
-                      <SelectItem value={TechnicianType.FREELANCER}>{t("technicians.types.freelancer")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -489,8 +493,12 @@ export default function JoinRequestsPage() {
                       <SelectValue placeholder={t("joinRequests.approveDialog.workModePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
+<<<<<<< HEAD
                       {approveTechnicianType === TechnicianType.FULL_TIME && (
                         <SelectItem value={"HYBRID"}>{t("technicians.workModes.hybrid")}</SelectItem>
+=======
+                        <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
+>>>>>>> worktree-agent-a0600cc7
                       )}
                       <SelectItem value={"ON_SITE"}>{t("technicians.workModes.onSite")}</SelectItem>
                       <SelectItem value={"ON_ROAD"}>{t("technicians.workModes.onRoad")}</SelectItem>

@@ -1,5 +1,5 @@
 import {
-  TechnicianType,
+  
 
   TimeEntryStatus,
   BreakType,
@@ -25,7 +25,7 @@ import type {
 } from '@hbcfield/shared/client';
 
 // Re-export shared enums
-export { TechnicianType, TimeEntryStatus, BreakType, Role, Platform, TaskStatus, TaskPriority };
+export { TimeEntryStatus, BreakType, Role, Platform, TaskStatus, TaskPriority };
 
 // Re-export shared types
 export type {
@@ -64,7 +64,6 @@ export interface User {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  technicianType?: TechnicianType;
   position?: string | null;
   enabledModules?: string[] | null;
   specialty?: string | null;

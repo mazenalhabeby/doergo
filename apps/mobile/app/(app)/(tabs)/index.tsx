@@ -1,6 +1,10 @@
 import { useAuth } from '../../../src/contexts/auth-context';
 import { AdminDashboard, FullTimeHome, FreelancerHome, HybridHome } from '../../../src/components/home';
+<<<<<<< HEAD
 import { Role, hasModule } from '@hbcfield/shared/client';
+=======
+import { Role, WorkMode } from '@hbcfield/shared/client';
+>>>>>>> worktree-agent-a0600cc7
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -17,7 +21,11 @@ export default function HomeScreen() {
       return <HybridHome />;
     }
     // ON_SITE full-time: attendance-focused home
+<<<<<<< HEAD
     if (hasModule(user || {}, 'clock') && !hasModule(user || {}, 'tasks')) {
+=======
+    if (user?.workMode === WorkMode.ON_SITE) {
+>>>>>>> worktree-agent-a0600cc7
       return <FullTimeHome />;
     }
   }

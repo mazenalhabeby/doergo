@@ -6,7 +6,7 @@
  */
 
 import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Role, Platform, TechnicianType } from '../types';
+import { Role, WorkMode } from '../types';
 
 // =============================================================================
 // METADATA KEYS
@@ -63,18 +63,16 @@ export interface CurrentUserData {
   onboardingCompleted: boolean;
   avatarUrl?: string | null;
   // Permission fields
-  platform: Platform | string;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  technicianType?: TechnicianType;
-  position?: string | null;
-  enabledModules?: string[] | null;
+  workMode?: WorkMode;
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {
     showRole: boolean;
+    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   };

@@ -1,12 +1,11 @@
 /**
- * Employee Management Types
+ * Technician Management Types
  *
- * These types are used for all employees (formerly "technicians").
- * The type names (TechnicianProfile, etc.) are retained for backward compatibility
- * but apply to all users with the EMPLOYEE role (stored as TECHNICIAN in DB).
+ * Types for the full technicians management system including
+ * profiles, statistics, performance metrics, and API inputs.
  */
 
-import { TechnicianType, Role, Platform, TaskStatus } from './enums';
+import { WorkMode, Role, TaskStatus } from './enums';
 
 // ============================================================================
 // TECHNICIAN PROFILE
@@ -27,7 +26,7 @@ export interface TechnicianProfile {
   updatedAt: string;
 
   // Technician-specific fields
-  technicianType: TechnicianType;
+  workMode: WorkMode;
   specialty: string | null;
   position?: string | null;
   enabledModules?: string[] | null;
@@ -41,7 +40,7 @@ export interface TechnicianProfile {
   // Profile badge overrides (null = use org defaults)
   profileBadges?: {
     showRole: boolean;
-
+    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   } | null;
@@ -52,9 +51,6 @@ export interface TechnicianProfile {
     id: string;
     name: string;
   };
-
-  // Platform access
-  platform: Platform;
 
   // Computed fields (populated by backend)
   currentTaskCount?: number; // Active tasks right now
@@ -81,7 +77,7 @@ export interface TechnicianListItem {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  technicianType: TechnicianType;
+  workMode: WorkMode;
   specialty: string | null;
   position?: string | null;
   enabledModules?: string[] | null;
@@ -216,9 +212,9 @@ export interface CreateTechnicianInput {
   firstName: string;
   lastName: string;
   password?: string; // Optional - system can generate
-  technicianType?: TechnicianType;
   position?: string;
   enabledModules?: string[];
+  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
 }
@@ -229,9 +225,9 @@ export interface CreateTechnicianInput {
 export interface UpdateTechnicianInput {
   firstName?: string;
   lastName?: string;
-  technicianType?: TechnicianType;
   position?: string;
   enabledModules?: string[];
+  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
@@ -240,6 +236,7 @@ export interface UpdateTechnicianInput {
   canCreateTasks?: boolean;
   profileBadges?: {
     showRole: boolean;
+    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   } | null;
@@ -251,7 +248,7 @@ export interface UpdateTechnicianInput {
 export interface TechniciansQueryParams {
   // Filters
   status?: 'active' | 'inactive' | 'all';
-  type?: TechnicianType | 'all';
+  workMode?: WorkMode | 'all';
   position?: string;
   specialty?: string;
   search?: string; // Search by name or email
@@ -348,34 +345,6 @@ export interface AvailabilityCalendarData {
 // ============================================================================
 
 /**
- * Get display label for technician type
- */
-export function getTechnicianTypeLabel(type: TechnicianType): string {
-  switch (type) {
-    case TechnicianType.FREELANCER:
-      return 'Freelancer';
-    case TechnicianType.FULL_TIME:
-      return 'Full-Time';
-    default:
-      return type;
-  }
-}
-
-/**
- * Get color class for technician type badge
- */
-export function getTechnicianTypeColor(type: TechnicianType): string {
-  switch (type) {
-    case TechnicianType.FREELANCER:
-      return 'bg-purple-100 text-purple-700';
-    case TechnicianType.FULL_TIME:
-      return 'bg-blue-100 text-blue-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-}
-
-/**
  * Check if a technician is considered "online"
  * Online = location updated within the last 5 minutes
  */
@@ -457,33 +426,53 @@ export const SPECIALTY_OPTIONS = [
 ] as const;
 
 // ============================================================================
-// POSITION HELPERS
+// WORK MODE HELPERS
 // ============================================================================
 
 /**
- * Get display label for a position
+ * Get display label for work mode
  */
-export function getPositionLabel(position?: string | null): string {
-  if (!position) return 'Employee';
-  return position.charAt(0).toUpperCase() + position.slice(1).replace(/_/g, ' ');
+export function getWorkModeLabel(mode: WorkMode): string {
+  switch (mode) {
+    case WorkMode.ON_SITE:
+      return 'On-Site';
+    case WorkMode.ON_ROAD:
+      return 'On-Road';
+    case WorkMode.HYBRID:
+      return 'Hybrid';
+    default:
+      return mode;
+  }
 }
 
 /**
- * Get color class for position badge
+ * Get color class for work mode badge
  */
-export function getPositionColor(position?: string | null): string {
-  switch (position) {
-    case 'technician':
-      return 'bg-blue-100 text-blue-700';
-    case 'driver':
-      return 'bg-orange-100 text-orange-700';
-    case 'office_manager':
+export function getWorkModeColor(mode: WorkMode): string {
+  switch (mode) {
+    case WorkMode.ON_SITE:
       return 'bg-teal-100 text-teal-700';
-    case 'sales':
-      return 'bg-purple-100 text-purple-700';
-    case 'accountant':
+    case WorkMode.ON_ROAD:
+      return 'bg-orange-100 text-orange-700';
+    case WorkMode.HYBRID:
       return 'bg-indigo-100 text-indigo-700';
     default:
       return 'bg-gray-100 text-gray-700';
   }
+}
+
+/**
+ * Check if a technician's work mode allows attendance (clock in/out)
+ * ON_SITE and HYBRID can use attendance, ON_ROAD cannot
+ */
+export function canUseAttendance(workMode: WorkMode): boolean {
+  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
+}
+
+/**
+ * Check if a technician's work mode allows location assignment
+ * ON_SITE and HYBRID can be assigned to locations, ON_ROAD cannot
+ */
+export function canBeAssignedToLocation(workMode: WorkMode): boolean {
+  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
 }

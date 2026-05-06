@@ -49,9 +49,9 @@ export class InvitationService {
     createdById: string;
     creatorRole: string;
     expiresInHours?: number;
-    technicianType?: string;
     position?: string;
     enabledModules?: string[];
+    workMode?: string;
     specialty?: string;
     maxDailyJobs?: number;
   }) {
@@ -136,11 +136,10 @@ export class InvitationService {
         organizationId: data.organizationId,
         createdById: data.createdById,
         expiresAt,
-        technicianType: isTechnician ? (data.technicianType as any) || 'FREELANCER' : null,
+        position: isTechnician ? data.position || 'technician' : null,
+        workMode: isTechnician ? (data.workMode as any) || 'HYBRID' : null,
         specialty: isTechnician ? data.specialty || null : null,
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
-        position: isTechnician ? data.position || 'technician' : null,
-        enabledModules: isTechnician && data.enabledModules ? data.enabledModules : undefined,
       },
       include: {
         organization: { select: { id: true, name: true } },
@@ -159,13 +158,12 @@ export class InvitationService {
         targetRole: invitation.targetRole,
         status: invitation.status,
         expiresAt: invitation.expiresAt.toISOString(),
-        technicianType: invitation.technicianType,
         position: invitation.position,
-        enabledModules: invitation.enabledModules,
+        workMode: invitation.workMode,
         specialty: invitation.specialty,
         maxDailyJobs: invitation.maxDailyJobs,
-        organization: (invitation as any).organization,
-        createdBy: (invitation as any).createdBy,
+        organization: invitation.organization,
+        createdBy: invitation.createdBy,
         createdAt: invitation.createdAt.toISOString(),
       },
     };
@@ -200,9 +198,8 @@ export class InvitationService {
       valid: true,
       targetRole: invitation.targetRole,
       organizationName: invitation.organization.name,
-      technicianType: invitation.technicianType,
       position: invitation.position,
-      enabledModules: invitation.enabledModules,
+      workMode: invitation.workMode,
       specialty: invitation.specialty,
       expiresAt: invitation.expiresAt.toISOString(),
     };
@@ -290,16 +287,14 @@ export class InvitationService {
           lastName: data.lastName.trim(),
           role: invitation.targetRole,
           organizationId: invitation.organizationId,
-          platform: defaultPerms.platform,
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
           ...(invitation.targetRole === 'TECHNICIAN'
             ? {
-                technicianType: invitation.technicianType || 'FREELANCER',
                 position: invitation.position || 'technician',
-                enabledModules: invitation.enabledModules || ['tasks', 'clock', 'time_off'],
+                workMode: invitation.workMode || 'HYBRID',
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
               }
@@ -312,7 +307,6 @@ export class InvitationService {
           lastName: true,
           role: true,
           organizationId: true,
-          platform: true,
           canCreateTasks: true,
           canViewAllTasks: true,
           canAssignTasks: true,
