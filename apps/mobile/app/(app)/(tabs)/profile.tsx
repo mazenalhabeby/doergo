@@ -36,7 +36,6 @@ import { ConfirmSheet } from '../../../src/components';
 import {
   getRoleLabel,
   getWorkModeLabel,
-  getTechnicianTypeLabel,
   Role,
 } from '@hbcfield/shared/client';
 
@@ -238,7 +237,6 @@ export default function ProfileScreen() {
           const showType = badges?.showType !== false;
           const showSpecialty = badges?.showSpecialty !== false;
           const hasBadges = showRole || (isTechnician && showWorkMode && !!user?.workMode)
-            || (isTechnician && showType && !!user?.technicianType)
             || (isTechnician && showSpecialty && !!user?.specialty);
 
           if (!hasBadges) return null;
@@ -262,14 +260,6 @@ export default function ProfileScreen() {
                   <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
                   <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
                     {getWorkModeLabel(user.workMode)}
-                  </Text>
-                </View>
-              )}
-              {isTechnician && showType && !!user?.technicianType && (
-                <View style={[styles.badge, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                  <Ionicons name="person-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
-                  <Text style={[styles.badgeText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                    {getTechnicianTypeLabel(user.technicianType)}
                   </Text>
                 </View>
               )}

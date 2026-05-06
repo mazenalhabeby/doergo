@@ -1,13 +1,13 @@
 // Re-export all enums from dedicated file (avoids require cycles with sub-modules)
 export {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority, TaskEventType,
-  AttachmentType, AssetStatus, ReportAttachmentType, TechnicianType, WorkMode,
+  AttachmentType, AssetStatus, ReportAttachmentType, WorkMode,
   TimeEntryStatus, BreakType, ApprovalStatus,
 } from './enums';
 
 import {
-  Role, Platform, AccessLevel, TaskStatus, TaskPriority,
-  TechnicianType, WorkMode,
+  Role, AccessLevel, TaskStatus, TaskPriority,
+  WorkMode,
   AttachmentType, AssetStatus, ReportAttachmentType, TaskEventType,
 } from './enums';
 
@@ -102,26 +102,22 @@ export interface User extends BaseEntity {
   isActive: boolean;
   onboardingCompleted: boolean;
   // Permission fields
-  platform: Platform;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  technicianType?: TechnicianType;
   workMode?: WorkMode;
 }
 
 // Default permissions by role
 export const DEFAULT_PERMISSIONS: Record<Role, {
-  platform: Platform;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
 }> = {
   [Role.ADMIN]: {
-    platform: Platform.BOTH,
     canCreateTasks: true,
     canViewAllTasks: true,
     canAssignTasks: true,
@@ -129,21 +125,18 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
   },
   [Role.CLIENT]: {
     // Deprecated, same as ADMIN for backward compatibility
-    platform: Platform.BOTH,
     canCreateTasks: true,
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: true,
   },
   [Role.DISPATCHER]: {
-    platform: Platform.WEB,
     canCreateTasks: false,
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: false,
   },
   [Role.TECHNICIAN]: {
-    platform: Platform.MOBILE,
     canCreateTasks: false,
     canViewAllTasks: false,
     canAssignTasks: false,
@@ -196,7 +189,6 @@ export interface TechnicianAssignment extends BaseEntity {
     firstName: string;
     lastName: string;
     email: string;
-    technicianType?: TechnicianType;
   };
 }
 

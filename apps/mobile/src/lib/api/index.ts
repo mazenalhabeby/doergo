@@ -50,8 +50,8 @@ export type {
 
 // Re-exported enums from @hbcfield/shared
 export {
-  TechnicianType,
-  WorkMode,
+  
+
   TimeEntryStatus,
   BreakType,
   Role,

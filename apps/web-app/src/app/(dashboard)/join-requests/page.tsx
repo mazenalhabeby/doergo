@@ -18,7 +18,7 @@ import { toast } from "sonner"
 import {
   joinRequestsApi,
   JoinRequestStatus,
-  TechnicianType,
+
   WorkMode,
   type JoinRequest,
 } from "@/lib/api"
@@ -118,7 +118,6 @@ export default function JoinRequestsPage() {
   // Approve form state
   const [approveRole, setApproveRole] = useState<"DISPATCHER" | "TECHNICIAN">("TECHNICIAN")
   const [approvePlatform, setApprovePlatform] = useState<string>("")
-  const [approveTechnicianType, setApproveTechnicianType] = useState<string>("")
   const [approveWorkMode, setApproveWorkMode] = useState<string>("")
   const [approveSpecialty, setApproveSpecialty] = useState<string>("")
   const [approveMaxDailyJobs, setApproveMaxDailyJobs] = useState("")
@@ -176,7 +175,6 @@ export default function JoinRequestsPage() {
     setSelectedRequest(request)
     setApproveRole("TECHNICIAN")
     setApprovePlatform("")
-    setApproveTechnicianType("")
     setApproveWorkMode("")
     setApproveSpecialty("")
     setApproveMaxDailyJobs("")
@@ -208,7 +206,6 @@ export default function JoinRequestsPage() {
 
     if (approveRole === "TECHNICIAN") {
       if (approvePlatform) data.platform = approvePlatform
-      if (approveTechnicianType) data.technicianType = approveTechnicianType
       if (approveWorkMode) data.workMode = approveWorkMode
       if (approveSpecialty) data.specialty = approveSpecialty
       if (approveMaxDailyJobs) data.maxDailyJobs = parseInt(approveMaxDailyJobs)
@@ -471,13 +468,10 @@ export default function JoinRequestsPage() {
 
                 <div className="space-y-2">
                   <Label>{t("joinRequests.approveDialog.employmentTypeLabel")}</Label>
-                  <Select value={approveTechnicianType} onValueChange={setApproveTechnicianType}>
                     <SelectTrigger>
                       <SelectValue placeholder={t("joinRequests.approveDialog.employmentTypePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={TechnicianType.FULL_TIME}>{t("technicians.types.fullTime")}</SelectItem>
-                      <SelectItem value={TechnicianType.FREELANCER}>{t("technicians.types.freelancer")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -489,7 +483,6 @@ export default function JoinRequestsPage() {
                       <SelectValue placeholder={t("joinRequests.approveDialog.workModePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {approveTechnicianType === TechnicianType.FULL_TIME && (
                         <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
                       )}
                       <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>

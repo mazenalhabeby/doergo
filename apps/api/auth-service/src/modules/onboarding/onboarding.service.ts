@@ -2,8 +2,6 @@ import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   Role,
-  Platform,
-  TechnicianType,
   WorkMode,
   DEFAULT_PERMISSIONS,
   ORG_CODE_LENGTH,
@@ -65,7 +63,7 @@ export class OnboardingService {
           organizationId: organization.id,
           role: 'ADMIN',
           onboardingCompleted: true,
-          platform: defaultPerms.platform,
+
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
@@ -79,12 +77,12 @@ export class OnboardingService {
           role: true,
           organizationId: true,
           onboardingCompleted: true,
-          platform: true,
+
           canCreateTasks: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
-          technicianType: true,
+
           workMode: true,
         },
       });
@@ -222,7 +220,6 @@ export class OnboardingService {
           organizationId: organization.id,
           onboardingCompleted: true,
           role: 'TECHNICIAN',
-          platform: 'MOBILE',
         },
       });
 
@@ -334,14 +331,14 @@ export class OnboardingService {
           organizationId: invitation.organizationId,
           role: invitation.targetRole,
           onboardingCompleted: true,
-          platform: defaultPerms.platform,
+
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
           ...(isTechnician
             ? {
-                technicianType: invitation.technicianType || 'FREELANCER',
+                position: invitation.position || 'technician',
                 workMode: invitation.workMode || 'HYBRID',
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
@@ -356,12 +353,12 @@ export class OnboardingService {
           role: true,
           organizationId: true,
           onboardingCompleted: true,
-          platform: true,
+
           canCreateTasks: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
-          technicianType: true,
+
           workMode: true,
         },
       });
@@ -507,8 +504,8 @@ export class OnboardingService {
     organizationId: string;
     approverId: string;
     role: string;
-    platform?: string;
-    technicianType?: string;
+    position?: string;
+    enabledModules?: string[];
     workMode?: string;
     specialty?: string;
     maxDailyJobs?: number;
@@ -542,14 +539,14 @@ export class OnboardingService {
           organizationId: data.organizationId,
           role,
           onboardingCompleted: true,
-          platform: (data.platform || defaultPerms.platform) as Platform,
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
           ...(isTechnician
             ? {
-                technicianType: (data.technicianType || 'FREELANCER') as TechnicianType,
+                position: data.position || 'technician',
+                enabledModules: data.enabledModules || ['tasks', 'clock', 'time_off'],
                 workMode: (data.workMode || 'HYBRID') as WorkMode,
                 specialty: data.specialty || null,
                 maxDailyJobs: data.maxDailyJobs || 5,
@@ -566,7 +563,6 @@ export class OnboardingService {
           reviewedById: data.approverId,
           reviewedAt: new Date(),
           assignedRole: data.role as any,
-          assignedPlatform: (data.platform || defaultPerms.platform) as any,
         },
       });
 

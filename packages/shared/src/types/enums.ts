@@ -70,11 +70,6 @@ export enum ReportAttachmentType {
   AFTER = 'AFTER',
 }
 
-export enum TechnicianType {
-  FREELANCER = 'FREELANCER',
-  FULL_TIME = 'FULL_TIME',
-}
-
 export enum WorkMode {
   ON_SITE = 'ON_SITE',
   ON_ROAD = 'ON_ROAD',

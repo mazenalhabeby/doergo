@@ -20,7 +20,6 @@ import {
   DEFAULT_PERMISSIONS,
   DEFAULT_PROFILE_BADGES,
   Role,
-  Platform,
   type ProfileBadgesConfig,
 } from '@hbcfield/shared';
 
@@ -172,7 +171,7 @@ export class AuthService {
               onboardingCompleted: true,
               failedLoginAttempts: 0,
               lockedUntil: null,
-              platform: defaultPerms.platform,
+
               canCreateTasks: defaultPerms.canCreateTasks,
               canViewAllTasks: defaultPerms.canViewAllTasks,
               canAssignTasks: defaultPerms.canAssignTasks,
@@ -187,7 +186,7 @@ export class AuthService {
               organizationId: true,
               onboardingCompleted: true,
               avatarUrl: true,
-              platform: true,
+
               canCreateTasks: true,
               canViewAllTasks: true,
               canAssignTasks: true,
@@ -212,7 +211,6 @@ export class AuthService {
             onboardingCompleted: false,
             failedLoginAttempts: 0,
             lockedUntil: null,
-            platform: defaultPerms.platform,
             canCreateTasks: defaultPerms.canCreateTasks,
             canViewAllTasks: defaultPerms.canViewAllTasks,
             canAssignTasks: defaultPerms.canAssignTasks,
@@ -226,7 +224,6 @@ export class AuthService {
             role: true,
             organizationId: true,
             onboardingCompleted: true,
-            platform: true,
             canCreateTasks: true,
             canViewAllTasks: true,
             canAssignTasks: true,
@@ -365,13 +362,11 @@ export class AuthService {
             onboardingCompleted: user.onboardingCompleted,
             avatarUrl: user.avatarUrl,
             // Permission fields
-            platform: user.platform,
             canCreateTasks: user.canCreateTasks,
             canViewAllTasks: user.canViewAllTasks,
             canAssignTasks: user.canAssignTasks,
             canManageUsers: user.canManageUsers,
             // Technician-specific fields
-            technicianType: user.technicianType,
             workMode: user.workMode,
             specialty: user.specialty,
             // Profile badge visibility
@@ -626,12 +621,10 @@ export class AuthService {
             organizationId: storedToken.user.organizationId,
             onboardingCompleted: storedToken.user.onboardingCompleted,
             avatarUrl: storedToken.user.avatarUrl,
-            platform: storedToken.user.platform,
             canCreateTasks: storedToken.user.canCreateTasks,
             canViewAllTasks: storedToken.user.canViewAllTasks,
             canAssignTasks: storedToken.user.canAssignTasks,
             canManageUsers: storedToken.user.canManageUsers,
-            technicianType: storedToken.user.technicianType,
             workMode: storedToken.user.workMode,
             specialty: storedToken.user.specialty,
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
@@ -864,7 +857,6 @@ export class AuthService {
           canAssignTasks: true,
           canManageUsers: true,
           // Technician-specific fields
-          technicianType: true,
           workMode: true,
           specialty: true,
           // Badge config

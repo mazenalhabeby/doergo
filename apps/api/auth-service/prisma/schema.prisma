@@ -80,12 +80,6 @@ enum ReportAttachmentType {
   AFTER   // Photo taken after work completed
 }
 
-// Technician employment/billing type (who pays for expenses)
-enum TechnicianType {
-  FREELANCER  // Covers own trips and expenses
-  FULL_TIME   // Company covers trips and expenses
-}
-
 // Where the technician works (decoupled from billing type)
 enum WorkMode {
   ON_SITE  // Works at company locations (attendance tracking)
@@ -333,14 +327,12 @@ model User {
   lockedUntil         DateTime?
 
   // Permission fields (granular access control)
-  platform        Platform @default(BOTH)    // Which platforms user can access
   canCreateTasks  Boolean  @default(false)   // Can create new tasks
   canViewAllTasks Boolean  @default(false)   // Can view all org tasks (vs only assigned/created)
   canAssignTasks  Boolean  @default(false)   // Can assign tasks to technicians
   canManageUsers  Boolean  @default(false)   // Can manage users in organization
 
   // Technician-specific fields (only used when role = TECHNICIAN)
-  technicianType TechnicianType @default(FREELANCER)  // Billing: who pays for expenses
   workMode       WorkMode       @default(HYBRID)      // Where they work: on-site, on-road, or both
   specialty      String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
   rating         Float?    @default(5.0) // Average rating (1-5)
@@ -1000,7 +992,6 @@ model Invitation {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
-  technicianType TechnicianType?
   workMode       WorkMode?
   specialty      String?
   maxDailyJobs   Int?

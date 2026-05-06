@@ -72,8 +72,6 @@ export interface SubmitJoinRequestInput {
 // Approve join request input (admin action)
 export interface ApproveJoinRequestInput {
   role: string;
-  platform?: string;
-  technicianType?: string;
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;

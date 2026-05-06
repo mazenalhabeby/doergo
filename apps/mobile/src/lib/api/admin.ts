@@ -34,7 +34,6 @@ export interface OrgMember {
   platform: string;
   isActive: boolean;
   specialty?: string | null;
-  technicianType?: string;
   workMode?: string;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
@@ -49,7 +48,6 @@ export interface Invitation {
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
   expiresAt: string;
   createdAt: string;
-  technicianType?: string;
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;
@@ -60,7 +58,6 @@ export interface Invitation {
 export interface CreateInvitationInput {
   targetRole: string;
   expiresInHours?: number;
-  technicianType?: string;
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;
@@ -80,7 +77,6 @@ export const joinRequestsApi = {
   approve: async (id: string, data: {
     role: string;
     platform?: string;
-    technicianType?: string;
     workMode?: string;
     specialty?: string;
   }): Promise<void> => {

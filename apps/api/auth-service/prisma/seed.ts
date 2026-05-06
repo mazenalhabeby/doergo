@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, TechnicianType, WorkMode, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@prisma/client';
+import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, WorkMode, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@prisma/client';
 import { createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 
@@ -65,7 +65,6 @@ async function main() {
       organizationId: organization.id,
       onboardingCompleted: true,
       // ADMIN permissions - full access
-      platform: 'BOTH',
       canCreateTasks: true,
       canViewAllTasks: true,
       canAssignTasks: true,
@@ -84,7 +83,6 @@ async function main() {
       organizationId: organization.id,
       onboardingCompleted: true,
       // DISPATCHER permissions - web only, can view all and assign
-      platform: 'WEB',
       canCreateTasks: false,
       canViewAllTasks: true,
       canAssignTasks: true,
@@ -103,13 +101,11 @@ async function main() {
       organizationId: organization.id,
       onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
-      platform: 'MOBILE',
       canCreateTasks: false,
       canViewAllTasks: false,
       canAssignTasks: false,
       canManageUsers: false,
       // Full-time employee - assigned to company locations
-      technicianType: TechnicianType.FULL_TIME,
       workMode: WorkMode.ON_SITE,
     },
   });
@@ -124,13 +120,11 @@ async function main() {
       organizationId: organization.id,
       onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
-      platform: 'MOBILE',
       canCreateTasks: false,
       canViewAllTasks: false,
       canAssignTasks: false,
       canManageUsers: false,
       // Freelancer - task-based work, no fixed location
-      technicianType: TechnicianType.FREELANCER,
       workMode: WorkMode.ON_ROAD,
     },
   });
@@ -145,12 +139,10 @@ async function main() {
       role: Role.TECHNICIAN,
       organizationId: organization.id,
       onboardingCompleted: true,
-      platform: 'MOBILE',
       canCreateTasks: false,
       canViewAllTasks: false,
       canAssignTasks: false,
       canManageUsers: false,
-      technicianType: TechnicianType.FULL_TIME,
       workMode: WorkMode.HYBRID,
     },
   });
@@ -1495,7 +1487,6 @@ async function main() {
       createdById: clientUser.id,
       expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), // 3 days
       status: InvitationStatus.PENDING,
-      technicianType: TechnicianType.FULL_TIME,
       workMode: WorkMode.ON_SITE,
       specialty: 'Electrical',
       maxDailyJobs: 5,
@@ -1525,7 +1516,6 @@ async function main() {
       status: InvitationStatus.ACCEPTED,
       usedAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // Used 1 day ago
       acceptedById: technician1.id,
-      technicianType: TechnicianType.FULL_TIME,
     },
   });
 
@@ -1566,11 +1556,9 @@ async function main() {
 
   console.log('\nSeed completed successfully!');
   console.log('\nTest credentials:');
-  console.log('  Admin:       client@example.com / password123 (platform: BOTH)');
-  console.log('  Dispatcher:  dispatcher@example.com / password123 (platform: WEB)');
-  console.log('  Technician1: technician1@example.com / password123 (FULL_TIME, ON_SITE)');
-  console.log('  Technician2: technician2@example.com / password123 (FREELANCER, ON_ROAD)');
-  console.log('  Technician3: technician3@example.com / password123 (FULL_TIME, HYBRID — all 5 tabs)');
+  console.log('  Technician1: technician1@example.com / password123 (ON_SITE)');
+  console.log('  Technician2: technician2@example.com / password123 (ON_ROAD)');
+  console.log('  Technician3: technician3@example.com / password123 (HYBRID — all modules)');
   console.log('  New User:    newuser@example.com / password123 (NO org, onboarding incomplete)');
   console.log('\nOrg Join Code: ACME2026 (policy: OPEN)');
   console.log('Invitation Codes: TEST01 (technician), TEST02 (dispatcher)');

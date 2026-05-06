@@ -5,7 +5,7 @@
  * profiles, statistics, performance metrics, and API inputs.
  */
 
-import { TechnicianType, WorkMode, Role, Platform, TaskStatus } from './enums';
+import { WorkMode, Role, TaskStatus } from './enums';
 
 // ============================================================================
 // TECHNICIAN PROFILE
@@ -26,9 +26,10 @@ export interface TechnicianProfile {
   updatedAt: string;
 
   // Technician-specific fields
-  technicianType: TechnicianType;
   workMode: WorkMode;
   specialty: string | null;
+  position?: string | null;
+  enabledModules?: string[] | null;
   rating: number;
   ratingCount: number;
   maxDailyJobs: number;
@@ -50,9 +51,6 @@ export interface TechnicianProfile {
     id: string;
     name: string;
   };
-
-  // Platform access
-  platform: Platform;
 
   // Computed fields (populated by backend)
   currentTaskCount?: number; // Active tasks right now
@@ -79,9 +77,10 @@ export interface TechnicianListItem {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  technicianType: TechnicianType;
   workMode: WorkMode;
   specialty: string | null;
+  position?: string | null;
+  enabledModules?: string[] | null;
   rating: number;
   ratingCount: number;
   maxDailyJobs: number;
@@ -213,7 +212,8 @@ export interface CreateTechnicianInput {
   firstName: string;
   lastName: string;
   password?: string; // Optional - system can generate
-  technicianType?: TechnicianType;
+  position?: string;
+  enabledModules?: string[];
   workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
@@ -225,7 +225,8 @@ export interface CreateTechnicianInput {
 export interface UpdateTechnicianInput {
   firstName?: string;
   lastName?: string;
-  technicianType?: TechnicianType;
+  position?: string;
+  enabledModules?: string[];
   workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
@@ -247,8 +248,8 @@ export interface UpdateTechnicianInput {
 export interface TechniciansQueryParams {
   // Filters
   status?: 'active' | 'inactive' | 'all';
-  type?: TechnicianType | 'all';
   workMode?: WorkMode | 'all';
+  position?: string;
   specialty?: string;
   search?: string; // Search by name or email
 
@@ -342,34 +343,6 @@ export interface AvailabilityCalendarData {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-/**
- * Get display label for technician type
- */
-export function getTechnicianTypeLabel(type: TechnicianType): string {
-  switch (type) {
-    case TechnicianType.FREELANCER:
-      return 'Freelancer';
-    case TechnicianType.FULL_TIME:
-      return 'Full-Time';
-    default:
-      return type;
-  }
-}
-
-/**
- * Get color class for technician type badge
- */
-export function getTechnicianTypeColor(type: TechnicianType): string {
-  switch (type) {
-    case TechnicianType.FREELANCER:
-      return 'bg-purple-100 text-purple-700';
-    case TechnicianType.FULL_TIME:
-      return 'bg-blue-100 text-blue-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-}
 
 /**
  * Check if a technician is considered "online"

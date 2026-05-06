@@ -291,9 +291,7 @@ export default function InvitationsPage() {
                     <TableCell>
                       <div className="space-y-1">
                         {getRoleBadge(inv.targetRole, t)}
-                        {inv.technicianType && (
                           <div className="text-xs text-slate-500">
-                            {inv.technicianType === "FULL_TIME" ? t("technicians.types.fullTime") : t("technicians.types.freelancer")}
                             {inv.specialty && ` / ${inv.specialty}`}
                           </div>
                         )}

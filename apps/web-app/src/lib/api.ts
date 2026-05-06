@@ -11,7 +11,6 @@
 import {
   TimeEntryStatus,
   BreakType,
-  TechnicianType,
   WorkMode,
   InvitationStatus,
   JoinRequestStatus,
@@ -63,7 +62,7 @@ export type {
   OnboardingStatus,
   OrgCodeValidation,
 };
-export { TimeEntryStatus, BreakType, TechnicianType, WorkMode, InvitationStatus, JoinRequestStatus, JoinPolicy };
+export { TimeEntryStatus, BreakType, WorkMode, InvitationStatus, JoinRequestStatus, JoinPolicy };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -2294,7 +2293,6 @@ export interface TechnicianAvailability {
   id: string;
   firstName: string;
   lastName: string;
-  technicianType: TechnicianType;
   workMode: WorkMode;
   isAvailable: boolean;
   onTimeOff: boolean;
@@ -2419,8 +2417,6 @@ export const joinRequestsApi = {
 
   approve: async (id: string, data: {
     role: string;
-    platform?: string;
-    technicianType?: string;
     workMode?: string;
     specialty?: string;
     maxDailyJobs?: number;
@@ -2448,10 +2444,8 @@ export interface OrgMember {
   firstName: string;
   lastName: string;
   role: string;
-  platform: string;
   isActive: boolean;
   createdAt: string;
-  technicianType?: string;
   workMode?: string;
   specialty?: string;
   canCreateTasks: boolean;
@@ -2464,7 +2458,6 @@ export interface UpdateMemberInput {
   firstName?: string;
   lastName?: string;
   role?: string;
-  platform?: string;
   canCreateTasks?: boolean;
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
@@ -2623,7 +2616,6 @@ export interface LocationAssignment {
     firstName: string;
     lastName: string;
     email: string;
-    technicianType?: string;
     workMode?: string;
   };
   location?: CompanyLocation;

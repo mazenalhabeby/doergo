@@ -8,7 +8,7 @@
 
 export { OnboardingCompleteGuard } from './onboarding.guard';
 
-import { Role, Platform } from '../types';
+import { Role } from '../types';
 
 // ============================================
 // Role-based helpers
@@ -51,35 +51,6 @@ export function isDispatcher(user: { role: string }): boolean {
  */
 export function isTechnician(user: { role: string }): boolean {
   return user.role === Role.TECHNICIAN;
-}
-
-// ============================================
-// Platform-based helpers
-// ============================================
-
-/**
- * Check if user can access a specific platform
- */
-export function canAccessPlatform(
-  user: { platform?: string },
-  targetPlatform: 'WEB' | 'MOBILE'
-): boolean {
-  if (!user.platform) return true; // Default allow if platform not set (backward compat)
-  return user.platform === Platform.BOTH || user.platform === targetPlatform;
-}
-
-/**
- * Check if user can access web platform
- */
-export function canAccessWeb(user: { platform?: string }): boolean {
-  return canAccessPlatform(user, 'WEB');
-}
-
-/**
- * Check if user can access mobile platform
- */
-export function canAccessMobile(user: { platform?: string }): boolean {
-  return canAccessPlatform(user, 'MOBILE');
 }
 
 // ============================================

@@ -31,7 +31,7 @@ import {
   type UpdateTechnicianInput,
   type Task,
   type TimeEntry,
-  TechnicianType,
+
   WorkMode,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -110,7 +110,6 @@ export default function TechnicianDetailPage() {
   // Edit form state
   const [editFirstName, setEditFirstName] = useState("")
   const [editLastName, setEditLastName] = useState("")
-  const [editTechnicianType, setEditTechnicianType] = useState<TechnicianType>(TechnicianType.FREELANCER)
   const [editWorkMode, setEditWorkMode] = useState<WorkMode>(WorkMode.HYBRID)
   const [editSpecialty, setEditSpecialty] = useState("")
   const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
@@ -201,7 +200,6 @@ export default function TechnicianDetailPage() {
     if (technician) {
       setEditFirstName(technician.firstName)
       setEditLastName(technician.lastName)
-      setEditTechnicianType(technician.technicianType)
       setEditWorkMode(technician.workMode || WorkMode.HYBRID)
       setEditSpecialty(technician.specialty || "")
       setEditMaxDailyJobs(technician.maxDailyJobs || 5)
@@ -228,7 +226,6 @@ export default function TechnicianDetailPage() {
     updateMutation.mutate({
       firstName: editFirstName.trim(),
       lastName: editLastName.trim(),
-      technicianType: editTechnicianType,
       workMode: editWorkMode,
       specialty: editSpecialty.trim() || undefined,
       maxDailyJobs: editMaxDailyJobs,
@@ -247,11 +244,8 @@ export default function TechnicianDetailPage() {
   const stats = technician?.stats
 
   // Helper functions
-  const getTypeBadge = (type: TechnicianType) => {
     switch (type) {
-      case TechnicianType.FULL_TIME:
         return <Badge className="bg-blue-100 text-blue-700">{t('technicians.types.fullTime')}</Badge>
-      case TechnicianType.FREELANCER:
         return <Badge className="bg-purple-100 text-purple-700">{t('technicians.types.freelancer')}</Badge>
       default:
         return null
@@ -342,7 +336,6 @@ export default function TechnicianDetailPage() {
                   <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                     {technician.firstName} {technician.lastName}
                   </h1>
-                  {getTypeBadge(technician.technicianType)}
                   {technician.canCreateTasks && (
                     <Badge className="bg-emerald-100 text-emerald-700">{t('technicians.detail.canCreateTasks')}</Badge>
                   )}
@@ -526,15 +519,11 @@ export default function TechnicianDetailPage() {
               <div className="space-y-2">
                 <Label>{t('technicians.detail.editDialog.employmentTypeLabel')}</Label>
                 <Select
-                  value={editTechnicianType}
-                  onValueChange={(v) => setEditTechnicianType(v as TechnicianType)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={TechnicianType.FREELANCER}>{t('technicians.types.freelancer')}</SelectItem>
-                    <SelectItem value={TechnicianType.FULL_TIME}>{t('technicians.types.fullTime')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -548,7 +537,6 @@ export default function TechnicianDetailPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {editTechnicianType === TechnicianType.FULL_TIME && (
                       <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
                     )}
                     <SelectItem value={WorkMode.ON_SITE}>{t('technicians.workModes.onSite')}</SelectItem>

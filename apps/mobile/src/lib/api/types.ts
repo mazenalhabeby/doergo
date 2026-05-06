@@ -1,6 +1,6 @@
 import {
-  TechnicianType,
-  WorkMode,
+  
+
   TimeEntryStatus,
   BreakType,
   Role,
@@ -25,7 +25,7 @@ import type {
 } from '@hbcfield/shared/client';
 
 // Re-export shared enums
-export { TechnicianType, WorkMode, TimeEntryStatus, BreakType, Role, Platform, TaskStatus, TaskPriority };
+export { TimeEntryStatus, BreakType, Role, Platform, TaskStatus, TaskPriority };
 
 // Re-export shared types
 export type {
@@ -53,7 +53,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN';
+  role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN' | 'EMPLOYEE';
   organizationId: string | null;
   onboardingCompleted: boolean;
   avatarUrl?: string | null;
@@ -64,13 +64,13 @@ export interface User {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  technicianType?: TechnicianType;
-  workMode?: WorkMode;
+  position?: string | null;
+  enabledModules?: string[] | null;
   specialty?: string | null;
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {
     showRole: boolean;
-    showWorkMode: boolean;
+
     showType: boolean;
     showSpecialty: boolean;
   };

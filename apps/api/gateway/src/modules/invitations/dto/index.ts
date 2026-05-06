@@ -44,14 +44,6 @@ export class CreateInvitationDto {
   expiresInHours?: number;
 
   // Technician-specific fields
-  @ApiPropertyOptional({
-    enum: ['FREELANCER', 'FULL_TIME'],
-    description: 'Technician type (only for TECHNICIAN role)',
-  })
-  @IsString()
-  @IsOptional()
-  @IsEnum(['FREELANCER', 'FULL_TIME'])
-  technicianType?: string;
 
   @ApiPropertyOptional({
     enum: ['ON_SITE', 'ON_ROAD', 'HYBRID'],

@@ -10,7 +10,7 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { TechnicianType, WorkMode } from '@hbcfield/shared';
+import { WorkMode } from '@hbcfield/shared';
 
 export class UpdateTechnicianDto {
   @ApiPropertyOptional({
@@ -32,15 +32,6 @@ export class UpdateTechnicianDto {
   @MinLength(1)
   @MaxLength(50)
   lastName?: string;
-
-  @ApiPropertyOptional({
-    enum: TechnicianType,
-    example: TechnicianType.FULL_TIME,
-    description: 'Employment type',
-  })
-  @IsEnum(TechnicianType)
-  @IsOptional()
-  technicianType?: TechnicianType;
 
   @ApiPropertyOptional({
     enum: WorkMode,

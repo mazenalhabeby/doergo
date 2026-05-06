@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   invitationsApi,
   type CreateInvitationInput,
-  TechnicianType,
+
   WorkMode,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -54,7 +54,6 @@ export default function InviteMemberPage() {
   const [role, setRole] = useState<string>("TECHNICIAN")
   const [email, setEmail] = useState("")
   const [expiresInHours, setExpiresInHours] = useState("168")
-  const [technicianType, setTechnicianType] = useState<string>("")
   const [workMode, setWorkMode] = useState<string>("")
   const [specialty, setSpecialty] = useState("")
   const [maxDailyJobs, setMaxDailyJobs] = useState("")
@@ -94,7 +93,6 @@ export default function InviteMemberPage() {
     }
 
     if (isTechnician) {
-      if (technicianType) input.technicianType = technicianType
       if (workMode) input.workMode = workMode
       if (specialty) input.specialty = specialty
       if (maxDailyJobs) input.maxDailyJobs = parseInt(maxDailyJobs)
@@ -269,11 +267,8 @@ export default function InviteMemberPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t("members.invite.employmentTypeLabel")}</Label>
-                    <Select value={technicianType} onValueChange={setTechnicianType}>
                       <SelectTrigger><SelectValue placeholder={t("common.optional")} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={TechnicianType.FREELANCER}>{t("technicians.types.freelancer")}</SelectItem>
-                        <SelectItem value={TechnicianType.FULL_TIME}>{t("technicians.types.fullTime")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -281,12 +276,10 @@ export default function InviteMemberPage() {
                   <div className="space-y-2">
                     <Label>{t("members.invite.workModeLabel")}</Label>
                     <Select
-                      value={workMode === WorkMode.HYBRID && technicianType !== TechnicianType.FULL_TIME ? "" : workMode}
                       onValueChange={setWorkMode}
                     >
                       <SelectTrigger><SelectValue placeholder={t("common.optional")} /></SelectTrigger>
                       <SelectContent>
-                        {technicianType === TechnicianType.FULL_TIME && (
                           <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
                         )}
                         <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>

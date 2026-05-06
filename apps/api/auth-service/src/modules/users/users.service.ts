@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TechnicianType, WorkMode, Platform, TaskStatus } from '@hbcfield/shared';
+import { Role, WorkMode, TaskStatus } from '@hbcfield/shared';
 import * as bcrypt from 'bcrypt';
 import {
   CreateTechnicianDto,
@@ -40,7 +40,6 @@ export class UsersService {
         isActive: true,
         createdAt: true,
         // Permission fields
-        platform: true,
         canCreateTasks: true,
         canViewAllTasks: true,
         canAssignTasks: true,
@@ -114,7 +113,6 @@ export class UsersService {
     const {
       organizationId,
       status = 'active',
-      type = 'all',
       specialty,
       search,
       page = 1,
@@ -134,11 +132,6 @@ export class UsersService {
       where.isActive = true;
     } else if (status === 'inactive') {
       where.isActive = false;
-    }
-
-    // Type filter
-    if (type !== 'all') {
-      where.technicianType = type;
     }
 
     // Work mode filter
@@ -194,8 +187,9 @@ export class UsersService {
         firstName: true,
         lastName: true,
         isActive: true,
-        technicianType: true,
         workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         rating: true,
         ratingCount: true,
@@ -240,7 +234,6 @@ export class UsersService {
       firstName: tech.firstName,
       lastName: tech.lastName,
       isActive: tech.isActive,
-      technicianType: tech.technicianType,
       workMode: tech.workMode,
       specialty: tech.specialty,
       rating: tech.rating || 5.0,
@@ -286,15 +279,15 @@ export class UsersService {
         isActive: true,
         createdAt: true,
         updatedAt: true,
-        technicianType: true,
         workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         rating: true,
         ratingCount: true,
         maxDailyJobs: true,
         canCreateTasks: true,
         organizationId: true,
-        platform: true,
         organization: {
           select: {
             id: true,
@@ -333,15 +326,15 @@ export class UsersService {
       isActive: technician.isActive,
       createdAt: technician.createdAt.toISOString(),
       updatedAt: technician.updatedAt.toISOString(),
-      technicianType: technician.technicianType,
       workMode: technician.workMode,
+      position: technician.position,
+      enabledModules: technician.enabledModules as string[] | null,
       specialty: technician.specialty,
       rating: technician.rating || 5.0,
       ratingCount: technician.ratingCount || 0,
       maxDailyJobs: technician.maxDailyJobs || 5,
       canCreateTasks: technician.canCreateTasks,
       organizationId: technician.organizationId,
-      platform: technician.platform,
       organization: technician.organization,
       lastLocation: technician.lastLocation
         ? {
@@ -389,7 +382,8 @@ export class UsersService {
       firstName,
       lastName,
       password,
-      technicianType = TechnicianType.FREELANCER,
+      position,
+      enabledModules,
       workMode = WorkMode.HYBRID,
       specialty,
       maxDailyJobs = 5,
@@ -417,12 +411,12 @@ export class UsersService {
         lastName,
         passwordHash,
         role: Role.TECHNICIAN,
-        technicianType,
+        position: position || 'technician',
+        enabledModules: enabledModules || ['tasks', 'clock', 'time_off'],
         workMode,
         specialty,
         maxDailyJobs,
         organizationId,
-        platform: Platform.MOBILE, // Technicians default to mobile
         canCreateTasks: false,
         canViewAllTasks: false,
         canAssignTasks: false,
@@ -436,12 +430,12 @@ export class UsersService {
         lastName: true,
         role: true,
         isActive: true,
-        technicianType: true,
+        position: true,
+        enabledModules: true,
         workMode: true,
         specialty: true,
         maxDailyJobs: true,
         organizationId: true,
-        platform: true,
         createdAt: true,
       },
     });
@@ -480,9 +474,8 @@ export class UsersService {
       data: {
         ...(dto.firstName !== undefined && { firstName: dto.firstName }),
         ...(dto.lastName !== undefined && { lastName: dto.lastName }),
-        ...(dto.technicianType !== undefined && {
-          technicianType: dto.technicianType,
-        }),
+        ...(dto.position !== undefined && { position: dto.position }),
+        ...(dto.enabledModules !== undefined && { enabledModules: dto.enabledModules }),
         ...(dto.workMode !== undefined && { workMode: dto.workMode }),
         ...(dto.specialty !== undefined && { specialty: dto.specialty }),
         ...(dto.maxDailyJobs !== undefined && { maxDailyJobs: dto.maxDailyJobs }),
@@ -499,7 +492,8 @@ export class UsersService {
         lastName: true,
         role: true,
         isActive: true,
-        technicianType: true,
+        position: true,
+        enabledModules: true,
         workMode: true,
         specialty: true,
         maxDailyJobs: true,
@@ -507,7 +501,6 @@ export class UsersService {
         ratingCount: true,
         canCreateTasks: true,
         organizationId: true,
-        platform: true,
         updatedAt: true,
       },
     });
@@ -692,11 +685,11 @@ export class UsersService {
         firstName: true,
         lastName: true,
         role: true,
-        platform: true,
         isActive: true,
         createdAt: true,
-        technicianType: true,
         workMode: true,
+        position: true,
+        enabledModules: true,
         specialty: true,
         canCreateTasks: true,
         canViewAllTasks: true,
@@ -761,20 +754,10 @@ export class UsersService {
       }
     }
 
-    // Set default platform based on role if not provided
-    const platform =
-      dto.platform ||
-      (dto.role === Role.TECHNICIAN
-        ? Platform.MOBILE
-        : dto.role === Role.DISPATCHER
-          ? Platform.WEB
-          : Platform.BOTH);
-
     const updated = await this.prisma.user.update({
       where: { id: memberId },
       data: {
         role: dto.role,
-        platform,
         canCreateTasks: dto.canCreateTasks ?? (dto.role === Role.ADMIN),
         canViewAllTasks:
           dto.canViewAllTasks ??
@@ -790,7 +773,6 @@ export class UsersService {
         firstName: true,
         lastName: true,
         role: true,
-        platform: true,
         isActive: true,
         canCreateTasks: true,
         canViewAllTasks: true,
@@ -904,15 +886,6 @@ export class UsersService {
 
       data.role = dto.role;
 
-      // Set default platform based on role if not provided
-      data.platform =
-        dto.platform ||
-        (dto.role === Role.TECHNICIAN
-          ? Platform.MOBILE
-          : dto.role === Role.DISPATCHER
-            ? Platform.WEB
-            : Platform.BOTH);
-
       data.canCreateTasks = dto.canCreateTasks ?? (dto.role === Role.ADMIN);
       data.canViewAllTasks =
         dto.canViewAllTasks ??
@@ -922,8 +895,7 @@ export class UsersService {
         (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER);
       data.canManageUsers = dto.canManageUsers ?? (dto.role === Role.ADMIN);
     } else {
-      // No role change — still allow updating individual permission/platform fields
-      if (dto.platform !== undefined) data.platform = dto.platform;
+      // No role change — still allow updating individual permission fields
       if (dto.canCreateTasks !== undefined) data.canCreateTasks = dto.canCreateTasks;
       if (dto.canViewAllTasks !== undefined) data.canViewAllTasks = dto.canViewAllTasks;
       if (dto.canAssignTasks !== undefined) data.canAssignTasks = dto.canAssignTasks;
@@ -939,7 +911,6 @@ export class UsersService {
         firstName: true,
         lastName: true,
         role: true,
-        platform: true,
         isActive: true,
         canCreateTasks: true,
         canViewAllTasks: true,

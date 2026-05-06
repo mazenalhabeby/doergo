@@ -153,13 +153,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!isLoading && isAuthenticated && user?.role && !allowedRoles.includes(user.role)) {
       router.push('/unauthorized');
     }
-    // Check platform access (WEB or BOTH allowed)
-    if (!isLoading && isAuthenticated && user?.platform) {
-      const canAccessWeb = user.platform === 'WEB' || user.platform === 'BOTH';
-      if (!canAccessWeb) {
-        router.push('/unauthorized');
-      }
-    }
   }, [isLoading, isAuthenticated, user, router]);
 
   if (isLoading) {

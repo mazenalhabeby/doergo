@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   techniciansApi,
   type CreateTechnicianInput,
-  TechnicianType,
+
   WorkMode,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -63,8 +63,6 @@ export default function NewTechnicianPage() {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [password, setPassword] = useState("")
-  const [technicianType, setTechnicianType] = useState<TechnicianType>(
-    TechnicianType.FREELANCER
   )
   const [workMode, setWorkMode] = useState<WorkMode>(WorkMode.HYBRID)
   const [specialty, setSpecialty] = useState("")
@@ -117,7 +115,6 @@ export default function NewTechnicianPage() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       password: password.trim() || undefined,
-      technicianType,
       workMode,
       specialty: specialty || undefined,
       maxDailyJobs,
@@ -277,17 +274,13 @@ export default function NewTechnicianPage() {
                 <div className="space-y-2">
                   <Label htmlFor="type">{t('technicians.create.employmentTypeLabel')}</Label>
                   <Select
-                    value={technicianType}
-                    onValueChange={(v) => setTechnicianType(v as TechnicianType)}
                   >
                     <SelectTrigger id="type">
                       <SelectValue placeholder={t('technicians.create.employmentTypeLabel')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={TechnicianType.FREELANCER}>
                         {t('technicians.types.freelancer')}
                       </SelectItem>
-                      <SelectItem value={TechnicianType.FULL_TIME}>
                         {t('technicians.types.fullTimeEmployee')}
                       </SelectItem>
                     </SelectContent>
@@ -307,7 +300,6 @@ export default function NewTechnicianPage() {
                       <SelectValue placeholder={t('technicians.create.workModeLabel')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {technicianType === TechnicianType.FULL_TIME && (
                         <SelectItem value={WorkMode.HYBRID}>
                           {t('technicians.workModes.hybridDescription')}
                         </SelectItem>

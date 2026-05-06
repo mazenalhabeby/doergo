@@ -28,7 +28,7 @@ import {
   techniciansApi,
   type TechnicianListItem,
   type TechniciansQueryParams,
-  TechnicianType,
+
   WorkMode,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -79,7 +79,6 @@ export default function TechniciansPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active")
-  const [typeFilter, setTypeFilter] = useState<TechnicianType | "all">("all")
   const [workModeFilter, setWorkModeFilter] = useState<WorkMode | "all">("all")
   const [specialtyFilter, setSpecialtyFilter] = useState("all")
   const [page, setPage] = useState(1)
@@ -92,13 +91,11 @@ export default function TechniciansPage() {
   // Build query params
   const queryParams: TechniciansQueryParams = useMemo(() => ({
     status: statusFilter,
-    type: typeFilter,
     workMode: workModeFilter,
     specialty: specialtyFilter !== "all" ? specialtyFilter : undefined,
     search: searchQuery || undefined,
     page,
     limit,
-  }), [statusFilter, typeFilter, workModeFilter, specialtyFilter, searchQuery, page, limit])
 
   // Fetch technicians
   const { data: techniciansData, isLoading, isError, error, refetch } = useQuery({
@@ -143,8 +140,6 @@ export default function TechniciansPage() {
     setPage(1)
   }
 
-  const handleTypeChange = (value: string) => {
-    setTypeFilter(value as TechnicianType | "all")
     setPage(1)
   }
 
@@ -199,11 +194,8 @@ export default function TechniciansPage() {
     }
   }
 
-  const getTypeBadge = (type: TechnicianType) => {
     switch (type) {
-      case TechnicianType.FULL_TIME:
         return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{t('technicians.types.fullTime')}</Badge>
-      case TechnicianType.FREELANCER:
         return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">{t('technicians.types.freelancer')}</Badge>
       default:
         return null
@@ -265,14 +257,10 @@ export default function TechniciansPage() {
               </Select>
 
               {/* Type Filter */}
-              <Select value={typeFilter} onValueChange={handleTypeChange}>
                 <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
                   <SelectValue placeholder={t('technicians.table.type')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('common.allTypes')}</SelectItem>
-                  <SelectItem value={TechnicianType.FULL_TIME}>{t('technicians.types.fullTime')}</SelectItem>
-                  <SelectItem value={TechnicianType.FREELANCER}>{t('technicians.types.freelancer')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -343,7 +331,6 @@ export default function TechniciansPage() {
               <User className="h-12 w-12 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-800 mb-2">{t('technicians.list.noTechniciansFound')}</h3>
               <p className="text-sm text-slate-400 mb-4">
-                {searchQuery || statusFilter !== "active" || typeFilter !== "all" || specialtyFilter
                   ? t('technicians.list.noTechniciansHint')
                   : t('technicians.list.addFirstTechnician')}
               </p>
@@ -399,7 +386,6 @@ export default function TechniciansPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{getTypeBadge(tech.technicianType)}</TableCell>
                       <TableCell>{tech.workMode ? getWorkModeBadge(tech.workMode) : <span className="text-slate-400">—</span>}</TableCell>
                       <TableCell>
                         {tech.specialty ? (
