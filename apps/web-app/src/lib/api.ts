@@ -11,7 +11,6 @@
 import {
   TimeEntryStatus,
   BreakType,
-  WorkMode,
   InvitationStatus,
   JoinRequestStatus,
   JoinPolicy,
@@ -62,7 +61,6 @@ export type {
   OnboardingStatus,
   OrgCodeValidation,
 };
-export { TimeEntryStatus, BreakType, WorkMode, InvitationStatus, JoinRequestStatus, JoinPolicy };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -1935,8 +1933,6 @@ export const techniciansApi = {
   list: async (params?: TechniciansQueryParams) => {
     const endpoint = buildUrlWithQuery('/technicians', {
       status: params?.status,
-      type: params?.type,
-      workMode: params?.workMode,
       specialty: params?.specialty,
       search: params?.search,
       page: params?.page,
@@ -2293,7 +2289,6 @@ export interface TechnicianAvailability {
   id: string;
   firstName: string;
   lastName: string;
-  workMode: WorkMode;
   isAvailable: boolean;
   onTimeOff: boolean;
   schedule: {
@@ -2538,16 +2533,16 @@ export const organizationsApi = {
   getProfileBadges: async () => {
     const response = await api.get<{
       success: boolean;
-      data: { profileBadges: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean } | null };
+      data: { profileBadges: { showRole: boolean; showType: boolean; showSpecialty: boolean } | null };
     }>('/organizations/profile-badges');
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
-  updateProfileBadges: async (data: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean }) => {
+  updateProfileBadges: async (data: { showRole: boolean; showType: boolean; showSpecialty: boolean }) => {
     const response = await api.patch<{
       success: boolean;
-      data: { profileBadges: { showRole: boolean; showWorkMode: boolean; showType: boolean; showSpecialty: boolean } };
+      data: { profileBadges: { showRole: boolean; showType: boolean; showSpecialty: boolean } };
     }>('/organizations/profile-badges', data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
@@ -2769,3 +2764,4 @@ export const overtimeApi = {
 };
 
 export default api;
+export { TimeEntryStatus, BreakType, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@hbcfield/shared/client';

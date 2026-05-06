@@ -28,9 +28,7 @@ import {
   techniciansApi,
   type TechnicianListItem,
   type TechniciansQueryParams,
-  TechnicianType,
 } from "@/lib/api"
-import { getPositionLabel, getPositionColor } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -79,7 +77,6 @@ export default function TechniciansPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active")
-  const [typeFilter, setTypeFilter] = useState<TechnicianType | "all">("all")
   const [specialtyFilter, setSpecialtyFilter] = useState("all")
   const [page, setPage] = useState(1)
   const limit = 10
@@ -91,12 +88,11 @@ export default function TechniciansPage() {
   // Build query params
   const queryParams: TechniciansQueryParams = useMemo(() => ({
     status: statusFilter,
-    type: typeFilter,
     specialty: specialtyFilter !== "all" ? specialtyFilter : undefined,
     search: searchQuery || undefined,
     page,
     limit,
-  }), [statusFilter, typeFilter, specialtyFilter, searchQuery, page, limit])
+  }), [statusFilter, specialtyFilter, searchQuery, page, limit])
 
   // Fetch technicians
   const { data: techniciansData, isLoading, isError, error, refetch } = useQuery({
@@ -142,7 +138,6 @@ export default function TechniciansPage() {
   }
 
   const handleTypeChange = (value: string) => {
-    setTypeFilter(value as TechnicianType | "all")
     setPage(1)
   }
 
@@ -192,20 +187,9 @@ export default function TechniciansPage() {
     }
   }
 
-  const getTypeBadge = (type: TechnicianType) => {
-    switch (type) {
-      case TechnicianType.FULL_TIME:
-        return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100">{t('technicians.types.fullTime')}</Badge>
-      case TechnicianType.FREELANCER:
-        return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-100">{t('technicians.types.freelancer')}</Badge>
-      default:
-        return null
-    }
-  }
-
   const getPositionBadge = (position?: string | null) => {
     if (!position) return <span className="text-muted-foreground">--</span>
-    return <Badge className={getPositionColor(position) + " hover:opacity-80"}>{getPositionLabel(position)}</Badge>
+    return <Badge className="bg-muted text-muted-foreground">{position}</Badge>
   }
 
   // Check if user can manage technicians (ADMIN or DISPATCHER)
@@ -249,17 +233,6 @@ export default function TechniciansPage() {
                 </SelectContent>
               </Select>
 
-              {/* Type Filter */}
-              <Select value={typeFilter} onValueChange={handleTypeChange}>
-                <SelectTrigger className="w-[130px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder={t('technicians.table.type')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.allTypes')}</SelectItem>
-                  <SelectItem value={TechnicianType.FULL_TIME}>{t('technicians.types.fullTime')}</SelectItem>
-                  <SelectItem value={TechnicianType.FREELANCER}>{t('technicians.types.freelancer')}</SelectItem>
-                </SelectContent>
-              </Select>
 
               {/* Removed WorkMode filter - replaced by position/modules */}
 
@@ -317,9 +290,7 @@ export default function TechniciansPage() {
               <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">{t('technicians.list.noTechniciansFound')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {searchQuery || statusFilter !== "active" || typeFilter !== "all" || specialtyFilter
-                  ? t('technicians.list.noTechniciansHint')
-                  : t('technicians.list.addFirstTechnician')}
+                {searchQuery ? t('technicians.list.noTechniciansHint') : t('technicians.list.addFirstTechnician')}
               </p>
               {canManage && !searchQuery && (
                 <Link href="/members/invite">
@@ -373,7 +344,7 @@ export default function TechniciansPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{getTypeBadge(tech.technicianType)}</TableCell>
+                      <TableCell>{tech.position && <Badge className="bg-muted text-muted-foreground">{tech.position}</Badge>}</TableCell>
                       <TableCell>{getPositionBadge(tech.position)}</TableCell>
                       <TableCell>
                         {tech.specialty ? (

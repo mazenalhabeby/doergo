@@ -7,7 +7,7 @@ import { Copy, Check } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invitationsApi, type CreateInvitationInput, WorkMode } from "@/lib/api"
+import { invitationsApi, type CreateInvitationInput } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -60,7 +60,6 @@ export function CreateInvitationDialog({
   // Form state
   const [targetRole, setTargetRole] = useState<"TECHNICIAN" | "DISPATCHER">("TECHNICIAN")
   const [expiresInHours, setExpiresInHours] = useState("72")
-  const [workMode, setWorkMode] = useState<string>("")
   const [specialty, setSpecialty] = useState<string>("")
   const [maxDailyJobs, setMaxDailyJobs] = useState("")
 
@@ -97,7 +96,6 @@ export function CreateInvitationDialog({
     }
 
     if (targetRole === "TECHNICIAN") {
-      if (workMode) input.workMode = workMode
       if (specialty) input.specialty = specialty
       if (maxDailyJobs) input.maxDailyJobs = parseInt(maxDailyJobs)
     }
@@ -119,7 +117,6 @@ export function CreateInvitationDialog({
     setTimeout(() => {
       setTargetRole("TECHNICIAN")
       setExpiresInHours("72")
-      setWorkMode("")
       setSpecialty("")
       setMaxDailyJobs("")
       setGeneratedCode(null)
@@ -228,18 +225,11 @@ export function CreateInvitationDialog({
           {targetRole === "TECHNICIAN" && (
             <>
               <div className="space-y-2">
-                <Label>{t("invitations.createDialog.workModeLabel")}</Label>
                 <Select
-                  value={workMode}
-                  onValueChange={setWorkMode}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("invitations.createDialog.selectWorkModePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
-                    <SelectItem value={WorkMode.ON_SITE}>{t("technicians.workModes.onSite")}</SelectItem>
-                    <SelectItem value={WorkMode.ON_ROAD}>{t("technicians.workModes.onRoad")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

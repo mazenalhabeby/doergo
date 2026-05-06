@@ -31,7 +31,6 @@ import {
   type UpdateTechnicianInput,
   type Task,
   type TimeEntry,
-  TechnicianType,
 
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -110,7 +109,6 @@ export default function TechnicianDetailPage() {
   // Edit form state
   const [editFirstName, setEditFirstName] = useState("")
   const [editLastName, setEditLastName] = useState("")
-  const [editTechnicianType, setEditTechnicianType] = useState<TechnicianType>(TechnicianType.FREELANCER)
   const [editWorkMode, setEditWorkMode] = useState<string>("position")
   const [editSpecialty, setEditSpecialty] = useState("")
   const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
@@ -201,7 +199,6 @@ export default function TechnicianDetailPage() {
     if (technician) {
       setEditFirstName(technician.firstName)
       setEditLastName(technician.lastName)
-      setEditTechnicianType(technician.technicianType)
       setEditWorkMode(technician.position || "technician")
       setEditSpecialty(technician.specialty || "")
       setEditMaxDailyJobs(technician.maxDailyJobs || 5)
@@ -228,7 +225,6 @@ export default function TechnicianDetailPage() {
     updateMutation.mutate({
       firstName: editFirstName.trim(),
       lastName: editLastName.trim(),
-      technicianType: editTechnicianType,
       position: editWorkMode,
       specialty: editSpecialty.trim() || undefined,
       maxDailyJobs: editMaxDailyJobs,
@@ -246,17 +242,6 @@ export default function TechnicianDetailPage() {
 
   const stats = technician?.stats
 
-  // Helper functions
-  const getTypeBadge = (type: TechnicianType) => {
-    switch (type) {
-      case TechnicianType.FULL_TIME:
-        return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400">{t('technicians.types.fullTime')}</Badge>
-      case TechnicianType.FREELANCER:
-        return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400">{t('technicians.types.freelancer')}</Badge>
-      default:
-        return null
-    }
-  }
 
   // Check if user can manage technicians (ADMIN or DISPATCHER)
   const canManage = user?.role === "ADMIN" || user?.role === "DISPATCHER"
@@ -342,7 +327,6 @@ export default function TechnicianDetailPage() {
                   <h1 className="text-2xl font-bold text-foreground tracking-tight">
                     {technician.firstName} {technician.lastName}
                   </h1>
-                  {getTypeBadge(technician.technicianType)}
                   {technician.canCreateTasks && (
                     <Badge className="bg-emerald-100 text-emerald-700">{t('technicians.detail.canCreateTasks')}</Badge>
                   )}
@@ -526,33 +510,11 @@ export default function TechnicianDetailPage() {
               <div className="space-y-2">
                 <Label>{t('technicians.detail.editDialog.employmentTypeLabel')}</Label>
                 <Select
-                  value={editTechnicianType}
-                  onValueChange={(v) => setEditTechnicianType(v as TechnicianType)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={TechnicianType.FREELANCER}>{t('technicians.types.freelancer')}</SelectItem>
-                    <SelectItem value={TechnicianType.FULL_TIME}>{t('technicians.types.fullTime')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t('technicians.detail.editDialog.workModeLabel')}</Label>
-                <Select
-                  value={editWorkMode}
-                  onValueChange={(v) => setEditWorkMode(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {editTechnicianType === TechnicianType.FULL_TIME && (
-                      <SelectItem value={"HYBRID"}>{t('technicians.workModes.hybrid')}</SelectItem>
-                    )}
-                    <SelectItem value={"ON_SITE"}>{t('technicians.workModes.onSite')}</SelectItem>
-                    <SelectItem value={"ON_ROAD"}>{t('technicians.workModes.onRoad')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

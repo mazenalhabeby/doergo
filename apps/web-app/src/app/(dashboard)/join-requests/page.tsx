@@ -18,8 +18,6 @@ import { toast } from "sonner"
 import {
   joinRequestsApi,
   JoinRequestStatus,
-  TechnicianType,
-
   type JoinRequest,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -117,9 +115,6 @@ export default function JoinRequestsPage() {
 
   // Approve form state
   const [approveRole, setApproveRole] = useState<"DISPATCHER" | "TECHNICIAN">("TECHNICIAN")
-  const [approvePlatform, setApprovePlatform] = useState<string>("")
-  const [approveTechnicianType, setApproveTechnicianType] = useState<string>("")
-  const [approveWorkMode, setApproveWorkMode] = useState<string>("")
   const [approveSpecialty, setApproveSpecialty] = useState<string>("")
   const [approveMaxDailyJobs, setApproveMaxDailyJobs] = useState("")
 
@@ -175,9 +170,6 @@ export default function JoinRequestsPage() {
   const handleApproveClick = (request: JoinRequest) => {
     setSelectedRequest(request)
     setApproveRole("TECHNICIAN")
-    setApprovePlatform("")
-    setApproveTechnicianType("")
-    setApproveWorkMode("")
     setApproveSpecialty("")
     setApproveMaxDailyJobs("")
     setApproveDialogOpen(true)
@@ -206,15 +198,8 @@ export default function JoinRequestsPage() {
       role: approveRole,
     }
 
-    if (approveRole === "TECHNICIAN") {
-      if (approvePlatform) data.platform = approvePlatform
-      if (approveTechnicianType) data.technicianType = approveTechnicianType
-      if (approveWorkMode) (data as any).position = approveWorkMode
-      if (approveSpecialty) data.specialty = approveSpecialty
-      if (approveMaxDailyJobs) data.maxDailyJobs = parseInt(approveMaxDailyJobs)
-    } else if (approveRole === "DISPATCHER") {
-      data.platform = "WEB"
-    }
+    if (approveSpecialty) data.specialty = approveSpecialty
+    if (approveMaxDailyJobs) data.maxDailyJobs = parseInt(approveMaxDailyJobs)
 
     approveMutation.mutate({ id: selectedRequest.id, data })
   }
@@ -453,51 +438,9 @@ export default function JoinRequestsPage() {
               </Select>
             </div>
 
-            {/* Technician-specific fields */}
+            {/* Employee-specific fields */}
             {approveRole === "TECHNICIAN" && (
               <>
-                <div className="space-y-2">
-                  <Label>{t("joinRequests.approveDialog.platformLabel")}</Label>
-                  <Select value={approvePlatform} onValueChange={setApprovePlatform}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("joinRequests.approveDialog.platformPlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MOBILE">{t("members.platforms.mobile")}</SelectItem>
-                      <SelectItem value="BOTH">{t("members.platforms.webAndMobile")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{t("joinRequests.approveDialog.employmentTypeLabel")}</Label>
-                  <Select value={approveTechnicianType} onValueChange={setApproveTechnicianType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("joinRequests.approveDialog.employmentTypePlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={TechnicianType.FULL_TIME}>{t("technicians.types.fullTime")}</SelectItem>
-                      <SelectItem value={TechnicianType.FREELANCER}>{t("technicians.types.freelancer")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{t("joinRequests.approveDialog.workModeLabel")}</Label>
-                  <Select value={approveWorkMode} onValueChange={setApproveWorkMode}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("joinRequests.approveDialog.workModePlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {approveTechnicianType === TechnicianType.FULL_TIME && (
-                        <SelectItem value={"HYBRID"}>{t("technicians.workModes.hybrid")}</SelectItem>
-                      )}
-                      <SelectItem value={"ON_SITE"}>{t("technicians.workModes.onSite")}</SelectItem>
-                      <SelectItem value={"ON_ROAD"}>{t("technicians.workModes.onRoad")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="space-y-2">
                   <Label>{t("joinRequests.approveDialog.specialtyLabel")}</Label>
                   <Select value={approveSpecialty} onValueChange={setApproveSpecialty}>

@@ -181,7 +181,7 @@ export default function MembersPage() {
     setEditFirstName(member.firstName)
     setEditLastName(member.lastName)
     setEditRole(member.role)
-    setEditPlatform(member.platform)
+    setEditPlatform("BOTH")
     setEditPerms({
       canCreateTasks: member.canCreateTasks,
       canViewAllTasks: member.canViewAllTasks,
@@ -196,7 +196,7 @@ export default function MembersPage() {
     setEditRole(role)
     const defaults = DEFAULT_PERMISSIONS[role]
     if (defaults) {
-      setEditPlatform(defaults.platform)
+      setEditPlatform("BOTH")
       setEditPerms({
         canCreateTasks: defaults.canCreateTasks,
         canViewAllTasks: defaults.canViewAllTasks,
@@ -214,7 +214,6 @@ export default function MembersPage() {
         firstName: editFirstName,
         lastName: editLastName,
         role: editRole,
-        platform: editPlatform,
         ...editPerms,
       },
     })
@@ -331,7 +330,7 @@ export default function MembersPage() {
               <TableBody>
                 {members.map((member) => {
                   const roleBadge = ROLE_BADGES[member.role] || ROLE_BADGES.TECHNICIAN!
-                  const platformBadge = PLATFORM_BADGES[member.platform] || PLATFORM_BADGES.WEB!
+                  const platformBadge = PLATFORM_BADGES["BOTH"] || PLATFORM_BADGES.WEB!
                   const isSelf = member.id === user?.id
                   return (
                     <TableRow key={member.id} className="hover:bg-accent/50">

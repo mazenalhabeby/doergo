@@ -12,7 +12,6 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   techniciansApi,
   type CreateTechnicianInput,
-  TechnicianType,
 
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -63,9 +62,6 @@ export default function NewTechnicianPage() {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [password, setPassword] = useState("")
-  const [technicianType, setTechnicianType] = useState<TechnicianType>(
-    TechnicianType.FREELANCER
-  )
   const [position, setPosition] = useState<string>("technician")
   const [specialty, setSpecialty] = useState("")
   const [maxDailyJobs, setMaxDailyJobs] = useState(5)
@@ -117,7 +113,6 @@ export default function NewTechnicianPage() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       password: password.trim() || undefined,
-      technicianType,
       
       specialty: specialty || undefined,
       maxDailyJobs,
@@ -275,51 +270,13 @@ export default function NewTechnicianPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">{t('technicians.create.employmentTypeLabel')}</Label>
-                  <Select
-                    value={technicianType}
-                    onValueChange={(v) => setTechnicianType(v as TechnicianType)}
-                  >
-                    <SelectTrigger id="type">
-                      <SelectValue placeholder={t('technicians.create.employmentTypeLabel')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={TechnicianType.FREELANCER}>
-                        {t('technicians.types.freelancer')}
-                      </SelectItem>
-                      <SelectItem value={TechnicianType.FULL_TIME}>
-                        {t('technicians.types.fullTimeEmployee')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {t('technicians.create.employmentTypeHint')}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="position">{t('technicians.create.positionLabel')}</Label>
-                  <Select
+                  <Input
+                    id="position"
                     value={position}
-                    onValueChange={(v) => setPosition(v)}
-                  >
-                    <SelectTrigger id="position">
-                      <SelectValue placeholder={t('technicians.create.positionLabel')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {technicianType === TechnicianType.FULL_TIME && (
-                        <SelectItem value={"HYBRID"}>
-                          {t('technicians.positions.hybridDescription')}
-                        </SelectItem>
-                      )}
-                      <SelectItem value={"ON_SITE"}>
-                        {t('technicians.positions.onSiteDescription')}
-                      </SelectItem>
-                      <SelectItem value={"ON_ROAD"}>
-                        {t('technicians.positions.onRoadDescription')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => setPosition(e.target.value)}
+                    placeholder="e.g., technician, driver, sales"
+                  />
                   <p className="text-xs text-muted-foreground">
                     {t('technicians.create.positionHint')}
                   </p>
