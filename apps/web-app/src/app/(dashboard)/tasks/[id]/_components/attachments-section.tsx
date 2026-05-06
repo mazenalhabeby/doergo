@@ -165,14 +165,14 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
   const isUploading = uploadingFiles.length > 0
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm mb-6">
-      <div className="p-5 border-b border-slate-100">
+    <div className="bg-card rounded-2xl shadow-sm mb-6">
+      <div className="p-5 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Paperclip className="size-5 text-slate-400" />
-            <h3 className="font-semibold text-gray-900">Attachments</h3>
+            <Paperclip className="size-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Attachments</h3>
             {attachments.length > 0 && (
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {attachments.length}
               </span>
             )}
@@ -207,7 +207,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
           className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${
             isDragging
               ? "border-blue-400 bg-blue-50"
-              : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
+              : "border-border hover:border-border bg-muted"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -215,13 +215,13 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload
-            className={`size-8 mx-auto mb-2 ${isDragging ? "text-blue-400" : "text-slate-300"}`}
+            className={`size-8 mx-auto mb-2 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`}
           />
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Drag & drop files here, or{" "}
             <span className="text-blue-600 font-medium">browse</span>
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Images and documents up to 20MB
           </p>
         </div>
@@ -236,7 +236,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
               >
                 <Loader2 className="size-4 text-blue-500 animate-spin shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-700 truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {uf.file.name}
                   </p>
                   <div className="w-full h-1.5 bg-blue-100 rounded-full mt-1.5">
@@ -257,7 +257,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
         {/* Loading state */}
         {isLoading && (
           <div className="mt-4 flex items-center justify-center py-8">
-            <Loader2 className="size-5 text-slate-400 animate-spin" />
+            <Loader2 className="size-5 text-muted-foreground animate-spin" />
           </div>
         )}
 
@@ -267,7 +267,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
             {attachments.map((attachment) => (
               <div
                 key={attachment.id}
-                className="group relative rounded-xl border border-slate-200 overflow-hidden bg-white hover:border-slate-300 transition-colors"
+                className="group relative rounded-xl border border-border overflow-hidden bg-card hover:border-border transition-colors"
               >
                 {isImageType(attachment.fileType) ? (
                   <a
@@ -276,7 +276,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
                     rel="noopener noreferrer"
                     className="block"
                   >
-                    <div className="aspect-square bg-slate-50">
+                    <div className="aspect-square bg-muted">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={attachment.fileUrl}
@@ -292,9 +292,9 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
                     rel="noopener noreferrer"
                     className="block"
                   >
-                    <div className="aspect-square bg-slate-50 flex flex-col items-center justify-center p-4">
-                      <FileText className="size-10 text-slate-300 mb-2" />
-                      <p className="text-xs text-slate-500 text-center truncate w-full px-2">
+                    <div className="aspect-square bg-muted flex flex-col items-center justify-center p-4">
+                      <FileText className="size-10 text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground text-center truncate w-full px-2">
                         {attachment.fileName}
                       </p>
                     </div>
@@ -318,13 +318,13 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
                           href={attachment.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-md bg-white/20 hover:bg-white/30 transition-colors"
+                          className="p-1.5 rounded-md bg-card/20 hover:bg-card/30 transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Download className="size-3.5 text-white" />
                         </a>
                         <button
-                          className="p-1.5 rounded-md bg-white/20 hover:bg-red-500/80 transition-colors"
+                          className="p-1.5 rounded-md bg-card/20 hover:bg-red-500/80 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
                             setDeleteTarget(attachment)
@@ -343,7 +343,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
 
         {/* Empty state */}
         {!isLoading && attachments.length === 0 && uploadingFiles.length === 0 && (
-          <p className="text-center text-sm text-slate-400 mt-4">
+          <p className="text-center text-sm text-muted-foreground mt-4">
             No attachments yet
           </p>
         )}

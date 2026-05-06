@@ -72,13 +72,13 @@ const STATUS_OPTIONS_KEYS = [
 function getStatusBadge(status: InvitationStatus, t: (key: string) => string) {
   switch (status) {
     case InvitationStatus.PENDING:
-      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">{t("invitations.status.pending")}</Badge>
+      return <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-100">{t("invitations.status.pending")}</Badge>
     case InvitationStatus.ACCEPTED:
-      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t("invitations.status.accepted")}</Badge>
+      return <Badge className="bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-100">{t("invitations.status.accepted")}</Badge>
     case InvitationStatus.EXPIRED:
-      return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100">{t("invitations.status.expired")}</Badge>
+      return <Badge className="bg-muted text-muted-foreground hover:bg-accent">{t("invitations.status.expired")}</Badge>
     case InvitationStatus.REVOKED:
-      return <Badge className="bg-red-100 text-red-600 hover:bg-red-100">{t("invitations.status.revoked")}</Badge>
+      return <Badge className="bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-100">{t("invitations.status.revoked")}</Badge>
     default:
       return <Badge variant="outline">{status}</Badge>
   }
@@ -87,9 +87,9 @@ function getStatusBadge(status: InvitationStatus, t: (key: string) => string) {
 function getRoleBadge(role: string, t: (key: string) => string) {
   switch (role) {
     case "TECHNICIAN":
-      return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{t("members.roles.technician")}</Badge>
+      return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100">{t("members.roles.technician")}</Badge>
     case "DISPATCHER":
-      return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">{t("members.roles.dispatcher")}</Badge>
+      return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-100">{t("members.roles.dispatcher")}</Badge>
     default:
       return <Badge variant="outline">{role}</Badge>
   }
@@ -177,23 +177,23 @@ export default function InvitationsPage() {
   const endItem = Math.min(page * limit, total)
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {t("invitations.title")}
               </h1>
-              <p className="mt-1.5 text-slate-500">
+              <p className="mt-1.5 text-muted-foreground">
                 {t("invitations.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-[160px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                <SelectTrigger className="w-[160px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                   <SelectValue placeholder={t("common.filterByStatus")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -211,7 +211,7 @@ export default function InvitationsPage() {
                 size="icon"
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+                className="h-11 w-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm hover:shadow-md transition-all"
               >
                 <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
               </Button>
@@ -231,14 +231,14 @@ export default function InvitationsPage() {
         {/* Summary */}
         {total > 0 && (
           <div className="mb-4">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {t("invitations.showingRange", { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
             </p>
           </div>
         )}
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border/80 shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="p-6 space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -248,17 +248,17 @@ export default function InvitationsPage() {
           ) : isError ? (
             <div className="p-12 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("invitations.failedToLoad")}</h3>
-              <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t("invitations.failedToLoad")}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{(error as Error)?.message}</p>
               <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
                 {t("common.tryAgain")}
               </Button>
             </div>
           ) : invitations.length === 0 ? (
             <div className="p-16 text-center">
-              <Mail className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("invitations.noInvitationsFound")}</h3>
-              <p className="text-sm text-slate-400 mb-4">
+              <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">{t("invitations.noInvitationsFound")}</h3>
+              <p className="text-sm text-muted-foreground mb-4">
                 {statusFilter !== "all"
                   ? t("invitations.noInvitationsHint")
                   : t("invitations.createFirstInvitation")}
@@ -274,14 +274,14 @@ export default function InvitationsPage() {
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80">
-                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.role")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.code")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.status")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.createdBy")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.created")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.expires")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("invitations.table.usedBy")}</TableHead>
+                  <TableRow className="bg-muted">
+                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.role")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.code")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.status")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.createdBy")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.created")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.expires")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.usedBy")}</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -292,7 +292,7 @@ export default function InvitationsPage() {
                       <div className="space-y-1">
                         {getRoleBadge(inv.targetRole, t)}
                         {inv.technicianType && (
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-muted-foreground">
                             {inv.technicianType === "FULL_TIME" ? t("technicians.types.fullTime") : t("technicians.types.freelancer")}
                             {inv.specialty && ` / ${inv.specialty}`}
                           </div>
@@ -301,35 +301,35 @@ export default function InvitationsPage() {
                     </TableCell>
                     <TableCell>
                       {inv.code ? (
-                        <span className="font-mono text-sm font-semibold tracking-wider text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                        <span className="font-mono text-sm font-semibold tracking-wider text-foreground bg-muted px-2 py-1 rounded">
                           {inv.code}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-400">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell>{getStatusBadge(inv.status, t)}</TableCell>
                     <TableCell>
                       {inv.createdBy ? (
-                        <span className="text-slate-700">
+                        <span className="text-foreground">
                           {inv.createdBy.firstName} {inv.createdBy.lastName}
                         </span>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-slate-600">
+                      <span className="text-sm text-muted-foreground">
                         {formatDate(inv.createdAt)}
                       </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className={`text-sm ${
                           inv.status === InvitationStatus.PENDING && isExpired(inv.expiresAt)
                             ? "text-red-600"
-                            : "text-slate-600"
+                            : "text-muted-foreground"
                         }`}>
                           {formatDate(inv.expiresAt)}
                         </span>
@@ -338,13 +338,13 @@ export default function InvitationsPage() {
                     <TableCell>
                       {inv.acceptedBy ? (
                         <div>
-                          <span className="text-slate-700">
+                          <span className="text-foreground">
                             {inv.acceptedBy.firstName} {inv.acceptedBy.lastName}
                           </span>
-                          <div className="text-xs text-slate-500">{inv.acceptedBy.email}</div>
+                          <div className="text-xs text-muted-foreground">{inv.acceptedBy.email}</div>
                         </div>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -374,8 +374,8 @@ export default function InvitationsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
-                <p className="text-sm text-slate-500">
+              <div className="flex items-center justify-between px-6 py-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
                   {t("common.page", { page, totalPages })}
                 </p>
                 <div className="flex items-center gap-2">

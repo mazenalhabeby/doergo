@@ -153,14 +153,14 @@ export function DispatcherDashboard() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-[13px] font-medium text-slate-400">{greeting}</p>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <p className="text-[13px] font-medium text-muted-foreground">{greeting}</p>
+          <h1 className="text-2xl font-semibold text-foreground">
             {t("dashboard.dispatcher.operationsDashboard")}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            <span className="font-medium text-slate-700">{activeTasks} {t("dashboard.dispatcher.activeTasks").toLowerCase()}</span>
+          <p className="text-sm text-muted-foreground mt-1">
+            <span className="font-medium text-foreground">{activeTasks} {t("dashboard.dispatcher.activeTasks").toLowerCase()}</span>
             {onlineWorkers > 0 && (
-              <> · <span className="font-medium text-slate-700">{t("dashboard.dispatcher.total", { count: onlineWorkers })} {t("dashboard.dispatcher.technicians").toLowerCase()}</span></>
+              <> · <span className="font-medium text-foreground">{t("dashboard.dispatcher.total", { count: onlineWorkers })} {t("dashboard.dispatcher.technicians").toLowerCase()}</span></>
             )}
             {pendingAssignment > 0 && (
               <> · <span className="font-medium text-amber-600">{t("dashboard.dispatcher.unassigned", { count: pendingAssignment })}</span></>
@@ -170,7 +170,7 @@ export function DispatcherDashboard() {
         {pendingAssignment > 0 && (
           <Link
             href="/tasks?status=NEW"
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 transition-colors"
           >
             <UserCheck className="size-4" />
             {t("dashboard.dispatcher.assignTasks")}
@@ -215,22 +215,22 @@ export function DispatcherDashboard() {
           {/* Team Status */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.dispatcher.teamStatus")}</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("dashboard.dispatcher.teamStatus")}</h2>
               <Link
                 href="/technicians"
-                className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("dashboard.dispatcher.manageTeam")}
               </Link>
             </div>
-            <div className="rounded-2xl border border-slate-200/60 bg-white p-5">
+            <div className="rounded-2xl border border-border/60 bg-card p-5">
               {teamMembers.length > 0 ? (
                 <TeamStatus members={teamMembers} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Users className="mb-3 size-8 text-slate-200" strokeWidth={1.5} />
-                  <p className="text-sm text-slate-500">{t("dashboard.dispatcher.noTechniciansFound")}</p>
-                  <p className="text-[13px] text-slate-400 mt-1">{t("dashboard.dispatcher.addTeamMembersToGetStarted")}</p>
+                  <Users className="mb-3 size-8 text-muted-foreground" strokeWidth={1.5} />
+                  <p className="text-sm text-muted-foreground">{t("dashboard.dispatcher.noTechniciansFound")}</p>
+                  <p className="text-[13px] text-muted-foreground mt-1">{t("dashboard.dispatcher.addTeamMembersToGetStarted")}</p>
                 </div>
               )}
             </div>
@@ -239,15 +239,15 @@ export function DispatcherDashboard() {
           {/* Recent Tasks */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.dispatcher.recentTasks")}</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("dashboard.dispatcher.recentTasks")}</h2>
               <Link
                 href="/tasks"
-                className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("dashboard.dispatcher.viewAll")}
               </Link>
             </div>
-            <div className="rounded-2xl border border-slate-200/60 bg-white p-2">
+            <div className="rounded-2xl border border-border/60 bg-card p-2">
               <RecentTasks tasks={recentTasks} showViewAll={false} />
             </div>
           </section>
@@ -257,20 +257,20 @@ export function DispatcherDashboard() {
         <div className="space-y-6">
           {/* Quick Actions */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.dispatcher.quickActions")}</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-4">{t("dashboard.dispatcher.quickActions")}</h2>
             <QuickActions actions={quickActions} />
           </section>
 
           {/* Task Distribution Chart */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.dispatcher.distribution")}</h2>
-            <div className="rounded-2xl border border-slate-200/60 bg-white p-6">
+            <h2 className="text-sm font-semibold text-foreground mb-4">{t("dashboard.dispatcher.distribution")}</h2>
+            <div className="rounded-2xl border border-border/60 bg-card p-6">
               {chartData.length > 0 ? (
                 <TaskChart data={chartData} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <TrendingUp className="mb-2 size-8 text-slate-200" strokeWidth={1.5} />
-                  <p className="text-sm text-slate-400">{t("dashboard.dispatcher.noDataYet")}</p>
+                  <TrendingUp className="mb-2 size-8 text-muted-foreground" strokeWidth={1.5} />
+                  <p className="text-sm text-muted-foreground">{t("dashboard.dispatcher.noDataYet")}</p>
                 </div>
               )}
             </div>
@@ -280,10 +280,10 @@ export function DispatcherDashboard() {
           {pendingTimeOff.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.dispatcher.timeOffRequests")}</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t("dashboard.dispatcher.timeOffRequests")}</h2>
                 <Link
                   href="/technicians/availability?tab=time-off"
-                  className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                  className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {t("dashboard.dispatcher.viewAll")}
                 </Link>
@@ -298,24 +298,24 @@ export function DispatcherDashboard() {
                 {pendingTimeOff.slice(0, 3).map((req: any) => (
                   <div
                     key={req.id}
-                    className="flex items-center justify-between rounded-lg bg-white p-3 border border-slate-100"
+                    className="flex items-center justify-between rounded-lg bg-card p-3 border border-border"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-medium text-slate-600 shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-[11px] font-medium text-muted-foreground shrink-0">
                         {req.technician?.firstName?.[0]}{req.technician?.lastName?.[0]}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {req.technician?.firstName} {req.technician?.lastName}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-muted-foreground">
                           {format(parseISO(req.startDate), "MMM d")}
                           {req.startDate !== req.endDate && <> &ndash; {format(parseISO(req.endDate), "MMM d")}</>}
                           {" "}({differenceInCalendarDays(parseISO(req.endDate), parseISO(req.startDate)) + 1}d)
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-700 text-[11px] shrink-0">{t("common.pending")}</Badge>
+                    <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[11px] shrink-0">{t("common.pending")}</Badge>
                   </div>
                 ))}
                 {pendingTimeOff.length > 3 && (
@@ -333,8 +333,8 @@ export function DispatcherDashboard() {
 
           {/* Activity Feed */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">{t("dashboard.dispatcher.recentActivity")}</h2>
-            <div className="rounded-2xl border border-slate-200/60 bg-white px-5">
+            <h2 className="text-sm font-semibold text-foreground mb-4">{t("dashboard.dispatcher.recentActivity")}</h2>
+            <div className="rounded-2xl border border-border/60 bg-card px-5">
               <ActivityFeed activities={activities} maxItems={5} />
             </div>
           </section>

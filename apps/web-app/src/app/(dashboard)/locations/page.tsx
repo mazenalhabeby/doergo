@@ -77,10 +77,10 @@ const LocationPicker = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex items-center justify-center h-[340px] rounded-lg border border-dashed border-slate-200 bg-slate-50">
+      <div className="flex items-center justify-center h-[340px] rounded-lg border border-dashed border-border bg-muted">
         <div className="text-center">
-          <Loader2 className="h-6 w-6 text-slate-400 animate-spin mx-auto mb-2" />
-          <p className="text-sm text-slate-400">Loading map...</p>
+          <Loader2 className="h-6 w-6 text-muted-foreground animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Loading map...</p>
         </div>
       </div>
     ),
@@ -179,20 +179,20 @@ export default function LocationsPage() {
   })
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
     <div className="max-w-screen-xl mx-auto px-6 py-8">
       {/* Page Header */}
       <div className="mb-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Company Locations</h1>
-            <p className="mt-1.5 text-slate-500">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Company Locations</h1>
+            <p className="mt-1.5 text-muted-foreground">
               Manage work sites, geofence areas, and technician assignments
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-[140px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+              <SelectTrigger className="w-[140px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -201,7 +201,7 @@ export default function LocationsPage() {
                 <SelectItem value="all">All</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border-slate-200/80 shadow-sm" onClick={() => refetch()}>
+            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border-border/80 shadow-sm" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />
             </Button>
             {isAdmin && (
@@ -216,16 +216,16 @@ export default function LocationsPage() {
         {/* Search + count */}
         <div className="mt-6 flex items-center justify-between">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search locations..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-11 rounded-xl border-slate-200/80 shadow-sm"
+              className="pl-9 h-11 rounded-xl border-border/80 shadow-sm"
             />
           </div>
           {meta && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               Showing {filteredLocations.length} of {meta.total} location{meta.total !== 1 ? "s" : ""}
             </p>
           )}
@@ -241,11 +241,11 @@ export default function LocationsPage() {
         </div>
       ) : filteredLocations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="rounded-full bg-slate-100 p-4 mb-4">
-            <MapPin className="h-8 w-8 text-slate-400" />
+          <div className="rounded-full bg-muted p-4 mb-4">
+            <MapPin className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-700">No locations found</h3>
-          <p className="text-sm text-slate-500 mt-1">
+          <h3 className="text-lg font-semibold text-foreground">No locations found</h3>
+          <p className="text-sm text-muted-foreground mt-1">
             {statusFilter === "active" ? "Add your first company location to get started." : "No inactive locations."}
           </p>
           {isAdmin && statusFilter === "active" && (
@@ -277,7 +277,7 @@ export default function LocationsPage() {
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
             Previous
           </Button>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-muted-foreground">
             Page {page} of {meta.totalPages}
           </span>
           <Button variant="outline" size="sm" disabled={page >= meta.totalPages} onClick={() => setPage(page + 1)}>
@@ -366,41 +366,41 @@ function LocationCard({
   })
 
   return (
-    <div className={`rounded-xl border p-5 transition-all hover:shadow-md ${location.isActive ? "bg-white border-slate-200" : "bg-slate-50 border-slate-200/60 opacity-70"}`}>
+    <div className={`rounded-xl border p-5 transition-all hover:shadow-md ${location.isActive ? "bg-card border-border" : "bg-muted border-border/60 opacity-70"}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${location.isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"}`}>
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${location.isActive ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
             <MapPin className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-slate-800 truncate">{location.name}</h3>
+              <h3 className="font-semibold text-foreground truncate">{location.name}</h3>
               {!location.isActive && (
-                <Badge variant="outline" className="text-slate-500 border-slate-300 text-xs">Inactive</Badge>
+                <Badge variant="outline" className="text-muted-foreground border-border text-xs">Inactive</Badge>
               )}
             </div>
             {location.address && (
-              <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1">
+              <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
                 <Navigation className="h-3 w-3 shrink-0" />
                 <span className="truncate">{location.address}</span>
               </p>
             )}
             <div className="flex items-center gap-4 mt-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Shield className="h-3.5 w-3.5" />
                 {location.geofenceRadius}m geofence
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" />
                 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </span>
               {location.timezone && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                   🕐 {location.timezone}
                 </span>
               )}
               {assignments && assignments.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Users className="h-3.5 w-3.5" />
                   {assignments.length} technician{assignments.length !== 1 ? "s" : ""}
                 </span>
@@ -551,7 +551,7 @@ function CreateLocationDialog({
                 onChange={(e) => setRadius(e.target.value)}
                 className="flex-1 accent-emerald-600"
               />
-              <span className="text-sm text-slate-500 w-12 text-right">{radius}m</span>
+              <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
             </div>
           </div>
           <div className="space-y-2">
@@ -566,7 +566,7 @@ function CreateLocationDialog({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-slate-400">Used for shift schedules and auto clock-out timing</p>
+            <p className="text-xs text-muted-foreground">Used for shift schedules and auto clock-out timing</p>
           </div>
         </div>
         <DialogFooter>
@@ -662,7 +662,7 @@ function EditLocationDialog({
             <div className="flex items-center gap-3">
               <Input id="edit-radius" type="number" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="w-24" />
               <input type="range" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="flex-1 accent-emerald-600" />
-              <span className="text-sm text-slate-500 w-12 text-right">{radius}m</span>
+              <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
             </div>
           </div>
           <div className="space-y-2">
@@ -773,25 +773,25 @@ function AssignTechnicianDialog({
 
         {/* Current Assignments */}
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-slate-700">Current Assignments</h4>
+          <h4 className="text-sm font-medium text-foreground">Current Assignments</h4>
           {assignmentsLoading ? (
             <Skeleton className="h-16 w-full" />
           ) : !assignments || assignments.length === 0 ? (
-            <p className="text-sm text-slate-400 py-3 text-center">No technicians assigned yet</p>
+            <p className="text-sm text-muted-foreground py-3 text-center">No technicians assigned yet</p>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {assignments.map((a) => (
                 <div key={a.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-slate-700">
+                      <span className="text-sm font-medium text-foreground">
                         {a.user?.firstName} {a.user?.lastName}
                       </span>
                       {a.isPrimary && (
                         <Badge className="bg-emerald-100 text-emerald-700 text-xs">Primary</Badge>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {a.schedule && a.schedule.length > 0 && a.schedule.length < 7
                         ? a.schedule.map((d) => DAY_LABELS[d] || d).join(", ")
                         : "All days"}
@@ -800,7 +800,7 @@ function AssignTechnicianDialog({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-slate-400 hover:text-red-600"
+                    className="h-7 w-7 text-muted-foreground hover:text-red-600"
                     onClick={() => removeMutation.mutate(a.id)}
                   >
                     <X className="h-4 w-4" />
@@ -815,14 +815,14 @@ function AssignTechnicianDialog({
 
         {/* Add New Assignment */}
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-slate-700">Add Technician</h4>
+          <h4 className="text-sm font-medium text-foreground">Add Technician</h4>
           <Select value={selectedTechId} onValueChange={setSelectedTechId}>
             <SelectTrigger>
               <SelectValue placeholder="Select a technician..." />
             </SelectTrigger>
             <SelectContent>
               {availableTechs.length === 0 ? (
-                <div className="p-2 text-sm text-slate-400 text-center">
+                <div className="p-2 text-sm text-muted-foreground text-center">
                   No available technicians (ON_SITE/HYBRID only)
                 </div>
               ) : (
@@ -846,7 +846,7 @@ function AssignTechnicianDialog({
                   className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-colors ${
                     selectedDays.includes(day)
                       ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                      : "bg-slate-50 text-slate-400 border border-slate-200"
+                      : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
                   {DAY_LABELS[day]}
@@ -861,9 +861,9 @@ function AssignTechnicianDialog({
               type="checkbox"
               checked={isPrimary}
               onChange={(e) => setIsPrimary(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              className="rounded border-border text-emerald-600 focus:ring-emerald-500"
             />
-            <span className="text-sm text-slate-600">Set as primary location</span>
+            <span className="text-sm text-muted-foreground">Set as primary location</span>
           </label>
         </div>
 

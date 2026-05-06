@@ -69,14 +69,9 @@ const hbcfieldPreset: Partial<Config> = {
           light: '#DBEAFE',
           border: '#93C5FD',
         },
-        // Sidebar
-        sidebar: {
-          DEFAULT: '#FFFFFF',
-          active: '#059669',
-          hover: '#F1F5F9',
-          text: '#64748B',
-          icon: '#94A3B8',
-        },
+        // Sidebar colors are defined via CSS variables in globals.css
+        // (--sidebar-background, --sidebar-foreground, etc.)
+        // Do NOT hardcode them here — they need to change with dark/light theme
       },
 
       // Font Family

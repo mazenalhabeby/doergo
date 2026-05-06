@@ -57,22 +57,22 @@ function StatusBadge({ status }: { status: string }) {
     CLOCKED_IN: {
       label: "Active",
       icon: CheckCircle2,
-      className: "bg-green-50 text-green-700 border-green-200",
+      className: "bg-green-500/10 text-green-700 border-green-200",
     },
     CLOCKED_OUT: {
       label: "Completed",
       icon: Clock,
-      className: "bg-slate-50 text-slate-700 border-slate-200",
+      className: "bg-muted text-foreground border-border",
     },
     AUTO_OUT: {
       label: "Auto",
       icon: AlertCircle,
-      className: "bg-amber-50 text-amber-700 border-amber-200",
+      className: "bg-amber-500/10 text-amber-700 border-amber-200",
     },
   }[status] || {
     label: status,
     icon: Clock,
-    className: "bg-slate-50 text-slate-700 border-slate-200",
+    className: "bg-muted text-foreground border-border",
   }
 
   const Icon = config.icon
@@ -108,9 +108,9 @@ function GeofenceIndicator({ withinGeofence }: { withinGeofence: boolean }) {
 // Flag reason badge for smart auto-approval
 const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
   OVERTIME: { label: "Overtime", className: "bg-orange-50 text-orange-700 border-orange-200" },
-  MISSED_CLOCK_OUT: { label: "Missed Clock-Out", className: "bg-red-50 text-red-700 border-red-200" },
-  OUTSIDE_GEOFENCE_IN: { label: "Geofence (In)", className: "bg-amber-50 text-amber-700 border-amber-200" },
-  OUTSIDE_GEOFENCE_OUT: { label: "Geofence (Out)", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  MISSED_CLOCK_OUT: { label: "Missed Clock-Out", className: "bg-red-500/10 text-red-700 border-red-200" },
+  OUTSIDE_GEOFENCE_IN: { label: "Geofence (In)", className: "bg-amber-500/10 text-amber-700 border-amber-200" },
+  OUTSIDE_GEOFENCE_OUT: { label: "Geofence (Out)", className: "bg-amber-500/10 text-amber-700 border-amber-200" },
   LATE_ARRIVAL: { label: "Late Arrival", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
   EARLY_DEPARTURE: { label: "Early Departure", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
   UNSCHEDULED_DAY: { label: "Unscheduled", className: "bg-purple-50 text-purple-700 border-purple-200" },
@@ -121,7 +121,7 @@ function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {reasons.map((reason) => {
-        const config = FLAG_BADGE_CONFIG[reason] || { label: reason, className: "bg-slate-50 text-slate-600 border-slate-200" }
+        const config = FLAG_BADGE_CONFIG[reason] || { label: reason, className: "bg-muted text-muted-foreground border-border" }
         return (
           <span
             key={reason}
@@ -162,21 +162,21 @@ function StatCard({
   color: "blue" | "green" | "amber" | "slate"
 }) {
   const colorClasses = {
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600",
-    amber: "bg-amber-50 text-amber-600",
-    slate: "bg-slate-50 text-slate-600",
+    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    green: "bg-green-500/10 text-green-600",
+    amber: "bg-amber-500/10 text-amber-600",
+    slate: "bg-muted text-muted-foreground",
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <div className="bg-card rounded-2xl border border-border/60 p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="flex items-center gap-4">
         <div className={cn("p-3 rounded-xl", colorClasses[color])}>
           <Icon className="size-5" />
         </div>
         <div>
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{title}</p>
-          <p className="text-2xl font-bold text-slate-900 mt-0.5">{value}</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
+          <p className="text-2xl font-bold text-foreground mt-0.5">{value}</p>
         </div>
       </div>
     </div>
@@ -390,11 +390,11 @@ export default function AttendancePage() {
   // Not authorized
   if (!canAccess) {
     return (
-      <div className="min-h-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="min-h-full flex items-center justify-center bg-background">
         <div className="text-center">
-          <XCircle className="size-16 text-slate-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-slate-800">Access Denied</h2>
-          <p className="text-slate-500 mt-2">
+          <XCircle className="size-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground">Access Denied</h2>
+          <p className="text-muted-foreground mt-2">
             You don't have permission to view this page.
           </p>
         </div>
@@ -403,16 +403,16 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 Attendance Management
               </h1>
-              <p className="mt-1.5 text-slate-500">
+              <p className="mt-1.5 text-muted-foreground">
                 Track attendance, view reports, and manage approvals
               </p>
             </div>
@@ -421,24 +421,24 @@ export default function AttendancePage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as typeof activeTab)} className="mb-6">
-          <TabsList className="bg-white border border-slate-200/60 rounded-xl p-1 shadow-sm h-auto">
+          <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
             <TabsTrigger
               value="tracking"
-              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
               <Clock className="size-3.5 mr-1.5" />
               Tracking
             </TabsTrigger>
             <TabsTrigger
               value="reports"
-              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
               <BarChart3 className="size-3.5 mr-1.5" />
               Reports
             </TabsTrigger>
             <TabsTrigger
               value="approvals"
-              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <ClipboardCheck className="size-3.5 mr-1.5" />
               Approvals
@@ -450,7 +450,7 @@ export default function AttendancePage() {
             </TabsTrigger>
             <TabsTrigger
               value="breaks"
-              className="data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <Coffee className="size-3.5 mr-1.5" />
               Breaks
@@ -497,10 +497,10 @@ export default function AttendancePage() {
 
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (
-          <div className="bg-white rounded-2xl border border-amber-200/60 shadow-sm mb-8">
+          <div className="bg-card rounded-2xl border border-amber-200/60 shadow-sm mb-8">
             <div className="p-5 border-b border-amber-100 bg-amber-50/50 rounded-t-2xl">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
+                <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
                   <AlertCircle className="size-5" />
                 </div>
                 <div>
@@ -522,17 +522,17 @@ export default function AttendancePage() {
                       {entry.user?.lastName?.[0]}
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">
+                      <p className="font-medium text-foreground">
                         {entry.user?.firstName} {entry.user?.lastName}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         {entry.location?.name || "Unknown location"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-sm font-medium text-foreground">
                         {formatTime(entry.clockInAt)}
                         {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt)}`}
                       </p>
@@ -566,17 +566,17 @@ export default function AttendancePage() {
 
         {/* Scheduler Section (ADMIN only) — compact collapsible */}
         {isAdmin && schedulerInfo && (
-          <details className="bg-white rounded-2xl border border-slate-200/60 shadow-sm mb-8 group">
-            <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-slate-50/50 rounded-2xl transition-colors">
+          <details className="bg-card rounded-2xl border border-border/60 shadow-sm mb-8 group">
+            <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-accent/50 rounded-2xl transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
                   <Settings className="size-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-slate-900">
+                  <h2 className="text-sm font-semibold text-foreground">
                     Auto Clock-Out Scheduler
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     {schedulerInfo.repeatableJobs?.length || 0} jobs · {schedulerInfo.queueStats?.active || 0} active · {schedulerInfo.queueStats?.failed || 0} failed
                   </p>
                 </div>
@@ -604,11 +604,11 @@ export default function AttendancePage() {
                 </Button>
               </div>
             </summary>
-            <div className="px-4 pb-4 pt-2 border-t border-slate-100">
+            <div className="px-4 pb-4 pt-2 border-t border-border">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-1">Scheduled</p>
-                  <p className="text-lg font-bold text-slate-900">{schedulerInfo.repeatableJobs?.length || 0}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Scheduled</p>
+                  <p className="text-lg font-bold text-foreground">{schedulerInfo.repeatableJobs?.length || 0}</p>
                 </div>
                 <div className="p-3 bg-blue-50 rounded-xl">
                   <p className="text-[10px] font-medium text-blue-600 uppercase tracking-wide mb-1">Active</p>
@@ -628,7 +628,7 @@ export default function AttendancePage() {
                   {schedulerInfo.repeatableJobs.map((job, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-lg"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground text-xs rounded-lg"
                     >
                       <Clock className="size-3" />
                       {job.next
@@ -646,12 +646,12 @@ export default function AttendancePage() {
         <div className="flex flex-wrap items-center gap-3 mb-6">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm"
+              className="pl-10 h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm"
             />
           </div>
 
@@ -663,8 +663,8 @@ export default function AttendancePage() {
               setPage(1)
             }}
           >
-            <SelectTrigger className="w-[200px] h-11 rounded-xl bg-white border-slate-200/80 shadow-sm">
-              <MapPin className="size-4 mr-2 text-slate-400" />
+            <SelectTrigger className="w-[200px] h-11 rounded-xl bg-card border-border/80 shadow-sm">
+              <MapPin className="size-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Select location" />
             </SelectTrigger>
             <SelectContent>
@@ -685,7 +685,7 @@ export default function AttendancePage() {
               setPage(1)
             }}
           >
-            <SelectTrigger className="w-[150px] h-11 rounded-xl bg-white border-slate-200/80 shadow-sm">
+            <SelectTrigger className="w-[150px] h-11 rounded-xl bg-card border-border/80 shadow-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -698,7 +698,7 @@ export default function AttendancePage() {
 
           {/* Date Filter */}
           <div className="relative">
-            <Calendar className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <Calendar className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               type="date"
               value={selectedDate}
@@ -706,7 +706,7 @@ export default function AttendancePage() {
                 setSelectedDate(e.target.value)
                 setPage(1)
               }}
-              className="pl-10 w-[180px] h-11 bg-white/80 border-slate-200/80 rounded-xl shadow-sm"
+              className="pl-10 w-[180px] h-11 bg-card/80 border-border/80 rounded-xl shadow-sm"
             />
           </div>
 
@@ -715,14 +715,14 @@ export default function AttendancePage() {
             variant="outline"
             size="icon"
             onClick={() => refetch()}
-            className="h-11 w-11 rounded-xl border-slate-200/80 bg-white shadow-sm hover:bg-slate-50"
+            className="h-11 w-11 rounded-xl border-border/80 bg-card shadow-sm hover:bg-accent"
           >
-            <RefreshCw className="size-4 text-slate-500" />
+            <RefreshCw className="size-4 text-muted-foreground" />
           </Button>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
           {loadingEntries || loadingLocations ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -739,10 +739,10 @@ export default function AttendancePage() {
           ) : isError ? (
             <div className="p-12 text-center">
               <AlertCircle className="size-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800">
+              <h3 className="text-lg font-medium text-foreground">
                 Failed to load attendance
               </h3>
-              <p className="text-slate-500 mt-1">
+              <p className="text-muted-foreground mt-1">
                 {error instanceof Error ? error.message : "An error occurred"}
               </p>
               <Button
@@ -756,11 +756,11 @@ export default function AttendancePage() {
             </div>
           ) : filteredEntries.length === 0 ? (
             <div className="p-12 text-center">
-              <Clock className="size-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800">
+              <Clock className="size-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground">
                 No attendance records
               </h3>
-              <p className="text-slate-500 mt-1">
+              <p className="text-muted-foreground mt-1">
                 {selectedLocationId === "all"
                   ? "Select a location to view attendance"
                   : "No entries found for this date and location"}
@@ -770,19 +770,19 @@ export default function AttendancePage() {
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80">
-                    <TableHead className="font-semibold text-slate-600">Technician</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Status</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Clock In</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Clock Out</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Duration</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Approval</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Notes</TableHead>
+                  <TableRow className="bg-muted/80">
+                    <TableHead className="font-semibold text-muted-foreground">Technician</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Clock In</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Clock Out</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Duration</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Approval</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredEntries.map((entry: TimeEntry) => (
-                    <TableRow key={entry.id} className="hover:bg-slate-50/50">
+                    <TableRow key={entry.id} className="hover:bg-accent/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="size-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
@@ -790,10 +790,10 @@ export default function AttendancePage() {
                             {entry.user?.lastName?.[0]}
                           </div>
                           <div>
-                            <p className="font-medium text-slate-900">
+                            <p className="font-medium text-foreground">
                               {entry.user?.firstName} {entry.user?.lastName}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                               {entry.location?.name || "Unknown location"}
                             </p>
                           </div>
@@ -804,10 +804,10 @@ export default function AttendancePage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-slate-900">
+                          <p className="font-medium text-foreground">
                             {formatTime(entry.clockInAt)}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             {format(toDate(entry.clockInAt), "MMM d")}
                           </p>
                         </div>
@@ -815,19 +815,19 @@ export default function AttendancePage() {
                       <TableCell>
                         {entry.clockOutAt ? (
                           <div>
-                            <p className="font-medium text-slate-900">
+                            <p className="font-medium text-foreground">
                               {formatTime(entry.clockOutAt)}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                               {format(toDate(entry.clockOutAt), "MMM d")}
                             </p>
                           </div>
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium text-slate-900">
+                        <span className="font-medium text-foreground">
                           {formatDurationMinutes(entry.totalMinutes)}
                         </span>
                       </TableCell>
@@ -860,13 +860,13 @@ export default function AttendancePage() {
                       <TableCell>
                         {entry.notes ? (
                           <span
-                            className="text-sm text-slate-600 truncate max-w-[150px] block"
+                            className="text-sm text-muted-foreground truncate max-w-[150px] block"
                             title={entry.notes}
                           >
                             {entry.notes}
                           </span>
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -876,8 +876,8 @@ export default function AttendancePage() {
 
               {/* Pagination */}
               {meta && meta.totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
-                  <p className="text-sm text-slate-500">
+                <div className="flex items-center justify-between px-6 py-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
                     Showing {(page - 1) * limit + 1} to{" "}
                     {Math.min(page * limit, meta.total)} of {meta.total} entries
                   </p>
@@ -915,12 +915,12 @@ export default function AttendancePage() {
 
           {/* Approvals Tab */}
           <TabsContent value="approvals" className="mt-6">
-            <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm">
-              <div className="p-6 border-b border-slate-100">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-sm">
+              <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Pending Approvals</h2>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <h2 className="text-lg font-semibold text-foreground">Pending Approvals</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Review and approve time entries that require manager approval
                     </p>
                   </div>
@@ -945,21 +945,21 @@ export default function AttendancePage() {
               ) : !pendingApprovalsData?.data?.length ? (
                 <div className="p-12 text-center">
                   <CheckCircle2 className="size-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-800">All caught up!</h3>
-                  <p className="text-slate-500 mt-1">No pending approvals at this time</p>
+                  <h3 className="text-lg font-medium text-foreground">All caught up!</h3>
+                  <p className="text-muted-foreground mt-1">No pending approvals at this time</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/80">
-                      <TableHead className="font-semibold text-slate-600">Technician</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Location</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Date</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Clock In</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Clock Out</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Duration</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Reason</TableHead>
-                      <TableHead className="font-semibold text-slate-600 text-right">Actions</TableHead>
+                    <TableRow className="bg-muted/80">
+                      <TableHead className="font-semibold text-muted-foreground">Technician</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Location</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Date</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Clock In</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Clock Out</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Duration</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Reason</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -970,7 +970,7 @@ export default function AttendancePage() {
                             <div className="size-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-medium text-sm">
                               {entry.user?.firstName?.[0]}{entry.user?.lastName?.[0]}
                             </div>
-                            <p className="font-medium text-slate-900">
+                            <p className="font-medium text-foreground">
                               {entry.user?.firstName} {entry.user?.lastName}
                             </p>
                           </div>
@@ -1054,8 +1054,8 @@ export default function AttendancePage() {
 
             {/* Break Stats by Type */}
             {!loadingBreakSummary && breakSummary && breakSummary.totalBreaks > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 mb-6">
-                <h3 className="text-md font-semibold text-slate-900 mb-4">Breaks by Type</h3>
+              <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-6 mb-6">
+                <h3 className="text-md font-semibold text-foreground mb-4">Breaks by Type</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-amber-50 rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
@@ -1097,23 +1097,23 @@ export default function AttendancePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-xl">
+                  <div className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
-                      <Pause className="size-5 text-slate-600" />
-                      <p className="font-medium text-slate-900">Other Breaks</p>
+                      <Pause className="size-5 text-muted-foreground" />
+                      <p className="font-medium text-foreground">Other Breaks</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-lg font-bold text-slate-900">{breakSummary.breaksByType?.OTHER?.count || 0}</p>
-                        <p className="text-xs text-slate-600">Count</p>
+                        <p className="text-lg font-bold text-foreground">{breakSummary.breaksByType?.OTHER?.count || 0}</p>
+                        <p className="text-xs text-muted-foreground">Count</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-slate-900">{formatDurationMinutes(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
-                        <p className="text-xs text-slate-600">Total</p>
+                        <p className="text-lg font-bold text-foreground">{formatDurationMinutes(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
+                        <p className="text-xs text-muted-foreground">Total</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-slate-900">{breakSummary.breaksByType?.OTHER?.averageMinutes || 0}m</p>
-                        <p className="text-xs text-slate-600">Avg</p>
+                        <p className="text-lg font-bold text-foreground">{breakSummary.breaksByType?.OTHER?.averageMinutes || 0}m</p>
+                        <p className="text-xs text-muted-foreground">Avg</p>
                       </div>
                     </div>
                   </div>
@@ -1122,16 +1122,16 @@ export default function AttendancePage() {
             )}
 
             {/* Active Breaks Section */}
-            <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm mb-6">
-              <div className="p-6 border-b border-slate-100">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-sm mb-6">
+              <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-lg bg-orange-50 text-orange-600">
                       <Coffee className="size-5" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-slate-900">Active Breaks</h2>
-                      <p className="text-sm text-slate-500">
+                      <h2 className="text-lg font-semibold text-foreground">Active Breaks</h2>
+                      <p className="text-sm text-muted-foreground">
                         Technicians currently on break
                       </p>
                     </div>
@@ -1157,19 +1157,19 @@ export default function AttendancePage() {
               ) : activeBreaks.length === 0 ? (
                 <div className="p-12 text-center">
                   <CheckCircle2 className="size-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-800">No active breaks</h3>
-                  <p className="text-slate-500 mt-1">All technicians are working</p>
+                  <h3 className="text-lg font-medium text-foreground">No active breaks</h3>
+                  <p className="text-muted-foreground mt-1">All technicians are working</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-border">
                   {activeBreaks.map((breakItem: Break) => (
-                    <div key={breakItem.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                    <div key={breakItem.id} className="p-4 flex items-center justify-between hover:bg-accent">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "size-10 rounded-full flex items-center justify-center",
-                          breakItem.type === "LUNCH" ? "bg-amber-100 text-amber-600" :
-                          breakItem.type === "SHORT" ? "bg-blue-100 text-blue-600" :
-                          "bg-slate-100 text-slate-600"
+                          breakItem.type === "LUNCH" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" :
+                          breakItem.type === "SHORT" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" :
+                          "bg-muted text-muted-foreground"
                         )}>
                           {breakItem.type === "LUNCH" ? (
                             <UtensilsCrossed className="size-5" />
@@ -1180,10 +1180,10 @@ export default function AttendancePage() {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900">
+                          <p className="font-medium text-foreground">
                             {breakItem.user?.firstName} {breakItem.user?.lastName}
                           </p>
-                          <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span className="capitalize">{breakItem.type.toLowerCase()} break</span>
                             <span>•</span>
                             <span>Started {formatTime(breakItem.startedAt)}</span>
@@ -1221,12 +1221,12 @@ export default function AttendancePage() {
             </div>
 
             {/* Break History Section */}
-            <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm">
-              <div className="p-6 border-b border-slate-100">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-sm">
+              <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Break History</h2>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <h2 className="text-lg font-semibold text-foreground">Break History</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
                       View past break records
                     </p>
                   </div>
@@ -1236,7 +1236,7 @@ export default function AttendancePage() {
                       value={breakTypeFilter}
                       onValueChange={setBreakTypeFilter}
                     >
-                      <SelectTrigger className="w-[130px] h-10 rounded-lg bg-white border-slate-200/80 shadow-sm">
+                      <SelectTrigger className="w-[130px] h-10 rounded-lg bg-card border-border/80 shadow-sm">
                         <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1249,12 +1249,12 @@ export default function AttendancePage() {
 
                     {/* Date Filter */}
                     <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <Calendar className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                       <Input
                         type="date"
                         value={breakDate}
                         onChange={(e) => setBreakDate(e.target.value)}
-                        className="pl-9 w-[160px] h-10 bg-white/80 border-slate-200/80 rounded-lg shadow-sm"
+                        className="pl-9 w-[160px] h-10 bg-card/80 border-border/80 rounded-lg shadow-sm"
                       />
                     </div>
 
@@ -1262,9 +1262,9 @@ export default function AttendancePage() {
                       variant="outline"
                       size="icon"
                       onClick={() => refetchBreakHistory()}
-                      className="h-10 w-10 rounded-lg border-slate-200/80 bg-white shadow-sm hover:bg-slate-50"
+                      className="h-10 w-10 rounded-lg border-border/80 bg-card shadow-sm hover:bg-accent"
                     >
-                      <RefreshCw className="size-4 text-slate-500" />
+                      <RefreshCw className="size-4 text-muted-foreground" />
                     </Button>
                   </div>
                 </div>
@@ -1278,31 +1278,31 @@ export default function AttendancePage() {
                 </div>
               ) : !breakHistoryData?.data?.length ? (
                 <div className="p-12 text-center">
-                  <Coffee className="size-12 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-800">No break records</h3>
-                  <p className="text-slate-500 mt-1">No breaks found for the selected date</p>
+                  <Coffee className="size-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground">No break records</h3>
+                  <p className="text-muted-foreground mt-1">No breaks found for the selected date</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/80">
-                      <TableHead className="font-semibold text-slate-600">Technician</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Type</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Started</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Ended</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Duration</TableHead>
-                      <TableHead className="font-semibold text-slate-600">Notes</TableHead>
+                    <TableRow className="bg-muted/80">
+                      <TableHead className="font-semibold text-muted-foreground">Technician</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Type</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Started</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Ended</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Duration</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Notes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {breakHistoryData.data.map((breakItem: Break) => (
-                      <TableRow key={breakItem.id} className="hover:bg-slate-50/50">
+                      <TableRow key={breakItem.id} className="hover:bg-accent/50">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="size-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
                               {breakItem.user?.firstName?.[0]}{breakItem.user?.lastName?.[0]}
                             </div>
-                            <span className="font-medium text-slate-900">
+                            <span className="font-medium text-foreground">
                               {breakItem.user?.firstName} {breakItem.user?.lastName}
                             </span>
                           </div>
@@ -1310,9 +1310,9 @@ export default function AttendancePage() {
                         <TableCell>
                           <span className={cn(
                             "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
-                            breakItem.type === "LUNCH" ? "bg-amber-50 text-amber-700 border-amber-200" :
-                            breakItem.type === "SHORT" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                            "bg-slate-50 text-slate-700 border-slate-200"
+                            breakItem.type === "LUNCH" ? "bg-amber-500/10 text-amber-700 border-amber-200" :
+                            breakItem.type === "SHORT" ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200" :
+                            "bg-muted text-foreground border-border"
                           )}>
                             {breakItem.type === "LUNCH" ? (
                               <UtensilsCrossed className="size-3.5" />
@@ -1324,22 +1324,22 @@ export default function AttendancePage() {
                             {breakItem.type.charAt(0) + breakItem.type.slice(1).toLowerCase()}
                           </span>
                         </TableCell>
-                        <TableCell className="text-slate-900">{formatTime(breakItem.startedAt)}</TableCell>
-                        <TableCell className="text-slate-900">
+                        <TableCell className="text-foreground">{formatTime(breakItem.startedAt)}</TableCell>
+                        <TableCell className="text-foreground">
                           {breakItem.endedAt ? formatTime(breakItem.endedAt) : (
                             <span className="text-orange-600">On break</span>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium text-slate-900">
+                        <TableCell className="font-medium text-foreground">
                           {formatDurationMinutes(breakItem.durationMinutes)}
                         </TableCell>
                         <TableCell>
                           {breakItem.notes ? (
-                            <span className="text-sm text-slate-600 truncate max-w-[150px] block" title={breakItem.notes}>
+                            <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={breakItem.notes}>
                               {breakItem.notes}
                             </span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
                       </TableRow>

@@ -10,10 +10,10 @@ function Shimmer({ className }: ShimmerProps) {
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-md bg-slate-200',
+        'relative overflow-hidden rounded-md bg-muted',
         'before:absolute before:inset-0 before:-translate-x-full',
         'before:animate-[shimmer_1.5s_infinite]',
-        'before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent',
+        'before:bg-gradient-to-r before:from-transparent before:via-card/60 before:to-transparent',
         className
       )}
     />
@@ -26,9 +26,9 @@ function Shimmer({ className }: ShimmerProps) {
 
 function SidebarSkeleton() {
   return (
-    <div className="hidden md:flex h-screen w-64 flex-col bg-slate-50 border-r border-slate-200">
+    <div className="hidden md:flex h-screen w-64 flex-col bg-muted border-r border-border">
       {/* Logo area */}
-      <div className="flex items-center gap-3 p-4 border-b border-slate-200">
+      <div className="flex items-center gap-3 p-4 border-b border-border">
         <Shimmer className="w-8 h-8 rounded-lg" />
         <Shimmer className="w-24 h-5 rounded" />
       </div>
@@ -55,7 +55,7 @@ function SidebarSkeleton() {
       </div>
 
       {/* User profile area */}
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3">
           <Shimmer className="w-10 h-10 rounded-full" />
           <div className="flex-1 space-y-1.5">
@@ -74,9 +74,9 @@ function SidebarSkeleton() {
 
 function HeaderSkeleton() {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-slate-200 px-4 bg-white">
+    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-4 bg-card">
       <Shimmer className="w-8 h-8 rounded" />
-      <div className="w-px h-4 bg-slate-200" />
+      <div className="w-px h-4 bg-muted" />
       <Shimmer className="w-48 h-5 rounded" />
       <div className="flex-1" />
       <Shimmer className="w-8 h-8 rounded-full" />
@@ -90,7 +90,7 @@ function HeaderSkeleton() {
 
 function StatsCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center gap-4">
         <Shimmer className="w-12 h-12 rounded-lg" />
         <div className="space-y-2">
@@ -127,7 +127,7 @@ function WelcomeSkeleton() {
 
 function ContentCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center gap-2 mb-4">
         <Shimmer className="w-5 h-5 rounded" />
         <Shimmer className="w-32 h-6 rounded" />
@@ -161,7 +161,7 @@ function ContentCardSkeleton() {
 
 export function DashboardSkeleton() {
   return (
-    <div className="flex h-screen bg-slate-100 animate-in fade-in duration-300">
+    <div className="flex h-screen bg-muted animate-in fade-in duration-300">
       {/* Sidebar */}
       <SidebarSkeleton />
 

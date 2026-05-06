@@ -27,7 +27,7 @@ const EVENT_CONFIG: Record<
   { icon: React.ElementType; color: string; label: string }
 > = {
   CREATED: { icon: Clock, color: "text-blue-500", label: "Task created" },
-  UPDATED: { icon: FileEdit, color: "text-gray-500", label: "Task updated" },
+  UPDATED: { icon: FileEdit, color: "text-muted-foreground", label: "Task updated" },
   ASSIGNED: { icon: UserPlus, color: "text-purple-500", label: "Technician assigned" },
   UNASSIGNED: { icon: UserMinus, color: "text-orange-500", label: "Technician unassigned" },
   STATUS_CHANGED: { icon: PlayCircle, color: "text-amber-500", label: "Status changed" },
@@ -37,7 +37,7 @@ const EVENT_CONFIG: Record<
   BLOCKED: { icon: AlertTriangle, color: "text-red-500", label: "Task blocked" },
   COMPLETED: { icon: CheckCircle2, color: "text-green-500", label: "Task completed" },
   CANCELED: { icon: XCircle, color: "text-red-500", label: "Task canceled" },
-  CLOSED: { icon: CheckCircle2, color: "text-gray-500", label: "Task closed" },
+  CLOSED: { icon: CheckCircle2, color: "text-muted-foreground", label: "Task closed" },
   ATTACHMENT_ADDED: { icon: Paperclip, color: "text-indigo-500", label: "Attachment added" },
   ATTACHMENT_REMOVED: { icon: Paperclip, color: "text-red-500", label: "Attachment removed" },
 }
@@ -96,14 +96,14 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
   const activityCount = filteredEvents.length
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm h-[400px] flex flex-col">
-      <div className="p-6 border-b border-gray-100 shrink-0 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-          <Clock className="size-4 text-gray-400" />
+    <div className="bg-card rounded-2xl shadow-sm h-[400px] flex flex-col">
+      <div className="p-6 border-b border-border shrink-0 flex items-center justify-between">
+        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+          <Clock className="size-4 text-muted-foreground" />
           Activity
         </h3>
         {activityCount > 0 && (
-          <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+          <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full">
             {activityCount}
           </span>
         )}
@@ -124,12 +124,12 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
           </div>
         ) : isError || filteredEvents.length === 0 ? (
           <div className="text-center py-4">
-            <Clock className="size-6 text-gray-300 mx-auto mb-1" />
-            <p className="text-xs text-gray-400">No activity yet</p>
+            <Clock className="size-6 text-muted-foreground mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">No activity yet</p>
           </div>
         ) : (
           <div className="relative">
-            <div className="absolute left-2.5 top-2 bottom-2 w-px bg-gray-200" />
+            <div className="absolute left-2.5 top-2 bottom-2 w-px bg-muted" />
 
             <div className="space-y-3">
               {filteredEvents.map((event) => {
@@ -138,14 +138,14 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
 
                 return (
                   <div key={event.id} className="relative flex gap-2.5 pl-0">
-                    <div className="relative z-10 size-5 rounded-full bg-white flex items-center justify-center ring-2 ring-gray-100">
+                    <div className="relative z-10 size-5 rounded-full bg-card flex items-center justify-center ring-2 ring-border">
                       <Icon className={cn("size-3", config.color)} />
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
-                      <p className="text-xs text-gray-900 leading-tight">
+                      <p className="text-xs text-foreground leading-tight">
                         {getEventDescription(event)}
                       </p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
                         {event.user.firstName} {event.user.lastName} · {formatTimeAgo(event.createdAt)}
                       </p>
                     </div>

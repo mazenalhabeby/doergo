@@ -165,10 +165,10 @@ export default function CreateTaskPage() {
   }
 
   return (
-    <div className="min-h-full bg-slate-50/30">
+    <div className="min-h-full bg-muted">
       <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Page Title */}
-        <h1 className="text-2xl font-semibold text-slate-900 mb-8">
+        <h1 className="text-2xl font-semibold text-foreground mb-8">
           {t("tasks.create.title")}
         </h1>
 
@@ -176,7 +176,7 @@ export default function CreateTaskPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="title" className="text-sm font-medium text-foreground">
               {t("tasks.create.taskTitleLabel")}<span className="text-red-500">*</span>
             </Label>
             <Input
@@ -185,13 +185,13 @@ export default function CreateTaskPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={isSubmitting}
-              className="h-12 rounded-xl border-slate-200 bg-white text-base placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
+              className="h-12 rounded-xl border-border bg-card text-base placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20"
             />
           </div>
 
           {/* Problem Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="description" className="text-sm font-medium text-foreground">
               {t("tasks.create.descriptionLabel")}<span className="text-red-500">*</span>
             </Label>
             <Textarea
@@ -201,13 +201,13 @@ export default function CreateTaskPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isSubmitting}
-              className="rounded-xl border-slate-200 bg-white text-base placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 resize-none"
+              className="rounded-xl border-border bg-card text-base placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20 resize-none"
             />
           </div>
 
           {/* Due Date */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">
+            <Label className="text-sm font-medium text-foreground">
               {t("tasks.create.preferredDateLabel")}
             </Label>
             <Popover>
@@ -215,12 +215,12 @@ export default function CreateTaskPage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "h-12 w-full justify-start text-left text-base font-normal rounded-xl border-slate-200 bg-white hover:bg-slate-50",
-                    !dueDate && "text-slate-400"
+                    "h-12 w-full justify-start text-left text-base font-normal rounded-xl border-border bg-card hover:bg-accent",
+                    !dueDate && "text-muted-foreground"
                   )}
                   disabled={isSubmitting}
                 >
-                  <CalendarIcon className="mr-3 size-5 text-slate-400" />
+                  <CalendarIcon className="mr-3 size-5 text-muted-foreground" />
                   {dueDate ? format(dueDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
                 </Button>
               </PopoverTrigger>
@@ -238,12 +238,12 @@ export default function CreateTaskPage() {
 
           {/* Service Location with Map */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">
+            <Label className="text-sm font-medium text-foreground">
               {t("tasks.create.serviceLocationLabel")}
             </Label>
             <Suspense fallback={
-              <div className="h-[340px] rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center">
-                <Loader2 className="size-6 text-slate-400 animate-spin" />
+              <div className="h-[340px] rounded-xl border border-border bg-muted flex items-center justify-center">
+                <Loader2 className="size-6 text-muted-foreground animate-spin" />
               </div>
             }>
               <LocationPicker
@@ -262,7 +262,7 @@ export default function CreateTaskPage() {
 
           {/* Attachments */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">
+            <Label className="text-sm font-medium text-foreground">
               {t("tasks.create.attachmentsLabel")}
             </Label>
             <div
@@ -273,7 +273,7 @@ export default function CreateTaskPage() {
                 "relative rounded-xl border-2 border-dashed transition-all duration-200",
                 isDragOver
                   ? "border-blue-400 bg-blue-50"
-                  : "border-slate-200 bg-white hover:border-slate-300"
+                  : "border-border bg-card hover:border-border"
               )}
             >
               <input
@@ -285,13 +285,13 @@ export default function CreateTaskPage() {
                 disabled={isSubmitting}
               />
               <div className="flex flex-col items-center justify-center py-10 px-4">
-                <div className="flex size-12 items-center justify-center rounded-xl bg-slate-100 mb-3">
-                  <Upload className="size-5 text-slate-400" />
+                <div className="flex size-12 items-center justify-center rounded-xl bg-muted mb-3">
+                  <Upload className="size-5 text-muted-foreground" />
                 </div>
-                <p className="text-sm text-slate-600 font-medium">
+                <p className="text-sm text-muted-foreground font-medium">
                   {t("tasks.create.dragAndDrop")}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {t("tasks.create.imagesAndPdfOnly")}
                 </p>
               </div>
@@ -306,7 +306,7 @@ export default function CreateTaskPage() {
                     className="group relative"
                   >
                     {file.type.startsWith("image/") ? (
-                      <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-border bg-muted">
                         <img
                           src={URL.createObjectURL(file)}
                           alt={file.name}
@@ -322,17 +322,17 @@ export default function CreateTaskPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="relative flex items-center gap-2 rounded-xl bg-slate-100 border border-slate-200 pl-3 pr-2 py-2.5">
-                        <FileText className="size-5 text-slate-500" />
-                        <span className="text-sm text-slate-700 max-w-[120px] truncate">
+                      <div className="relative flex items-center gap-2 rounded-xl bg-muted border border-border pl-3 pr-2 py-2.5">
+                        <FileText className="size-5 text-muted-foreground" />
+                        <span className="text-sm text-foreground max-w-[120px] truncate">
                           {file.name}
                         </span>
                         <button
                           type="button"
                           onClick={() => removeAttachment(index)}
-                          className="p-1 rounded-full hover:bg-slate-200 transition-colors"
+                          className="p-1 rounded-full hover:bg-muted transition-colors"
                         >
-                          <X className="size-3.5 text-slate-400" />
+                          <X className="size-3.5 text-muted-foreground" />
                         </button>
                       </div>
                     )}
@@ -344,7 +344,7 @@ export default function CreateTaskPage() {
 
           {/* Additional Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="notes" className="text-sm font-medium text-foreground">
               {t("tasks.create.additionalNotesLabel")}
             </Label>
             <Textarea
@@ -354,13 +354,13 @@ export default function CreateTaskPage() {
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
               disabled={isSubmitting}
-              className="rounded-xl border-slate-200 bg-white text-base placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 resize-none"
+              className="rounded-xl border-border bg-card text-base placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20 resize-none"
             />
           </div>
 
           {/* Priority Selection */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">
+            <Label className="text-sm font-medium text-foreground">
               {t("tasks.create.priorityLabel")}
             </Label>
             <PrioritySelector

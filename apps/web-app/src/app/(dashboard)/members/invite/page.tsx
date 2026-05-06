@@ -123,7 +123,7 @@ export default function InviteMemberPage() {
         </Link>
         <Card>
           <CardContent className="py-12 text-center">
-            <h3 className="text-lg font-medium text-slate-800 mb-2">{t("members.invite.accessDenied")}</h3>
+            <h3 className="text-lg font-medium text-foreground mb-2">{t("members.invite.accessDenied")}</h3>
           </CardContent>
         </Card>
       </div>
@@ -167,7 +167,7 @@ export default function InviteMemberPage() {
               </div>
             )}
 
-            <p className="text-sm text-slate-500 text-center">
+            <p className="text-sm text-muted-foreground text-center">
               {t("members.invite.shareCodeHint")}
             </p>
 
@@ -212,11 +212,11 @@ export default function InviteMemberPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Role */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-slate-700">{t("members.invite.roleSection")}</h3>
+              <h3 className="text-sm font-medium text-foreground">{t("members.invite.roleSection")}</h3>
               <div className="space-y-2">
                 <Label>{t("members.invite.roleLabel")}</Label>
                 {isDispatcher ? (
-                  <div className="flex items-center h-10 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-700">
+                  <div className="flex items-center h-10 px-3 rounded-md border border-border bg-muted text-sm text-foreground">
                     {t("members.roles.technician")}
                   </div>
                 ) : (
@@ -233,7 +233,7 @@ export default function InviteMemberPage() {
 
             {/* Email (optional) */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-slate-700">{t("members.invite.contactSection")}</h3>
+              <h3 className="text-sm font-medium text-foreground">{t("members.invite.contactSection")}</h3>
               <div className="space-y-2">
                 <Label htmlFor="email">{t("members.invite.emailLabel")} <span className="text-red-500">*</span></Label>
                 <Input
@@ -244,7 +244,7 @@ export default function InviteMemberPage() {
                   placeholder="john@example.com"
                   required
                 />
-                <p className="text-xs text-slate-500">{t("members.invite.emailHint")}</p>
+                <p className="text-xs text-muted-foreground">{t("members.invite.emailHint")}</p>
               </div>
             </div>
 
@@ -264,7 +264,7 @@ export default function InviteMemberPage() {
             {/* Technician details */}
             {isTechnician && (
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-slate-700">{t("members.invite.workDetails")}</h3>
+                <h3 className="text-sm font-medium text-foreground">{t("members.invite.workDetails")}</h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

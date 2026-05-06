@@ -247,7 +247,7 @@ export default function Home() {
                 {t('landing.nav.signIn')}
               </Link>
               <Magnetic>
-                <Link href="/login" className="text-sm px-5 py-2.5 rounded-full bg-white/[.08] hover:bg-white/[.14] text-white font-medium transition-all duration-300 border border-white/[.08] hover:border-white/[.16]">
+                <Link href="/login" className="text-sm px-5 py-2.5 rounded-full bg-card/[.08] hover:bg-card/[.14] text-white font-medium transition-all duration-300 border border-white/[.08] hover:border-white/[.16]">
                   {t('landing.nav.getStarted')}
                 </Link>
               </Magnetic>

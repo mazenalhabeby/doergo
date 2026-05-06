@@ -41,7 +41,7 @@ export function TaskCard({
   return (
     <div
       className={cn(
-        "relative bg-white rounded-2xl border border-slate-200/60 overflow-hidden",
+        "relative bg-card rounded-2xl border border-border/60 overflow-hidden",
         "shadow-sm transition-all duration-300 ease-out",
         className
       )}
@@ -54,7 +54,7 @@ export function TaskCard({
             ? "bg-gradient-to-b from-red-500 to-red-600"
             : isHigh
             ? "bg-gradient-to-b from-amber-500 to-amber-600"
-            : "bg-gradient-to-b from-slate-200 to-slate-300"
+            : "bg-gradient-to-b from-muted to-muted-foreground/20"
         )}
       />
 
@@ -66,7 +66,7 @@ export function TaskCard({
             <StatusBadge status={task.status} />
 
             {/* Request ID */}
-            <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
+            <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded-md">
               {taskRequestId}
             </span>
 
@@ -87,7 +87,7 @@ export function TaskCard({
           </div>
 
           {/* Time */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3.5" />
             {formatTimeAgo(task.updatedAt)}
           </div>
@@ -99,7 +99,7 @@ export function TaskCard({
             {/* Title */}
             <HoverCard openDelay={300} closeDelay={100}>
               <HoverCardTrigger asChild>
-                <h3 className="text-base font-semibold text-slate-800 mb-2 truncate cursor-default">
+                <h3 className="text-base font-semibold text-foreground mb-2 truncate cursor-default">
                   {task.title}
                 </h3>
               </HoverCardTrigger>
@@ -107,7 +107,7 @@ export function TaskCard({
                 <HoverCardContent
                   side="top"
                   align="start"
-                  className="w-80 p-3 text-sm font-semibold text-slate-800"
+                  className="w-80 p-3 text-sm font-semibold text-foreground"
                 >
                   {task.title}
                 </HoverCardContent>
@@ -118,7 +118,7 @@ export function TaskCard({
             {task.description && (
               <HoverCard openDelay={300} closeDelay={100}>
                 <HoverCardTrigger asChild>
-                  <p className="text-sm text-slate-500 leading-relaxed line-clamp-2 mb-4 cursor-default">
+                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-4 cursor-default">
                     {task.description}
                   </p>
                 </HoverCardTrigger>
@@ -126,7 +126,7 @@ export function TaskCard({
                   <HoverCardContent
                     side="bottom"
                     align="start"
-                    className="w-96 p-3 text-sm text-slate-600 leading-relaxed"
+                    className="w-96 p-3 text-sm text-muted-foreground leading-relaxed"
                   >
                     {task.description}
                   </HoverCardContent>
@@ -143,7 +143,7 @@ export function TaskCard({
                       {task.assignedTo.firstName?.[0]}{task.assignedTo.lastName?.[0]}
                     </span>
                   </div>
-                  <span className="text-sm text-slate-600">
+                  <span className="text-sm text-muted-foreground">
                     {task.assignedTo.firstName} {task.assignedTo.lastName}
                   </span>
                   {/* Acceptance Status Indicator */}
@@ -167,8 +167,8 @@ export function TaskCard({
               {task.locationAddress && (
                 <HoverCard openDelay={300} closeDelay={100}>
                   <HoverCardTrigger asChild>
-                    <div className="flex items-center gap-1.5 text-sm text-slate-500 cursor-default">
-                      <MapPin className="size-3.5 text-slate-400 flex-shrink-0" />
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-default">
+                      <MapPin className="size-3.5 text-muted-foreground flex-shrink-0" />
                       <span className="truncate max-w-[180px]">
                         {task.locationAddress}
                       </span>
@@ -178,10 +178,10 @@ export function TaskCard({
                     <HoverCardContent
                       side="top"
                       align="start"
-                      className="w-72 p-3 text-sm text-slate-600"
+                      className="w-72 p-3 text-sm text-muted-foreground"
                     >
                       <div className="flex items-start gap-2">
-                        <MapPin className="size-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                        <MapPin className="size-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <span>{task.locationAddress}</span>
                       </div>
                     </HoverCardContent>
@@ -201,7 +201,7 @@ export function TaskCard({
                   size="sm"
                   className={cn(
                     "w-full h-10 rounded-xl font-medium justify-center",
-                    "border-slate-200 bg-white text-slate-600",
+                    "border-border bg-card text-muted-foreground",
                     "hover:bg-blue-600 hover:text-white hover:border-blue-600",
                     "hover:shadow-lg hover:shadow-blue-600/25",
                     "transition-all duration-300"

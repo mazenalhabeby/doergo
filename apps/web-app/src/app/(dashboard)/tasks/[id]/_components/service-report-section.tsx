@@ -50,10 +50,10 @@ function PhotoGallery({
 
   if (filteredAttachments.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+      <div className="flex items-center justify-center h-32 bg-muted rounded-lg border-2 border-dashed border-border">
         <div className="text-center">
-          <Camera className="size-6 text-gray-300 mx-auto mb-1" />
-          <p className="text-xs text-gray-400">No {type.toLowerCase()} photos</p>
+          <Camera className="size-6 text-muted-foreground mx-auto mb-1" />
+          <p className="text-xs text-muted-foreground">No {type.toLowerCase()} photos</p>
         </div>
       </div>
     )
@@ -64,7 +64,7 @@ function PhotoGallery({
   return (
     <div className="relative">
       <div
-        className="relative h-48 bg-gray-100 rounded-lg overflow-hidden cursor-pointer group"
+        className="relative h-48 bg-muted rounded-lg overflow-hidden cursor-pointer group"
         onClick={() => setShowFullscreen(true)}
       >
         <img
@@ -96,18 +96,18 @@ function PhotoGallery({
               e.stopPropagation()
               setCurrentIndex((i) => (i === 0 ? filteredAttachments.length - 1 : i - 1))
             }}
-            className="absolute left-1 top-1/2 -translate-y-1/2 p-1 bg-white/80 rounded-full shadow hover:bg-white"
+            className="absolute left-1 top-1/2 -translate-y-1/2 p-1 bg-card/80 rounded-full shadow hover:bg-card"
           >
-            <ChevronLeft className="size-4 text-gray-600" />
+            <ChevronLeft className="size-4 text-muted-foreground" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation()
               setCurrentIndex((i) => (i === filteredAttachments.length - 1 ? 0 : i + 1))
             }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 bg-white/80 rounded-full shadow hover:bg-white"
+            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 bg-card/80 rounded-full shadow hover:bg-card"
           >
-            <ChevronRight className="size-4 text-gray-600" />
+            <ChevronRight className="size-4 text-muted-foreground" />
           </button>
           <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">
             {currentIndex + 1}/{filteredAttachments.length}
@@ -127,7 +127,7 @@ function PhotoGallery({
             className="max-w-full max-h-full object-contain"
           />
           <button
-            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/30"
+            className="absolute top-4 right-4 p-2 bg-card/20 rounded-full text-white hover:bg-card/30"
             onClick={() => setShowFullscreen(false)}
           >
             <span className="sr-only">Close</span>
@@ -142,7 +142,7 @@ function PhotoGallery({
 function PartsTable({ parts }: { parts: PartUsed[] }) {
   if (parts.length === 0) {
     return (
-      <div className="text-center py-4 text-sm text-gray-500">
+      <div className="text-center py-4 text-sm text-muted-foreground">
         No parts used in this service.
       </div>
     )
@@ -154,31 +154,31 @@ function PartsTable({ parts }: { parts: PartUsed[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left py-2 px-3 font-medium text-gray-700">Part</th>
-            <th className="text-left py-2 px-3 font-medium text-gray-700">Part #</th>
-            <th className="text-center py-2 px-3 font-medium text-gray-700">Qty</th>
-            <th className="text-right py-2 px-3 font-medium text-gray-700">Unit Cost</th>
-            <th className="text-right py-2 px-3 font-medium text-gray-700">Total</th>
+          <tr className="border-b border-border">
+            <th className="text-left py-2 px-3 font-medium text-foreground">Part</th>
+            <th className="text-left py-2 px-3 font-medium text-foreground">Part #</th>
+            <th className="text-center py-2 px-3 font-medium text-foreground">Qty</th>
+            <th className="text-right py-2 px-3 font-medium text-foreground">Unit Cost</th>
+            <th className="text-right py-2 px-3 font-medium text-foreground">Total</th>
           </tr>
         </thead>
         <tbody>
           {parts.map((part) => (
-            <tr key={part.id} className="border-b border-gray-100">
+            <tr key={part.id} className="border-b border-border">
               <td className="py-2 px-3">
                 <div>
-                  <span className="text-gray-900">{part.name}</span>
+                  <span className="text-foreground">{part.name}</span>
                   {part.notes && (
-                    <span className="block text-xs text-gray-500">{part.notes}</span>
+                    <span className="block text-xs text-muted-foreground">{part.notes}</span>
                   )}
                 </div>
               </td>
-              <td className="py-2 px-3 text-gray-600">{part.partNumber || "-"}</td>
-              <td className="py-2 px-3 text-center text-gray-600">{part.quantity}</td>
-              <td className="py-2 px-3 text-right text-gray-600">
+              <td className="py-2 px-3 text-muted-foreground">{part.partNumber || "-"}</td>
+              <td className="py-2 px-3 text-center text-muted-foreground">{part.quantity}</td>
+              <td className="py-2 px-3 text-right text-muted-foreground">
                 {part.unitCost ? `$${part.unitCost.toFixed(2)}` : "-"}
               </td>
-              <td className="py-2 px-3 text-right text-gray-900 font-medium">
+              <td className="py-2 px-3 text-right text-foreground font-medium">
                 {part.unitCost ? `$${(part.unitCost * part.quantity).toFixed(2)}` : "-"}
               </td>
             </tr>
@@ -186,11 +186,11 @@ function PartsTable({ parts }: { parts: PartUsed[] }) {
         </tbody>
         {totalCost > 0 && (
           <tfoot>
-            <tr className="bg-gray-50">
-              <td colSpan={4} className="py-2 px-3 text-right font-medium text-gray-700">
+            <tr className="bg-muted">
+              <td colSpan={4} className="py-2 px-3 text-right font-medium text-foreground">
                 Total Parts:
               </td>
-              <td className="py-2 px-3 text-right font-semibold text-gray-900">
+              <td className="py-2 px-3 text-right font-semibold text-foreground">
                 ${totalCost.toFixed(2)}
               </td>
             </tr>
@@ -205,9 +205,9 @@ function SignatureDisplay({ label, signature, name }: { label: string; signature
   if (!signature) {
     return (
       <div className="flex-1">
-        <p className="text-xs font-medium text-gray-500 mb-2">{label}</p>
-        <div className="h-24 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
-          <p className="text-xs text-gray-400">No signature</p>
+        <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
+        <div className="h-24 bg-muted rounded-lg border-2 border-dashed border-border flex items-center justify-center">
+          <p className="text-xs text-muted-foreground">No signature</p>
         </div>
       </div>
     )
@@ -215,15 +215,15 @@ function SignatureDisplay({ label, signature, name }: { label: string; signature
 
   return (
     <div className="flex-1">
-      <p className="text-xs font-medium text-gray-500 mb-2">{label}</p>
-      <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+      <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
+      <div className="bg-muted rounded-lg p-2 border border-border">
         <img
           src={signature}
           alt={`${label} signature`}
           className="h-20 w-full object-contain"
         />
         {name && (
-          <p className="text-xs text-center text-gray-600 mt-1">{name}</p>
+          <p className="text-xs text-center text-muted-foreground mt-1">{name}</p>
         )}
       </div>
     </div>
@@ -308,8 +308,8 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
     <div className="mt-4 space-y-3">
       {/* Type toggle */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-gray-500">Upload as:</span>
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+        <span className="text-xs font-medium text-muted-foreground">Upload as:</span>
+        <div className="flex rounded-lg border border-border overflow-hidden">
           <button
             type="button"
             onClick={() => setUploadType("BEFORE")}
@@ -317,7 +317,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
               "px-3 py-1 text-xs font-medium transition-colors",
               uploadType === "BEFORE"
                 ? "bg-blue-600 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-card text-muted-foreground hover:bg-accent"
             )}
           >
             Before
@@ -329,7 +329,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
               "px-3 py-1 text-xs font-medium transition-colors",
               uploadType === "AFTER"
                 ? "bg-blue-600 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-card text-muted-foreground hover:bg-accent"
             )}
           >
             After
@@ -353,7 +353,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
           "relative rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer",
           isDragOver
             ? "border-blue-400 bg-blue-50"
-            : "border-gray-200 bg-gray-50 hover:border-gray-300",
+            : "border-border bg-muted hover:border-border",
           isUploading && "pointer-events-none opacity-60"
         )}
       >
@@ -369,15 +369,15 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
           {isUploading ? (
             <>
               <Loader2 className="size-5 text-blue-500 animate-spin mb-2" />
-              <p className="text-xs text-gray-600 font-medium">Uploading...</p>
+              <p className="text-xs text-muted-foreground font-medium">Uploading...</p>
             </>
           ) : (
             <>
-              <Upload className="size-5 text-gray-400 mb-2" />
-              <p className="text-xs text-gray-600 font-medium">
+              <Upload className="size-5 text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground font-medium">
                 Drop an image or click to upload
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 JPG, PNG, WebP up to 10MB
               </p>
             </>
@@ -445,15 +445,15 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+      <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <FileText className="size-5 text-gray-400 animate-pulse" />
-          <h3 className="text-base font-semibold text-gray-900">Service Report</h3>
+          <FileText className="size-5 text-muted-foreground animate-pulse" />
+          <h3 className="text-base font-semibold text-foreground">Service Report</h3>
         </div>
         <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
+          <div className="h-32 bg-muted rounded"></div>
         </div>
       </div>
     )
@@ -461,12 +461,12 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
 
   if (error || !report) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+      <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <CheckCircle2 className="size-5 text-green-500" />
-          <h3 className="text-base font-semibold text-gray-900">Job Completed</h3>
+          <h3 className="text-base font-semibold text-foreground">Job Completed</h3>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <AlertCircle className="size-4" />
           <p>No service report available for this task.</p>
         </div>
@@ -478,14 +478,14 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
   const partsUsed = report.partsUsed || []
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+    <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="size-5 text-green-500" />
-          <h3 className="text-base font-semibold text-gray-900">Service Report</h3>
+          <h3 className="text-base font-semibold text-foreground">Service Report</h3>
         </div>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-muted-foreground">
           Completed{" "}
           {new Date(report.completedAt).toLocaleDateString("en-US", {
             month: "short",
@@ -497,7 +497,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
 
       {/* Summary */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">Summary</h4>
+        <h4 className="text-sm font-medium text-foreground mb-2">Summary</h4>
         <div className="bg-green-50 border-l-4 border-green-500 rounded-r-lg p-4">
           <p className="text-sm text-green-900">{report.summary}</p>
         </div>
@@ -506,27 +506,27 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       {/* Work Performed */}
       {report.workPerformed && (
         <div className="mb-6">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Work Performed</h4>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-sm text-gray-700 whitespace-pre-line">{report.workPerformed}</p>
+          <h4 className="text-sm font-medium text-foreground mb-2">Work Performed</h4>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-foreground whitespace-pre-line">{report.workPerformed}</p>
           </div>
         </div>
       )}
 
       {/* Duration & Technician */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-gray-50 rounded-lg p-4 flex items-center gap-3">
+        <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
           <Clock className="size-5 text-blue-500" />
           <div>
-            <p className="text-xs text-gray-500">Duration</p>
-            <p className="text-sm font-semibold text-gray-900">{formatDuration(report.workDuration)}</p>
+            <p className="text-xs text-muted-foreground">Duration</p>
+            <p className="text-sm font-semibold text-foreground">{formatDuration(report.workDuration)}</p>
           </div>
         </div>
-        <div className="bg-gray-50 rounded-lg p-4 flex items-center gap-3">
+        <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
           <User className="size-5 text-blue-500" />
           <div>
-            <p className="text-xs text-gray-500">Technician</p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs text-muted-foreground">Technician</p>
+            <p className="text-sm font-semibold text-foreground">
               {report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : "Unknown"}
             </p>
           </div>
@@ -536,12 +536,12 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       {/* Before & After Photos */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <Camera className="size-4 text-gray-500" />
-          <h4 className="text-sm font-medium text-gray-700">Before & After Photos</h4>
+          <Camera className="size-4 text-muted-foreground" />
+          <h4 className="text-sm font-medium text-foreground">Before & After Photos</h4>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Before</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Before</p>
             <PhotoGallery
               attachments={attachments}
               type="BEFORE"
@@ -551,7 +551,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
             />
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">After</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">After</p>
             <PhotoGallery
               attachments={attachments}
               type="AFTER"
@@ -572,10 +572,10 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       {partsUsed.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <Wrench className="size-4 text-gray-500" />
-            <h4 className="text-sm font-medium text-gray-700">Parts Used</h4>
+            <Wrench className="size-4 text-muted-foreground" />
+            <h4 className="text-sm font-medium text-foreground">Parts Used</h4>
           </div>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-border rounded-lg overflow-hidden">
             <PartsTable parts={partsUsed} />
           </div>
         </div>
@@ -585,8 +585,8 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       {(report.technicianSignature || report.customerSignature) && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <PenTool className="size-4 text-gray-500" />
-            <h4 className="text-sm font-medium text-gray-700">Signatures</h4>
+            <PenTool className="size-4 text-muted-foreground" />
+            <h4 className="text-sm font-medium text-foreground">Signatures</h4>
           </div>
           <div className="flex gap-4">
             <SignatureDisplay

@@ -23,8 +23,8 @@ const PRIORITY_OPTIONS: {
     value: "LOW",
     label: "Low",
     icon: ArrowDown,
-    activeClass: "border-slate-900 bg-slate-900 text-white",
-    hoverClass: "hover:border-slate-300",
+    activeClass: "border-foreground bg-foreground text-background",
+    hoverClass: "hover:border-border",
   },
   {
     value: "MEDIUM",
@@ -71,7 +71,7 @@ export function PrioritySelector({
               "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200",
               isSelected
                 ? option.activeClass
-                : cn("border-slate-200 text-slate-600", option.hoverClass),
+                : cn("border-border text-muted-foreground", option.hoverClass),
               disabled && "opacity-50 cursor-not-allowed"
             )}
           >

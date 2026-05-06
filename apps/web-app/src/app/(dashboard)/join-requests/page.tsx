@@ -79,13 +79,13 @@ const SPECIALTY_OPTIONS = [
 function getStatusBadge(status: JoinRequestStatus, t: (key: string) => string) {
   switch (status) {
     case JoinRequestStatus.PENDING:
-      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">{t("joinRequests.status.pending")}</Badge>
+      return <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-100">{t("joinRequests.status.pending")}</Badge>
     case JoinRequestStatus.APPROVED:
-      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t("joinRequests.status.approved")}</Badge>
+      return <Badge className="bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-100">{t("joinRequests.status.approved")}</Badge>
     case JoinRequestStatus.REJECTED:
-      return <Badge className="bg-red-100 text-red-600 hover:bg-red-100">{t("joinRequests.status.rejected")}</Badge>
+      return <Badge className="bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-100">{t("joinRequests.status.rejected")}</Badge>
     case JoinRequestStatus.CANCELED:
-      return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100">{t("joinRequests.status.canceled")}</Badge>
+      return <Badge className="bg-muted text-muted-foreground hover:bg-accent">{t("joinRequests.status.canceled")}</Badge>
     default:
       return <Badge variant="outline">{status}</Badge>
   }
@@ -237,23 +237,23 @@ export default function JoinRequestsPage() {
   const endItem = Math.min(page * limit, total)
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {t("joinRequests.title")}
               </h1>
-              <p className="mt-1.5 text-slate-500">
+              <p className="mt-1.5 text-muted-foreground">
                 {t("joinRequests.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-[160px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                <SelectTrigger className="w-[160px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                   <SelectValue placeholder={t("common.filterByStatus")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,7 +271,7 @@ export default function JoinRequestsPage() {
                 size="icon"
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+                className="h-11 w-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm hover:shadow-md transition-all"
               >
                 <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
               </Button>
@@ -282,14 +282,14 @@ export default function JoinRequestsPage() {
         {/* Summary */}
         {total > 0 && (
           <div className="mb-4">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {t("joinRequests.showingRange", { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
             </p>
           </div>
         )}
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border/80 shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="p-6 space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -299,17 +299,17 @@ export default function JoinRequestsPage() {
           ) : isError ? (
             <div className="p-12 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("joinRequests.failedToLoad")}</h3>
-              <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t("joinRequests.failedToLoad")}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{(error as Error)?.message}</p>
               <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
                 {t("common.tryAgain")}
               </Button>
             </div>
           ) : requests.length === 0 ? (
             <div className="p-16 text-center">
-              <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">{t("joinRequests.noRequestsFound")}</h3>
-              <p className="text-sm text-slate-400">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">{t("joinRequests.noRequestsFound")}</h3>
+              <p className="text-sm text-muted-foreground">
                 {statusFilter !== "all"
                   ? t("joinRequests.noRequestsFilterHint")
                   : t("joinRequests.noRequestsHint")}
@@ -319,12 +319,12 @@ export default function JoinRequestsPage() {
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80">
-                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.name")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.email")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.message")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.status")}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t("joinRequests.table.requestedAt")}</TableHead>
+                  <TableRow className="bg-muted">
+                    <TableHead className="font-semibold text-muted-foreground">{t("joinRequests.table.name")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("joinRequests.table.email")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("joinRequests.table.message")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("joinRequests.table.status")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("joinRequests.table.requestedAt")}</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -332,29 +332,29 @@ export default function JoinRequestsPage() {
                 {requests.map((req) => (
                   <TableRow key={req.id}>
                     <TableCell>
-                      <span className="font-medium text-slate-800">
+                      <span className="font-medium text-foreground">
                         {req.user
                           ? `${req.user.firstName} ${req.user.lastName}`
                           : "-"}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-slate-600">
+                      <span className="text-muted-foreground">
                         {req.user?.email || "-"}
                       </span>
                     </TableCell>
                     <TableCell>
                       {req.message ? (
-                        <span className="text-sm text-slate-600 line-clamp-2 max-w-[200px]">
+                        <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">
                           {req.message}
                         </span>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>{getStatusBadge(req.status, t)}</TableCell>
                     <TableCell>
-                      <span className="text-sm text-slate-600">
+                      <span className="text-sm text-muted-foreground">
                         {formatDate(req.createdAt)}
                       </span>
                     </TableCell>
@@ -389,8 +389,8 @@ export default function JoinRequestsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
-                <p className="text-sm text-slate-500">
+              <div className="flex items-center justify-between px-6 py-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
                   {t("common.page", { page, totalPages })}
                 </p>
                 <div className="flex items-center gap-2">

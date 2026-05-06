@@ -23,8 +23,8 @@ import { cn, formatDurationMs } from "@/lib/utils"
 const RouteMapView = dynamic(() => import("./route-map-view"), {
   ssr: false,
   loading: () => (
-    <div className="h-64 bg-slate-100 rounded-xl flex items-center justify-center">
-      <div className="flex items-center gap-2 text-slate-400">
+    <div className="h-64 bg-muted rounded-xl flex items-center justify-center">
+      <div className="flex items-center gap-2 text-muted-foreground">
         <Map className="size-5 animate-pulse" />
         <span className="text-sm">Loading map...</span>
       </div>
@@ -105,8 +105,8 @@ export function RouteTrackingSection({
   // Loading state
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-slate-100">
+      <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
+        <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Skeleton className="size-5 rounded" />
             <Skeleton className="h-5 w-32" />
@@ -122,21 +122,21 @@ export function RouteTrackingSection({
   // No route data for assigned task - show waiting state
   if (hasAssignee && !routeData?.points?.length && !routeData?.distance) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-slate-100">
+      <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
+        <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <Route className="size-5 text-slate-400" />
-            <h3 className="text-base font-semibold text-slate-900">Route Tracking</h3>
+            <Route className="size-5 text-muted-foreground" />
+            <h3 className="text-base font-semibold text-foreground">Route Tracking</h3>
           </div>
         </div>
         <div className="p-6">
-          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
-            <div className="size-12 rounded-xl bg-slate-100 flex items-center justify-center">
-              <Car className="size-6 text-slate-400" />
+          <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
+            <div className="size-12 rounded-xl bg-muted flex items-center justify-center">
+              <Car className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-700">Waiting for technician</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-medium text-foreground">Waiting for technician</p>
+              <p className="text-xs text-muted-foreground">
                 Route tracking will begin when the technician starts driving to your location
               </p>
             </div>
@@ -165,19 +165,19 @@ export function RouteTrackingSection({
   const hasRoutePoints = routeData.points.length > 1
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+    <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100">
+      <div className="px-6 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <h3 className="text-base font-semibold text-slate-900">Route Tracking</h3>
+          <h3 className="text-base font-semibold text-foreground">Route Tracking</h3>
           {isLive && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
               <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
               Live
             </span>
           )}
           {stage === "arrived" && !isLive && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
               Completed
             </span>
           )}
@@ -189,31 +189,31 @@ export function RouteTrackingSection({
         {/* Stats Row */}
         <div className="flex gap-6 mb-6">
           <div className="flex items-center gap-2">
-            <Gauge className="size-4 text-slate-400" />
-            <span className="text-sm text-slate-500">Avg Speed:</span>
-            <span className="text-sm font-semibold text-slate-700">
+            <Gauge className="size-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Avg Speed:</span>
+            <span className="text-sm font-semibold text-foreground">
               {calculateAverageSpeed(routeData.distance, displayDuration)}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <MapPin className="size-4 text-slate-400" />
-            <span className="text-sm text-slate-500">GPS Points:</span>
-            <span className="text-sm font-semibold text-slate-700">
+            <MapPin className="size-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">GPS Points:</span>
+            <span className="text-sm font-semibold text-foreground">
               {routeData.points.length}
             </span>
           </div>
         </div>
 
         {/* Route Journey Visual */}
-        <div className="border border-slate-100 rounded-xl p-4">
+        <div className="border border-border rounded-xl p-4">
           <div className="flex items-center">
             {/* Start point */}
             <div className="flex flex-col items-center">
-              <div className="size-10 rounded-full flex items-center justify-center bg-slate-100">
-                <Navigation className="size-4 text-slate-600" />
+              <div className="size-10 rounded-full flex items-center justify-center bg-muted">
+                <Navigation className="size-4 text-muted-foreground" />
               </div>
-              <p className="text-[10px] font-medium text-slate-500 mt-1.5">Start</p>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] font-medium text-muted-foreground mt-1.5">Start</p>
+              <p className="text-[10px] text-muted-foreground">
                 {routeData.startTime
                   ? new Date(routeData.startTime).toLocaleString("en-US", {
                       hour: "numeric",
@@ -226,11 +226,11 @@ export function RouteTrackingSection({
             {/* Journey line */}
             <div className="flex-1 mx-4 relative">
               {/* Base track */}
-              <div className="h-1 bg-slate-100 rounded-full" />
+              <div className="h-1 bg-muted rounded-full" />
 
               {/* Completed track */}
               <div
-                className="absolute top-0 left-0 h-1 rounded-full bg-slate-300 transition-all duration-500"
+                className="absolute top-0 left-0 h-1 rounded-full bg-muted-foreground transition-all duration-500"
                 style={{ width: "100%" }}
               />
 
@@ -241,9 +241,9 @@ export function RouteTrackingSection({
                   style={{ animation: "carTravel 3s ease-in-out infinite" }}
                 >
                   <div className="relative">
-                    <div className="absolute -inset-1 bg-slate-200 rounded-full animate-ping opacity-50" />
-                    <div className="relative size-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center">
-                      <Car className="size-3 text-slate-600" />
+                    <div className="absolute -inset-1 bg-muted rounded-full animate-ping opacity-50" />
+                    <div className="relative size-6 rounded-full bg-card border border-border shadow-sm flex items-center justify-center">
+                      <Car className="size-3 text-muted-foreground" />
                     </div>
                   </div>
                 </div>
@@ -251,17 +251,17 @@ export function RouteTrackingSection({
 
               {/* Stats badge in center */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-full shadow-sm">
                   <div className="flex items-center gap-1">
-                    <Route className="size-3 text-slate-400" />
-                    <span className="text-[11px] font-semibold text-slate-700">
+                    <Route className="size-3 text-muted-foreground" />
+                    <span className="text-[11px] font-semibold text-foreground">
                       {routeData.distance !== null ? formatDistance(routeData.distance) : "—"}
                     </span>
                   </div>
-                  <div className="w-px h-3 bg-slate-200" />
+                  <div className="w-px h-3 bg-muted" />
                   <div className="flex items-center gap-1">
-                    <Timer className="size-3 text-slate-400" />
-                    <span className="text-[11px] font-semibold text-slate-700 tabular-nums">
+                    <Timer className="size-3 text-muted-foreground" />
+                    <span className="text-[11px] font-semibold text-foreground tabular-nums">
                       {formatDurationMs(displayDuration)}
                     </span>
                     {isLive && <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />}
@@ -275,15 +275,15 @@ export function RouteTrackingSection({
               <div className={cn(
                 "size-10 rounded-full flex items-center justify-center",
                 isLive
-                  ? "bg-white border-2 border-dashed border-slate-200"
-                  : "bg-slate-100"
+                  ? "bg-card border-2 border-dashed border-border"
+                  : "bg-muted"
               )}>
-                <Flag className={cn("size-4", isLive ? "text-slate-400" : "text-slate-600")} />
+                <Flag className={cn("size-4", isLive ? "text-muted-foreground" : "text-muted-foreground")} />
               </div>
-              <p className="text-[10px] font-medium text-slate-500 mt-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground mt-1.5">
                 {isLive ? "Destination" : "Arrived"}
               </p>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-muted-foreground">
                 {routeData.endTime
                   ? new Date(routeData.endTime).toLocaleString("en-US", {
                       hour: "numeric",
@@ -297,7 +297,7 @@ export function RouteTrackingSection({
 
         {/* Live tracking info */}
         {isLive && routeData.points.length > 0 && (
-          <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+          <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
             <span>Live tracking active</span>
             <span>
               Last update: {new Date(routeData.points[routeData.points.length - 1].timestamp).toLocaleString("en-US", {
@@ -312,11 +312,11 @@ export function RouteTrackingSection({
 
         {/* View Route on Map Button */}
         {hasRoutePoints && (
-          <div className="mt-5 pt-5 border-t border-slate-100">
+          <div className="mt-5 pt-5 border-t border-border">
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-center rounded-xl border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              className="w-full justify-center rounded-xl border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               onClick={() => setShowMap(!showMap)}
             >
               <Map className="size-4 mr-2" />

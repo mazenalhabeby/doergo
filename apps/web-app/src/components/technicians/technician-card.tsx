@@ -39,7 +39,7 @@ export function TechnicianCard({
 
   if (variant === "suggested") {
     return (
-      <div className={cn("px-6 py-4 bg-slate-50 border-b border-gray-100", className)}>
+      <div className={cn("px-6 py-4 bg-muted border-b border-border", className)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="size-10">
@@ -49,12 +49,12 @@ export function TechnicianCard({
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Suggested Technician:</span>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-xs text-muted-foreground">Suggested Technician:</span>
+                <span className="text-sm font-medium text-foreground">
                   {technician.firstName} {technician.lastName}
                 </span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {technician.availableAt || "Available today"}
               </p>
             </div>
@@ -79,7 +79,7 @@ export function TechnicianCard({
   return (
     <div
       className={cn(
-        "px-6 py-4 flex items-center justify-between hover:bg-gray-50",
+        "px-6 py-4 flex items-center justify-between hover:bg-accent",
         className
       )}
     >
@@ -91,29 +91,29 @@ export function TechnicianCard({
         </Avatar>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-foreground">
               {technician.firstName} {technician.lastName}
             </span>
             {technician.rating && (
               <>
                 <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground">
                   {technician.rating.toFixed(1)}
                 </span>
               </>
             )}
           </div>
           {technician.specialty && (
-            <p className="text-sm text-gray-500">{technician.specialty}</p>
+            <p className="text-sm text-muted-foreground">{technician.specialty}</p>
           )}
-          <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
             {technician.status && (
               <span
                 className={cn(
                   "flex items-center gap-1",
                   isAvailable && "text-green-600",
                   isBusy && "text-amber-600",
-                  isOnVacation && "text-gray-400"
+                  isOnVacation && "text-muted-foreground"
                 )}
               >
                 <span
@@ -121,7 +121,7 @@ export function TechnicianCard({
                     "size-1.5 rounded-full",
                     isAvailable && "bg-green-500",
                     isBusy && "bg-amber-500",
-                    isOnVacation && "bg-gray-300"
+                    isOnVacation && "bg-muted-foreground"
                   )}
                 />
                 {technician.status}

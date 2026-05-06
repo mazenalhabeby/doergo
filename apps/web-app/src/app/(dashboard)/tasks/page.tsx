@@ -214,35 +214,35 @@ export default function TasksPage() {
   const endItem = Math.min(page * limit, meta?.total || 0)
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {t("tasks.list.title")}
               </h1>
-              <p className="mt-1.5 text-slate-500">
+              <p className="mt-1.5 text-muted-foreground">
                 {t("tasks.list.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder={t("tasks.list.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-72 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm focus:bg-white focus:shadow-md transition-all"
+                  className="pl-10 w-72 h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm focus:bg-card focus:shadow-md transition-all"
                 />
               </div>
 
               {/* Priority Filter */}
               <Select value={priorityFilter} onValueChange={handlePriorityChange}>
-                <SelectTrigger className="w-[140px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <Filter className="size-4 mr-2 text-slate-400" />
+                <SelectTrigger className="w-[140px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
+                  <Filter className="size-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder={t("tasks.list.priority")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -260,7 +260,7 @@ export default function TasksPage() {
                 size="icon"
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+                className="h-11 w-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm hover:shadow-md transition-all"
               >
                 <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
               </Button>
@@ -284,12 +284,12 @@ export default function TasksPage() {
         </div>
 
         {/* Status Tabs */}
-        <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/60 shadow-sm mb-6">
+        <div className="relative overflow-hidden bg-card rounded-2xl border border-border/60 shadow-sm mb-6">
           {/* Left scroll button */}
           <div
             className={cn(
               "absolute left-0 top-0 bottom-0 z-10 flex items-center pl-1.5 pr-6",
-              "bg-gradient-to-r from-white from-60% to-transparent",
+              "bg-gradient-to-r from-card from-60% to-transparent",
               "transition-all duration-300",
               canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
@@ -298,15 +298,15 @@ export default function TasksPage() {
               onClick={() => scrollTabs("left")}
               className={cn(
                 "group size-9 rounded-xl flex items-center justify-center",
-                "bg-white/80 backdrop-blur-sm",
-                "border border-slate-200/60 shadow-lg shadow-slate-200/50",
-                "hover:bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-300/50",
+                "bg-card/80 backdrop-blur-sm",
+                "border border-border/60 shadow-lg shadow-slate-200/50",
+                "hover:bg-card hover:border-border hover:shadow-xl hover:shadow-slate-300/50",
                 "hover:scale-105 active:scale-95",
                 "transition-all duration-200"
               )}
               aria-label="Scroll left"
             >
-              <ChevronLeft className="size-4 text-slate-500 group-hover:text-slate-700 transition-colors" />
+              <ChevronLeft className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
             </button>
           </div>
 
@@ -327,10 +327,10 @@ export default function TasksPage() {
                   onClick={() => handleStatusChange(tabValue)}
                   className={cn(
                     "relative flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap transition-all duration-200",
-                    "hover:bg-slate-50/80",
+                    "hover:bg-accent/80",
                     isActive
                       ? "text-blue-600"
-                      : "text-slate-500 hover:text-slate-700"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {statusConfig && (
@@ -350,8 +350,8 @@ export default function TasksPage() {
                       className={cn(
                         "min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold flex items-center justify-center",
                         isActive
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-slate-100 text-slate-500"
+                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                          : "bg-muted text-muted-foreground"
                       )}
                     >
                       {count > 99 ? "99+" : count}
@@ -371,7 +371,7 @@ export default function TasksPage() {
           <div
             className={cn(
               "absolute right-0 top-0 bottom-0 z-10 flex items-center pr-1.5 pl-6",
-              "bg-gradient-to-l from-white from-60% to-transparent",
+              "bg-gradient-to-l from-card from-60% to-transparent",
               "transition-all duration-300",
               canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
@@ -380,15 +380,15 @@ export default function TasksPage() {
               onClick={() => scrollTabs("right")}
               className={cn(
                 "group size-9 rounded-xl flex items-center justify-center",
-                "bg-white/80 backdrop-blur-sm",
-                "border border-slate-200/60 shadow-lg shadow-slate-200/50",
-                "hover:bg-white hover:border-slate-300 hover:shadow-xl hover:shadow-slate-300/50",
+                "bg-card/80 backdrop-blur-sm",
+                "border border-border/60 shadow-lg shadow-slate-200/50",
+                "hover:bg-card hover:border-border hover:shadow-xl hover:shadow-slate-300/50",
                 "hover:scale-105 active:scale-95",
                 "transition-all duration-200"
               )}
               aria-label="Scroll right"
             >
-              <ChevronRight className="size-4 text-slate-500 group-hover:text-slate-700 transition-colors" />
+              <ChevronRight className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
             </button>
           </div>
         </div>
@@ -396,7 +396,7 @@ export default function TasksPage() {
         {/* Results Count */}
         {!isLoading && !isError && meta && (
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {t("common.showingCount", { count: filteredTasks.length, total: meta.total, item: t("nav.sidebar.tasks").toLowerCase() })}
             </p>
           </div>
@@ -404,14 +404,14 @@ export default function TasksPage() {
 
         {/* Error State */}
         {isError && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-16 text-center">
+          <div className="bg-card rounded-2xl border border-border/80 shadow-sm p-16 text-center">
             <div className="flex flex-col items-center gap-4">
               <div className="size-16 rounded-2xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
                 <ClipboardList className="size-8 text-red-500" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-slate-800">{t("tasks.list.failedToLoad")}</p>
-                <p className="text-slate-500 mt-1">{(error as Error)?.message}</p>
+                <p className="text-lg font-semibold text-foreground">{t("tasks.list.failedToLoad")}</p>
+                <p className="text-muted-foreground mt-1">{(error as Error)?.message}</p>
               </div>
               <Button onClick={handleRefresh} className="mt-2 rounded-xl">
                 <RefreshCw className="mr-2 size-4" />
@@ -425,7 +425,7 @@ export default function TasksPage() {
         {isLoading && (
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+              <div key={i} className="bg-card rounded-2xl border border-border/80 shadow-sm p-6">
                 <div className="flex items-start gap-6">
                   <Skeleton className="size-12 rounded-xl" />
                   <div className="flex-1">
@@ -449,14 +449,14 @@ export default function TasksPage() {
 
         {/* Empty State */}
         {!isLoading && !isError && filteredTasks.length === 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-16 text-center">
+          <div className="bg-card rounded-2xl border border-border/80 shadow-sm p-16 text-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="size-20 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-                <ClipboardList className="size-10 text-slate-300" />
+              <div className="size-20 rounded-2xl bg-gradient-to-br from-muted to-muted flex items-center justify-center">
+                <ClipboardList className="size-10 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-slate-800">{t("tasks.list.noTasksFound")}</p>
-                <p className="text-slate-500 mt-1 max-w-sm mx-auto">
+                <p className="text-lg font-semibold text-foreground">{t("tasks.list.noTasksFound")}</p>
+                <p className="text-muted-foreground mt-1 max-w-sm mx-auto">
                   {statusFilter !== "all" || priorityFilter !== "all" || searchQuery
                     ? t("tasks.list.noTasksHint")
                     : t("tasks.list.createFirstTask")}

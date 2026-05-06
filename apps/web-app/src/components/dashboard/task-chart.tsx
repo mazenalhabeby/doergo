@@ -23,8 +23,8 @@ export function TaskChart({ data, className }: TaskChartProps) {
   if (total === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-8", className)}>
-        <div className="size-24 rounded-full border-4 border-dashed border-slate-200" />
-        <p className="mt-4 text-sm text-slate-400">No data</p>
+        <div className="size-24 rounded-full border-4 border-dashed border-border" />
+        <p className="mt-4 text-sm text-muted-foreground">No data</p>
       </div>
     )
   }
@@ -81,8 +81,8 @@ export function TaskChart({ data, className }: TaskChartProps) {
         </svg>
         {/* Center text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-semibold text-slate-900">{total}</span>
-          <span className="text-[11px] text-slate-400">Total</span>
+          <span className="text-2xl font-semibold text-foreground">{total}</span>
+          <span className="text-[11px] text-muted-foreground">Total</span>
         </div>
       </div>
 
@@ -95,8 +95,8 @@ export function TaskChart({ data, className }: TaskChartProps) {
               style={{ backgroundColor: item.color }}
             />
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600">{item.name}</span>
-              <span className="text-sm font-medium text-slate-900">{item.value}</span>
+              <span className="text-sm text-muted-foreground">{item.name}</span>
+              <span className="text-sm font-medium text-foreground">{item.value}</span>
             </div>
           </div>
         ))}

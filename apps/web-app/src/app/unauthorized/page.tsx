@@ -9,8 +9,8 @@ export default function UnauthorizedPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-modal p-8 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-muted via-muted to-muted flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-card rounded-2xl shadow-modal p-8 text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
             className="w-8 h-8 text-red-600"
@@ -26,8 +26,8 @@ export default function UnauthorizedPage() {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('unauthorized.title')}</h1>
-        <p className="text-slate-600 mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t('unauthorized.title')}</h1>
+        <p className="text-muted-foreground mb-6">
           {t('unauthorized.description')}
           {user?.role === 'TECHNICIAN' && (
             <> {t('unauthorized.technicianHint')}</>

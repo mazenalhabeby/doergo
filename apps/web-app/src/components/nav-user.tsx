@@ -58,20 +58,20 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="group rounded-xl border border-slate-200 bg-white p-3 transition-all hover:bg-slate-50 hover:border-slate-300 data-[state=open]:bg-slate-50 data-[state=open]:border-slate-300"
+              className="group rounded-xl border border-border bg-card p-3 transition-all hover:bg-muted hover:border-border data-[state=open]:bg-muted data-[state=open]:border-border"
             >
-              <Avatar className="h-9 w-9 rounded-lg ring-2 ring-slate-100">
+              <Avatar className="h-9 w-9 rounded-lg ring-2 ring-border">
                 <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-base">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-base leading-tight">
-                <span className="truncate font-semibold text-slate-900">{fullName}</span>
-                <span className="truncate text-sm text-slate-500">
+                <span className="truncate font-semibold text-foreground">{fullName}</span>
+                <span className="truncate text-sm text-muted-foreground">
                   {user.email}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
+              <ChevronsUpDown className="ml-auto size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -82,14 +82,14 @@ export function NavUser() {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-3 p-2">
-                <Avatar className="h-11 w-11 rounded-xl ring-2 ring-slate-100">
+                <Avatar className="h-11 w-11 rounded-xl ring-2 ring-border">
                   <AvatarFallback className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="font-semibold text-base text-slate-900">{fullName}</span>
-                  <span className="text-sm text-slate-500">
+                  <span className="font-semibold text-base text-foreground">{fullName}</span>
+                  <span className="text-sm text-muted-foreground">
                     {user.email}
                   </span>
                 </div>
@@ -115,23 +115,23 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                 <Link href="/profile" className="flex items-center gap-2 py-2">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-slate-100">
-                    <User className="size-4 text-slate-600" />
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-muted">
+                    <User className="size-4 text-muted-foreground" />
                   </div>
                   <div className="flex flex-col">
                     <span className="font-medium text-base">{t("nav.userMenu.profile")}</span>
-                    <span className="text-sm text-slate-500">{t("nav.userMenu.viewYourProfile")}</span>
+                    <span className="text-sm text-muted-foreground">{t("nav.userMenu.viewYourProfile")}</span>
                   </div>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                 <Link href="/settings" className="flex items-center gap-2 py-2">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-slate-100">
-                    <Settings className="size-4 text-slate-600" />
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-muted">
+                    <Settings className="size-4 text-muted-foreground" />
                   </div>
                   <div className="flex flex-col">
                     <span className="font-medium text-base">{t("nav.userMenu.settings")}</span>
-                    <span className="text-sm text-slate-500">{t("nav.userMenu.managePreferences")}</span>
+                    <span className="text-sm text-muted-foreground">{t("nav.userMenu.managePreferences")}</span>
                   </div>
                 </Link>
               </DropdownMenuItem>

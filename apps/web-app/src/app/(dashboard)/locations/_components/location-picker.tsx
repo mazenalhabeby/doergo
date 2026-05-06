@@ -211,7 +211,7 @@ export default function LocationPicker({
       {/* Search bar */}
       <div ref={wrapperRef} className="relative">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search for a city, street, or landmark..."
             value={searchQuery}
@@ -220,20 +220,20 @@ export default function LocationPicker({
             className="pl-9 pr-9"
           />
           {isSearching && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
           )}
         </div>
 
         {showResults && results.length > 0 && (
-          <div className="absolute z-[1000] mt-1 w-full rounded-lg border bg-white shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute z-[1000] mt-1 w-full rounded-lg border bg-card shadow-lg max-h-48 overflow-y-auto">
             {results.map((result, i) => (
               <button
                 key={i}
                 onClick={() => selectResult(result)}
-                className="flex items-start gap-2 w-full px-3 py-2.5 text-left hover:bg-slate-50 transition-colors border-b last:border-b-0"
+                className="flex items-start gap-2 w-full px-3 py-2.5 text-left hover:bg-accent transition-colors border-b last:border-b-0"
               >
-                <MapPin className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-                <span className="text-sm text-slate-700 line-clamp-2">{result.display_name}</span>
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <span className="text-sm text-foreground line-clamp-2">{result.display_name}</span>
               </button>
             ))}
           </div>
@@ -241,7 +241,7 @@ export default function LocationPicker({
       </div>
 
       {/* Map */}
-      <div className="rounded-lg overflow-hidden border border-slate-200" style={{ height: 280 }}>
+      <div className="rounded-lg overflow-hidden border border-border" style={{ height: 280 }}>
         <MapContainer
           center={mapCenter}
           zoom={lat && lng ? 16 : 12}
@@ -273,41 +273,41 @@ export default function LocationPicker({
       </div>
 
       {/* Address + Coordinates - manual entry */}
-      <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+      <div className="space-y-3 rounded-lg border border-border bg-muted p-3">
         <div className="space-y-1.5">
-          <Label className="text-xs text-slate-500">Address</Label>
+          <Label className="text-xs text-muted-foreground">Address</Label>
           <Input
             placeholder="Type the full address manually"
             value={address}
             onChange={(e) => onAddressChange(e.target.value)}
-            className="bg-white text-sm"
+            className="bg-card text-sm"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-500">Latitude</Label>
+            <Label className="text-xs text-muted-foreground">Latitude</Label>
             <Input
               type="number"
               step="any"
               placeholder="48.1351"
               value={manualLat}
               onChange={(e) => handleLatChange(e.target.value)}
-              className="bg-white text-sm"
+              className="bg-card text-sm"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-500">Longitude</Label>
+            <Label className="text-xs text-muted-foreground">Longitude</Label>
             <Input
               type="number"
               step="any"
               placeholder="11.5820"
               value={manualLng}
               onChange={(e) => handleLngChange(e.target.value)}
-              className="bg-white text-sm"
+              className="bg-card text-sm"
             />
           </div>
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Search above, click on the map, or enter the address and coordinates manually.
         </p>
       </div>

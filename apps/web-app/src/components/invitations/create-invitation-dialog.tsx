@@ -144,8 +144,8 @@ export function CreateInvitationDialog({
           </DialogHeader>
 
           <div className="flex flex-col items-center py-6 space-y-4">
-            <div className="flex items-center justify-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl w-full">
-              <span className="text-3xl font-mono font-bold tracking-[0.3em] text-slate-800">
+            <div className="flex items-center justify-center gap-3 p-4 bg-muted border border-border rounded-xl w-full">
+              <span className="text-3xl font-mono font-bold tracking-[0.3em] text-foreground">
                 {generatedCode}
               </span>
               <Button
@@ -157,11 +157,11 @@ export function CreateInvitationDialog({
                 {copied ? (
                   <Check className="h-5 w-5 text-green-600" />
                 ) : (
-                  <Copy className="h-5 w-5 text-slate-400" />
+                  <Copy className="h-5 w-5 text-muted-foreground" />
                 )}
               </Button>
             </div>
-            <p className="text-sm text-slate-500 text-center">
+            <p className="text-sm text-muted-foreground text-center">
               {t("invitations.createDialog.codeOnlyShownOnce")}
             </p>
           </div>
@@ -191,7 +191,7 @@ export function CreateInvitationDialog({
           <div className="space-y-2">
             <Label>{t("invitations.createDialog.roleLabel")}</Label>
             {isDispatcher ? (
-              <div className="flex items-center h-9 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-700">
+              <div className="flex items-center h-9 px-3 rounded-md border border-border bg-muted text-sm text-foreground">
                 {t("members.roles.technician")}
               </div>
             ) : (

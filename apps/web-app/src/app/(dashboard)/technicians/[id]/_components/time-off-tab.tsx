@@ -84,10 +84,10 @@ const STATUS_BADGES: Record<
   TimeOffStatus,
   { labelKey: string; className: string }
 > = {
-  PENDING: { labelKey: "common.pending", className: "bg-amber-100 text-amber-700" },
-  APPROVED: { labelKey: "common.approved", className: "bg-green-100 text-green-700" },
-  REJECTED: { labelKey: "common.rejected", className: "bg-red-100 text-red-700" },
-  CANCELED: { labelKey: "common.canceled", className: "bg-slate-100 text-slate-500" },
+  PENDING: { labelKey: "common.pending", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  APPROVED: { labelKey: "common.approved", className: "bg-green-500/15 text-green-600 dark:text-green-400" },
+  REJECTED: { labelKey: "common.rejected", className: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  CANCELED: { labelKey: "common.canceled", className: "bg-muted text-muted-foreground" },
 }
 
 function getDurationDays(start: string, end: string): number {
@@ -369,7 +369,7 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                         {getDurationDays(request.startDate, request.endDate)}{" "}
                         {t('technicians.timeOffTab.days')}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate text-slate-500">
+                      <TableCell className="max-w-xs truncate text-muted-foreground">
                         {request.reason || "—"}
                       </TableCell>
                       <TableCell>
@@ -377,7 +377,7 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
                           {t(badge.labelKey)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500">
+                      <TableCell className="text-sm text-muted-foreground">
                         {request.approvedBy
                           ? `${request.approvedBy.firstName} ${request.approvedBy.lastName}`
                           : "—"}
@@ -420,8 +420,8 @@ export function TimeOffTab({ technicianId, canManage }: TimeOffTabProps) {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-12 text-slate-500">
-              <Umbrella className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+            <div className="text-center py-12 text-muted-foreground">
+              <Umbrella className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p>{t('technicians.timeOffTab.noRequests')}</p>
             </div>
           )}

@@ -173,9 +173,9 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
     return (
       <Card>
         <CardContent className="py-12">
-          <div className="text-center text-slate-500">
-            <Calendar className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-            <h3 className="text-lg font-medium text-slate-700 mb-2">
+          <div className="text-center text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
               {t('technicians.scheduleTab.noSchedule')}
             </h3>
             <p className="text-sm mb-4">
@@ -238,7 +238,7 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
                           className="w-32"
                           disabled={!row.isActive}
                         />
-                        <span className="text-slate-400">{t('technicians.scheduleTab.to')}</span>
+                        <span className="text-muted-foreground">{t('technicians.scheduleTab.to')}</span>
                         <Input
                           type="time"
                           value={row.endTime}
@@ -281,16 +281,16 @@ export function ScheduleTab({ technicianId, canManage }: ScheduleTabProps) {
                           ? `${formatTime12h(entry.startTime)} - ${formatTime12h(entry.endTime)}`
                           : "—"}
                       </TableCell>
-                      <TableCell className="text-slate-500">
+                      <TableCell className="text-muted-foreground">
                         {entry?.notes || "—"}
                       </TableCell>
                       <TableCell className="text-center">
                         {entry?.isActive ? (
-                          <Badge className="bg-green-100 text-green-700">
+                          <Badge className="bg-green-500/15 text-green-600 dark:text-green-400">
                             {t('technicians.scheduleTab.activeBadge')}
                           </Badge>
                         ) : (
-                          <Badge className="bg-slate-100 text-slate-500">
+                          <Badge className="bg-muted text-muted-foreground">
                             {t('technicians.scheduleTab.offBadge')}
                           </Badge>
                         )}

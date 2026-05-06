@@ -51,3 +51,7 @@ android/
 # Misc
 *.tsbuildinfo
 .turbo/
+
+# Confidential / Internal
+AI_FEATURES_ANALYSIS.md
+dashboard-*.html

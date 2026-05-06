@@ -116,11 +116,11 @@ function KpiCard({
   color: "blue" | "green" | "amber" | "red" | "slate"
 }) {
   const colorMap = {
-    blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "bg-blue-100 text-blue-600" },
-    green: { bg: "bg-green-50", text: "text-green-600", icon: "bg-green-100 text-green-600" },
-    amber: { bg: "bg-amber-50", text: "text-amber-600", icon: "bg-amber-100 text-amber-600" },
-    red: { bg: "bg-red-50", text: "text-red-600", icon: "bg-red-100 text-red-600" },
-    slate: { bg: "bg-slate-50", text: "text-slate-600", icon: "bg-slate-100 text-slate-600" },
+    blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+    green: { bg: "bg-green-50", text: "text-green-600", icon: "bg-green-500/15 text-green-600 dark:text-green-400" },
+    amber: { bg: "bg-amber-50", text: "text-amber-600", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+    red: { bg: "bg-red-50", text: "text-red-600", icon: "bg-red-500/15 text-red-600 dark:text-red-400" },
+    slate: { bg: "bg-muted", text: "text-muted-foreground", icon: "bg-muted text-muted-foreground" },
   }
   const c = colorMap[color]
 
@@ -132,7 +132,7 @@ function KpiCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5 hover:shadow-md transition-shadow">
+    <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("p-2.5 rounded-xl", c.icon)}>
           <Icon className="size-5" />
@@ -140,17 +140,17 @@ function KpiCard({
         {trend && trend.direction !== "flat" && (
           <div className={cn(
             "flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold",
-            trend.direction === "up" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+            trend.direction === "up" ? "bg-green-500/10 text-green-700" : "bg-red-500/10 text-red-700"
           )}>
             {trend.direction === "up" ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
             {trend.pct}%
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-slate-900">
-        {value}{unit && <span className="text-lg text-slate-400 ml-0.5">{unit}</span>}
+      <p className="text-2xl font-bold text-foreground">
+        {value}{unit && <span className="text-lg text-muted-foreground ml-0.5">{unit}</span>}
       </p>
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mt-1">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-1">{label}</p>
     </div>
   )
 }
@@ -187,12 +187,12 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
         return (
           <div
             key={item.user.id}
-            className="group relative rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50/50 p-2 -mx-2 transition-all duration-200"
+            className="group relative rounded-xl border border-transparent hover:border-border hover:bg-accent/50 p-2 -mx-2 transition-all duration-200"
           >
             <div className="flex items-center gap-3">
               {/* Rank + Avatar */}
               <div className="w-36 flex-shrink-0 flex items-center gap-2.5">
-                <span className="text-[10px] font-bold text-slate-300 w-4 text-right">{i + 1}</span>
+                <span className="text-[10px] font-bold text-muted-foreground w-4 text-right">{i + 1}</span>
                 <div className={cn(
                   "size-8 rounded-lg flex items-center justify-center text-[10px] font-bold ring-1",
                   color.bg, color.text, color.ring
@@ -200,10 +200,10 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
                   {item.user.firstName.charAt(0)}{item.user.lastName.charAt(0)}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-slate-800 truncate leading-tight">
+                  <p className="text-xs font-semibold text-foreground truncate leading-tight">
                     {item.user.firstName} {item.user.lastName.charAt(0)}.
                   </p>
-                  <p className="text-[10px] text-slate-400 leading-tight truncate">
+                  <p className="text-[10px] text-muted-foreground leading-tight truncate">
                     {item.shifts} shift{item.shifts !== 1 ? "s" : ""}
                   </p>
                 </div>
@@ -211,7 +211,7 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
 
               {/* Bar */}
               <div className="flex-1 relative">
-                <div className="h-8 bg-slate-100/80 rounded-lg overflow-hidden">
+                <div className="h-8 bg-muted rounded-lg overflow-hidden">
                   <div
                     className={cn(
                       "h-full bg-gradient-to-r rounded-lg transition-all duration-700 ease-out flex items-center justify-end pr-2",
@@ -229,11 +229,11 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
                 {/* Average line indicator */}
                 {avgShift > 0 && item.shifts > 0 && (
                   <div
-                    className="absolute top-0 bottom-0 w-px bg-slate-400/40 hidden group-hover:block"
+                    className="absolute top-0 bottom-0 w-px bg-muted-foreground/40 hidden group-hover:block"
                     style={{ left: `${Math.min(((avgShift * item.shifts) / maxHours) * 100, 100)}%` }}
                     title={`Expected: ${(avgShift * item.shifts).toFixed(1)}h`}
                   >
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-slate-400 whitespace-nowrap bg-white px-1 rounded shadow-sm border border-slate-100">
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground whitespace-nowrap bg-card px-1 rounded shadow-sm border border-border">
                       avg
                     </div>
                   </div>
@@ -242,11 +242,11 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
 
               {/* Stats */}
               <div className="w-20 flex-shrink-0 text-right space-y-0.5">
-                <p className="text-sm font-bold text-slate-900">{item.totalHours}h</p>
+                <p className="text-sm font-bold text-foreground">{item.totalHours}h</p>
                 <div className="flex items-center justify-end gap-1">
-                  <span className="text-[10px] text-slate-400">{item.averageShiftHours}h avg</span>
+                  <span className="text-[10px] text-muted-foreground">{item.averageShiftHours}h avg</span>
                   {hasIssues && (
-                    <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-red-100 text-red-600 rounded-full">
+                    <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold bg-red-500/15 text-red-600 dark:text-red-400 rounded-full">
                       {item.autoClockOuts}
                     </span>
                   )}
@@ -258,7 +258,7 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
       })}
       {byUser.length > 8 && (
         <div className="text-center pt-2">
-          <span className="text-[11px] text-slate-400 bg-slate-50 px-3 py-1 rounded-full">
+          <span className="text-[11px] text-muted-foreground bg-muted px-3 py-1 rounded-full">
             + {byUser.length - 8} more technicians
           </span>
         </div>
@@ -365,7 +365,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
   return (
     <div className="space-y-8">
       {/* ── Header Bar ─────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5">
+      <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Period Picker */}
@@ -373,11 +373,11 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="h-10 px-4 rounded-xl border-slate-200 shadow-sm hover:shadow-md transition-all gap-2 font-medium"
+                  className="h-10 px-4 rounded-xl border-border shadow-sm hover:shadow-md transition-all gap-2 font-medium"
                 >
                   <CalendarDays className="size-4 text-blue-500" />
                   {preset.label}
-                  <ChevronDown className="size-3.5 text-slate-400" />
+                  <ChevronDown className="size-3.5 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-52 p-1" align="start">
@@ -388,8 +388,8 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                     className={cn(
                       "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all",
                       i === selectedPreset
-                        ? "bg-blue-50 text-blue-700 font-semibold"
-                        : "text-slate-600 hover:bg-slate-50"
+                        ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold"
+                        : "text-muted-foreground hover:bg-accent"
                     )}
                   >
                     {p.label}
@@ -400,8 +400,8 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
 
             {/* Location */}
             <Select value={locationFilter} onValueChange={setLocationFilter}>
-              <SelectTrigger className="w-[180px] h-10 rounded-xl border-slate-200 shadow-sm">
-                <MapPin className="size-3.5 mr-1.5 text-slate-400" />
+              <SelectTrigger className="w-[180px] h-10 rounded-xl border-border shadow-sm">
+                <MapPin className="size-3.5 mr-1.5 text-muted-foreground" />
                 <SelectValue placeholder="All Locations" />
               </SelectTrigger>
               <SelectContent>
@@ -414,12 +414,12 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
 
             {/* Period info */}
             {report && (
-              <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-200 ml-1">
-                <span className="text-xs text-slate-400">
+              <div className="hidden md:flex items-center gap-2 pl-2 border-l border-border ml-1">
+                <span className="text-xs text-muted-foreground">
                   {preset.getPeriodLabel()} · {report.period.workDays} days
                 </span>
                 {locationFilter !== "all" && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-semibold rounded-md">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-semibold rounded-md">
                     <MapPin className="size-2.5" />
                     {locations.find(l => l.id === locationFilter)?.name}
                   </span>
@@ -434,11 +434,11 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               <Button
                 variant="outline"
                 disabled={!report}
-                className="h-10 px-4 rounded-xl border-slate-200 shadow-sm hover:shadow-md transition-all font-medium gap-2"
+                className="h-10 px-4 rounded-xl border-border shadow-sm hover:shadow-md transition-all font-medium gap-2"
               >
                 <Download className="size-4" />
                 Export
-                <ChevronDown className="size-3 text-slate-400" />
+                <ChevronDown className="size-3 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
@@ -446,14 +446,14 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 <FileText className="size-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium">CSV</p>
-                  <p className="text-[10px] text-slate-400">Spreadsheet data</p>
+                  <p className="text-[10px] text-muted-foreground">Spreadsheet data</p>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => report && exportPDF(getExportData())} className="gap-2.5 py-2.5">
                 <FileText className="size-4 text-red-500" />
                 <div>
                   <p className="text-sm font-medium">PDF Report</p>
-                  <p className="text-[10px] text-slate-400">Print-ready document</p>
+                  <p className="text-[10px] text-muted-foreground">Print-ready document</p>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -473,12 +473,12 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
           <Skeleton className="h-48 rounded-2xl" />
         </div>
       ) : !report ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-20 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-5">
-            <FileText className="size-8 text-slate-300" />
+        <div className="bg-card rounded-2xl border border-dashed border-border p-20 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
+            <FileText className="size-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-700">No attendance data</h3>
-          <p className="text-sm text-slate-400 mt-1.5 max-w-sm mx-auto">
+          <h3 className="text-lg font-semibold text-foreground">No attendance data</h3>
+          <p className="text-sm text-muted-foreground mt-1.5 max-w-sm mx-auto">
             There are no attendance records for this period. Try selecting a different date range.
           </p>
         </div>
@@ -495,11 +495,11 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
           {/* ── Chart + Sidebar ──────────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Chart */}
-            <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
+            <div className="lg:col-span-3 bg-card rounded-2xl border border-border/60 shadow-sm">
               <div className="px-6 pt-6 pb-2 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Hours by Technician</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <h3 className="text-sm font-bold text-foreground">Hours by Technician</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     {filteredByUser.length} technician{filteredByUser.length !== 1 ? "s" : ""} · {filteredTotalHours.toFixed(1)}h total · hover for avg line
                   </p>
                 </div>
@@ -508,8 +508,8 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 {filteredByUser.length > 0 ? (
                   <HoursBarChart byUser={filteredByUser} avgShift={report.summary.averageShiftHours} />
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-48 text-slate-400">
-                    <Users className="size-8 mb-2 text-slate-200" />
+                  <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                    <Users className="size-8 mb-2 text-muted-foreground" />
                     <p className="text-sm">No data for selected filters</p>
                   </div>
                 )}
@@ -517,8 +517,8 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
             </div>
 
             {/* Quick Stats */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
-              <h3 className="text-sm font-bold text-slate-900 mb-5">Overview</h3>
+            <div className="lg:col-span-2 bg-card rounded-2xl border border-border/60 shadow-sm p-6">
+              <h3 className="text-sm font-bold text-foreground mb-5">Overview</h3>
               <div className="space-y-0">
                 {[
                   { label: "Total Shifts", value: report.summary.totalShifts, color: "" },
@@ -530,10 +530,10 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 ].map((stat, i) => (
                   <div key={stat.label} className={cn(
                     "flex items-center justify-between py-3.5",
-                    i > 0 && "border-t border-slate-100/80"
+                    i > 0 && "border-t border-border/80"
                   )}>
-                    <span className="text-[13px] text-slate-500">{stat.label}</span>
-                    <span className={cn("text-[13px] font-bold text-slate-900", stat.color)}>{stat.value}</span>
+                    <span className="text-[13px] text-muted-foreground">{stat.label}</span>
+                    <span className={cn("text-[13px] font-bold text-foreground", stat.color)}>{stat.value}</span>
                   </div>
                 ))}
               </div>
@@ -541,11 +541,11 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
           </div>
 
           {/* ── Data Table ───────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
             {/* Toggle + count */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
               {locationFilter === "all" ? (
-                <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
+                <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
                   {(["summary", "location"] as const).map((view) => (
                     <button
                       key={view}
@@ -553,8 +553,8 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                       className={cn(
                         "px-4 py-2 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5",
                         activeView === view
-                          ? "bg-white shadow-sm text-slate-900"
-                          : "text-slate-500 hover:text-slate-700"
+                          ? "bg-card shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       {view === "summary" ? <Users className="size-3.5" /> : <MapPin className="size-3.5" />}
@@ -567,12 +567,12 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                   <div className="p-1.5 rounded-lg bg-blue-50">
                     <Users className="size-3.5 text-blue-600" />
                   </div>
-                  <span className="text-sm font-semibold text-slate-900">
+                  <span className="text-sm font-semibold text-foreground">
                     Technicians at {locations.find(l => l.id === locationFilter)?.name}
                   </span>
                 </div>
               )}
-              <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
                 {activeView === "summary" ? filteredByUser.length : filteredByLocation.length} records
               </span>
             </div>
@@ -582,49 +582,49 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               filteredByUser.length > 0 ? (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/60">
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider">Technician</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Avg</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Issues</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider">Locations</TableHead>
+                    <TableRow className="bg-muted">
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Technician</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Avg</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Issues</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Locations</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredByUser.map((item, i) => {
                       const color = BAR_COLORS[i % BAR_COLORS.length]!
                       return (
-                        <TableRow key={item.user.id} className="hover:bg-slate-50/50 transition-colors">
+                        <TableRow key={item.user.id} className="hover:bg-accent/50 transition-colors">
                           <TableCell className="py-3.5">
                             <div className="flex items-center gap-3">
                               <div className={cn("size-9 rounded-lg flex items-center justify-center text-[10px] font-bold ring-1", color.bg, color.text, color.ring)}>
                                 {item.user.firstName?.[0]}{item.user.lastName?.[0]}
                               </div>
                               <div>
-                                <p className="text-sm font-semibold text-slate-900">{item.user.firstName} {item.user.lastName}</p>
-                                <p className="text-[11px] text-slate-400">{item.user.email}</p>
+                                <p className="text-sm font-semibold text-foreground">{item.user.firstName} {item.user.lastName}</p>
+                                <p className="text-[11px] text-muted-foreground">{item.user.email}</p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <span className="text-sm font-bold text-slate-900">{item.totalHours}h</span>
+                            <span className="text-sm font-bold text-foreground">{item.totalHours}h</span>
                           </TableCell>
-                          <TableCell className="text-right text-sm text-slate-600">{item.shifts}</TableCell>
-                          <TableCell className="text-right text-sm text-slate-600">{item.averageShiftHours}h</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">{item.shifts}</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">{item.averageShiftHours}h</TableCell>
                           <TableCell className="text-right">
                             {item.autoClockOuts > 0 ? (
-                              <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 text-[10px] font-bold bg-red-50 text-red-600 rounded-full ring-1 ring-red-200">
+                              <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 text-[10px] font-bold bg-red-500/10 text-red-600 rounded-full ring-1 ring-red-200">
                                 {item.autoClockOuts}
                               </span>
                             ) : (
-                              <span className="text-slate-200">—</span>
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {item.locations.map((loc) => (
-                                <span key={loc} className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-slate-50 text-slate-500 rounded-md ring-1 ring-slate-200/60">
+                                <span key={loc} className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded-md ring-1 ring-border/60">
                                   {loc}
                                 </span>
                               ))}
@@ -634,18 +634,18 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                       )
                     })}
                     {/* Totals row */}
-                    <TableRow className="bg-slate-50/80 border-t-2 border-slate-200">
+                    <TableRow className="bg-muted border-t-2 border-border">
                       <TableCell className="py-3.5">
-                        <span className="text-sm font-bold text-slate-700">Total ({filteredByUser.length})</span>
+                        <span className="text-sm font-bold text-foreground">Total ({filteredByUser.length})</span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="text-sm font-bold text-slate-900">{filteredTotalHours.toFixed(1)}h</span>
+                        <span className="text-sm font-bold text-foreground">{filteredTotalHours.toFixed(1)}h</span>
                       </TableCell>
-                      <TableCell className="text-right text-sm font-bold text-slate-700">{filteredShifts}</TableCell>
-                      <TableCell className="text-right text-sm font-bold text-slate-700">
+                      <TableCell className="text-right text-sm font-bold text-foreground">{filteredShifts}</TableCell>
+                      <TableCell className="text-right text-sm font-bold text-foreground">
                         {filteredShifts > 0 ? (filteredTotalHours / filteredShifts).toFixed(1) : "0"}h
                       </TableCell>
-                      <TableCell className="text-right text-sm font-bold text-slate-700">
+                      <TableCell className="text-right text-sm font-bold text-foreground">
                         {filteredByUser.reduce((s, u) => s + u.autoClockOuts, 0) || "—"}
                       </TableCell>
                       <TableCell />
@@ -654,9 +654,9 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 </Table>
               ) : (
                 <div className="p-16 text-center">
-                  <Users className="size-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-slate-500">No technician data</p>
-                  <p className="text-xs text-slate-400 mt-1">No attendance records match your filters</p>
+                  <Users className="size-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No technician data</p>
+                  <p className="text-xs text-muted-foreground mt-1">No attendance records match your filters</p>
                 </div>
               )
             )}
@@ -666,31 +666,31 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               filteredByLocation.length > 0 ? (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/60">
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider">Location</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Technicians</TableHead>
-                      <TableHead className="font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right">Avg / Shift</TableHead>
+                    <TableRow className="bg-muted">
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Location</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Technicians</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Avg / Shift</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredByLocation.map((item, i) => {
                       const color = BAR_COLORS[i % BAR_COLORS.length]!
                       return (
-                        <TableRow key={item.location.id} className="hover:bg-slate-50/50 transition-colors">
+                        <TableRow key={item.location.id} className="hover:bg-accent/50 transition-colors">
                           <TableCell className="py-3.5">
                             <div className="flex items-center gap-3">
                               <div className={cn("p-2 rounded-lg ring-1", color.bg, color.text, color.ring)}>
                                 <MapPin className="size-4" />
                               </div>
-                              <span className="text-sm font-semibold text-slate-900">{item.location.name}</span>
+                              <span className="text-sm font-semibold text-foreground">{item.location.name}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right text-sm font-bold text-slate-900">{item.totalHours}h</TableCell>
-                          <TableCell className="text-right text-sm text-slate-600">{item.shifts}</TableCell>
-                          <TableCell className="text-right text-sm text-slate-600">{item.uniqueTechnicians}</TableCell>
-                          <TableCell className="text-right text-sm text-slate-600">
+                          <TableCell className="text-right text-sm font-bold text-foreground">{item.totalHours}h</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">{item.shifts}</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">{item.uniqueTechnicians}</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
                             {item.shifts > 0 ? (item.totalHours / item.shifts).toFixed(1) : "0"}h
                           </TableCell>
                         </TableRow>
@@ -700,9 +700,9 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 </Table>
               ) : (
                 <div className="p-16 text-center">
-                  <MapPin className="size-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-slate-500">No location data</p>
-                  <p className="text-xs text-slate-400 mt-1">No attendance records for this period</p>
+                  <MapPin className="size-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No location data</p>
+                  <p className="text-xs text-muted-foreground mt-1">No attendance records for this period</p>
                 </div>
               )
             )}

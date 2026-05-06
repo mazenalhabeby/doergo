@@ -55,17 +55,17 @@ export function LocationsTab({ assignments }: LocationsTabProps) {
                 )}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-slate-800">
+                  <h4 className="font-medium text-foreground">
                     {assignment.location.name}
                   </h4>
                   {assignment.isPrimary && (
-                    <Badge className="bg-blue-100 text-blue-700">{t('technicians.locationsTab.primary')}</Badge>
+                    <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400">{t('technicians.locationsTab.primary')}</Badge>
                   )}
                 </div>
-                <p className="text-sm text-slate-500 mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   {assignment.location.address}
                 </p>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-muted-foreground">
                   <p>
                     {t('technicians.locationsTab.schedule', { days: assignment.schedule?.join(", ") || t('technicians.locationsTab.allDays') })}
                   </p>
@@ -77,8 +77,8 @@ export function LocationsTab({ assignments }: LocationsTabProps) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-500">
-            <MapPin className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+          <div className="text-center py-12 text-muted-foreground">
+            <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p>{t('technicians.locationsTab.noAssignments')}</p>
           </div>
         )}

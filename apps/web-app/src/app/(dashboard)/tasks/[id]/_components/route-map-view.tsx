@@ -137,8 +137,8 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
 
   if (points.length === 0) {
     return (
-      <div className="h-64 bg-slate-100 rounded-xl flex items-center justify-center">
-        <p className="text-sm text-slate-500">No route data available</p>
+      <div className="h-64 bg-muted rounded-xl flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">No route data available</p>
       </div>
     )
   }
@@ -146,7 +146,7 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
   const center = bounds ? bounds.getCenter() : { lat: points[0].lat, lng: points[0].lng }
 
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-200">
+    <div className="rounded-xl overflow-hidden border border-border">
       <MapContainer
         center={[center.lat, center.lng]}
         zoom={13}
@@ -177,8 +177,8 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
           <Marker position={[startPoint.lat, startPoint.lng]} icon={startIcon}>
             <Popup>
               <div className="text-center p-1">
-                <p className="font-semibold text-slate-800">Start Point</p>
-                <p className="text-xs text-slate-500 flex items-center justify-center gap-1 mt-1">
+                <p className="font-semibold text-foreground">Start Point</p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
                   <Clock size={12} />
                   {new Date(startPoint.timestamp).toLocaleString("en-US", {
                     hour: "numeric",
@@ -196,10 +196,10 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
           <Marker position={[endPoint.lat, endPoint.lng]} icon={endIcon}>
             <Popup>
               <div className="text-center p-1">
-                <p className="font-semibold text-slate-800">
+                <p className="font-semibold text-foreground">
                   {isLive ? "Current Location" : "Destination"}
                 </p>
-                <p className="text-xs text-slate-500 flex items-center justify-center gap-1 mt-1">
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
                   <Clock size={12} />
                   {new Date(endPoint.timestamp).toLocaleString("en-US", {
                     hour: "numeric",
@@ -214,8 +214,8 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
       </MapContainer>
 
       {/* Map legend */}
-      <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-4 text-xs text-slate-600">
+      <div className="px-4 py-3 bg-muted border-t border-border flex items-center justify-between">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <span className="size-3 rounded-full bg-green-500" />
             <span>Start</span>
@@ -229,7 +229,7 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
             <span>Route</span>
           </div>
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           {points.length} GPS points
         </p>
       </div>

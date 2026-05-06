@@ -190,10 +190,10 @@ export function TechnicianAssignDialog({
       <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
         {/* Header */}
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle className="text-lg font-semibold text-gray-900">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             Technicians
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-500">
+          <DialogDescription className="text-sm text-muted-foreground">
             Select a technician to handle this maintenance request.
           </DialogDescription>
         </DialogHeader>
@@ -243,15 +243,15 @@ export function TechnicianAssignDialog({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-foreground">
                       {suggestedTechnician.firstName} {suggestedTechnician.lastName}
                     </span>
                     <div className="flex items-center gap-0.5">
                       <Star className="size-3 fill-amber-400 text-amber-400" />
-                      <span className="text-xs text-gray-600">{suggestedTechnician.rating.toFixed(1)}</span>
+                      <span className="text-xs text-muted-foreground">{suggestedTechnician.rating.toFixed(1)}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {formatAvailability(suggestedTechnician)}
                     {suggestedTechnician.distanceKm !== null && ` • ${formatDistance(suggestedTechnician.distanceKm)} away`}
                   </p>
@@ -276,16 +276,16 @@ export function TechnicianAssignDialog({
         {/* Filters */}
         <div className="px-6 pb-4 flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Name"
-              className="pl-9 h-10 text-sm rounded-lg border-gray-200"
+              className="pl-9 h-10 text-sm rounded-lg border-border"
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
             />
           </div>
           <Select value={distanceFilter} onValueChange={setDistanceFilter}>
-            <SelectTrigger className="w-[120px] h-10 text-sm rounded-lg border-gray-200">
+            <SelectTrigger className="w-[120px] h-10 text-sm rounded-lg border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -300,7 +300,7 @@ export function TechnicianAssignDialog({
             value={specializationFilter}
             onValueChange={setSpecializationFilter}
           >
-            <SelectTrigger className="w-[140px] h-10 text-sm rounded-lg border-gray-200">
+            <SelectTrigger className="w-[140px] h-10 text-sm rounded-lg border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -315,7 +315,7 @@ export function TechnicianAssignDialog({
             value={availabilityFilter}
             onValueChange={setAvailabilityFilter}
           >
-            <SelectTrigger className="w-[130px] h-10 text-sm rounded-lg border-gray-200">
+            <SelectTrigger className="w-[130px] h-10 text-sm rounded-lg border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -329,7 +329,7 @@ export function TechnicianAssignDialog({
         </div>
 
         {/* Technician List */}
-        <div className="border-t border-gray-100 max-h-[400px] overflow-y-auto">
+        <div className="border-t border-border max-h-[400px] overflow-y-auto">
           {isLoading ? (
             <div className="p-6 space-y-4">
               {[1, 2, 3].map((i) => (
@@ -356,8 +356,8 @@ export function TechnicianAssignDialog({
             </div>
           ) : (
             <div className="p-12 text-center">
-              <p className="text-sm text-gray-500">No technicians found</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground">No technicians found</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Try adjusting your filters
               </p>
             </div>
@@ -387,7 +387,7 @@ function TechnicianRow({
   const isAtCapacity = status === "At Capacity"
 
   return (
-    <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+    <div className="px-6 py-4 flex items-center justify-between hover:bg-accent/50 transition-colors">
       <div className="flex items-center gap-4">
         {/* Avatar */}
         <Avatar className="size-11 border-2 border-white shadow-sm">
@@ -401,7 +401,7 @@ function TechnicianRow({
                 ? "bg-green-100 text-green-600"
                 : isBusy
                   ? "bg-orange-100 text-orange-600"
-                  : "bg-gray-100 text-gray-500"
+                  : "bg-muted text-muted-foreground"
             )}
           >
             {technician.firstName[0]}
@@ -413,19 +413,19 @@ function TechnicianRow({
         <div>
           {/* Name + Rating + Score */}
           <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-foreground">
               {technician.firstName} {technician.lastName}
             </span>
             <div className="flex items-center gap-0.5">
               <Star className="size-3.5 fill-amber-400 text-amber-400" />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-muted-foreground">
                 {technician.rating.toFixed(1)}
               </span>
             </div>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded cursor-help">
+                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded cursor-help">
                     {technician.score}%
                   </span>
                 </TooltipTrigger>
@@ -444,7 +444,7 @@ function TechnicianRow({
           </div>
 
           {/* Specialty */}
-          <p className="text-sm text-gray-500">{technician.specialty || "General"}</p>
+          <p className="text-sm text-muted-foreground">{technician.specialty || "General"}</p>
 
           {/* Meta row */}
           <div className="flex items-center gap-3 mt-1">
@@ -456,7 +456,7 @@ function TechnicianRow({
                   ? "text-green-600"
                   : isBusy
                     ? "text-orange-600"
-                    : "text-gray-400"
+                    : "text-muted-foreground"
               )}
             >
               <span
@@ -466,26 +466,26 @@ function TechnicianRow({
                     ? "bg-green-500"
                     : isBusy
                       ? "bg-orange-500"
-                      : "bg-gray-300"
+                      : "bg-muted-foreground"
                 )}
               />
               {status}
             </span>
 
             {/* Current Jobs */}
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Briefcase className="size-3" />
               {technician.activeTaskCount} Active
             </span>
 
             {/* Today's capacity */}
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="size-3" />
               {technician.todayTaskCount}/{technician.maxDailyJobs} today
             </span>
 
             {/* Distance */}
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="size-3" />
               {formatDistance(technician.distanceKm)}
             </span>
@@ -502,7 +502,7 @@ function TechnicianRow({
             ? "bg-blue-600 hover:bg-blue-700 text-white"
             : isBusy
               ? "bg-orange-500 hover:bg-orange-600 text-white"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-muted text-muted-foreground cursor-not-allowed"
         )}
         onClick={() => onAssign(technician.id)}
         disabled={isAssigning || isAtCapacity}

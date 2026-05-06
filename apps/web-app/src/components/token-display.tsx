@@ -103,9 +103,9 @@ export function TokenDisplay() {
             </span>
           </div>
           {isExpanded ? (
-            <ChevronDown className="size-4 text-slate-400" />
+            <ChevronDown className="size-4 text-muted-foreground" />
           ) : (
-            <ChevronUp className="size-4 text-slate-400" />
+            <ChevronUp className="size-4 text-muted-foreground" />
           )}
         </button>
 
@@ -114,7 +114,7 @@ export function TokenDisplay() {
             {/* Access Token */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400">Access Token</span>
+                <span className="text-xs font-medium text-muted-foreground">Access Token</span>
                 <div className="flex items-center gap-2">
                   {accessRemaining.isExpired ? (
                     <span className="flex items-center gap-1 text-red-400 text-xs">
@@ -134,7 +134,7 @@ export function TokenDisplay() {
                 </div>
               </div>
               <div className="bg-slate-800 rounded-lg p-2">
-                <code className="text-xs text-slate-300 break-all">
+                <code className="text-xs text-muted-foreground break-all">
                   {truncateToken(tokenInfo.accessToken)}
                 </code>
               </div>
@@ -149,13 +149,13 @@ export function TokenDisplay() {
                   style={{ width: `${Math.min(100, (accessRemaining.seconds / tokenDurations.accessDuration) * 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-500">Total duration: {formatDuration(tokenDurations.accessDuration)}</p>
+              <p className="text-xs text-muted-foreground">Total duration: {formatDuration(tokenDurations.accessDuration)}</p>
             </div>
 
             {/* Refresh Token */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400">Refresh Token</span>
+                <span className="text-xs font-medium text-muted-foreground">Refresh Token</span>
                 <div className="flex items-center gap-2">
                   {refreshRemaining.isExpired ? (
                     <span className="flex items-center gap-1 text-red-400 text-xs">
@@ -175,7 +175,7 @@ export function TokenDisplay() {
                 </div>
               </div>
               <div className="bg-slate-800 rounded-lg p-2">
-                <code className="text-xs text-slate-300 break-all">
+                <code className="text-xs text-muted-foreground break-all">
                   {truncateToken(tokenInfo.refreshToken)}
                 </code>
               </div>
@@ -190,7 +190,7 @@ export function TokenDisplay() {
                   style={{ width: `${Math.min(100, (refreshRemaining.seconds / tokenDurations.refreshDuration) * 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-500">Total duration: {formatDuration(tokenDurations.refreshDuration)}</p>
+              <p className="text-xs text-muted-foreground">Total duration: {formatDuration(tokenDurations.refreshDuration)}</p>
             </div>
 
             {/* Status */}
@@ -216,7 +216,7 @@ export function TokenDisplay() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 px-3 text-xs bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                className="h-7 px-3 text-xs bg-transparent border-slate-600 text-muted-foreground hover:bg-slate-700 hover:text-white"
                 onClick={handleRefresh}
                 disabled={isRefreshing || refreshRemaining.isExpired}
               >
@@ -226,7 +226,7 @@ export function TokenDisplay() {
             </div>
 
             {/* Info */}
-            <div className="text-xs text-slate-500 pt-2 border-t border-slate-700">
+            <div className="text-xs text-muted-foreground pt-2 border-t border-slate-700">
               <p>Access: {formatDuration(tokenDurations.accessDuration)} | Refresh: {formatDuration(tokenDurations.refreshDuration)}</p>
               <p className="text-green-400">
                 OAuth 2.0: Auto-refresh on 401 response

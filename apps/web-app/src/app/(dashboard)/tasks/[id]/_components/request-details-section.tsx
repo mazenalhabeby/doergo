@@ -36,9 +36,9 @@ export function RequestDetailsSection({
   task,
 }: RequestDetailsSectionProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm">
-      <div className="p-6 border-b border-gray-100">
-        <h3 className="text-base font-semibold text-gray-900">
+    <div className="bg-card rounded-2xl shadow-sm">
+      <div className="p-6 border-b border-border">
+        <h3 className="text-base font-semibold text-foreground">
           Request Details
         </h3>
       </div>
@@ -46,11 +46,11 @@ export function RequestDetailsSection({
       <div className="p-6 space-y-6">
         {/* Description */}
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">
+          <h4 className="text-sm font-medium text-foreground mb-3">
             Description
           </h4>
-          <div className="border border-gray-200 rounded-xl p-4">
-            <p className="text-sm text-gray-600 leading-relaxed">
+          <div className="border border-border rounded-xl p-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {task.description || "No description provided."}
             </p>
           </div>
@@ -58,22 +58,22 @@ export function RequestDetailsSection({
 
         {/* Task Information */}
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">
+          <h4 className="text-sm font-medium text-foreground mb-3">
             Task Information
           </h4>
-          <div className="border border-gray-200 rounded-xl p-5">
+          <div className="border border-border rounded-xl p-5">
             <div className="grid grid-cols-2 gap-x-12 gap-y-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Location</p>
+                <p className="text-xs text-muted-foreground mb-1">Location</p>
                 {task.locationAddress ? (
-                  <p className="text-sm text-gray-900">{task.locationAddress}</p>
+                  <p className="text-sm text-foreground">{task.locationAddress}</p>
                 ) : (
-                  <p className="text-sm text-gray-400">—</p>
+                  <p className="text-sm text-muted-foreground">—</p>
                 )}
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Due Date</p>
-                <p className="text-sm text-gray-900">
+                <p className="text-xs text-muted-foreground mb-1">Due Date</p>
+                <p className="text-sm text-foreground">
                   {task.dueDate
                     ? new Date(task.dueDate).toLocaleDateString("en-US", {
                         day: "numeric",
@@ -84,15 +84,15 @@ export function RequestDetailsSection({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Created By</p>
-                <p className="text-sm text-gray-900">
+                <p className="text-xs text-muted-foreground mb-1">Created By</p>
+                <p className="text-sm text-foreground">
                   {task.createdBy
                     ? `${task.createdBy.firstName} ${task.createdBy.lastName}`
                     : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Priority</p>
+                <p className="text-xs text-muted-foreground mb-1">Priority</p>
                 <p className="text-sm text-blue-600 font-medium">
                   {task.priority || "—"}
                 </p>
@@ -104,7 +104,7 @@ export function RequestDetailsSection({
         {/* Attachments */}
         {task.attachments && task.attachments.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-900 mb-3">
+            <h4 className="text-sm font-medium text-foreground mb-3">
               Attachments
             </h4>
             <div className="grid grid-cols-2 gap-4">
@@ -119,15 +119,15 @@ export function RequestDetailsSection({
                 return (
                   <div
                     key={attachment.id}
-                    className="border border-gray-200 rounded-xl p-4"
+                    className="border border-border rounded-xl p-4"
                   >
-                    <div className="w-12 h-12 border border-gray-200 rounded-lg flex items-center justify-center mb-3">
-                      <Icon className="size-6 text-gray-400" />
+                    <div className="w-12 h-12 border border-border rounded-lg flex items-center justify-center mb-3">
+                      <Icon className="size-6 text-muted-foreground" />
                     </div>
-                    <p className="text-sm font-medium text-gray-900 truncate mb-0.5">
+                    <p className="text-sm font-medium text-foreground truncate mb-0.5">
                       {attachment.fileName}
                     </p>
-                    <p className="text-xs text-gray-400 mb-2">{fileSize}</p>
+                    <p className="text-xs text-muted-foreground mb-2">{fileSize}</p>
                     <a
                       href={attachment.fileUrl}
                       target="_blank"

@@ -38,7 +38,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.completionRate')}</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.completionRate')}</p>
               <p className="text-3xl font-bold text-green-600">
                 {performance?.summary.completionRate?.toFixed(0) || 0}%
               </p>
@@ -48,7 +48,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
               <p className="text-3xl font-bold text-blue-600">
                 {performance?.summary.onTimeRate?.toFixed(0) || 0}%
               </p>
@@ -58,7 +58,7 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
               <p className="text-3xl font-bold text-purple-600">
                 {performance?.summary.tasksCompleted || 0}
               </p>
@@ -113,9 +113,9 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex items-center justify-center text-slate-500 bg-slate-50 rounded-lg">
+              <div className="h-64 flex items-center justify-center text-muted-foreground bg-muted rounded-lg">
                 <div className="text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <p>{t('technicians.performanceTab.noPerformanceData')}</p>
                 </div>
               </div>
@@ -187,9 +187,9 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex items-center justify-center text-slate-500 bg-slate-50 rounded-lg">
+              <div className="h-64 flex items-center justify-center text-muted-foreground bg-muted rounded-lg">
                 <div className="text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <p>{t('technicians.performanceTab.noPerformanceData')}</p>
                 </div>
               </div>
@@ -209,8 +209,8 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.completionRate')}</p>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.completionRate')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
@@ -223,8 +223,8 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                   {performance.comparison.completionRateChange.toFixed(1)}%
                 </p>
               </div>
-              <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
@@ -237,8 +237,8 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                   {performance.comparison.onTimeRateChange.toFixed(1)}%
                 </p>
               </div>
-              <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.rating')}</p>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.rating')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
@@ -251,8 +251,8 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                   {performance.comparison.ratingChange.toFixed(2)}
                 </p>
               </div>
-              <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-500 mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",

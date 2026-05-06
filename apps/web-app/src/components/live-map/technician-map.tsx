@@ -14,7 +14,7 @@ const createTechnicianIcon = (isOnline: boolean) => {
     html: `
       <div class="relative">
         <div class="w-10 h-10 rounded-full ${
-          isOnline ? "bg-green-500" : "bg-slate-400"
+          isOnline ? "bg-green-500" : "bg-muted-foreground"
         } border-4 border-white shadow-lg flex items-center justify-center">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -241,42 +241,42 @@ export default function TechnicianMap({
             >
               <Popup>
                 <div className="min-w-[200px]">
-                  <div className="font-semibold text-slate-900">
+                  <div className="font-semibold text-foreground">
                     {worker.firstName} {worker.lastName}
                   </div>
-                  <div className="text-sm text-slate-500 mb-2">{worker.email}</div>
+                  <div className="text-sm text-muted-foreground mb-2">{worker.email}</div>
 
                   <div className="flex items-center gap-2 mb-2">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         online
                           ? "bg-green-100 text-green-800"
-                          : "bg-slate-100 text-slate-600"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {online ? "Online" : "Offline"}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-muted-foreground">
                       {formatLastUpdate(worker.updatedAt)}
                     </span>
                   </div>
 
                   {worker.currentTask && (
                     <div className="border-t pt-2 mt-2">
-                      <div className="text-xs text-slate-500 uppercase font-medium mb-1">
+                      <div className="text-xs text-muted-foreground uppercase font-medium mb-1">
                         Current Task
                       </div>
-                      <div className="text-sm font-medium text-slate-900 truncate">
+                      <div className="text-sm font-medium text-foreground truncate">
                         {worker.currentTask.title}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-muted-foreground">
                         Status: {worker.currentTask.status.replace("_", " ")}
                       </div>
                     </div>
                   )}
 
                   {worker.accuracy && (
-                    <div className="text-xs text-slate-400 mt-2">
+                    <div className="text-xs text-muted-foreground mt-2">
                       Accuracy: ~{Math.round(worker.accuracy)}m
                     </div>
                   )}
@@ -289,25 +289,25 @@ export default function TechnicianMap({
 
       {/* Route info panel */}
       {selectedWorker && currentRoute && (
-        <div className="absolute bottom-4 left-4 right-4 bg-white rounded-lg shadow-lg p-4 z-[1000]">
+        <div className="absolute bottom-4 left-4 right-4 bg-card rounded-lg shadow-lg p-4 z-[1000]">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium text-slate-900">
+              <div className="text-sm font-medium text-foreground">
                 {selectedWorker.firstName} {selectedWorker.lastName} - On The Way
               </div>
-              <div className="text-xs text-slate-500 truncate max-w-[200px]">
+              <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                 {currentRoute.taskTitle}
               </div>
             </div>
             <div className="flex gap-4 text-right">
               <div>
-                <div className="text-xs text-slate-500">Distance</div>
+                <div className="text-xs text-muted-foreground">Distance</div>
                 <div className="text-sm font-semibold text-blue-600">
                   {formatDistance(currentRoute.distance)}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-slate-500">Time</div>
+                <div className="text-xs text-muted-foreground">Time</div>
                 <div className="text-sm font-semibold text-blue-600">
                   {currentRoute.duration !== null ? formatDuration(currentRoute.duration) : "N/A"}
                 </div>
@@ -315,7 +315,7 @@ export default function TechnicianMap({
             </div>
           </div>
           {currentRoute.points.length > 0 && (
-            <div className="mt-2 text-xs text-slate-400">
+            <div className="mt-2 text-xs text-muted-foreground">
               {currentRoute.points.length} tracking points recorded
             </div>
           )}
@@ -324,8 +324,8 @@ export default function TechnicianMap({
 
       {/* Loading indicator */}
       {loadingRoute && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow px-3 py-1 z-[1000]">
-          <span className="text-xs text-slate-500">Loading route...</span>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card rounded-lg shadow px-3 py-1 z-[1000]">
+          <span className="text-xs text-muted-foreground">Loading route...</span>
         </div>
       )}
     </div>

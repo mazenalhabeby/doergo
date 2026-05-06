@@ -33,13 +33,13 @@ import { getRoleLabel } from "@hbcfield/shared/types"
 function getRoleColor(role: string) {
   switch (role) {
     case "ADMIN":
-      return "bg-purple-100 text-purple-700"
+      return "bg-purple-500/15 text-purple-600 dark:text-purple-400"
     case "DISPATCHER":
-      return "bg-blue-100 text-blue-700"
+      return "bg-blue-500/15 text-blue-600 dark:text-blue-400"
     case "TECHNICIAN":
-      return "bg-green-100 text-green-700"
+      return "bg-green-500/15 text-green-600 dark:text-green-400"
     default:
-      return "bg-gray-100 text-gray-700"
+      return "bg-muted text-foreground"
   }
 }
 
@@ -109,8 +109,8 @@ export default function ProfilePage() {
     <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-800">{t("profile.title")}</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-semibold text-foreground">{t("profile.title")}</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           {t("profile.subtitle")}
         </p>
       </div>
@@ -139,23 +139,23 @@ export default function ProfilePage() {
             <div className="flex-1 space-y-4">
               <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     {t("profile.accountInformation.fullName")}
                   </p>
-                  <p className="text-sm font-medium text-slate-900 mt-0.5">
+                  <p className="text-sm font-medium text-foreground mt-0.5">
                     {user.firstName} {user.lastName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     {t("profile.accountInformation.email")}
                   </p>
-                  <p className="text-sm font-medium text-slate-900 mt-0.5">
+                  <p className="text-sm font-medium text-foreground mt-0.5">
                     {user.email}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     {t("profile.accountInformation.role")}
                   </p>
                   <div className="mt-1">
@@ -167,10 +167,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     {t("profile.accountInformation.platformAccess")}
                   </p>
-                  <p className="text-sm font-medium text-slate-900 mt-0.5">
+                  <p className="text-sm font-medium text-foreground mt-0.5">
                     {getPlatformLabel(user.platform, t)}
                   </p>
                 </div>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
 
               {/* Permissions */}
               <div>
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                   {t("profile.accountInformation.permissions")}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -187,8 +187,8 @@ export default function ProfilePage() {
                       key={perm.label}
                       className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${
                         perm.enabled
-                          ? "bg-green-50 text-green-700 border border-green-200"
-                          : "bg-gray-50 text-gray-400 border border-gray-200"
+                          ? "bg-green-500/10 text-green-700 border border-green-200"
+                          : "bg-muted text-muted-foreground border border-border"
                       }`}
                     >
                       {perm.enabled ? (
@@ -223,7 +223,7 @@ export default function ProfilePage() {
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
             {/* Current Password */}
             <div className="space-y-2">
-              <Label htmlFor="current-password" className="text-sm font-medium text-slate-700">
+              <Label htmlFor="current-password" className="text-sm font-medium text-foreground">
                 {t("profile.changePassword.currentPasswordLabel")}
               </Label>
               <div className="relative">
@@ -239,7 +239,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
                   {showCurrentPassword ? (
                     <EyeOff className="size-4" />
@@ -252,7 +252,7 @@ export default function ProfilePage() {
 
             {/* New Password */}
             <div className="space-y-2">
-              <Label htmlFor="new-password" className="text-sm font-medium text-slate-700">
+              <Label htmlFor="new-password" className="text-sm font-medium text-foreground">
                 {t("profile.changePassword.newPasswordLabel")}
               </Label>
               <div className="relative">
@@ -268,7 +268,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
                   {showNewPassword ? (
                     <EyeOff className="size-4" />
@@ -286,7 +286,7 @@ export default function ProfilePage() {
 
             {/* Confirm Password */}
             <div className="space-y-2">
-              <Label htmlFor="confirm-password" className="text-sm font-medium text-slate-700">
+              <Label htmlFor="confirm-password" className="text-sm font-medium text-foreground">
                 {t("profile.changePassword.confirmPasswordLabel")}
               </Label>
               <Input
@@ -347,8 +347,8 @@ export default function ProfilePage() {
                   }}
                   className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${
                     isActive
-                      ? "border-blue-300 bg-blue-50 text-blue-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                      ? "border-blue-300 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                      : "border-border bg-card text-muted-foreground hover:border-border hover:bg-accent"
                   }`}
                 >
                   <span className="text-lg">{lang.flag}</span>

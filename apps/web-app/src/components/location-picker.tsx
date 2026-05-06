@@ -151,7 +151,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
       {/* Search input */}
       <div ref={containerRef} className="relative">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search for an address..."
             value={query}
@@ -163,16 +163,16 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
               if (results.length > 0) setShowResults(true)
             }}
             disabled={disabled}
-            className="h-12 pl-10 pr-10 rounded-xl border-slate-200 bg-white text-base placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
+            className="h-12 pl-10 pr-10 rounded-xl border-border bg-card text-base placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20"
           />
           {isSearching && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 animate-spin" />
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground animate-spin" />
           )}
           {!isSearching && query && (
             <button
               type="button"
               onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
             >
               <X className="size-4" />
             </button>
@@ -181,16 +181,16 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
 
         {/* Autocomplete dropdown */}
         {showResults && (
-          <div className="absolute z-[1000] mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          <div className="absolute z-[1000] mt-1 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
             {results.map((r) => (
               <button
                 key={r.place_id}
                 type="button"
                 onClick={() => handleSelect(r)}
-                className="flex items-start gap-2 w-full px-3 py-2.5 text-left hover:bg-slate-50 transition-colors"
+                className="flex items-start gap-2 w-full px-3 py-2.5 text-left hover:bg-accent transition-colors"
               >
                 <MapPin className="size-4 text-blue-500 mt-0.5 shrink-0" />
-                <span className="text-sm text-slate-700 line-clamp-2">{r.display_name}</span>
+                <span className="text-sm text-foreground line-clamp-2">{r.display_name}</span>
               </button>
             ))}
           </div>
@@ -198,7 +198,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
       </div>
 
       {/* Map - isolate stacking context so Leaflet z-indexes don't bleed out */}
-      <div className="h-[280px] rounded-xl overflow-hidden border border-slate-200" style={{ isolation: "isolate" }}>
+      <div className="h-[280px] rounded-xl overflow-hidden border border-border" style={{ isolation: "isolate" }}>
         <MapContainer
           center={mapCenter}
           zoom={lat && lng ? 15 : 4}
@@ -221,7 +221,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
 
       {/* Selected coordinates hint */}
       {lat && lng && (
-        <p className="text-xs text-slate-400 flex items-center gap-1">
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
           <Navigation className="size-3" />
           {lat.toFixed(5)}, {lng.toFixed(5)}
         </p>

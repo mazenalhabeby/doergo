@@ -18,10 +18,10 @@ const TechnicianMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full w-full flex items-center justify-center bg-slate-100 rounded-lg">
+      <div className="h-full w-full flex items-center justify-center bg-muted rounded-lg">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 text-slate-400 animate-spin mx-auto mb-2" />
-          <p className="text-sm text-slate-500">Loading map...</p>
+          <RefreshCw className="w-8 h-8 text-muted-foreground animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Loading map...</p>
         </div>
       </div>
     ),
@@ -98,10 +98,10 @@ export default function LiveMapPage() {
     <div
       className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
         isConnected
-          ? "bg-green-100 text-green-700"
+          ? "bg-green-500/15 text-green-600 dark:text-green-400"
           : connectionError
-          ? "bg-red-100 text-red-700"
-          : "bg-slate-100 text-slate-600"
+          ? "bg-red-500/15 text-red-600 dark:text-red-400"
+          : "bg-muted text-muted-foreground"
       }`}
     >
       {isConnected ? (
@@ -128,10 +128,10 @@ export default function LiveMapPage() {
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">
+          <h3 className="text-lg font-semibold text-foreground mb-1">
             {t("liveMap.failedToLoad")}
           </h3>
-          <p className="text-sm text-slate-500 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             {error instanceof Error ? error.message : "Unknown error"}
           </p>
           <Button onClick={() => refetch()} variant="outline">
@@ -148,8 +148,8 @@ export default function LiveMapPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t("liveMap.title")}</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-foreground">{t("liveMap.title")}</h1>
+          <p className="text-sm text-muted-foreground">
             {t("liveMap.subtitle")}
           </p>
         </div>
@@ -172,7 +172,7 @@ export default function LiveMapPage() {
       {/* Main content */}
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Map */}
-        <div className="flex-1 bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="flex-1 bg-card rounded-lg shadow-sm border overflow-hidden">
           <TechnicianMap
             workers={workers}
             selectedWorkerId={selectedWorkerId}
@@ -181,7 +181,7 @@ export default function LiveMapPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="w-80 flex-shrink-0 bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="w-80 flex-shrink-0 bg-card rounded-lg shadow-sm border overflow-hidden">
           <TechnicianList
             workers={workers}
             selectedWorkerId={selectedWorkerId}

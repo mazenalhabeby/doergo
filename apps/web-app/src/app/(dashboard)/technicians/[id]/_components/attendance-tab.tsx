@@ -72,9 +72,9 @@ export function AttendanceTab({ attendance }: AttendanceTabProps) {
                   <TableCell>{entry.location?.name || "—"}</TableCell>
                   <TableCell>
                     {entry.clockInWithinGeofence ? (
-                      <Badge className="bg-green-100 text-green-700">{t('technicians.attendanceTab.inZone')}</Badge>
+                      <Badge className="bg-green-500/15 text-green-600 dark:text-green-400">{t('technicians.attendanceTab.inZone')}</Badge>
                     ) : (
-                      <Badge className="bg-amber-100 text-amber-700">
+                      <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400">
                         {t('technicians.attendanceTab.outOfZone')}
                       </Badge>
                     )}
@@ -84,8 +84,8 @@ export function AttendanceTab({ attendance }: AttendanceTabProps) {
             </TableBody>
           </Table>
         ) : (
-          <div className="text-center py-12 text-slate-500">
-            <Clock className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+          <div className="text-center py-12 text-muted-foreground">
+            <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p>{t('technicians.attendanceTab.noRecords')}</p>
           </div>
         )}

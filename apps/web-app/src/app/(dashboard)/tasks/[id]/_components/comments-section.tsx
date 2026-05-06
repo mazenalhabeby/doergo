@@ -57,16 +57,16 @@ export function CommentsSection({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-card rounded-2xl shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-100">
+      <div className="px-6 py-4 border-b border-border">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <MessageCircle className="size-4 text-gray-500" />
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <MessageCircle className="size-4 text-muted-foreground" />
             {t("tasks.comments.title")}
           </h3>
           {comments.length > 0 && (
-            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+            <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-medium rounded-full">
               {comments.length}
             </span>
           )}
@@ -89,7 +89,7 @@ export function CommentsSection({
                   key={comment.id}
                   className={cn(
                     "group",
-                    !isLast && "pb-4 border-b border-gray-100"
+                    !isLast && "pb-4 border-b border-border"
                   )}
                 >
                   <div className="flex gap-3">
@@ -106,14 +106,14 @@ export function CommentsSection({
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-foreground">
                           {comment.user.firstName} {comment.user.lastName}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {formatTimeAgo(comment.createdAt)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                         {comment.content}
                       </p>
                     </div>
@@ -124,11 +124,11 @@ export function CommentsSection({
           </div>
         ) : (
           <div className="text-center py-8 mb-6">
-            <div className="size-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-              <MessageCircle className="size-6 text-gray-400" />
+            <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <MessageCircle className="size-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-gray-500 font-medium">{t("tasks.comments.noComments")}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground font-medium">{t("tasks.comments.noComments")}</p>
+            <p className="text-xs text-muted-foreground mt-1">
               {t("tasks.comments.beTheFirst")}
             </p>
           </div>
@@ -145,8 +145,8 @@ export function CommentsSection({
                 placeholder={t("tasks.comments.placeholder")}
                 className={cn(
                   "resize-none text-sm pr-4 min-h-[80px] rounded-xl",
-                  "border-gray-200 focus:border-blue-300 focus:ring-blue-200",
-                  "placeholder:text-gray-400 transition-all"
+                  "border-border focus:border-blue-300 focus:ring-blue-200",
+                  "placeholder:text-muted-foreground transition-all"
                 )}
                 rows={3}
               />
@@ -169,7 +169,7 @@ export function CommentsSection({
               )}
             </Button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-2 ml-1">
+          <p className="text-[10px] text-muted-foreground mt-2 ml-1">
             {t("tasks.comments.hint")}
           </p>
         </div>

@@ -28,13 +28,13 @@ const activityConfig: Record<
   ActivityItem["type"],
   { icon: LucideIcon; color: string }
 > = {
-  task_created: { icon: FileText, color: "text-slate-400" },
-  task_assigned: { icon: UserPlus, color: "text-slate-400" },
-  task_started: { icon: Play, color: "text-slate-400" },
+  task_created: { icon: FileText, color: "text-muted-foreground" },
+  task_assigned: { icon: UserPlus, color: "text-muted-foreground" },
+  task_started: { icon: Play, color: "text-muted-foreground" },
   task_completed: { icon: CheckCircle2, color: "text-emerald-500" },
   task_blocked: { icon: AlertCircle, color: "text-amber-500" },
-  comment_added: { icon: MessageSquare, color: "text-slate-400" },
-  attachment_added: { icon: FileText, color: "text-slate-400" },
+  comment_added: { icon: MessageSquare, color: "text-muted-foreground" },
+  attachment_added: { icon: FileText, color: "text-muted-foreground" },
 }
 
 interface ActivityFeedProps {
@@ -49,8 +49,8 @@ export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFe
   if (displayActivities.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-12", className)}>
-        <Circle className="mb-3 size-8 text-slate-200" strokeWidth={1.5} />
-        <p className="text-sm text-slate-400">No recent activity</p>
+        <Circle className="mb-3 size-8 text-muted-foreground" strokeWidth={1.5} />
+        <p className="text-sm text-muted-foreground">No recent activity</p>
       </div>
     )
   }
@@ -66,7 +66,7 @@ export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFe
             key={activity.id}
             className={cn(
               "group relative flex gap-4 py-4",
-              index !== displayActivities.length - 1 && "border-b border-slate-100"
+              index !== displayActivities.length - 1 && "border-b border-border"
             )}
           >
             {/* Icon */}
@@ -76,12 +76,12 @@ export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFe
 
             {/* Content */}
             <div className="flex-1 min-w-0 space-y-1">
-              <p className="text-sm text-slate-700 leading-snug">
+              <p className="text-sm text-foreground leading-snug">
                 {activity.title}
               </p>
-              <p className="text-[13px] text-slate-400">
+              <p className="text-[13px] text-muted-foreground">
                 {activity.user && (
-                  <span className="text-slate-500">{activity.user.name} · </span>
+                  <span className="text-muted-foreground">{activity.user.name} · </span>
                 )}
                 {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
               </p>

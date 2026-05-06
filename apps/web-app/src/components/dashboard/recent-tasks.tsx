@@ -29,11 +29,11 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
   if (tasks.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-16", className)}>
-        <div className="mb-4 rounded-full bg-slate-100 p-4">
-          <Inbox className="size-6 text-slate-400" strokeWidth={1.5} />
+        <div className="mb-4 rounded-full bg-muted p-4">
+          <Inbox className="size-6 text-muted-foreground" strokeWidth={1.5} />
         </div>
-        <p className="text-sm font-medium text-slate-600">No tasks yet</p>
-        <p className="mt-1 text-[13px] text-slate-400">
+        <p className="text-sm font-medium text-muted-foreground">No tasks yet</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
           Tasks will appear here once created
         </p>
       </div>
@@ -53,7 +53,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
             className={cn(
               "group flex items-center gap-4 rounded-xl p-4 -mx-2",
               "transition-all duration-200",
-              "hover:bg-slate-50"
+              "hover:bg-accent"
             )}
           >
             {/* Priority indicator */}
@@ -64,7 +64,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1.5">
-                <span className="text-sm font-medium text-slate-900 truncate">
+                <span className="text-sm font-medium text-foreground truncate">
                   {task.title}
                 </span>
                 <span className={cn(
@@ -75,7 +75,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
                   {statusConfig.label}
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-[13px] text-slate-400">
+              <div className="flex items-center gap-4 text-[13px] text-muted-foreground">
                 {task.assignee && (
                   <span className="flex items-center gap-1">
                     <User className="size-3" strokeWidth={1.5} />
@@ -98,7 +98,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
             </div>
 
             {/* Arrow */}
-            <ChevronRight className="size-4 text-slate-300 transition-all group-hover:text-slate-400 group-hover:translate-x-0.5" strokeWidth={1.5} />
+            <ChevronRight className="size-4 text-muted-foreground transition-all group-hover:text-muted-foreground group-hover:translate-x-0.5" strokeWidth={1.5} />
           </Link>
         )
       })}
@@ -106,7 +106,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
       {showViewAll && (
         <Link
           href="/tasks"
-          className="block pt-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
+          className="block pt-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           View all tasks
         </Link>

@@ -33,11 +33,11 @@ export function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-sidebar bg-white border-r border-slate-200 flex flex-col">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-sidebar bg-card border-r border-border flex flex-col">
       {/* Logo */}
-      <div className="h-header flex items-center px-6 border-b border-slate-200">
+      <div className="h-header flex items-center px-6 border-b border-border">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-slate-800">
+          <span className="text-2xl font-bold text-foreground">
             Doer<span className="text-accent">go</span>
           </span>
         </Link>
@@ -66,7 +66,7 @@ export function Sidebar() {
         </ul>
 
         {/* Bottom Navigation */}
-        <div className="mt-auto pt-4 border-t border-slate-200">
+        <div className="mt-auto pt-4 border-t border-border">
           <ul className="space-y-1">
             {bottomNavigation.map((item) => {
               const isActive = pathname === item.href;
@@ -90,21 +90,21 @@ export function Sidebar() {
       </nav>
 
       {/* User Section */}
-      <div className="border-t border-slate-200 p-4">
+      <div className="border-t border-border p-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
             {user?.firstName?.[0]}
             {user?.lastName?.[0]}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-800 truncate">
+            <p className="text-sm font-medium text-foreground truncate">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
           <button
             onClick={logout}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 text-muted-foreground hover:text-muted-foreground hover:bg-accent rounded-lg transition-colors"
             title="Logout"
           >
             <LogOut className="h-5 w-5" />

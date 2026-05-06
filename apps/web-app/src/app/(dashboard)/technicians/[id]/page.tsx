@@ -250,9 +250,9 @@ export default function TechnicianDetailPage() {
   const getTypeBadge = (type: TechnicianType) => {
     switch (type) {
       case TechnicianType.FULL_TIME:
-        return <Badge className="bg-blue-100 text-blue-700">{t('technicians.types.fullTime')}</Badge>
+        return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400">{t('technicians.types.fullTime')}</Badge>
       case TechnicianType.FREELANCER:
-        return <Badge className="bg-purple-100 text-purple-700">{t('technicians.types.freelancer')}</Badge>
+        return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400">{t('technicians.types.freelancer')}</Badge>
       default:
         return null
     }
@@ -263,10 +263,10 @@ export default function TechnicianDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="min-h-full bg-background">
         <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
           <Skeleton className="h-8 w-40 rounded-lg" />
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6">
+          <div className="bg-card rounded-xl border border-border/80 shadow-sm p-6">
             <div className="flex gap-6">
               <Skeleton className="h-24 w-24 rounded-full" />
               <div className="space-y-3 flex-1">
@@ -285,7 +285,7 @@ export default function TechnicianDetailPage() {
 
   if (isError || !technician) {
     return (
-      <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="min-h-full bg-background">
         <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
           <Link href="/technicians">
             <Button variant="ghost" size="sm" className="gap-2 rounded-lg">
@@ -293,12 +293,12 @@ export default function TechnicianDetailPage() {
               {t('technicians.detail.backToTechnicians')}
             </Button>
           </Link>
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-12 text-center">
+          <div className="bg-card rounded-xl border border-border/80 shadow-sm p-12 text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-800 mb-2">
+            <h3 className="text-lg font-medium text-foreground mb-2">
               {t('technicians.detail.notFound')}
             </h3>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               {(error as Error)?.message || t('technicians.detail.notFoundDescription')}
             </p>
             <Link href="/technicians">
@@ -311,25 +311,25 @@ export default function TechnicianDetailPage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
         {/* Back button */}
         <Link href="/technicians">
-          <Button variant="ghost" size="sm" className="gap-2 rounded-lg hover:bg-white/80">
+          <Button variant="ghost" size="sm" className="gap-2 rounded-lg hover:bg-card/80">
             <ArrowLeft className="h-4 w-4" />
             {t('technicians.detail.backToTechnicians')}
           </Button>
         </Link>
 
         {/* Profile Header */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6">
+        <div className="bg-card rounded-xl border border-border/80 shadow-sm p-6">
           <div className="flex items-start justify-between">
             <div className="flex gap-6">
               {/* Avatar */}
               <div
                 className={cn(
                   "h-24 w-24 rounded-full flex items-center justify-center text-white text-2xl font-medium shadow-md",
-                  technician.isOnline ? "bg-green-500" : "bg-slate-400"
+                  technician.isOnline ? "bg-green-500" : "bg-muted-foreground"
                 )}
               >
                 {technician.firstName[0]}
@@ -339,7 +339,7 @@ export default function TechnicianDetailPage() {
               {/* Info */}
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight">
                     {technician.firstName} {technician.lastName}
                   </h1>
                   {getTypeBadge(technician.technicianType)}
@@ -348,16 +348,16 @@ export default function TechnicianDetailPage() {
                   )}
                   {technician.isActive ? (
                     technician.isOnline ? (
-                      <Badge className="bg-green-100 text-green-700">{t('common.online')}</Badge>
+                      <Badge className="bg-green-500/15 text-green-600 dark:text-green-400">{t('common.online')}</Badge>
                     ) : (
-                      <Badge className="bg-slate-100 text-slate-600">{t('common.offline')}</Badge>
+                      <Badge className="bg-muted text-muted-foreground">{t('common.offline')}</Badge>
                     )
                   ) : (
-                    <Badge className="bg-red-100 text-red-700">{t('common.inactive')}</Badge>
+                    <Badge className="bg-red-500/15 text-red-600 dark:text-red-400">{t('common.inactive')}</Badge>
                   )}
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-slate-500 mb-3">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                   <span className="flex items-center gap-1.5">
                     <Mail className="h-4 w-4" />
                     {technician.email}
@@ -380,14 +380,14 @@ export default function TechnicianDetailPage() {
                           "h-5 w-5",
                           star <= Math.round(technician.rating)
                             ? "text-amber-400 fill-amber-400"
-                            : "text-slate-200"
+                            : "text-muted-foreground"
                         )}
                       />
                     ))}
                     <span className="ml-1 text-sm font-medium">
                       {technician.rating.toFixed(1)}
                     </span>
-                    <span className="text-sm text-slate-400">
+                    <span className="text-sm text-muted-foreground">
                       ({t('technicians.detail.reviews', { count: technician.ratingCount })})
                     </span>
                   </div>
@@ -432,7 +432,7 @@ export default function TechnicianDetailPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border border-slate-200/80 shadow-sm">
+          <TabsList className="bg-card border border-border/80 shadow-sm">
             <TabsTrigger value="overview" className="gap-2">
               <Activity className="h-4 w-4" />
               {t('technicians.detail.tabs.overview')}
@@ -586,7 +586,7 @@ export default function TechnicianDetailPage() {
               />
             </div>
 
-            <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
               <Checkbox
                 id="edit-canCreateTasks"
                 checked={editCanCreateTasks}
@@ -596,7 +596,7 @@ export default function TechnicianDetailPage() {
                 <label htmlFor="edit-canCreateTasks" className="text-sm font-medium cursor-pointer">
                   {t('technicians.detail.editDialog.canCreateTasksLabel')}
                 </label>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {t('technicians.detail.editDialog.canCreateTasksDescription')}
                 </p>
               </div>
@@ -605,7 +605,7 @@ export default function TechnicianDetailPage() {
             {/* Profile Badges */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">{t('technicians.detail.profileBadges')}</Label>
-              <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+              <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                 <Checkbox
                   id="edit-useOrgBadgeDefaults"
                   checked={editUseOrgBadgeDefaults}
@@ -623,7 +623,7 @@ export default function TechnicianDetailPage() {
                     { id: "edit-badgeShowType", label: t('technicians.detail.badgeShowType'), checked: editBadgeShowType, onChange: setEditBadgeShowType },
                     { id: "edit-badgeShowSpecialty", label: t('technicians.detail.badgeShowSpecialty'), checked: editBadgeShowSpecialty, onChange: setEditBadgeShowSpecialty },
                   ].map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 rounded-lg border border-slate-100 p-2.5">
+                    <div key={item.id} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
                       <Checkbox
                         id={item.id}
                         checked={item.checked}

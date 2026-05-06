@@ -16,7 +16,7 @@ export interface TeamMember {
 const statusConfig = {
   online: { color: "bg-emerald-500", label: "Available" },
   busy: { color: "bg-amber-500", label: "On Task" },
-  offline: { color: "bg-slate-300", label: "Offline" },
+  offline: { color: "bg-muted-foreground", label: "Offline" },
 }
 
 interface TeamStatusProps {
@@ -31,14 +31,14 @@ export function TeamStatus({ members, className }: TeamStatusProps) {
     <div className={cn("space-y-4", className)}>
       {/* Summary */}
       <div className="flex items-center justify-between">
-        <span className="text-[13px] text-slate-500">
-          <span className="font-medium text-slate-900">{onlineCount}</span> of {members.length} online
+        <span className="text-[13px] text-muted-foreground">
+          <span className="font-medium text-foreground">{onlineCount}</span> of {members.length} online
         </span>
         <div className="flex items-center gap-4">
           {Object.entries(statusConfig).map(([key, config]) => (
             <div key={key} className="flex items-center gap-1.5">
               <div className={cn("size-2 rounded-full", config.color)} />
-              <span className="text-[11px] text-slate-400">{config.label}</span>
+              <span className="text-[11px] text-muted-foreground">{config.label}</span>
             </div>
           ))}
         </div>
@@ -53,14 +53,14 @@ export function TeamStatus({ members, className }: TeamStatusProps) {
             <div
               key={member.id}
               className={cn(
-                "group flex items-center gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4",
+                "group flex items-center gap-4 rounded-xl border border-border bg-muted p-4",
                 "transition-all duration-200",
-                "hover:border-slate-200 hover:bg-white"
+                "hover:border-border hover:bg-card"
               )}
             >
               {/* Avatar */}
               <div className="relative">
-                <div className="flex size-10 items-center justify-center rounded-full bg-slate-200 text-sm font-medium text-slate-600">
+                <div className="flex size-10 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">
                   {member.name.split(" ").map(n => n[0]).join("")}
                 </div>
                 <div
@@ -74,16 +74,16 @@ export function TeamStatus({ members, className }: TeamStatusProps) {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-slate-900 truncate">
+                  <span className="text-sm font-medium text-foreground truncate">
                     {member.name}
                   </span>
                 </div>
                 {member.currentTask ? (
-                  <p className="text-[13px] text-slate-500 truncate">
+                  <p className="text-[13px] text-muted-foreground truncate">
                     {member.currentTask}
                   </p>
                 ) : member.location ? (
-                  <p className="text-[13px] text-slate-400 truncate flex items-center gap-1">
+                  <p className="text-[13px] text-muted-foreground truncate flex items-center gap-1">
                     <MapPin className="size-3" />
                     {member.location}
                   </p>
@@ -91,7 +91,7 @@ export function TeamStatus({ members, className }: TeamStatusProps) {
               </div>
 
               {/* Stats */}
-              <div className="flex items-center gap-1.5 text-slate-400">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <CheckCircle2 className="size-4" strokeWidth={1.5} />
                 <span className="text-sm font-medium">{member.completedToday}</span>
               </div>

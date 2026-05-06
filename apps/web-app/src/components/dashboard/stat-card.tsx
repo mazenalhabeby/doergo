@@ -53,19 +53,19 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "group relative rounded-2xl border border-slate-200/60 bg-white p-6",
+        "group relative rounded-2xl border border-border/60 bg-card p-6",
         "transition-all duration-300 ease-out",
-        "hover:border-slate-300/80 hover:shadow-lg hover:shadow-slate-200/40",
+        "hover:border-border/80 hover:shadow-lg hover:shadow-slate-200/40",
         className
       )}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-3">
-          <span className="text-[13px] font-medium tracking-wide text-slate-500">
+          <span className="text-[13px] font-medium tracking-wide text-muted-foreground">
             {title}
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold tracking-tight text-slate-900">
+            <span className="text-3xl font-semibold tracking-tight text-foreground">
               <AnimatedNumber value={value} />
             </span>
             {trend && trendValue && (
@@ -74,7 +74,7 @@ export function StatCard({
                   "text-xs font-medium",
                   trend === "up" && "text-emerald-600",
                   trend === "down" && "text-rose-600",
-                  trend === "neutral" && "text-slate-400"
+                  trend === "neutral" && "text-muted-foreground"
                 )}
               >
                 {trend === "up" && "↑ "}
@@ -84,12 +84,12 @@ export function StatCard({
             )}
           </div>
           {description && (
-            <p className="text-[13px] text-slate-400">{description}</p>
+            <p className="text-[13px] text-muted-foreground">{description}</p>
           )}
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-2.5 transition-colors group-hover:bg-slate-100">
-          <Icon className="size-5 text-slate-400" strokeWidth={1.5} />
+        <div className="rounded-xl bg-muted p-2.5 transition-colors group-hover:bg-accent">
+          <Icon className="size-5 text-muted-foreground" strokeWidth={1.5} />
         </div>
       </div>
     </div>

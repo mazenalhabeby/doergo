@@ -58,7 +58,7 @@ export function TasksTab({ tasks }: TasksTabProps) {
                 return (
                   <TableRow
                     key={task.id}
-                    className="cursor-pointer hover:bg-slate-50"
+                    className="cursor-pointer hover:bg-accent"
                     onClick={() => router.push(`/tasks/${task.id}`)}
                   >
                     <TableCell className="font-medium">{task.title}</TableCell>
@@ -82,8 +82,8 @@ export function TasksTab({ tasks }: TasksTabProps) {
             </TableBody>
           </Table>
         ) : (
-          <div className="text-center py-12 text-slate-500">
-            <ClipboardList className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+          <div className="text-center py-12 text-muted-foreground">
+            <ClipboardList className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p>{t('technicians.tasksTab.noTasks')}</p>
           </div>
         )}

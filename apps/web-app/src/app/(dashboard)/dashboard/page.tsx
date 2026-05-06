@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const isDispatcher = user?.role === "DISPATCHER"
 
   return (
-    <div className="p-6">
+    <div className="flex flex-1">
       {isDispatcher ? <DispatcherDashboard /> : <ClientDashboard />}
     </div>
   )

@@ -152,10 +152,10 @@ export default function NewTechnicianPage() {
         </Link>
         <Card>
           <CardContent className="py-12 text-center">
-            <h3 className="text-lg font-medium text-slate-800 mb-2">
+            <h3 className="text-lg font-medium text-foreground mb-2">
               {t('technicians.create.accessDenied')}
             </h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {t('technicians.create.noPermission')}
             </p>
           </CardContent>
@@ -189,7 +189,7 @@ export default function NewTechnicianPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Info */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-slate-700">
+              <h3 className="text-sm font-medium text-foreground">
                 {t('technicians.create.basicInformation')}
               </h3>
 
@@ -232,7 +232,7 @@ export default function NewTechnicianPage() {
                   placeholder="john.doe@example.com"
                   required
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {t('technicians.create.emailHint')}
                 </p>
               </div>
@@ -261,7 +261,7 @@ export default function NewTechnicianPage() {
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {t('technicians.create.passwordHint')}
                 </p>
               </div>
@@ -269,7 +269,7 @@ export default function NewTechnicianPage() {
 
             {/* Work Details */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-slate-700">
+              <h3 className="text-sm font-medium text-foreground">
                 {t('technicians.create.workDetails')}
               </h3>
 
@@ -292,7 +292,7 @@ export default function NewTechnicianPage() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     {t('technicians.create.employmentTypeHint')}
                   </p>
                 </div>
@@ -320,7 +320,7 @@ export default function NewTechnicianPage() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     {t('technicians.create.positionHint')}
                   </p>
                 </div>
@@ -341,7 +341,7 @@ export default function NewTechnicianPage() {
                       <option key={option.value} value={option.label} />
                     ))}
                   </datalist>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     {t('technicians.create.jobTitleHint')}
                   </p>
                 </div>
@@ -357,7 +357,7 @@ export default function NewTechnicianPage() {
                   value={maxDailyJobs}
                   onChange={(e) => setMaxDailyJobs(parseInt(e.target.value) || 5)}
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {t('technicians.create.maxDailyJobsHint')}
                 </p>
               </div>
@@ -401,13 +401,13 @@ export default function NewTechnicianPage() {
               <p>
                 {t('technicians.createSuccess.description')}
               </p>
-              <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+              <div className="bg-muted rounded-lg p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">{t('technicians.createSuccess.emailLabel')}</span>
+                  <span className="text-sm text-muted-foreground">{t('technicians.createSuccess.emailLabel')}</span>
                   <span className="font-mono text-sm">{email}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">{t('technicians.createSuccess.passwordLabel')}</span>
+                  <span className="text-sm text-muted-foreground">{t('technicians.createSuccess.passwordLabel')}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm">{generatedPassword}</span>
                     <Button

@@ -75,15 +75,15 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const ROLE_BADGES: Record<string, { label: string; className: string }> = {
-  ADMIN: { label: "Admin", className: "bg-blue-100 text-blue-700" },
-  DISPATCHER: { label: "Dispatcher", className: "bg-purple-100 text-purple-700" },
-  TECHNICIAN: { label: "Technician", className: "bg-green-100 text-green-700" },
+  ADMIN: { label: "Admin", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  DISPATCHER: { label: "Dispatcher", className: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
+  TECHNICIAN: { label: "Technician", className: "bg-green-500/15 text-green-600 dark:text-green-400" },
 }
 
 const PLATFORM_BADGES: Record<string, { label: string; className: string }> = {
-  WEB: { label: "Web", className: "bg-slate-100 text-slate-600" },
-  MOBILE: { label: "Mobile", className: "bg-slate-100 text-slate-600" },
-  BOTH: { label: "Both", className: "bg-slate-100 text-slate-600" },
+  WEB: { label: "Web", className: "bg-muted text-muted-foreground" },
+  MOBILE: { label: "Mobile", className: "bg-muted text-muted-foreground" },
+  BOTH: { label: "Both", className: "bg-muted text-muted-foreground" },
 }
 
 const DEFAULT_PERMISSIONS: Record<
@@ -232,23 +232,23 @@ export default function MembersPage() {
   const meta = data?.meta
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {t("members.title")}
               </h1>
-              <p className="mt-1.5 text-slate-500">
+              <p className="mt-1.5 text-muted-foreground">
                 {t("members.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder={t("members.searchPlaceholder")}
                   value={search}
@@ -256,7 +256,7 @@ export default function MembersPage() {
                     setSearch(e.target.value)
                     setPage(1)
                   }}
-                  className="pl-10 w-72 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm focus:bg-white focus:shadow-md transition-all"
+                  className="pl-10 w-72 h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm focus:bg-card focus:shadow-md transition-all"
                 />
               </div>
 
@@ -268,7 +268,7 @@ export default function MembersPage() {
                   setPage(1)
                 }}
               >
-                <SelectTrigger className="w-[140px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                <SelectTrigger className="w-[140px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
                 <SelectContent>
@@ -285,7 +285,7 @@ export default function MembersPage() {
                 size="icon"
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+                className="h-11 w-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm hover:shadow-md transition-all"
               >
                 <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
               </Button>
@@ -303,13 +303,13 @@ export default function MembersPage() {
 
         {/* Summary */}
         <div className="mb-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             {meta ? t("members.showingCount", { count: members.length, total: meta.total, plural: meta.total !== 1 ? "s" : "" }) : ""}
           </p>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border/80 shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -319,12 +319,12 @@ export default function MembersPage() {
           ) : members.length > 0 ? (
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/80">
-                  <TableHead className="w-[35%] font-semibold text-slate-600">{t("members.table.member")}</TableHead>
-                  <TableHead className="font-semibold text-slate-600">{t("members.table.role")}</TableHead>
-                  <TableHead className="font-semibold text-slate-600">{t("members.table.platform")}</TableHead>
-                  <TableHead className="font-semibold text-slate-600">{t("members.table.status")}</TableHead>
-                  <TableHead className="font-semibold text-slate-600">{t("members.table.joined")}</TableHead>
+                <TableRow className="bg-muted">
+                  <TableHead className="w-[35%] font-semibold text-muted-foreground">{t("members.table.member")}</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">{t("members.table.role")}</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">{t("members.table.platform")}</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">{t("members.table.status")}</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">{t("members.table.joined")}</TableHead>
                   {isAdmin && <TableHead className="w-[60px]"></TableHead>}
                 </TableRow>
               </TableHeader>
@@ -334,16 +334,16 @@ export default function MembersPage() {
                   const platformBadge = PLATFORM_BADGES[member.platform] || PLATFORM_BADGES.WEB!
                   const isSelf = member.id === user?.id
                   return (
-                    <TableRow key={member.id} className="hover:bg-slate-50/50">
+                    <TableRow key={member.id} className="hover:bg-accent/50">
                       <TableCell className="py-4">
                         <div>
-                          <p className="font-medium text-slate-800">
+                          <p className="font-medium text-foreground">
                             {member.firstName} {member.lastName}
                             {isSelf && (
-                              <span className="ml-2 text-xs text-slate-400">{t("common.you")}</span>
+                              <span className="ml-2 text-xs text-muted-foreground">{t("common.you")}</span>
                             )}
                           </p>
-                          <p className="text-sm text-slate-500">{member.email}</p>
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -358,12 +358,12 @@ export default function MembersPage() {
                       </TableCell>
                       <TableCell>
                         {member.isActive ? (
-                          <Badge className="bg-green-100 text-green-700">{t("common.active")}</Badge>
+                          <Badge className="bg-green-500/15 text-green-600 dark:text-green-400">{t("common.active")}</Badge>
                         ) : (
-                          <Badge className="bg-slate-100 text-slate-500">{t("common.inactive")}</Badge>
+                          <Badge className="bg-muted text-muted-foreground">{t("common.inactive")}</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500">
+                      <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(member.createdAt), "MMM d, yyyy")}
                       </TableCell>
                       {isAdmin && (
@@ -398,17 +398,17 @@ export default function MembersPage() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-16 text-slate-500">
-              <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+            <div className="text-center py-16 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="font-medium">{t("members.noMembersFound")}</p>
-              <p className="text-sm text-slate-400 mt-1">{t("members.noMembersHint")}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("members.noMembersHint")}</p>
             </div>
           )}
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
-              <p className="text-sm text-slate-500">
+            <div className="flex items-center justify-between px-6 py-3 border-t border-border">
+              <p className="text-sm text-muted-foreground">
                 {t("common.pageWithTotal", { page: meta.page, totalPages: meta.totalPages, total: meta.total })}
               </p>
               <div className="flex gap-2">
@@ -456,7 +456,7 @@ export default function MembersPage() {
           <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
             {/* Profile Section */}
             <div>
-              <h4 className="text-sm font-medium text-slate-700 mb-3">{t("members.editDialog.profileSection")}</h4>
+              <h4 className="text-sm font-medium text-foreground mb-3">{t("members.editDialog.profileSection")}</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="editFirstName">{t("members.editDialog.firstNameLabel")}</Label>
@@ -481,7 +481,7 @@ export default function MembersPage() {
 
             {/* Role & Permissions Section */}
             <div>
-              <h4 className="text-sm font-medium text-slate-700 mb-3">{t("members.editDialog.roleAndPermissions")}</h4>
+              <h4 className="text-sm font-medium text-foreground mb-3">{t("members.editDialog.roleAndPermissions")}</h4>
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>{t("members.editDialog.roleLabel")}</Label>
@@ -571,7 +571,7 @@ export default function MembersPage() {
 
             {/* Password Reset Section */}
             <div>
-              <h4 className="text-sm font-medium text-slate-700 mb-3">{t("members.editDialog.passwordReset")}</h4>
+              <h4 className="text-sm font-medium text-foreground mb-3">{t("members.editDialog.passwordReset")}</h4>
               {tempPassword ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -602,7 +602,7 @@ export default function MembersPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     {t("members.editDialog.passwordResetDescription")}
                   </p>
                   <Button

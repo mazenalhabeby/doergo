@@ -32,23 +32,30 @@ export const PersonNode = React.memo(function PersonNode({
   ...avatarProps
 }: PersonNodeProps) {
   return (
-    <div className={cn("flex flex-col items-center gap-1 w-[72px]", className)}>
+    <div
+      className={cn(
+        "flex flex-col items-center cursor-pointer",
+        "gap-2.5 w-[8cqw] min-w-[60px]",
+        "transition-transform duration-150 hover:scale-105",
+        className,
+      )}
+    >
       <WorkerAvatar {...avatarProps} />
-      <span className="text-[11px] leading-tight text-muted-foreground truncate w-full text-center">
+      <span className="text-[clamp(7px,0.9cqw,12px)] leading-tight text-foreground/70 truncate w-full text-center font-medium">
         {name}
       </span>
-      {tag ? (
-        <span
-          className={cn(
-            "text-[10px] font-medium leading-none px-1.5 py-0.5 rounded-full",
-            TAG_CLASSES[tag.variant],
-          )}
-        >
-          {tag.text}
-        </span>
-      ) : (
-        <span className="h-[14px]" /> // Placeholder for consistent height
-      )}
+      <div className="min-h-[clamp(10px,1.2cqw,16px)] flex items-center">
+        {tag ? (
+          <span
+            className={cn(
+              "text-[10px] font-bold leading-none px-2 py-1 rounded-full uppercase tracking-wide",
+              TAG_CLASSES[tag.variant],
+            )}
+          >
+            {tag.text}
+          </span>
+        ) : null}
+      </div>
     </div>
   )
 })

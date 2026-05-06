@@ -5,22 +5,22 @@ import { ArrowLeft } from "lucide-react"
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-muted to-card">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 transition-colors">
+          <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-blue-600 transition-colors">
             <ArrowLeft className="size-4" />
             Back to HBCField
           </Link>
-          <span className="text-sm text-slate-400">Last updated: 20 April 2026</span>
+          <span className="text-sm text-muted-foreground">Last updated: 20 April 2026</span>
         </div>
       </header>
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Privacy Policy</h1>
-        <p className="text-lg text-slate-500 mb-12">HBCField — Field Service Management Platform</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Privacy Policy</h1>
+        <p className="text-lg text-muted-foreground mb-12">HBCField — Field Service Management Platform</p>
 
         <div className="prose prose-slate prose-lg max-w-none">
           <p>
@@ -198,9 +198,9 @@ export default function PrivacyPolicyPage() {
           </p>
 
           <h2>13. Contact Us</h2>
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 not-prose my-6">
-            <p className="font-semibold text-slate-900 mb-2">HBC Group GmbH</p>
-            <ul className="space-y-1 text-slate-600 text-base">
+          <div className="bg-muted border border-border rounded-xl p-6 not-prose my-6">
+            <p className="font-semibold text-foreground mb-2">HBC Group GmbH</p>
+            <ul className="space-y-1 text-muted-foreground text-base">
               <li>Email: <a href="mailto:privacy@hbcfield.com" className="text-blue-600 hover:underline">privacy@hbcfield.com</a></li>
               <li>Website: <a href="https://hbcfield.com" className="text-blue-600 hover:underline">https://hbcfield.com</a></li>
               <li>Support: <a href="mailto:support@hbcfield.com" className="text-blue-600 hover:underline">support@hbcfield.com</a></li>
@@ -210,8 +210,8 @@ export default function PrivacyPolicyPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 mt-12">
-        <div className="max-w-3xl mx-auto px-6 py-8 text-center text-sm text-slate-400">
+      <footer className="border-t border-border mt-12">
+        <div className="max-w-3xl mx-auto px-6 py-8 text-center text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} HBC Group GmbH. All rights reserved.
         </div>
       </footer>

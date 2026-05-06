@@ -47,8 +47,8 @@ export function NavSecondary({
                   className={cn(
                     "group/nav-item rounded-xl py-2.5 px-2 transition-all duration-200",
                     active
-                      ? "bg-slate-100/80 text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-700"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
                   <Link href={item.url} className="flex items-center gap-3">
@@ -56,8 +56,8 @@ export function NavSecondary({
                       className={cn(
                         "flex size-8 items-center justify-center rounded-lg transition-all duration-200",
                         active
-                          ? "bg-slate-200 text-slate-700"
-                          : "bg-slate-100/60 text-slate-400 group-hover/nav-item:bg-slate-100 group-hover/nav-item:text-slate-600"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "bg-sidebar-accent/60 text-sidebar-foreground/70 group-hover/nav-item:bg-sidebar-accent group-hover/nav-item:text-sidebar-foreground"
                       )}
                     >
                       <Icon className="size-[16px]" />

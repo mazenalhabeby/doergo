@@ -8,18 +8,18 @@ function S({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md bg-slate-200/70",
+        "relative overflow-hidden rounded-md bg-muted",
         "before:absolute before:inset-0 before:-translate-x-full",
         "before:animate-[shimmer_1.5s_infinite]",
-        "before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent",
+        "before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent",
         className
       )}
     />
   )
 }
 
-// Page wrapper matching polished pages: gradient bg + centered content
-const PAGE_OUTER = "min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30 animate-in fade-in duration-200"
+// Page wrapper
+const PAGE_OUTER = "min-h-full bg-background animate-in fade-in duration-200"
 const PAGE_INNER = "max-w-screen-xl mx-auto px-6 py-8"
 
 // ============================================================================
@@ -66,7 +66,7 @@ function SummaryLine() {
 /** Tab strip with shadow */
 function TabStrip({ count = 5 }: { count?: number }) {
   return (
-    <div className="flex gap-1.5 bg-white rounded-xl border border-slate-200/80 shadow-sm p-1 mb-6">
+    <div className="flex gap-1.5 bg-card rounded-xl border border-border shadow-sm p-1 mb-6">
       {Array.from({ length: count }).map((_, i) => (
         <S key={i} className={cn("h-9 rounded-lg", i === 0 ? "w-24" : "w-20")} />
       ))}
@@ -77,9 +77,9 @@ function TabStrip({ count = 5 }: { count?: number }) {
 /** Polished table skeleton */
 function TableSkeleton({ cols = 5, rows = 6 }: { cols?: number; rows?: number }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100">
+      <div className="flex items-center gap-4 px-6 py-3.5 bg-muted/50 border-b border-border">
         {Array.from({ length: cols }).map((_, i) => (
           <S
             key={i}
@@ -95,7 +95,7 @@ function TableSkeleton({ cols = 5, rows = 6 }: { cols?: number; rows?: number })
       {Array.from({ length: rows }).map((_, r) => (
         <div
           key={r}
-          className="flex items-center gap-4 px-6 py-4 border-b border-slate-50 last:border-0"
+          className="flex items-center gap-4 px-6 py-4 border-b border-border/50 last:border-0"
         >
           {r < 3 && (
             <S className="w-10 h-10 rounded-full flex-shrink-0" />
@@ -119,8 +119,8 @@ function TableSkeleton({ cols = 5, rows = 6 }: { cols?: number; rows?: number })
 /** Simple table (no avatars) */
 function SimpleTableSkeleton({ cols = 5, rows = 6 }: { cols?: number; rows?: number }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-      <div className="flex items-center gap-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100">
+    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="flex items-center gap-4 px-6 py-3.5 bg-muted/50 border-b border-border">
         {Array.from({ length: cols }).map((_, i) => (
           <S
             key={i}
@@ -129,7 +129,7 @@ function SimpleTableSkeleton({ cols = 5, rows = 6 }: { cols?: number; rows?: num
         ))}
       </div>
       {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} className="flex items-center gap-4 px-6 py-4 border-b border-slate-50 last:border-0">
+        <div key={r} className="flex items-center gap-4 px-6 py-4 border-b border-border/50 last:border-0">
           {Array.from({ length: cols }).map((_, c) => (
             <S
               key={c}
@@ -147,7 +147,7 @@ function StatsRow({ count = 4 }: { count?: number }) {
   return (
     <div className={cn("grid gap-4 mb-6", count <= 3 ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-4")}>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+        <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-5">
           <div className="flex items-center gap-3">
             <S className="w-11 h-11 rounded-xl" />
             <div className="space-y-1.5">
@@ -164,7 +164,7 @@ function StatsRow({ count = 4 }: { count?: number }) {
 /** Card skeleton */
 function CardSkeleton({ lines = 3 }: { lines?: number }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+    <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-4">
       <S className="h-5 w-32 rounded" />
       {Array.from({ length: lines }).map((_, i) => (
         <S key={i} className={cn("h-4 rounded", i === 0 ? "w-full" : i === 1 ? "w-3/4" : "w-1/2")} />
@@ -176,7 +176,7 @@ function CardSkeleton({ lines = 3 }: { lines?: number }) {
 /** Pagination bar */
 function PaginationBar() {
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
+    <div className="flex items-center justify-between px-6 py-3 border-t border-border">
       <S className="h-4 w-28 rounded" />
       <div className="flex gap-2">
         <S className="h-8 w-20 rounded-lg" />
@@ -193,22 +193,76 @@ function PaginationBar() {
 /** Dashboard page */
 export function DashboardPageSkeleton() {
   return (
-    <div className={PAGE_OUTER}>
-      <div className={PAGE_INNER}>
-        {/* Welcome */}
-        <div className="mb-8">
-          <S className="h-9 w-64 rounded-lg mb-2" />
-          <S className="h-4 w-80 rounded-lg" />
+    <div className="flex flex-1">
+      {/* Main content */}
+      <div className="flex-1 p-6 space-y-6">
+        {/* Header */}
+        <div>
+          <S className="h-4 w-24 rounded mb-2" />
+          <S className="h-8 w-56 rounded-lg" />
         </div>
-        <StatsRow />
-        {/* Chart + recent section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <CardSkeleton lines={4} />
-          </div>
-          <div>
-            <CardSkeleton lines={5} />
-          </div>
+
+        {/* Workspace grid skeleton */}
+        <div className="grid grid-cols-6 gap-2">
+          {/* Simulate workspace boxes */}
+          {[3, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1].map((span, i) => (
+            <div
+              key={i}
+              className={cn(
+                "rounded-xl bg-card border border-border p-3 flex flex-col gap-3",
+                span === 3 ? "col-span-3" : "col-span-1",
+              )}
+              style={{ minHeight: 120 }}
+            >
+              {/* Title bar */}
+              <S className="h-3 w-16 rounded" />
+              {/* Avatar placeholder */}
+              <div className="flex-1 flex items-center justify-center gap-4">
+                {Array.from({ length: span === 3 ? 3 : 1 }).map((_, j) => (
+                  <div key={j} className="flex flex-col items-center gap-2">
+                    <S className="h-10 w-10 rounded-full" />
+                    <S className="h-2.5 w-12 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel skeleton */}
+      <div className="w-[300px] border-l border-border bg-card/60 flex flex-col">
+        {/* Live Activity header */}
+        <div className="px-4 py-3 border-b border-border bg-foreground/[0.03]">
+          <S className="h-3 w-20 rounded" />
+        </div>
+        {/* Activity items */}
+        <div className="flex-1 p-2 space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3 px-2">
+              <S className="h-2 w-2 rounded-full shrink-0 mt-1" />
+              <div className="flex-1 space-y-1.5">
+                <S className="h-2.5 w-full rounded" />
+                <S className="h-2 w-16 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Pending header */}
+        <div className="px-4 py-3 border-t border-b border-border bg-foreground/[0.03]">
+          <S className="h-3 w-28 rounded" />
+        </div>
+        {/* Pending items */}
+        <div className="p-2 space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-2">
+              <S className="h-8 w-8 rounded-full shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <S className="h-2.5 w-28 rounded" />
+                <S className="h-2 w-20 rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -231,7 +285,7 @@ export function TasksPageSkeleton() {
         {/* Task cards */}
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+            <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-5">
               <div className="flex items-start justify-between">
                 <div className="flex-1 space-y-2.5">
                   <div className="flex items-center gap-2.5">
@@ -272,7 +326,7 @@ export function TaskDetailPageSkeleton() {
           </div>
         </div>
         {/* Progress card */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <div className="flex items-center justify-between">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -306,7 +360,7 @@ export function TaskNewPageSkeleton() {
           <S className="h-9 w-44 rounded-lg" />
           <S className="h-4 w-64 rounded-lg mt-2" />
         </div>
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="space-y-2">
               <S className="h-4 w-24 rounded" />
@@ -327,9 +381,9 @@ export function TechniciansPageSkeleton() {
       <div className={PAGE_INNER}>
         <PageHeader titleW="w-44" controls={4} />
         <SummaryLine />
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100">
+          <div className="flex items-center gap-4 px-6 py-3.5 bg-muted/50 border-b border-border">
             <S className="h-4 w-32 rounded" />
             <S className="h-4 w-16 rounded flex-1" />
             <S className="h-4 w-20 rounded flex-1" />
@@ -341,7 +395,7 @@ export function TechniciansPageSkeleton() {
           </div>
           {/* Rows with avatar */}
           {Array.from({ length: 6 }).map((_, r) => (
-            <div key={r} className="flex items-center gap-4 px-6 py-4 border-b border-slate-50 last:border-0">
+            <div key={r} className="flex items-center gap-4 px-6 py-4 border-b border-border/50 last:border-0">
               <div className="flex items-center gap-3 w-60 flex-shrink-0">
                 <S className="w-10 h-10 rounded-full flex-shrink-0" />
                 <div className="space-y-1.5 flex-1">
@@ -374,7 +428,7 @@ export function TechnicianDetailPageSkeleton() {
         <S className="h-9 w-40 rounded-lg mb-6" />
 
         {/* Profile Header */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6 mb-6">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-6 mb-6">
           <div className="flex items-start justify-between">
             <div className="flex gap-6">
               <S className="w-24 h-24 rounded-full flex-shrink-0" />
@@ -430,7 +484,7 @@ export function AvailabilityPageSkeleton() {
           </div>
         </div>
         {/* Calendar grid */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <div className="grid grid-cols-7 gap-2">
             {Array.from({ length: 7 }).map((_, i) => (
               <S key={i} className="h-6 w-full rounded" />
@@ -452,8 +506,8 @@ export function MembersPageSkeleton() {
       <div className={PAGE_INNER}>
         <PageHeader titleW="w-56" controls={2} />
         <SummaryLine />
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+          <div className="flex items-center gap-4 px-6 py-3.5 bg-muted/50 border-b border-border">
             <S className="h-4 w-32 rounded flex-shrink-0" />
             <S className="h-4 w-16 rounded flex-1" />
             <S className="h-4 w-20 rounded flex-1" />
@@ -462,7 +516,7 @@ export function MembersPageSkeleton() {
             <S className="h-4 w-8 rounded" />
           </div>
           {Array.from({ length: 6 }).map((_, r) => (
-            <div key={r} className="flex items-center gap-4 px-6 py-4 border-b border-slate-50 last:border-0">
+            <div key={r} className="flex items-center gap-4 px-6 py-4 border-b border-border/50 last:border-0">
               <div className="space-y-1.5 w-56 flex-shrink-0">
                 <S className="h-4 w-32 rounded" />
                 <S className="h-3 w-44 rounded" />
@@ -487,7 +541,7 @@ export function InvitationsPageSkeleton() {
       <div className={PAGE_INNER}>
         <PageHeader titleW="w-40" controls={1} />
         <SummaryLine />
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <SimpleTableSkeleton cols={7} rows={5} />
           <PaginationBar />
         </div>
@@ -503,7 +557,7 @@ export function JoinRequestsPageSkeleton() {
       <div className={PAGE_INNER}>
         <PageHeader titleW="w-44" controls={1} hasAction={false} />
         <SummaryLine />
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <SimpleTableSkeleton cols={6} rows={5} />
           <PaginationBar />
         </div>
@@ -541,7 +595,7 @@ export function ProfilePageSkeleton() {
         </div>
         <div className="space-y-6">
           {/* Profile info card */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-6">
             <div className="flex items-center gap-4 mb-6">
               <S className="w-16 h-16 rounded-full" />
               <div className="space-y-2">
@@ -584,7 +638,7 @@ export function LiveMapPageSkeleton() {
   return (
     <div className="flex h-[calc(100vh-4rem)] animate-in fade-in duration-200">
       {/* Sidebar list */}
-      <div className="w-80 border-r border-slate-200 bg-white p-4 space-y-3">
+      <div className="w-80 border-r border-border bg-card p-4 space-y-3">
         <S className="h-11 w-full rounded-xl" />
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl">
@@ -598,7 +652,7 @@ export function LiveMapPageSkeleton() {
         ))}
       </div>
       {/* Map area */}
-      <div className="flex-1 bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center">
+      <div className="flex-1 bg-muted flex items-center justify-center">
         <div className="text-center">
           <S className="w-14 h-14 rounded-full mx-auto mb-3" />
           <S className="w-24 h-3 rounded mx-auto" />

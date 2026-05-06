@@ -8,3 +8,4 @@ export { WorkerAvatar, type WorkerAvatarProps, type WorkerStatus } from "./worke
 export { PersonNode, type PersonNodeProps, type PersonNodeTag, type TagVariant } from "./person-node"
 export { WorkspaceBox, type WorkspaceBoxProps } from "./workspace-box"
 export { WorkspaceGrid, type WorkspaceGridProps } from "./workspace-grid"
+export { ActivityPanel, type ActivityPanelProps, type LiveEvent, type PendingAction } from "./activity-panel"

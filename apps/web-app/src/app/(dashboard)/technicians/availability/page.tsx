@@ -85,10 +85,10 @@ type ViewMode = "month" | "week"
 const WEEKDAY_KEYS = ["common.weekdaysShort.sun", "common.weekdaysShort.mon", "common.weekdaysShort.tue", "common.weekdaysShort.wed", "common.weekdaysShort.thu", "common.weekdaysShort.fri", "common.weekdaysShort.sat"]
 
 const STATUS_CONFIG: Record<TimeOffStatus, { labelKey: string; className: string }> = {
-  PENDING: { labelKey: "common.pending", className: "bg-amber-100 text-amber-700" },
-  APPROVED: { labelKey: "common.approved", className: "bg-green-100 text-green-700" },
-  REJECTED: { labelKey: "common.rejected", className: "bg-red-100 text-red-700" },
-  CANCELED: { labelKey: "common.canceled", className: "bg-slate-100 text-slate-500" },
+  PENDING: { labelKey: "common.pending", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  APPROVED: { labelKey: "common.approved", className: "bg-green-500/15 text-green-600 dark:text-green-400" },
+  REJECTED: { labelKey: "common.rejected", className: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  CANCELED: { labelKey: "common.canceled", className: "bg-muted text-muted-foreground" },
 }
 
 type OrgTimeOffRequest = TimeOffRequest & {
@@ -158,7 +158,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
     <>
       {/* Filter bar */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           {pendingCount > 0 ? (
             t('technicians.availabilityPage.pendingNeedReview', { count: pendingCount, plural: pendingCount !== 1 ? "s" : "", verb: pendingCount === 1 ? "s" : "" })
           ) : (
@@ -166,8 +166,8 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
           )}
         </p>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as TimeOffStatus | "all")}>
-          <SelectTrigger className="w-[160px] bg-white">
-            <Filter className="h-3.5 w-3.5 mr-2 text-slate-400" />
+          <SelectTrigger className="w-[160px] bg-card">
+            <Filter className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -181,7 +181,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-6 space-y-4">
             {[...Array(3)].map((_, i) => (
@@ -190,9 +190,9 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
           </div>
         ) : requests.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Umbrella className="h-10 w-10 text-slate-200 mb-3" strokeWidth={1.5} />
-            <p className="text-sm font-medium text-slate-600">{t('technicians.availabilityPage.noTimeOffRequests')}</p>
-            <p className="text-[13px] text-slate-400 mt-1">
+            <Umbrella className="h-10 w-10 text-muted-foreground mb-3" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-muted-foreground">{t('technicians.availabilityPage.noTimeOffRequests')}</p>
+            <p className="text-[13px] text-muted-foreground mt-1">
               {statusFilter !== "all"
                 ? t('technicians.availabilityPage.noRequestsFound', { status: statusFilter.toLowerCase() })
                 : t('technicians.availabilityPage.requestsFromTechnicians')}
@@ -201,7 +201,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50/50">
+              <TableRow className="bg-muted">
                 <TableHead className="font-medium">{t('technicians.availabilityPage.technicianColumn')}</TableHead>
                 <TableHead className="font-medium">{t('technicians.availabilityPage.datesColumn')}</TableHead>
                 <TableHead className="font-medium">{t('technicians.availabilityPage.durationColumn')}</TableHead>
@@ -217,23 +217,23 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                   <TableCell>
                     <Link href={`/technicians/${request.technician.id}`} className="hover:underline">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-medium text-slate-600">
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
                           {request.technician.firstName[0]}{request.technician.lastName[0]}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-slate-800">
+                          <p className="text-sm font-medium text-foreground">
                             {request.technician.firstName} {request.technician.lastName}
                           </p>
                           {request.technician.specialty && (
-                            <p className="text-xs text-slate-400">{request.technician.specialty}</p>
+                            <p className="text-xs text-muted-foreground">{request.technician.specialty}</p>
                           )}
                         </div>
                       </div>
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                      <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
                       {format(parseISO(request.startDate), "MMM d")}
                       {request.startDate !== request.endDate && (
                         <> &ndash; {format(parseISO(request.endDate), "MMM d, yyyy")}</>
@@ -244,11 +244,11 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-600">{getDuration(request.startDate, request.endDate)}</span>
+                    <span className="text-sm text-muted-foreground">{getDuration(request.startDate, request.endDate)}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-500 max-w-[200px] truncate block">
-                      {request.reason || <span className="text-slate-300 italic">{t('common.noReason')}</span>}
+                    <span className="text-sm text-muted-foreground max-w-[200px] truncate block">
+                      {request.reason || <span className="text-muted-foreground italic">{t('common.noReason')}</span>}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -261,13 +261,13 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                       </p>
                     )}
                     {request.approvedBy && (
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {t('technicians.availabilityPage.byReviewer', { name: `${request.approvedBy.firstName} ${request.approvedBy.lastName}` })}
                       </p>
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-400">{format(parseISO(request.createdAt), "MMM d, yyyy")}</span>
+                    <span className="text-sm text-muted-foreground">{format(parseISO(request.createdAt), "MMM d, yyyy")}</span>
                   </TableCell>
                   {canManage && (
                     <TableCell className="text-right">
@@ -293,7 +293,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-300">&mdash;</span>
+                        <span className="text-xs text-muted-foreground">&mdash;</span>
                       )}
                     </TableCell>
                   )}
@@ -324,20 +324,20 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
                     : t('technicians.availabilityPage.rejectTimeOffDescription', { name: `${actionDialog.request?.technician.firstName} ${actionDialog.request?.technician.lastName}` })}
                 </p>
                 {actionDialog.request && (
-                  <div className="bg-slate-50 rounded-lg p-3 text-sm space-y-1">
-                    <p className="text-slate-600">
+                  <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
+                    <p className="text-muted-foreground">
                       <span className="font-medium">{t('technicians.availabilityPage.datesColumn')}:</span>{" "}
                       {format(parseISO(actionDialog.request.startDate), "MMM d, yyyy")}
                       {actionDialog.request.startDate !== actionDialog.request.endDate && (
                         <> &ndash; {format(parseISO(actionDialog.request.endDate), "MMM d, yyyy")}</>
                       )}
                     </p>
-                    <p className="text-slate-600">
+                    <p className="text-muted-foreground">
                       <span className="font-medium">{t('technicians.availabilityPage.durationColumn')}:</span>{" "}
                       {getDuration(actionDialog.request.startDate, actionDialog.request.endDate)}
                     </p>
                     {actionDialog.request.reason && (
-                      <p className="text-slate-600">
+                      <p className="text-muted-foreground">
                         <span className="font-medium">{t('technicians.availabilityPage.reasonColumn')}:</span> {actionDialog.request.reason}
                       </p>
                     )}
@@ -439,17 +439,17 @@ function CalendarTab({
   return (
     <>
       <div className={cn(
-        "bg-white rounded-2xl border border-slate-200/60 shadow-md overflow-hidden mb-6 transition-all duration-300",
+        "bg-card rounded-2xl border border-border/60 shadow-md overflow-hidden mb-6 transition-all duration-300",
         isFetchingNew && "opacity-50 pointer-events-none"
       )}>
         {/* Weekday Headers */}
-        <div className="grid grid-cols-7 border-b border-slate-100">
+        <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAY_KEYS.map((dayKey, i) => (
             <div
               key={dayKey}
               className={cn(
                 "text-center text-xs font-semibold uppercase tracking-wider py-3.5",
-                i === 0 || i === 6 ? "text-slate-400" : "text-slate-500"
+                i === 0 || i === 6 ? "text-muted-foreground" : "text-muted-foreground"
               )}
             >
               {t(dayKey)}
@@ -461,7 +461,7 @@ function CalendarTab({
         {isInitialLoad ? (
           <div className="grid grid-cols-7">
             {Array.from({ length: viewMode === "week" ? 7 : 35 }).map((_, i) => (
-              <div key={i} className={cn("bg-white p-3 border-r border-b border-slate-50 last:border-r-0", viewMode === "week" ? "min-h-28" : "min-h-24")}>
+              <div key={i} className={cn("bg-card p-3 border-r border-b border-border last:border-r-0", viewMode === "week" ? "min-h-28" : "min-h-24")}>
                 <Skeleton className="h-6 w-6 rounded-full mb-3" />
                 <Skeleton className="h-5 w-full rounded-lg" />
               </div>
@@ -482,23 +482,23 @@ function CalendarTab({
                   key={day.toISOString()}
                   onClick={() => handleDayClick(day, data.technicians)}
                   className={cn(
-                    "p-3 transition-all duration-150 border-r border-b border-slate-50 last:border-r-0",
+                    "p-3 transition-all duration-150 border-r border-b border-border last:border-r-0",
                     viewMode === "week" ? "min-h-28" : "min-h-24",
-                    !isCurrentMonth && "bg-slate-50/30",
+                    !isCurrentMonth && "bg-muted",
                     hasData && "cursor-pointer",
                     isSelected
                       ? "bg-blue-50 ring-2 ring-inset ring-blue-400/50"
                       : isTodayDate
                       ? "bg-blue-50/40 ring-1 ring-inset ring-blue-200/50"
-                      : hasData ? "hover:bg-slate-50/80" : ""
+                      : hasData ? "hover:bg-accent/80" : ""
                   )}
                 >
                   {/* Day number */}
                   <div className="flex items-center justify-between mb-2">
                     <span className={cn(
                       "text-sm font-semibold leading-none",
-                      !isCurrentMonth && "text-slate-300",
-                      isCurrentMonth && !isTodayDate && "text-slate-800",
+                      !isCurrentMonth && "text-muted-foreground",
+                      isCurrentMonth && !isTodayDate && "text-foreground",
                       isTodayDate && "bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-sm"
                     )}>
                       {format(day, "d")}
@@ -513,7 +513,7 @@ function CalendarTab({
                     <div className="space-y-1.5">
                       {data.available > 0 && (
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
+                          <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
                             <div
                               className="h-full bg-emerald-500 rounded-full"
                               style={{ width: `${(data.available / data.total) * 100}%` }}
@@ -524,7 +524,7 @@ function CalendarTab({
                       )}
                       {data.timeOff > 0 && (
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
+                          <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
                             <div
                               className="h-full bg-amber-400 rounded-full"
                               style={{ width: `${(data.timeOff / data.total) * 100}%` }}
@@ -535,16 +535,16 @@ function CalendarTab({
                       )}
                       {data.notScheduled > 0 && (
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
+                          <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
                             <div
-                              className="h-full bg-slate-300 rounded-full"
+                              className="h-full bg-muted-foreground rounded-full"
                               style={{ width: `${(data.notScheduled / data.total) * 100}%` }}
                             />
                           </div>
-                          <span className="text-[10px] font-semibold text-slate-400 min-w-[14px] text-right">{data.notScheduled}</span>
+                          <span className="text-[10px] font-semibold text-muted-foreground min-w-[14px] text-right">{data.notScheduled}</span>
                         </div>
                       )}
-                      <p className="text-[10px] text-slate-400 pt-0.5">
+                      <p className="text-[10px] text-muted-foreground pt-0.5">
                         {data.total} {data.total !== 1 ? t('technicians.availabilityPage.techniciansPlural') : t('technicians.availabilityPage.technicians')}
                       </p>
                     </div>
@@ -558,11 +558,11 @@ function CalendarTab({
 
       {/* Day Detail Panel */}
       {selectedDay && (
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-md overflow-hidden mb-6">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-md overflow-hidden mb-6">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <CalendarDays className="h-5 w-5 text-slate-400" />
-              <h3 className="text-sm font-semibold text-slate-900">
+              <CalendarDays className="h-5 w-5 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">
                 {format(selectedDay.date, "EEEE, MMMM d, yyyy")}
               </h3>
               <Badge variant="secondary" className="text-xs">
@@ -573,29 +573,29 @@ function CalendarTab({
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <div className="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
+          <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
             {selectedDay.technicians.map((tech) => (
               <Link
                 key={tech.id}
                 href={`/technicians/${tech.id}`}
-                className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/80 transition-colors"
+                className="flex items-center justify-between px-5 py-3 hover:bg-accent/80 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
-                    tech.onTimeOff ? "bg-amber-100 text-amber-700"
+                    tech.onTimeOff ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
                       : tech.isAvailable ? "bg-emerald-100 text-emerald-700"
-                      : "bg-slate-100 text-slate-500"
+                      : "bg-muted text-muted-foreground"
                   )}>
                     {tech.firstName.charAt(0)}{tech.lastName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-800">{tech.firstName} {tech.lastName}</p>
+                    <p className="text-sm font-medium text-foreground">{tech.firstName} {tech.lastName}</p>
                     <p className={cn(
                       "text-xs",
                       tech.onTimeOff ? "text-amber-600"
                         : tech.isAvailable ? "text-emerald-600"
-                        : "text-slate-400"
+                        : "text-muted-foreground"
                     )}>
                       {tech.onTimeOff
                         ? `${t('technicians.availabilityPage.timeOffLabel')}${tech.timeOff?.reason ? ` — ${tech.timeOff.reason}` : ""}`
@@ -607,9 +607,9 @@ function CalendarTab({
                 </div>
                 <Badge className={cn(
                   "text-[11px]",
-                  tech.onTimeOff ? "bg-amber-100 text-amber-700"
+                  tech.onTimeOff ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
                     : tech.isAvailable ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-100 text-slate-500"
+                    : "bg-muted text-muted-foreground"
                 )}>
                   {tech.onTimeOff ? t('technicians.availability.timeOff') : tech.isAvailable ? t('technicians.availability.available') : t('technicians.availability.unavailable')}
                 </Badge>
@@ -723,12 +723,12 @@ export default function ScheduleAndTimeOffPage() {
 
   if (!canManage) {
     return (
-      <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="min-h-full bg-background">
         <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-12 text-center">
+          <div className="bg-card rounded-xl border border-border/80 shadow-sm p-12 text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-800 mb-2">{t('technicians.availabilityPage.accessDenied')}</h3>
-            <p className="text-sm text-slate-500">{t('technicians.availabilityPage.noPermission')}</p>
+            <h3 className="text-lg font-medium text-foreground mb-2">{t('technicians.availabilityPage.accessDenied')}</h3>
+            <p className="text-sm text-muted-foreground">{t('technicians.availabilityPage.noPermission')}</p>
           </div>
         </div>
       </div>
@@ -739,23 +739,23 @@ export default function ScheduleAndTimeOffPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="min-h-full bg-background">
         <div className="max-w-screen-xl mx-auto px-6 py-8">
           {/* Page Header */}
           <div className="mb-6">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+                <h1 className="text-2xl font-semibold text-foreground tracking-tight">
                   {t('technicians.availabilityPage.title')}
                 </h1>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {t('technicians.availabilityPage.subtitle')}
                 </p>
               </div>
               {activeTab === "calendar" && (
                 <div className="flex items-center gap-3">
                   <Select value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                    <SelectTrigger className="w-[120px] h-10 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                    <SelectTrigger className="w-[120px] h-10 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -764,7 +764,7 @@ export default function ScheduleAndTimeOffPage() {
                     </SelectContent>
                   </Select>
                   <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
-                    <SelectTrigger className="w-[180px] h-10 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                    <SelectTrigger className="w-[180px] h-10 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                       <SelectValue placeholder={t('technicians.availabilityPage.allTechnicians')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -776,14 +776,14 @@ export default function ScheduleAndTimeOffPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" size="sm" onClick={handleToday} className="h-10 px-4 rounded-xl bg-white/80 shadow-sm">
+                  <Button variant="outline" size="sm" onClick={handleToday} className="h-10 px-4 rounded-xl bg-card/80 shadow-sm">
                     {t('common.today')}
                   </Button>
-                  <Button variant="outline" size="icon" onClick={handlePrevious} className="h-10 w-10 rounded-xl bg-white/80 shadow-sm">
+                  <Button variant="outline" size="icon" onClick={handlePrevious} className="h-10 w-10 rounded-xl bg-card/80 shadow-sm">
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="text-sm font-semibold text-slate-700 min-w-36 text-center">{headerTitle}</span>
-                  <Button variant="outline" size="icon" onClick={handleNext} className="h-10 w-10 rounded-xl bg-white/80 shadow-sm">
+                  <span className="text-sm font-semibold text-foreground min-w-36 text-center">{headerTitle}</span>
+                  <Button variant="outline" size="icon" onClick={handleNext} className="h-10 w-10 rounded-xl bg-card/80 shadow-sm">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -793,36 +793,36 @@ export default function ScheduleAndTimeOffPage() {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+            <div className="bg-card rounded-xl border border-border/80 shadow-sm p-5">
               <div className="flex items-center gap-4">
                 <div className="h-11 w-11 rounded-xl bg-blue-100 flex items-center justify-center">
                   <Users className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">{t('technicians.availabilityPage.totalTechnicians')}</p>
-                  <p className="text-2xl font-bold text-slate-900">{todaySummary.total}</p>
+                  <p className="text-sm text-muted-foreground">{t('technicians.availabilityPage.totalTechnicians')}</p>
+                  <p className="text-2xl font-bold text-foreground">{todaySummary.total}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+            <div className="bg-card rounded-xl border border-border/80 shadow-sm p-5">
               <div className="flex items-center gap-4">
                 <div className="h-11 w-11 rounded-xl bg-green-100 flex items-center justify-center">
                   <Check className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">{t('technicians.availabilityPage.availableToday')}</p>
-                  <p className="text-2xl font-bold text-slate-900">{todaySummary.available}</p>
+                  <p className="text-sm text-muted-foreground">{t('technicians.availabilityPage.availableToday')}</p>
+                  <p className="text-2xl font-bold text-foreground">{todaySummary.available}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+            <div className="bg-card rounded-xl border border-border/80 shadow-sm p-5">
               <div className="flex items-center gap-4">
                 <div className="h-11 w-11 rounded-xl bg-amber-100 flex items-center justify-center">
                   <Umbrella className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">{t('technicians.availabilityPage.onTimeOffToday')}</p>
-                  <p className="text-2xl font-bold text-slate-900">{todaySummary.onTimeOff}</p>
+                  <p className="text-sm text-muted-foreground">{t('technicians.availabilityPage.onTimeOffToday')}</p>
+                  <p className="text-2xl font-bold text-foreground">{todaySummary.onTimeOff}</p>
                 </div>
               </div>
             </div>
@@ -830,7 +830,7 @@ export default function ScheduleAndTimeOffPage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-white border border-slate-200/80 shadow-sm mb-6">
+            <TabsList className="bg-card border border-border/80 shadow-sm mb-6">
               <TabsTrigger value="calendar" className="gap-2">
                 <CalendarIcon className="h-4 w-4" />
                 {t('technicians.availabilityPage.calendarTab')}
@@ -857,7 +857,7 @@ export default function ScheduleAndTimeOffPage() {
                 t={t}
               />
               {/* Legend */}
-              <div className="flex items-center justify-center gap-8 text-xs text-slate-500 py-2">
+              <div className="flex items-center justify-center gap-8 text-xs text-muted-foreground py-2">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   <span>{t('technicians.availabilityPage.legend.available')}</span>
@@ -867,7 +867,7 @@ export default function ScheduleAndTimeOffPage() {
                   <span>{t('technicians.availabilityPage.legend.timeOff')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground" />
                   <span>{t('technicians.availabilityPage.legend.notScheduled')}</span>
                 </div>
               </div>

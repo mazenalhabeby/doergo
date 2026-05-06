@@ -40,7 +40,7 @@ export function LoadingOverlay({ message, size = 'lg' }: LoadingOverlayProps) {
     <div className="flex flex-col items-center justify-center min-h-[200px] gap-3">
       <Spinner size={size} />
       {message && (
-        <p className="text-sm text-slate-500 animate-pulse">{message}</p>
+        <p className="text-sm text-muted-foreground animate-pulse">{message}</p>
       )}
     </div>
   );

@@ -174,7 +174,7 @@ export default function TaskDetailPage({
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-full bg-slate-50 p-8">
+      <div className="min-h-full bg-muted p-8">
         <Skeleton className="h-8 w-48 mb-6" />
         <Skeleton className="h-20 w-full rounded-xl mb-4" />
         <Skeleton className="h-40 w-full rounded-xl mb-4" />
@@ -186,14 +186,14 @@ export default function TaskDetailPage({
   // Error state
   if (isError || !task) {
     return (
-      <div className="min-h-full bg-slate-50 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
+      <div className="min-h-full bg-muted p-8">
+        <h1 className="text-2xl font-semibold text-foreground mb-6">
           {t("tasks.detail.title")}
         </h1>
-        <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+        <div className="bg-card rounded-2xl shadow-sm p-12 text-center">
           <AlertCircle className="mx-auto size-12 text-red-400 mb-4" />
           <p className="font-semibold text-lg mb-2">{t("tasks.detail.failedToLoad")}</p>
-          <p className="text-gray-500 mb-4">
+          <p className="text-muted-foreground mb-4">
             {(error as Error)?.message || t("tasks.detail.notFound")}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
@@ -209,7 +209,7 @@ export default function TaskDetailPage({
   const taskDate = formatShortDate(task.createdAt)
 
   return (
-    <div className="min-h-full bg-slate-50">
+    <div className="min-h-full bg-muted">
       {/* Technician Assignment Dialog */}
       <TechnicianAssignDialog
         open={showAssignModal}
@@ -232,16 +232,16 @@ export default function TaskDetailPage({
         {/* Page Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-3">
+            <h1 className="text-2xl font-semibold text-foreground mb-3">
               {t("tasks.detail.title")}
             </h1>
             <div className="flex items-center gap-3 mb-2">
               <StatusBadge status={task.status} />
-              <span className="text-base font-medium text-gray-900">
+              <span className="text-base font-medium text-foreground">
                 {task.title}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>{t("tasks.detail.request", { id: requestId })}</span>
               <span className="flex items-center gap-1.5">
                 <Calendar className="size-4" />
@@ -253,7 +253,7 @@ export default function TaskDetailPage({
             {canAssign && !isCompleted && !isCanceled && (
               <Button
                 variant="outline"
-                className="h-9 px-4 text-sm border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300"
+                className="h-9 px-4 text-sm border-amber-200 bg-amber-500/10 text-amber-700 hover:bg-amber-100 hover:border-amber-300"
                 onClick={() => setShowAssignModal(true)}
               >
                 <User className="size-4 mr-1.5" />

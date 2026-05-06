@@ -55,12 +55,12 @@ function ExternalLinkIcon({ className }: { className?: string }) {
 // ─── Platform Card Components ────────────────────────────────────────────────────
 function AndroidCard() {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
+    <div className="bg-card rounded-2xl shadow-lg p-8">
       <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
         <AndroidIcon className="w-9 h-9 text-green-600" />
       </div>
-      <h2 className="text-2xl font-semibold text-slate-800 mb-2">Android</h2>
-      <p className="text-slate-500 mb-6 text-sm">
+      <h2 className="text-2xl font-semibold text-foreground mb-2">Android</h2>
+      <p className="text-muted-foreground mb-6 text-sm">
         Download and install the APK directly on your device.
       </p>
       <a
@@ -70,19 +70,19 @@ function AndroidCard() {
         <DownloadIcon className="w-5 h-5" />
         Download APK
       </a>
-      <p className="text-xs text-slate-400 mt-4">v{APP_VERSION} &middot; Android 6.0+</p>
+      <p className="text-xs text-muted-foreground mt-4">v{APP_VERSION} &middot; Android 6.0+</p>
     </div>
   );
 }
 
 function IosCard() {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <AppleIcon className="w-9 h-9 text-slate-800" />
+    <div className="bg-card rounded-2xl shadow-lg p-8">
+      <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <AppleIcon className="w-9 h-9 text-foreground" />
       </div>
-      <h2 className="text-2xl font-semibold text-slate-800 mb-2">iOS</h2>
-      <p className="text-slate-500 mb-6 text-sm">
+      <h2 className="text-2xl font-semibold text-foreground mb-2">iOS</h2>
+      <p className="text-muted-foreground mb-6 text-sm">
         Install via TestFlight &mdash; Apple&apos;s official beta testing platform.
         No App Store needed.
       </p>
@@ -95,7 +95,7 @@ function IosCard() {
         <ExternalLinkIcon className="w-5 h-5" />
         Open TestFlight
       </a>
-      <p className="text-xs text-slate-400 mt-4">v{APP_VERSION} &middot; iOS 16.0+</p>
+      <p className="text-xs text-muted-foreground mt-4">v{APP_VERSION} &middot; iOS 16.0+</p>
     </div>
   );
 }
@@ -125,7 +125,7 @@ function IosInstructions() {
 
 function StepList({ steps }: { steps: string[] }) {
   return (
-    <ol className="text-sm text-slate-500 space-y-3">
+    <ol className="text-sm text-muted-foreground space-y-3">
       {steps.map((step, i) => (
         <li key={i} className="flex gap-3 items-start">
           <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center justify-center mt-0.5">
@@ -155,19 +155,19 @@ export default function DownloadPage() {
   const showIos = platform === 'ios' || (showTabs && activeTab === 'ios');
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-50 to-blue-50">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-b from-muted to-blue-50">
       <div className="text-center max-w-lg w-full">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-slate-800 mb-2 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-2 tracking-tight">
             HBC FIELD
           </h1>
-          <p className="text-slate-500 text-lg">Dispatch &middot; Track &middot; Deliver</p>
+          <p className="text-muted-foreground text-lg">Dispatch &middot; Track &middot; Deliver</p>
         </div>
 
         {/* Platform switcher (desktop only) */}
         {showTabs && (
-          <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 max-w-xs mx-auto">
+          <div className="flex bg-card rounded-xl shadow-sm p-1 mb-6 max-w-xs mx-auto">
             {(['android', 'ios'] as const).map((tab) => (
               <button
                 key={tab}
@@ -175,7 +175,7 @@ export default function DownloadPage() {
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab === 'android' ? <AndroidIcon className="w-4 h-4" /> : <AppleIcon className="w-4 h-4" />}
@@ -190,15 +190,15 @@ export default function DownloadPage() {
         {showIos && <IosCard />}
 
         {/* Installation instructions */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 text-left mt-6">
-          <h3 className="font-semibold text-slate-700 mb-4">How to install</h3>
+        <div className="bg-card rounded-2xl shadow-sm p-6 text-left mt-6">
+          <h3 className="font-semibold text-foreground mb-4">How to install</h3>
           {showAndroid && <AndroidInstructions />}
           {showIos && <IosInstructions />}
         </div>
 
         {/* Desktop: show both options side by side below */}
         {showTabs && (
-          <p className="text-xs text-slate-400 mt-6">
+          <p className="text-xs text-muted-foreground mt-6">
             Open this page on your phone to auto-detect your platform.
           </p>
         )}
@@ -206,7 +206,7 @@ export default function DownloadPage() {
         {/* Back link */}
         <Link
           href="/"
-          className="inline-block mt-6 text-sm text-slate-400 hover:text-blue-600 transition-colors"
+          className="inline-block mt-6 text-sm text-muted-foreground hover:text-blue-600 transition-colors"
         >
           &larr; Back to Partner Portal
         </Link>

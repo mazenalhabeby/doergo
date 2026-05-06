@@ -226,9 +226,9 @@ export function TaskProgressCard({
         return {
           label: t("tasks.progress.status.assigned"),
           sublabel: t("tasks.progress.status.waitingToStart"),
-          color: "text-slate-600",
-          bgColor: "bg-slate-50",
-          dotColor: "bg-slate-400",
+          color: "text-muted-foreground",
+          bgColor: "bg-muted",
+          dotColor: "bg-muted-foreground",
           pulse: false,
         }
     }
@@ -266,22 +266,22 @@ export function TaskProgressCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+    <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
       {/* Header */}
       <div className={cn(
-        "px-6 py-4 border-b border-slate-100",
+        "px-6 py-4 border-b border-border",
         isCompleted ? "bg-gradient-to-r from-green-50 to-emerald-50" :
         taskStatus === "BLOCKED" ? "bg-gradient-to-r from-red-50 to-orange-50" :
         "bg-gradient-to-r from-blue-50 to-indigo-50"
       )}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">
+          <h3 className="text-lg font-semibold text-foreground">
             {getTitle()}
           </h3>
           {elapsedTime && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-lg border border-slate-200/60">
-              <Timer className="size-4 text-slate-500" />
-              <span className="text-sm font-medium text-slate-700">{elapsedTime}</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-sm rounded-lg border border-border/60">
+              <Timer className="size-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">{elapsedTime}</span>
             </div>
           )}
         </div>
@@ -305,7 +305,7 @@ export function TaskProgressCard({
                     {index < STEPS.length - 1 && (
                       <div className="absolute top-[19px] left-1/2 w-full h-0.5">
                         {/* Background track */}
-                        <div className="w-full h-full bg-slate-200" />
+                        <div className="w-full h-full bg-muted" />
                         {/* Progress fill */}
                         <div
                           className={cn(
@@ -322,7 +322,7 @@ export function TaskProgressCard({
                         "relative z-10 size-10 rounded-full flex items-center justify-center transition-all duration-300",
                         isComplete && "bg-blue-600 text-white shadow-lg shadow-blue-600/25",
                         isActive && "bg-blue-600 text-white shadow-lg shadow-blue-600/25",
-                        isFuture && "bg-slate-100 text-slate-400 border-2 border-slate-200"
+                        isFuture && "bg-muted text-muted-foreground border-2 border-border"
                       )}
                     >
                       {isComplete ? (
@@ -341,7 +341,7 @@ export function TaskProgressCard({
                     <span
                       className={cn(
                         "text-xs mt-3 text-center font-medium max-w-[80px]",
-                        isComplete || isActive ? "text-slate-900" : "text-slate-400"
+                        isComplete || isActive ? "text-foreground" : "text-muted-foreground"
                       )}
                     >
                       {t(step.labelKey)}
@@ -349,7 +349,7 @@ export function TaskProgressCard({
 
                     {/* Timestamp */}
                     {timestamp && (isComplete || isActive) && (
-                      <span className="text-[10px] text-slate-400 mt-1">
+                      <span className="text-[10px] text-muted-foreground mt-1">
                         {formatTimeAgo(timestamp)}
                       </span>
                     )}
@@ -360,8 +360,8 @@ export function TaskProgressCard({
           </div>
 
           {/* Technician Card - 30% */}
-          <div className="w-[30%] border-l border-slate-100 pl-6">
-            <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-4">
+          <div className="w-[30%] border-l border-border pl-6">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4">
               {t("tasks.progress.assignedTechnician")}
             </p>
 
@@ -377,10 +377,10 @@ export function TaskProgressCard({
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {assignedTo.firstName} {assignedTo.lastName}
                     </p>
-                    <p className="text-[11px] text-slate-500 truncate">
+                    <p className="text-[11px] text-muted-foreground truncate">
                       {assignedTo.specialty || t("tasks.progress.fieldTechnician")}
                     </p>
                   </div>
@@ -411,7 +411,7 @@ export function TaskProgressCard({
 
                 {/* ETA or arrival info */}
                 {estimatedArrival ? (
-                  <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                     <Clock className="size-3" />
                     <span>{estimatedArrival === "Any moment" ? t("tasks.progress.eta.anyMoment") : t("tasks.progress.eta.arrivesIn", { time: estimatedArrival })}</span>
                   </div>
@@ -426,12 +426,12 @@ export function TaskProgressCard({
                     <span>{t("tasks.progress.eta.atYourLocation")}</span>
                   </div>
                 ) : taskStatus === "COMPLETED" || taskStatus === "CLOSED" ? (
-                  <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                     <CircleCheck className="size-3" />
                     <span>{t("tasks.progress.eta.jobCompleted")}</span>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-slate-400">{statusInfo.sublabel}</p>
+                  <p className="text-[11px] text-muted-foreground">{statusInfo.sublabel}</p>
                 )}
               </div>
             </div>
@@ -462,7 +462,7 @@ export function TaskProgressCard({
                 }}
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 h-9 rounded-lg",
-                  "bg-white border border-blue-600 text-blue-600",
+                  "bg-card border border-blue-600 text-blue-600",
                   "hover:bg-blue-50",
                   "active:scale-[0.97] transition-all duration-150"
                 )}

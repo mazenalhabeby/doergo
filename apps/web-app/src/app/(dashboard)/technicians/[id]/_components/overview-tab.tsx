@@ -35,8 +35,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">{t('technicians.overview.completionRate')}</p>
-                <p className="text-2xl font-semibold text-slate-800">
+                <p className="text-sm text-muted-foreground">{t('technicians.overview.completionRate')}</p>
+                <p className="text-2xl font-semibold text-foreground">
                   {stats?.performance.completionRate?.toFixed(0) || 0}%
                 </p>
               </div>
@@ -51,8 +51,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">{t('technicians.overview.onTimeRate')}</p>
-                <p className="text-2xl font-semibold text-slate-800">
+                <p className="text-sm text-muted-foreground">{t('technicians.overview.onTimeRate')}</p>
+                <p className="text-2xl font-semibold text-foreground">
                   {stats?.performance.onTimeRate?.toFixed(0) || 0}%
                 </p>
               </div>
@@ -67,8 +67,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">{t('technicians.overview.tasksCompleted')}</p>
-                <p className="text-2xl font-semibold text-slate-800">
+                <p className="text-sm text-muted-foreground">{t('technicians.overview.tasksCompleted')}</p>
+                <p className="text-2xl font-semibold text-foreground">
                   {stats?.tasks.completed || 0}
                 </p>
               </div>
@@ -83,8 +83,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">{t('technicians.overview.hoursThisWeek')}</p>
-                <p className="text-2xl font-semibold text-slate-800">
+                <p className="text-sm text-muted-foreground">{t('technicians.overview.hoursThisWeek')}</p>
+                <p className="text-2xl font-semibold text-foreground">
                   {stats?.attendance.totalHoursThisWeek?.toFixed(1) || 0}h
                 </p>
               </div>
@@ -107,8 +107,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-slate-500">
-              <ClipboardList className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardList className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <p>{t('technicians.overview.taskDetailsInTab')}</p>
             </div>
           </CardContent>
@@ -130,8 +130,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
                   >
                     <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />
                     <div className="flex-1">
-                      <p className="text-slate-700">{activity.description}</p>
-                      <p className="text-slate-400 text-xs">
+                      <p className="text-foreground">{activity.description}</p>
+                      <p className="text-muted-foreground text-xs">
                         {formatDistanceToNow(new Date(activity.timestamp), {
                           addSuffix: true,
                         })}
@@ -141,8 +141,8 @@ export function OverviewTab({ stats }: OverviewTabProps) {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-500">
-                <Activity className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Activity className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p>{t('technicians.overview.noRecentActivity')}</p>
               </div>
             )}

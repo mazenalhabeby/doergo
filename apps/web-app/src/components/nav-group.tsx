@@ -62,21 +62,21 @@ function NavDropdownItem({
           <SidebarMenuButton
             tooltip={item.title}
             isActive={false}
-            className="group/nav-item rounded-xl py-2.5 px-2 transition-all duration-200 hover:bg-slate-50/80 data-[active=true]:bg-transparent"
+            className="group/nav-item rounded-xl py-2.5 px-2 transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-transparent"
           >
             <div className="flex items-center gap-3 flex-1">
-              <div className="flex size-9 items-center justify-center rounded-lg transition-all duration-200 bg-slate-100/80 text-slate-500 group-hover/nav-item:bg-slate-200/80 group-hover/nav-item:text-slate-700">
+              <div className="flex size-9 items-center justify-center rounded-lg transition-all duration-200 bg-sidebar-accent text-sidebar-foreground group-hover/nav-item:bg-sidebar-accent group-hover/nav-item:text-sidebar-accent-foreground">
                 <Icon className="size-[18px]" />
               </div>
-              <span className="flex-1 text-[14px] tracking-wide font-medium text-slate-500">
+              <span className="flex-1 text-[14px] tracking-wide font-medium text-sidebar-foreground">
                 {item.title}
               </span>
             </div>
-            <ChevronRight className="size-4 text-slate-400 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+            <ChevronRight className="size-4 text-sidebar-foreground/70 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
-          <SidebarMenuSub className="ml-[26px] border-l-2 border-slate-200/60 pl-3 pr-2 py-1.5 space-y-0.5">
+          <SidebarMenuSub className="ml-[26px] border-l-2 border-sidebar-border pl-3 pr-2 py-1.5 space-y-0.5">
             {item.items?.map((subItem) => {
               const subIsActive = isActive(subItem.url, true)
               return (
@@ -87,8 +87,8 @@ function NavDropdownItem({
                     className={cn(
                       "rounded-lg py-1.5 px-2 transition-all duration-200",
                       subIsActive
-                        ? "bg-gradient-to-r from-blue-50 to-blue-50/50 text-blue-700 font-semibold shadow-sm ring-1 ring-blue-100"
-                        : "bg-transparent hover:bg-transparent text-slate-400 hover:text-slate-600"
+                        ? "bg-sidebar-primary/10 text-sidebar-primary font-semibold ring-1 ring-sidebar-primary/20"
+                        : "bg-transparent hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground"
                     )}
                   >
                     <Link href={subItem.url} className="flex items-center justify-between w-full">
@@ -98,8 +98,8 @@ function NavDropdownItem({
                           className={cn(
                             "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[12px] font-bold",
                             subIsActive
-                              ? "bg-blue-600 text-white"
-                              : "bg-slate-200 text-slate-600"
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                              : "bg-sidebar-accent text-sidebar-foreground"
                           )}
                         >
                           {subItem.badge}
@@ -137,8 +137,8 @@ function NavSimpleItem({
         className={cn(
           "group/nav-item rounded-xl py-2.5 px-2 transition-all duration-200",
           itemIsActive
-            ? "bg-gradient-to-r from-blue-50 to-blue-50/50 text-blue-700 shadow-sm ring-1 ring-blue-100"
-            : "hover:bg-slate-50/80"
+            ? "bg-sidebar-primary/10 text-sidebar-primary ring-1 ring-sidebar-primary/20"
+            : "hover:bg-sidebar-accent"
         )}
       >
         <Link href={item.url} className="flex items-center gap-3">
@@ -146,8 +146,8 @@ function NavSimpleItem({
             className={cn(
               "flex size-9 items-center justify-center rounded-lg transition-all duration-200",
               itemIsActive
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-slate-100/80 text-slate-500 group-hover/nav-item:bg-slate-200/80 group-hover/nav-item:text-slate-700"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm shadow-sidebar-primary/20"
+                : "bg-sidebar-accent text-sidebar-foreground group-hover/nav-item:bg-sidebar-accent group-hover/nav-item:text-sidebar-accent-foreground"
             )}
           >
             <Icon className="size-[18px]" />
@@ -155,11 +155,11 @@ function NavSimpleItem({
           <span className={cn(
             "flex-1 text-[14px] tracking-wide",
             itemIsActive
-              ? "font-semibold text-slate-900"
-              : "font-medium text-slate-500"
+              ? "font-semibold text-sidebar-accent-foreground"
+              : "font-medium text-sidebar-foreground"
           )}>{item.title}</span>
           {item.badge !== undefined && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[12px] font-bold text-white shadow-sm">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-primary px-1.5 text-[12px] font-bold text-sidebar-primary-foreground shadow-sm">
               {item.badge}
             </span>
           )}
@@ -210,10 +210,10 @@ export function NavGroup({ label, items }: NavGroupProps) {
 
   return (
     <SidebarGroup className="py-0.5">
-      <SidebarGroupLabel className="px-3 mb-1.5 text-[12px] font-bold uppercase tracking-[0.1em] text-slate-400/80">
+      <SidebarGroupLabel className="px-3 mb-1.5 text-[12px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
         {label}
       </SidebarGroupLabel>
-      <SidebarMenu className="gap-0.5 px-1.5">
+      <SidebarMenu className="gap-1.5 px-1.5">
         {items.map((item) => (
           item.items?.length ? (
             <NavDropdownItem

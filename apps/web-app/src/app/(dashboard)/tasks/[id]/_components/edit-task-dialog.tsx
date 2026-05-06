@@ -98,7 +98,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="edit-title" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="edit-title" className="text-sm font-medium text-foreground">
               Title<span className="text-red-500">*</span>
             </Label>
             <Input
@@ -107,13 +107,13 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={updateMutation.isPending}
-              className="h-10 rounded-lg border-slate-200 bg-white"
+              className="h-10 rounded-lg border-border bg-card"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="edit-description" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="edit-description" className="text-sm font-medium text-foreground">
               Description<span className="text-red-500">*</span>
             </Label>
             <Textarea
@@ -123,14 +123,14 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={updateMutation.isPending}
-              className="rounded-lg border-slate-200 bg-white resize-none"
+              className="rounded-lg border-border bg-card resize-none"
             />
           </div>
 
           {/* Location & Due Date */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-location" className="text-sm font-medium text-slate-700">
+              <Label htmlFor="edit-location" className="text-sm font-medium text-foreground">
                 Service Location
               </Label>
               <Input
@@ -139,12 +139,12 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                 value={locationAddress}
                 onChange={(e) => setLocationAddress(e.target.value)}
                 disabled={updateMutation.isPending}
-                className="h-10 rounded-lg border-slate-200 bg-white"
+                className="h-10 rounded-lg border-border bg-card"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700">
+              <Label className="text-sm font-medium text-foreground">
                 Due Date
               </Label>
               <Popover>
@@ -152,12 +152,12 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-10 w-full justify-start text-left font-normal rounded-lg border-slate-200 bg-white hover:bg-slate-50",
-                      !dueDate && "text-slate-400"
+                      "h-10 w-full justify-start text-left font-normal rounded-lg border-border bg-card hover:bg-accent",
+                      !dueDate && "text-muted-foreground"
                     )}
                     disabled={updateMutation.isPending}
                   >
-                    <CalendarIcon className="mr-2 size-4 text-slate-400" />
+                    <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
                     {dueDate ? format(dueDate, "MMM d, yyyy") : "Select date"}
                   </Button>
                 </PopoverTrigger>
@@ -175,7 +175,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
 
           {/* Priority */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">Priority</Label>
+            <Label className="text-sm font-medium text-foreground">Priority</Label>
             <PrioritySelector
               value={priority}
               onChange={setPriority}

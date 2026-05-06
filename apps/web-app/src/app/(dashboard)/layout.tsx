@@ -21,6 +21,7 @@ import {
 import { DashboardSkeleton } from '@/components/skeletons';
 import { NotificationBell } from '@/components/notification-bell';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ActivityPanelProvider } from '@/contexts/activity-panel-context';
 import { useAuth } from '@/contexts/auth-context';
 import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider, useBreadcrumbOverride } from '@/contexts/breadcrumb-context';
@@ -72,14 +73,14 @@ function RouteChangeIndicator() {
 function ContentFallback() {
   return (
     <div className="p-6 space-y-4 animate-pulse">
-      <div className="h-8 w-64 bg-slate-200 rounded-lg" />
-      <div className="h-4 w-48 bg-slate-100 rounded-lg" />
+      <div className="h-8 w-64 bg-muted rounded-lg" />
+      <div className="h-4 w-48 bg-muted/50 rounded-lg" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-28 bg-white rounded-xl border border-slate-200/80" />
+          <div key={i} className="h-28 bg-card rounded-xl border border-border" />
         ))}
       </div>
-      <div className="h-64 bg-white rounded-xl border border-slate-200/80 mt-4" />
+      <div className="h-64 bg-card rounded-xl border border-border mt-4" />
     </div>
   );
 }
@@ -149,19 +150,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
-    // Allow ADMIN and DISPATCHER roles only (TECHNICIAN uses mobile app)
-    const allowedRoles = ['ADMIN', 'DISPATCHER'];
-    if (!isLoading && isAuthenticated && user?.role && !allowedRoles.includes(user.role)) {
-      router.push('/unauthorized');
-    }
-    // Check platform access (WEB or BOTH allowed)
-    if (!isLoading && isAuthenticated && user?.platform) {
-      const canAccessWeb = user.platform === 'WEB' || user.platform === 'BOTH';
-      if (!canAccessWeb) {
-        router.push('/unauthorized');
-      }
-    }
-  }, [isLoading, isAuthenticated, user, router]);
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -173,12 +162,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SocketProvider>
+    <ActivityPanelProvider>
     <BreadcrumbProvider>
       <SidebarProvider>
         <RouteChangeIndicator />
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <BreadcrumbNav />
@@ -187,7 +177,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <NotificationBell />
             </div>
           </header>
-          <div className="flex flex-1 flex-col overflow-auto bg-slate-50/50 dark:bg-background">
+          <div className="flex flex-1 flex-col overflow-auto bg-background">
             <Suspense fallback={<ContentFallback />}>
               {children}
             </Suspense>
@@ -196,6 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* <TokenDisplay /> */}
       </SidebarProvider>
     </BreadcrumbProvider>
+    </ActivityPanelProvider>
     </SocketProvider>
   );
 }

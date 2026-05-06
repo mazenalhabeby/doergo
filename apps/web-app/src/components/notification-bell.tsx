@@ -50,14 +50,14 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   task_assigned:      { icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
   task_completed:     { icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
   task_declined:      { icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
-  task_status_changed:{ icon: ClipboardList, color: "text-slate-600", bg: "bg-slate-50" },
+  task_status_changed:{ icon: ClipboardList, color: "text-muted-foreground", bg: "bg-muted" },
   comment_added:      { icon: MessageSquare, color: "text-amber-600", bg: "bg-amber-50" },
   attachment_added:   { icon: Paperclip, color: "text-cyan-600", bg: "bg-cyan-50" },
   join_request:       { icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50" },
   join_approved:      { icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
   join_rejected:      { icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
   clock_in:           { icon: Clock, color: "text-green-600", bg: "bg-green-50" },
-  clock_out:          { icon: Clock, color: "text-slate-600", bg: "bg-slate-50" },
+  clock_out:          { icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
   auto_clock_out:     { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
   geofence_alert:     { icon: MapPin, color: "text-red-600", bg: "bg-red-50" },
   break_started:      { icon: Coffee, color: "text-amber-600", bg: "bg-amber-50" },
@@ -177,7 +177,7 @@ export function NotificationBell() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative rounded-lg">
-          <Bell className="h-5 w-5 text-slate-500" />
+          <Bell className="h-5 w-5 text-muted-foreground" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -185,11 +185,11 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-96 p-0 rounded-xl shadow-xl border-slate-200">
+      <PopoverContent align="end" className="w-96 p-0 rounded-xl shadow-xl border-border">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-slate-800">{t("notifications.title")}</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("notifications.title")}</h3>
             {isConnected && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
           </div>
           <div className="flex gap-1">
@@ -199,7 +199,7 @@ export function NotificationBell() {
               </Button>
             )}
             {notifications.length > 0 && (
-              <Button variant="ghost" size="sm" className="text-xs h-7 px-2 text-slate-400" onClick={clearAll}>
+              <Button variant="ghost" size="sm" className="text-xs h-7 px-2 text-muted-foreground" onClick={clearAll}>
                 {t("notifications.clearAll")}
               </Button>
             )}
@@ -210,8 +210,8 @@ export function NotificationBell() {
         <div className="max-h-[420px] overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="py-12 text-center">
-              <Bell className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-slate-400">{t("notifications.empty")}</p>
+              <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">{t("notifications.empty")}</p>
             </div>
           ) : (
             notifications.map(notif => {
@@ -222,7 +222,7 @@ export function NotificationBell() {
                   key={notif.id}
                   onClick={() => handleClick(notif)}
                   className={cn(
-                    "w-full flex gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 border-b border-slate-50 last:border-0",
+                    "w-full flex gap-3 px-4 py-3 text-left transition-colors hover:bg-muted border-b border-border last:border-0",
                     !notif.read && "bg-blue-50/40"
                   )}
                 >
@@ -230,11 +230,11 @@ export function NotificationBell() {
                     <Icon className={cn("h-4 w-4", config.color)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={cn("text-sm truncate", notif.read ? "text-slate-600" : "text-slate-900 font-medium")}>
+                    <p className={cn("text-sm truncate", notif.read ? "text-muted-foreground" : "text-foreground font-medium")}>
                       {notif.title}
                     </p>
-                    <p className="text-xs text-slate-400 truncate">{notif.message}</p>
-                    <p className="text-[10px] text-slate-300 mt-1">
+                    <p className="text-xs text-muted-foreground truncate">{notif.message}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
                       {formatDistanceToNow(notif.createdAt, { addSuffix: true })}
                     </p>
                   </div>
