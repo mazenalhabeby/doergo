@@ -1,13 +1,13 @@
 // Re-export all enums from dedicated file (avoids require cycles with sub-modules)
 export {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority, TaskEventType,
-  AttachmentType, AssetStatus, ReportAttachmentType, WorkMode,
-  TimeEntryStatus, BreakType, ApprovalStatus,
+  AttachmentType, AssetStatus, ReportAttachmentType,
+  ContractType, OvertimePolicy, OvertimeDetectionSource,
+  TimeEntryStatus, BreakType, ApprovalStatus, WORKER_ROLE,
 } from './enums';
 
 import {
   Role, AccessLevel, TaskStatus, TaskPriority,
-  WorkMode,
   AttachmentType, AssetStatus, ReportAttachmentType, TaskEventType,
 } from './enums';
 
@@ -107,7 +107,6 @@ export interface User extends BaseEntity {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  workMode?: WorkMode;
 }
 
 // Default permissions by role
@@ -142,19 +141,23 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
     canAssignTasks: false,
     canManageUsers: false,
   },
+  [Role.EMPLOYEE]: {
+    canCreateTasks: false,
+    canViewAllTasks: false,
+    canAssignTasks: false,
+    canManageUsers: false,
+  },
 };
 
 // Profile badge visibility configuration
 export interface ProfileBadgesConfig {
   showRole: boolean;
-  showWorkMode: boolean;
   showType: boolean;
   showSpecialty: boolean;
 }
 
 export const DEFAULT_PROFILE_BADGES: ProfileBadgesConfig = {
   showRole: true,
-  showWorkMode: true,
   showType: true,
   showSpecialty: true,
 };

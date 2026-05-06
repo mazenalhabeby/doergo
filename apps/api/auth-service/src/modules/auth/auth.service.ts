@@ -367,7 +367,6 @@ export class AuthService {
             canAssignTasks: user.canAssignTasks,
             canManageUsers: user.canManageUsers,
             // Technician-specific fields
-            workMode: user.workMode,
             specialty: user.specialty,
             // Profile badge visibility
             profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
@@ -625,7 +624,6 @@ export class AuthService {
             canViewAllTasks: storedToken.user.canViewAllTasks,
             canAssignTasks: storedToken.user.canAssignTasks,
             canManageUsers: storedToken.user.canManageUsers,
-            workMode: storedToken.user.workMode,
             specialty: storedToken.user.specialty,
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
           },
@@ -851,13 +849,11 @@ export class AuthService {
           avatarUrl: true,
           isActive: true,
           // Permission fields
-          platform: true,
           canCreateTasks: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
           // Technician-specific fields
-          workMode: true,
           specialty: true,
           // Badge config
           profileBadges: true,

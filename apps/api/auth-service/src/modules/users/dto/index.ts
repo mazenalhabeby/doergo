@@ -1,8 +1,8 @@
+import { Role } from "@hbcfield/shared";
 /**
  * User/Technician DTOs for Auth Service
  */
 
-import { WorkMode, Role } from '@hbcfield/shared';
 
 /**
  * DTO for creating a new technician
@@ -14,7 +14,6 @@ export interface CreateTechnicianDto {
   password?: string;
   position?: string;
   enabledModules?: string[];
-  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
   organizationId: string;
@@ -28,7 +27,6 @@ export interface UpdateTechnicianDto {
   lastName?: string;
   position?: string;
   enabledModules?: string[];
-  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
@@ -44,7 +42,6 @@ export interface UpdateTechnicianDto {
 export interface ListTechniciansDto {
   organizationId: string;
   status?: 'active' | 'inactive' | 'all';
-  workMode?: WorkMode | 'all';
   position?: string;
   specialty?: string;
   search?: string;

@@ -6,7 +6,7 @@
  */
 
 import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Role, WorkMode } from '../types';
+import { Role } from '../types/enums';
 
 // =============================================================================
 // METADATA KEYS
@@ -68,11 +68,9 @@ export interface CurrentUserData {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Technician-specific fields
-  workMode?: WorkMode;
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {
     showRole: boolean;
-    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   };

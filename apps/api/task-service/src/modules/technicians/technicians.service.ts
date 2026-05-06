@@ -643,7 +643,7 @@ export class TechniciansService {
         id: true,
         firstName: true,
         lastName: true,
-        workMode: true,
+        position: true,
         schedules: {
           where: { dayOfWeek: { in: daysOfWeek }, isActive: true },
         },
@@ -662,10 +662,10 @@ export class TechniciansService {
       const dayOfWeek = queryDate.getDay();
       const dateStr = queryDate.toISOString().split('T')[0];
 
-      const availability = technicians.map((tech) => {
-        const schedule = tech.schedules.find(s => s.dayOfWeek === dayOfWeek) || null;
-        const timeOffRecord = tech.timeOffRequests.find(
-          t => new Date(t.startDate) <= queryDate && new Date(t.endDate) >= queryDate
+      const availability = technicians.map((tech: any) => {
+        const schedule = tech.schedules?.find((s: any) => s.dayOfWeek === dayOfWeek) || null;
+        const timeOffRecord = tech.timeOffRequests?.find(
+          (t: any) => new Date(t.startDate) <= queryDate && new Date(t.endDate) >= queryDate
         );
         const onTimeOff = !!timeOffRecord;
         const hasSchedule = schedule !== null;
@@ -674,7 +674,7 @@ export class TechniciansService {
           id: tech.id,
           firstName: tech.firstName,
           lastName: tech.lastName,
-          workMode: tech.workMode,
+          position: tech.position,
           isAvailable: hasSchedule && !onTimeOff,
           onTimeOff,
           schedule: schedule

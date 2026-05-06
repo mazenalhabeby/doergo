@@ -10,7 +10,6 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { WorkMode } from '@hbcfield/shared';
 
 export class UpdateTechnicianDto {
   @ApiPropertyOptional({
@@ -34,13 +33,9 @@ export class UpdateTechnicianDto {
   lastName?: string;
 
   @ApiPropertyOptional({
-    enum: WorkMode,
-    example: WorkMode.HYBRID,
     description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
   })
-  @IsEnum(WorkMode)
   @IsOptional()
-  workMode?: WorkMode;
 
   @ApiPropertyOptional({
     example: 'Electrical',
@@ -98,7 +93,6 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     description: 'Profile badge visibility override (null to use org defaults)',
-    example: { showRole: true, showWorkMode: true, showType: false, showSpecialty: true },
   })
   @IsOptional()
   profileBadges?: any;

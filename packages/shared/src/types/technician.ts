@@ -5,7 +5,7 @@
  * profiles, statistics, performance metrics, and API inputs.
  */
 
-import { WorkMode, Role, TaskStatus } from './enums';
+import { Role, TaskStatus } from './enums';
 
 // ============================================================================
 // TECHNICIAN PROFILE
@@ -26,7 +26,6 @@ export interface TechnicianProfile {
   updatedAt: string;
 
   // Technician-specific fields
-  workMode: WorkMode;
   specialty: string | null;
   position?: string | null;
   enabledModules?: string[] | null;
@@ -40,7 +39,6 @@ export interface TechnicianProfile {
   // Profile badge overrides (null = use org defaults)
   profileBadges?: {
     showRole: boolean;
-    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   } | null;
@@ -77,7 +75,6 @@ export interface TechnicianListItem {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  workMode: WorkMode;
   specialty: string | null;
   position?: string | null;
   enabledModules?: string[] | null;
@@ -214,7 +211,6 @@ export interface CreateTechnicianInput {
   password?: string; // Optional - system can generate
   position?: string;
   enabledModules?: string[];
-  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
 }
@@ -227,7 +223,6 @@ export interface UpdateTechnicianInput {
   lastName?: string;
   position?: string;
   enabledModules?: string[];
-  workMode?: WorkMode;
   specialty?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
@@ -236,7 +231,6 @@ export interface UpdateTechnicianInput {
   canCreateTasks?: boolean;
   profileBadges?: {
     showRole: boolean;
-    showWorkMode: boolean;
     showType: boolean;
     showSpecialty: boolean;
   } | null;
@@ -248,7 +242,6 @@ export interface UpdateTechnicianInput {
 export interface TechniciansQueryParams {
   // Filters
   status?: 'active' | 'inactive' | 'all';
-  workMode?: WorkMode | 'all';
   position?: string;
   specialty?: string;
   search?: string; // Search by name or email
@@ -425,54 +418,4 @@ export const SPECIALTY_OPTIONS = [
   { value: 'General Maintenance', label: 'General Maintenance' },
 ] as const;
 
-// ============================================================================
-// WORK MODE HELPERS
-// ============================================================================
 
-/**
- * Get display label for work mode
- */
-export function getWorkModeLabel(mode: WorkMode): string {
-  switch (mode) {
-    case WorkMode.ON_SITE:
-      return 'On-Site';
-    case WorkMode.ON_ROAD:
-      return 'On-Road';
-    case WorkMode.HYBRID:
-      return 'Hybrid';
-    default:
-      return mode;
-  }
-}
-
-/**
- * Get color class for work mode badge
- */
-export function getWorkModeColor(mode: WorkMode): string {
-  switch (mode) {
-    case WorkMode.ON_SITE:
-      return 'bg-teal-100 text-teal-700';
-    case WorkMode.ON_ROAD:
-      return 'bg-orange-100 text-orange-700';
-    case WorkMode.HYBRID:
-      return 'bg-indigo-100 text-indigo-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-}
-
-/**
- * Check if a technician's work mode allows attendance (clock in/out)
- * ON_SITE and HYBRID can use attendance, ON_ROAD cannot
- */
-export function canUseAttendance(workMode: WorkMode): boolean {
-  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
-}
-
-/**
- * Check if a technician's work mode allows location assignment
- * ON_SITE and HYBRID can be assigned to locations, ON_ROAD cannot
- */
-export function canBeAssignedToLocation(workMode: WorkMode): boolean {
-  return workMode === WorkMode.ON_SITE || workMode === WorkMode.HYBRID;
-}

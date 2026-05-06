@@ -2,7 +2,6 @@ import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   Role,
-  WorkMode,
   DEFAULT_PERMISSIONS,
   ORG_CODE_LENGTH,
   ORG_CODE_CHARSET,
@@ -83,7 +82,6 @@ export class OnboardingService {
           canAssignTasks: true,
           canManageUsers: true,
 
-          workMode: true,
         },
       });
 
@@ -339,7 +337,6 @@ export class OnboardingService {
           ...(isTechnician
             ? {
                 position: invitation.position || 'technician',
-                workMode: invitation.workMode || 'HYBRID',
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
               }
@@ -359,7 +356,6 @@ export class OnboardingService {
           canAssignTasks: true,
           canManageUsers: true,
 
-          workMode: true,
         },
       });
 
@@ -506,7 +502,6 @@ export class OnboardingService {
     role: string;
     position?: string;
     enabledModules?: string[];
-    workMode?: string;
     specialty?: string;
     maxDailyJobs?: number;
   }) {
@@ -537,7 +532,7 @@ export class OnboardingService {
         where: { id: request.userId },
         data: {
           organizationId: data.organizationId,
-          role,
+          role: role as any,
           onboardingCompleted: true,
           canCreateTasks: defaultPerms.canCreateTasks,
           canViewAllTasks: defaultPerms.canViewAllTasks,
@@ -547,7 +542,6 @@ export class OnboardingService {
             ? {
                 position: data.position || 'technician',
                 enabledModules: data.enabledModules || ['tasks', 'clock', 'time_off'],
-                workMode: (data.workMode || 'HYBRID') as WorkMode,
                 specialty: data.specialty || null,
                 maxDailyJobs: data.maxDailyJobs || 5,
               }
@@ -730,7 +724,6 @@ export class OnboardingService {
     const valid = profileBadges
       && typeof profileBadges === 'object'
       && typeof profileBadges.showRole === 'boolean'
-      && typeof profileBadges.showWorkMode === 'boolean'
       && typeof profileBadges.showType === 'boolean'
       && typeof profileBadges.showSpecialty === 'boolean';
 

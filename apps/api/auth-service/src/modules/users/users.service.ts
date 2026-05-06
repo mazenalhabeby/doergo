@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, WorkMode, TaskStatus } from '@hbcfield/shared';
+import { Role, TaskStatus } from '@hbcfield/shared';
 import * as bcrypt from 'bcrypt';
 import {
   CreateTechnicianDto,
@@ -113,6 +113,7 @@ export class UsersService {
     const {
       organizationId,
       status = 'active',
+      
       specialty,
       search,
       page = 1,
@@ -134,9 +135,11 @@ export class UsersService {
       where.isActive = false;
     }
 
-    // Work mode filter
-    if (dto.workMode && dto.workMode !== 'all') {
-      where.workMode = dto.workMode;
+    // Type filter
+
+    // Position filter
+    if (dto.position) {
+      where.position = { contains: dto.position, mode: 'insensitive' };
     }
 
     // Specialty filter
@@ -187,7 +190,6 @@ export class UsersService {
         firstName: true,
         lastName: true,
         isActive: true,
-        workMode: true,
         position: true,
         enabledModules: true,
         specialty: true,
@@ -234,7 +236,8 @@ export class UsersService {
       firstName: tech.firstName,
       lastName: tech.lastName,
       isActive: tech.isActive,
-      workMode: tech.workMode,
+      position: tech.position,
+      enabledModules: tech.enabledModules as string[] | null,
       specialty: tech.specialty,
       rating: tech.rating || 5.0,
       ratingCount: tech.ratingCount || 0,
@@ -279,7 +282,6 @@ export class UsersService {
         isActive: true,
         createdAt: true,
         updatedAt: true,
-        workMode: true,
         position: true,
         enabledModules: true,
         specialty: true,
@@ -326,7 +328,6 @@ export class UsersService {
       isActive: technician.isActive,
       createdAt: technician.createdAt.toISOString(),
       updatedAt: technician.updatedAt.toISOString(),
-      workMode: technician.workMode,
       position: technician.position,
       enabledModules: technician.enabledModules as string[] | null,
       specialty: technician.specialty,
@@ -382,9 +383,9 @@ export class UsersService {
       firstName,
       lastName,
       password,
-      position,
+      
+      position = 'technician',
       enabledModules,
-      workMode = WorkMode.HYBRID,
       specialty,
       maxDailyJobs = 5,
       organizationId,
@@ -403,6 +404,10 @@ export class UsersService {
     const actualPassword = password || this.generateRandomPassword();
     const passwordHash = await bcrypt.hash(actualPassword, BCRYPT_COST_FACTOR);
 
+    // Determine default modules from position if not provided
+    const { getDefaultModules } = require("@hbcfield/shared");
+    const modules = enabledModules || getDefaultModules(position);
+
     // Create technician
     const technician = await this.prisma.user.create({
       data: {
@@ -411,9 +416,8 @@ export class UsersService {
         lastName,
         passwordHash,
         role: Role.TECHNICIAN,
-        position: position || 'technician',
-        enabledModules: enabledModules || ['tasks', 'clock', 'time_off'],
-        workMode,
+        position,
+        enabledModules: modules,
         specialty,
         maxDailyJobs,
         organizationId,
@@ -432,7 +436,6 @@ export class UsersService {
         isActive: true,
         position: true,
         enabledModules: true,
-        workMode: true,
         specialty: true,
         maxDailyJobs: true,
         organizationId: true,
@@ -476,7 +479,6 @@ export class UsersService {
         ...(dto.lastName !== undefined && { lastName: dto.lastName }),
         ...(dto.position !== undefined && { position: dto.position }),
         ...(dto.enabledModules !== undefined && { enabledModules: dto.enabledModules }),
-        ...(dto.workMode !== undefined && { workMode: dto.workMode }),
         ...(dto.specialty !== undefined && { specialty: dto.specialty }),
         ...(dto.maxDailyJobs !== undefined && { maxDailyJobs: dto.maxDailyJobs }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
@@ -494,7 +496,6 @@ export class UsersService {
         isActive: true,
         position: true,
         enabledModules: true,
-        workMode: true,
         specialty: true,
         maxDailyJobs: true,
         rating: true,
@@ -687,7 +688,6 @@ export class UsersService {
         role: true,
         isActive: true,
         createdAt: true,
-        workMode: true,
         position: true,
         enabledModules: true,
         specialty: true,
@@ -754,10 +754,12 @@ export class UsersService {
       }
     }
 
+    // Set default platform based on role if not provided
     const updated = await this.prisma.user.update({
       where: { id: memberId },
       data: {
-        role: dto.role,
+        role: dto.role as any,
+        
         canCreateTasks: dto.canCreateTasks ?? (dto.role === Role.ADMIN),
         canViewAllTasks:
           dto.canViewAllTasks ??
@@ -886,6 +888,7 @@ export class UsersService {
 
       data.role = dto.role;
 
+      // Set default platform based on role if not provided
       data.canCreateTasks = dto.canCreateTasks ?? (dto.role === Role.ADMIN);
       data.canViewAllTasks =
         dto.canViewAllTasks ??
@@ -895,7 +898,7 @@ export class UsersService {
         (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER);
       data.canManageUsers = dto.canManageUsers ?? (dto.role === Role.ADMIN);
     } else {
-      // No role change — still allow updating individual permission fields
+      // No role change — still allow updating individual permission/platform fields
       if (dto.canCreateTasks !== undefined) data.canCreateTasks = dto.canCreateTasks;
       if (dto.canViewAllTasks !== undefined) data.canViewAllTasks = dto.canViewAllTasks;
       if (dto.canAssignTasks !== undefined) data.canAssignTasks = dto.canAssignTasks;

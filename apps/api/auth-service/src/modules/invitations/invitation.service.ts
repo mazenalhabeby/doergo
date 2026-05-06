@@ -51,7 +51,6 @@ export class InvitationService {
     expiresInHours?: number;
     position?: string;
     enabledModules?: string[];
-    workMode?: string;
     specialty?: string;
     maxDailyJobs?: number;
   }) {
@@ -136,8 +135,8 @@ export class InvitationService {
         organizationId: data.organizationId,
         createdById: data.createdById,
         expiresAt,
-        position: isTechnician ? data.position || 'technician' : null,
-        workMode: isTechnician ? (data.workMode as any) || 'HYBRID' : null,
+
+        position: isTechnician ? (data.position as any) || 'HYBRID' : null,
         specialty: isTechnician ? data.specialty || null : null,
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
       },
@@ -158,8 +157,8 @@ export class InvitationService {
         targetRole: invitation.targetRole,
         status: invitation.status,
         expiresAt: invitation.expiresAt.toISOString(),
+
         position: invitation.position,
-        workMode: invitation.workMode,
         specialty: invitation.specialty,
         maxDailyJobs: invitation.maxDailyJobs,
         organization: invitation.organization,
@@ -198,8 +197,8 @@ export class InvitationService {
       valid: true,
       targetRole: invitation.targetRole,
       organizationName: invitation.organization.name,
+
       position: invitation.position,
-      workMode: invitation.workMode,
       specialty: invitation.specialty,
       expiresAt: invitation.expiresAt.toISOString(),
     };
@@ -293,8 +292,8 @@ export class InvitationService {
           canManageUsers: defaultPerms.canManageUsers,
           ...(invitation.targetRole === 'TECHNICIAN'
             ? {
-                position: invitation.position || 'technician',
-                workMode: invitation.workMode || 'HYBRID',
+
+                position: invitation.position || 'HYBRID',
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
               }

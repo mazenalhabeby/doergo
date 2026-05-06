@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { Role, WorkMode } from '@hbcfield/shared';
+import { Role } from '@hbcfield/shared';
 
 /**
  * List join requests query DTO
@@ -36,9 +36,7 @@ export class ApproveJoinRequestDto {
   @IsEnum([Role.DISPATCHER, Role.TECHNICIAN], { message: 'Role must be DISPATCHER or TECHNICIAN' })
   role: string;
 
-  @ApiPropertyOptional({ enum: WorkMode, description: 'Work mode (if role=TECHNICIAN)' })
   @IsOptional()
-  @IsEnum(WorkMode)
   workMode?: string;
 
   @ApiPropertyOptional({ description: 'Specialty (if role=TECHNICIAN)' })

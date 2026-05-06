@@ -12,13 +12,6 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   invitationsApi,
   type CreateInvitationInput,
-<<<<<<< HEAD
-  TechnicianType,
-
-=======
-
-  WorkMode,
->>>>>>> worktree-agent-a0600cc7
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,7 +52,6 @@ export default function InviteMemberPage() {
   const [role, setRole] = useState<string>("TECHNICIAN")
   const [email, setEmail] = useState("")
   const [expiresInHours, setExpiresInHours] = useState("168")
-  const [workMode, setWorkMode] = useState<string>("")
   const [specialty, setSpecialty] = useState("")
   const [maxDailyJobs, setMaxDailyJobs] = useState("")
 
@@ -98,7 +90,6 @@ export default function InviteMemberPage() {
     }
 
     if (isTechnician) {
-      if (workMode) input.workMode = workMode
       if (specialty) input.specialty = specialty
       if (maxDailyJobs) input.maxDailyJobs = parseInt(maxDailyJobs)
     }
@@ -268,40 +259,6 @@ export default function InviteMemberPage() {
             {isTechnician && (
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-foreground">{t("members.invite.workDetails")}</h3>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>{t("members.invite.employmentTypeLabel")}</Label>
-                      <SelectTrigger><SelectValue placeholder={t("common.optional")} /></SelectTrigger>
-                      <SelectContent>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>{t("members.invite.workModeLabel")}</Label>
-                    <Select
-<<<<<<< HEAD
-                      value={workMode === "HYBRID" && technicianType !== TechnicianType.FULL_TIME ? "" : workMode}
-=======
->>>>>>> worktree-agent-a0600cc7
-                      onValueChange={setWorkMode}
-                    >
-                      <SelectTrigger><SelectValue placeholder={t("common.optional")} /></SelectTrigger>
-                      <SelectContent>
-<<<<<<< HEAD
-                        {technicianType === TechnicianType.FULL_TIME && (
-                          <SelectItem value={"HYBRID"}>{t("technicians.workModes.hybrid")}</SelectItem>
-=======
-                          <SelectItem value={WorkMode.HYBRID}>{t("technicians.workModes.hybrid")}</SelectItem>
->>>>>>> worktree-agent-a0600cc7
-                        )}
-                        <SelectItem value={"ON_SITE"}>{t("technicians.workModes.onSite")}</SelectItem>
-                        <SelectItem value={"ON_ROAD"}>{t("technicians.workModes.onRoad")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

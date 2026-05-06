@@ -332,8 +332,11 @@ model User {
   canAssignTasks  Boolean  @default(false)   // Can assign tasks to technicians
   canManageUsers  Boolean  @default(false)   // Can manage users in organization
 
-  // Technician-specific fields (only used when role = TECHNICIAN)
-  workMode       WorkMode       @default(HYBRID)      // Where they work: on-site, on-road, or both
+  // Worker configuration
+  position       String?   // Free-form: "technician", "driver", "sales", "office_manager"
+  enabledModules Json?     // Mobile modules: ["tasks", "clock", "time_off"]
+
+  // Employee fields
   specialty      String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
   rating         Float?    @default(5.0) // Average rating (1-5)
   ratingCount    Int?      @default(0)   // Number of ratings received
@@ -992,7 +995,8 @@ model Invitation {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
-  workMode       WorkMode?
+  position       String?
+  enabledModules Json?
   specialty      String?
   maxDailyJobs   Int?
 

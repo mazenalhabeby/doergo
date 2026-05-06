@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, hasModule } from '@hbcfield/shared';
+import { success, paginated } from '@hbcfield/shared';
 
 // Valid schedule days
 const VALID_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -192,19 +192,12 @@ export class LocationsService {
       },
       select: {
         id: true,
-        enabledModules: true,
         organizationId: true,
       },
     });
 
     if (!technician) {
-      throw new NotFoundException('Technician not found in organization');
-    }
-
-    if (!hasModule({ enabledModules: technician.enabledModules as string[] | null }, 'clock')) {
-      throw new BadRequestException(
-        'This worker does not have the clock module enabled. Enable it in their profile to assign locations.',
-      );
+      throw new NotFoundException('Employee not found in organization');
     }
 
     // Verify location exists and belongs to organization

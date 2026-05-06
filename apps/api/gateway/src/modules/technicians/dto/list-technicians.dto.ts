@@ -8,7 +8,6 @@ import {
   Max,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { WorkMode } from '@hbcfield/shared';
 
 export class ListTechniciansDto {
   @ApiPropertyOptional({
@@ -22,13 +21,11 @@ export class ListTechniciansDto {
   status?: 'active' | 'inactive' | 'all';
 
   @ApiPropertyOptional({
-    enum: [...Object.values(WorkMode), 'all'],
     example: 'all',
     description: 'Filter by work mode',
     default: 'all',
   })
   @IsOptional()
-  workMode?: WorkMode | 'all';
 
   @ApiPropertyOptional({
     example: 'Electrical',

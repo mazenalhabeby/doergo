@@ -34,6 +34,7 @@ describe('AttendanceService', () => {
     lastName: 'Doe',
     email: 'john@example.com',
     role: 'TECHNICIAN',
+    
     organizationId: 'org-123',
     isActive: true,
   };
@@ -155,8 +156,7 @@ describe('AttendanceService', () => {
       await expect(service.clockIn(clockInData)).rejects.toThrow(NotFoundException);
     });
 
-    it('should handle attendance check (deprecated)', async () => {
-      mockPrismaService.user.findFirst.mockResolvedValue(freelanceTech);
+    it('should throw BadRequestException for non-FULL_TIME technician', async () => {
 
       await expect(service.clockIn(clockInData)).rejects.toThrow(BadRequestException);
     });

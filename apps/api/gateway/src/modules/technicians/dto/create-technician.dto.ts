@@ -11,7 +11,6 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { WorkMode } from '@hbcfield/shared';
 
 export class CreateTechnicianDto {
   @ApiProperty({
@@ -53,14 +52,9 @@ export class CreateTechnicianDto {
   password?: string;
 
   @ApiPropertyOptional({
-    enum: WorkMode,
-    example: WorkMode.HYBRID,
     description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
-    default: WorkMode.HYBRID,
   })
-  @IsEnum(WorkMode)
   @IsOptional()
-  workMode?: WorkMode;
 
   @ApiPropertyOptional({
     example: 'Electrical',

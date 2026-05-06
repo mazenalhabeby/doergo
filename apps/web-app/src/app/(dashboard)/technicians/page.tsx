@@ -28,9 +28,9 @@ import {
   techniciansApi,
   type TechnicianListItem,
   type TechniciansQueryParams,
-
-  WorkMode,
+  TechnicianType,
 } from "@/lib/api"
+import { getPositionLabel, getPositionColor } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -79,7 +79,7 @@ export default function TechniciansPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active")
-  const [workModeFilter, setWorkModeFilter] = useState<WorkMode | "all">("all")
+  const [typeFilter, setTypeFilter] = useState<TechnicianType | "all">("all")
   const [specialtyFilter, setSpecialtyFilter] = useState("all")
   const [page, setPage] = useState(1)
   const limit = 10
@@ -91,11 +91,12 @@ export default function TechniciansPage() {
   // Build query params
   const queryParams: TechniciansQueryParams = useMemo(() => ({
     status: statusFilter,
-    workMode: workModeFilter,
+    type: typeFilter,
     specialty: specialtyFilter !== "all" ? specialtyFilter : undefined,
     search: searchQuery || undefined,
     page,
     limit,
+  }), [statusFilter, typeFilter, specialtyFilter, searchQuery, page, limit])
 
   // Fetch technicians
   const { data: techniciansData, isLoading, isError, error, refetch } = useQuery({
@@ -140,11 +141,8 @@ export default function TechniciansPage() {
     setPage(1)
   }
 
-    setPage(1)
-  }
-
-  const handleWorkModeChange = (value: string) => {
-    setWorkModeFilter(value as WorkMode | "all")
+  const handleTypeChange = (value: string) => {
+    setTypeFilter(value as TechnicianType | "all")
     setPage(1)
   }
 
@@ -184,69 +182,64 @@ export default function TechniciansPage() {
   const getAvailabilityBadge = (status: string) => {
     switch (status) {
       case "available":
-        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">{t('technicians.availability.available')}</Badge>
+        return <Badge className="bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-100">{t('technicians.availability.available')}</Badge>
       case "busy":
-        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">{t('technicians.availability.busy')}</Badge>
+        return <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-100">{t('technicians.availability.busy')}</Badge>
       case "at_capacity":
-        return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">{t('technicians.availability.atCapacity')}</Badge>
+        return <Badge className="bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-100">{t('technicians.availability.atCapacity')}</Badge>
       default:
         return null
     }
   }
 
+  const getTypeBadge = (type: TechnicianType) => {
     switch (type) {
-        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{t('technicians.types.fullTime')}</Badge>
-        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">{t('technicians.types.freelancer')}</Badge>
+      case TechnicianType.FULL_TIME:
+        return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100">{t('technicians.types.fullTime')}</Badge>
+      case TechnicianType.FREELANCER:
+        return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-100">{t('technicians.types.freelancer')}</Badge>
       default:
         return null
     }
   }
 
-  const getWorkModeBadge = (mode: WorkMode) => {
-    switch (mode) {
-      case WorkMode.ON_SITE:
-        return <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100">{t('technicians.workModes.onSite')}</Badge>
-      case WorkMode.ON_ROAD:
-        return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">{t('technicians.workModes.onRoad')}</Badge>
-      case WorkMode.HYBRID:
-        return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">{t('technicians.workModes.hybrid')}</Badge>
-      default:
-        return null
-    }
+  const getPositionBadge = (position?: string | null) => {
+    if (!position) return <span className="text-muted-foreground">--</span>
+    return <Badge className={getPositionColor(position) + " hover:opacity-80"}>{getPositionLabel(position)}</Badge>
   }
 
   // Check if user can manage technicians (ADMIN or DISPATCHER)
   const canManage = user?.role === "ADMIN" || user?.role === "DISPATCHER"
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {t('technicians.list.title')}
               </h1>
-              <p className="mt-1.5 text-slate-500">
+              <p className="mt-1.5 text-muted-foreground">
                 {t('technicians.list.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder={t('technicians.list.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 w-72 h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm focus:bg-white focus:shadow-md transition-all"
+                  className="pl-10 w-72 h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm focus:bg-card focus:shadow-md transition-all"
                 />
               </div>
 
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+                <SelectTrigger className="w-[130px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                   <SelectValue placeholder={t('common.status')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -257,25 +250,18 @@ export default function TechniciansPage() {
               </Select>
 
               {/* Type Filter */}
-                <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
+              <Select value={typeFilter} onValueChange={handleTypeChange}>
+                <SelectTrigger className="w-[130px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                   <SelectValue placeholder={t('technicians.table.type')} />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">{t('common.allTypes')}</SelectItem>
+                  <SelectItem value={TechnicianType.FULL_TIME}>{t('technicians.types.fullTime')}</SelectItem>
+                  <SelectItem value={TechnicianType.FREELANCER}>{t('technicians.types.freelancer')}</SelectItem>
                 </SelectContent>
               </Select>
 
-              {/* Work Mode Filter */}
-              <Select value={workModeFilter} onValueChange={handleWorkModeChange}>
-                <SelectTrigger className="w-[130px] h-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder={t('technicians.table.workMode')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.allModes')}</SelectItem>
-                  <SelectItem value={WorkMode.ON_SITE}>{t('technicians.workModes.onSite')}</SelectItem>
-                  <SelectItem value={WorkMode.ON_ROAD}>{t('technicians.workModes.onRoad')}</SelectItem>
-                  <SelectItem value={WorkMode.HYBRID}>{t('technicians.workModes.hybrid')}</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Removed WorkMode filter - replaced by position/modules */}
 
               {/* Refresh */}
               <Button
@@ -283,14 +269,14 @@ export default function TechniciansPage() {
                 size="icon"
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="h-11 w-11 bg-white/80 backdrop-blur-sm border-slate-200/80 rounded-xl shadow-sm hover:shadow-md transition-all"
+                className="h-11 w-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm hover:shadow-md transition-all"
               >
                 <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
               </Button>
 
               {/* Availability */}
               <Link href="/technicians/availability">
-                <Button variant="outline" className="h-11 rounded-xl gap-2 bg-white/80 backdrop-blur-sm border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+                <Button variant="outline" className="h-11 rounded-xl gap-2 bg-card/80 backdrop-blur-sm border-border/80 shadow-sm hover:shadow-md transition-all">
                   <Calendar className="size-4" />
                   {t('technicians.list.availability')}
                 </Button>
@@ -303,14 +289,14 @@ export default function TechniciansPage() {
         {/* Summary */}
         {total > 0 && (
           <div className="mb-4">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {t('technicians.list.showingRange', { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
             </p>
           </div>
         )}
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border/80 shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="p-6 space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -320,17 +306,18 @@ export default function TechniciansPage() {
           ) : isError ? (
             <div className="p-12 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">{t('technicians.list.failedToLoad')}</h3>
-              <p className="text-sm text-slate-500 mb-4">{(error as Error)?.message}</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t('technicians.list.failedToLoad')}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{(error as Error)?.message}</p>
               <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
                 {t('common.tryAgain')}
               </Button>
             </div>
           ) : technicians.length === 0 ? (
             <div className="p-16 text-center">
-              <User className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">{t('technicians.list.noTechniciansFound')}</h3>
-              <p className="text-sm text-slate-400 mb-4">
+              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">{t('technicians.list.noTechniciansFound')}</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {searchQuery || statusFilter !== "active" || typeFilter !== "all" || specialtyFilter
                   ? t('technicians.list.noTechniciansHint')
                   : t('technicians.list.addFirstTechnician')}
               </p>
@@ -347,14 +334,14 @@ export default function TechniciansPage() {
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80">
-                    <TableHead className="w-[250px] font-semibold text-slate-600">{t('technicians.table.technician')}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.type')}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.workMode')}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.specialty')}</TableHead>
-                    <TableHead className="text-center font-semibold text-slate-600">{t('technicians.table.rating')}</TableHead>
-                    <TableHead className="text-center font-semibold text-slate-600">{t('technicians.table.activeTasks')}</TableHead>
-                    <TableHead className="font-semibold text-slate-600">{t('technicians.table.status')}</TableHead>
+                  <TableRow className="bg-muted">
+                    <TableHead className="w-[250px] font-semibold text-muted-foreground">{t('technicians.table.technician')}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t('technicians.table.type')}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t('technicians.table.position', 'Position')}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t('technicians.table.specialty')}</TableHead>
+                    <TableHead className="text-center font-semibold text-muted-foreground">{t('technicians.table.rating')}</TableHead>
+                    <TableHead className="text-center font-semibold text-muted-foreground">{t('technicians.table.activeTasks')}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t('technicians.table.status')}</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -364,7 +351,7 @@ export default function TechniciansPage() {
                   return (
                     <TableRow
                       key={tech.id}
-                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                      className="cursor-pointer hover:bg-accent transition-colors"
                       onClick={() => router.push(`/technicians/${tech.id}`)}
                     >
                       <TableCell>
@@ -372,26 +359,27 @@ export default function TechniciansPage() {
                           <div
                             className={cn(
                               "h-10 w-10 rounded-full flex items-center justify-center text-white font-medium",
-                              tech.isOnline ? "bg-green-500" : "bg-slate-400"
+                              tech.isOnline ? "bg-green-500" : "bg-muted-foreground"
                             )}
                           >
                             {tech.firstName[0]}
                             {tech.lastName[0]}
                           </div>
                           <div>
-                            <div className="font-medium text-slate-800">
+                            <div className="font-medium text-foreground">
                               {tech.firstName} {tech.lastName}
                             </div>
-                            <div className="text-sm text-slate-500">{tech.email}</div>
+                            <div className="text-sm text-muted-foreground">{tech.email}</div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{tech.workMode ? getWorkModeBadge(tech.workMode) : <span className="text-slate-400">—</span>}</TableCell>
+                      <TableCell>{getTypeBadge(tech.technicianType)}</TableCell>
+                      <TableCell>{getPositionBadge(tech.position)}</TableCell>
                       <TableCell>
                         {tech.specialty ? (
-                          <span className="text-slate-700 capitalize">{tech.specialty}</span>
+                          <span className="text-foreground capitalize">{tech.specialty}</span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
@@ -401,7 +389,7 @@ export default function TechniciansPage() {
                             {tech.ratingCount > 0 ? tech.rating.toFixed(1) : t('common.notAvailable')}
                           </span>
                           {tech.ratingCount > 0 && (
-                            <span className="text-sm text-slate-400">({tech.ratingCount})</span>
+                            <span className="text-sm text-muted-foreground">({tech.ratingCount})</span>
                           )}
                         </div>
                       </TableCell>
@@ -418,14 +406,14 @@ export default function TechniciansPage() {
                         >
                           {tech.currentTaskCount}
                         </span>
-                        <span className="text-slate-400">/{tech.maxDailyJobs}</span>
+                        <span className="text-muted-foreground">/{tech.maxDailyJobs}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {tech.isActive ? (
                             getAvailabilityBadge(availStatus)
                           ) : (
-                            <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">
+                            <Badge className="bg-muted text-muted-foreground hover:bg-accent">
                               {t('common.inactive')}
                             </Badge>
                           )}
@@ -486,8 +474,8 @@ export default function TechniciansPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
-                <p className="text-sm text-slate-500">
+              <div className="flex items-center justify-between px-6 py-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
                   {t('common.page', { page, totalPages })}
                 </p>
                 <div className="flex items-center gap-2">

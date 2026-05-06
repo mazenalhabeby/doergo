@@ -14,7 +14,6 @@ import {
   paginated,
   TimeEntryStatus,
   haversineDistance,
-  hasModule,
   ATTENDANCE_CONSTANTS,
   SERVICE_NAMES,
   QUEUE_NAMES,
@@ -57,19 +56,12 @@ export class AttendanceService {
       },
       select: {
         id: true,
-        enabledModules: true,
         organizationId: true,
       },
     });
 
     if (!user) {
-      throw new NotFoundException('Technician not found');
-    }
-
-    if (!hasModule({ enabledModules: user.enabledModules as string[] | null }, 'clock')) {
-      throw new BadRequestException(
-        'This worker does not have the clock module enabled. Enable it in their profile settings.',
-      );
+      throw new NotFoundException('Employee not found');
     }
 
     // Verify user has an active assignment to this location
