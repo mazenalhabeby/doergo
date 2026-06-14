@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, lazy, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Copy,
@@ -22,11 +23,47 @@ import {
   MapPin,
   Clock,
   AlertCircle,
+  GitBranch,
+  ListChecks,
+  Repeat,
+  Puzzle,
 } from "lucide-react"
-import { toast } from "sonner"
+import NextLink from "next/link"
+import { notify } from "@/lib/toast"
 import { useTranslation } from "react-i18next"
 
+import { useAuth } from "@/contexts/auth-context"
+
+// Lazy-load sub-pages so they render inline in the settings content area
+const WorkflowsPage = lazy(() => import("./workflows/page"))
+const RolesPage = lazy(() => import("./roles/page"))
+const CustomFieldsPage = lazy(() => import("./custom-fields/page"))
+const RecurringPage = lazy(() => import("./recurring/page"))
+const AuditLogPage = lazy(() => import("./audit-log/page"))
+
+function LazyFallback() {
+  return (
+    <div className="space-y-4 p-2">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-4 w-72" />
+      <Skeleton className="h-64 w-full rounded-xl" />
+    </div>
+  )
+}
+
+// Strip the outer page wrapper when rendering inline — override backgrounds and padding
+function EmbeddedPage({ children }: { children: React.ReactNode }) {
+  return <div className="[&>div]:min-h-0 [&>div]:bg-transparent [&>div]:p-0 [&>div>div]:p-0 [&>div>div]:max-w-none">{children}</div>
+}
+
+function LazyWorkflows() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><WorkflowsPage /></EmbeddedPage></Suspense> }
+function LazyRoles() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><RolesPage /></EmbeddedPage></Suspense> }
+function LazyCustomFields() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><CustomFieldsPage /></EmbeddedPage></Suspense> }
+function LazyRecurring() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><RecurringPage /></EmbeddedPage></Suspense> }
+function LazyAuditLog() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><AuditLogPage /></EmbeddedPage></Suspense> }
 import { organizationsApi, JoinPolicy } from "@/lib/api"
+import { UserAvatar } from "@/components/user-avatar"
+import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -59,14 +96,36 @@ const TIMEZONE_OPTIONS = [
   "Pacific/Auckland",
 ] as const
 
-type SettingsSection = "general" | "members" | "appearance" | "notifications"
+type SettingsSection =
+  // Organization
+  | "general" | "members" | "modules" | "workflows" | "roles" | "custom-fields" | "recurring" | "audit-log"
+  // Personal
+  | "profile" | "security" | "notifications"
 
-const NAV_ITEMS: { key: SettingsSection; icon: typeof Building2; color: string; bgColor: string }[] = [
-  { key: "general", icon: Building2, color: "text-blue-600", bgColor: "bg-blue-50" },
-  { key: "members", icon: Users, color: "text-purple-600", bgColor: "bg-purple-50" },
-  { key: "appearance", icon: Paintbrush, color: "text-emerald-600", bgColor: "bg-emerald-50" },
-  { key: "notifications", icon: Bell, color: "text-amber-600", bgColor: "bg-amber-50" },
+interface NavItem {
+  key: SettingsSection
+  icon: typeof Building2
+  label: string
+}
+
+const ORG_NAV_ITEMS: NavItem[] = [
+  { key: "general", icon: Building2, label: "General" },
+  { key: "members", icon: Users, label: "Members" },
+  { key: "modules", icon: Puzzle, label: "Modules" },
+  { key: "workflows", icon: GitBranch, label: "Workflows" },
+  { key: "roles", icon: Shield, label: "Roles" },
+  { key: "custom-fields", icon: ListChecks, label: "Custom Fields" },
+  { key: "recurring", icon: Repeat, label: "Recurring Tasks" },
+  { key: "audit-log", icon: Clock, label: "Audit Log" },
 ]
+
+const PERSONAL_NAV_ITEMS: NavItem[] = [
+  { key: "profile", icon: Users, label: "Profile" },
+  { key: "security", icon: Key, label: "Password & Security" },
+  { key: "notifications", icon: Bell, label: "Notifications" },
+]
+
+const NAV_ITEMS = [...ORG_NAV_ITEMS, ...PERSONAL_NAV_ITEMS]
 
 // ============================================================================
 // Reusable Components (DRY)
@@ -223,9 +282,9 @@ function GeneralSection() {
     mutationFn: (updates: Record<string, string>) => organizationsApi.updateProfile(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
-      toast.success(t("settings.general.saved"))
+      notify.success(t("settings.general.saved"))
     },
-    onError: (error: Error) => toast.error(error.message || t("settings.general.failed")),
+    onError: (error: Error) => notify.error(error.message || t("settings.general.failed")),
   })
 
   const set = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }))
@@ -357,9 +416,9 @@ function MembersSection() {
       const code = data?.joinCode
       if (code) setNewlyGeneratedCode(code)
       queryClient.invalidateQueries({ queryKey: ["organization-join-code"] })
-      toast.success(t("settings.joinCode.regeneratedSuccessfully"))
+      notify.success(t("settings.joinCode.regeneratedSuccessfully"))
     },
-    onError: (e: Error) => toast.error(e.message || t("common.error")),
+    onError: (e: Error) => notify.error(e.message || t("common.error")),
   })
 
   const updatePolicyMutation = useMutation({
@@ -367,9 +426,9 @@ function MembersSection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-join-code"] })
       setSelectedPolicy(null)
-      toast.success(t("settings.joinPolicy.updatedSuccessfully"))
+      notify.success(t("settings.joinPolicy.updatedSuccessfully"))
     },
-    onError: (e: Error) => toast.error(e.message || t("common.error")),
+    onError: (e: Error) => notify.error(e.message || t("common.error")),
   })
 
   const displayCode = joinCodeData?.joinCode || newlyGeneratedCode || null
@@ -378,7 +437,7 @@ function MembersSection() {
     if (!displayCode) return
     await navigator.clipboard.writeText(displayCode)
     setCopied(true)
-    toast.success(t("common.codeCopiedToClipboard"))
+    notify.copied()
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -510,9 +569,9 @@ function AppearanceSection() {
     mutationFn: (d: typeof badges) => organizationsApi.updateProfileBadges(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-profile-badges"] })
-      toast.success(t("settings.profileBadges.updated"))
+      notify.success(t("settings.profileBadges.updated"))
     },
-    onError: (e: Error) => toast.error(e.message || t("settings.profileBadges.failed")),
+    onError: (e: Error) => notify.error(e.message || t("settings.profileBadges.failed")),
   })
 
   const toggle = useCallback((field: keyof typeof badges, value: boolean) => {
@@ -584,9 +643,9 @@ function NotificationsSection() {
     mutationFn: (d: typeof prefs) => organizationsApi.updateNotificationPrefs(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
-      toast.success(t("settings.notifications.saved"))
+      notify.success(t("settings.notifications.saved"))
     },
-    onError: (e: Error) => toast.error(e.message || t("settings.notifications.failed")),
+    onError: (e: Error) => notify.error(e.message || t("settings.notifications.failed")),
   })
 
   if (isLoading) return <Skeleton className="h-[300px] w-full rounded-2xl" />
@@ -622,13 +681,312 @@ function NotificationsSection() {
   )
 }
 
+function ModulesSection() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const { user, refreshUser } = useAuth()
+
+  const [modules, setModules] = useState<string[]>([])
+  const [initialized, setInitialized] = useState(false)
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["organization-profile"],
+    queryFn: () => organizationsApi.getProfile(),
+  })
+
+  useEffect(() => {
+    if (profile && !initialized) {
+      setModules((profile.enabledModules as string[] | null) || [])
+      setInitialized(true)
+    }
+  }, [profile, initialized])
+
+  const mutation = useMutation({
+    mutationFn: (enabledModules: string[]) => organizationsApi.updateEnabledModules(enabledModules),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+      refreshUser()
+      notify.success("Modules updated")
+    },
+    onError: (e: Error) => notify.error(e.message || "Failed to update modules"),
+  })
+
+  const toggle = useCallback((key: string, enabled: boolean) => {
+    const updated = enabled
+      ? [...modules, key]
+      : modules.filter(m => m !== key)
+    setModules(updated)
+    mutation.mutate(updated)
+  }, [modules, mutation])
+
+  if (isLoading) return <Skeleton className="h-[400px] w-full rounded-2xl" />
+
+  return (
+    <SettingCard
+      icon={Puzzle}
+      iconColor="text-orange-600"
+      iconBg="bg-orange-50"
+      title="Modules"
+      description="Enable optional features for your organization. Disabled modules are hidden from all users."
+    >
+      <div className="divide-y divide-border">
+        {AVAILABLE_MODULES.map(mod => (
+          <ToggleRow
+            key={mod.key}
+            id={`module-${mod.key}`}
+            label={mod.label}
+            description={mod.description}
+            checked={modules.includes(mod.key)}
+            onChange={v => toggle(mod.key, v)}
+            disabled={mutation.isPending}
+          />
+        ))}
+      </div>
+    </SettingCard>
+  )
+}
+
+// ============================================================================
+// ============================================================================
+// PERSONAL SECTIONS
+// ============================================================================
+
+function ProfileSection() {
+  const { user, refreshUser } = useAuth()
+  const queryClient = useQueryClient()
+  const [firstName, setFirstName] = useState(user?.firstName || "")
+  const [lastName, setLastName] = useState(user?.lastName || "")
+  const [saving, setSaving] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarRemoving, setAvatarRemoving] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || "")
+      setLastName(user.lastName || "")
+    }
+  }, [user])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const { organizationsApi } = await import("@/lib/api")
+      await organizationsApi.updateMember(user!.id, { firstName, lastName })
+      notify.success("Profile updated")
+      queryClient.invalidateQueries({ queryKey: ["user"] })
+      refreshUser()
+    } catch (e: any) {
+      notify.error(e.message || "Failed to update profile")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      notify.error("Image must be less than 5MB")
+      return
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
+    if (!allowedTypes.includes(file.type)) {
+      notify.error("Only JPEG, PNG, and WebP images are allowed")
+      return
+    }
+
+    setAvatarUploading(true)
+    try {
+      const { usersApi } = await import("@/lib/api")
+      // Upload file directly to the API gateway
+      await usersApi.uploadAvatar(file)
+
+      // Refresh user data
+      await refreshUser()
+      notify.success("Avatar updated")
+    } catch (err: any) {
+      notify.error(err.message || "Failed to upload avatar")
+    } finally {
+      setAvatarUploading(false)
+      // Reset the input so the same file can be selected again
+      e.target.value = ""
+    }
+  }
+
+  const handleAvatarRemove = async () => {
+    setAvatarRemoving(true)
+    try {
+      const { usersApi } = await import("@/lib/api")
+      await usersApi.removeAvatar()
+      await refreshUser()
+      notify.success("Avatar removed")
+    } catch (err: any) {
+      notify.error(err.message || "Failed to remove avatar")
+    } finally {
+      setAvatarRemoving(false)
+    }
+  }
+
+  return (
+    <SettingCard
+      icon={Users}
+      iconColor="text-foreground"
+      iconBg="bg-foreground/5"
+      title="Profile"
+      description="Your personal information. This is visible to other members of your organization."
+    >
+      <div className="space-y-4">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="relative group">
+            <UserAvatar
+              firstName={user?.firstName}
+              lastName={user?.lastName}
+              avatarUrl={user?.avatarUrl}
+              seed={user?.id}
+              size="2xl"
+            />
+            {/* Upload overlay */}
+            <label className="absolute inset-0 rounded-full cursor-pointer bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+              <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                {avatarUploading ? "..." : "Edit"}
+              </span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={handleAvatarUpload}
+                disabled={avatarUploading}
+              />
+            </label>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">{user?.firstName} {user?.lastName}</p>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase()}</p>
+              {user?.avatarUrl && (
+                <button
+                  type="button"
+                  onClick={handleAvatarRemove}
+                  disabled={avatarRemoving}
+                  className="text-xs text-red-500 hover:text-red-600 transition-colors disabled:opacity-50"
+                >
+                  {avatarRemoving ? "Removing..." : "Remove photo"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-muted-foreground">First Name</Label>
+            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Last Name</Label>
+            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1" />
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Email</Label>
+          <Input value={user?.email || ""} disabled className="mt-1 bg-muted" />
+          <p className="text-[11px] text-muted-foreground mt-1">Email cannot be changed. Contact support if needed.</p>
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button onClick={handleSave} disabled={saving} size="sm">
+            {saving ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Save className="size-4 mr-1.5" />}
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </SettingCard>
+  )
+}
+
+function SecuritySection() {
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      notify.error("Passwords do not match")
+      return
+    }
+    if (newPassword.length < 8) {
+      notify.error("Password must be at least 8 characters")
+      return
+    }
+    setSaving(true)
+    try {
+      const { authApi } = await import("@/lib/api")
+      await authApi.changePassword(currentPassword, newPassword)
+      notify.success("Password changed successfully")
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } catch (e: any) {
+      notify.error(e.message || "Failed to change password")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <SettingCard
+      icon={Shield}
+      iconColor="text-foreground"
+      iconBg="bg-foreground/5"
+      title="Password & Security"
+      description="Manage your password and security settings."
+    >
+      <div className="space-y-4">
+        <div>
+          <Label className="text-xs text-muted-foreground">Current Password</Label>
+          <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="mt-1" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-muted-foreground">New Password</Label>
+            <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Confirm New Password</Label>
+            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1" />
+          </div>
+        </div>
+        <p className="text-[11px] text-muted-foreground">Password must be at least 8 characters with a mix of letters and numbers.</p>
+        <div className="flex justify-end pt-2">
+          <Button onClick={handleChangePassword} disabled={saving || !currentPassword || !newPassword} size="sm">
+            {saving ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Key className="size-4 mr-1.5" />}
+            Change Password
+          </Button>
+        </div>
+      </div>
+    </SettingCard>
+  )
+}
+
 // ============================================================================
 // Main Settings Page — Sidebar + Content Layout
 // ============================================================================
 
 export default function SettingsPage() {
   const { t } = useTranslation()
-  const [activeSection, setActiveSection] = useState<SettingsSection>("general")
+  const { user } = useAuth()
+  const searchParams = useSearchParams()
+
+  const isAdmin = user?.role === "ADMIN"
+  const canManage = user?.canManageUsers
+
+  // Non-admins default to personal profile, admins to general
+  const defaultSection: SettingsSection = canManage ? "general" : "profile"
+  const initialSection = (searchParams.get("section") as SettingsSection) || defaultSection
+  const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection)
 
   return (
     <div className="min-h-full bg-background">
@@ -647,21 +1005,53 @@ export default function SettingsPage() {
         <div className="flex gap-8">
           {/* Sidebar Navigation */}
           <nav className="w-56 shrink-0 hidden lg:block">
-            <div className="sticky top-24 space-y-1">
-              {NAV_ITEMS.map(item => {
+            <div className="sticky top-24 space-y-0.5">
+              {/* Organization section — only for admins */}
+              {canManage && (
+                <>
+                  <p className="px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Organization
+                  </p>
+                  {ORG_NAV_ITEMS.map(item => {
+                    const isActive = activeSection === item.key
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => setActiveSection(item.key)}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+                          isActive
+                            ? "bg-foreground/[0.06] text-foreground"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        }`}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </>
+              )}
+
+              {/* Personal section */}
+              <div className={canManage ? "pt-5 pb-1.5" : "pb-1.5"}>
+                <p className="px-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Personal
+                </p>
+              </div>
+              {PERSONAL_NAV_ITEMS.map(item => {
                 const isActive = activeSection === item.key
                 return (
                   <button
                     key={item.key}
                     onClick={() => setActiveSection(item.key)}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                       isActive
-                        ? `${item.bgColor} ${item.color} shadow-sm`
-                        : "text-muted-foreground hover:bg-accent/80 hover:text-foreground"
+                        ? "bg-foreground/[0.06] text-foreground"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                     }`}
                   >
-                    <item.icon className="h-4.5 w-4.5" />
-                    {t(`settings.tabs.${item.key}`)}
+                    <item.icon className="size-4" />
+                    {item.label}
                   </button>
                 )
               })}
@@ -669,19 +1059,19 @@ export default function SettingsPage() {
           </nav>
 
           {/* Mobile Tab Bar */}
-          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 py-2 flex gap-1">
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 py-2 flex gap-1 overflow-x-auto">
             {NAV_ITEMS.map(item => {
               const isActive = activeSection === item.key
               return (
                 <button
                   key={item.key}
                   onClick={() => setActiveSection(item.key)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    isActive ? `${item.color}` : "text-muted-foreground"
+                  className={`flex-none flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
+                    isActive ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
                   <item.icon className="h-5 w-5" />
-                  <span>{t(`settings.tabs.${item.key}`)}</span>
+                  <span>{item.label}</span>
                 </button>
               )
             })}
@@ -689,9 +1079,19 @@ export default function SettingsPage() {
 
           {/* Content Area */}
           <div className="flex-1 min-w-0">
+            {/* Organization sections — inline */}
             {activeSection === "general" && <GeneralSection />}
             {activeSection === "members" && <MembersSection />}
-            {activeSection === "appearance" && <AppearanceSection />}
+            {activeSection === "modules" && <ModulesSection />}
+            {/* Organization sections — lazy loaded from sub-pages */}
+            {activeSection === "workflows" && <LazyWorkflows />}
+            {activeSection === "roles" && <LazyRoles />}
+            {activeSection === "custom-fields" && <LazyCustomFields />}
+            {activeSection === "recurring" && <LazyRecurring />}
+            {activeSection === "audit-log" && <LazyAuditLog />}
+            {/* Personal sections */}
+            {activeSection === "profile" && <ProfileSection />}
+            {activeSection === "security" && <SecuritySection />}
             {activeSection === "notifications" && <NotificationsSection />}
           </div>
         </div>

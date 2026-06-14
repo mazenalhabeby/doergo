@@ -52,7 +52,7 @@ export class AttendanceService {
       where: {
         id: data.userId,
         organizationId: data.organizationId,
-        role: 'TECHNICIAN',
+        role: 'EMPLOYEE',
       },
       select: {
         id: true,
@@ -193,6 +193,13 @@ export class AttendanceService {
       `Clock in successful: entry=${entry.id}, user=${data.userId}, location=${location.name}, withinGeofence=${withinGeofence}, flags=[${flagReasons.join(',')}], approval=${approvalStatus}`,
     );
 
+    // Emit real-time event for dashboard/team updates
+    this.notificationClient.emit('attendance_clock_in', {
+      userId: data.userId,
+      organizationId: data.organizationId,
+      timeEntry: entry,
+    });
+
     return success(entry, `Clocked in at ${location.name}`);
   }
 
@@ -311,6 +318,13 @@ export class AttendanceService {
         action: 'clock_out',
       });
     }
+
+    // Emit real-time event for dashboard/team updates
+    this.notificationClient.emit('attendance_clock_out', {
+      userId: data.userId,
+      organizationId: data.organizationId,
+      timeEntry: updatedEntry,
+    });
 
     return success(
       updatedEntry,
@@ -821,7 +835,7 @@ export class AttendanceService {
       const managers = await this.prisma.user.findMany({
         where: {
           organizationId: data.organizationId,
-          role: { in: ['ADMIN', 'DISPATCHER'] },
+          role: { in: ['ADMIN', 'MANAGER'] },
           isActive: true,
         },
         select: { id: true, email: true },

@@ -9,6 +9,8 @@ import {
 import { Server, Socket } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as jwt from 'jsonwebtoken';
 import { SocketEvents } from '@hbcfield/shared';
 
 export interface ClientInfo {
@@ -44,6 +46,15 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   private startTime = Date.now();
   private messagesReceived = 0;
   private messagesSent = 0;
+  private readonly jwtSecret: string;
+
+  constructor(configService: ConfigService) {
+    const secret = configService.get<string>('JWT_ACCESS_SECRET');
+    if (!secret) {
+      throw new Error('CRITICAL: JWT_ACCESS_SECRET must be configured for socket authentication');
+    }
+    this.jwtSecret = secret;
+  }
 
   afterInit(server: Server) {
     this.logger.log('Socket.IO Gateway initialized');
@@ -113,27 +124,62 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
   @SubscribeMessage('authenticate')
   handleAuthenticate(client: Socket, payload: { userId: string; role: string; organizationId: string }) {
-    this.logger.log(`[AUTH] Client ${client.id} authenticating as user ${payload.userId} (${payload.role})`);
+    // Extract token from socket handshake auth
+    const token = client.handshake?.auth?.token;
+
+    if (!token || token === 'web-dashboard') {
+      this.logger.warn(`[AUTH] Client ${client.id} rejected: no valid JWT token provided`);
+      return { success: false, error: 'Authentication token required' };
+    }
+
+    // Verify JWT token
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, this.jwtSecret);
+    } catch (err: any) {
+      this.logger.warn(`[AUTH] Client ${client.id} rejected: invalid/expired token - ${err.message}`);
+      return { success: false, error: 'Invalid or expired token' };
+    }
+
+    // Verify the token payload matches the authenticate payload
+    const tokenUserId = decoded.sub || decoded.userId;
+    if (tokenUserId !== payload.userId) {
+      this.logger.warn(`[AUTH] Client ${client.id} rejected: userId mismatch (token: ${tokenUserId}, payload: ${payload.userId})`);
+      return { success: false, error: 'User identity mismatch' };
+    }
+
+    // Use ONLY data from the verified token — never fall back to the
+    // client-supplied payload (that let a socket self-assign any role/org room).
+    const userId = tokenUserId;
+    const role = decoded.role;
+    const organizationId = decoded.organizationId;
+
+    if (!role || !organizationId) {
+      this.logger.warn(`[AUTH] Client ${client.id} rejected: token missing role/organization claims`);
+      return { success: false, error: 'Token missing required claims' };
+    }
+
+    this.logger.log(`[AUTH] Client ${client.id} authenticated as user ${userId} (${role})`);
 
     const clientInfo: ClientInfo = {
-      userId: payload.userId,
-      role: payload.role,
-      organizationId: payload.organizationId,
+      userId,
+      role,
+      organizationId,
       connectedAt: new Date(),
       rooms: [],
     };
 
     // Join organization room
-    client.join(`org:${payload.organizationId}`);
-    clientInfo.rooms.push(`org:${payload.organizationId}`);
+    client.join(`org:${organizationId}`);
+    clientInfo.rooms.push(`org:${organizationId}`);
 
     // Join role-specific room
-    client.join(`role:${payload.role}`);
-    clientInfo.rooms.push(`role:${payload.role}`);
+    client.join(`role:${role}`);
+    clientInfo.rooms.push(`role:${role}`);
 
     // Join user-specific room
-    client.join(`user:${payload.userId}`);
-    clientInfo.rooms.push(`user:${payload.userId}`);
+    client.join(`user:${userId}`);
+    clientInfo.rooms.push(`user:${userId}`);
 
     this.connectedClients.set(client.id, clientInfo);
 
@@ -144,15 +190,18 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
   @SubscribeMessage('join_task')
   handleJoinTask(client: Socket, payload: { taskId: string }) {
-    const roomName = `task:${payload.taskId}`;
-    client.join(roomName);
-
     const clientInfo = this.connectedClients.get(client.id);
-    if (clientInfo) {
-      clientInfo.rooms.push(roomName);
+
+    if (!clientInfo || !clientInfo.organizationId) {
+      this.logger.warn(`[JOIN] Client ${client.id} rejected: not authenticated`);
+      return { success: false, error: 'Must authenticate before joining task rooms' };
     }
 
-    this.logger.log(`[JOIN] Client ${client.id} joined room ${roomName}`);
+    const roomName = `task:${payload.taskId}`;
+    client.join(roomName);
+    clientInfo.rooms.push(roomName);
+
+    this.logger.log(`[JOIN] Client ${client.id} (org: ${clientInfo.organizationId}) joined room ${roomName}`);
     return { success: true };
   }
 
@@ -174,6 +223,65 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   handlePing(client: Socket) {
     this.logger.debug(`[PING] Client ${client.id}`);
     return { pong: true, timestamp: Date.now() };
+  }
+
+  // =========================================================================
+  // AUTH CHECK FOR STATS ENDPOINTS
+  // =========================================================================
+
+  /**
+   * Verify a stats request token. Returns true if authorized.
+   * Used by the notification controller to gate stats/clients endpoints.
+   */
+  verifyStatsAccess(authHeader: string | undefined): boolean {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return false;
+    }
+    const token = authHeader.slice(7);
+    try {
+      const decoded: any = jwt.verify(token, this.jwtSecret);
+      // Only ADMIN and MANAGER roles can view stats
+      return decoded.role === 'ADMIN' || decoded.role === 'MANAGER';
+    } catch {
+      return false;
+    }
+  }
+
+  // =========================================================================
+  // FORCE DISCONNECT
+  // =========================================================================
+
+  /**
+   * Force-disconnect all sockets for a given user (e.g., after removal from org).
+   */
+  forceDisconnectUser(userId: string) {
+    let disconnected = 0;
+    for (const [socketId, client] of this.connectedClients) {
+      if (client.userId === userId) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.emit('force_disconnect', { reason: 'removed_from_organization' });
+          socket.disconnect(true);
+          disconnected++;
+        }
+        this.connectedClients.delete(socketId);
+      }
+    }
+    if (disconnected > 0) {
+      this.logger.log(`[FORCE_DISCONNECT] Disconnected ${disconnected} socket(s) for user ${userId}`);
+    }
+  }
+
+  // =========================================================================
+  // TASK DELETED EVENT
+  // =========================================================================
+
+  emitTaskDeleted(taskId: string, organizationId: string) {
+    this.logger.log(`[EMIT] task.deleted (taskId: ${taskId}) to org:${organizationId}`);
+    this.messagesSent++;
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
+    // Also notify anyone watching this specific task
+    this.server.to(`task:${taskId}`).emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
   }
 
   // Get connection statistics

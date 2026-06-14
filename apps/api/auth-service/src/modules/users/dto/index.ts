@@ -1,13 +1,13 @@
 import { Role } from "@hbcfield/shared";
 /**
- * User/Technician DTOs for Auth Service
+ * User/Employee DTOs for Auth Service
  */
 
 
 /**
- * DTO for creating a new technician
+ * DTO for creating a new employee
  */
-export interface CreateTechnicianDto {
+export interface CreateEmployeeDto {
   email: string;
   firstName: string;
   lastName: string;
@@ -20,9 +20,9 @@ export interface CreateTechnicianDto {
 }
 
 /**
- * DTO for updating a technician
+ * DTO for updating an employee
  */
-export interface UpdateTechnicianDto {
+export interface UpdateEmployeeDto {
   firstName?: string;
   lastName?: string;
   position?: string;
@@ -37,9 +37,9 @@ export interface UpdateTechnicianDto {
 }
 
 /**
- * DTO for listing technicians
+ * DTO for listing employees
  */
-export interface ListTechniciansDto {
+export interface ListEmployeesDto {
   organizationId: string;
   status?: 'active' | 'inactive' | 'all';
   position?: string;
@@ -52,17 +52,17 @@ export interface ListTechniciansDto {
 }
 
 /**
- * DTO for getting technician detail
+ * DTO for getting employee detail
  */
-export interface GetTechnicianDetailDto {
+export interface GetEmployeeDetailDto {
   id: string;
   organizationId: string;
 }
 
 /**
- * DTO for getting technician performance
+ * DTO for getting employee performance
  */
-export interface GetTechnicianPerformanceDto {
+export interface GetEmployeePerformanceDto {
   id: string;
   organizationId: string;
   startDate?: string;
@@ -90,6 +90,7 @@ export interface ListOrgMembersDto {
 export interface UpdateMemberRoleDto {
   role: Role;
   canCreateTasks?: boolean;
+  taskCreationScope?: string;
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
   canManageUsers?: boolean;
@@ -101,8 +102,12 @@ export interface UpdateMemberRoleDto {
 export interface UpdateMemberProfileDto {
   firstName?: string;
   lastName?: string;
+  position?: string;
+  scheduleType?: string;
+  monthlyHourBudget?: number;
   role?: Role;
   canCreateTasks?: boolean;
+  taskCreationScope?: string;
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
   canManageUsers?: boolean;
@@ -116,3 +121,10 @@ export interface RemoveMemberDto {
   organizationId: string;
   requesterId: string;
 }
+
+// Backward-compatible aliases for internal message patterns
+export type CreateTechnicianDto = CreateEmployeeDto;
+export type UpdateTechnicianDto = UpdateEmployeeDto;
+export type ListTechniciansDto = ListEmployeesDto;
+export type GetTechnicianDetailDto = GetEmployeeDetailDto;
+export type GetTechnicianPerformanceDto = GetEmployeePerformanceDto;

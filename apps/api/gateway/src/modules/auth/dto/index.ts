@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import {
   EmailField,
   PasswordField,
@@ -58,9 +58,10 @@ export class RegisterDto {
  * Refresh token request DTO
  */
 export class RefreshTokenDto {
-  @ApiProperty({ description: 'Refresh token for getting new access token' })
-  @TokenField('Refresh token')
-  refreshToken: string;
+  @ApiPropertyOptional({ description: 'Refresh token (optional — can also be sent via httpOnly cookie)' })
+  @IsOptional()
+  @IsString()
+  refreshToken?: string;
 }
 
 /**

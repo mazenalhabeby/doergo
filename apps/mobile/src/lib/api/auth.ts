@@ -1,4 +1,4 @@
-import { fetchApi, fetchWithAuth, saveTokens, clearTokens, getAccessToken, getRefreshToken } from './client';
+import { fetchApi, fetchWithAuth, saveTokens, clearTokens, getAccessToken, getRefreshToken, getApiUrl } from './client';
 import type { User, LoginResponse } from './types';
 
 // Auth API (login/register use fetchApi - no auth required)
@@ -91,20 +91,33 @@ export const accountApi = {
   },
 };
 
-// Avatar API - profile picture upload
+// Avatar API - profile picture upload (local file storage)
 export const avatarApi = {
-  getPresignedUrl: async (fileName: string, fileType: string): Promise<{ uploadUrl: string; fileUrl: string; expiresIn: number }> => {
-    return fetchWithAuth('/users/avatar/presign', {
-      method: 'POST',
-      body: JSON.stringify({ fileName, fileType }),
-    });
-  },
+  upload: async (uri: string, fileName: string, fileType: string): Promise<{ avatarUrl: string }> => {
+    const token = await getAccessToken();
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      name: fileName,
+      type: fileType,
+    } as any);
 
-  confirm: async (avatarUrl: string): Promise<any> => {
-    return fetchWithAuth('/users/avatar', {
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/users/avatar/upload`, {
       method: 'POST',
-      body: JSON.stringify({ avatarUrl }),
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
     });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.message || 'Upload failed');
+    }
+
+    const data = await response.json();
+    return data.data;
   },
 
   remove: async (): Promise<any> => {

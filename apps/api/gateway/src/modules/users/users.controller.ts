@@ -8,13 +8,19 @@ import {
   Body,
   Inject,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { IsString, IsOptional } from 'class-validator';
+import { join } from 'path';
+import { mkdir, writeFile, unlink } from 'fs/promises';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -31,19 +37,6 @@ class RegisterPushTokenDto {
   @IsString()
   @IsOptional()
   deviceId?: string;
-}
-
-class AvatarPresignDto {
-  @IsString()
-  fileName: string;
-
-  @IsString()
-  fileType: string;
-}
-
-class AvatarConfirmDto {
-  @IsString()
-  avatarUrl: string;
 }
 
 @ApiTags('users')
@@ -67,40 +60,53 @@ export class UsersController {
   }
 
   // =========================================================================
-  // AVATAR
+  // AVATAR (local file upload)
   // =========================================================================
 
-  @Post('avatar/presign')
-  @ApiOperation({ summary: 'Get presigned URL for avatar upload' })
-  @ApiBody({ type: AvatarPresignDto })
-  async avatarPresign(
+  @Post('avatar/upload')
+  @ApiOperation({ summary: 'Upload avatar image (multipart/form-data)' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async avatarUpload(
     @CurrentUser() user: CurrentUserData,
-    @Body() dto: AvatarPresignDto,
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.tasksQueueService.getAvatarPresignedUrl({
-      userId: user.id,
-      fileName: dto.fileName,
-      fileType: dto.fileType,
-    });
-  }
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('File too large (max 5MB)');
+    }
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
+    }
 
-  @Post('avatar')
-  @ApiOperation({ summary: 'Confirm avatar upload (save URL to user profile)' })
-  @ApiBody({ type: AvatarConfirmDto })
-  async avatarConfirm(
-    @CurrentUser() user: CurrentUserData,
-    @Body() dto: AvatarConfirmDto,
-  ) {
-    return firstValueFrom(
+    // Save file to local uploads directory
+    const uploadDir = join(process.cwd(), 'uploads', 'avatars', user.id);
+    await mkdir(uploadDir, { recursive: true });
+
+    const ext = file.originalname.split('.').pop() || 'jpg';
+    const fileName = `${Date.now()}.${ext}`;
+    const filePath = join(uploadDir, fileName);
+    await writeFile(filePath, file.buffer);
+
+    // Build URL path (served as static files)
+    const avatarUrl = `/uploads/avatars/${user.id}/${fileName}`;
+
+    // Update user in database
+    await firstValueFrom(
       this.authClient.send(
         { cmd: 'update_avatar' },
-        { userId: user.id, avatarUrl: dto.avatarUrl },
+        { userId: user.id, avatarUrl },
       ),
     );
+
+    return { success: true, data: { avatarUrl } };
   }
 
   @Delete('avatar')
-  @ApiOperation({ summary: 'Remove avatar from user profile and S3' })
+  @ApiOperation({ summary: 'Remove avatar from user profile and local storage' })
   async avatarRemove(@CurrentUser() user: CurrentUserData) {
     // 1. Remove from DB and get old URL
     const result: any = await firstValueFrom(
@@ -110,14 +116,15 @@ export class UsersController {
       ),
     );
 
-    // 2. Delete old file from S3 if exists (fire-and-forget with logging)
+    // 2. Delete old file from local storage if exists (fire-and-forget)
     const oldUrl = result?.data?.oldAvatarUrl;
     if (oldUrl) {
-      this.tasksQueueService.deleteAvatarFromS3({ fileUrl: oldUrl })
-        .catch((err) => {
-          // Log but don't fail the user-facing response
-          console.warn(`[AvatarRemove] Failed to delete S3 avatar for user ${user.id}: ${err?.message}`);
-        });
+      try {
+        const filePath = join(process.cwd(), oldUrl);
+        await unlink(filePath);
+      } catch (err: any) {
+        console.warn(`[AvatarRemove] Failed to delete local avatar for user ${user.id}: ${err?.message}`);
+      }
     }
 
     return result;
@@ -162,9 +169,9 @@ export class UsersController {
   }
 
   @Get('workers')
-  @ApiOperation({ summary: 'Get all technicians (CLIENT or DISPATCHER)' })
+  @ApiOperation({ summary: 'Get all employees (ADMIN or MANAGER)' })
   @ApiQuery({ name: 'organizationId', required: false })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async getWorkers(
     @CurrentUser() user: CurrentUserData,
     @Query() query: Record<string, any>,
@@ -185,7 +192,7 @@ export class UsersController {
     @CurrentUser() user: CurrentUserData,
   ) {
     // Users can only access their own data, or DISPATCHER can access users in their org
-    if (user.id !== id && user.role !== Role.DISPATCHER) {
+    if (user.id !== id && user.role !== Role.MANAGER) {
       throw new ForbiddenException('You can only access your own profile');
     }
 
@@ -198,7 +205,7 @@ export class UsersController {
     }
 
     // DISPATCHER can only access users in their organization
-    if (user.role === Role.DISPATCHER && result.data.organizationId !== user.organizationId) {
+    if (user.role === Role.MANAGER && result.data.organizationId !== user.organizationId) {
       throw new ForbiddenException('You can only access users in your organization');
     }
 
@@ -206,19 +213,19 @@ export class UsersController {
   }
 
   @Get(':id/tasks')
-  @ApiOperation({ summary: 'Get tasks assigned to a technician' })
-  @Roles(Role.DISPATCHER, Role.TECHNICIAN)
+  @ApiOperation({ summary: 'Get tasks assigned to an employee' })
+  @Roles(Role.MANAGER, Role.EMPLOYEE)
   async getWorkerTasks(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    // Technicians can only see their own tasks, DISPATCHER can see any technician's tasks in their org
-    if (user.role === Role.TECHNICIAN && user.id !== id) {
+    // Employees can only see their own tasks, MANAGER can see any employee's tasks in their org
+    if (user.role === Role.EMPLOYEE && user.id !== id) {
       throw new ForbiddenException('You can only access your own tasks');
     }
 
-    // For DISPATCHER, verify the technician is in their organization
-    if (user.role === Role.DISPATCHER) {
+    // For MANAGER, verify the employee is in their organization
+    if (user.role === Role.MANAGER) {
       const workerResult = await firstValueFrom(
         this.authClient.send({ cmd: 'find_user' }, { id }),
       );
@@ -239,7 +246,7 @@ export class UsersController {
 
   @Get(':id/assignments')
   @ApiOperation({ summary: 'Get company location assignments for a user' })
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async getUserAssignments(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,

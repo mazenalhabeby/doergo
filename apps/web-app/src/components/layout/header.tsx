@@ -34,9 +34,15 @@ export function Header({ title }: HeaderProps) {
         </button>
 
         {/* User Avatar */}
-        <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-          {user?.firstName?.[0]}
-          {user?.lastName?.[0]}
+        <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm overflow-hidden">
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+          ) : (
+            <>
+              {user?.firstName?.[0]}
+              {user?.lastName?.[0]}
+            </>
+          )}
         </div>
       </div>
     </header>

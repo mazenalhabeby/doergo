@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Home — Mobile Layout Options</title>
+<style>
+  :root{
+    --bg:#0a0a10; --surface:#121219; --card:#1a1a24; --raised:#22222e;
+    --border:rgba(255,255,255,0.08); --text:#f2f3f7; --muted:#8b8d98; --muted2:#5c5e6b;
+    --primary:#2563EB; --primaryL:rgba(37,99,235,0.15);
+    --green:#10b981; --blue:#3b82f6; --amber:#f59e0b; --red:#ef4444; --purple:#8b5cf6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,sans-serif}
+  body{background:#05050a;color:var(--text);padding:40px 24px 60px;display:flex;flex-direction:column;align-items:center;gap:8px}
+  h1{font-size:22px;font-weight:700;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:28px;text-align:center;max-width:680px;line-height:1.5}
+  .row{display:flex;gap:36px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .label{font-size:14px;font-weight:600}
+  .desc{font-size:11px;color:var(--muted);max-width:300px;text-align:center;line-height:1.5;min-height:48px}
+  .pick{font-size:11px;color:var(--primary);font-weight:600;border:1px solid var(--primary);border-radius:20px;padding:5px 14px;cursor:default}
+
+  /* phone frame */
+  .phone{width:300px;height:620px;background:var(--bg);border-radius:38px;border:10px solid #1c1c24;
+    box-shadow:0 30px 60px rgba(0,0,0,0.5);overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#1c1c24;border-radius:0 0 16px 16px;z-index:30}
+  .statusbar{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;color:var(--muted);flex-shrink:0}
+  .screen{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
+  .scroll{flex:1;overflow-y:auto;padding:0 14px 14px}
+  .scroll::-webkit-scrollbar{width:0}
+
+  /* header */
+  .greet{font-size:12px;color:var(--muted);margin-top:6px}
+  .welcome{font-size:21px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .newbtn{font-size:11px;font-weight:600;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:6px 10px;white-space:nowrap}
+
+  /* section headers */
+  .sechead{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 10px}
+  .sectitle{font-size:10px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,0.8);text-transform:uppercase}
+  .badge{font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px}
+  .badge.p{background:var(--primaryL);color:#7aa2f7}
+  .badge.a{background:rgba(245,158,11,0.15);color:var(--amber)}
+
+  /* location card */
+  .loc{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px}
+  .loc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .loc-name{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+  .loc-count{font-size:11px;font-weight:700;color:var(--text);background:var(--raised);border-radius:8px;padding:2px 8px}
+  .alert{font-size:9px;font-weight:700;color:var(--red);background:rgba(239,68,68,.15);border-radius:6px;padding:2px 6px}
+  .people{display:flex;gap:16px;flex-wrap:wrap}
+  .person{display:flex;flex-direction:column;align-items:center;gap:5px;width:54px}
+  .av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;position:relative}
+  .dot{position:absolute;bottom:1px;right:1px;width:11px;height:11px;border-radius:50%;border:2px solid var(--card)}
+  .dot.on{background:var(--green)} .dot.busy{background:var(--blue)} .dot.off{background:var(--muted2)}
+  .pname{font-size:10px;color:rgba(255,255,255,.72);font-weight:500;text-align:center;white-space:nowrap}
+  .ptag{font-size:8px;font-weight:800;letter-spacing:.4px;border-radius:10px;padding:2px 6px;text-transform:uppercase}
+  .t-task{background:rgba(59,130,246,.2);color:#7aa2f7}
+  .t-hrs{background:rgba(139,92,246,.2);color:#b794f6}
+  .empty{font-size:10px;color:var(--muted2)}
+
+  /* activity feed */
+  .ev{display:flex;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .ev .d{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+  .d.green{background:var(--green)} .d.blue{background:var(--blue)} .d.amber{background:var(--amber)} .d.red{background:var(--red)} .d.purple{background:var(--purple)}
+  .ev .msg{font-size:11px;color:var(--muted);line-height:1.45}
+  .ev .msg b{color:var(--text);font-weight:600}
+  .ev .tm{font-size:9px;color:var(--muted2);margin-top:2px}
+
+  /* pending */
+  .pend{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .pend .av{width:32px;height:32px;font-size:11px}
+  .pend .info{flex:1;min-width:0}
+  .pend .ti{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pend .de{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .iconbtn{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .ok{color:var(--green);background:rgba(16,185,129,.1)} .no{color:var(--red);background:rgba(239,68,68,.1)}
+
+  /* segmented */
+  .seg{display:flex;background:var(--raised);border-radius:11px;padding:3px;margin:12px 2px 4px}
+  .seg div{flex:1;text-align:center;font-size:12px;font-weight:600;padding:7px;border-radius:8px;color:var(--muted)}
+  .seg div.act{background:var(--primary);color:#fff}
+
+  /* FAB + sheet */
+  .fab{position:absolute;right:16px;bottom:18px;background:var(--primary);border-radius:16px;padding:11px 15px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#fff;box-shadow:0 8px 20px rgba(37,99,235,.4);z-index:20}
+  .fab .c{background:#fff;color:var(--primary);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px}
+  .sheet{position:absolute;left:0;right:0;bottom:0;height:56%;background:var(--surface);border-radius:22px 22px 0 0;border-top:1px solid var(--border);box-shadow:0 -12px 30px rgba(0,0,0,.5);padding:8px 14px 14px;z-index:15}
+  .grip{width:38px;height:4px;border-radius:3px;background:var(--muted2);margin:6px auto 4px}
+  .dim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:14}
+</style>
+</head>
+<body>
+  <h1>Admin Home — Mobile Layout Options</h1>
+  <p class="sub">Three ways to fit the website's two-pane dashboard (workspace grid + activity rail) onto a phone. Same live data, same "Full parity" actions in all three — only the arrangement differs.</p>
+
+  <div class="row">
+
+    <!-- ============ OPTION 1: Single scroll ============ -->
+    <div class="col">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>17:42</span><span>5G ▮▮▮</span></div>
+        <div class="screen"><div class="scroll">
+          <div class="greet">Good evening</div>
+          <div class="welcome"><span>Welcome back, John</span><span class="newbtn">+ Space</span></div>
+
+          <!-- locations -->
+          <div class="loc">
+            <div class="loc-top"><span class="loc-name">▣ Main Office</span><span class="loc-count">2/4</span></div>
+            <div class="people">
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">MW<span class="dot busy"></span></div><span class="pname">Mike W.</span><span class="ptag t-task">Working</span></div>
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS<span class="dot on"></span></div><span class="pname">Noor S.</span><span class="ptag t-hrs">Available</span></div>
+            </div>
+          </div>
+          <div class="loc">
+            <div class="loc-top"><span class="loc-name">▣ Service Center</span><span class="loc-count">2/2</span></div>
+            <div class="people">
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#f59e0b,#d97706)">KA<span class="dot busy"></span></div><span class="pname">Karim A.</span><span class="ptag t-task">Working</span></div>
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#10b981,#059669)">DK<span class="dot on"></span></div><span class="pname">David K.</span><span class="ptag t-hrs">Available</span></div>
+            </div>
+          </div>
+          <div class="loc">
+            <div class="loc-top"><span class="loc-name">▣ Warehouse <span class="alert">1 alert</span></span><span class="loc-count">1/2</span></div>
+            <div class="people">
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)">HB<span class="dot on"></span></div><span class="pname">Hassan B.</span><span class="ptag t-hrs">Available</span></div>
+            </div>
+          </div>
+
+          <!-- live activity -->
+          <div class="sechead"><span class="sectitle">Live Activity</span><span class="badge p">10 events</span></div>
+          <div class="ev"><div class="d red"></div><div><div class="msg"><b>David K.</b> created <b>Emergency Water Heater Repair</b></div><div class="tm">23d ago</div></div></div>
+          <div class="ev"><div class="d amber"></div><div><div class="msg"><b>Someone</b> was assigned to <b>Office Network Cabling</b></div><div class="tm">23d ago</div></div></div>
+          <div class="ev"><div class="d blue"></div><div><div class="msg"><b>Karim A.</b> en route to <b>Electrical Panel Inspection</b></div><div class="tm">23d ago</div></div></div>
+
+          <!-- pending -->
+          <div class="sechead"><span class="sectitle">Pending Actions</span><span class="badge a">5</span></div>
+          <div class="pend"><div class="av" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS</div><div class="info"><div class="ti">Noor S. – Blocked</div><div class="de">Window Tinting — South Wing</div></div><div class="iconbtn ok">✓</div><div class="iconbtn no">✕</div></div>
+          <div class="pend"><div class="av" style="background:linear-gradient(135deg,#ef4444,#dc2626)">?</div><div class="info"><div class="ti">Unassigned – New Task</div><div class="de">Loading Dock Light Replacement</div></div><div class="iconbtn ok">✓</div></div>
+        </div></div>
+      </div>
+      <div class="label">1 · Single scroll, stacked</div>
+      <div class="desc">Everything on one scrollable screen: locations → Live Activity → Pending Actions. Most native-feeling; longest scroll.</div>
+    </div>
+
+    <!-- ============ OPTION 2: Segmented tabs ============ -->
+    <div class="col">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>17:42</span><span>5G ▮▮▮</span></div>
+        <div class="screen"><div class="scroll">
+          <div class="greet">Good evening</div>
+          <div class="welcome"><span>Welcome back, John</span><span class="newbtn">+ Space</span></div>
+          <div class="seg"><div class="act">Workspace</div><div>Activity · 5</div></div>
+
+          <div class="loc">
+            <div class="loc-top"><span class="loc-name">▣ Main Office</span><span class="loc-count">2/4</span></div>
+            <div class="people">
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">MW<span class="dot busy"></span></div><span class="pname">Mike W.</span><span class="ptag t-task">Working</span></div>
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS<span class="dot on"></span></div><span class="pname">Noor S.</span><span class="ptag t-hrs">Available</span></div>
+            </div>
+          </div>
+          <div class="loc">
+            <div class="loc-top"><span class="loc-name">▣ Service Center</span><span class="loc-count">2/2</span></div>
+            <div class="people">
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#f59e0b,#d97706)">KA<span class="dot busy"></span></div><span class="pname">Karim A.</span><span class="ptag t-task">Working</span></div>
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#10b981,#059669)">DK<span class="dot on"></span></div><span class="pname">David K.</span><span class="ptag t-hrs">Available</span></div>
+            </div>
+          </div>
+          <div class="loc">
+            <div class="loc-top"><span class="loc-name">▣ Warehouse <span class="alert">1 alert</span></span><span class="loc-count">1/2</span></div>
+            <div class="people">
+              <div class="person"><div class="av" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)">HB<span class="dot on"></span></div><span class="pname">Hassan B.</span><span class="ptag t-hrs">Available</span></div>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:10px;color:var(--muted2);margin-top:14px">— tap "Activity" to see the feed & pending —</div>
+        </div></div>
+      </div>
+      <div class="label">2 · Segmented tabs</div>
+      <div class="desc">A "Workspace / Activity" toggle under the header. Each pane gets the full screen; closest to the desktop split. One extra tap to reach activity.</div>
+    </div>
+
+    <!-- ============ OPTION 3: Cards + activity sheet ============ -->
+    <div class="col">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>17:42</span><span>5G ▮▮▮</span></div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="greet">Good evening</div>
+            <div class="welcome"><span>Welcome back, John</span><span class="newbtn">+ Space</span></div>
+            <div class="loc">
+              <div class="loc-top"><span class="loc-name">▣ Main Office</span><span class="loc-count">2/4</span></div>
+              <div class="people">
+                <div class="person"><div class="av" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">MW<span class="dot busy"></span></div><span class="pname">Mike W.</span><span class="ptag t-task">Working</span></div>
+                <div class="person"><div class="av" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS<span class="dot on"></span></div><span class="pname">Noor S.</span><span class="ptag t-hrs">Avail.</span></div>
+              </div>
+            </div>
+            <div class="loc">
+              <div class="loc-top"><span class="loc-name">▣ Service Center</span><span class="loc-count">2/2</span></div>
+              <div class="people">
+                <div class="person"><div class="av" style="background:linear-gradient(135deg,#f59e0b,#d97706)">KA<span class="dot busy"></span></div><span class="pname">Karim A.</span><span class="ptag t-task">Working</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- bottom sheet peeking -->
+          <div class="dim"></div>
+          <div class="sheet">
+            <div class="grip"></div>
+            <div class="sechead" style="margin-top:4px"><span class="sectitle">Live Activity</span><span class="badge p">10</span></div>
+            <div class="ev"><div class="d red"></div><div><div class="msg"><b>David K.</b> created <b>Water Heater Repair</b></div><div class="tm">23d ago</div></div></div>
+            <div class="ev"><div class="d amber"></div><div><div class="msg"><b>Someone</b> assigned to <b>Network Cabling</b></div><div class="tm">23d ago</div></div></div>
+            <div class="sechead"><span class="sectitle">Pending Actions</span><span class="badge a">5</span></div>
+            <div class="pend"><div class="av" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS</div><div class="info"><div class="ti">Noor S. – Blocked</div><div class="de">Window Tinting</div></div><div class="iconbtn ok">✓</div><div class="iconbtn no">✕</div></div>
+          </div>
+          <div class="fab"><span class="c">▲</span> Activity <span class="c" style="background:var(--amber);color:#000">5</span></div>
+        </div>
+      </div>
+      <div class="label">3 · Cards + activity sheet</div>
+      <div class="desc">Workspace fills the screen; a floating "Activity" button pulls up a bottom sheet with the feed + pending actions. Most room for the grid.</div>
+    </div>
+
+  </div>
+</body>
+</html>

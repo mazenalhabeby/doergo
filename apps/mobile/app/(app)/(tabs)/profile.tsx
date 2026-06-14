@@ -35,12 +35,8 @@ import {
 import { ConfirmSheet } from '../../../src/components';
 import {
   getRoleLabel,
-<<<<<<< HEAD
   getPositionLabel,
   getTechnicianTypeLabel,
-=======
-  getWorkModeLabel,
->>>>>>> worktree-agent-a0600cc7
   Role,
 } from '@hbcfield/shared/client';
 
@@ -240,12 +236,8 @@ export default function ProfileScreen() {
           const showRole = badges?.showRole !== false;
           const showType = badges?.showType !== false;
           const showSpecialty = badges?.showSpecialty !== false;
-<<<<<<< HEAD
           const hasBadges = showRole || (isTechnician && !!user?.position)
             || (isTechnician && showType && !!user?.technicianType)
-=======
-          const hasBadges = showRole || (isTechnician && showWorkMode && !!user?.workMode)
->>>>>>> worktree-agent-a0600cc7
             || (isTechnician && showSpecialty && !!user?.specialty);
 
           if (!hasBadges) return null;

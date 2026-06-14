@@ -57,4 +57,23 @@ export const attendanceApi = {
   getBreakStatus: async (): Promise<BreakStatus> => {
     return fetchWithAuth<BreakStatus>('/attendance/breaks/status', { method: 'GET' });
   },
+
+  /** Admin view: all org time entries for a day (who is clocked in). */
+  getAllEntries: async (params?: { date?: string; status?: string; limit?: number }): Promise<TimeEntry[]> => {
+    const endpoint = buildUrlWithQuery('/attendance/all-entries', {
+      date: params?.date,
+      status: params?.status,
+      limit: params?.limit ?? 500,
+    });
+    const result = await fetchWithAuth<any>(endpoint, { method: 'GET' });
+    if (Array.isArray(result)) return result;
+    return result?.data ?? [];
+  },
+
+  /** Admin view: breaks currently in progress across the org. */
+  getActiveBreaks: async (): Promise<Array<{ userId: string; [k: string]: any }>> => {
+    const result = await fetchWithAuth<any>('/attendance/breaks/active', { method: 'GET' });
+    if (Array.isArray(result)) return result;
+    return result?.data ?? [];
+  },
 };

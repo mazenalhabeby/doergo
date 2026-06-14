@@ -1,36 +1,38 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, memo } from "react"
 import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { notify } from "@/lib/toast"
 import {
   MapPin,
-  Search,
   Plus,
   MoreHorizontal,
   Pencil,
-  Trash2,
-  RefreshCw,
-  Navigation,
-  Shield,
   Users,
-  ToggleLeft,
-  ToggleRight,
-  UserPlus,
-  X,
   Loader2,
+  Settings2,
+
+  ToggleRight,
+  ToggleLeft,
+  Building2,
+  ChevronRight,
+  X,
+  UserPlus,
 } from "lucide-react"
+import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
 
 import { useAuth } from "@/contexts/auth-context"
 import {
   locationsApi,
-  techniciansApi,
+  workflowsApi,
+  employeesApi,
   type CompanyLocation,
   type CreateLocationInput,
   type UpdateLocationInput,
-  type LocationAssignment,
-  type AssignTechnicianInput,
+  type StatusWorkflow,
+  type AssignMemberInput,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,6 +40,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select,
   SelectContent,
@@ -45,6 +48,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { WorkflowSelector } from "./_components/workflow-selector"
+import { WorkflowBuilder } from "./_components/workflow-builder"
 import {
   Dialog,
   DialogContent,
@@ -77,9 +82,9 @@ const LocationPicker = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex items-center justify-center h-[340px] rounded-lg border border-dashed border-border bg-muted">
+      <div className="flex items-center justify-center h-[300px] rounded-lg border border-dashed border-border bg-muted/50">
         <div className="text-center">
-          <Loader2 className="h-6 w-6 text-muted-foreground animate-spin mx-auto mb-2" />
+          <Loader2 className="h-5 w-5 text-muted-foreground animate-spin mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">Loading map...</p>
         </div>
       </div>
@@ -89,6 +94,10 @@ const LocationPicker = dynamic(
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const
 
+const DAY_LABELS: Record<string, string> = {
+  MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun",
+}
+
 const TIMEZONES = [
   { value: "Europe/Berlin", label: "Europe/Berlin (CET)" },
   { value: "Europe/Vienna", label: "Europe/Vienna (CET)" },
@@ -96,446 +105,557 @@ const TIMEZONES = [
   { value: "Europe/London", label: "Europe/London (GMT)" },
   { value: "Europe/Paris", label: "Europe/Paris (CET)" },
   { value: "Europe/Amsterdam", label: "Europe/Amsterdam (CET)" },
-  { value: "Europe/Rome", label: "Europe/Rome (CET)" },
-  { value: "Europe/Madrid", label: "Europe/Madrid (CET)" },
-  { value: "Europe/Warsaw", label: "Europe/Warsaw (CET)" },
-  { value: "Europe/Istanbul", label: "Europe/Istanbul (TRT)" },
   { value: "America/New_York", label: "America/New_York (EST)" },
   { value: "America/Chicago", label: "America/Chicago (CST)" },
-  { value: "America/Denver", label: "America/Denver (MST)" },
   { value: "America/Los_Angeles", label: "America/Los_Angeles (PST)" },
-  { value: "America/Toronto", label: "America/Toronto (EST)" },
-  { value: "America/Sao_Paulo", label: "America/Sao_Paulo (BRT)" },
-  { value: "Asia/Dubai", label: "Asia/Dubai (GST)" },
-  { value: "Asia/Riyadh", label: "Asia/Riyadh (AST)" },
-  { value: "Asia/Tokyo", label: "Asia/Tokyo (JST)" },
-  { value: "Asia/Shanghai", label: "Asia/Shanghai (CST)" },
-  { value: "Asia/Kolkata", label: "Asia/Kolkata (IST)" },
-  { value: "Australia/Sydney", label: "Australia/Sydney (AEST)" },
-  { value: "Pacific/Auckland", label: "Pacific/Auckland (NZST)" },
   { value: "UTC", label: "UTC" },
 ]
-const DAY_LABELS: Record<string, string> = {
-  MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun",
+
+// Module color mapping for pills
+const MODULE_COLORS: Record<string, string> = {
+  time_tracking: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  sprints: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
+  story_points: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  epics: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  phases: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
+  custom_fields: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+}
+
+function getModuleLabel(key: string): string {
+  return AVAILABLE_MODULES.find((m) => m.key === key)?.label || key
 }
 
 // ============================================================================
 // MAIN PAGE
 // ============================================================================
 
-export default function LocationsPage() {
+export default function SpacesPage() {
   const queryClient = useQueryClient()
+  const router = useRouter()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
 
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("active")
-  const [page, setPage] = useState(1)
-
-  // Dialog states
   const [createOpen, setCreateOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState<CompanyLocation | null>(null)
+  const [configureTarget, setConfigureTarget] = useState<CompanyLocation | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CompanyLocation | null>(null)
-  const [assignTarget, setAssignTarget] = useState<CompanyLocation | null>(null)
+  const [editTarget, setEditTarget] = useState<CompanyLocation | null>(null)
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["locations", statusFilter, page],
-    queryFn: () => locationsApi.list({
-      page,
-      limit: 20,
-      includeInactive: statusFilter === "all" || statusFilter === "inactive",
-    }),
+  const { data, isLoading } = useQuery({
+    queryKey: ["locations", "all"],
+    queryFn: () => locationsApi.list({ limit: 100, includeInactive: true }),
+  })
+
+  const { data: workflows } = useQuery({
+    queryKey: ["workflows"],
+    queryFn: () => workflowsApi.list(),
   })
 
   const locations = data?.data || []
-  const meta = data?.meta
-  const filteredLocations = locations.filter((loc) => {
-    if (statusFilter === "active" && !loc.isActive) return false
-    if (statusFilter === "inactive" && loc.isActive) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return loc.name.toLowerCase().includes(q) || (loc.address || "").toLowerCase().includes(q)
-    }
-    return true
-  })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => locationsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations"] })
       setDeleteTarget(null)
-      toast.success("Location deactivated successfully")
+      notify.success("Space deactivated")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to deactivate location"),
+    onError: (err: Error) => notify.error(err.message || "Failed to deactivate space"),
   })
 
   const reactivateMutation = useMutation({
     mutationFn: (id: string) => locationsApi.update(id, { isActive: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations"] })
-      toast.success("Location reactivated")
+      notify.success("Space reactivated")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to reactivate"),
+    onError: (err: Error) => notify.error(err.message || "Failed to reactivate"),
   })
 
   return (
     <div className="min-h-full bg-background">
-    <div className="max-w-screen-xl mx-auto px-6 py-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">Company Locations</h1>
-            <p className="mt-1.5 text-muted-foreground">
-              Manage work sites, geofence areas, and technician assignments
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-[140px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="all">All</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border-border/80 shadow-sm" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+      <div className="max-w-[1440px] mx-auto px-6 py-6">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">Spaces</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Manage your workspaces — each space has its own workflow, modules, and team.
+              </p>
+            </div>
             {isAdmin && (
-              <Button onClick={() => setCreateOpen(true)} className="h-11 gap-2 rounded-xl shadow-sm">
+              <Button onClick={() => setCreateOpen(true)} className="h-10 gap-2 rounded-xl shadow-sm">
                 <Plus className="h-4 w-4" />
-                Add Location
+                New Space
               </Button>
             )}
           </div>
         </div>
 
-        {/* Search + count */}
-        <div className="mt-6 flex items-center justify-between">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search locations..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-11 rounded-xl border-border/80 shadow-sm"
-            />
+        {/* Space Cards */}
+        {isLoading ? (
+          <div className="grid gap-4 animate-in fade-in duration-300">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative overflow-hidden rounded-lg bg-muted size-10 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                    <div className="space-y-1.5">
+                      <div className="relative overflow-hidden rounded bg-muted h-4 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" style={{ width: `${100 + i * 30}px` }} />
+                      <div className="relative overflow-hidden rounded bg-muted h-3 w-48 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                    </div>
+                  </div>
+                  <div className="relative overflow-hidden rounded-full bg-muted h-6 w-16 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                </div>
+                <div className="flex items-center gap-3 mt-4">
+                  {Array.from({ length: 3 + i }).map((_, j) => (
+                    <div key={j} className="relative overflow-hidden rounded-full bg-muted h-5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" style={{ width: `${50 + j * 15}px` }} />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                  {Array.from({ length: 3 }).map((_, j) => (
+                    <div key={j} className="relative overflow-hidden rounded-full bg-muted size-7 -ml-1 first:ml-0 ring-2 ring-card before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                  ))}
+                  <div className="relative overflow-hidden rounded bg-muted h-3 w-20 ml-2 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                </div>
+              </div>
+            ))}
           </div>
-          {meta && (
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredLocations.length} of {meta.total} location{meta.total !== 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Location Cards */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : filteredLocations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <MapPin className="h-8 w-8 text-muted-foreground" />
+        ) : locations.length === 0 ? (
+          <EmptyState onCreateClick={() => setCreateOpen(true)} isAdmin={isAdmin} />
+        ) : (
+          <div className="grid gap-4">
+            {locations.map((location, index) => (
+              <SpaceCard
+                key={location.id}
+                space={location}
+                workflows={workflows || []}
+                isAdmin={isAdmin}
+                index={index}
+                onConfigure={() => setConfigureTarget(location)}
+                onEdit={() => setEditTarget(location)}
+                onDelete={() => setDeleteTarget(location)}
+                onReactivate={() => reactivateMutation.mutate(location.id)}
+                onViewTasks={() => router.push(`/tasks?space=${location.id}`)}
+              />
+            ))}
           </div>
-          <h3 className="text-lg font-semibold text-foreground">No locations found</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {statusFilter === "active" ? "Add your first company location to get started." : "No inactive locations."}
-          </p>
-          {isAdmin && statusFilter === "active" && (
-            <Button onClick={() => setCreateOpen(true)} className="mt-4 gap-2">
-              <Plus className="h-4 w-4" />
-              Add Location
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {filteredLocations.map((location) => (
-            <LocationCard
-              key={location.id}
-              location={location}
-              isAdmin={isAdmin}
-              onEdit={() => setEditTarget(location)}
-              onDelete={() => setDeleteTarget(location)}
-              onReactivate={() => reactivateMutation.mutate(location.id)}
-              onAssign={() => setAssignTarget(location)}
-            />
-          ))}
-        </div>
-      )}
+        )}
 
-      {/* Pagination */}
-      {meta && meta.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {meta.totalPages}
-          </span>
-          <Button variant="outline" size="sm" disabled={page >= meta.totalPages} onClick={() => setPage(page + 1)}>
-            Next
-          </Button>
-        </div>
-      )}
-
-      {/* Dialogs */}
-      <CreateLocationDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["locations"] })
-          setCreateOpen(false)
-        }}
-      />
-
-      {editTarget && (
-        <EditLocationDialog
-          location={editTarget}
-          open={!!editTarget}
-          onOpenChange={(open) => { if (!open) setEditTarget(null) }}
+        {/* Create Space Dialog */}
+        <CreateSpaceDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          workflows={workflows || []}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ["locations"] })
-            setEditTarget(null)
+            setCreateOpen(false)
           }}
         />
-      )}
 
-      {assignTarget && (
-        <AssignTechnicianDialog
-          location={assignTarget}
-          open={!!assignTarget}
-          onOpenChange={(open) => { if (!open) setAssignTarget(null) }}
-        />
-      )}
+        {/* Configure Space Dialog */}
+        {configureTarget && (
+          <ConfigureSpaceDialog
+            space={configureTarget}
+            workflows={workflows || []}
+            open={!!configureTarget}
+            onOpenChange={(open) => { if (!open) setConfigureTarget(null) }}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["locations"] })
+              setConfigureTarget(null)
+            }}
+          />
+        )}
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate Location</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to deactivate <strong>{deleteTarget?.name}</strong>? Technicians will no longer be able to clock in at this location. You can reactivate it later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-            >
-              Deactivate
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Edit Space Dialog (General only - lightweight) */}
+        {editTarget && (
+          <EditSpaceDialog
+            space={editTarget}
+            workflows={workflows || []}
+            open={!!editTarget}
+            onOpenChange={(open) => { if (!open) setEditTarget(null) }}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["locations"] })
+              setEditTarget(null)
+            }}
+          />
+        )}
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Deactivate Space</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to deactivate <strong>{deleteTarget?.name}</strong>? Employees will no longer be able to clock in at this location. You can reactivate it later.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              >
+                Deactivate
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   )
 }
 
 // ============================================================================
-// LOCATION CARD
+// EMPTY STATE
 // ============================================================================
 
-function LocationCard({
-  location,
+function EmptyState({ onCreateClick, isAdmin }: { onCreateClick: () => void; isAdmin: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="rounded-2xl bg-muted/50 p-5 mb-5">
+        <Building2 className="h-10 w-10 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground">Create your first space</h3>
+      <p className="text-sm text-muted-foreground mt-2 max-w-md">
+        Spaces are where work happens — offices, warehouses, job sites.
+        Each space can have its own workflow, modules, and team.
+      </p>
+      {isAdmin && (
+        <Button onClick={onCreateClick} className="mt-6 gap-2">
+          <Plus className="h-4 w-4" />
+          Create Space
+        </Button>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// SPACE CARD
+// ============================================================================
+
+const SpaceCard = memo(function SpaceCard({
+  space,
+  workflows,
   isAdmin,
+  index,
+  onConfigure,
   onEdit,
   onDelete,
   onReactivate,
-  onAssign,
+  onViewTasks,
 }: {
-  location: CompanyLocation
+  space: CompanyLocation
+  workflows: StatusWorkflow[]
   isAdmin: boolean
+  index: number
+  onConfigure: () => void
   onEdit: () => void
   onDelete: () => void
   onReactivate: () => void
-  onAssign: () => void
+  onViewTasks: () => void
 }) {
   const { data: assignments } = useQuery({
-    queryKey: ["location-assignments", location.id],
-    queryFn: () => locationsApi.getAssignedTechnicians(location.id),
-    enabled: location.isActive,
+    queryKey: ["location-assignments", space.id],
+    queryFn: () => locationsApi.getAssignedMembers(space.id),
+    enabled: space.isActive,
   })
 
+  const memberCount = assignments?.length || 0
+  const enabledModules = space.enabledModules || []
+  const workflow = workflows.find((w) => w.id === space.workflowId) || workflows.find((w) => w.isDefault)
+  const statusCount = workflow?.statuses?.length || 0
+
   return (
-    <div className={`rounded-xl border p-5 transition-all hover:shadow-md ${location.isActive ? "bg-card border-border" : "bg-muted border-border/60 opacity-70"}`}>
+    <div
+      className={`rounded-xl border bg-card p-5 transition-all duration-200 hover:shadow-md ${
+        !space.isActive ? "opacity-60" : ""
+      }`}
+      style={{ animationDelay: `${index * 50}ms`, animation: "fadeInUp 0.3s ease-out forwards", opacity: 0 }}
+    >
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      {/* Top: Name + Status + Member count */}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${location.isActive ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
-            <MapPin className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-foreground truncate">{location.name}</h3>
-              {!location.isActive && (
-                <Badge variant="outline" className="text-muted-foreground border-border text-xs">Inactive</Badge>
-              )}
-            </div>
-            {location.address && (
-              <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
-                <Navigation className="h-3 w-3 shrink-0" />
-                <span className="truncate">{location.address}</span>
-              </p>
-            )}
-            <div className="flex items-center gap-4 mt-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Shield className="h-3.5 w-3.5" />
-                {location.geofenceRadius}m geofence
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h3 className="text-base font-semibold text-foreground truncate">{space.name}</h3>
+            <Badge
+              variant="outline"
+              className={`text-xs font-medium ${
+                space.isActive
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {space.isActive ? "Active" : "Inactive"}
+            </Badge>
+            {memberCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
+                {memberCount} member{memberCount !== 1 ? "s" : ""}
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" />
-                {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-              </span>
-              {location.timezone && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  🕐 {location.timezone}
-                </span>
-              )}
-              {assignments && assignments.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Users className="h-3.5 w-3.5" />
-                  {assignments.length} technician{assignments.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-            {/* Assignment badges */}
-            {assignments && assignments.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
-                {assignments.map((a) => (
-                  <Badge key={a.id} variant="secondary" className="text-xs font-normal">
-                    {a.user?.firstName} {a.user?.lastName}
-                    {a.isPrimary && <span className="ml-1 text-emerald-600 font-medium">(Primary)</span>}
-                  </Badge>
-                ))}
-              </div>
             )}
           </div>
+
+          {/* Address */}
+          {space.address && (
+            <p className="text-sm text-muted-foreground mt-1 truncate">{space.address}</p>
+          )}
+
+          {/* Modules row */}
+          {enabledModules.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {enabledModules.map((mod) => (
+                <span
+                  key={mod}
+                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
+                    MODULE_COLORS[mod] || "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {getModuleLabel(mod)}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Workflow info */}
+          {workflow && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Workflow: {workflow.name}{statusCount > 0 ? ` (${statusCount} statuses)` : ""}
+            </p>
+          )}
         </div>
 
-        {isAdmin && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                <MoreHorizontal className="h-4 w-4" />
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          {space.isActive && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs rounded-lg"
+                onClick={onConfigure}
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                Configure
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onEdit}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              {location.isActive && (
-                <DropdownMenuItem onClick={onAssign}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Assign Technicians
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground rounded-lg"
+                onClick={onViewTasks}
+              >
+                View Tasks
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              {location.isActive ? (
-                <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Deactivate
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={onReactivate} className="text-emerald-600 focus:text-emerald-600">
-                  <ToggleRight className="mr-2 h-4 w-4" />
-                  Reactivate
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                <DropdownMenuSeparator />
+                {space.isActive ? (
+                  <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+                    <ToggleLeft className="mr-2 h-4 w-4" />
+                    Deactivate
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={onReactivate} className="text-emerald-600 focus:text-emerald-600">
+                    <ToggleRight className="mr-2 h-4 w-4" />
+                    Reactivate
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
     </div>
   )
-}
+})
 
 // ============================================================================
-// CREATE DIALOG
+// CREATE SPACE DIALOG
 // ============================================================================
 
-function CreateLocationDialog({
+function CreateSpaceDialog({
   open,
   onOpenChange,
+  workflows,
   onSuccess,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  workflows: StatusWorkflow[]
   onSuccess: () => void
 }) {
   const [name, setName] = useState("")
   const [address, setAddress] = useState("")
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
-  const [radius, setRadius] = useState("50")
+  const [radius, setRadius] = useState("200")
   const [timezone, setTimezone] = useState("Europe/Berlin")
+  const [workflowId, setWorkflowId] = useState("")
+  const [enabledModules, setEnabledModules] = useState<string[]>(["time_tracking"])
+  const [showMap, setShowMap] = useState(false)
+
+  const defaultWorkflow = workflows.find((w) => w.isDefault)
 
   const mutation = useMutation({
     mutationFn: (data: CreateLocationInput) => locationsApi.create(data),
     onSuccess: () => {
-      toast.success("Location created successfully")
+      notify.success("Space created")
       resetForm()
       onSuccess()
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to create location"),
+    onError: (err: Error) => notify.error(err.message || "Failed to create space"),
   })
 
   const resetForm = () => {
-    setName(""); setAddress(""); setLat(null); setLng(null); setRadius("50"); setTimezone("Europe/Berlin")
+    setName("")
+    setAddress("")
+    setLat(null)
+    setLng(null)
+    setRadius("200")
+    setTimezone("Europe/Berlin")
+    setWorkflowId("")
+    setEnabledModules(["time_tracking"])
+    setShowMap(false)
   }
 
+  const toggleModule = useCallback((key: string) => {
+    setEnabledModules((prev) =>
+      prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]
+    )
+  }, [])
+
   const handleSubmit = () => {
-    if (!name.trim()) return toast.error("Name is required")
-    if (lat === null || lng === null) return toast.error("Select a location on the map or search an address")
+    if (!name.trim()) return notify.error("Name is required")
 
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
-      lat,
-      lng,
-      geofenceRadius: parseInt(radius) || 50,
+      lat: lat ?? 0,
+      lng: lng ?? 0,
+      geofenceRadius: parseInt(radius) || 200,
       timezone,
+      enabledModules,
+      workflowId: workflowId || defaultWorkflow?.id || undefined,
     })
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v) }}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Location</DialogTitle>
+          <DialogTitle>Create Space</DialogTitle>
           <DialogDescription>
-            Search for an address or click on the map to set the location.
+            Set up a new workspace with its own workflow and modules.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label htmlFor="name">Location Name *</Label>
-            <Input id="name" placeholder="e.g. Main Office" value={name} onChange={(e) => setName(e.target.value)} />
+
+        <div className="space-y-5 py-2">
+          {/* Name + Address */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="create-name">Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="create-name"
+                placeholder="e.g. Main Office"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-address">Address</Label>
+              <Input
+                id="create-address"
+                placeholder="123 Business Ave"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
           </div>
 
-          {/* Map Picker */}
-          <LocationPicker
-            lat={lat}
-            lng={lng}
-            radius={parseInt(radius) || 50}
-            address={address}
-            onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
-            onAddressChange={setAddress}
+          {/* Map picker toggle */}
+          <div>
+            <button
+              type="button"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+              onClick={() => setShowMap(!showMap)}
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              {showMap ? "Hide map" : "Pick location on map (optional)"}
+            </button>
+            {showMap && (
+              <div className="mt-3">
+                <LocationPicker
+                  lat={lat}
+                  lng={lng}
+                  radius={parseInt(radius) || 200}
+                  address={address}
+                  onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
+                  onAddressChange={setAddress}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Workflow */}
+          <WorkflowSelector
+            value={workflowId || defaultWorkflow?.id || ""}
+            onChange={setWorkflowId}
+            workflows={workflows}
+            allowCreate
           />
 
+          {/* Modules */}
+          <div className="space-y-3">
+            <Label>Modules</Label>
+            <div className="space-y-2">
+              {AVAILABLE_MODULES.map((mod) => (
+                <label
+                  key={mod.key}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={enabledModules.includes(mod.key)}
+                    onChange={() => toggleModule(mod.key)}
+                    className="mt-0.5 rounded border-border text-blue-600 focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-foreground">{mod.label}</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Geofence Radius */}
           <div className="space-y-2">
-            <Label htmlFor="radius">Geofence Radius (meters)</Label>
+            <Label htmlFor="create-radius">Geofence Radius</Label>
             <div className="flex items-center gap-3">
               <Input
-                id="radius"
+                id="create-radius"
                 type="number"
                 min={5}
                 max={500}
@@ -543,36 +663,15 @@ function CreateLocationDialog({
                 onChange={(e) => setRadius(e.target.value)}
                 className="w-24"
               />
-              <input
-                type="range"
-                min={5}
-                max={500}
-                value={radius}
-                onChange={(e) => setRadius(e.target.value)}
-                className="flex-1 accent-emerald-600"
-              />
-              <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
+              <span className="text-sm text-muted-foreground">{radius}m</span>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="timezone">Timezone</Label>
-            <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TIMEZONES.map((tz) => (
-                  <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">Used for shift schedules and auto clock-out timing</p>
-          </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={mutation.isPending}>
-            {mutation.isPending ? "Creating..." : "Create Location"}
+            {mutation.isPending ? "Creating..." : "Create Space"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -581,46 +680,47 @@ function CreateLocationDialog({
 }
 
 // ============================================================================
-// EDIT DIALOG
+// EDIT SPACE DIALOG (lightweight - general fields only)
 // ============================================================================
 
-function EditLocationDialog({
-  location,
+function EditSpaceDialog({
+  space,
+  workflows,
   open,
   onOpenChange,
   onSuccess,
 }: {
-  location: CompanyLocation
+  space: CompanyLocation
+  workflows: StatusWorkflow[]
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
 }) {
-  const [name, setName] = useState(location.name)
-  const [address, setAddress] = useState(location.address || "")
-  const [lat, setLat] = useState<number | null>(location.lat)
-  const [lng, setLng] = useState<number | null>(location.lng)
-  const [radius, setRadius] = useState(location.geofenceRadius.toString())
-  const [timezone, setTimezone] = useState(location.timezone || "Europe/Berlin")
+  const [name, setName] = useState(space.name)
+  const [address, setAddress] = useState(space.address || "")
+  const [lat, setLat] = useState<number | null>(space.lat)
+  const [lng, setLng] = useState<number | null>(space.lng)
+  const [radius, setRadius] = useState(space.geofenceRadius.toString())
+  const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
 
   const mutation = useMutation({
-    mutationFn: (data: UpdateLocationInput) => locationsApi.update(location.id, data),
+    mutationFn: (data: UpdateLocationInput) => locationsApi.update(space.id, data),
     onSuccess: () => {
-      toast.success("Location updated successfully")
+      notify.success("Space updated")
       onSuccess()
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to update location"),
+    onError: (err: Error) => notify.error(err.message || "Failed to update space"),
   })
 
   const handleSubmit = () => {
-    if (!name.trim()) return toast.error("Name is required")
-    if (lat === null || lng === null) return toast.error("Location is required")
+    if (!name.trim()) return notify.error("Name is required")
 
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
-      lat,
-      lng,
-      geofenceRadius: parseInt(radius) || 50,
+      lat: lat ?? undefined,
+      lng: lng ?? undefined,
+      geofenceRadius: parseInt(radius) || 200,
       timezone,
     })
   }
@@ -629,42 +729,33 @@ function EditLocationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Location</DialogTitle>
-          <DialogDescription>Update the details or move the pin on the map.</DialogDescription>
+          <DialogTitle>Edit Space</DialogTitle>
+          <DialogDescription>Update the details for {space.name}.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label htmlFor="edit-name">Location Name *</Label>
+            <Label htmlFor="edit-name">Name <span className="text-red-500">*</span></Label>
             <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
-          {/* Map Picker */}
           <LocationPicker
             lat={lat}
             lng={lng}
-            radius={parseInt(radius) || 50}
+            radius={parseInt(radius) || 200}
             address={address}
             onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
             onAddressChange={setAddress}
           />
 
-          {lat !== null && lng !== null && (
-            <div className="flex items-center gap-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
-              <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span className="text-sm text-emerald-700">
-                {lat.toFixed(6)}, {lng.toFixed(6)}
-              </span>
-            </div>
-          )}
-
           <div className="space-y-2">
             <Label htmlFor="edit-radius">Geofence Radius (meters)</Label>
             <div className="flex items-center gap-3">
               <Input id="edit-radius" type="number" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="w-24" />
-              <input type="range" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="flex-1 accent-emerald-600" />
+              <input type="range" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="flex-1 accent-blue-600" />
               <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
             </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-timezone">Timezone</Label>
             <Select value={timezone} onValueChange={setTimezone}>
@@ -691,59 +782,399 @@ function EditLocationDialog({
 }
 
 // ============================================================================
-// ASSIGN TECHNICIAN DIALOG
+// CONFIGURE SPACE DIALOG (full config with tabs)
 // ============================================================================
 
-function AssignTechnicianDialog({
-  location,
+function ConfigureSpaceDialog({
+  space,
+  workflows,
   open,
   onOpenChange,
+  onSuccess,
 }: {
-  location: CompanyLocation
+  space: CompanyLocation
+  workflows: StatusWorkflow[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess: () => void
 }) {
   const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState("general")
 
-  const [selectedTechId, setSelectedTechId] = useState("")
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Configure — {space.name}</DialogTitle>
+          <DialogDescription>
+            Manage this space&apos;s settings, modules, workflow, and team members.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="modules">Modules</TabsTrigger>
+            <TabsTrigger value="workflow">Workflow</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="mt-4">
+            <GeneralTab space={space} onSuccess={onSuccess} />
+          </TabsContent>
+
+          <TabsContent value="modules" className="mt-4">
+            <ModulesTab space={space} onSuccess={onSuccess} />
+          </TabsContent>
+
+          <TabsContent value="workflow" className="mt-4">
+            <WorkflowTab space={space} workflows={workflows} onSuccess={onSuccess} />
+          </TabsContent>
+
+          <TabsContent value="members" className="mt-4">
+            <MembersTab space={space} />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---- General Tab ----
+
+function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: () => void }) {
+  const [name, setName] = useState(space.name)
+  const [address, setAddress] = useState(space.address || "")
+  const [radius, setRadius] = useState(space.geofenceRadius.toString())
+  const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
+  const [isActive, setIsActive] = useState(space.isActive)
+
+  const mutation = useMutation({
+    mutationFn: (data: UpdateLocationInput) => locationsApi.update(space.id, data),
+    onSuccess: () => {
+      notify.success("Space updated")
+      onSuccess()
+    },
+    onError: (err: Error) => notify.error(err.message || "Failed to update"),
+  })
+
+  const handleSave = () => {
+    if (!name.trim()) return notify.error("Name is required")
+    mutation.mutate({
+      name: name.trim(),
+      address: address.trim() || undefined,
+      geofenceRadius: parseInt(radius) || 200,
+      timezone,
+      isActive,
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="cfg-name">Name</Label>
+        <Input id="cfg-name" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="cfg-address">Address</Label>
+        <Input id="cfg-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="cfg-radius">Geofence Radius</Label>
+          <div className="flex items-center gap-2">
+            <Input id="cfg-radius" type="number" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="w-24" />
+            <span className="text-sm text-muted-foreground">{radius}m</span>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="cfg-timezone">Timezone</Label>
+          <Select value={timezone} onValueChange={setTimezone}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIMEZONES.map((tz) => (
+                <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="flex items-center justify-between rounded-lg border p-3">
+        <div>
+          <p className="text-sm font-medium text-foreground">Active</p>
+          <p className="text-xs text-muted-foreground">Employees can clock in at this space</p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+        </label>
+      </div>
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={mutation.isPending} size="sm">
+          {mutation.isPending ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ---- Modules Tab ----
+
+function ModulesTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: () => void }) {
+  const [enabledModules, setEnabledModules] = useState<string[]>(space.enabledModules || [])
+  const [hasChanges, setHasChanges] = useState(false)
+
+  const mutation = useMutation({
+    mutationFn: (modules: string[]) => locationsApi.update(space.id, { enabledModules: modules }),
+    onSuccess: () => {
+      notify.success("Modules updated")
+      setHasChanges(false)
+      onSuccess()
+    },
+    onError: (err: Error) => notify.error(err.message || "Failed to update modules"),
+  })
+
+  const toggleModule = (key: string) => {
+    setEnabledModules((prev) => {
+      const next = prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]
+      setHasChanges(true)
+      return next
+    })
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Toggle modules on or off for this space.
+      </p>
+      <div className="space-y-2">
+        {AVAILABLE_MODULES.map((mod) => {
+          const isEnabled = enabledModules.includes(mod.key)
+          return (
+            <label
+              key={mod.key}
+              className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                isEnabled
+                  ? "border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30"
+                  : "border-border hover:bg-muted/50"
+              }`}
+            >
+              <div className="flex-1 min-w-0 mr-3">
+                <span className="text-sm font-medium text-foreground">{mod.label}</span>
+                <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
+              </div>
+              <div className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={isEnabled}
+                  onChange={() => toggleModule(mod.key)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </div>
+            </label>
+          )
+        })}
+      </div>
+      {hasChanges && (
+        <div className="flex justify-end pt-2">
+          <Button onClick={() => mutation.mutate(enabledModules)} disabled={mutation.isPending} size="sm">
+            {mutation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---- Workflow Tab ----
+
+function WorkflowTab({
+  space,
+  workflows,
+  onSuccess,
+}: {
+  space: CompanyLocation
+  workflows: StatusWorkflow[]
+  onSuccess: () => void
+}) {
+  const queryClient = useQueryClient()
+  const currentWorkflow = workflows.find((w) => w.id === space.workflowId) || workflows.find((w) => w.isDefault)
+  const [selectedId, setSelectedId] = useState(currentWorkflow?.id || "")
+  const [editMode, setEditMode] = useState(false)
+  const [showCreateBuilder, setShowCreateBuilder] = useState(false)
+  const hasChanges = selectedId !== (currentWorkflow?.id || "")
+
+  const mutation = useMutation({
+    mutationFn: (wfId: string) => locationsApi.update(space.id, { workflowId: wfId }),
+    onSuccess: () => {
+      notify.success("Workflow updated")
+      onSuccess()
+    },
+    onError: (err: Error) => notify.error(err.message || "Failed to update workflow"),
+  })
+
+  const previewWorkflow = workflows.find((w) => w.id === selectedId)
+
+  return (
+    <div className="space-y-4">
+      {/* Workflow selector */}
+      <WorkflowSelector
+        value={selectedId}
+        onChange={(id) => {
+          setSelectedId(id)
+          setEditMode(false)
+          setShowCreateBuilder(false)
+        }}
+        workflows={workflows}
+        allowCreate={false}
+        label="Current Workflow"
+      />
+
+      {/* Status preview */}
+      {previewWorkflow?.statuses && previewWorkflow.statuses.length > 0 && !editMode && (
+        <div className="rounded-lg border p-3 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Statuses ({previewWorkflow.statuses.length})
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {previewWorkflow.statuses
+              .sort((a, b) => a.position - b.position)
+              .map((status) => (
+                <span
+                  key={status.id}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium bg-muted text-foreground"
+                >
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: status.color }}
+                  />
+                  {status.name}
+                  {status.isFinal && !status.isCanceled && (
+                    <span className="text-[10px] text-emerald-600 ml-0.5">Final</span>
+                  )}
+                  {status.isCanceled && (
+                    <span className="text-[10px] text-red-500 ml-0.5">Canceled</span>
+                  )}
+                </span>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Edit / Create buttons */}
+      {!editMode && !showCreateBuilder && (
+        <div className="flex items-center gap-2">
+          {previewWorkflow && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditMode(true)}
+            >
+              Edit Workflow
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => setShowCreateBuilder(true)}
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            Create New
+          </Button>
+          {hasChanges && (
+            <Button
+              onClick={() => mutation.mutate(selectedId)}
+              disabled={mutation.isPending}
+              size="sm"
+              className="ml-auto"
+            >
+              {mutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Inline edit builder */}
+      {editMode && previewWorkflow && (
+        <WorkflowBuilder
+          mode="edit"
+          workflowId={previewWorkflow.id}
+          workflowName={previewWorkflow.name}
+          initialStatuses={previewWorkflow.statuses}
+          onSaved={() => {
+            setEditMode(false)
+            queryClient.invalidateQueries({ queryKey: ["workflows"] })
+            onSuccess()
+          }}
+          onCancel={() => setEditMode(false)}
+        />
+      )}
+
+      {/* Inline create builder */}
+      {showCreateBuilder && (
+        <WorkflowBuilder
+          mode="create"
+          onCreated={(newId) => {
+            setSelectedId(newId)
+            setShowCreateBuilder(false)
+          }}
+          onCancel={() => setShowCreateBuilder(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ---- Members Tab ----
+
+function MembersTab({ space }: { space: CompanyLocation }) {
+  const queryClient = useQueryClient()
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
   const [isPrimary, setIsPrimary] = useState(false)
   const [selectedDays, setSelectedDays] = useState<string[]>([...DAYS])
 
-  const { data: assignments, isLoading: assignmentsLoading } = useQuery({
-    queryKey: ["location-assignments", location.id],
-    queryFn: () => locationsApi.getAssignedTechnicians(location.id),
+  const { data: assignments, isLoading } = useQuery({
+    queryKey: ["location-assignments", space.id],
+    queryFn: () => locationsApi.getAssignedMembers(space.id),
   })
 
-  const { data: techData } = useQuery({
-    queryKey: ["technicians-for-assign"],
-    queryFn: () => techniciansApi.list({ limit: 100, status: "active",  }),
+  const { data: employeeData } = useQuery({
+    queryKey: ["employees-for-assign"],
+    queryFn: () => employeesApi.list({ limit: 100, status: "active" }),
   })
 
-  // Filter to only ON_SITE/HYBRID technicians not already assigned
   const assignedIds = new Set((assignments || []).map((a) => a.userId))
-  const availableTechs = (techData?.data || []).filter(
-    (t) => !assignedIds.has(t.id) && (true)
-  )
+  const availableEmployees = (employeeData?.data || []).filter((t) => !assignedIds.has(t.id))
 
   const assignMutation = useMutation({
-    mutationFn: (data: AssignTechnicianInput) => locationsApi.assignTechnician(location.id, data),
+    mutationFn: (data: AssignMemberInput) => locationsApi.assignMember(space.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["location-assignments", location.id] })
-      toast.success("Technician assigned")
-      setSelectedTechId("")
+      queryClient.invalidateQueries({ queryKey: ["location-assignments", space.id] })
+      notify.success("Member added")
+      setSelectedEmployeeId("")
       setIsPrimary(false)
       setSelectedDays([...DAYS])
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to assign technician"),
+    onError: (err: Error) => notify.error(err.message || "Failed to add member"),
   })
 
   const removeMutation = useMutation({
-    mutationFn: (assignmentId: string) => locationsApi.removeAssignment(location.id, assignmentId),
+    mutationFn: (assignmentId: string) => locationsApi.removeAssignment(space.id, assignmentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["location-assignments", location.id] })
-      toast.success("Assignment removed")
+      queryClient.invalidateQueries({ queryKey: ["location-assignments", space.id] })
+      notify.success("Member removed")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to remove assignment"),
+    onError: (err: Error) => notify.error(err.message || "Failed to remove member"),
   })
 
   const toggleDay = (day: string) => {
@@ -753,130 +1184,130 @@ function AssignTechnicianDialog({
   }
 
   const handleAssign = () => {
-    if (!selectedTechId) return toast.error("Select a technician")
+    if (!selectedEmployeeId) return notify.error("Select an employee")
     assignMutation.mutate({
-      userId: selectedTechId,
+      userId: selectedEmployeeId,
       isPrimary,
       schedule: selectedDays.length === 7 ? undefined : selectedDays,
     })
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Manage Technicians - {location.name}</DialogTitle>
-          <DialogDescription>
-            Assign technicians to this location for attendance tracking.
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Current Assignments */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-foreground">Current Assignments</h4>
-          {assignmentsLoading ? (
-            <Skeleton className="h-16 w-full" />
-          ) : !assignments || assignments.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-3 text-center">No technicians assigned yet</p>
-          ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {assignments.map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">
-                        {a.user?.firstName} {a.user?.lastName}
-                      </span>
-                      {a.isPrimary && (
-                        <Badge className="bg-emerald-100 text-emerald-700 text-xs">Primary</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {a.schedule && a.schedule.length > 0 && a.schedule.length < 7
-                        ? a.schedule.map((d) => DAY_LABELS[d] || d).join(", ")
-                        : "All days"}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-red-600"
-                    onClick={() => removeMutation.mutate(a.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Add New Assignment */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-foreground">Add Technician</h4>
-          <Select value={selectedTechId} onValueChange={setSelectedTechId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a technician..." />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTechs.length === 0 ? (
-                <div className="p-2 text-sm text-muted-foreground text-center">
-                  No available technicians (ON_SITE/HYBRID only)
-                </div>
-              ) : (
-                availableTechs.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.firstName} {t.lastName}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-
-          {/* Schedule Days */}
-          <div className="space-y-2">
-            <Label className="text-xs">Work Days</Label>
-            <div className="flex gap-1">
-              {DAYS.map((day) => (
-                <button
-                  key={day}
-                  onClick={() => toggleDay(day)}
-                  className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-colors ${
-                    selectedDays.includes(day)
-                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                      : "bg-muted text-muted-foreground border border-border"
-                  }`}
-                >
-                  {DAY_LABELS[day]}
-                </button>
-              ))}
-            </div>
+    <div className="space-y-4">
+      {/* Current members */}
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-foreground">
+          Members ({assignments?.length || 0})
+        </p>
+        {isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : !assignments || assignments.length === 0 ? (
+          <div className="text-center py-6 text-sm text-muted-foreground rounded-lg border border-dashed">
+            No members assigned yet
           </div>
+        ) : (
+          <div className="space-y-2 max-h-[200px] overflow-y-auto">
+            {assignments.map((a) => (
+              <div key={a.id} className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {a.user?.firstName} {a.user?.lastName}
+                    </span>
+                    {a.isPrimary && (
+                      <Badge className="bg-emerald-100 text-emerald-700 text-xs dark:bg-emerald-950 dark:text-emerald-300">
+                        Primary
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {a.schedule && a.schedule.length > 0 && a.schedule.length < 7
+                      ? a.schedule.map((d) => DAY_LABELS[d] || d).join(", ")
+                      : "All days"}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                  onClick={() => removeMutation.mutate(a.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-          {/* Primary Toggle */}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPrimary}
-              onChange={(e) => setIsPrimary(e.target.checked)}
-              className="rounded border-border text-emerald-600 focus:ring-emerald-500"
-            />
-            <span className="text-sm text-muted-foreground">Set as primary location</span>
-          </label>
+      <Separator />
+
+      {/* Add member */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+          <UserPlus className="h-4 w-4" />
+          Add Member
+        </p>
+        <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select an employee..." />
+          </SelectTrigger>
+          <SelectContent>
+            {availableEmployees.length === 0 ? (
+              <div className="p-2 text-sm text-muted-foreground text-center">
+                No available employees
+              </div>
+            ) : (
+              availableEmployees.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.firstName} {t.lastName}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+
+        {/* Schedule Days */}
+        <div className="space-y-2">
+          <Label className="text-xs">Work Days</Label>
+          <div className="flex gap-1">
+            {DAYS.map((day) => (
+              <button
+                key={day}
+                type="button"
+                onClick={() => toggleDay(day)}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-colors ${
+                  selectedDays.includes(day)
+                    ? "bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
+                    : "bg-muted text-muted-foreground border border-border"
+                }`}
+              >
+                {DAY_LABELS[day]}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Done</Button>
-          <Button
-            onClick={handleAssign}
-            disabled={!selectedTechId || assignMutation.isPending}
-          >
-            {assignMutation.isPending ? "Assigning..." : "Assign"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {/* Primary Toggle */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPrimary}
+            onChange={(e) => setIsPrimary(e.target.checked)}
+            className="rounded border-border text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm text-muted-foreground">Set as primary location</span>
+        </label>
+
+        <Button
+          onClick={handleAssign}
+          disabled={!selectedEmployeeId || assignMutation.isPending}
+          size="sm"
+          className="w-full"
+        >
+          {assignMutation.isPending ? "Adding..." : "Add Member"}
+        </Button>
+      </div>
+    </div>
   )
 }

@@ -23,6 +23,8 @@ import { firstValueFrom, timeout, catchError } from 'rxjs';
 interface ServiceError {
   name?: string;
   status?: number;
+  statusCode?: number;
+  response?: { statusCode?: number; message?: string | string[] };
   message?: string;
 }
 
@@ -57,9 +59,14 @@ export abstract class BaseGatewayService {
       if (error.name === 'TimeoutError') {
         throw new HttpException('Service timeout', HttpStatus.REQUEST_TIMEOUT);
       }
-      // Re-throw HTTP exceptions from microservice
-      if (error.status && error.message) {
-        throw new HttpException(error.message, error.status);
+      // Re-throw HTTP exceptions from the microservice with their real status.
+      // A NestJS HttpException serialized over RPC exposes the code as
+      // `statusCode` (or nested under `response`), not `status` — so check all
+      // forms; otherwise a 404/403 would collapse into a generic 500.
+      const status = error.status ?? error.statusCode ?? error.response?.statusCode;
+      const message = error.response?.message ?? error.message;
+      if (status && message) {
+        throw new HttpException(message, status);
       }
       throw new HttpException(
         error.message || 'Service error',

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
+import { notify } from '@/lib/toast';
 import {
   AuthSkeleton,
   LoginForm,
@@ -26,9 +26,7 @@ function AuthPageContent() {
   // Check for registered query param
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
-      toast.success('Account created successfully!', {
-        description: 'Please sign in with your new credentials.',
-      });
+      notify.success('Account created successfully!', 'Please sign in with your new credentials.');
       setIsLoginActive(true);
       router.replace('/login', { scroll: false });
     }

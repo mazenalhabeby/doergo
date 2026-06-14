@@ -2,11 +2,7 @@
 
 import { cn } from '@/lib/utils';
 
-interface ShimmerProps {
-  className?: string;
-}
-
-function Shimmer({ className }: ShimmerProps) {
+function Shimmer({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <div
       className={cn(
@@ -16,181 +12,100 @@ function Shimmer({ className }: ShimmerProps) {
         'before:bg-gradient-to-r before:from-transparent before:via-card/60 before:to-transparent',
         className
       )}
+      style={style}
     />
   );
 }
 
 // ============================================================================
-// Sidebar Skeleton
+// Navbar Skeleton — matches the real TopNavbar layout
 // ============================================================================
 
-function SidebarSkeleton() {
+function NavbarSkeleton() {
   return (
-    <div className="hidden md:flex h-screen w-64 flex-col bg-muted border-r border-border">
-      {/* Logo area */}
-      <div className="flex items-center gap-3 p-4 border-b border-border">
-        <Shimmer className="w-8 h-8 rounded-lg" />
-        <Shimmer className="w-24 h-5 rounded" />
-      </div>
+    <header className="sticky top-0 z-50 h-14 shrink-0 border-b border-border bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-full max-w-[1440px] items-center px-6">
+        {/* Logo */}
+        <div className="mr-6 flex items-center gap-2">
+          <Shimmer className="w-6 h-6 rounded" />
+          <Shimmer className="w-20 h-5 rounded" />
+        </div>
 
-      {/* Navigation items */}
-      <div className="flex-1 p-4 space-y-2">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3 p-2">
-            <Shimmer className="w-5 h-5 rounded" />
-            <Shimmer className={cn('h-4 rounded', i === 0 ? 'w-20' : i === 1 ? 'w-16' : 'w-24')} />
-          </div>
-        ))}
-
-        {/* Section divider */}
-        <div className="my-4">
-          <Shimmer className="w-16 h-3 rounded mb-3" />
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-2">
-              <Shimmer className="w-5 h-5 rounded" />
-              <Shimmer className="w-20 h-4 rounded" />
-            </div>
+        {/* Nav items */}
+        <div className="hidden lg:flex items-center gap-1">
+          {[56, 40, 44, 48, 56, 64].map((w, i) => (
+            <Shimmer key={i} className="h-7 rounded-md" style={{ width: w }} />
           ))}
         </div>
-      </div>
 
-      {/* User profile area */}
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <Shimmer className="w-10 h-10 rounded-full" />
-          <div className="flex-1 space-y-1.5">
-            <Shimmer className="w-24 h-4 rounded" />
-            <Shimmer className="w-32 h-3 rounded" />
-          </div>
+        {/* Right side */}
+        <div className="ml-auto flex items-center gap-2">
+          <Shimmer className="w-24 h-8 rounded-lg" />
+          <Shimmer className="w-8 h-8 rounded-full" />
+          <Shimmer className="w-8 h-8 rounded-full" />
         </div>
       </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Header Skeleton
-// ============================================================================
-
-function HeaderSkeleton() {
-  return (
-    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-4 bg-card">
-      <Shimmer className="w-8 h-8 rounded" />
-      <div className="w-px h-4 bg-muted" />
-      <Shimmer className="w-48 h-5 rounded" />
-      <div className="flex-1" />
-      <Shimmer className="w-8 h-8 rounded-full" />
     </header>
   );
 }
 
 // ============================================================================
-// Stats Cards Skeleton
+// Content Skeleton — generic page content placeholder
 // ============================================================================
 
-function StatsCardSkeleton() {
+function ContentSkeleton() {
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <div className="flex items-center gap-4">
-        <Shimmer className="w-12 h-12 rounded-lg" />
-        <div className="space-y-2">
-          <Shimmer className="w-20 h-4 rounded" />
-          <Shimmer className="w-12 h-7 rounded" />
-        </div>
+    <div className="max-w-[1440px] mx-auto px-6 py-6">
+      {/* Header area */}
+      <div className="mb-6">
+        <Shimmer className="w-48 h-4 rounded mb-2" />
+        <Shimmer className="w-72 h-8 rounded" />
       </div>
-    </div>
-  );
-}
 
-function StatsGridSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {[...Array(4)].map((_, i) => (
-        <StatsCardSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-// ============================================================================
-// Content Area Skeleton
-// ============================================================================
-
-function WelcomeSkeleton() {
-  return (
-    <div className="mb-6">
-      <Shimmer className="w-64 h-8 rounded mb-2" />
-      <Shimmer className="w-80 h-5 rounded" />
-    </div>
-  );
-}
-
-function ContentCardSkeleton() {
-  return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Shimmer className="w-5 h-5 rounded" />
-        <Shimmer className="w-32 h-6 rounded" />
-      </div>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-6">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="space-y-3">
-              <div className="flex justify-between">
-                <Shimmer className="w-24 h-4 rounded" />
-                <Shimmer className="w-16 h-4 rounded" />
-              </div>
-              <Shimmer className="w-full h-20 rounded-lg" />
-              <Shimmer className="w-32 h-3 rounded" />
+      {/* Content grid */}
+      <div className="grid grid-cols-6 gap-3">
+        {[2, 2, 2, 3, 3].map((span, i) => (
+          <div
+            key={i}
+            className="bg-card rounded-xl border border-border p-4"
+            style={{ gridColumn: `span ${span}` }}
+          >
+            <Shimmer className="w-20 h-3 rounded mb-3" />
+            <div className="flex items-center gap-2">
+              {[...Array(Math.min(span, 3))].map((_, j) => (
+                <Shimmer key={j} className="w-10 h-10 rounded-full" />
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="flex gap-3 mt-4">
-          <Shimmer className="w-32 h-9 rounded-lg" />
-          <Shimmer className="w-28 h-9 rounded-lg" />
-          <Shimmer className="w-24 h-9 rounded-lg" />
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
 // ============================================================================
-// Main Dashboard Skeleton
+// Main Dashboard Skeleton — shown during initial auth check
 // ============================================================================
 
 export function DashboardSkeleton() {
   return (
-    <div className="flex h-screen bg-muted animate-in fade-in duration-300">
-      {/* Sidebar */}
-      <SidebarSkeleton />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <HeaderSkeleton />
-
-        {/* Content */}
-        <main className="flex-1 overflow-auto p-6">
-          <WelcomeSkeleton />
-          <StatsGridSkeleton />
-          <ContentCardSkeleton />
-        </main>
+    <div className="h-screen flex flex-col bg-background animate-in fade-in duration-200">
+      <NavbarSkeleton />
+      <div className="flex-1 overflow-auto">
+        <ContentSkeleton />
       </div>
     </div>
   );
 }
 
 // ============================================================================
-// Page Content Skeleton (for use inside dashboard layout)
+// Page Content Skeleton — for use inside dashboard layout (Suspense fallback)
 // ============================================================================
 
 export function PageContentSkeleton() {
   return (
-    <div className="p-6 animate-in fade-in duration-300">
-      <WelcomeSkeleton />
-      <StatsGridSkeleton />
-      <ContentCardSkeleton />
+    <div className="animate-in fade-in duration-200">
+      <ContentSkeleton />
     </div>
   );
 }

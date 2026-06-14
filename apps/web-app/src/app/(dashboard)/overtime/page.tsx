@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { notify } from "@/lib/toast"
 import { format, formatDistanceToNow } from "date-fns"
 import {
   Clock,
@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/tabs"
 
 const STATUS_BADGES: Record<string, { label: string; className: string; icon: any }> = {
-  PENDING_TECHNICIAN: { label: "Awaiting Technician", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
+  PENDING_TECHNICIAN: { label: "Awaiting Employee", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
   PENDING_APPROVAL: { label: "Needs Approval", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400", icon: AlertTriangle },
   APPROVED: { label: "Active", className: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
   REJECTED: { label: "Rejected", className: "bg-red-500/15 text-red-600 dark:text-red-400", icon: XCircle },
@@ -87,7 +87,6 @@ export default function OvertimePage() {
   const { data: pendingData, isLoading: pendingLoading, refetch: refetchPending } = useQuery({
     queryKey: ["overtime-pending"],
     queryFn: () => overtimeApi.getPendingApprovals(),
-    refetchInterval: 30000,
   })
 
   const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
@@ -106,9 +105,9 @@ export default function OvertimePage() {
       queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
       queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
       setApproveTarget(null)
-      toast.success("Overtime approved")
+      notify.success("Overtime approved")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to approve"),
+    onError: (err: Error) => notify.error(err.message || "Failed to approve"),
   })
 
   const rejectMutation = useMutation({
@@ -118,9 +117,9 @@ export default function OvertimePage() {
       queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
       queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
       setRejectTarget(null)
-      toast.success("Overtime rejected")
+      notify.success("Overtime rejected")
     },
-    onError: (err: Error) => toast.error(err.message || "Failed to reject"),
+    onError: (err: Error) => notify.error(err.message || "Failed to reject"),
   })
 
   const pending = pendingData || []
@@ -136,7 +135,7 @@ export default function OvertimePage() {
             <div>
               <h1 className="text-3xl font-bold text-foreground tracking-tight">Overtime Management</h1>
               <p className="mt-1.5 text-muted-foreground">
-                Review and manage technician overtime requests
+                Review and manage employee overtime requests
               </p>
             </div>
             <Button
@@ -262,7 +261,7 @@ export default function OvertimePage() {
             <div className="space-y-4 py-2">
               {approveTarget?.technicianReason && (
                 <div className="rounded-lg bg-muted p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Technician's reason:</p>
+                  <p className="text-xs text-muted-foreground mb-1">Employee's reason:</p>
                   <p className="text-sm text-foreground">{approveTarget.technicianReason}</p>
                 </div>
               )}
@@ -287,7 +286,7 @@ export default function OvertimePage() {
               <div className="space-y-2">
                 <Label>Notes (optional)</Label>
                 <Input
-                  placeholder="Any notes for the technician..."
+                  placeholder="Any notes for the employee..."
                   value={approveNotes}
                   onChange={(e) => setApproveNotes(e.target.value)}
                 />

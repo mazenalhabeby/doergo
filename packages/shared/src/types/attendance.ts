@@ -22,6 +22,9 @@ export interface CompanyLocation {
   createdAt: string;
   updatedAt: string;
   organizationId: string;
+  // Space configuration
+  enabledModules?: string[] | null;
+  workflowId?: string | null;
 }
 
 // ============================================================================

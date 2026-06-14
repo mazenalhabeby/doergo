@@ -15,8 +15,6 @@ import {
   TaskEventType,
   Role,
   STATUS_TRANSITIONS,
-  isValidStatusTransition,
-  canRoleSetStatus,
   success,
   paginated,
   buildDateRangeFilter,
@@ -29,6 +27,11 @@ const STATUS_COUNTS_TTL = 30; // seconds
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
   private readonly redis: Redis;
+
+  private static readonly SUGGESTION_LIMIT = 100;
+  private static readonly MAX_SEARCH_LENGTH = 200;
+  private static readonly MAX_DEPENDENCY_DEPTH = 100;
+  private static readonly GEOFENCE_RADIUS_METERS = 20;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -45,33 +48,113 @@ export class TasksService {
    */
   async create(data: any) {
     const hasAssignment = !!data.assignedToId;
+    const assigneeIds: string[] = data.assigneeIds || [];
 
-    const task = await this.prisma.task.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        priority: data.priority || 'MEDIUM',
-        status: hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW,
-        dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        locationLat: data.locationLat,
-        locationLng: data.locationLng,
-        locationAddress: data.locationAddress,
-        organizationId: data.organizationId,
-        createdById: data.userId,
-        assignedToId: data.assignedToId || null,
-        assetId: data.assetId || null,
-      },
-      include: {
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+    // SPACE-scoped users MUST provide a spaceId
+    if (data.taskCreationScope === 'SPACE' && !data.spaceId) {
+      throw new ForbiddenException('Task creation scope is SPACE — you must select a space');
+    }
+
+    // If spaceId provided, validate it belongs to the org and auto-populate location
+    let locationLat = data.locationLat;
+    let locationLng = data.locationLng;
+    let locationAddress = data.locationAddress;
+    if (data.spaceId) {
+      const space = await this.prisma.companyLocation.findUnique({
+        where: { id: data.spaceId },
+        select: { organizationId: true, lat: true, lng: true, address: true },
+      });
+      if (!space) {
+        throw new NotFoundException('Space not found');
+      }
+      if (space.organizationId !== data.organizationId) {
+        throw new ForbiddenException('Cannot create task in a space outside your organization');
+      }
+
+      // SPACE scope validation — user must be assigned to the space
+      if (data.taskCreationScope === 'SPACE') {
+        const assignment = await this.prisma.technicianAssignment.findFirst({
+          where: { userId: data.userId, locationId: data.spaceId },
+        });
+        if (!assignment) {
+          throw new ForbiddenException('You can only create tasks in spaces you are assigned to');
+        }
+      }
+
+      // Auto-populate location from space if not provided
+      if (!locationLat && !locationLng && !locationAddress) {
+        locationLat = space.lat;
+        locationLng = space.lng;
+        locationAddress = space.address;
+      }
+    }
+
+    const task = await this.prisma.$transaction(async (tx) => {
+      const createdTask = await tx.task.create({
+        data: {
+          title: data.title,
+          description: data.description,
+          priority: data.priority || 'MEDIUM',
+          status: hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW,
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+          startDate: data.startDate ? new Date(data.startDate) : null,
+          estimatedHours: data.estimatedHours ?? null,
+          locationLat,
+          locationLng,
+          locationAddress,
+          organizationId: data.organizationId,
+          createdById: data.userId,
+          assignedToId: data.assignedToId || null,
+          assetId: data.assetId || null,
+          parentId: data.parentId || null,
+          phaseId: data.phaseId || null,
+          sprintId: data.sprintId || null,
+          epicId: data.epicId || null,
+          storyPoints: data.storyPoints ?? null,
+          spaceId: data.spaceId || null,
         },
-        assignedTo: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+        include: {
+          createdBy: {
+            select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
+          },
+          assignedTo: {
+            select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
+          },
+          organization: {
+            select: { id: true, name: true },
+          },
         },
-        organization: {
-          select: { id: true, name: true },
-        },
-      },
+      });
+
+      // Create TaskAssignee records if assigneeIds provided
+      if (assigneeIds.length > 0) {
+        // If there is a primary assignedToId, mark them as LEAD
+        const assigneeData = assigneeIds.map((userId: string) => ({
+          taskId: createdTask.id,
+          userId,
+          role: userId === data.assignedToId ? 'LEAD' as const : 'MEMBER' as const,
+        }));
+
+        await tx.taskAssignee.createMany({
+          data: assigneeData,
+          skipDuplicates: true,
+        });
+      }
+
+      // If assignedToId is set but not in assigneeIds, add as LEAD assignee
+      if (hasAssignment && !assigneeIds.includes(data.assignedToId)) {
+        await tx.taskAssignee.create({
+          data: {
+            taskId: createdTask.id,
+            userId: data.assignedToId,
+            role: 'LEAD',
+          },
+        }).catch(() => {
+          // Ignore duplicate
+        });
+      }
+
+      return createdTask;
     });
 
     // Create task event
@@ -117,9 +200,12 @@ export class TasksService {
       userId,
       userRole,
       organizationId,
+      spaceId,
     } = query;
-    const skip = (page - 1) * Number(limit);
-    const take = Number(limit);
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(Math.max(1, Number(limit) || 20), 500);
+    const skip = (safePage - 1) * safeLimit;
+    const take = safeLimit;
 
     // Build where clause based on role
     const where: any = {};
@@ -131,27 +217,47 @@ export class TasksService {
     if (priority) where.priority = priority;
 
     // Role-based filtering
-    switch (userRole) {
+    // Normalize legacy roles
+    const normalizedRole = userRole === 'CLIENT' ? Role.ADMIN
+      : userRole === 'DISPATCHER' ? Role.MANAGER
+      : userRole === 'TECHNICIAN' ? Role.EMPLOYEE
+      : userRole;
+
+    switch (normalizedRole) {
       case Role.ADMIN:
-        // CLIENT sees only their own tasks in their org
-        where.organizationId = organizationId;
-        where.createdById = userId;
-        break;
-
-      case Role.DISPATCHER:
-        // DISPATCHER sees all tasks in their org
-        // TODO: Also include tasks from orgs they have access to via OrganizationAccess
+        // Admin sees all tasks in their org
         where.organizationId = organizationId;
         break;
 
-      case Role.TECHNICIAN:
-        // TECHNICIAN sees only tasks assigned to them
-        where.assignedToId = userId;
+      case Role.MANAGER:
+        // Manager sees all tasks in their org
+        where.organizationId = organizationId;
+        break;
+
+      case Role.EMPLOYEE:
+        // Employee sees tasks assigned to them — as the LEAD (legacy
+        // assignedToId, incl. seed data) OR as any multi-assignee MEMBER.
+        // Wrapped in AND so it composes with other OR filters below.
+        where.AND = [
+          ...(where.AND || []),
+          { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
+        ];
         break;
 
       default:
-        // No access
-        return paginated([], { page: Number(page), limit: take, total: 0 });
+        return paginated([], { page: safePage, limit: safeLimit, total: 0 });
+    }
+
+    // Space filter — verify it belongs to the user's org before applying
+    if (spaceId) {
+      const space = await this.prisma.companyLocation.findUnique({
+        where: { id: spaceId },
+        select: { organizationId: true },
+      });
+      if (!space || space.organizationId !== organizationId) {
+        throw new ForbiddenException('Access denied to this space');
+      }
+      where.spaceId = spaceId;
     }
 
     // Build AND conditions for date range and search
@@ -171,11 +277,15 @@ export class TasksService {
     }
 
     // Search filter on title and description
-    if (search && typeof search === 'string' && search.trim()) {
+    const trimmedSearch = search?.trim();
+    if (trimmedSearch && trimmedSearch.length > TasksService.MAX_SEARCH_LENGTH) {
+      throw new BadRequestException('Search query too long');
+    }
+    if (trimmedSearch) {
       andConditions.push({
         OR: [
-          { title: { contains: search.trim(), mode: 'insensitive' } },
-          { description: { contains: search.trim(), mode: 'insensitive' } },
+          { title: { contains: trimmedSearch, mode: 'insensitive' } },
+          { description: { contains: trimmedSearch, mode: 'insensitive' } },
         ],
       });
     }
@@ -191,24 +301,29 @@ export class TasksService {
         take,
         orderBy: { createdAt: 'desc' },
         include: {
-          createdBy: { select: { id: true, firstName: true, lastName: true } },
-          assignedTo: { select: { id: true, firstName: true, lastName: true } },
-          organization: { select: { id: true, name: true } },
-          asset: {
-            select: {
-              id: true,
-              name: true,
-              serialNumber: true,
-              category: { select: { id: true, name: true } },
-              type: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          assignees: {
+            take: 4, // List view only needs a few for stacked avatars
+            orderBy: { createdAt: 'asc' },
+            include: {
+              user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
             },
+          },
+          space: { select: { id: true, name: true } },
+          phase: { select: { id: true, name: true, color: true, type: true } },
+          sprint: { select: { id: true, name: true, status: true } },
+          epic: { select: { id: true, name: true, color: true, status: true } },
+          parent: { select: { id: true, title: true } },
+          _count: {
+            select: { checklistItems: true, subtasks: true, assignees: true },
           },
         },
       }),
       this.prisma.task.count({ where }),
     ]);
 
-    return paginated(tasks, { page: Number(page), limit: take, total });
+    return paginated(tasks, { page: safePage, limit: safeLimit, total });
   }
 
   /**
@@ -218,8 +333,8 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true, email: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
         organization: { select: { id: true, name: true } },
         asset: {
           include: {
@@ -230,9 +345,42 @@ export class TasksService {
         comments: {
           orderBy: { createdAt: 'desc' },
           take: 20,
-          include: { user: { select: { id: true, firstName: true, lastName: true } } },
+          include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
         },
         attachments: { orderBy: { createdAt: 'desc' } },
+        assignees: {
+          include: {
+            user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+          },
+        },
+        checklistItems: {
+          orderBy: { position: 'asc' },
+        },
+        // Subtask hierarchy
+        parent: { select: { id: true, title: true } },
+        subtasks: {
+          orderBy: { position: 'asc' },
+          include: {
+            assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            _count: { select: { subtasks: true, checklistItems: true } },
+          },
+        },
+        // Space
+        space: { select: { id: true, name: true, enabledModules: true, workflowId: true } },
+        // Phase & Sprint
+        phase: { select: { id: true, name: true, color: true, type: true } },
+        sprint: { select: { id: true, name: true, status: true } },
+        // Dependencies
+        predecessors: {
+          include: {
+            predecessor: { select: { id: true, title: true, status: true } },
+          },
+        },
+        successors: {
+          include: {
+            successor: { select: { id: true, title: true, status: true } },
+          },
+        },
       },
     });
 
@@ -241,7 +389,7 @@ export class TasksService {
     }
 
     // Authorization check
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
 
     return success(task);
   }
@@ -278,14 +426,21 @@ export class TasksService {
         ...(updateData.description !== undefined && { description: updateData.description }),
         ...(updateData.priority && { priority: updateData.priority }),
         ...(updateData.dueDate && { dueDate: new Date(updateData.dueDate) }),
+        ...(updateData.startDate !== undefined && { startDate: updateData.startDate ? new Date(updateData.startDate) : null }),
+        ...(updateData.estimatedHours !== undefined && { estimatedHours: updateData.estimatedHours }),
         ...(updateData.locationLat !== undefined && { locationLat: updateData.locationLat }),
         ...(updateData.locationLng !== undefined && { locationLng: updateData.locationLng }),
         ...(updateData.locationAddress !== undefined && { locationAddress: updateData.locationAddress }),
         ...(updateData.assetId !== undefined && { assetId: updateData.assetId }),
+        ...(updateData.spaceId !== undefined && { spaceId: updateData.spaceId || null }),
+        ...(updateData.phaseId !== undefined && { phaseId: updateData.phaseId || null }),
+        ...(updateData.sprintId !== undefined && { sprintId: updateData.sprintId || null }),
+        ...(updateData.epicId !== undefined && { epicId: updateData.epicId || null }),
+        ...(updateData.storyPoints !== undefined && { storyPoints: updateData.storyPoints }),
       },
       include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -313,6 +468,7 @@ export class TasksService {
 
     // Authorization: CLIENT/DISPATCHER can only assign tasks in their org
     if (task.organizationId !== data.organizationId) {
+      this.logger.warn(`Authorization denied: assign task across orgs`, { userId: data.userId, taskId: data.id });
       throw new ForbiddenException('You can only assign tasks in your organization');
     }
 
@@ -345,8 +501,8 @@ export class TasksService {
         status: TaskStatus.ASSIGNED, // Reset to ASSIGNED on (re)assign
       },
       include: {
-        assignedTo: { select: { id: true, firstName: true, lastName: true, email: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -380,7 +536,7 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {
-        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -407,7 +563,7 @@ export class TasksService {
         status: TaskStatus.NEW,
       },
       include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -454,8 +610,14 @@ export class TasksService {
 
     // Role-based authorization
     // Any assigned user can set execution statuses on their assigned tasks
-    // ADMIN/DISPATCHER can also cancel tasks they have authority over
-    const isAssignedUser = task.assignedToId === data.userId;
+    // ADMIN/DISPATCHER can also cancel tasks they have authority over.
+    // Recognise BOTH the LEAD (assignedToId) and multi-assignee MEMBER rows.
+    const isAssignedUser =
+      task.assignedToId === data.userId ||
+      !!(await this.prisma.taskAssignee.findFirst({
+        where: { taskId: task.id, userId: data.userId },
+        select: { id: true },
+      }));
     const isExecutionStatus = data.status !== TaskStatus.CANCELED && data.status !== TaskStatus.ASSIGNED;
     const isCancelation = data.status === TaskStatus.CANCELED;
 
@@ -463,6 +625,7 @@ export class TasksService {
       // Execution statuses (ACCEPTED, EN_ROUTE, ARRIVED, IN_PROGRESS, BLOCKED, COMPLETED)
       // Only the assigned user can set these
       if (!isAssignedUser) {
+        this.logger.warn(`Authorization denied: non-assigned user attempted status update`, { userId: data.userId, taskId: data.id, status: data.status });
         throw new ForbiddenException('You can only update execution status of tasks assigned to you');
       }
     } else if (isCancelation) {
@@ -473,12 +636,12 @@ export class TasksService {
             throw new ForbiddenException('You can only cancel tasks in your organization');
           }
           break;
-        case Role.DISPATCHER:
+        case Role.MANAGER:
           if (task.organizationId !== data.organizationId) {
             throw new ForbiddenException('You can only cancel tasks in your organization');
           }
           break;
-        case Role.TECHNICIAN:
+        case Role.EMPLOYEE:
           // Technicians (non-assigned) cannot cancel
           if (!isAssignedUser) {
             throw new ForbiddenException('You can only update status of tasks assigned to you');
@@ -497,7 +660,7 @@ export class TasksService {
     }
 
     // Validate status transition
-    const allowedTransitions = STATUS_TRANSITIONS[task.status] || [];
+    const allowedTransitions = STATUS_TRANSITIONS[task.status as TaskStatus] || [];
     if (!allowedTransitions.includes(data.status as TaskStatus)) {
       throw new BadRequestException(
         `Invalid status transition from ${task.status} to ${data.status}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
@@ -506,8 +669,7 @@ export class TasksService {
 
     // ── Assigned user execution enforcement ──
 
-    // (0) Location Verification — assigned user must be within 20m of task location to arrive/start
-    const GEOFENCE_RADIUS_METERS = 20;
+    // (0) Location Verification — assigned user must be within geofence of task location to arrive/start
     const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
 
     if (
@@ -524,9 +686,9 @@ export class TasksService {
 
       const distance = haversineDistance(data.lat, data.lng, task.locationLat, task.locationLng);
 
-      if (distance > GEOFENCE_RADIUS_METERS) {
+      if (distance > TasksService.GEOFENCE_RADIUS_METERS) {
         throw new BadRequestException(
-          `You are ${Math.round(distance)}m from the job site. You must be within ${GEOFENCE_RADIUS_METERS}m to ${data.status === TaskStatus.ARRIVED ? 'mark as arrived' : 'start the job'}. Please move closer and try again.`,
+          `You are ${Math.round(distance)}m from the job site. You must be within ${TasksService.GEOFENCE_RADIUS_METERS}m to ${data.status === TaskStatus.ARRIVED ? 'mark as arrived' : 'start the job'}. Please move closer and try again.`,
         );
       }
     }
@@ -590,8 +752,8 @@ export class TasksService {
       where: { id: data.id },
       data: updateData,
       include: {
-        assignedTo: { select: { id: true, firstName: true, lastName: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -623,8 +785,8 @@ export class TasksService {
             newTaskTitle: updatedTask.title,
           });
         }
-      } catch {
-        // Fire-and-forget — don't block the response
+      } catch (err) {
+        this.logger.warn('Failed to send blocked tasks reminder', err);
       }
     }
 
@@ -657,6 +819,12 @@ export class TasksService {
 
     await this.prisma.task.delete({ where: { id: data.id } });
 
+    // Notify via Socket.IO for real-time updates
+    this.notificationClient.emit('task_deleted', {
+      taskId: data.id,
+      organizationId: task.organizationId,
+    });
+
     this.invalidateStatusCountsCache(task.organizationId);
 
     return success(null, 'Task deleted successfully');
@@ -675,13 +843,13 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
 
     const events = await this.prisma.taskEvent.findMany({
       where: { taskId: data.id },
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true } },
+        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -691,37 +859,53 @@ export class TasksService {
   /**
    * Check if user has access to a task
    */
-  private checkTaskAccess(
+  private async checkTaskAccess(
     task: any,
     userId: string,
     userRole: string,
     organizationId: string,
   ) {
-    // Any user assigned to the task can access it (regardless of role)
+    // Any user assigned to the task can access it (regardless of role). This
+    // covers BOTH the legacy single-assignee field (LEAD, mirrored into
+    // assignedToId) AND multi-assignee MEMBER rows in TaskAssignee — otherwise
+    // a MEMBER assignee would be locked out of their own task.
     if (task.assignedToId === userId) {
       return;
+    }
+    if (Array.isArray(task.assignees)) {
+      if (task.assignees.some((a: any) => a.userId === userId)) return;
+    } else {
+      const membership = await this.prisma.taskAssignee.findFirst({
+        where: { taskId: task.id, userId },
+        select: { id: true },
+      });
+      if (membership) return;
     }
 
     switch (userRole) {
       case Role.ADMIN:
         // ADMIN can access tasks they created or in their org
         if (task.createdById !== userId && task.organizationId !== organizationId) {
+          this.logger.warn(`Authorization denied: ADMIN access to task outside org`, { userId, taskId: task.id });
           throw new ForbiddenException('Access denied');
         }
         break;
 
-      case Role.DISPATCHER:
+      case Role.MANAGER:
         // DISPATCHER can access all tasks in their org
         if (task.organizationId !== organizationId) {
+          this.logger.warn(`Authorization denied: DISPATCHER access to task outside org`, { userId, taskId: task.id });
           throw new ForbiddenException('Access denied');
         }
         break;
 
-      case Role.TECHNICIAN:
+      case Role.EMPLOYEE:
         // TECHNICIAN can only access tasks assigned to them (already checked above)
+        this.logger.warn(`Authorization denied: TECHNICIAN access to unassigned task`, { userId, taskId: task.id });
         throw new ForbiddenException('Access denied');
 
       default:
+        this.logger.warn(`Authorization denied: unknown role`, { userId, userRole, taskId: task.id });
         throw new ForbiddenException('Access denied');
     }
   }
@@ -746,7 +930,7 @@ export class TasksService {
     }
 
     // Authorization check
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
 
     const comment = await this.prisma.comment.create({
       data: {
@@ -755,7 +939,7 @@ export class TasksService {
         userId: data.userId,
       },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true } },
+        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -793,13 +977,13 @@ export class TasksService {
     }
 
     // Authorization check
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
 
     const comments = await this.prisma.comment.findMany({
       where: { taskId: data.taskId },
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true } },
+        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
     });
 
@@ -825,6 +1009,317 @@ export class TasksService {
     });
   }
 
+  // ============ Assignee Methods ============
+
+  /**
+   * Add an assignee to a task
+   */
+  async addAssignee(data: {
+    taskId: string;
+    userId: string;
+    role?: string;
+    requestUserId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    if (task.organizationId !== data.organizationId) {
+      throw new ForbiddenException('You can only manage assignees for tasks in your organization');
+    }
+
+    // Verify the target user exists in the organization
+    const user = await this.prisma.user.findFirst({
+      where: { id: data.userId, organizationId: data.organizationId, isActive: true },
+      select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+    });
+    if (!user) throw new NotFoundException('User not found or not in your organization');
+
+    const role = (data.role as any) || 'MEMBER';
+
+    // If adding as LEAD, demote existing LEAD to MEMBER
+    if (role === 'LEAD') {
+      await this.prisma.taskAssignee.updateMany({
+        where: { taskId: data.taskId, role: 'LEAD' },
+        data: { role: 'MEMBER' },
+      });
+    }
+
+    const assignee = await this.prisma.taskAssignee.upsert({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+      create: { taskId: data.taskId, userId: data.userId, role },
+      update: { role },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+      },
+    });
+
+    // Sync the primary assignedToId field
+    await this.syncPrimaryAssignee(data.taskId);
+
+    await this.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_ADDED, {
+      assigneeId: data.userId,
+      assigneeName: `${user.firstName} ${user.lastName}`,
+      role,
+    });
+
+    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+
+    return success(assignee);
+  }
+
+  /**
+   * Remove an assignee from a task
+   */
+  async removeAssignee(data: {
+    taskId: string;
+    userId: string;
+    requestUserId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    if (task.organizationId !== data.organizationId) {
+      throw new ForbiddenException('You can only manage assignees for tasks in your organization');
+    }
+
+    const existing = await this.prisma.taskAssignee.findUnique({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+      include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+    });
+    if (!existing) throw new NotFoundException('Assignee not found on this task');
+
+    await this.prisma.taskAssignee.delete({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+    });
+
+    // Sync the primary assignedToId field
+    await this.syncPrimaryAssignee(data.taskId);
+
+    await this.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_REMOVED, {
+      assigneeId: data.userId,
+      assigneeName: existing.user ? `${existing.user.firstName} ${existing.user.lastName}` : '',
+    });
+
+    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+
+    return success(null, 'Assignee removed');
+  }
+
+  /**
+   * Sync the legacy assignedToId field with the LEAD assignee from TaskAssignee records.
+   * This keeps backward compatibility with existing single-assignee flows.
+   */
+  private async syncPrimaryAssignee(taskId: string) {
+    const leadAssignee = await this.prisma.taskAssignee.findFirst({
+      where: { taskId, role: 'LEAD' },
+    });
+
+    await this.prisma.task.update({
+      where: { id: taskId },
+      data: { assignedToId: leadAssignee?.userId || null },
+    });
+  }
+
+  // ============ Checklist Methods ============
+
+  /**
+   * Add a checklist item to a task
+   */
+  async addChecklistItem(data: {
+    taskId: string;
+    text: string;
+    position?: number;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+
+    // Determine position: use provided or append at end
+    let position = data.position;
+    if (position === undefined || position === null) {
+      const lastItem = await this.prisma.checklistItem.findFirst({
+        where: { taskId: data.taskId },
+        orderBy: { position: 'desc' },
+        select: { position: true },
+      });
+      position = (lastItem?.position ?? -1) + 1;
+    }
+
+    const item = await this.prisma.checklistItem.create({
+      data: {
+        taskId: data.taskId,
+        text: data.text,
+        position,
+      },
+    });
+
+    await this.createTaskEvent(data.taskId, data.userId, TaskEventType.CHECKLIST_ITEM_ADDED, {
+      itemId: item.id,
+      text: data.text,
+    });
+
+    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+
+    return success(item);
+  }
+
+  /**
+   * Update a checklist item (toggle completion or update text)
+   */
+  async updateChecklistItem(data: {
+    taskId: string;
+    itemId: string;
+    text?: string;
+    isCompleted?: boolean;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+
+    const existing = await this.prisma.checklistItem.findFirst({
+      where: { id: data.itemId, taskId: data.taskId },
+    });
+    if (!existing) throw new NotFoundException('Checklist item not found');
+
+    const updateData: any = {};
+    if (data.text !== undefined) updateData.text = data.text;
+    if (data.isCompleted !== undefined) updateData.isCompleted = data.isCompleted;
+
+    const item = await this.prisma.checklistItem.update({
+      where: { id: data.itemId },
+      data: updateData,
+    });
+
+    if (data.isCompleted !== undefined) {
+      await this.createTaskEvent(data.taskId, data.userId, TaskEventType.CHECKLIST_ITEM_TOGGLED, {
+        itemId: item.id,
+        text: item.text,
+        isCompleted: item.isCompleted,
+      });
+    }
+
+    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+
+    return success(item);
+  }
+
+  /**
+   * Delete a checklist item
+   */
+  async deleteChecklistItem(data: {
+    taskId: string;
+    itemId: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+
+    const existing = await this.prisma.checklistItem.findFirst({
+      where: { id: data.itemId, taskId: data.taskId },
+    });
+    if (!existing) throw new NotFoundException('Checklist item not found');
+
+    await this.prisma.checklistItem.delete({ where: { id: data.itemId } });
+
+    await this.createTaskEvent(data.taskId, data.userId, TaskEventType.CHECKLIST_ITEM_REMOVED, {
+      itemId: data.itemId,
+      text: existing.text,
+    });
+
+    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+
+    return success(null, 'Checklist item deleted');
+  }
+
+  /**
+   * Reorder checklist items
+   */
+  async reorderChecklist(data: {
+    taskId: string;
+    itemIds: string[];
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+
+    // Update positions in a transaction
+    await this.prisma.$transaction(
+      data.itemIds.map((itemId, index) =>
+        this.prisma.checklistItem.updateMany({
+          where: { id: itemId, taskId: data.taskId },
+          data: { position: index },
+        }),
+      ),
+    );
+
+    // Fetch the reordered items
+    const items = await this.prisma.checklistItem.findMany({
+      where: { taskId: data.taskId },
+      orderBy: { position: 'asc' },
+    });
+
+    return success(items);
+  }
+
+  /**
+   * Get task assignees (READ - for direct microservice calls)
+   */
+  async getAssignees(data: {
+    taskId: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+
+    const assignees = await this.prisma.taskAssignee.findMany({
+      where: { taskId: data.taskId },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return success(assignees);
+  }
+
+  /**
+   * Get task checklist items (READ - for direct microservice calls)
+   */
+  async getChecklist(data: {
+    taskId: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+
+    const items = await this.prisma.checklistItem.findMany({
+      where: { taskId: data.taskId },
+      orderBy: { position: 'asc' },
+    });
+
+    return success(items);
+  }
+
   /**
    * Get task counts grouped by status
    * Returns counts for all statuses based on role-based filtering
@@ -833,22 +1328,23 @@ export class TasksService {
     userId: string;
     userRole: string;
     organizationId: string;
+    spaceId?: string;
   }) {
-    const { userId, userRole, organizationId } = query;
+    const { userId, userRole, organizationId, spaceId } = query;
 
     if (!userRole) {
       return success({});
     }
 
     // Check Redis cache first
-    const cacheKey = `status_counts:${userRole}:${userId}:${organizationId}`;
+    const cacheKey = `status_counts:${userRole}:${userId}:${organizationId}${spaceId ? `:${spaceId}` : ''}`;
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) {
         return success(JSON.parse(cached));
       }
-    } catch {
-      // Redis failure is non-fatal, fall through to DB
+    } catch (err) {
+      this.logger.warn('Redis cache read failed for status counts', err);
     }
 
     // Build where clause based on role (same logic as findAll)
@@ -860,13 +1356,25 @@ export class TasksService {
         where.createdById = userId;
         break;
 
-      case Role.DISPATCHER:
+      case Role.MANAGER:
         where.organizationId = organizationId;
         break;
 
-      case Role.TECHNICIAN:
+      case Role.EMPLOYEE:
         where.assignedToId = userId;
         break;
+    }
+
+    // Space filter — verify it belongs to the user's org before applying
+    if (spaceId) {
+      const space = await this.prisma.companyLocation.findUnique({
+        where: { id: spaceId },
+        select: { organizationId: true },
+      });
+      if (!space || space.organizationId !== organizationId) {
+        throw new ForbiddenException('Access denied to this space');
+      }
+      where.spaceId = spaceId;
     }
 
     // Get counts grouped by status using Prisma groupBy
@@ -890,8 +1398,8 @@ export class TasksService {
     // Cache for 30 seconds
     try {
       await this.redis.setex(cacheKey, STATUS_COUNTS_TTL, JSON.stringify(counts));
-    } catch {
-      // Redis failure is non-fatal
+    } catch (err) {
+      this.logger.warn('Redis cache write failed for status counts', err);
     }
 
     return success(counts);
@@ -907,8 +1415,8 @@ export class TasksService {
       if (keys.length > 0) {
         await this.redis.del(...keys);
       }
-    } catch {
-      // Redis failure is non-fatal
+    } catch (err) {
+      this.logger.warn('Failed to invalidate status counts cache', err);
     }
   }
 
@@ -938,7 +1446,7 @@ export class TasksService {
     }
 
     // Authorization: Only DISPATCHER or CLIENT can see suggested technicians
-    if (data.userRole !== Role.DISPATCHER && data.userRole !== Role.ADMIN) {
+    if (data.userRole !== Role.MANAGER && data.userRole !== Role.ADMIN) {
       throw new ForbiddenException('Only dispatchers and clients can view suggested technicians');
     }
 
@@ -953,7 +1461,7 @@ export class TasksService {
         isActive: true,
         id: { not: task.createdById ?? undefined },
       },
-      take: 100, // Cap to prevent unbounded queries in large orgs
+      take: TasksService.SUGGESTION_LIMIT, // Cap to prevent unbounded queries in large orgs
       select: {
         id: true,
         firstName: true,
@@ -986,20 +1494,31 @@ export class TasksService {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
+    // Batch query: get today's completed task counts for all technicians at once (avoids N+1)
+    const techIds = technicians.map((t) => t.id);
+    const todayCompletedCounts = await this.prisma.task.groupBy({
+      by: ['assignedToId'],
+      where: {
+        assignedToId: { in: techIds },
+        status: TaskStatus.COMPLETED,
+        updatedAt: {
+          gte: todayStart,
+          lte: todayEnd,
+        },
+      },
+      _count: { id: true },
+    });
+
+    const completedCountMap = new Map<string, number>();
+    for (const row of todayCompletedCounts) {
+      if (row.assignedToId) {
+        completedCountMap.set(row.assignedToId, row._count.id);
+      }
+    }
+
     // Calculate scores for each technician
-    const scoredTechnicians = await Promise.all(
-      technicians.map(async (tech) => {
-        // Get today's completed tasks count
-        const todayCompletedCount = await this.prisma.task.count({
-          where: {
-            assignedToId: tech.id,
-            status: TaskStatus.COMPLETED,
-            updatedAt: {
-              gte: todayStart,
-              lte: todayEnd,
-            },
-          },
-        });
+    const scoredTechnicians = technicians.map((tech) => {
+        const todayCompletedCount = completedCountMap.get(tech.id) || 0;
 
         const activeTaskCount = tech._count.assignedTasks;
         const todayTaskCount = activeTaskCount + todayCompletedCount;
@@ -1050,8 +1569,7 @@ export class TasksService {
             rating: Math.round(ratingScore),
           },
         };
-      }),
-    );
+      });
 
     // Sort by score (highest first)
     scoredTechnicians.sort((a, b) => b.score - a.score);
@@ -1191,5 +1709,282 @@ export class TasksService {
 
   private toRad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  // ============ Subtask Methods ============
+
+  private static readonly MAX_SUBTASK_DEPTH = 5;
+
+  /**
+   * Create a subtask under a parent task
+   */
+  async createSubtask(data: any) {
+    const parent = await this.prisma.task.findUnique({
+      where: { id: data.parentId },
+    });
+
+    if (!parent) {
+      throw new NotFoundException('Parent task not found');
+    }
+
+    if (parent.organizationId !== data.organizationId) {
+      throw new ForbiddenException('Parent task is not in your organization');
+    }
+
+    // Verify no circular parent-child relationship
+    let current: string | null = data.parentId;
+    const visited = new Set<string>();
+    while (current) {
+      if (visited.has(current)) {
+        throw new BadRequestException('Circular parent-child relationship detected');
+      }
+      visited.add(current);
+      const p = await this.prisma.task.findUnique({ where: { id: current }, select: { parentId: true } });
+      current = p?.parentId || null;
+    }
+
+    // Validate depth
+    const newDepth = (parent.depth ?? 0) + 1;
+    if (newDepth > TasksService.MAX_SUBTASK_DEPTH) {
+      throw new BadRequestException(
+        `Maximum subtask nesting depth is ${TasksService.MAX_SUBTASK_DEPTH}. Current parent is at depth ${parent.depth ?? 0}.`,
+      );
+    }
+
+    // Determine position among siblings
+    const lastSibling = await this.prisma.task.findFirst({
+      where: { parentId: data.parentId },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
+    const position = (lastSibling?.position ?? -1) + 1;
+
+    const hasAssignment = !!data.assignedToId;
+
+    const task = await this.prisma.task.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        priority: data.priority || 'MEDIUM',
+        status: hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        startDate: data.startDate ? new Date(data.startDate) : null,
+        estimatedHours: data.estimatedHours ?? null,
+        locationLat: data.locationLat,
+        locationLng: data.locationLng,
+        locationAddress: data.locationAddress,
+        organizationId: data.organizationId,
+        createdById: data.userId,
+        assignedToId: data.assignedToId || null,
+        assetId: data.assetId || null,
+        parentId: data.parentId,
+        depth: newDepth,
+        position,
+        phaseId: data.phaseId || null,
+        sprintId: data.sprintId || null,
+        epicId: data.epicId || null,
+        storyPoints: data.storyPoints ?? null,
+      },
+      include: {
+        createdBy: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        parent: { select: { id: true, title: true } },
+      },
+    });
+
+    await this.createTaskEvent(task.id, data.userId, TaskEventType.CREATED, {
+      parentId: data.parentId,
+      parentTitle: parent.title,
+    });
+
+    this.notificationClient.emit('task_created', task);
+    this.invalidateStatusCountsCache(task.organizationId);
+
+    return success(task);
+  }
+
+  /**
+   * Get subtasks of a task
+   */
+  async getSubtasks(data: {
+    taskId: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: data.taskId },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+
+    const subtasks = await this.prisma.task.findMany({
+      where: { parentId: data.taskId },
+      orderBy: { position: 'asc' },
+      include: {
+        assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        _count: { select: { subtasks: true, checklistItems: true } },
+      },
+    });
+
+    return success(subtasks);
+  }
+
+  // ============ Dependency Methods ============
+
+  /**
+   * Add a dependency between two tasks
+   */
+  async addDependency(data: {
+    predecessorId: string;
+    successorId: string;
+    type?: string;
+    lagDays?: number;
+    userId: string;
+    organizationId: string;
+  }) {
+    // Validate both tasks exist and belong to the same org
+    const [predecessor, successor] = await Promise.all([
+      this.prisma.task.findUnique({ where: { id: data.predecessorId } }),
+      this.prisma.task.findUnique({ where: { id: data.successorId } }),
+    ]);
+
+    if (!predecessor) {
+      throw new NotFoundException('Predecessor task not found');
+    }
+    if (!successor) {
+      throw new NotFoundException('Successor task not found');
+    }
+
+    if (predecessor.organizationId !== data.organizationId) {
+      throw new ForbiddenException('Predecessor task is not in your organization');
+    }
+    if (successor.organizationId !== data.organizationId) {
+      throw new ForbiddenException('Successor task is not in your organization');
+    }
+
+    if (data.predecessorId === data.successorId) {
+      throw new BadRequestException('A task cannot depend on itself');
+    }
+
+    // Check for circular dependency
+    const hasCircular = await this.detectCircularDependency(data.successorId, data.predecessorId);
+    if (hasCircular) {
+      throw new BadRequestException(
+        'Adding this dependency would create a circular dependency chain',
+      );
+    }
+
+    // Check if dependency already exists
+    const existing = await this.prisma.taskDependency.findUnique({
+      where: {
+        predecessorId_successorId: {
+          predecessorId: data.predecessorId,
+          successorId: data.successorId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('This dependency already exists');
+    }
+
+    const dependency = await this.prisma.taskDependency.create({
+      data: {
+        predecessorId: data.predecessorId,
+        successorId: data.successorId,
+        type: (data.type as any) || 'FINISH_TO_START',
+        lagDays: data.lagDays ?? 0,
+      },
+      include: {
+        predecessor: { select: { id: true, title: true, status: true } },
+        successor: { select: { id: true, title: true, status: true } },
+      },
+    });
+
+    return success(dependency);
+  }
+
+  /**
+   * Remove a dependency
+   */
+  async removeDependency(data: {
+    dependencyId: string;
+    userId: string;
+    organizationId: string;
+  }) {
+    const dependency = await this.prisma.taskDependency.findUnique({
+      where: { id: data.dependencyId },
+      include: {
+        predecessor: { select: { organizationId: true } },
+      },
+    });
+
+    if (!dependency) {
+      throw new NotFoundException('Dependency not found');
+    }
+
+    if (dependency.predecessor.organizationId !== data.organizationId) {
+      throw new ForbiddenException('Dependency is not in your organization');
+    }
+
+    await this.prisma.taskDependency.delete({
+      where: { id: data.dependencyId },
+    });
+
+    return success(null, 'Dependency removed successfully');
+  }
+
+  /**
+   * Detect circular dependencies by walking the predecessor chain.
+   * Returns true if adding a dependency from predecessorId to successorId
+   * would create a cycle.
+   *
+   * We check: does successorId eventually reach predecessorId
+   * through existing predecessor chains?
+   */
+  private async detectCircularDependency(
+    fromTaskId: string,
+    targetTaskId: string,
+    visited: Set<string> = new Set(),
+    maxDepth: number = TasksService.MAX_DEPENDENCY_DEPTH,
+  ): Promise<boolean> {
+    if (maxDepth <= 0) {
+      throw new BadRequestException('Dependency chain too deep — possible circular dependency');
+    }
+
+    if (fromTaskId === targetTaskId) {
+      return true;
+    }
+
+    if (visited.has(fromTaskId)) {
+      return false;
+    }
+
+    visited.add(fromTaskId);
+
+    // Find all tasks that fromTaskId is a predecessor of
+    const dependencies = await this.prisma.taskDependency.findMany({
+      where: { predecessorId: fromTaskId },
+      select: { successorId: true },
+    });
+
+    for (const dep of dependencies) {
+      const hasCycle = await this.detectCircularDependency(
+        dep.successorId,
+        targetTaskId,
+        visited,
+        maxDepth - 1,
+      );
+      if (hasCycle) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

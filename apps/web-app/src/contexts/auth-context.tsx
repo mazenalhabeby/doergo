@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken, getRefreshToken } from '@/lib/api';
+import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
 import { DashboardSkeleton } from '@/components/skeletons';
 
 // User type
@@ -22,11 +22,18 @@ export interface User {
   organizationId?: string;
   organizationName?: string;
   // Permission fields
-  platform: string;
   canCreateTasks: boolean;
+  taskCreationScope: string;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  // Organization enabled modules (e.g. ["story_points", "epics", "sprints"])
+  enabledModules: string[];
+  // Avatar
+  avatarUrl?: string | null;
+  // Custom role
+  orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
+  rolePermissions?: Record<string, boolean>;
 }
 
 // Token info type
@@ -74,6 +81,10 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   manualRefresh: () => Promise<boolean>;
+  /** Check if an organization module is enabled */
+  hasModule: (module: string) => boolean;
+  /** Check if the user has a specific permission (checks user fields + role permissions) */
+  hasPermission: (perm: string) => boolean;
 }
 
 // Create context
@@ -96,14 +107,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
   const queryClient = useQueryClient();
 
-  // Update token info from storage
+  // Update token info from storage. The refresh token now lives only in an
+  // httpOnly cookie and is not readable from JS, so it isn't surfaced here.
   const updateTokenInfo = useCallback(() => {
     const accessToken = getAccessToken();
-    const refreshToken = getRefreshToken();
 
     let accessTokenExp: Date | null = null;
-    let refreshTokenExp: Date | null = null;
-
     if (accessToken) {
       const payload = parseJwt(accessToken);
       if (payload?.exp) {
@@ -111,18 +120,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
-    if (refreshToken) {
-      const payload = parseJwt(refreshToken);
-      if (payload?.exp) {
-        refreshTokenExp = new Date(payload.exp * 1000);
-      }
-    }
-
     setTokenInfo({
       accessToken,
-      refreshToken,
+      refreshToken: null,
       accessTokenExp,
-      refreshTokenExp,
+      refreshTokenExp: null,
     });
   }, []);
 
@@ -136,7 +138,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const userData = await authApi.getMe();
       if (userData) {
-        setUser(userData);
+        setUser({
+          ...userData,
+          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.role === 'MANAGER' ? 'SPACE' : 'NONE'),
+          canCreateTasks: userData.role === 'ADMIN' || userData.role === 'MANAGER' || (userData.taskCreationScope || 'NONE') !== 'NONE',
+          avatarUrl: userData.avatarUrl || null,
+          enabledModules: userData.enabledModules || [],
+          orgRole: userData.orgRole || null,
+          rolePermissions: userData.rolePermissions || {},
+        });
         updateTokenInfo();
       }
     } catch {
@@ -151,27 +161,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, [checkAuth]);
 
-  // Update token info every second (for countdown display)
+  // Update token info when user changes
+  useEffect(() => {
+    if (user) updateTokenInfo();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Proactive token refresh — refresh access token before it expires
+  // This avoids the 401 → refresh → retry cycle (3 requests instead of 1)
   useEffect(() => {
     if (!user) return;
 
-    const interval = setInterval(() => {
-      updateTokenInfo();
-    }, 1000);
+    const checkAndRefresh = async () => {
+      const accessToken = getAccessToken();
+      if (!accessToken) return;
+
+      // Refresh when access token will expire within 2 minutes
+      if (isTokenExpiringSoon(accessToken, 120)) {
+        const success = await refreshTokens();
+        if (success) {
+          updateTokenInfo();
+        } else {
+          // Refresh token also expired — session is dead
+          clearTokens();
+          setUser(null);
+        }
+      }
+    };
+
+    // Check every 30 seconds (not every second — lightweight)
+    const interval = setInterval(checkAndRefresh, 30_000);
+
+    // Also check immediately on mount
+    checkAndRefresh();
 
     return () => clearInterval(interval);
   }, [user, updateTokenInfo]);
-
-  // Token refresh is handled by the 401 handler in api.ts
-  // When an API call gets 401, it automatically refreshes tokens and retries
-  // No proactive refresh - simpler and more reliable
 
   // Login function
   const login = useCallback(async (email: string, password: string) => {
     // Clear all cached data from previous session before setting new user
     queryClient.clear();
     const response = await authApi.login(email, password);
-    setUser(response.user);
+    const u = response.user;
+    setUser({
+      ...u,
+      taskCreationScope: u.taskCreationScope || (u.role === 'ADMIN' ? 'ORG' : u.role === 'MANAGER' ? 'SPACE' : 'NONE'),
+      canCreateTasks: u.role === 'ADMIN' || u.role === 'MANAGER' || (u.taskCreationScope || 'NONE') !== 'NONE',
+      avatarUrl: u.avatarUrl || null,
+      enabledModules: u.enabledModules || [],
+      orgRole: u.orgRole || null,
+      rolePermissions: u.rolePermissions || {},
+    });
     updateTokenInfo();
   }, [updateTokenInfo, queryClient]);
 
@@ -194,12 +234,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const userData = await authApi.getMe();
       if (userData) {
-        setUser(userData);
+        setUser({
+          ...userData,
+          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.role === 'MANAGER' ? 'SPACE' : 'NONE'),
+          canCreateTasks: userData.role === 'ADMIN' || userData.role === 'MANAGER' || (userData.taskCreationScope || 'NONE') !== 'NONE',
+          avatarUrl: userData.avatarUrl || null,
+          enabledModules: userData.enabledModules || [],
+          orgRole: userData.orgRole || null,
+          rolePermissions: userData.rolePermissions || {},
+        });
       }
     } catch {
       // Ignore errors
     }
   }, []);
+
+  // Check if an organization module is enabled
+  const hasModule = useCallback((module: string) => {
+    return user?.enabledModules?.includes(module) ?? false;
+  }, [user?.enabledModules]);
+
+  // Check if user has a specific permission
+  const hasPermission = useCallback((perm: string) => {
+    if (!user) return false;
+    // Check direct user fields first (backward compat)
+    if (perm in user) return (user as any)[perm] === true;
+    // Then check role permissions
+    return user.rolePermissions?.[perm] === true;
+  }, [user]);
 
   // Manual refresh function
   const manualRefresh = useCallback(async () => {
@@ -224,6 +286,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     refreshUser,
     manualRefresh,
+    hasModule,
+    hasPermission,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

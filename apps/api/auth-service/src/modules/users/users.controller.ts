@@ -2,11 +2,11 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import {
-  CreateTechnicianDto,
-  UpdateTechnicianDto,
-  ListTechniciansDto,
-  GetTechnicianDetailDto,
-  GetTechnicianPerformanceDto,
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  ListEmployeesDto,
+  GetEmployeeDetailDto,
+  GetEmployeePerformanceDto,
   ListOrgMembersDto,
   UpdateMemberRoleDto,
   UpdateMemberProfileDto,
@@ -41,41 +41,41 @@ export class UsersController {
   }
 
   // ============================================================================
-  // TECHNICIAN MANAGEMENT
+  // EMPLOYEE MANAGEMENT
   // ============================================================================
 
   @MessagePattern({ cmd: 'list_technicians' })
-  async listTechnicians(@Payload() data: ListTechniciansDto) {
-    return this.usersService.listTechnicians(data);
+  async listEmployees(@Payload() data: ListEmployeesDto) {
+    return this.usersService.listEmployees(data);
   }
 
   @MessagePattern({ cmd: 'get_technician_detail' })
-  async getTechnicianDetail(@Payload() data: GetTechnicianDetailDto) {
-    return this.usersService.getTechnicianDetail(data);
+  async getEmployeeDetail(@Payload() data: GetEmployeeDetailDto) {
+    return this.usersService.getEmployeeDetail(data);
   }
 
   @MessagePattern({ cmd: 'create_technician' })
-  async createTechnician(@Payload() data: CreateTechnicianDto) {
-    return this.usersService.createTechnician(data);
+  async createEmployee(@Payload() data: CreateEmployeeDto) {
+    return this.usersService.createEmployee(data);
   }
 
   @MessagePattern({ cmd: 'update_technician' })
-  async updateTechnician(
-    @Payload() data: { id: string; organizationId: string; dto: UpdateTechnicianDto },
+  async updateEmployee(
+    @Payload() data: { id: string; organizationId: string; dto: UpdateEmployeeDto },
   ) {
-    return this.usersService.updateTechnician(data.id, data.organizationId, data.dto);
+    return this.usersService.updateEmployee(data.id, data.organizationId, data.dto);
   }
 
   @MessagePattern({ cmd: 'deactivate_technician' })
-  async deactivateTechnician(
+  async deactivateEmployee(
     @Payload() data: { id: string; organizationId: string },
   ) {
-    return this.usersService.deactivateTechnician(data.id, data.organizationId);
+    return this.usersService.deactivateEmployee(data.id, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_technician_performance' })
-  async getTechnicianPerformance(@Payload() data: GetTechnicianPerformanceDto) {
-    return this.usersService.getTechnicianPerformance(data);
+  async getEmployeePerformance(@Payload() data: GetEmployeePerformanceDto) {
+    return this.usersService.getEmployeePerformance(data);
   }
 
   // ============================================================================

@@ -80,6 +80,36 @@ export class TasksProcessor extends WorkerHost {
       case TASK_JOB_TYPES.ADD_COMMENT:
         return this.tasksService.addComment(data);
 
+      // ============ Assignee Write Operations ============
+      case TASK_JOB_TYPES.ADD_ASSIGNEE:
+        return this.tasksService.addAssignee(data);
+
+      case TASK_JOB_TYPES.REMOVE_ASSIGNEE:
+        return this.tasksService.removeAssignee(data);
+
+      // ============ Checklist Write Operations ============
+      case TASK_JOB_TYPES.ADD_CHECKLIST_ITEM:
+        return this.tasksService.addChecklistItem(data);
+
+      case TASK_JOB_TYPES.UPDATE_CHECKLIST_ITEM:
+        return this.tasksService.updateChecklistItem(data);
+
+      case TASK_JOB_TYPES.DELETE_CHECKLIST_ITEM:
+        return this.tasksService.deleteChecklistItem(data);
+
+      case TASK_JOB_TYPES.REORDER_CHECKLIST:
+        return this.tasksService.reorderChecklist(data);
+
+      // ============ Subtask & Dependency Write Operations ============
+      case TASK_JOB_TYPES.CREATE_SUBTASK:
+        return this.tasksService.createSubtask(data);
+
+      case TASK_JOB_TYPES.ADD_DEPENDENCY:
+        return this.tasksService.addDependency(data);
+
+      case TASK_JOB_TYPES.REMOVE_DEPENDENCY:
+        return this.tasksService.removeDependency(data);
+
       // ============ Attachment Write Operations ============
       case TASK_JOB_TYPES.ADD_ATTACHMENT:
         return this.attachmentsService.create(data);

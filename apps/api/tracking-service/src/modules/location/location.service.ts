@@ -4,6 +4,10 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter } from '@hbcfield/shared';
 import { catchError, of } from 'rxjs';
 
+// Field-worker roles across the legacy → current rename. Must be valid DB Role
+// enum values (no 'WORKER' — that's not in the enum).
+const WORKER_ROLES = ['EMPLOYEE', 'TECHNICIAN'] as const;
+
 @Injectable()
 export class LocationService {
   private readonly logger = new Logger(LocationService.name);
@@ -21,6 +25,14 @@ export class LocationService {
     accuracy?: number,
     taskId?: string,
   ) {
+    // Validate coordinate bounds — reject garbage before it pollutes the map/route.
+    if (
+      typeof lat !== 'number' || typeof lng !== 'number' ||
+      lat < -90 || lat > 90 || lng < -180 || lng > 180
+    ) {
+      throw new Error('Invalid coordinates');
+    }
+
     // Upsert worker's last location (for live map)
     const location = await this.prisma.workerLastLocation.upsert({
       where: { userId },
@@ -30,51 +42,41 @@ export class LocationService {
 
     // If taskId provided, store in location history for route tracking
     if (taskId) {
-      // Get the task to check if it's EN_ROUTE
+      // Get the task — and verify it is assigned to THIS user (ownership check:
+      // a worker may only append GPS points to their own active task).
       const task = await this.prisma.task.findUnique({
         where: { id: taskId },
-        select: { status: true, routeStartedAt: true, routeDistance: true },
+        select: { status: true, assignedToId: true },
       });
 
-      // Only record history if task is EN_ROUTE
-      if (task && task.status === 'EN_ROUTE') {
+      // Only record history if the task is EN_ROUTE and owned by the caller.
+      if (task && task.status === 'EN_ROUTE' && task.assignedToId === userId) {
         // Get the last location point for this task to calculate incremental distance
         const lastPoint = await this.prisma.locationHistory.findFirst({
           where: { taskId, userId },
           orderBy: { timestamp: 'desc' },
         });
 
-        // Calculate distance from last point
         let incrementalDistance = 0;
         if (lastPoint) {
-          incrementalDistance = haversineDistance(
-            lastPoint.lat,
-            lastPoint.lng,
-            lat,
-            lng,
-          );
+          incrementalDistance = haversineDistance(lastPoint.lat, lastPoint.lng, lat, lng);
         }
 
-        // Store location point in history
-        await this.prisma.locationHistory.create({
-          data: {
-            userId,
-            taskId,
-            lat,
-            lng,
-            accuracy,
-          },
-        });
-
-        // Update task's total route distance
-        if (incrementalDistance > 0) {
-          await this.prisma.task.update({
-            where: { id: taskId },
-            data: {
-              routeDistance: (task.routeDistance || 0) + incrementalDistance,
-            },
-          });
-        }
+        // Append the point and bump the distance atomically so concurrent pings
+        // can't lose an increment (read-modify-write race on routeDistance).
+        await this.prisma.$transaction([
+          this.prisma.locationHistory.create({
+            data: { userId, taskId, lat, lng, accuracy },
+          }),
+          ...(incrementalDistance > 0
+            ? [
+                this.prisma.task.update({
+                  where: { id: taskId },
+                  data: { routeDistance: { increment: incrementalDistance } },
+                }),
+              ]
+            : []),
+        ]);
       }
     }
 
@@ -101,7 +103,9 @@ export class LocationService {
   async getActiveWorkers(organizationId?: string) {
     const where: any = {
       user: {
-        role: 'TECHNICIAN',
+        // Field workers across legacy + current role names (the live map must
+        // show EMPLOYEE workers, not just the dropped legacy TECHNICIAN role).
+        role: { in: [...WORKER_ROLES] },
         isActive: true,
       },
     };
@@ -177,9 +181,13 @@ export class LocationService {
     return success(data);
   }
 
-  async getWorkerLocation(workerId: string) {
-    const location = await this.prisma.workerLastLocation.findUnique({
-      where: { userId: workerId },
+  async getWorkerLocation(workerId: string, organizationId?: string) {
+    const location = await this.prisma.workerLastLocation.findFirst({
+      where: {
+        userId: workerId,
+        // Scope by tenant so one org can't read another org's worker location.
+        ...(organizationId ? { user: { organizationId } } : {}),
+      },
       include: {
         user: {
           select: {
@@ -205,7 +213,21 @@ export class LocationService {
     });
   }
 
-  async getWorkerHistory(workerId: string, startDate?: string, endDate?: string) {
+  async getWorkerHistory(
+    workerId: string,
+    startDate?: string,
+    endDate?: string,
+    organizationId?: string,
+  ) {
+    // Tenant scope: bail out if the worker isn't in the requesting org.
+    if (organizationId) {
+      const worker = await this.prisma.user.findFirst({
+        where: { id: workerId, organizationId },
+        select: { id: true },
+      });
+      if (!worker) return success([]);
+    }
+
     const dateFilter = buildDateRangeFilter(startDate, endDate);
     const where: any = { userId: workerId };
     if (dateFilter) {
@@ -227,10 +249,10 @@ export class LocationService {
     return success(history);
   }
 
-  async getTaskRoute(taskId: string) {
-    // Get task with route info
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
+  async getTaskRoute(taskId: string, organizationId?: string) {
+    // Get task with route info — scoped to the requesting org (tenant isolation).
+    const task = await this.prisma.task.findFirst({
+      where: { id: taskId, ...(organizationId ? { organizationId } : {}) },
       select: {
         id: true,
         status: true,
@@ -279,12 +301,13 @@ export class LocationService {
     });
   }
 
-  async getWorkerCurrentRoute(workerId: string) {
-    // Find the worker's current EN_ROUTE task
+  async getWorkerCurrentRoute(workerId: string, organizationId?: string) {
+    // Find the worker's current EN_ROUTE task — scoped to the requesting org.
     const task = await this.prisma.task.findFirst({
       where: {
         assignedToId: workerId,
         status: 'EN_ROUTE',
+        ...(organizationId ? { organizationId } : {}),
       },
       select: {
         id: true,

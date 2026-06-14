@@ -1,20 +1,35 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'path';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
+
+  // Serve uploaded files (avatars, etc.) as static assets
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+  // Trust the proxy/load-balancer so req.ip and the throttler use the real
+  // client IP (X-Forwarded-For) instead of bucketing every client together.
+  app.set('trust proxy', 1);
 
   // Increase body size limit for base64 signatures
   const express = require('express');
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Parse cookies (for httpOnly refresh token)
+  app.use(cookieParser());
 
   // Simple request logging for testing (skip noisy endpoints)
   const QUIET_ROUTES = ['/tracking/location'];
@@ -60,6 +75,30 @@ async function bootstrap() {
   app.setGlobalPrefix(apiPrefix, {
     exclude: ['admin/queues', 'admin/queues/(.*)'],
   });
+
+  // Protect Bull Board in production — require basic auth
+  if (isProduction) {
+    const bullBoardUser = configService.get<string>('BULL_BOARD_USER', 'admin');
+    const bullBoardPass = configService.get<string>('BULL_BOARD_PASSWORD');
+    if (bullBoardPass) {
+      app.use('/admin/queues', (req: any, res: any, next: any) => {
+        const auth = req.headers.authorization;
+        if (!auth || !auth.startsWith('Basic ')) {
+          res.setHeader('WWW-Authenticate', 'Basic realm="Bull Board"');
+          return res.status(401).send('Authentication required');
+        }
+        const [user, pass] = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
+        if (user === bullBoardUser && pass === bullBoardPass) return next();
+        res.setHeader('WWW-Authenticate', 'Basic realm="Bull Board"');
+        return res.status(401).send('Invalid credentials');
+      });
+    } else {
+      // No password configured — block access entirely in production
+      app.use('/admin/queues', (_req: any, res: any) => {
+        res.status(403).send('Bull Board disabled in production. Set BULL_BOARD_PASSWORD to enable.');
+      });
+    }
+  }
 
   // CORS
   const corsOrigins = configService.get<string>('CORS_ORIGINS', 'http://localhost:3001,http://localhost:3002');

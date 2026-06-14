@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react"
-import { toast } from "sonner"
+import { notify } from "@/lib/toast"
 
 import {
   joinRequestsApi,
@@ -114,7 +114,7 @@ export default function JoinRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<JoinRequest | null>(null)
 
   // Approve form state
-  const [approveRole, setApproveRole] = useState<"DISPATCHER" | "TECHNICIAN">("TECHNICIAN")
+  const [approveRole, setApproveRole] = useState<"MANAGER" | "EMPLOYEE">("EMPLOYEE")
   const [approveSpecialty, setApproveSpecialty] = useState<string>("")
   const [approveMaxDailyJobs, setApproveMaxDailyJobs] = useState("")
 
@@ -139,12 +139,12 @@ export default function JoinRequestsPage() {
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof joinRequestsApi.approve>[1] }) =>
       joinRequestsApi.approve(id, data),
     onSuccess: () => {
-      toast.success(t("joinRequests.approveDialog.approvedSuccessfully"))
+      notify.success(t("joinRequests.approveDialog.approvedSuccessfully"))
       queryClient.invalidateQueries({ queryKey: ["join-requests"] })
       closeApproveDialog()
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to approve join request")
+      notify.error(error.message || "Failed to approve join request")
     },
   })
 
@@ -153,12 +153,12 @@ export default function JoinRequestsPage() {
     mutationFn: ({ id, data }: { id: string; data?: { reason?: string } }) =>
       joinRequestsApi.reject(id, data),
     onSuccess: () => {
-      toast.success(t("joinRequests.rejectDialog.rejectedSuccessfully"))
+      notify.success(t("joinRequests.rejectDialog.rejectedSuccessfully"))
       queryClient.invalidateQueries({ queryKey: ["join-requests"] })
       closeRejectDialog()
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to reject join request")
+      notify.error(error.message || "Failed to reject join request")
     },
   })
 
@@ -169,7 +169,7 @@ export default function JoinRequestsPage() {
 
   const handleApproveClick = (request: JoinRequest) => {
     setSelectedRequest(request)
-    setApproveRole("TECHNICIAN")
+    setApproveRole("EMPLOYEE")
     setApproveSpecialty("")
     setApproveMaxDailyJobs("")
     setApproveDialogOpen(true)
@@ -426,20 +426,20 @@ export default function JoinRequestsPage() {
               <Label>{t("joinRequests.approveDialog.roleLabel")}</Label>
               <Select
                 value={approveRole}
-                onValueChange={(v) => setApproveRole(v as "DISPATCHER" | "TECHNICIAN")}
+                onValueChange={(v) => setApproveRole(v as "MANAGER" | "EMPLOYEE")}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="TECHNICIAN">{t("members.roles.technician")}</SelectItem>
-                  <SelectItem value="DISPATCHER">{t("members.roles.dispatcher")}</SelectItem>
+                  <SelectItem value="EMPLOYEE">{t("members.roles.technician")}</SelectItem>
+                  <SelectItem value="MANAGER">{t("members.roles.dispatcher")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Employee-specific fields */}
-            {approveRole === "TECHNICIAN" && (
+            {approveRole === "EMPLOYEE" && (
               <>
                 <div className="space-y-2">
                   <Label>{t("joinRequests.approveDialog.specialtyLabel")}</Label>

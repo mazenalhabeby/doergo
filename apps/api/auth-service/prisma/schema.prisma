@@ -10,9 +10,12 @@ datasource db {
 // Enums
 enum Role {
   ADMIN       // Organization owner/admin - full control
-  CLIENT      // DEPRECATED: Use ADMIN instead (kept for backward compatibility)
-  DISPATCHER  // Office manager - assigns workers, monitors operations
-  TECHNICIAN  // Field worker - executes tasks
+  MANAGER     // Office manager - assigns workers, monitors operations
+  EMPLOYEE    // Worker - executes tasks
+  // Legacy values kept for backward compatibility (normalizeRole maps them)
+  CLIENT      // DEPRECATED → ADMIN
+  DISPATCHER  // DEPRECATED → MANAGER
+  TECHNICIAN  // DEPRECATED → EMPLOYEE
 }
 
 // Platform access restriction
@@ -60,6 +63,16 @@ enum TaskEventType {
   COMMENT_ADDED
   ATTACHMENT_ADDED
   ATTACHMENT_REMOVED
+  ASSIGNEE_ADDED
+  ASSIGNEE_REMOVED
+  CHECKLIST_ITEM_ADDED
+  CHECKLIST_ITEM_TOGGLED
+  CHECKLIST_ITEM_REMOVED
+}
+
+enum TaskAssigneeRole {
+  LEAD
+  MEMBER
 }
 
 enum AttachmentType {
@@ -78,13 +91,6 @@ enum AssetStatus {
 enum ReportAttachmentType {
   BEFORE  // Photo taken before work started
   AFTER   // Photo taken after work completed
-}
-
-// Where the technician works (decoupled from billing type)
-enum WorkMode {
-  ON_SITE  // Works at company locations (attendance tracking)
-  ON_ROAD  // Works on-the-go (task-based, no attendance)
-  HYBRID   // Both on-site and on-road
 }
 
 // Time entry status for attendance tracking
@@ -217,7 +223,77 @@ enum OvertimeApprovalMethod {
   SIGNATURE // Team leader signed on the technician's phone
 }
 
+// Task creation scope — controls who the user can create tasks for
+enum TaskCreationScope {
+  NONE   // Cannot create tasks
+  SELF   // Can only create tasks assigned to self
+  SPACE  // Can create tasks in spaces the user is assigned to
+  ORG    // Can create tasks for anyone in the organization
+}
+
+// Custom field types for organization-specific task fields
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  DROPDOWN
+  CHECKBOX
+  URL
+  EMAIL
+}
+
+// Recurrence frequency for recurring task templates
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+// Task dependency types (project management)
+enum DependencyType {
+  FINISH_TO_START   // Predecessor must finish before successor starts
+  START_TO_START    // Predecessor must start before successor starts
+  FINISH_TO_FINISH  // Predecessor must finish before successor finishes
+  START_TO_FINISH   // Predecessor must start before successor finishes
+}
+
+// Sprint status for agile workflow
+enum SprintStatus {
+  PLANNING   // Sprint is being planned
+  ACTIVE     // Sprint is in progress
+  COMPLETED  // Sprint is completed
+}
+
 // Models
+
+// Custom organization role with JSON permissions
+model OrgRole {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String
+  description    String?
+  color          String?      @default("#6b7280")
+  isSystem       Boolean      @default(false)
+  legacyRole     String?      // Maps to Role enum for backward compat (ADMIN, DISPATCHER, TECHNICIAN)
+  position       Int          @default(0)
+  isActive       Boolean      @default(true)
+  permissions    Json         // { canCreateTasks: bool, canViewAllTasks: bool, ... }
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  users          User[]
+  invitations    Invitation[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("org_roles")
+}
+
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -243,9 +319,13 @@ model Organization {
   profileBadges     Json?   // { showRole, showWorkMode, showType, showSpecialty }
   notificationPrefs Json?   // { emailOnTaskCreate, emailOnTaskComplete, emailOnJoinRequest, pushEnabled }
   securitySettings  Json?   // { sessionTimeoutHours, requireStrongPassword, maxFailedAttempts }
+  enabledModules    Json?   // e.g. ["story_points", "epics", "sprints", "phases", "custom_fields", "time_tracking"]
 
   users User[]
   tasks Task[]
+
+  // Custom roles
+  orgRoles OrgRole[]
 
   // Organization delegation relationships
   grantedAccess  OrganizationAccess[] @relation("Grantor")  // Access this org has granted to others
@@ -270,12 +350,33 @@ model Organization {
   // Join requests
   joinRequests JoinRequest[]
 
+  // Project management
+  phases   Phase[]
+  sprints  Sprint[]
+  epics    Epic[]
+
+  // Agile
+  definitionsOfDone DefinitionOfDone[]
+
+  // Custom workflows & fields
+  workflows              StatusWorkflow[]
+  customFieldDefinitions CustomFieldDefinition[]
+
+  // Recurring tasks
+  recurringTemplates RecurringTaskTemplate[]
+
   // Monitoring
   activityLogs          ActivityLog[]
   notificationDeliveries NotificationDelivery[]
   alerts                Alert[]
   dailyMetrics          DailyMetric[]
   overtimeRequests      OvertimeRequest[]
+
+  // Invoicing
+  invoices Invoice[]
+
+  // Schedule templates
+  scheduleTemplates ScheduleTemplate[]
 
   @@map("organizations")
 }
@@ -328,12 +429,15 @@ model User {
 
   // Permission fields (granular access control)
   canCreateTasks  Boolean  @default(false)   // Can create new tasks
+  taskCreationScope TaskCreationScope @default(NONE) // Granular task creation scope
   canViewAllTasks Boolean  @default(false)   // Can view all org tasks (vs only assigned/created)
   canAssignTasks  Boolean  @default(false)   // Can assign tasks to technicians
   canManageUsers  Boolean  @default(false)   // Can manage users in organization
 
   // Worker configuration
   position       String?   // Free-form: "technician", "driver", "sales", "office_manager"
+  scheduleType   String?   @default("NONE")  // "FIXED", "FLEXIBLE", "NONE"
+  monthlyHourBudget Float? // For FLEXIBLE: target hours per month (e.g., 160)
   enabledModules Json?     // Mobile modules: ["tasks", "clock", "time_off"]
 
   // Employee fields
@@ -355,8 +459,13 @@ model User {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
+  // Custom role assignment
+  orgRoleId String?
+  orgRole   OrgRole? @relation(fields: [orgRoleId], references: [id], onDelete: SetNull)
+
   createdTasks   Task[]       @relation("TaskCreator")
   assignedTasks  Task[]       @relation("TaskAssignee")
+  taskAssignments  TaskAssignee[] @relation("TaskAssignees")
   comments       Comment[]
   attachments    Attachment[]
   taskEvents     TaskEvent[]
@@ -395,9 +504,16 @@ model User {
   overtimeRequests         OvertimeRequest[] @relation("TechnicianOvertime")
   approvedOvertimeRequests OvertimeRequest[] @relation("OvertimeApprover")
 
+  // Recurring tasks
+  recurringTemplates RecurringTaskTemplate[] @relation("RecurringTaskCreator")
+
+  // Invoices
+  createdInvoices Invoice[] @relation("InvoiceCreator")
+
   @@index([organizationId])
   @@index([role])
   @@index([email])
+  @@index([orgRoleId])
   @@index([organizationId, role, isActive])  // list technicians/members in org
   @@map("users")
 }
@@ -464,9 +580,15 @@ model Task {
   id          String       @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus   @default(NEW)
+  status      String       @default("NEW")
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
+  startDate       DateTime?
+  estimatedHours  Float?
+
+  // Custom workflow association
+  workflowId  String?
+  workflow    StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
 
   locationLat     Float?
   locationLng     Float?
@@ -489,15 +611,44 @@ model Task {
   assignedToId String?
   assignedTo   User?   @relation("TaskAssignee", fields: [assignedToId], references: [id])
 
+  // Optional link to space (CompanyLocation) for space-centric workflows
+  spaceId String?
+  space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+
   // Optional link to asset for maintenance history
   assetId String?
   asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  // Subtask hierarchy
+  parentId    String?
+  parent      Task?     @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks    Task[]    @relation("TaskSubtasks")
+  depth       Int       @default(0)  // Nesting level (0 = root, max 5)
+  position    Int       @default(0)  // Order within siblings
+
+  // Agile fields
+  storyPoints Int?      // Fibonacci: 1,2,3,5,8,13,21
+
+  // Phase, Sprint & Epic associations
+  phaseId     String?
+  phase       Phase?    @relation(fields: [phaseId], references: [id], onDelete: SetNull)
+  sprintId    String?
+  sprint      Sprint?   @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  epicId      String?
+  epic        Epic?     @relation(fields: [epicId], references: [id], onDelete: SetNull)
+
+  // Dependencies
+  predecessors TaskDependency[] @relation("DependencySuccessor")
+  successors   TaskDependency[] @relation("DependencyPredecessor")
 
   comments        Comment[]
   attachments     Attachment[]
   events          TaskEvent[]
   locationHistory LocationHistory[]
   serviceReport   ServiceReport?
+  assignees       TaskAssignee[]
+  checklistItems  ChecklistItem[]
+  customFields    CustomFieldValue[]
 
   @@index([organizationId])
   @@index([status])
@@ -509,7 +660,44 @@ model Task {
   @@index([organizationId, status, createdAt])
   @@index([assignedToId, status])  // technician task stats groupBy, suggested technicians _count
   @@index([dueDate])               // due date filtering/sorting
+  @@index([parentId])              // subtask queries
+  @@index([phaseId])               // phase filtering
+  @@index([sprintId])              // sprint filtering
+  @@index([epicId])                // epic filtering
+  @@index([workflowId])            // workflow filtering
+  @@index([spaceId])               // space filtering
+  @@index([organizationId, spaceId, status]) // space + status filtering
   @@map("tasks")
+}
+
+model TaskAssignee {
+  id        String           @id @default(cuid())
+  taskId    String
+  task      Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
+  role      TaskAssigneeRole @default(MEMBER)
+  createdAt DateTime         @default(now())
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+  @@map("task_assignees")
+}
+
+model ChecklistItem {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  text        String
+  isCompleted Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([taskId, position])
+  @@map("checklist_items")
 }
 
 model Comment {
@@ -784,6 +972,14 @@ model CompanyLocation {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  // Space configuration
+  enabledModules Json?          // Override org modules for this space, e.g. ["time_tracking", "sprints"]
+  workflowId     String?
+  workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+
+  // Tasks linked to this space
+  tasks          Task[]
+
   // Technicians assigned to this location
   assignments TechnicianAssignment[]
 
@@ -950,6 +1146,23 @@ model TechnicianSchedule {
   @@map("technician_schedules")
 }
 
+// Reusable schedule template (e.g., "Morning Shift", "Night Shift")
+model ScheduleTemplate {
+  id              String       @id @default(cuid())
+  name            String       // "Morning Shift", "Night Shift", "Flex 4x10"
+  description     String?
+  entries         Json         // Array of { dayOfWeek, startTime, endTime, isActive, notes? }
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  isDefault       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("schedule_templates")
+}
+
 // Time-off request (vacation, sick day, personal leave)
 model TimeOff {
   id String @id @default(cuid())
@@ -993,6 +1206,10 @@ model Invitation {
   targetRole     Role
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Custom role assignment (optional — overrides targetRole permissions)
+  targetOrgRoleId String?
+  targetOrgRole   OrgRole? @relation(fields: [targetOrgRoleId], references: [id], onDelete: SetNull)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
   position       String?
@@ -1287,4 +1504,313 @@ model OvertimeRequest {
   @@index([status, technicianTimeoutAt])
   @@index([status, approvalTimeoutAt])
   @@map("overtime_requests")
+}
+
+// ==================== PROJECT MANAGEMENT ====================
+
+// Phase or milestone for grouping tasks
+model Phase {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  color          String       @default("#3b82f6")
+  type           String       @default("phase") // "phase" or "milestone"
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  startDate      DateTime?
+  endDate        DateTime?
+  position       Int          @default(0)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  tasks          Task[]
+
+  @@index([organizationId])
+  @@map("phases")
+}
+
+// Sprint for agile workflow
+model Sprint {
+  id             String       @id @default(cuid())
+  name           String
+  goal           String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  startDate      DateTime
+  endDate        DateTime
+  status         SprintStatus @default(PLANNING)
+  position       Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  tasks          Task[]
+  report         SprintReport?
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@map("sprints")
+}
+
+// Epic for grouping tasks into larger initiatives
+model Epic {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  color          String       @default("#8b5cf6")
+  status         String       @default("OPEN") // OPEN, IN_PROGRESS, DONE
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  startDate      DateTime?
+  targetDate     DateTime?
+  position       Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  tasks          Task[]
+
+  @@index([organizationId])
+  @@map("epics")
+}
+
+// Sprint report generated when a sprint completes
+model SprintReport {
+  id                String   @id @default(cuid())
+  sprintId          String   @unique
+  sprint            Sprint   @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  organizationId    String
+  committedPoints   Int      @default(0)
+  completedPoints   Int      @default(0)
+  committedTasks    Int      @default(0)
+  completedTasks    Int      @default(0)
+  carriedOverTasks  Int      @default(0)
+  carriedOverPoints Int      @default(0)
+  addedMidSprint    Int      @default(0)
+  removedMidSprint  Int      @default(0)
+  velocity          Float    @default(0)  // completedPoints
+  dailyBurndown     Json     // array of { date: string, remaining: number, ideal: number }
+  createdAt         DateTime @default(now())
+
+  @@index([organizationId])
+  @@map("sprint_reports")
+}
+
+// Definition of Done for organization quality gates
+model DefinitionOfDone {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workflowId     String?      // optional: tied to specific workflow
+  items          Json         // array of { text: string, isRequired: boolean }
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@map("definition_of_done")
+}
+
+// Task dependency (predecessor/successor relationship)
+model TaskDependency {
+  id             String         @id @default(cuid())
+  predecessorId  String
+  predecessor    Task           @relation("DependencyPredecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successorId    String
+  successor      Task           @relation("DependencySuccessor", fields: [successorId], references: [id], onDelete: Cascade)
+  type           DependencyType @default(FINISH_TO_START)
+  lagDays        Int            @default(0)
+  createdAt      DateTime       @default(now())
+
+  @@unique([predecessorId, successorId])
+  @@index([predecessorId])
+  @@index([successorId])
+  @@map("task_dependencies")
+}
+
+// ==================== CUSTOM STATUS WORKFLOWS ====================
+
+// Organization-level custom status workflow
+model StatusWorkflow {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String       // "Default", "Field Service", "Logistics", etc.
+  isDefault      Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  statuses       WorkflowStatus[]
+  tasks          Task[]
+  spaces         CompanyLocation[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("status_workflows")
+}
+
+// Individual status within a workflow
+model WorkflowStatus {
+  id         String         @id @default(cuid())
+  workflowId String
+  workflow   StatusWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name       String         // "New", "In Transit", "Delivered", etc.
+  key        String         // "NEW", "IN_TRANSIT", "DELIVERED" — machine-readable
+  color      String         @default("#3b82f6")
+  icon       String?        // optional lucide icon name
+  position   Int            @default(0)
+  isFinal    Boolean        @default(false) // marks completion states
+  isCanceled Boolean        @default(false) // marks cancellation states
+  transitions String[]      // array of WorkflowStatus keys this status can transition TO
+  createdAt  DateTime       @default(now())
+
+  @@unique([workflowId, key])
+  @@index([workflowId])
+  @@map("workflow_statuses")
+}
+
+// ==================== CUSTOM FIELDS ====================
+
+// Organization-level custom field definition
+model CustomFieldDefinition {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String          // "Customer PO Number", "Equipment Model"
+  key            String          // "customer_po", "equipment_model"
+  type           CustomFieldType
+  options        Json?           // for DROPDOWN: ["Option A", "Option B"]
+  isRequired     Boolean         @default(false)
+  position       Int             @default(0)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  values         CustomFieldValue[]
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@map("custom_field_definitions")
+}
+
+// Custom field value for a specific task
+model CustomFieldValue {
+  id           String                @id @default(cuid())
+  definitionId String
+  definition   CustomFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  taskId       String
+  task         Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  value        String                // stored as string, parsed by type
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@unique([definitionId, taskId])
+  @@index([taskId])
+  @@map("custom_field_values")
+}
+
+// ==================== RECURRING TASKS ====================
+
+// Template for automatically creating recurring tasks
+model RecurringTaskTemplate {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  priority       TaskPriority        @default(MEDIUM)
+  locationLat    Float?
+  locationLng    Float?
+  locationAddress String?
+  assigneeIds    Json?               // array of user IDs to assign
+  estimatedHours Float?
+  checklist      Json?               // array of { text: string }
+  frequency      RecurrenceFrequency
+  customDays     Int?                // for CUSTOM: every N days
+  dayOfWeek      Int?                // for WEEKLY/BIWEEKLY: 0=Sun, 1=Mon, etc.
+  dayOfMonth     Int?                // for MONTHLY: 1-31
+  startDate      DateTime
+  endDate        DateTime?           // null = forever
+  lastGeneratedAt DateTime?
+  nextRunAt      DateTime?
+  isActive       Boolean             @default(true)
+  createdById    String
+  createdBy      User                @relation("RecurringTaskCreator", fields: [createdById], references: [id])
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([organizationId])
+  @@index([nextRunAt, isActive])
+  @@map("recurring_task_templates")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INVOICING & BILLING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELED
+  REFUNDED
+}
+
+model Invoice {
+  id              String          @id @default(cuid())
+  invoiceNumber   String          // Auto-generated: INV-YYYY-XXXX
+  status          InvoiceStatus   @default(DRAFT)
+
+  // Client info
+  clientName      String
+  clientEmail     String?
+  clientAddress   String?
+
+  // Amounts
+  subtotal        Float           @default(0)
+  taxRate         Float?          // e.g., 0.15 for 15%
+  taxAmount       Float           @default(0)
+  discount        Float           @default(0)
+  total           Float           @default(0)
+  currency        String          @default("USD")
+
+  // Dates
+  issueDate       DateTime        @default(now())
+  dueDate         DateTime?
+  paidAt          DateTime?
+
+  // Notes
+  notes           String?
+
+  // Relations
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById     String
+  createdBy       User            @relation("InvoiceCreator", fields: [createdById], references: [id])
+
+  items           InvoiceItem[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@index([invoiceNumber])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id              String    @id @default(cuid())
+  invoiceId       String
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  description     String
+  quantity        Float     @default(1)
+  unitPrice       Float     @default(0)
+  amount          Float     @default(0)
+
+  // Optional link to task/service report
+  taskId          String?
+  reportId        String?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([invoiceId])
+  @@map("invoice_items")
 }

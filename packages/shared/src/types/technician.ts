@@ -1,21 +1,21 @@
 /**
- * Technician Management Types
+ * Employee Management Types
  *
- * Types for the full technicians management system including
+ * Types for the full employee management system including
  * profiles, statistics, performance metrics, and API inputs.
  */
 
 import { Role, TaskStatus } from './enums';
 
 // ============================================================================
-// TECHNICIAN PROFILE
+// EMPLOYEE PROFILE
 // ============================================================================
 
 /**
- * Full technician profile with computed fields
+ * Full employee profile with computed fields
  * Used for detail views and list items
  */
-export interface TechnicianProfile {
+export interface EmployeeProfile {
   id: string;
   email: string;
   firstName: string;
@@ -67,9 +67,9 @@ export interface TechnicianProfile {
 }
 
 /**
- * Simplified technician data for list views
+ * Simplified employee data for list views
  */
-export interface TechnicianListItem {
+export interface EmployeeListItem {
   id: string;
   email: string;
   firstName: string;
@@ -89,14 +89,14 @@ export interface TechnicianListItem {
 }
 
 // ============================================================================
-// TECHNICIAN STATISTICS
+// EMPLOYEE STATISTICS
 // ============================================================================
 
 /**
- * Comprehensive technician statistics
+ * Comprehensive employee statistics
  * Used for the detail page Overview tab
  */
-export interface TechnicianStats {
+export interface EmployeeStats {
   // Task statistics
   tasks: {
     total: number;
@@ -130,13 +130,13 @@ export interface TechnicianStats {
   };
 
   // Recent activity
-  recentActivity: TechnicianActivityItem[];
+  recentActivity: EmployeeActivityItem[];
 }
 
 /**
  * Activity item for recent activity feed
  */
-export interface TechnicianActivityItem {
+export interface EmployeeActivityItem {
   id: string;
   type:
     | 'TASK_COMPLETED'
@@ -202,9 +202,9 @@ export interface PerformanceTrendPoint {
 // ============================================================================
 
 /**
- * Input for creating a new technician
+ * Input for creating a new employee
  */
-export interface CreateTechnicianInput {
+export interface CreateEmployeeInput {
   email: string;
   firstName: string;
   lastName: string;
@@ -216,9 +216,9 @@ export interface CreateTechnicianInput {
 }
 
 /**
- * Input for updating a technician
+ * Input for updating an employee
  */
-export interface UpdateTechnicianInput {
+export interface UpdateEmployeeInput {
   firstName?: string;
   lastName?: string;
   position?: string;
@@ -237,9 +237,9 @@ export interface UpdateTechnicianInput {
 }
 
 /**
- * Query parameters for listing technicians
+ * Query parameters for listing employees
  */
-export interface TechniciansQueryParams {
+export interface EmployeesQueryParams {
   // Filters
   status?: 'active' | 'inactive' | 'all';
   position?: string;
@@ -260,11 +260,11 @@ export interface TechniciansQueryParams {
 // ============================================================================
 
 /**
- * Response for listing technicians
+ * Response for listing employees
  */
-export interface TechniciansListResponse {
+export interface EmployeesListResponse {
   success: boolean;
-  data: TechnicianListItem[];
+  data: EmployeeListItem[];
   meta: {
     page: number;
     limit: number;
@@ -274,19 +274,19 @@ export interface TechniciansListResponse {
 }
 
 /**
- * Response for getting a single technician
+ * Response for getting a single employee
  */
-export interface TechnicianDetailResponse {
+export interface EmployeeDetailResponse {
   success: boolean;
-  data: TechnicianProfile & {
-    stats: TechnicianStats;
+  data: EmployeeProfile & {
+    stats: EmployeeStats;
   };
 }
 
 /**
- * Response for technician performance metrics
+ * Response for employee performance metrics
  */
-export interface TechnicianPerformanceResponse {
+export interface EmployeePerformanceResponse {
   success: boolean;
   data: PerformanceMetrics;
 }
@@ -296,9 +296,9 @@ export interface TechnicianPerformanceResponse {
 // ============================================================================
 
 /**
- * Technician availability for a specific day
+ * Employee availability for a specific day
  */
-export interface TechnicianAvailability {
+export interface EmployeeAvailability {
   technicianId: string;
   technician: {
     id: string;
@@ -330,7 +330,7 @@ export interface AvailabilityCalendarData {
     lastName: string;
     specialty: string | null;
   }[];
-  availability: TechnicianAvailability[];
+  availability: EmployeeAvailability[];
 }
 
 // ============================================================================
@@ -338,10 +338,10 @@ export interface AvailabilityCalendarData {
 // ============================================================================
 
 /**
- * Check if a technician is considered "online"
+ * Check if an employee is considered "online"
  * Online = location updated within the last 5 minutes
  */
-export function isTechnicianOnline(
+export function isEmployeeOnline(
   lastLocationUpdatedAt: string | null | undefined
 ): boolean {
   if (!lastLocationUpdatedAt) return false;
@@ -418,4 +418,32 @@ export const SPECIALTY_OPTIONS = [
   { value: 'General Maintenance', label: 'General Maintenance' },
 ] as const;
 
+// ============================================================================
+// BACKWARD COMPATIBILITY ALIASES
+// ============================================================================
+// These aliases keep other packages (mobile, api) working until they are migrated.
 
+/** @deprecated Use EmployeeProfile */
+export type TechnicianProfile = EmployeeProfile;
+/** @deprecated Use EmployeeListItem */
+export type TechnicianListItem = EmployeeListItem;
+/** @deprecated Use EmployeeStats */
+export type TechnicianStats = EmployeeStats;
+/** @deprecated Use EmployeeActivityItem */
+export type TechnicianActivityItem = EmployeeActivityItem;
+/** @deprecated Use CreateEmployeeInput */
+export type CreateTechnicianInput = CreateEmployeeInput;
+/** @deprecated Use UpdateEmployeeInput */
+export type UpdateTechnicianInput = UpdateEmployeeInput;
+/** @deprecated Use EmployeesQueryParams */
+export type TechniciansQueryParams = EmployeesQueryParams;
+/** @deprecated Use EmployeesListResponse */
+export type TechniciansListResponse = EmployeesListResponse;
+/** @deprecated Use EmployeeDetailResponse */
+export type TechnicianDetailResponse = EmployeeDetailResponse;
+/** @deprecated Use EmployeePerformanceResponse */
+export type TechnicianPerformanceResponse = EmployeePerformanceResponse;
+/** @deprecated Use EmployeeAvailability */
+export type TechnicianAvailability = EmployeeAvailability;
+/** @deprecated Use isEmployeeOnline */
+export const isTechnicianOnline = isEmployeeOnline;

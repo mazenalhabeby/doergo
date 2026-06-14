@@ -20,6 +20,8 @@ interface TaskData {
   description: string | null
   priority: string | null
   dueDate: string | null
+  startDate?: string | null
+  estimatedHours?: number | null
   locationAddress: string | null
   createdBy?: {
     firstName: string
@@ -95,6 +97,26 @@ export function RequestDetailsSection({
                 <p className="text-xs text-muted-foreground mb-1">Priority</p>
                 <p className="text-sm text-blue-600 font-medium">
                   {task.priority || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                <p className="text-sm text-foreground">
+                  {task.startDate
+                    ? new Date(task.startDate).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Estimated Hours</p>
+                <p className="text-sm text-foreground">
+                  {task.estimatedHours != null
+                    ? `${task.estimatedHours}h`
+                    : "—"}
                 </p>
               </div>
             </div>

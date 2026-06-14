@@ -13,11 +13,7 @@ const DispatcherDashboard = dynamic(
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const isDispatcher = user?.role === "DISPATCHER"
+  const isDispatcher = user?.role === "MANAGER"
 
-  return (
-    <div className="flex flex-1">
-      {isDispatcher ? <DispatcherDashboard /> : <ClientDashboard />}
-    </div>
-  )
+  return isDispatcher ? <DispatcherDashboard /> : <ClientDashboard />
 }

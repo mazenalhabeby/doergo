@@ -118,39 +118,21 @@ export class AttendanceNotificationHandler {
   @EventPattern('attendance_clock_in')
   async handleClockIn(@Payload() data: {
     userId: string;
-    userName: string;
-    locationName: string;
-    clockInTime: string;
-    withinGeofence: boolean;
     organizationId: string;
+    timeEntry: any;
   }) {
-    this.logger.log(`Clock-in: user=${data.userName}, location=${data.locationName}`);
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_clock_in', {
-      userId: data.userId,
-      userName: data.userName,
-      locationName: data.locationName,
-      clockInTime: data.clockInTime,
-      withinGeofence: data.withinGeofence,
-    });
+    this.logger.log(`Clock-in: user=${data.userId}`);
+    this.websocketGateway.emitClockIn(data.userId, data.organizationId, data.timeEntry);
   }
 
   @EventPattern('attendance_clock_out')
   async handleClockOut(@Payload() data: {
     userId: string;
-    userName: string;
-    locationName: string;
-    clockOutTime: string;
-    totalHours: number;
     organizationId: string;
+    timeEntry: any;
   }) {
-    this.logger.log(`Clock-out: user=${data.userName}, hours=${data.totalHours}`);
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_clock_out', {
-      userId: data.userId,
-      userName: data.userName,
-      locationName: data.locationName,
-      clockOutTime: data.clockOutTime,
-      totalHours: data.totalHours,
-    });
+    this.logger.log(`Clock-out: user=${data.userId}`);
+    this.websocketGateway.emitClockOut(data.userId, data.organizationId, data.timeEntry);
   }
 
   @EventPattern('break_started')

@@ -5,14 +5,13 @@ import {
   IsEmail,
   IsOptional,
   IsNumber,
-  IsEnum,
   Min,
   Max,
   MinLength,
   MaxLength,
 } from 'class-validator';
 
-export class CreateTechnicianDto {
+export class CreateEmployeeDto {
   @ApiProperty({
     example: 'john.doe@example.com',
     description: 'Email address (must be unique)',
@@ -52,13 +51,8 @@ export class CreateTechnicianDto {
   password?: string;
 
   @ApiPropertyOptional({
-    description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
-  })
-  @IsOptional()
-
-  @ApiPropertyOptional({
     example: 'Electrical',
-    description: 'Technician specialty (e.g., Electrical, Plumbing, HVAC)',
+    description: 'Employee specialty (e.g., Electrical, Plumbing, HVAC)',
   })
   @IsString()
   @IsOptional()

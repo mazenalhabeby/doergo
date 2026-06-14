@@ -16,7 +16,7 @@ import {
   MoreHorizontal,
   Trash2,
 } from "lucide-react"
-import { toast } from "sonner"
+import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
@@ -86,9 +86,9 @@ function getStatusBadge(status: InvitationStatus, t: (key: string) => string) {
 
 function getRoleBadge(role: string, t: (key: string) => string) {
   switch (role) {
-    case "TECHNICIAN":
+    case "EMPLOYEE":
       return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100">{t("members.roles.technician")}</Badge>
-    case "DISPATCHER":
+    case "MANAGER":
       return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-100">{t("members.roles.dispatcher")}</Badge>
     default:
       return <Badge variant="outline">{role}</Badge>
@@ -141,13 +141,13 @@ export default function InvitationsPage() {
   const revokeMutation = useMutation({
     mutationFn: (id: string) => invitationsApi.revoke(id),
     onSuccess: () => {
-      toast.success(t("invitations.revokeDialog.revokedSuccessfully"))
+      notify.success(t("invitations.revokeDialog.revokedSuccessfully"))
       queryClient.invalidateQueries({ queryKey: ["invitations"] })
       setRevokeDialogOpen(false)
       setSelectedInvitation(null)
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to revoke invitation")
+      notify.error(error.message || "Failed to revoke invitation")
     },
   })
 

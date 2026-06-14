@@ -9,11 +9,7 @@ import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-<<<<<<< HEAD
 import { Role, hasModule } from '@hbcfield/shared/client';
-=======
-import { Role, WorkMode } from '@hbcfield/shared/client';
->>>>>>> worktree-agent-a0600cc7
 
 // Logo icon for header left
 function HeaderLogo() {
@@ -159,17 +155,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const { user } = useAuth();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
   const isTechnician = user?.role === Role.TECHNICIAN;
-<<<<<<< HEAD
   // Module-based tab visibility
   const showTechTasks = hasModule(user || {}, 'tasks');
   const showAttendance = isTechnician && hasModule(user || {}, 'clock');
-=======
-  // Work mode determines tab visibility for technicians
-  const userWorkMode = user?.workMode || WorkMode.HYBRID;
-  const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
-  const isFullTime = true; // No longer gated by TechnicianType
-  const showAttendance = isTechnician && isFullTime && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
->>>>>>> worktree-agent-a0600cc7
 
   // Filter routes based on role and modules (profile is in header, not tab bar)
   const visibleRoutes = state.routes.filter((route: any) => {
@@ -242,15 +230,8 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
   const isTechnician = user?.role === Role.TECHNICIAN;
-<<<<<<< HEAD
   const showTechTasks = hasModule(user || {}, 'tasks');
   const showAttendance = isTechnician && hasModule(user || {}, 'clock');
-=======
-  const userWorkMode = user?.workMode || WorkMode.HYBRID;
-  const showTechTasks = userWorkMode === WorkMode.ON_ROAD || userWorkMode === WorkMode.HYBRID;
-  const isFullTime = true; // No longer gated by TechnicianType
-  const showAttendance = isTechnician && isFullTime && (userWorkMode === WorkMode.ON_SITE || userWorkMode === WorkMode.HYBRID);
->>>>>>> worktree-agent-a0600cc7
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>

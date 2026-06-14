@@ -513,7 +513,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
         </div>
       )}
 
-      {/* Duration & Technician */}
+      {/* Duration & Employee */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
           <Clock className="size-5 text-blue-500" />
@@ -525,7 +525,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
         <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
           <User className="size-5 text-blue-500" />
           <div>
-            <p className="text-xs text-muted-foreground">Technician</p>
+            <p className="text-xs text-muted-foreground">Employee</p>
             <p className="text-sm font-semibold text-foreground">
               {report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : "Unknown"}
             </p>
@@ -590,7 +590,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
           </div>
           <div className="flex gap-4">
             <SignatureDisplay
-              label="Technician"
+              label="Employee"
               signature={report.technicianSignature}
               name={report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : undefined}
             />

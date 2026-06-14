@@ -1,0 +1,43 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# HBCField API Gateway — Production Dockerfile
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9 --activate
+WORKDIR /app
+
+# ─── Dependencies ──────────────────────────────────────────────────────────────
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/gateway/package.json apps/api/gateway/
+COPY apps/api/auth-service/package.json apps/api/auth-service/
+COPY packages/shared/package.json packages/shared/
+COPY apps/api/auth-service/prisma apps/api/auth-service/prisma/
+RUN pnpm install --frozen-lockfile --prod=false
+
+# ─── Build ─────────────────────────────────────────────────────────────────────
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/gateway/node_modules ./apps/api/gateway/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY . .
+RUN cd packages/shared && pnpm build
+RUN cd apps/api/auth-service && npx prisma generate
+RUN cd apps/api/gateway && npx nest build
+
+# ─── Production ────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS production
+RUN corepack enable && corepack prepare pnpm@9 --activate
+WORKDIR /app
+
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/api/gateway/dist ./apps/api/gateway/dist
+COPY --from=build /app/apps/api/gateway/package.json ./apps/api/gateway/
+COPY --from=build /app/packages/shared/dist ./packages/shared/dist
+COPY --from=build /app/packages/shared/package.json ./packages/shared/
+COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
+
+ENV NODE_ENV=production
+EXPOSE 4000
+
+CMD ["node", "apps/api/gateway/dist/main.js"]

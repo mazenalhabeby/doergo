@@ -25,6 +25,8 @@ export class LocationsService {
     lat: number;
     lng: number;
     geofenceRadius?: number;
+    enabledModules?: string[];
+    workflowId?: string;
     organizationId: string;
     userId: string;
   }) {
@@ -37,6 +39,8 @@ export class LocationsService {
         lat: data.lat,
         lng: data.lng,
         geofenceRadius: data.geofenceRadius ?? 15,
+        enabledModules: data.enabledModules ?? undefined,
+        workflowId: data.workflowId ?? undefined,
         organizationId: data.organizationId,
       },
     });
@@ -73,6 +77,18 @@ export class LocationsService {
         skip,
         take: limit,
         orderBy: { name: 'asc' },
+        include: {
+          workflow: { select: { id: true, name: true } },
+          _count: { select: { tasks: true } },
+          // Active member assignments — lets clients render each location's
+          // roster without an extra request per location (avoids N+1).
+          assignments: {
+            where: {
+              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+            },
+            select: { userId: true, isPrimary: true },
+          },
+        },
       }),
       this.prisma.companyLocation.count({ where }),
     ]);
@@ -88,6 +104,14 @@ export class LocationsService {
       where: {
         id: data.id,
         organizationId: data.organizationId,
+      },
+      include: {
+        workflow: {
+          include: {
+            statuses: { orderBy: { position: 'asc' } },
+          },
+        },
+        _count: { select: { tasks: true } },
       },
     });
 
@@ -111,6 +135,8 @@ export class LocationsService {
     lng?: number;
     geofenceRadius?: number;
     isActive?: boolean;
+    enabledModules?: string[];
+    workflowId?: string;
   }) {
     // Verify location exists and belongs to organization
     const existing = await this.prisma.companyLocation.findFirst({
@@ -131,6 +157,8 @@ export class LocationsService {
     if (data.lng !== undefined) updateData.lng = data.lng;
     if (data.geofenceRadius !== undefined) updateData.geofenceRadius = data.geofenceRadius;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
+    if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;
 
     const location = await this.prisma.companyLocation.update({
       where: { id: data.id },
@@ -166,10 +194,49 @@ export class LocationsService {
     return success(location, 'Company location deactivated successfully');
   }
 
-  // ==================== TECHNICIAN ASSIGNMENT METHODS ====================
+  /**
+   * Get effective modules for a space.
+   * Returns the space's enabledModules if set, otherwise falls back to the org's enabledModules.
+   */
+  async getEffectiveModules(data: { id: string; organizationId: string }) {
+    const location = await this.prisma.companyLocation.findFirst({
+      where: {
+        id: data.id,
+        organizationId: data.organizationId,
+      },
+      select: {
+        id: true,
+        name: true,
+        enabledModules: true,
+        organization: {
+          select: {
+            enabledModules: true,
+          },
+        },
+      },
+    });
+
+    if (!location) {
+      throw new NotFoundException('Company location not found');
+    }
+
+    // Space modules take priority over org modules
+    const effectiveModules = (location.enabledModules as string[] | null) ??
+      (location.organization.enabledModules as string[] | null) ??
+      [];
+
+    return success({
+      spaceId: location.id,
+      spaceName: location.name,
+      modules: effectiveModules,
+      source: location.enabledModules ? 'space' : 'organization',
+    });
+  }
+
+  // ==================== MEMBER ASSIGNMENT METHODS ====================
 
   /**
-   * Assign a technician to a company location
+   * Assign a member to a company location
    */
   async assignTechnician(data: {
     userId: string;
@@ -181,7 +248,7 @@ export class LocationsService {
     requestingUserId: string;
     organizationId: string;
   }) {
-    this.logger.log(`Assigning technician ${data.userId} to location ${data.locationId}`);
+    this.logger.log(`Assigning member ${data.userId} to location ${data.locationId}`);
 
     // Verify user exists in organization with appropriate work mode
     const technician = await this.prisma.user.findFirst({
@@ -269,12 +336,12 @@ export class LocationsService {
       },
     });
 
-    this.logger.log(`Technician assignment created/updated: ${assignment.id}`);
-    return success(assignment, 'Technician assigned to location successfully');
+    this.logger.log(`Member assignment created/updated: ${assignment.id}`);
+    return success(assignment, 'Member assigned to location successfully');
   }
 
   /**
-   * Get all technicians assigned to a location
+   * Get all members assigned to a location
    */
   async getLocationAssignments(data: {
     locationId: string;
@@ -318,7 +385,7 @@ export class LocationsService {
   }
 
   /**
-   * Get all location assignments for a technician
+   * Get all location assignments for an employee
    */
   async getTechnicianAssignments(data: {
     userId: string;
@@ -432,7 +499,7 @@ export class LocationsService {
   }
 
   /**
-   * Remove a technician assignment
+   * Remove a member assignment
    */
   async removeAssignment(data: { assignmentId: string; organizationId: string }) {
     // Find the assignment and verify organization ownership

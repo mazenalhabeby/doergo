@@ -58,7 +58,6 @@ export interface User {
   onboardingCompleted: boolean;
   avatarUrl?: string | null;
   // Permission fields
-  platform: 'WEB' | 'MOBILE' | 'BOTH';
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
@@ -129,6 +128,7 @@ export interface Task {
     id: string;
     firstName: string;
     lastName: string;
+    avatarUrl?: string | null;
   };
 }
 

@@ -1,14 +1,24 @@
 "use client"
 
-import { useMemo, useCallback } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useMemo, useCallback, useState } from "react"
+import { useQuery, useQueries } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Plus, MapPin, Users, ArrowRight } from "lucide-react"
+import { Plus, Users } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
-import { tasksApi, locationsApi } from "@/lib/api"
+import {
+  tasksApi,
+  locationsApi,
+  attendanceApi,
+  organizationsApi,
+  type OrgMember,
+  type LocationAssignment,
+  type Task,
+} from "@/lib/api"
+import type { TimeEntry } from "@hbcfield/shared"
+import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import { Button } from "@/components/ui/button"
 import {
   WorkspaceGrid,
@@ -20,9 +30,11 @@ import {
   type PendingAction,
 } from "@/components/dashboard"
 import { ActivityPanelToggle } from "@/components/activity-panel-toggle"
+import { useActivityPanel } from "@/contexts/activity-panel-context"
 import { getGreeting } from "./helpers"
 
-// Gradient colors for worker avatars
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
 const AVATAR_COLORS = [
   "linear-gradient(135deg, #6366f1, #8b5cf6)",
   "linear-gradient(135deg, #3b82f6, #06b6d4)",
@@ -47,280 +59,568 @@ function hashString(str: string): number {
   return Math.abs(hash)
 }
 
-function getStatusFromTask(taskStatus: string): WorkerStatus {
-  switch (taskStatus) {
-    case "IN_PROGRESS":
-    case "EN_ROUTE":
-    case "ARRIVED":
-      return "busy"
-    case "BLOCKED":
-      return "late"
-    default:
-      return "on"
+function getAvatarColor(id: string): string {
+  return AVATAR_COLORS[hashString(id) % AVATAR_COLORS.length]!
+}
+
+/** Employee status based on ATTENDANCE (not task status) */
+function getEmployeeStatus(opts: {
+  isClockedIn: boolean
+  isOnBreak: boolean
+  isLate: boolean // clocked in late based on schedule
+  hasActiveTask: boolean
+}): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
+  if (!opts.isClockedIn) {
+    return { status: "off" }
+  }
+  if (opts.isOnBreak) {
+    return { status: "on", tag: { text: "On Break", variant: "hrs" } }
+  }
+  if (opts.isLate) {
+    return { status: "late", tag: { text: "Late", variant: "late" } }
+  }
+  if (opts.hasActiveTask) {
+    return { status: "busy", tag: { text: "Working", variant: "task" } }
+  }
+  return { status: "on", tag: { text: "Available", variant: "hrs" } }
+}
+
+/** Check if a time entry is "currently clocked in" (no clock-out yet) */
+function isClockedIn(entry: TimeEntry): boolean {
+  return entry.status === "CLOCKED_IN" && !entry.clockOutAt
+}
+
+/** Get today's date string in YYYY-MM-DD format */
+function getTodayString(): string {
+  return new Date().toISOString().split("T")[0]!
+}
+
+/** Build a PersonNodeProps from an OrgMember */
+function memberToPersonNode(
+  member: OrgMember,
+  status: WorkerStatus,
+  tag?: PersonNodeProps["tag"],
+  currentTask?: string,
+): PersonNodeProps {
+  return {
+    initials: getInitials(member.firstName, member.lastName),
+    color: getAvatarColor(member.id),
+    status,
+    imageUrl: member.avatarUrl || undefined,
+    name: `${member.firstName} ${member.lastName?.[0] || ""}.`,
+    tag,
+    userId: member.id,
+    role: member.role === "EMPLOYEE" ? "Employee" : member.role === "MANAGER" ? "Manager" : "Admin",
+    currentTask,
   }
 }
 
-function getTagFromTask(taskStatus: string): PersonNodeProps["tag"] {
-  switch (taskStatus) {
-    case "IN_PROGRESS":
-      return { text: "Working", variant: "task" }
-    case "EN_ROUTE":
-      return { text: "En Route", variant: "task" }
-    case "ARRIVED":
-      return { text: "On Site", variant: "task" }
-    case "BLOCKED":
-      return { text: "Blocked", variant: "miss" }
-    default:
-      return undefined
-  }
+/** Time elapsed since a date, human readable */
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
 }
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export function ClientDashboard() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const router = useRouter()
+  const { isOpen: panelOpen } = useActivityPanel()
 
   const handleEditLocation = useCallback((locationId: string) => {
     router.push(`/locations?edit=${locationId}`)
   }, [router])
 
-  const handleAssignWorkers = useCallback((locationId: string) => {
-    router.push(`/locations?assign=${locationId}`)
+  const [assignSpaceId, setAssignSpaceId] = useState<string | null>(null)
+  const handleNavigateToProfile = useCallback((userId: string) => {
+    router.push(`/members/${userId}`)
   }, [router])
 
-  // Fetch tasks
-  const { data: tasksData } = useQuery({
+  const handleAssignWorkers = useCallback((locationId: string) => {
+    setAssignSpaceId(locationId)
+  }, [])
+
+  const handleViewTasks = useCallback((locationId: string) => {
+    router.push(`/tasks?space=${locationId}`)
+  }, [router])
+
+  // ── Data Fetching ──────────────────────────────────────────────────────────
+
+  // Tasks — auto-refresh every 30s for live updates
+  const { data: tasksData, isLoading: loadingTasks } = useQuery({
     queryKey: ["tasks"],
-    queryFn: () => tasksApi.list(),
+    queryFn: () => tasksApi.list({ limit: 200 }),
   })
 
-  // Fetch company locations
-  const { data: locationsData } = useQuery({
+  // Company locations
+  const { data: locationsData, isLoading: loadingLocations } = useQuery({
     queryKey: ["locations"],
     queryFn: () => locationsApi.list(),
   })
 
-  const tasks = tasksData?.data || []
-  const locations = locationsData?.data || []
+  // All org members (for worker info: name, avatar, workMode, role)
+  const { data: membersData } = useQuery({
+    queryKey: ["orgMembers-dashboard"],
+    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    staleTime: 60000,
+  })
 
-  // Build workspace boxes from locations + task data
-  const workspaceBoxes: WorkspaceBoxProps[] = useMemo(() => {
-    // Group tasks by location address (or "Unassigned" if none)
-    const locationGroups = new Map<string, typeof tasks>()
+  // Attendance entries for today — who is clocked in?
+  const { data: attendanceData } = useQuery({
+    queryKey: ["attendance-today"],
+    queryFn: () => attendanceApi.getAllEntries({ date: getTodayString(), limit: 500 }),
+    staleTime: 30000,
+  })
 
+  // Active breaks — who is currently on break?
+  const { data: activeBreaksData } = useQuery({
+    queryKey: ["active-breaks"],
+    queryFn: () => attendanceApi.getActiveBreaks().catch(() => ({ data: [] })),
+    staleTime: 30000,
+  })
+
+  // ── Derived Data ───────────────────────────────────────────────────────────
+
+  const tasks: Task[] = tasksData?.data || []
+  const allLocations = locationsData?.data || []
+  const members: OrgMember[] = membersData?.data || []
+  const todayEntries: TimeEntry[] = attendanceData?.data || []
+  const activeBreaks = (activeBreaksData as any)?.data || []
+
+  // Set of user IDs currently on break
+  const onBreakUserIds = useMemo(() => {
+    const set = new Set<string>()
+    for (const b of activeBreaks) {
+      if (b.userId) set.add(b.userId)
+    }
+    return set
+  }, [activeBreaks])
+
+  // Location assignments — fetch per location
+  const locationIds = useMemo(
+    () => allLocations.filter((l: { isActive: boolean }) => l.isActive).map((l: { id: string }) => l.id),
+    [allLocations],
+  )
+
+  const assignmentQueries = useQueries({
+    queries: locationIds.map((locId: string) => ({
+      queryKey: ["locationAssignments", locId],
+      queryFn: () => locationsApi.getAssignedMembers(locId).catch(() => [] as LocationAssignment[]),
+      staleTime: 60000,
+    })),
+  })
+
+  // Build maps for fast lookup
+  const memberMap = useMemo(() => {
+    const map = new Map<string, OrgMember>()
+    for (const m of members) map.set(m.id, m)
+    return map
+  }, [members])
+
+  // Set of user IDs currently clocked in (active today, no clock-out)
+  const clockedInUserIds = useMemo(() => {
+    const set = new Set<string>()
+    for (const entry of todayEntries) {
+      if (isClockedIn(entry)) set.add(entry.userId)
+    }
+    return set
+  }, [todayEntries])
+
+  // Map userId -> locationId from today's attendance (most recent clock-in location)
+  const attendanceLocationMap = useMemo(() => {
+    const map = new Map<string, string>()
+    // Sort by clockInAt descending so we get the most recent
+    const sorted = [...todayEntries].sort(
+      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
+    )
+    for (const entry of sorted) {
+      if (!map.has(entry.userId)) {
+        map.set(entry.userId, entry.locationId)
+      }
+    }
+    return map
+  }, [todayEntries])
+
+  // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED)
+  const activeTaskMap = useMemo(() => {
+    const map = new Map<string, Task>()
+    const priority: Record<string, number> = {
+      IN_PROGRESS: 4,
+      ARRIVED: 3,
+      EN_ROUTE: 2,
+      BLOCKED: 1,
+    }
     for (const task of tasks) {
-      const loc = task.locationAddress || "Unassigned"
-      if (!locationGroups.has(loc)) {
-        locationGroups.set(loc, [])
-      }
-      locationGroups.get(loc)!.push(task)
-    }
-
-    // Also group by status for workspace context
-    const activeTasks = tasks.filter(t =>
-      ["IN_PROGRESS", "EN_ROUTE", "ARRIVED", "BLOCKED"].includes(t.status)
-    )
-    const pendingTasksList = tasks.filter(t =>
-      ["NEW", "ASSIGNED", "ACCEPTED"].includes(t.status)
-    )
-    const completedTasksList = tasks.filter(t =>
-      ["COMPLETED", "CLOSED"].includes(t.status)
-    )
-
-    // Build person nodes for active workers
-    const activeWorkerMap = new Map<string, PersonNodeProps>()
-    for (const task of activeTasks) {
-      if (task.assignedTo && !activeWorkerMap.has(task.assignedTo.id)) {
-        const colorIdx = hashString(task.assignedTo.id) % AVATAR_COLORS.length
-        activeWorkerMap.set(task.assignedTo.id, {
-          initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
-          color: AVATAR_COLORS[colorIdx]!,
-          status: getStatusFromTask(task.status),
-          name: `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`,
-          tag: getTagFromTask(task.status),
-        })
+      const assigneeId = task.assignedToId
+      if (!assigneeId) continue
+      const p = priority[task.status]
+      if (p === undefined) continue
+      const existing = map.get(assigneeId)
+      if (!existing || (priority[existing.status] || 0) < p) {
+        map.set(assigneeId, task)
       }
     }
+    return map
+  }, [tasks])
 
-    const pendingWorkerMap = new Map<string, PersonNodeProps>()
-    for (const task of pendingTasksList) {
-      if (task.assignedTo && !pendingWorkerMap.has(task.assignedTo.id) && !activeWorkerMap.has(task.assignedTo.id)) {
-        const colorIdx = hashString(task.assignedTo.id) % AVATAR_COLORS.length
-        pendingWorkerMap.set(task.assignedTo.id, {
-          initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
-          color: AVATAR_COLORS[colorIdx]!,
-          status: "on" as WorkerStatus,
-          name: `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`,
-          tag: { text: `${tasks.filter(t => t.assignedToId === task.assignedTo?.id && ["NEW", "ASSIGNED", "ACCEPTED"].includes(t.status)).length} pending`, variant: "hrs" },
-        })
+  // Assignments per location: locationId -> userId[]
+  // Use a stable key derived from query results to avoid useMemo size change
+  const assignmentDataKey = assignmentQueries.map(q => q.dataUpdatedAt).join(",")
+  const assignmentsPerLocation = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    locationIds.forEach((locId: string, i: number) => {
+      const data = assignmentQueries[i]?.data as LocationAssignment[] | undefined
+      const userIds = new Set<string>()
+      if (data) {
+        for (const a of data) userIds.add(a.userId)
+      }
+      map.set(locId, userIds)
+    })
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationIds, assignmentDataKey])
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+
+  const isDataLoading = loadingTasks || loadingLocations
+
+  // Role-based location filtering
+  const isAdminOrDispatcher = user?.role === "ADMIN" || user?.role === "MANAGER"
+  const locations = useMemo(() => {
+    if (isAdminOrDispatcher) return allLocations
+    const userSpaceIds = new Set<string>()
+    for (const task of tasks) {
+      if (task.assignedToId === user?.id && task.spaceId) {
+        userSpaceIds.add(task.spaceId)
       }
     }
+    if (userSpaceIds.size === 0) return allLocations
+    return allLocations.filter((loc: { id: string }) => userSpaceIds.has(loc.id))
+  }, [isAdminOrDispatcher, allLocations, tasks, user?.id])
 
+  // ── Build Workspace Boxes ─────────────────────────────────────────────────
+
+  const workspaceBoxes: WorkspaceBoxProps[] = useMemo(() => {
     const boxes: WorkspaceBoxProps[] = []
 
-    // Fixed location boxes — from company locations API
+    // Track which worker IDs are accounted for (placed in a location box)
+    const accountedWorkerIds = new Set<string>()
+
+    // Compute alerts per location
+    const now = new Date()
+
     for (const loc of locations) {
       if (!loc.isActive) continue
-      // Find workers currently at this location (from active tasks)
-      const locPeople: PersonNodeProps[] = []
-      for (const task of activeTasks) {
-        if (task.assignedTo && task.locationAddress?.includes(loc.name)) {
-          const colorIdx = hashString(task.assignedTo.id) % AVATAR_COLORS.length
-          if (!locPeople.find(p => p.name.startsWith(task.assignedTo!.firstName))) {
-            locPeople.push({
-              initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
-              color: AVATAR_COLORS[colorIdx]!,
-              status: getStatusFromTask(task.status),
-              name: `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`,
-              tag: getTagFromTask(task.status),
-            })
-          }
+
+      const locId = loc.id
+      const assignedUserIds = assignmentsPerLocation.get(locId) || new Set<string>()
+
+      const people: PersonNodeProps[] = []
+      const offDutyPeople: PersonNodeProps[] = []
+      const onRoadPeople: PersonNodeProps[] = []
+      const remotePeople: PersonNodeProps[] = []
+
+      for (const userId of assignedUserIds) {
+        const member = memberMap.get(userId)
+        if (!member) continue
+        if (!member.isActive) continue
+
+        accountedWorkerIds.add(userId)
+
+        const activeTask = activeTaskMap.get(userId)
+        const isCurrentlyClockedIn = clockedInUserIds.has(userId)
+        const clockedInLocationId = attendanceLocationMap.get(userId)
+        const workMode = member.workMode || "HYBRID"
+
+        // Determine employee status based on ATTENDANCE (not task)
+        const hasActiveTask = !!activeTask
+        const isOnBreak = onBreakUserIds.has(userId)
+
+        const { status, tag } = getEmployeeStatus({
+          isClockedIn: isCurrentlyClockedIn,
+          isOnBreak,
+          isLate: false, // TODO: compare clock-in time vs schedule
+          hasActiveTask,
+        })
+
+        const node = memberToPersonNode(member, status, tag, activeTask?.title)
+
+        if (!isCurrentlyClockedIn && !hasActiveTask) {
+          // Not clocked in, no task → off duty
+          offDutyPeople.push(memberToPersonNode(member, "off"))
+        } else if (workMode === "ON_ROAD") {
+          // On-road workers go in field sub-panel
+          onRoadPeople.push({ ...node, tag: tag || { text: "In Field", variant: "task" } })
+        } else if (isCurrentlyClockedIn && clockedInLocationId !== locId) {
+          // Clocked in at a different location → remote
+          remotePeople.push({ ...node, tag: tag || { text: "Off-site", variant: "hrs" } })
+        } else {
+          // Present at this location (clocked in here, or has task here)
+          people.push(node)
         }
       }
+
+      // Count alerts (BLOCKED + overdue tasks at this location)
+      let locAlerts = 0
+      for (const task of tasks) {
+        const isThisLocation = task.spaceId === locId || task.locationAddress?.includes(loc.name)
+        if (!isThisLocation) continue
+        const isBlocked = task.status === "BLOCKED"
+        const isOverdue = task.dueDate && new Date(task.dueDate) < now &&
+          !["COMPLETED", "CLOSED", "CANCELED"].includes(task.status)
+        if (isBlocked || isOverdue) locAlerts++
+      }
+
+      const activeCount = people.length + onRoadPeople.length + remotePeople.length
+
       boxes.push({
         title: loc.name,
         type: "fixed",
-        people: locPeople,
-        totalAssigned: locPeople.length,
-        locationId: loc.id,
+        people,
+        offDutyPeople,
+        onRoadPeople,
+        remotePeople,
+        totalAssigned: assignedUserIds.size,
+        activeCount,
+        locationId: locId,
+        alerts: locAlerts,
         onEdit: handleEditLocation,
         onAssign: handleAssignWorkers,
+        onViewTasks: handleViewTasks,
+        onPersonClick: handleNavigateToProfile,
       })
     }
 
-    // Location-based boxes from task addresses (dynamic — only if not already a fixed location)
-    for (const [location, locTasks] of locationGroups) {
-      if (location === "Unassigned") continue
-
-      const allLocWorkerIds = new Set(
-        locTasks.filter(t => t.assignedTo).map(t => t.assignedTo!.id)
-      )
-      const activeLocTasks = locTasks.filter(t =>
-        ["IN_PROGRESS", "EN_ROUTE", "ARRIVED"].includes(t.status)
-      )
-
-      const people: PersonNodeProps[] = []
-      const seenIds = new Set<string>()
-      for (const task of activeLocTasks) {
-        if (task.assignedTo && !seenIds.has(task.assignedTo.id)) {
-          seenIds.add(task.assignedTo.id)
-          const colorIdx = hashString(task.assignedTo.id) % AVATAR_COLORS.length
-          people.push({
+    // "On Task" dynamic box — workers with active tasks NOT assigned to any location
+    const onTaskPeople: PersonNodeProps[] = []
+    for (const [userId, task] of activeTaskMap) {
+      if (accountedWorkerIds.has(userId)) continue
+      const member = memberMap.get(userId)
+      if (!member) {
+        // Fallback to task.assignedTo data if member not found
+        if (task.assignedTo) {
+          const fallbackStatus = getEmployeeStatus({
+            isClockedIn: clockedInUserIds.has(task.assignedTo.id),
+            isOnBreak: onBreakUserIds.has(task.assignedTo.id),
+            isLate: false,
+            hasActiveTask: true,
+          })
+          onTaskPeople.push({
             initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
-            color: AVATAR_COLORS[colorIdx]!,
-            status: getStatusFromTask(task.status),
+            color: getAvatarColor(task.assignedTo.id),
+            status: fallbackStatus.status,
+            imageUrl: task.assignedTo.avatarUrl || undefined,
             name: `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`,
-            tag: getTagFromTask(task.status),
+            tag: fallbackStatus.tag,
+            userId: task.assignedTo.id,
+            role: "Employee",
+            currentTask: task.title,
           })
         }
+        continue
       }
-
-      const shortLoc = location.length > 20
-        ? location.split(",")[0] || location.slice(0, 20)
-        : location
-
-      boxes.push({
-        title: shortLoc,
-        type: "fixed",
-        people,
-        totalAssigned: allLocWorkerIds.size,
+      accountedWorkerIds.add(userId)
+      const isClockedIn = clockedInUserIds.has(userId)
+      const { status, tag } = getEmployeeStatus({
+        isClockedIn,
+        isOnBreak: onBreakUserIds.has(userId),
+        isLate: false,
+        hasActiveTask: true,
       })
+      onTaskPeople.push(memberToPersonNode(member, status, tag, task.title))
     }
 
-    // On Task (dynamic — workers actively working)
-    if (activeWorkerMap.size > 0) {
+    if (onTaskPeople.length > 0) {
       boxes.push({
         title: "On Task",
         type: "dynamic",
-        people: Array.from(activeWorkerMap.values()),
+        people: onTaskPeople,
+        onPersonClick: handleNavigateToProfile,
       })
     }
 
-    // Off Duty (dynamic — completed workers)
-    const completedPeople: PersonNodeProps[] = []
-    const completedIds = new Set<string>()
-    for (const task of completedTasksList) {
-      if (task.assignedTo && !completedIds.has(task.assignedTo.id)) {
-        completedIds.add(task.assignedTo.id)
-        const colorIdx = hashString(task.assignedTo.id) % AVATAR_COLORS.length
-        completedPeople.push({
-          initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
-          color: AVATAR_COLORS[colorIdx]!,
-          status: "off" as WorkerStatus,
-          name: `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`,
-        })
+    // "Off Duty" dynamic box — workers who are clocked out and not assigned to any location
+    const offDutyPeople: PersonNodeProps[] = []
+    const workers = members.filter(m => m.role === "EMPLOYEE" && m.isActive)
+    for (const worker of workers) {
+      if (accountedWorkerIds.has(worker.id)) continue
+      if (!clockedInUserIds.has(worker.id) && !activeTaskMap.has(worker.id)) {
+        accountedWorkerIds.add(worker.id)
+        offDutyPeople.push(memberToPersonNode(worker, "off"))
       }
     }
-    if (completedPeople.length > 0) {
+
+    if (offDutyPeople.length > 0) {
       boxes.push({
         title: "Off Duty",
         type: "dynamic",
-        people: completedPeople,
+        people: offDutyPeople,
+        onPersonClick: handleNavigateToProfile,
       })
     }
 
     return boxes
-  }, [tasks, locations])
+  }, [
+    locations, tasks, members, assignmentsPerLocation,
+    memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, activeTaskMap,
+    handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
+  ])
 
-  // Build live events from recent task activity
+  // ── Live Events ────────────────────────────────────────────────────────────
+
   const liveEvents: LiveEvent[] = useMemo(() => {
-    return tasks.slice(0, 8).map((task, i) => {
-      const name = task.assignedTo
-        ? `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`
-        : "Unassigned"
-      const dotMap: Record<string, LiveEvent["dot"]> = {
-        IN_PROGRESS: "green",
-        EN_ROUTE: "blue",
-        ARRIVED: "green",
-        COMPLETED: "blue",
-        BLOCKED: "red",
-        ASSIGNED: "amber",
-        NEW: "purple",
-      }
-      const actionMap: Record<string, string> = {
-        IN_PROGRESS: "started",
-        EN_ROUTE: "en route to",
-        ARRIVED: "arrived at",
-        COMPLETED: "completed",
-        BLOCKED: "blocked on",
-        ASSIGNED: "assigned to",
-        NEW: "created",
-      }
-      return {
-        id: task.id,
-        dot: dotMap[task.status] || "blue" as LiveEvent["dot"],
-        message: <><strong>{name}</strong> {actionMap[task.status] || "updated"} <strong>{task.title}</strong></>,
-        time: "just now",
-      }
-    })
-  }, [tasks])
+    const events: LiveEvent[] = []
 
-  // Build pending actions from tasks that need attention
-  const pendingActions: PendingAction[] = useMemo(() => {
-    return tasks
-      .filter(t => t.status === "BLOCKED" || t.status === "NEW")
-      .slice(0, 5)
-      .map((task, i) => {
-        const name = task.assignedTo
-          ? `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`
-          : "Unassigned"
-        const initials = task.assignedTo
-          ? getInitials(task.assignedTo.firstName, task.assignedTo.lastName)
-          : "?"
-        const colorIdx = hashString(task.assignedTo?.id || "x") % AVATAR_COLORS.length
-        return {
-          id: task.id,
-          initials,
-          color: AVATAR_COLORS[colorIdx]!,
-          title: `${name} - ${task.status === "BLOCKED" ? "Blocked" : "New Task"}`,
-          description: task.title,
-          onApprove: () => {},
-          onReject: task.status === "BLOCKED" ? () => {} : undefined,
-        }
+    // Recent task activity (sorted by updatedAt descending)
+    const sortedTasks = [...tasks]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 10)
+
+    const dotMap: Record<string, LiveEvent["dot"]> = {
+      IN_PROGRESS: "green",
+      EN_ROUTE: "blue",
+      ARRIVED: "green",
+      COMPLETED: "blue",
+      BLOCKED: "red",
+      ASSIGNED: "amber",
+      ACCEPTED: "green",
+      NEW: "purple",
+      CANCELED: "red",
+    }
+    const actionMap: Record<string, string> = {
+      IN_PROGRESS: "started working on",
+      EN_ROUTE: "en route to",
+      ARRIVED: "arrived at",
+      COMPLETED: "completed",
+      BLOCKED: "blocked on",
+      ASSIGNED: "was assigned to",
+      ACCEPTED: "accepted",
+      NEW: "created",
+      CANCELED: "canceled",
+    }
+
+    for (const task of sortedTasks) {
+      const assignee = task.assignedTo
+      const name = assignee
+        ? `${assignee.firstName} ${assignee.lastName?.[0] || ""}.`
+        : "Someone"
+      const action = actionMap[task.status] || "updated"
+
+      events.push({
+        id: `task-${task.id}`,
+        dot: dotMap[task.status] || "blue",
+        message: (
+          <>
+            <strong>{name}</strong> {action} <strong>{task.title}</strong>
+          </>
+        ),
+        time: timeAgo(task.updatedAt),
       })
-  }, [tasks])
+    }
+
+    // Recent attendance events (clock-ins from today)
+    const recentClockIns = [...todayEntries]
+      .sort((a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime())
+      .slice(0, 5)
+
+    for (const entry of recentClockIns) {
+      const member = memberMap.get(entry.userId)
+      const name = member
+        ? `${member.firstName} ${member.lastName?.[0] || ""}.`
+        : entry.user
+          ? `${entry.user.firstName} ${entry.user.lastName?.[0] || ""}.`
+          : "Someone"
+      const locationName = entry.location?.name || "a location"
+
+      if (isClockedIn(entry)) {
+        events.push({
+          id: `clock-in-${entry.id}`,
+          dot: "green",
+          message: (
+            <>
+              <strong>{name}</strong> clocked in at <strong>{locationName}</strong>
+            </>
+          ),
+          time: timeAgo(entry.clockInAt),
+        })
+      } else if (entry.clockOutAt) {
+        events.push({
+          id: `clock-out-${entry.id}`,
+          dot: "blue",
+          message: (
+            <>
+              <strong>{name}</strong> clocked out from <strong>{locationName}</strong>
+            </>
+          ),
+          time: timeAgo(entry.clockOutAt),
+        })
+      }
+    }
+
+    // Sort all events by time (most recent first) and take top 12
+    return events.slice(0, 12)
+  }, [tasks, todayEntries, memberMap])
+
+  // ── Pending Actions ────────────────────────────────────────────────────────
+
+  const pendingActions: PendingAction[] = useMemo(() => {
+    const actions: PendingAction[] = []
+
+    // Blocked tasks need attention
+    const blockedTasks = tasks.filter(t => t.status === "BLOCKED")
+    for (const task of blockedTasks.slice(0, 3)) {
+      const assignee = task.assignedTo
+      const name = assignee
+        ? `${assignee.firstName} ${assignee.lastName?.[0] || ""}.`
+        : "Unassigned"
+      const initials = assignee
+        ? getInitials(assignee.firstName, assignee.lastName)
+        : "?"
+
+      actions.push({
+        id: `blocked-${task.id}`,
+        initials,
+        color: getAvatarColor(assignee?.id || "x"),
+        imageUrl: assignee?.avatarUrl || undefined,
+        title: `${name} - Blocked`,
+        description: task.title,
+        onApprove: () => router.push(`/tasks/${task.id}`),
+        onReject: () => {},
+      })
+    }
+
+    // New unassigned tasks need assignment
+    const newTasks = tasks.filter(t => t.status === "NEW" && !t.assignedToId)
+    for (const task of newTasks.slice(0, 3)) {
+      actions.push({
+        id: `new-${task.id}`,
+        initials: "?",
+        color: AVATAR_COLORS[4]!,
+        title: "Unassigned - New Task",
+        description: task.title,
+        onApprove: () => router.push(`/tasks/${task.id}`),
+      })
+    }
+
+    return actions.slice(0, 5)
+  }, [tasks, router])
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   const greeting = getGreeting()
+
+  // Show nothing while data is still loading — prevents empty state flash
+  if (isDataLoading) {
+    return null // layout's Suspense fallback handles the skeleton
+  }
+
   const hasFixedLocations = workspaceBoxes.some(b => b.type === "fixed")
 
   // Empty state — no fixed locations created
@@ -340,7 +640,6 @@ export function ClientDashboard() {
 
         {/* Layer 2: Popup workspace boxes with connection lines */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Popup workspace boxes — circle around center */}
           {(() => {
             const boxes = [
               { w:130, h:90, delay:'0.3s', avatars:[
@@ -389,12 +688,10 @@ export function ClientDashboard() {
                 animation: `boxPopIn 0.6s cubic-bezier(0.34,1.56,0.64,1) ${box.delay} both`,
               }}
             >
-              {/* Title bar skeleton */}
               <div className="flex items-center gap-1.5 px-3 pt-2.5">
                 <div className="h-1.5 w-12 rounded-full bg-foreground/[0.08]" />
                 <div className="h-1.5 w-5 rounded-full bg-foreground/[0.05] ml-auto" />
               </div>
-              {/* Avatars */}
               <div className="flex items-center justify-center gap-2 pt-3 pb-2">
                 {box.avatars.map((av, j) => (
                   <div
@@ -408,7 +705,6 @@ export function ClientDashboard() {
                   />
                 ))}
               </div>
-              {/* Name skeletons */}
               <div className="flex items-center justify-center gap-3 px-3 pb-2">
                 {box.avatars.map((_, j) => (
                   <div key={j} className="h-1 w-6 rounded-full bg-foreground/[0.05]" />
@@ -416,17 +712,16 @@ export function ClientDashboard() {
               </div>
             </div>
           ))}
-
         </div>
 
         {/* Content */}
         <div className="relative text-center max-w-md space-y-10 z-10 px-6">
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-              Your workspace<br />is ready
+              Set up your<br />workspace
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-              Add locations, invite your team, and see everyone — wherever they are — in one live view.
+              Create spaces, add your team, and track everyone in real time — all from one view.
             </p>
           </div>
 
@@ -434,13 +729,13 @@ export function ClientDashboard() {
             <Button asChild size="lg" className="gap-2 h-12 px-6 text-sm shadow-lg shadow-primary/25">
               <Link href="/locations">
                 <Plus className="h-4 w-4" />
-                Create Location
+                Add Space
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="gap-2 h-12 px-6 text-sm">
-              <Link href="/technicians">
+              <Link href="/members">
                 <Users className="h-4 w-4" />
-                Add Workers
+                Invite Team
               </Link>
             </Button>
           </div>
@@ -450,12 +745,12 @@ export function ClientDashboard() {
   }
 
   return (
-    <div className="flex flex-1">
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+    <div style={{ display: "flex", width: "100%", height: "100%" }}>
+      {/* Main content — scrollable */}
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start justify-between px-6 pt-6">
+          <div style={{ paddingLeft: "max(0px, calc((100% - 1440px) / 2))" }}>
             <p className="text-[13px] font-medium text-muted-foreground">{greeting}</p>
             <h1 className="text-2xl font-semibold text-foreground">
               {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
@@ -472,12 +767,24 @@ export function ClientDashboard() {
           </div>
         </div>
 
-        {/* Workspace Grid */}
-        <WorkspaceGrid boxes={workspaceBoxes} />
+        {/* Workspace Grid — contained */}
+        <div className="max-w-[1440px] mx-auto px-6 py-6">
+          <WorkspaceGrid boxes={workspaceBoxes} />
+        </div>
       </div>
 
-      {/* Right Activity Panel */}
-      <ActivityPanel events={liveEvents} pending={pendingActions} />
+      {/* Right Activity Panel — flex sibling, full height */}
+      <ActivityPanel events={liveEvents} pending={pendingActions} className="h-full" />
+
+      {/* Assign member dialog — opens from workspace box "Add Member" button */}
+      <AssignMemberDialog
+        open={!!assignSpaceId}
+        onOpenChange={(open) => { if (!open) setAssignSpaceId(null) }}
+        taskId={null}
+        spaceId={assignSpaceId}
+        onAssign={() => {}}
+      />
+
     </div>
   )
 }

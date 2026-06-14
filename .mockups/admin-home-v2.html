@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin Home v2 — dynamic grid + premium FAB</title>
+<style>
+:root{--bg:#0a0a10;--surface:#121219;--card:#1a1a24;--raised:#22222e;--border:rgba(255,255,255,.08);
+--text:#f2f3f7;--muted:#8b8d98;--muted2:#5c5e6b;--green:#10b981;--blue:#3b82f6;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
+body{background:#05050a;color:var(--text);padding:36px 24px 60px;display:flex;flex-direction:column;align-items:center}
+h1{font-size:20px;font-weight:700}.sub{color:var(--muted);font-size:12px;margin:6px 0 26px;text-align:center;max-width:560px;line-height:1.5}
+.row{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.col{display:flex;flex-direction:column;align-items:center;gap:12px}.label{font-size:13px;font-weight:600}
+.phone{width:300px;height:600px;background:var(--bg);border-radius:38px;border:10px solid #1c1c24;box-shadow:0 30px 60px rgba(0,0,0,.5);overflow:hidden;position:relative}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#1c1c24;border-radius:0 0 16px 16px;z-index:30}
+.statusbar{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;color:var(--muted)}
+.scroll{height:calc(100% - 38px);overflow-y:auto;padding:0 14px 14px;position:relative}.scroll::-webkit-scrollbar{width:0}
+.greet{font-size:12px;color:var(--muted);margin-top:4px}
+.welcome{font-size:20px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.newbtn{font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:6px 9px}
+.grid{margin-top:12px}.gridrow{display:flex;gap:10px;align-items:flex-start;margin-bottom:0}
+.loc{background:var(--card);border:1px solid var(--border);border-radius:15px;margin-bottom:10px;overflow:hidden}
+.loc-h{display:flex;align-items:center;justify-content:space-between;padding:11px 12px 5px}
+.loc-name{font-size:10px;font-weight:800;letter-spacing:.4px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:5px;min-width:0}
+.loc-name span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnt{font-size:11px;font-weight:700;color:var(--text);background:var(--raised);border-radius:8px;padding:2px 7px}
+.alert{font-size:8px;font-weight:700;color:#f87171;background:rgba(239,68,68,.15);border-radius:5px;padding:1px 4px}
+.ppl{display:flex;flex-wrap:wrap;gap:12px;padding:8px 12px 12px}
+.p{display:flex;flex-direction:column;align-items:center;gap:5px;width:54px}
+.av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;position:relative}
+.dot{position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;border:2px solid var(--card)}
+.on{background:var(--green)}.busy{background:var(--blue)}
+.pn{font-size:10px;color:rgba(255,255,255,.72);font-weight:500;white-space:nowrap}
+.tag{font-size:8px;font-weight:800;letter-spacing:.3px;border-radius:9px;padding:2px 6px;text-transform:uppercase}
+.t-task{background:rgba(59,130,246,.2);color:#7aa2f7}.t-hrs{background:rgba(139,92,246,.2);color:#b794f6}
+.acts{display:flex;border-top:1px solid var(--border)}
+.act{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px;font-size:11px;font-weight:600;color:#059669}
+.act.sec{color:var(--muted)}.actdiv{width:1px;background:var(--border)}
+.fab{position:absolute;right:16px;bottom:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#fff;box-shadow:0 8px 22px rgba(124,58,237,.55);z-index:20}
+.fab .b{min-width:18px;height:18px;border-radius:9px;background:#f59e0b;color:#1a1a24;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;padding:0 4px}
+.note{font-size:11px;color:var(--muted);max-width:300px;text-align:center;line-height:1.5}
+.tagn{font-size:13px;color:#a855f7;font-weight:600}
+</style></head><body>
+<h1>Admin Home — refined</h1>
+<p class="sub">Dynamic grid: small spaces pack two-per-row (no empty sides); busy spaces span full width. Plus a premium gradient Activity button. Same live data & actions.</p>
+<div class="row">
+ <div class="col">
+  <div class="phone"><div class="notch"></div>
+   <div class="statusbar"><span>17:42</span><span>5G ▮▮▮</span></div>
+   <div class="scroll">
+    <div class="greet">Good evening</div>
+    <div class="welcome"><span>Welcome back, John</span><span class="newbtn">+ Space</span></div>
+    <div class="grid">
+     <!-- full-width busy card -->
+     <div class="loc">
+      <div class="loc-h"><div class="loc-name">▣ <span>Main Office</span></div><div class="cnt">3/4</div></div>
+      <div class="ppl">
+       <div class="p"><div class="av" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">MW<span class="dot busy"></span></div><span class="pn">Mike W.</span><span class="tag t-task">Working</span></div>
+       <div class="p"><div class="av" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS<span class="dot on"></span></div><span class="pn">Noor S.</span><span class="tag t-hrs">Avail.</span></div>
+       <div class="p"><div class="av" style="background:linear-gradient(135deg,#10b981,#059669)">LA<span class="dot on"></span></div><span class="pn">Lisa A.</span><span class="tag t-hrs">Avail.</span></div>
+      </div>
+      <div class="acts"><div class="act">⊕ Assign</div><div class="actdiv"></div><div class="act sec">☰ Tasks</div></div>
+     </div>
+     <!-- two half-width cards packed side by side -->
+     <div class="gridrow">
+      <div class="loc" style="flex:1">
+       <div class="loc-h"><div class="loc-name">▣ <span>Service Ctr</span></div><div class="cnt">1/2</div></div>
+       <div class="ppl"><div class="p"><div class="av" style="background:linear-gradient(135deg,#f59e0b,#d97706)">KA<span class="dot busy"></span></div><span class="pn">Karim A.</span><span class="tag t-task">Working</span></div></div>
+       <div class="acts"><div class="act">⊕ Assign</div><div class="actdiv"></div><div class="act sec">☰</div></div>
+      </div>
+      <div class="loc" style="flex:1">
+       <div class="loc-h"><div class="loc-name">▣ <span>Warehouse</span> <span class="alert">1</span></div><div class="cnt">1/2</div></div>
+       <div class="ppl"><div class="p"><div class="av" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)">HB<span class="dot on"></span></div><span class="pn">Hassan B.</span><span class="tag t-hrs">Avail.</span></div></div>
+       <div class="acts"><div class="act">⊕ Assign</div><div class="actdiv"></div><div class="act sec">☰</div></div>
+      </div>
+     </div>
+     <!-- dynamic On Task -->
+     <div class="loc">
+      <div class="loc-h"><div class="loc-name">⦿ <span>On Task</span></div></div>
+      <div class="ppl">
+       <div class="p"><div class="av" style="background:linear-gradient(135deg,#14b8a6,#0d9488)">DK<span class="dot busy"></span></div><span class="pn">David K.</span><span class="tag t-task">Working</span></div>
+       <div class="p"><div class="av" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">DP<span class="dot busy"></span></div><span class="pn">Dana P.</span><span class="tag t-task">En route</span></div>
+      </div>
+     </div>
+    </div>
+    <div class="fab">⚡ Activity <span class="b">5</span></div>
+   </div>
+  </div>
+  <div class="label">Dynamic grid + premium gradient FAB</div>
+  <div class="note">Busy spaces = full width. Quiet spaces pair two-per-row. The Activity button is now an indigo→violet gradient with a glow.</div>
+ </div>
+</div>
+</body></html>

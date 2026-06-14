@@ -6,99 +6,97 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
-import { tasksApi, TaskStatus, type Task } from '../../lib/api';
-import { TaskCard, LoadingState, ErrorState, Skeleton } from '../../components';
+import {
+  tasksApi,
+  locationsApi,
+  attendanceApi,
+  membersApi,
+  type Task,
+  type OrgMember,
+  type LocationWithMembers,
+} from '../../lib/api';
+import type { TimeEntry } from '../../lib/api/types';
+import { ErrorState, Skeleton } from '../../components';
 import { ROUTES } from '../../lib/constants';
-import { isSameDay } from '../../lib/utils';
-import { WeekCalendar } from '../week-calendar';
-import { styles, COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, RADIUS, SHADOWS } from './home-styles';
+import { styles as homeStyles, SPACING, COLORS } from './home-styles';
+import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
+import { type PersonNodeData } from './workspace/person-node';
+import { ActivitySheet, type LiveEvent, type PendingActionItem } from './workspace/activity-sheet';
+import { AssignMemberSheet } from './workspace/assign-member-sheet';
+import {
+  getInitials,
+  shortName,
+  getEmployeeStatus,
+  isClockedIn,
+  getTodayString,
+  timeAgo,
+  STATUS_DOT,
+  STATUS_ACTION,
+  ACTIVE_TASK_PRIORITY,
+} from './workspace/helpers';
+
+// Dynamic grid — every card is half-width and dropped into the shorter of two
+// columns (masonry). Columns stay balanced, cards are filled to their width,
+// and the only slack lands bottom-right where the Activity FAB floats.
+const GRID_GAP = 10;
+
+/** Rough rendered height of a card, used only to balance the two columns. */
+function estimateHeight(box: WorkspaceBoxData): number {
+  const groupRows = (n: number) => (n > 0 ? 22 + Math.ceil(n / 2) * 74 : 0);
+  let h = 44; // header
+  h += box.people.length > 0 ? Math.ceil(box.people.length / 2) * 74 : 34;
+  h += groupRows(box.onRoadPeople?.length || 0);
+  h += groupRows(box.remotePeople?.length || 0);
+  h += groupRows(box.offDutyPeople?.length || 0);
+  if (box.type === 'fixed') h += 44; // actions row
+  return h + 12; // marginBottom
+}
+
+/** Distribute boxes across two balanced columns (greedy shortest-column). */
+function splitColumns(boxes: WorkspaceBoxData[]): [WorkspaceBoxData[], WorkspaceBoxData[]] {
+  const cols: [WorkspaceBoxData[], WorkspaceBoxData[]] = [[], []];
+  const heights = [0, 0];
+  for (const box of boxes) {
+    const target = heights[0] <= heights[1] ? 0 : 1;
+    cols[target].push(box);
+    heights[target] += estimateHeight(box);
+  }
+  return cols;
+}
 
 export function AdminDashboard() {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
+
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [locations, setLocations] = useState<LocationWithMembers[]>([]);
+  const [members, setMembers] = useState<OrgMember[]>([]);
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [activeBreaks, setActiveBreaks] = useState<Array<{ userId: string }>>([]);
+  const [assignments, setAssignments] = useState<Record<string, string[]>>({});
+
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
+
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [assignLocationId, setAssignLocationId] = useState<string | null>(null);
+
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
   const lastFetchTimeRef = useRef(0);
 
-  // Build task date set for calendar dots
-  const taskDateSet = useMemo(() => {
-    const dateSet = new Set<string>();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; })();
-    for (const task of tasks) {
-      if (!task.dueDate) {
-        dateSet.add(todayStr);
-      } else {
-        const d = new Date(task.dueDate);
-        dateSet.add(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
-      }
-    }
-    return dateSet;
-  }, [tasks]);
-
-  const handlePrevWeek = useCallback(() => {
-    setCurrentWeekStart(d => { const n = new Date(d); n.setDate(n.getDate() - 7); return n; });
-  }, []);
-  const handleNextWeek = useCallback(() => {
-    setCurrentWeekStart(d => { const n = new Date(d); n.setDate(n.getDate() + 7); return n; });
-  }, []);
-  const handleToday = useCallback(() => {
-    const today = new Date();
-    setCurrentWeekStart(today);
-    setSelectedDate(today);
-  }, []);
-
-  const stats = useMemo(() => {
-    return {
-      total: tasks.length,
-      inProgress: tasks.filter(t =>
-        [TaskStatus.IN_PROGRESS, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED].includes(t.status)
-      ).length,
-      completed: tasks.filter(t => t.status === TaskStatus.COMPLETED || t.status === TaskStatus.CLOSED).length,
-      pending: tasks.filter(t =>
-        [TaskStatus.NEW, TaskStatus.ASSIGNED, TaskStatus.ACCEPTED].includes(t.status)
-      ).length,
-    };
-  }, [tasks]);
-
-  // Tasks for selected calendar date
-  const selectedDayTasks = useMemo(() => {
-    const sel = new Date(selectedDate);
-    sel.setHours(0, 0, 0, 0);
-    const next = new Date(sel);
-    next.setDate(next.getDate() + 1);
-    return tasks.filter(task => {
-      if (!task.dueDate) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return sel.getTime() === today.getTime();
-      }
-      const d = new Date(task.dueDate);
-      return d >= sel && d < next;
-    });
-  }, [tasks, selectedDate]);
-
-  const recentTasks = useMemo(() => {
-    return [...tasks]
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      .slice(0, 5);
-  }, [tasks]);
-
-  const fetchTasks = useCallback(async (showRefresh = false) => {
+  const load = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
     try {
       lastFetchTimeRef.current = Date.now();
@@ -106,8 +104,28 @@ export function AdminDashboard() {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
       setError(null);
-      const fetchedTasks = await tasksApi.list();
-      setTasks(fetchedTasks || []);
+
+      // Single batch — locations now embed their member assignments, so there
+      // is no per-location follow-up request (no N+1).
+      const [tasksRes, locationsRes, membersRes, entriesRes, breaksRes] = await Promise.all([
+        tasksApi.list(),
+        locationsApi.list().catch(() => [] as LocationWithMembers[]),
+        membersApi.list().catch(() => [] as OrgMember[]),
+        attendanceApi.getAllEntries({ date: getTodayString() }).catch(() => [] as TimeEntry[]),
+        attendanceApi.getActiveBreaks().catch(() => [] as Array<{ userId: string }>),
+      ]);
+
+      const assignmentMap: Record<string, string[]> = {};
+      for (const loc of locationsRes || []) {
+        assignmentMap[loc.id] = (loc.assignments || []).map((a) => a.userId);
+      }
+
+      setTasks(tasksRes || []);
+      setLocations(locationsRes || []);
+      setMembers(membersRes || []);
+      setEntries(entriesRes || []);
+      setActiveBreaks(breaksRes || []);
+      setAssignments(assignmentMap);
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
       setError(err instanceof Error ? err.message : t('tasks.failedToLoad'));
@@ -116,214 +134,411 @@ export function AdminDashboard() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
     initialFetchDoneRef.current = true;
-    fetchTasks();
-  }, [fetchTasks]);
+    load();
+  }, [load]);
 
-  // Refetch when screen regains focus (e.g. navigating back from task detail)
   useFocusEffect(
     useCallback(() => {
       if (!initialFetchDoneRef.current) return;
       if (Date.now() - lastFetchTimeRef.current < 30000) return;
-      fetchTasks();
-    }, [fetchTasks])
+      load();
+    }, [load]),
   );
 
-  const handleTaskPress = (task: Task) => {
-    router.push(ROUTES.taskDetail(task.id));
-  };
+  // ── Derived lookups ──────────────────────────────────────────────────────
+  const memberMap = useMemo(() => {
+    const map = new Map<string, OrgMember>();
+    for (const m of members) map.set(m.id, m);
+    return map;
+  }, [members]);
 
-  if (isLoading) return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <Skeleton.Dashboard />
-    </View>
+  const clockedInUserIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of entries) if (isClockedIn(e)) set.add(e.userId);
+    return set;
+  }, [entries]);
+
+  const onBreakUserIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of activeBreaks) if (b.userId) set.add(b.userId);
+    return set;
+  }, [activeBreaks]);
+
+  const attendanceLocationMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const sorted = [...entries].sort(
+      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
+    );
+    for (const e of sorted) if (!map.has(e.userId)) map.set(e.userId, e.locationId);
+    return map;
+  }, [entries]);
+
+  const activeTaskMap = useMemo(() => {
+    const map = new Map<string, Task>();
+    for (const task of tasks) {
+      const assignee = task.assignedToId;
+      if (!assignee) continue;
+      const p = ACTIVE_TASK_PRIORITY[task.status];
+      if (p === undefined) continue;
+      const existing = map.get(assignee);
+      if (!existing || (ACTIVE_TASK_PRIORITY[existing.status] || 0) < p) map.set(assignee, task);
+    }
+    return map;
+  }, [tasks]);
+
+  // ── Build workspace boxes ────────────────────────────────────────────────
+  const boxes: WorkspaceBoxData[] = useMemo(() => {
+    const result: WorkspaceBoxData[] = [];
+    const accounted = new Set<string>();
+
+    const toNode = (m: OrgMember, status: PersonNodeData['status'], tag?: PersonNodeData['tag']): PersonNodeData => ({
+      userId: m.id,
+      initials: getInitials(m.firstName, m.lastName),
+      name: shortName(m.firstName, m.lastName),
+      status,
+      imageUrl: m.avatarUrl || undefined,
+      tag,
+    });
+
+    for (const loc of locations) {
+      if (!loc.isActive) continue;
+      const assigned = assignments[loc.id] || [];
+
+      const present: PersonNodeData[] = [];
+      const onRoad: PersonNodeData[] = [];
+      const remote: PersonNodeData[] = [];
+      const offDuty: PersonNodeData[] = [];
+
+      for (const userId of assigned) {
+        const m = memberMap.get(userId);
+        if (!m || !m.isActive) continue;
+        accounted.add(userId);
+
+        const activeTask = activeTaskMap.get(userId);
+        const clocked = clockedInUserIds.has(userId);
+        const clockedLoc = attendanceLocationMap.get(userId);
+        const { status, tag } = getEmployeeStatus({
+          isClockedIn: clocked,
+          isOnBreak: onBreakUserIds.has(userId),
+          isLate: false,
+          hasActiveTask: !!activeTask,
+        });
+        const node = toNode(m, status, tag);
+
+        if (!clocked && !activeTask) {
+          offDuty.push(toNode(m, 'off'));
+        } else if (activeTask && (activeTask.status === 'EN_ROUTE' || activeTask.status === 'ARRIVED')) {
+          onRoad.push({ ...node, tag: tag || { text: 'In Field', variant: 'task' } });
+        } else if (clocked && clockedLoc && clockedLoc !== loc.id) {
+          remote.push({ ...node, tag: tag || { text: 'Off-site', variant: 'hrs' } });
+        } else {
+          present.push(node);
+        }
+      }
+
+      // Alert badge = blocked tasks at this location (clear & actionable).
+      let alerts = 0;
+      for (const task of tasks) {
+        const atLoc = task.locationAddress?.includes(loc.name);
+        if (!atLoc) continue;
+        if (task.status === 'BLOCKED') alerts++;
+      }
+
+      result.push({
+        locationId: loc.id,
+        title: loc.name,
+        type: 'fixed',
+        people: present,
+        onRoadPeople: onRoad,
+        remotePeople: remote,
+        offDutyPeople: offDuty,
+        totalAssigned: assigned.length,
+        activeCount: present.length + onRoad.length + remote.length,
+        alerts,
+      });
+    }
+
+    // "On Task" — workers with active tasks not tied to a location
+    const onTask: PersonNodeData[] = [];
+    for (const [userId, task] of activeTaskMap) {
+      if (accounted.has(userId)) continue;
+      const m = memberMap.get(userId);
+      if (m) {
+        accounted.add(userId);
+        const { status, tag } = getEmployeeStatus({
+          isClockedIn: clockedInUserIds.has(userId),
+          isOnBreak: onBreakUserIds.has(userId),
+          isLate: false,
+          hasActiveTask: true,
+        });
+        onTask.push(toNode(m, status, tag));
+      } else if (task.assignedTo) {
+        onTask.push({
+          userId: task.assignedTo.id,
+          initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
+          name: shortName(task.assignedTo.firstName, task.assignedTo.lastName),
+          status: 'busy',
+          imageUrl: task.assignedTo.avatarUrl || undefined,
+          tag: { text: 'Working', variant: 'task' },
+        });
+      }
+    }
+    if (onTask.length > 0) {
+      result.push({ locationId: 'on-task', title: 'On Task', type: 'dynamic', people: onTask });
+    }
+
+    return result;
+  }, [
+    locations, assignments, tasks, memberMap,
+    clockedInUserIds, onBreakUserIds, attendanceLocationMap, activeTaskMap,
+  ]);
+
+  // ── Live events ──────────────────────────────────────────────────────────
+  const liveEvents: LiveEvent[] = useMemo(() => {
+    const events: LiveEvent[] = [];
+    const sortedTasks = [...tasks]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 10);
+    for (const task of sortedTasks) {
+      const a = task.assignedTo;
+      events.push({
+        id: `task-${task.id}`,
+        dot: STATUS_DOT[task.status] || 'blue',
+        name: a ? shortName(a.firstName, a.lastName) : 'Someone',
+        action: STATUS_ACTION[task.status] || 'updated',
+        subject: task.title,
+        time: timeAgo(task.updatedAt),
+      });
+    }
+    const recentClockIns = [...entries]
+      .sort((a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime())
+      .slice(0, 5);
+    for (const e of recentClockIns) {
+      const m = memberMap.get(e.userId);
+      const name = m ? shortName(m.firstName, m.lastName) : 'Someone';
+      const locName = (e as any).location?.name || 'a location';
+      if (isClockedIn(e)) {
+        events.push({ id: `in-${e.id}`, dot: 'green', name, action: 'clocked in at', subject: locName, time: timeAgo(e.clockInAt) });
+      } else if (e.clockOutAt) {
+        events.push({ id: `out-${e.id}`, dot: 'blue', name, action: 'clocked out from', subject: locName, time: timeAgo(e.clockOutAt) });
+      }
+    }
+    return events.slice(0, 12);
+  }, [tasks, entries, memberMap]);
+
+  // ── Pending actions ──────────────────────────────────────────────────────
+  const pending: PendingActionItem[] = useMemo(() => {
+    const actions: PendingActionItem[] = [];
+    for (const task of tasks.filter((x) => x.status === 'BLOCKED').slice(0, 3)) {
+      const a = task.assignedTo;
+      actions.push({
+        id: `blocked-${task.id}`,
+        userId: a?.id,
+        initials: a ? getInitials(a.firstName, a.lastName) : '?',
+        imageUrl: a?.avatarUrl || undefined,
+        title: `${a ? shortName(a.firstName, a.lastName) : 'Unassigned'} – Blocked`,
+        description: task.title,
+        taskId: task.id,
+      });
+    }
+    for (const task of tasks.filter((x) => x.status === 'NEW' && !x.assignedToId).slice(0, 3)) {
+      actions.push({
+        id: `new-${task.id}`,
+        initials: '?',
+        title: 'Unassigned – New Task',
+        description: task.title,
+        taskId: task.id,
+      });
+    }
+    return actions.slice(0, 5);
+  }, [tasks]);
+
+  const columns = useMemo(() => splitColumns(boxes), [boxes]);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    return h < 12 ? t('common.greeting.morning') : h < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening');
+  }, [t]);
+
+  const handlePersonPress = useCallback(() => {
+    router.push('/(app)/manage/members' as any);
+  }, []);
+  const handleViewTasks = useCallback(() => {
+    router.push(ROUTES.tasks as any);
+  }, []);
+  const handleOpenTask = useCallback((taskId: string) => {
+    setActivityOpen(false);
+    router.push(ROUTES.taskDetail(taskId) as any);
+  }, []);
+
+  const assignLocationName = useMemo(
+    () => locations.find((l) => l.id === assignLocationId)?.name,
+    [locations, assignLocationId],
   );
-  if (error) return <ErrorState message={error} onRetry={() => fetchTasks()} />;
+  const assignedUserIdsForLocation = useMemo(
+    () => new Set(assignLocationId ? assignments[assignLocationId] || [] : []),
+    [assignments, assignLocationId],
+  );
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
+        <Skeleton.Dashboard />
+      </View>
+    );
+  }
+  if (error) return <ErrorState message={error} onRetry={() => load()} />;
+
+  const hasFixed = boxes.some((b) => b.type === 'fixed');
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+    <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
       <ScrollView
-        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={() => fetchTasks(true)}
+            onRefresh={() => load(true)}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
           />
         }
       >
-        {/* Welcome */}
-        <View style={styles.welcomeSection}>
-          <Text style={[styles.welcomeGreeting, { color: colors.textMuted }]}>
-            {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting}</Text>
+          <Text style={[styles.welcome, { color: colors.textPrimary }]}>
+            {t('home.admin.welcomeBack', { name: user?.firstName })}
           </Text>
-          <Text style={[styles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
         </View>
 
-        {/* Stats Card */}
-        <View style={[adminStyles.hubCard, { backgroundColor: colors.card }]}>
-          <View style={adminStyles.statsStrip}>
-            {([
-              { n: stats.total, label: t('home.admin.statsTotal'), color: colors.textPrimary },
-              { n: stats.inProgress, label: t('home.admin.statsActive'), color: colors.textPrimary },
-              { n: stats.completed, label: t('home.admin.statsDone'), color: colors.textPrimary },
-              { n: stats.pending, label: t('home.admin.statsPending'), color: colors.textPrimary },
-            ] as const).map((s, i) => (
-              <View key={i} style={adminStyles.statCell}>
-                <Text style={[adminStyles.statNum, { color: s.color }]}>{s.n}</Text>
-                <Text style={[adminStyles.statLbl, { color: colors.textMuted }]}>{s.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Week Calendar */}
-        <WeekCalendar
-          taskDates={taskDateSet}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-          currentWeekStart={currentWeekStart}
-          onPrevWeek={handlePrevWeek}
-          onNextWeek={handleNextWeek}
-          onToday={handleToday}
-        />
-
-        {/* Selected Day Tasks */}
-        <View style={adminStyles.dayTasksSection}>
-          <View style={adminStyles.dayTasksHeader}>
-            <Text style={[adminStyles.dayTasksTitle, { color: colors.textPrimary }]}>
-              {isSameDay(selectedDate, new Date()) ? t('home.admin.todaysTasks') : selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-            </Text>
-            <View style={[adminStyles.dayTasksCount, { backgroundColor: colors.surfaceRaised }]}>
-              <Text style={[adminStyles.dayTasksCountText, { color: colors.textSecondary }]}>{selectedDayTasks.length}</Text>
-            </View>
-          </View>
-          {selectedDayTasks.length === 0 ? (
-            <View style={[adminStyles.emptyDay, { backgroundColor: colors.card }]}>
-              <Ionicons name="calendar-outline" size={24} color={colors.textMuted} />
-              <Text style={[adminStyles.emptyDayText, { color: colors.textMuted }]}>{t('home.admin.noTasksScheduled')}</Text>
+        {/* Workspace cards */}
+        <View style={styles.grid}>
+          {boxes.length === 0 || !hasFixed ? (
+            <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="business-outline" size={32} color={colors.textMuted} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Set up your workspace</Text>
+              <Text style={[styles.emptySub, { color: colors.textMuted }]}>
+                Create spaces and assign your team to track everyone in real time.
+              </Text>
             </View>
           ) : (
-            <View style={adminStyles.dayTasksList}>
-              {selectedDayTasks.map(task => (
-                <TaskCard key={task.id} task={task} onPress={() => handleTaskPress(task)} showAssignee showPriority />
+            <View style={styles.columns}>
+              {columns.map((column, ci) => (
+                <View key={`col-${ci}`} style={styles.column}>
+                  {column.map((box) => (
+                    <WorkspaceCard
+                      key={`${box.type}-${box.locationId}`}
+                      box={box}
+                      compact
+                      onPersonPress={handlePersonPress}
+                      onAssign={setAssignLocationId}
+                      onViewTasks={handleViewTasks}
+                    />
+                  ))}
+                </View>
               ))}
             </View>
           )}
         </View>
-
-        {/* Recent Tasks */}
-        <View style={adminStyles.recentSection}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('home.admin.recentTasks')}</Text>
-          {recentTasks.length === 0 ? (
-            <View style={[adminStyles.emptyRecent, { backgroundColor: colors.card }]}>
-              <Text style={[adminStyles.emptyRecentText, { color: colors.textMuted }]}>{t('home.admin.noTasksYet')}</Text>
-            </View>
-          ) : (
-            <View style={adminStyles.recentList}>
-              {recentTasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onPress={() => handleTaskPress(task)}
-                  showAssignee
-                  showPriority
-                />
-              ))}
-            </View>
-          )}
-        </View>
-
-        <View style={{ height: SPACING.xl }} />
       </ScrollView>
+
+      {/* Activity FAB — premium gradient pill */}
+      <TouchableOpacity style={styles.fabWrap} onPress={() => setActivityOpen(true)} activeOpacity={0.9}>
+        <LinearGradient
+          colors={['#6366f1', '#8b5cf6', '#a855f7']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fab}
+        >
+          <Ionicons name="flash" size={16} color="#fff" />
+          <Text style={styles.fabText}>Activity</Text>
+          {pending.length > 0 && (
+            <View style={styles.fabBadge}>
+              <Text style={styles.fabBadgeText}>{pending.length}</Text>
+            </View>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <ActivitySheet
+        visible={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        events={liveEvents}
+        pending={pending}
+        onOpenTask={handleOpenTask}
+      />
+
+      <AssignMemberSheet
+        visible={!!assignLocationId}
+        locationId={assignLocationId}
+        locationName={assignLocationName}
+        members={members}
+        assignedUserIds={assignedUserIdsForLocation}
+        onClose={() => setAssignLocationId(null)}
+        onAssigned={() => load(true)}
+      />
     </View>
   );
 }
 
-const adminStyles = StyleSheet.create({
-  // Combined hub card
-  hubCard: {
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-  },
-  // Stats strip
-  statsStrip: {
-    flexDirection: 'row',
-  },
-  statCell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statNum: {
-    fontSize: 22,
-    fontWeight: FONT_WEIGHT.bold,
-    lineHeight: 26,
-  },
-  statLbl: {
-    fontSize: 11,
-    fontWeight: FONT_WEIGHT.medium,
-    marginTop: 2,
-  },
-  recentSection: {
+const styles = StyleSheet.create({
+  header: {
     paddingHorizontal: SPACING.lg,
-    marginTop: SPACING.xxl,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
-  recentList: {
-    gap: SPACING.md,
-  },
-  emptyRecent: {
-    borderRadius: RADIUS.md,
-    padding: SPACING.xxxl,
+  greeting: { fontSize: 12, fontWeight: '500' },
+  welcome: { fontSize: 21, fontWeight: '700', marginTop: 2 },
+  grid: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: GRID_GAP },
+  column: { flex: 1 },
+  emptyState: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 28,
     alignItems: 'center',
+    gap: 8,
+    marginTop: SPACING.md,
   },
-  emptyRecentText: {
-    fontSize: FONT_SIZE.base,
-    textAlign: 'center',
+  emptyTitle: { fontSize: 16, fontWeight: '700', marginTop: 4 },
+  emptySub: { fontSize: 13, textAlign: 'center', lineHeight: 19 },
+  fabWrap: {
+    position: 'absolute',
+    right: 18,
+    bottom: 24,
+    borderRadius: 18,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
   },
-  // Day tasks (below calendar)
-  dayTasksSection: {
-    paddingHorizontal: SPACING.lg,
-    marginTop: SPACING.xl,
-  },
-  dayTasksHeader: {
+  fab: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
+    gap: 7,
+    paddingHorizontal: 17,
+    paddingVertical: 13,
+    borderRadius: 18,
   },
-  dayTasksTitle: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  dayTasksCount: {
-    paddingHorizontal: 10,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.md,
-  },
-  dayTasksCountText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  emptyDay: {
-    borderRadius: RADIUS.md,
-    padding: SPACING.xxl,
+  fabText: { color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
+  fabBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#f59e0b',
     alignItems: 'center',
-    flexDirection: 'row',
     justifyContent: 'center',
-    gap: SPACING.sm,
+    paddingHorizontal: 5,
   },
-  emptyDayText: {
-    fontSize: FONT_SIZE.base,
-  },
-  dayTasksList: {
-    gap: SPACING.md,
-  },
+  fabBadgeText: { color: '#1a1a24', fontSize: 10, fontWeight: '800' },
 });

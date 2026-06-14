@@ -16,7 +16,7 @@ export class TrackingController {
   ) {}
 
   @Post('location')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Update user location (any authenticated user on a task)' })
   async updateLocation(@Body() updateLocationDto: UpdateTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(
@@ -29,7 +29,7 @@ export class TrackingController {
 
   @Get('workers')
   @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'Get all active technician locations' })
+  @ApiOperation({ summary: 'Get all active employee locations' })
   async getActiveWorkers(@Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_active_workers' }, {
@@ -41,7 +41,7 @@ export class TrackingController {
 
   @Get('workers/:id')
   @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'Get technician location by ID' })
+  @ApiOperation({ summary: 'Get employee location by ID' })
   async getWorkerLocation(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_worker_location' }, {
@@ -54,7 +54,7 @@ export class TrackingController {
 
   @Get('workers/:id/history')
   @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'Get technician location history' })
+  @ApiOperation({ summary: 'Get employee location history' })
   async getWorkerHistory(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_worker_history' }, {
@@ -67,11 +67,12 @@ export class TrackingController {
 
   @Get('workers/:id/current-route')
   @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'Get technician current EN_ROUTE journey' })
-  async getWorkerCurrentRoute(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Get employee current EN_ROUTE journey' })
+  async getWorkerCurrentRoute(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_worker_current_route' }, {
         workerId: id,
+        organizationId: req.user.organizationId,
       }),
     );
   }
@@ -79,10 +80,11 @@ export class TrackingController {
   @Get('tasks/:taskId/route')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get full route for a task' })
-  async getTaskRoute(@Param('taskId') taskId: string) {
+  async getTaskRoute(@Param('taskId') taskId: string, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_task_route' }, {
         taskId,
+        organizationId: req.user.organizationId,
       }),
     );
   }

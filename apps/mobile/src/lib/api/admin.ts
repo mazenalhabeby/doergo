@@ -33,6 +33,8 @@ export interface OrgMember {
   role: string;
   platform: string;
   isActive: boolean;
+  avatarUrl?: string | null;
+  position?: string | null;
   specialty?: string | null;
   workMode?: string;
   canCreateTasks: boolean;

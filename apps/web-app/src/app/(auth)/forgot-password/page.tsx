@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { notify } from '@/lib/toast';
 import { Mail, ArrowLeft, CheckCircle, Send } from 'lucide-react';
 import { Button, Input, Label } from '@/components/ui';
 import { AnimatedLogo } from '@/components/auth';
@@ -38,13 +38,9 @@ export default function ForgotPasswordPage() {
       await authApi.forgotPassword(email);
 
       setIsSubmitted(true);
-      toast.success(t('auth.forgotPassword.resetLinkSentTitle'), {
-        description: t('auth.forgotPassword.resetLinkSentDescription'),
-      });
+      notify.success(t('auth.forgotPassword.resetLinkSentTitle'), t('auth.forgotPassword.resetLinkSentDescription'));
     } catch (err) {
-      toast.error(t('auth.forgotPassword.errorTitle'), {
-        description: err instanceof Error ? err.message : t('auth.forgotPassword.errorDescription'),
-      });
+      notify.error(err instanceof Error ? err.message : t('auth.forgotPassword.errorDescription'));
     } finally {
       setIsLoading(false);
     }

@@ -3,16 +3,17 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TaskStatus } from '@hbcfield/shared';
+import { Role, TaskStatus, getDefaultModules } from '@hbcfield/shared';
 import * as bcrypt from 'bcrypt';
 import {
-  CreateTechnicianDto,
-  UpdateTechnicianDto,
-  ListTechniciansDto,
-  GetTechnicianDetailDto,
-  GetTechnicianPerformanceDto,
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  ListEmployeesDto,
+  GetEmployeeDetailDto,
+  GetEmployeePerformanceDto,
   ListOrgMembersDto,
   UpdateMemberRoleDto,
   UpdateMemberProfileDto,
@@ -41,6 +42,7 @@ export class UsersService {
         createdAt: true,
         // Permission fields
         canCreateTasks: true,
+        taskCreationScope: true,
         canViewAllTasks: true,
         canAssignTasks: true,
         canManageUsers: true,
@@ -74,6 +76,7 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
+        avatarUrl: true,
         organizationId: true,
         lastLocation: true,
       },
@@ -103,17 +106,17 @@ export class UsersService {
   }
 
   // ============================================================================
-  // TECHNICIAN MANAGEMENT METHODS
+  // EMPLOYEE MANAGEMENT METHODS
   // ============================================================================
 
   /**
-   * List technicians with filtering and pagination
+   * List employees with filtering and pagination
    */
-  async listTechnicians(dto: ListTechniciansDto) {
+  async listEmployees(dto: ListEmployeesDto) {
     const {
       organizationId,
       status = 'active',
-      
+
       specialty,
       search,
       page = 1,
@@ -124,7 +127,7 @@ export class UsersService {
 
     // Build where clause
     const where: any = {
-      role: Role.TECHNICIAN,
+      role: Role.EMPLOYEE,
       organizationId,
     };
 
@@ -134,8 +137,6 @@ export class UsersService {
     } else if (status === 'inactive') {
       where.isActive = false;
     }
-
-    // Type filter
 
     // Position filter
     if (dto.position) {
@@ -181,14 +182,15 @@ export class UsersService {
     // Get total count
     const total = await this.prisma.user.count({ where });
 
-    // Get technicians with task counts
-    const technicians = await this.prisma.user.findMany({
+    // Get employees with task counts
+    const employees = await this.prisma.user.findMany({
       where,
       select: {
         id: true,
         email: true,
         firstName: true,
         lastName: true,
+        avatarUrl: true,
         isActive: true,
         position: true,
         enabledModules: true,
@@ -229,24 +231,24 @@ export class UsersService {
       take: limit,
     });
 
-    // Transform to TechnicianListItem format
-    const data = technicians.map((tech) => ({
-      id: tech.id,
-      email: tech.email,
-      firstName: tech.firstName,
-      lastName: tech.lastName,
-      isActive: tech.isActive,
-      position: tech.position,
-      enabledModules: tech.enabledModules as string[] | null,
-      specialty: tech.specialty,
-      rating: tech.rating || 5.0,
-      ratingCount: tech.ratingCount || 0,
-      maxDailyJobs: tech.maxDailyJobs || 5,
-      canCreateTasks: tech.canCreateTasks,
-      currentTaskCount: tech._count.assignedTasks,
-      todayTaskCount: tech._count.assignedTasks, // Will be refined if needed
-      isOnline: this.isOnline(tech.lastLocation?.updatedAt),
-      lastLocationUpdatedAt: tech.lastLocation?.updatedAt?.toISOString() || null,
+    // Transform to list item format
+    const data = employees.map((emp) => ({
+      id: emp.id,
+      email: emp.email,
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      isActive: emp.isActive,
+      position: emp.position,
+      enabledModules: emp.enabledModules as string[] | null,
+      specialty: emp.specialty,
+      rating: emp.rating || 5.0,
+      ratingCount: emp.ratingCount || 0,
+      maxDailyJobs: emp.maxDailyJobs || 5,
+      canCreateTasks: emp.canCreateTasks,
+      currentTaskCount: emp._count.assignedTasks,
+      todayTaskCount: emp._count.assignedTasks, // Will be refined if needed
+      isOnline: this.isOnline(emp.lastLocation?.updatedAt),
+      lastLocationUpdatedAt: emp.lastLocation?.updatedAt?.toISOString() || null,
     }));
 
     return {
@@ -262,22 +264,23 @@ export class UsersService {
   }
 
   /**
-   * Get full technician detail with stats
+   * Get full employee detail with stats
    */
-  async getTechnicianDetail(dto: GetTechnicianDetailDto) {
+  async getEmployeeDetail(dto: GetEmployeeDetailDto) {
     const { id, organizationId } = dto;
 
-    const technician = await this.prisma.user.findFirst({
+    const employee = await this.prisma.user.findFirst({
       where: {
         id,
         organizationId,
-        role: Role.TECHNICIAN,
+        role: Role.EMPLOYEE,
       },
       select: {
         id: true,
         email: true,
         firstName: true,
         lastName: true,
+        avatarUrl: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -307,47 +310,47 @@ export class UsersService {
       },
     });
 
-    if (!technician) {
-      throw new NotFoundException('Technician not found');
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
     }
 
     // Batch all stats queries in parallel to avoid N+1
     const [taskStats, attendanceStats, recentActivity] = await Promise.all([
-      this.getTaskStatsForTechnician(id),
-      this.getAttendanceStatsForTechnician(id),
-      this.getRecentActivityForTechnician(id),
+      this.getTaskStatsForEmployee(id),
+      this.getAttendanceStatsForEmployee(id),
+      this.getRecentActivityForEmployee(id),
     ]);
 
     // Build response
     const profile = {
-      id: technician.id,
-      email: technician.email,
-      firstName: technician.firstName,
-      lastName: technician.lastName,
-      role: technician.role,
-      isActive: technician.isActive,
-      createdAt: technician.createdAt.toISOString(),
-      updatedAt: technician.updatedAt.toISOString(),
-      position: technician.position,
-      enabledModules: technician.enabledModules as string[] | null,
-      specialty: technician.specialty,
-      rating: technician.rating || 5.0,
-      ratingCount: technician.ratingCount || 0,
-      maxDailyJobs: technician.maxDailyJobs || 5,
-      canCreateTasks: technician.canCreateTasks,
-      organizationId: technician.organizationId,
-      organization: technician.organization,
-      lastLocation: technician.lastLocation
+      id: employee.id,
+      email: employee.email,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      role: employee.role,
+      isActive: employee.isActive,
+      createdAt: employee.createdAt.toISOString(),
+      updatedAt: employee.updatedAt.toISOString(),
+      position: employee.position,
+      enabledModules: employee.enabledModules as string[] | null,
+      specialty: employee.specialty,
+      rating: employee.rating || 5.0,
+      ratingCount: employee.ratingCount || 0,
+      maxDailyJobs: employee.maxDailyJobs || 5,
+      canCreateTasks: employee.canCreateTasks,
+      organizationId: employee.organizationId,
+      organization: employee.organization,
+      lastLocation: employee.lastLocation
         ? {
-            lat: technician.lastLocation.lat,
-            lng: technician.lastLocation.lng,
-            accuracy: technician.lastLocation.accuracy,
-            updatedAt: technician.lastLocation.updatedAt.toISOString(),
+            lat: employee.lastLocation.lat,
+            lng: employee.lastLocation.lng,
+            accuracy: employee.lastLocation.accuracy,
+            updatedAt: employee.lastLocation.updatedAt.toISOString(),
           }
         : null,
       lastLocationUpdatedAt:
-        technician.lastLocation?.updatedAt?.toISOString() || null,
-      isOnline: this.isOnline(technician.lastLocation?.updatedAt),
+        employee.lastLocation?.updatedAt?.toISOString() || null,
+      isOnline: this.isOnline(employee.lastLocation?.updatedAt),
       currentTaskCount: taskStats.inProgress,
       todayTaskCount: taskStats.todayTotal,
       completedTaskCount: taskStats.completed,
@@ -359,8 +362,8 @@ export class UsersService {
       performance: {
         completionRate: taskStats.completionRate,
         onTimeRate: taskStats.onTimeRate,
-        customerRating: technician.rating || 5.0,
-        ratingCount: technician.ratingCount || 0,
+        customerRating: employee.rating || 5.0,
+        ratingCount: employee.ratingCount || 0,
       },
       recentActivity,
     };
@@ -375,15 +378,15 @@ export class UsersService {
   }
 
   /**
-   * Create a new technician
+   * Create a new employee
    */
-  async createTechnician(dto: CreateTechnicianDto) {
+  async createEmployee(dto: CreateEmployeeDto) {
     const {
       email,
       firstName,
       lastName,
       password,
-      
+
       position = 'technician',
       enabledModules,
       specialty,
@@ -405,17 +408,16 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(actualPassword, BCRYPT_COST_FACTOR);
 
     // Determine default modules from position if not provided
-    const { getDefaultModules } = require("@hbcfield/shared");
     const modules = enabledModules || getDefaultModules(position);
 
-    // Create technician
-    const technician = await this.prisma.user.create({
+    // Create employee
+    const employee = await this.prisma.user.create({
       data: {
         email,
         firstName,
         lastName,
         passwordHash,
-        role: Role.TECHNICIAN,
+        role: Role.EMPLOYEE,
         position,
         enabledModules: modules,
         specialty,
@@ -432,6 +434,7 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
+        avatarUrl: true,
         role: true,
         isActive: true,
         position: true,
@@ -445,34 +448,34 @@ export class UsersService {
 
     return {
       success: true,
-      data: technician,
+      data: employee,
       // Include generated password only if we generated it
       ...(password ? {} : { generatedPassword: actualPassword }),
     };
   }
 
   /**
-   * Update a technician
+   * Update an employee
    */
-  async updateTechnician(
+  async updateEmployee(
     id: string,
     organizationId: string,
-    dto: UpdateTechnicianDto,
+    dto: UpdateEmployeeDto,
   ) {
-    // Verify technician exists and belongs to organization
+    // Verify employee exists and belongs to organization
     const existing = await this.prisma.user.findFirst({
       where: {
         id,
         organizationId,
-        role: Role.TECHNICIAN,
+        role: Role.EMPLOYEE,
       },
     });
 
     if (!existing) {
-      throw new NotFoundException('Technician not found');
+      throw new NotFoundException('Employee not found');
     }
 
-    const technician = await this.prisma.user.update({
+    const employee = await this.prisma.user.update({
       where: { id },
       data: {
         ...(dto.firstName !== undefined && { firstName: dto.firstName }),
@@ -492,6 +495,7 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
+        avatarUrl: true,
         role: true,
         isActive: true,
         position: true,
@@ -506,24 +510,24 @@ export class UsersService {
       },
     });
 
-    return { success: true, data: technician };
+    return { success: true, data: employee };
   }
 
   /**
-   * Deactivate a technician (soft delete)
+   * Deactivate an employee (soft delete)
    */
-  async deactivateTechnician(id: string, organizationId: string) {
-    // Verify technician exists and belongs to organization
+  async deactivateEmployee(id: string, organizationId: string) {
+    // Verify employee exists and belongs to organization
     const existing = await this.prisma.user.findFirst({
       where: {
         id,
         organizationId,
-        role: Role.TECHNICIAN,
+        role: Role.EMPLOYEE,
       },
     });
 
     if (!existing) {
-      throw new NotFoundException('Technician not found');
+      throw new NotFoundException('Employee not found');
     }
 
     // Check for active tasks
@@ -544,7 +548,7 @@ export class UsersService {
 
     if (activeTasks > 0) {
       throw new BadRequestException(
-        `Cannot deactivate technician with ${activeTasks} active task(s). Please reassign tasks first.`,
+        `Cannot deactivate employee with ${activeTasks} active task(s). Please reassign tasks first.`,
       );
     }
 
@@ -553,27 +557,27 @@ export class UsersService {
       data: { isActive: false },
     });
 
-    return { success: true, message: 'Technician deactivated successfully' };
+    return { success: true, message: 'Employee deactivated successfully' };
   }
 
   /**
-   * Get technician performance metrics
+   * Get employee performance metrics
    */
-  async getTechnicianPerformance(dto: GetTechnicianPerformanceDto) {
+  async getEmployeePerformance(dto: GetEmployeePerformanceDto) {
     const { id, organizationId, startDate, endDate } = dto;
 
-    // Verify technician exists
-    const technician = await this.prisma.user.findFirst({
+    // Verify employee exists
+    const employee = await this.prisma.user.findFirst({
       where: {
         id,
         organizationId,
-        role: Role.TECHNICIAN,
+        role: Role.EMPLOYEE,
       },
       select: { rating: true, ratingCount: true },
     });
 
-    if (!technician) {
-      throw new NotFoundException('Technician not found');
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
     }
 
     // Default to last 30 days if no date range provided
@@ -644,7 +648,7 @@ export class UsersService {
           completionRate: total > 0 ? (completed / total) * 100 : 0,
           onTimeRate: completed > 0 ? (completedOnTime / completed) * 100 : 0,
           tasksCompleted: completed,
-          customerRating: technician.rating || 5.0,
+          customerRating: employee.rating || 5.0,
           totalHoursWorked: totalHours,
         },
         trends,
@@ -687,11 +691,15 @@ export class UsersService {
         lastName: true,
         role: true,
         isActive: true,
+        avatarUrl: true,
         createdAt: true,
         position: true,
+        scheduleType: true,
+        monthlyHourBudget: true,
         enabledModules: true,
         specialty: true,
         canCreateTasks: true,
+        taskCreationScope: true,
         canViewAllTasks: true,
         canAssignTasks: true,
         canManageUsers: true,
@@ -716,6 +724,34 @@ export class UsersService {
   /**
    * Update a member's role and permissions
    */
+  /**
+   * Guard against privilege escalation: only an ADMIN may create/modify admins
+   * or grant the user-management power. A non-admin holding `canManageUsers`
+   * (e.g. a MANAGER) can still manage lower roles, but cannot mint admins or
+   * touch an existing admin.
+   */
+  private async assertCanGrantRoleAndPerms(
+    requesterId: string,
+    organizationId: string,
+    member: { role: string },
+    dto: { role?: string; canManageUsers?: boolean },
+  ) {
+    const requester = await this.prisma.user.findFirst({
+      where: { id: requesterId, organizationId },
+      select: { role: true },
+    });
+    if (requester?.role === Role.ADMIN) return; // admins may do anything
+
+    const grantsAdmin = dto.role === Role.ADMIN;
+    const targetIsAdmin = member.role === Role.ADMIN;
+    const grantsUserMgmt = dto.canManageUsers === true || dto.role === Role.ADMIN;
+    if (grantsAdmin || targetIsAdmin || grantsUserMgmt) {
+      throw new ForbiddenException(
+        'Only an admin can grant or modify admin-level access',
+      );
+    }
+  }
+
   async updateMemberRole(
     memberId: string,
     organizationId: string,
@@ -736,6 +772,8 @@ export class UsersService {
       throw new NotFoundException('Member not found');
     }
 
+    await this.assertCanGrantRoleAndPerms(requesterId, organizationId, member, dto);
+
     // If demoting from ADMIN, check there's at least one other active ADMIN
     if (member.role === Role.ADMIN && dto.role !== Role.ADMIN) {
       const adminCount = await this.prisma.user.count({
@@ -754,19 +792,18 @@ export class UsersService {
       }
     }
 
-    // Set default platform based on role if not provided
     const updated = await this.prisma.user.update({
       where: { id: memberId },
       data: {
         role: dto.role as any,
-        
+
         canCreateTasks: dto.canCreateTasks ?? (dto.role === Role.ADMIN),
         canViewAllTasks:
           dto.canViewAllTasks ??
-          (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER),
+          (dto.role === Role.ADMIN || dto.role === Role.MANAGER),
         canAssignTasks:
           dto.canAssignTasks ??
-          (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER),
+          (dto.role === Role.ADMIN || dto.role === Role.MANAGER),
         canManageUsers: dto.canManageUsers ?? (dto.role === Role.ADMIN),
       },
       select: {
@@ -774,6 +811,7 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
+        avatarUrl: true,
         role: true,
         isActive: true,
         canCreateTasks: true,
@@ -855,11 +893,19 @@ export class UsersService {
       throw new NotFoundException('Member not found');
     }
 
+    // Block privilege escalation when role/permissions are being changed.
+    if (dto.role !== undefined || dto.canManageUsers !== undefined) {
+      await this.assertCanGrantRoleAndPerms(requesterId, organizationId, member, dto);
+    }
+
     const data: any = {};
 
     // Profile fields
     if (dto.firstName !== undefined) data.firstName = dto.firstName;
     if (dto.lastName !== undefined) data.lastName = dto.lastName;
+    if (dto.position !== undefined) data.position = dto.position;
+    if (dto.scheduleType !== undefined) data.scheduleType = dto.scheduleType;
+    if (dto.monthlyHourBudget !== undefined) data.monthlyHourBudget = dto.monthlyHourBudget;
 
     // Role/permission fields — only if role is provided
     if (dto.role !== undefined) {
@@ -890,16 +936,22 @@ export class UsersService {
 
       // Set default platform based on role if not provided
       data.canCreateTasks = dto.canCreateTasks ?? (dto.role === Role.ADMIN);
+      // Default taskCreationScope by role
+      const defaultScope = dto.role === Role.ADMIN ? 'ORG'
+        : dto.role === Role.MANAGER ? 'SPACE'
+        : 'SELF';
+      data.taskCreationScope = dto.taskCreationScope ?? defaultScope;
       data.canViewAllTasks =
         dto.canViewAllTasks ??
-        (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER);
+        (dto.role === Role.ADMIN || dto.role === Role.MANAGER);
       data.canAssignTasks =
         dto.canAssignTasks ??
-        (dto.role === Role.ADMIN || dto.role === Role.DISPATCHER);
+        (dto.role === Role.ADMIN || dto.role === Role.MANAGER);
       data.canManageUsers = dto.canManageUsers ?? (dto.role === Role.ADMIN);
     } else {
       // No role change — still allow updating individual permission/platform fields
       if (dto.canCreateTasks !== undefined) data.canCreateTasks = dto.canCreateTasks;
+      if (dto.taskCreationScope !== undefined) data.taskCreationScope = dto.taskCreationScope;
       if (dto.canViewAllTasks !== undefined) data.canViewAllTasks = dto.canViewAllTasks;
       if (dto.canAssignTasks !== undefined) data.canAssignTasks = dto.canAssignTasks;
       if (dto.canManageUsers !== undefined) data.canManageUsers = dto.canManageUsers;
@@ -913,9 +965,14 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
+        avatarUrl: true,
         role: true,
         isActive: true,
+        position: true,
+        scheduleType: true,
+        monthlyHourBudget: true,
         canCreateTasks: true,
+        taskCreationScope: true,
         canViewAllTasks: true,
         canAssignTasks: true,
         canManageUsers: true,
@@ -953,10 +1010,16 @@ export class UsersService {
     const temporaryPassword = this.generateRandomPassword();
     const passwordHash = await bcrypt.hash(temporaryPassword, BCRYPT_COST_FACTOR);
 
-    await this.prisma.user.update({
-      where: { id: memberId },
-      data: { passwordHash },
-    });
+    // Update the hash AND revoke all of the member's sessions atomically — an
+    // admin resets a compromised account to lock an attacker out, so any
+    // existing refresh tokens must stop working immediately.
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: memberId },
+        data: { passwordHash },
+      }),
+      this.prisma.refreshToken.deleteMany({ where: { userId: memberId } }),
+    ]);
 
     return { success: true, temporaryPassword };
   }
@@ -981,7 +1044,7 @@ export class UsersService {
     return password;
   }
 
-  private async getTaskStatsForTechnician(technicianId: string) {
+  private async getTaskStatsForEmployee(employeeId: string) {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -989,17 +1052,17 @@ export class UsersService {
     const [statusCounts, priorityCounts, todayCount] = await Promise.all([
       this.prisma.task.groupBy({
         by: ['status'],
-        where: { assignedToId: technicianId },
+        where: { assignedToId: employeeId },
         _count: { status: true },
       }),
       this.prisma.task.groupBy({
         by: ['priority'],
-        where: { assignedToId: technicianId },
+        where: { assignedToId: employeeId },
         _count: { priority: true },
       }),
       this.prisma.task.count({
         where: {
-          assignedToId: technicianId,
+          assignedToId: employeeId,
           createdAt: { gte: todayStart },
         },
       }),
@@ -1041,7 +1104,7 @@ export class UsersService {
       const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
       const recentCompleted = await this.prisma.task.findMany({
         where: {
-          assignedToId: technicianId,
+          assignedToId: employeeId,
           status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
           createdAt: { gte: ninetyDaysAgo },
         },
@@ -1068,7 +1131,7 @@ export class UsersService {
     };
   }
 
-  private async getAttendanceStatsForTechnician(technicianId: string) {
+  private async getAttendanceStatsForEmployee(employeeId: string) {
     const now = new Date();
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - now.getDay());
@@ -1079,7 +1142,7 @@ export class UsersService {
     // Batch both queries in parallel - month entries include week entries
     const monthEntries = await this.prisma.timeEntry.findMany({
       where: {
-        userId: technicianId,
+        userId: employeeId,
         clockInAt: { gte: monthStart },
       },
       select: {
@@ -1115,12 +1178,12 @@ export class UsersService {
     };
   }
 
-  private async getRecentActivityForTechnician(technicianId: string) {
+  private async getRecentActivityForEmployee(employeeId: string) {
     const activities: any[] = [];
 
     // Get recent task events
     const taskEvents = await this.prisma.taskEvent.findMany({
-      where: { userId: technicianId },
+      where: { userId: employeeId },
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
@@ -1144,7 +1207,7 @@ export class UsersService {
 
     // Get recent time entries
     const timeEntries = await this.prisma.timeEntry.findMany({
-      where: { userId: technicianId },
+      where: { userId: employeeId },
       orderBy: { clockInAt: 'desc' },
       take: 5,
       select: {

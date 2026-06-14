@@ -19,7 +19,8 @@ import { format, differenceInCalendarDays, parseISO } from "date-fns"
 import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
-import { tasksApi, usersApi, techniciansApi, type TimeOffRequest } from "@/lib/api"
+import { UserAvatar } from "@/components/user-avatar"
+import { tasksApi, usersApi, employeesApi, type TimeOffRequest } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import {
   StatCard,
@@ -33,7 +34,7 @@ import {
   type TeamMember,
   type RecentTask,
 } from "@/components/dashboard"
-import { getGreeting, pluralize } from "./helpers"
+import { getGreeting } from "./helpers"
 
 export function DispatcherDashboard() {
   const { user } = useAuth()
@@ -45,8 +46,8 @@ export function DispatcherDashboard() {
     queryFn: () => tasksApi.list(),
   })
 
-  // Fetch workers
-  const { data: workersData } = useQuery({
+  // Fetch employees
+  const { data: employeesData } = useQuery({
     queryKey: ["workers"],
     queryFn: () => usersApi.getWorkers(),
   })
@@ -54,11 +55,11 @@ export function DispatcherDashboard() {
   // Fetch pending time-off requests
   const { data: pendingTimeOff = [] } = useQuery({
     queryKey: ["orgTimeOff", "PENDING"],
-    queryFn: () => techniciansApi.getOrgTimeOff("PENDING"),
+    queryFn: () => employeesApi.getOrgTimeOff("PENDING"),
   })
 
   const tasks = tasksData?.data || []
-  const workers = workersData || []
+  const employees = employeesData || []
 
   // Calculate stats
   const activeTasks = tasks.filter(t =>
@@ -71,7 +72,7 @@ export function DispatcherDashboard() {
     return updated.toDateString() === today.toDateString()
   }).length
   const pendingAssignment = tasks.filter(t => t.status === "NEW").length
-  const onlineWorkers = workers.length // In real app, would check last location timestamp
+  const onlineEmployees = employees.length // In real app, would check last location timestamp
 
   // Task distribution for chart
   const chartData = [
@@ -83,7 +84,7 @@ export function DispatcherDashboard() {
   ].filter(d => d.value > 0)
 
   // Team members
-  const teamMembers: TeamMember[] = workers.map((w, idx) => ({
+  const teamMembers: TeamMember[] = employees.map((w, idx) => ({
     id: w.id,
     name: `${w.firstName} ${w.lastName}`,
     status: idx === 0 ? "busy" : idx === 1 ? "online" : "offline",
@@ -121,12 +122,6 @@ export function DispatcherDashboard() {
   // Quick actions for DISPATCHER
   const quickActions = [
     {
-      label: t("dashboard.dispatcher.liveMap"),
-      description: t("dashboard.dispatcher.trackTechnicians"),
-      href: "/map",
-      icon: Map,
-    },
-    {
       label: t("dashboard.dispatcher.allTasks"),
       description: t("dashboard.dispatcher.manageAllTasks"),
       href: "/tasks",
@@ -134,8 +129,8 @@ export function DispatcherDashboard() {
     },
     {
       label: t("dashboard.dispatcher.team"),
-      description: t("dashboard.dispatcher.manageTechnicians"),
-      href: "/technicians",
+      description: t("dashboard.dispatcher.manageEmployees"),
+      href: "/employees",
       icon: Users,
     },
     {
@@ -159,8 +154,8 @@ export function DispatcherDashboard() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             <span className="font-medium text-foreground">{activeTasks} {t("dashboard.dispatcher.activeTasks").toLowerCase()}</span>
-            {onlineWorkers > 0 && (
-              <> · <span className="font-medium text-foreground">{t("dashboard.dispatcher.total", { count: onlineWorkers })} {t("dashboard.dispatcher.technicians").toLowerCase()}</span></>
+            {onlineEmployees > 0 && (
+              <> · <span className="font-medium text-foreground">{t("dashboard.dispatcher.total", { count: onlineEmployees })} {t("dashboard.dispatcher.employees").toLowerCase()}</span></>
             )}
             {pendingAssignment > 0 && (
               <> · <span className="font-medium text-amber-600">{t("dashboard.dispatcher.unassigned", { count: pendingAssignment })}</span></>
@@ -188,10 +183,10 @@ export function DispatcherDashboard() {
           trendValue={t("dashboard.dispatcher.live")}
         />
         <StatCard
-          title={t("dashboard.dispatcher.technicians")}
-          value={onlineWorkers}
+          title={t("dashboard.dispatcher.employees")}
+          value={onlineEmployees}
           icon={Users}
-          description={t("dashboard.dispatcher.total", { count: workers.length })}
+          description={t("dashboard.dispatcher.total", { count: employees.length })}
         />
         <StatCard
           title={t("dashboard.dispatcher.completedToday")}
@@ -217,7 +212,7 @@ export function DispatcherDashboard() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-foreground">{t("dashboard.dispatcher.teamStatus")}</h2>
               <Link
-                href="/technicians"
+                href="/employees"
                 className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("dashboard.dispatcher.manageTeam")}
@@ -229,7 +224,7 @@ export function DispatcherDashboard() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Users className="mb-3 size-8 text-muted-foreground" strokeWidth={1.5} />
-                  <p className="text-sm text-muted-foreground">{t("dashboard.dispatcher.noTechniciansFound")}</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.dispatcher.noEmployeesFound")}</p>
                   <p className="text-[13px] text-muted-foreground mt-1">{t("dashboard.dispatcher.addTeamMembersToGetStarted")}</p>
                 </div>
               )}
@@ -282,7 +277,7 @@ export function DispatcherDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground">{t("dashboard.dispatcher.timeOffRequests")}</h2>
                 <Link
-                  href="/technicians/availability?tab=time-off"
+                  href="/employees/availability?tab=time-off"
                   className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {t("dashboard.dispatcher.viewAll")}
@@ -301,9 +296,13 @@ export function DispatcherDashboard() {
                     className="flex items-center justify-between rounded-lg bg-card p-3 border border-border"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-[11px] font-medium text-muted-foreground shrink-0">
-                        {req.technician?.firstName?.[0]}{req.technician?.lastName?.[0]}
-                      </div>
+                      <UserAvatar
+                        firstName={req.technician?.firstName}
+                        lastName={req.technician?.lastName}
+                        avatarUrl={req.technician?.avatarUrl}
+                        seed={req.technician?.id}
+                        size="sm"
+                      />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
                           {req.technician?.firstName} {req.technician?.lastName}
@@ -320,7 +319,7 @@ export function DispatcherDashboard() {
                 ))}
                 {pendingTimeOff.length > 3 && (
                   <Link
-                    href="/technicians/availability?tab=time-off"
+                    href="/employees/availability?tab=time-off"
                     className="flex items-center justify-center gap-1 text-[13px] font-medium text-amber-700 hover:text-amber-800 pt-1"
                   >
                     {t("dashboard.dispatcher.more", { count: pendingTimeOff.length - 3 })}

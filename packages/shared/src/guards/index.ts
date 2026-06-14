@@ -9,72 +9,47 @@
 export { OnboardingCompleteGuard } from './onboarding.guard';
 export { PermissionsGuard } from './permissions.guard';
 
-import { Role } from '../types';
+import { Role, normalizeRole } from '../types';
 
 // ============================================
 // Role-based helpers
 // ============================================
 
 /**
- * Helper to check if a user has a specific role
- * Useful for conditional logic within services
+ * Helper to check if a user has a specific role (handles legacy values)
  */
 export function hasRole(user: { role: string }, ...roles: Role[]): boolean {
-  // Handle backward compatibility: CLIENT maps to ADMIN, WORKER/TECHNICIAN maps to EMPLOYEE
-  let normalizedRole: string = user.role;
-  if (user.role === 'CLIENT') normalizedRole = Role.ADMIN;
-  if (user.role === 'WORKER' || user.role === 'TECHNICIAN') normalizedRole = Role.EMPLOYEE;
-  return roles.some((role) => normalizedRole === role
-    || (role === Role.ADMIN && user.role === 'CLIENT')
-    || (role === Role.EMPLOYEE && (user.role === 'WORKER' || user.role === 'TECHNICIAN'))
-    || (role === Role.TECHNICIAN && (user.role === 'WORKER' || user.role === 'TECHNICIAN' || user.role === 'EMPLOYEE'))
-  );
+  const normalized = normalizeRole(user.role);
+  return roles.some((role) => normalized === role || normalized === normalizeRole(role));
 }
 
-/**
- * Helper to check if user is an ADMIN (organization owner)
- */
+/** Check if user is ADMIN */
 export function isAdmin(user: { role: string }): boolean {
-  return user.role === Role.ADMIN || user.role === Role.CLIENT; // CLIENT is deprecated alias
+  const r = normalizeRole(user.role);
+  return r === Role.ADMIN;
 }
 
-/**
- * Helper to check if user is a CLIENT
- * @deprecated Use isAdmin() instead
- */
-export function isClient(user: { role: string }): boolean {
-  return isAdmin(user); // Alias for backward compatibility
+/** Check if user is MANAGER (formerly Dispatcher) */
+export function isManager(user: { role: string }): boolean {
+  const r = normalizeRole(user.role);
+  return r === Role.MANAGER;
 }
 
-/**
- * Helper to check if user is a DISPATCHER
- */
-export function isDispatcher(user: { role: string }): boolean {
-  return user.role === Role.DISPATCHER;
-}
-
-/**
- * Helper to check if user is a TECHNICIAN/EMPLOYEE
- * Handles TECHNICIAN, EMPLOYEE, and legacy WORKER values
- */
-export function isTechnician(user: { role: string }): boolean {
-  return user.role === Role.TECHNICIAN || user.role === Role.EMPLOYEE || user.role === 'WORKER';
-}
-
-/**
- * Helper to check if user is an EMPLOYEE (preferred over isTechnician)
- * Handles TECHNICIAN, EMPLOYEE, and legacy WORKER values
- */
+/** Check if user is EMPLOYEE (formerly Technician) */
 export function isEmployee(user: { role: string }): boolean {
-  return isTechnician(user);
+  const r = normalizeRole(user.role);
+  return r === Role.EMPLOYEE;
 }
 
-/**
- * Helper to check if user is a WORKER (alias for isTechnician/isEmployee)
- */
-export function isWorker(user: { role: string }): boolean {
-  return isTechnician(user);
-}
+// ── Legacy aliases (backward compat) ──
+/** @deprecated Use isAdmin() */
+export function isClient(user: { role: string }): boolean { return isAdmin(user); }
+/** @deprecated Use isManager() */
+export function isDispatcher(user: { role: string }): boolean { return isManager(user); }
+/** @deprecated Use isEmployee() */
+export function isTechnician(user: { role: string }): boolean { return isEmployee(user); }
+/** @deprecated Use isEmployee() */
+export function isWorker(user: { role: string }): boolean { return isEmployee(user); }
 
 // ============================================
 // Permission-based helpers
@@ -83,6 +58,7 @@ export function isWorker(user: { role: string }): boolean {
 interface UserWithPermissions {
   role: string;
   canCreateTasks?: boolean;
+  taskCreationScope?: string;
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
   canManageUsers?: boolean;
@@ -104,18 +80,18 @@ export function canCreateTasks(user: UserWithPermissions): boolean {
  */
 export function canViewAllTasks(user: UserWithPermissions): boolean {
   if (user.canViewAllTasks !== undefined) return user.canViewAllTasks;
-  // Default: ADMIN and DISPATCHER can view all tasks
-  return isAdmin(user) || isDispatcher(user);
+  // Default: ADMIN and MANAGER can view all tasks
+  return isAdmin(user) || isManager(user);
 }
 
 /**
- * Check if user can assign tasks to technicians
+ * Check if user can assign tasks to workers
  * Falls back to role-based check if permission not explicitly set
  */
 export function canAssignTasks(user: UserWithPermissions): boolean {
   if (user.canAssignTasks !== undefined) return user.canAssignTasks;
-  // Default: ADMIN and DISPATCHER can assign tasks
-  return isAdmin(user) || isDispatcher(user);
+  // Default: ADMIN and MANAGER can assign tasks
+  return isAdmin(user) || isManager(user);
 }
 
 /**
@@ -126,4 +102,19 @@ export function canManageUsers(user: UserWithPermissions): boolean {
   if (user.canManageUsers !== undefined) return user.canManageUsers;
   // Default: Only ADMIN can manage users
   return isAdmin(user);
+}
+
+// ============================================
+// Task creation scope helpers
+// ============================================
+
+const SCOPE_HIERARCHY = ['NONE', 'SELF', 'SPACE', 'ORG'] as const;
+
+/**
+ * Check if user's taskCreationScope is at least the given scope level.
+ * Falls back to 'NONE' if taskCreationScope is not set.
+ */
+export function canCreateTaskFor(user: UserWithPermissions, scope: 'SELF' | 'SPACE' | 'ORG'): boolean {
+  const userScope = user?.taskCreationScope || 'NONE';
+  return SCOPE_HIERARCHY.indexOf(userScope as typeof SCOPE_HIERARCHY[number]) >= SCOPE_HIERARCHY.indexOf(scope);
 }

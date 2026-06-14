@@ -573,28 +573,31 @@ pnpm build            # Build all packages
 
 ## 11. TEST CREDENTIALS (Seed Data)
 
-| Role | Email | Password | Platform | Type | WorkMode | Permissions |
-|------|-------|----------|----------|------|----------|-------------|
-| Admin | client@example.com | password123 | BOTH | - | - | All permissions |
-| Dispatcher | dispatcher@example.com | password123 | WEB | - | - | canViewAllTasks, canAssignTasks |
-| Technician 1 | technician1@example.com | password123 | MOBILE | FULL_TIME | ON_SITE | None (executor only) |
-| Technician 2 | technician2@example.com | password123 | MOBILE | FREELANCER | ON_ROAD | None (executor only) |
-| Technician 3 | technician3@example.com | password123 | MOBILE | FULL_TIME | HYBRID | None (executor only, all 5 tabs) |
-| New User (orphan) | newuser@example.com | password123 | - | - | - | No org, onboarding incomplete |
+> **⚠️ The running dev DB is seeded with `seed-demo.ts`, not `seed.ts`.** The accounts below are what actually exist. All use password `password123`. Roles are canonical (ADMIN/MANAGER/EMPLOYEE). The older `seed.ts` accounts (`dispatcher@`, `technician1-3@`, `newuser@`) and the `ACME2026` join code are **not** present unless you run `seed.ts`.
 
-### Onboarding Test Data
-| Item | Value | Notes |
-|------|-------|-------|
-| Org Join Code | `ACME2026` | For testing "Join Organization" flow |
-| Join Policy | OPEN | Anyone with code can request to join |
-| Orphan User | newuser@example.com | Has pending join request to Acme Corp |
+| Role | Email | Name | Position |
+|------|-------|------|----------|
+| ADMIN | client@example.com | John Owner | org owner — full access |
+| MANAGER | manager@example.com | Anna Müller | Operations Manager (canViewAllTasks, canAssignTasks) |
+| EMPLOYEE | mike@example.com | Mike Weber | Field Technician |
+| EMPLOYEE | sarah@example.com | Sarah Wagner | Service Engineer |
+| EMPLOYEE | karim@example.com | Karim Ahmad | HVAC Specialist |
+| EMPLOYEE | lisa@example.com | Lisa Adler | Electrician |
+| EMPLOYEE | hassan@example.com | Hassan Berger | Maintenance Worker |
+| EMPLOYEE | dana@example.com | Dana Pichler | Logistics Coordinator |
+| EMPLOYEE | david@example.com | David Koller | Senior Technician |
+| EMPLOYEE | noor@example.com | Noor Shah | Plumber |
 
-### Sample Company Locations
+**Seeds:**
+- `pnpm db:seed` runs `seed.ts` (the documented onboarding accounts + `ACME2026` join code + orphan `newuser@example.com`).
+- `npx tsx prisma/seed-demo.ts` (run from `apps/api/auth-service`) adds the demo manager + 8 employees + 3 spaces + tasks to the existing admin's org (requires an admin to already exist).
+
+### Sample Company Locations (from seed-demo.ts, Austria)
 | Name | Address | Coordinates | Geofence |
 |------|---------|-------------|----------|
-| Main Office | 123 Business Ave, New York, NY | 40.7128, -74.0060 | 20m |
-| Warehouse | 456 Industrial Blvd, Brooklyn, NY | 40.6892, -73.9857 | 30m |
-| Service Center | 789 Tech Park, Jersey City, NJ | 40.7178, -74.0431 | 25m |
+| Main Office | Arbeiterheimstraße 32, Laakirchen | 47.9813, 13.8269 | 50m |
+| Warehouse | 456 Industrial Blvd, Gmunden | 47.9186, 13.7991 | 80m |
+| Service Center | 789 Tech Park, Vöcklabruck | 48.0037, 13.6577 | 40m |
 
 ---
 

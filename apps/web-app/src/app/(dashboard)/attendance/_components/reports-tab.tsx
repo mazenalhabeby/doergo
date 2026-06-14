@@ -116,10 +116,10 @@ function KpiCard({
   color: "blue" | "green" | "amber" | "red" | "slate"
 }) {
   const colorMap = {
-    blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-    green: { bg: "bg-green-50", text: "text-green-600", icon: "bg-green-500/15 text-green-600 dark:text-green-400" },
-    amber: { bg: "bg-amber-50", text: "text-amber-600", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-    red: { bg: "bg-red-50", text: "text-red-600", icon: "bg-red-500/15 text-red-600 dark:text-red-400" },
+    blue: { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", icon: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+    green: { bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", icon: "bg-green-500/15 text-green-600 dark:text-green-400" },
+    amber: { bg: "bg-amber-50 dark:bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+    red: { bg: "bg-red-50 dark:bg-red-500/10", text: "text-red-600 dark:text-red-400", icon: "bg-red-500/15 text-red-600 dark:text-red-400" },
     slate: { bg: "bg-muted", text: "text-muted-foreground", icon: "bg-muted text-muted-foreground" },
   }
   const c = colorMap[color]
@@ -159,7 +159,7 @@ function KpiCard({
 // HOURS BY TECHNICIAN CHART
 // ============================================================================
 
-// Color palette for each technician row
+// Color palette for each worker row
 const BAR_COLORS = [
   { bar: "from-blue-500 to-blue-400", bg: "bg-blue-50", text: "text-blue-600", ring: "ring-blue-200" },
   { bar: "from-violet-500 to-violet-400", bg: "bg-violet-50", text: "text-violet-600", ring: "ring-violet-200" },
@@ -259,7 +259,7 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
       {byUser.length > 8 && (
         <div className="text-center pt-2">
           <span className="text-[11px] text-muted-foreground bg-muted px-3 py-1 rounded-full">
-            + {byUser.length - 8} more technicians
+            + {byUser.length - 8} more workers
           </span>
         </div>
       )}
@@ -281,7 +281,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
   const [locationFilter, setLocationFilter] = useState("all")
   const [tableView, setTableView] = useState<"summary" | "location">("summary")
 
-  // When a specific location is selected, always show technician view
+  // When a specific location is selected, always show worker view
   const activeView = locationFilter !== "all" ? "summary" : tableView
 
   const preset = RANGE_PRESETS[selectedPreset]!
@@ -351,7 +351,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
     return report.byLocation.filter(l => l.location.id === locationFilter)
   }, [report, locationFilter])
 
-  // Absence estimate: total technicians - those who worked
+  // Absence estimate: total workers - those who worked
   const absences = useMemo(() => {
     if (!report) return 0
     // rough: count users who have 0 shifts could be added; for now use autoClockOuts as proxy
@@ -498,9 +498,9 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
             <div className="lg:col-span-3 bg-card rounded-2xl border border-border/60 shadow-sm">
               <div className="px-6 pt-6 pb-2 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Hours by Technician</h3>
+                  <h3 className="text-sm font-bold text-foreground">Hours by Worker</h3>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {filteredByUser.length} technician{filteredByUser.length !== 1 ? "s" : ""} · {filteredTotalHours.toFixed(1)}h total · hover for avg line
+                    {filteredByUser.length} worker{filteredByUser.length !== 1 ? "s" : ""} · {filteredTotalHours.toFixed(1)}h total · hover for avg line
                   </p>
                 </div>
               </div>
@@ -525,7 +525,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                   { label: "Standard Hours", value: `${report.summary.standardHours}h`, color: "" },
                   { label: "Overtime Hours", value: `${report.summary.overtimeHours}h`, color: report.summary.overtimeHours > 0 ? "text-amber-600" : "" },
                   { label: "Active Now", value: report.summary.activeShifts, color: "text-emerald-600" },
-                  { label: "Technicians", value: filteredByUser.length, color: "" },
+                  { label: "Workers", value: filteredByUser.length, color: "" },
                   { label: "Locations", value: filteredByLocation.length, color: "" },
                 ].map((stat, i) => (
                   <div key={stat.label} className={cn(
@@ -558,17 +558,17 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                       )}
                     >
                       {view === "summary" ? <Users className="size-3.5" /> : <MapPin className="size-3.5" />}
-                      {view === "summary" ? "By Technician" : "By Location"}
+                      {view === "summary" ? "By Worker" : "By Location"}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-blue-50">
+                  <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10">
                     <Users className="size-3.5 text-blue-600" />
                   </div>
                   <span className="text-sm font-semibold text-foreground">
-                    Technicians at {locations.find(l => l.id === locationFilter)?.name}
+                    Workers at {locations.find(l => l.id === locationFilter)?.name}
                   </span>
                 </div>
               )}
@@ -577,13 +577,13 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               </span>
             </div>
 
-            {/* Technician rows */}
+            {/* Worker rows */}
             {activeView === "summary" && (
               filteredByUser.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted">
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Technician</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Worker</TableHead>
                       <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
                       <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
                       <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Avg</TableHead>
@@ -655,7 +655,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               ) : (
                 <div className="p-16 text-center">
                   <Users className="size-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No technician data</p>
+                  <p className="text-sm font-medium text-muted-foreground">No worker data</p>
                   <p className="text-xs text-muted-foreground mt-1">No attendance records match your filters</p>
                 </div>
               )
@@ -670,7 +670,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                       <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Location</TableHead>
                       <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
                       <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Technicians</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Workers</TableHead>
                       <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Avg / Shift</TableHead>
                     </TableRow>
                   </TableHeader>

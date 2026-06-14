@@ -52,6 +52,36 @@ enum TaskEventType {
   COMMENT_ADDED
   ATTACHMENT_ADDED
   ATTACHMENT_REMOVED
+  ASSIGNEE_ADDED
+  ASSIGNEE_REMOVED
+  CHECKLIST_ITEM_ADDED
+  CHECKLIST_ITEM_TOGGLED
+  CHECKLIST_ITEM_REMOVED
+}
+
+enum TaskAssigneeRole {
+  LEAD
+  MEMBER
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  DROPDOWN
+  CHECKBOX
+  URL
+  EMAIL
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
 }
 
 enum AttachmentType {
@@ -74,6 +104,11 @@ model Organization {
   // Organization delegation relationships
   grantedAccess  OrganizationAccess[] @relation("Grantor")  // Access this org has granted to others
   receivedAccess OrganizationAccess[] @relation("Grantee")  // Access this org has received from others
+
+  // Custom workflows & fields
+  workflows              StatusWorkflow[]
+  customFieldDefinitions CustomFieldDefinition[]
+  recurringTemplates     RecurringTaskTemplate[]
 
   @@map("organizations")
 }
@@ -129,6 +164,7 @@ model User {
 
   createdTasks   Task[]       @relation("TaskCreator")
   assignedTasks  Task[]       @relation("TaskAssignee")
+  taskAssignments TaskAssignee[] @relation("TaskAssignees")
   comments       Comment[]
   attachments    Attachment[]
   taskEvents     TaskEvent[]
@@ -136,6 +172,7 @@ model User {
   locationHistory      LocationHistory[]
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
+  recurringTemplates   RecurringTaskTemplate[] @relation("RecurringTaskCreator")
 
   @@index([organizationId])
   @@index([role])
@@ -183,9 +220,15 @@ model Task {
   id          String       @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus   @default(NEW)
+  status      String       @default("NEW")
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
+  startDate       DateTime?
+  estimatedHours  Float?
+
+  // Custom workflow association
+  workflowId  String?
+  workflow    StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
 
   locationLat     Float?
   locationLng     Float?
@@ -195,6 +238,13 @@ model Task {
   routeStartedAt DateTime?  // When EN_ROUTE started
   routeEndedAt   DateTime?  // When ARRIVED
   routeDistance  Float?     // Total distance in meters
+
+  // Subtask hierarchy
+  parentId    String?
+  parent      Task?     @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks    Task[]    @relation("TaskSubtasks")
+  depth       Int       @default(0)
+  position    Int       @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -212,12 +262,17 @@ model Task {
   attachments     Attachment[]
   events          TaskEvent[]
   locationHistory LocationHistory[]
+  assignees       TaskAssignee[]
+  checklistItems  ChecklistItem[]
+  customFields    CustomFieldValue[]
 
   @@index([organizationId])
   @@index([status])
   @@index([createdById])
   @@index([assignedToId])
   @@index([createdAt])
+  @@index([workflowId])
+  @@index([parentId])
   @@map("tasks")
 }
 
@@ -304,4 +359,143 @@ model LocationHistory {
   @@index([userId, timestamp])
   @@index([taskId, timestamp])
   @@map("location_history")
+}
+
+model TaskAssignee {
+  id        String           @id @default(cuid())
+  taskId    String
+  task      Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
+  role      TaskAssigneeRole @default(MEMBER)
+  createdAt DateTime         @default(now())
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+  @@map("task_assignees")
+}
+
+model ChecklistItem {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  text        String
+  isCompleted Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([taskId, position])
+  @@map("checklist_items")
+}
+
+// ==================== CUSTOM STATUS WORKFLOWS ====================
+
+model StatusWorkflow {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  isDefault      Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  statuses       WorkflowStatus[]
+  tasks          Task[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("status_workflows")
+}
+
+model WorkflowStatus {
+  id         String         @id @default(cuid())
+  workflowId String
+  workflow   StatusWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name       String
+  key        String
+  color      String         @default("#3b82f6")
+  icon       String?
+  position   Int            @default(0)
+  isFinal    Boolean        @default(false)
+  isCanceled Boolean        @default(false)
+  transitions String[]
+  createdAt  DateTime       @default(now())
+
+  @@unique([workflowId, key])
+  @@index([workflowId])
+  @@map("workflow_statuses")
+}
+
+// ==================== CUSTOM FIELDS ====================
+
+model CustomFieldDefinition {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  key            String
+  type           CustomFieldType
+  options        Json?
+  isRequired     Boolean         @default(false)
+  position       Int             @default(0)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  values         CustomFieldValue[]
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@map("custom_field_definitions")
+}
+
+model CustomFieldValue {
+  id           String                @id @default(cuid())
+  definitionId String
+  definition   CustomFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  taskId       String
+  task         Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  value        String
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@unique([definitionId, taskId])
+  @@index([taskId])
+  @@map("custom_field_values")
+}
+
+// ==================== RECURRING TASKS ====================
+
+model RecurringTaskTemplate {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  priority       TaskPriority        @default(MEDIUM)
+  locationLat    Float?
+  locationLng    Float?
+  locationAddress String?
+  assigneeIds    Json?
+  estimatedHours Float?
+  checklist      Json?
+  frequency      RecurrenceFrequency
+  customDays     Int?
+  dayOfWeek      Int?
+  dayOfMonth     Int?
+  startDate      DateTime
+  endDate        DateTime?
+  lastGeneratedAt DateTime?
+  nextRunAt      DateTime?
+  isActive       Boolean             @default(true)
+  createdById    String
+  createdBy      User                @relation("RecurringTaskCreator", fields: [createdById], references: [id])
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([organizationId])
+  @@index([nextRunAt, isActive])
+  @@map("recurring_task_templates")
 }

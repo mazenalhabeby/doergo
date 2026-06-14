@@ -5,6 +5,8 @@ export interface AnimatedLogoProps {
   size?: 'small' | 'default' | 'large';
   variant?: 'dark' | 'light';
   showTagline?: boolean;
+  /** Override text color directly */
+  textColor?: string;
   /** @deprecated Use variant instead. Kept for backward compatibility. */
   primaryColor?: string;
 }
@@ -58,10 +60,11 @@ export function AnimatedLogo({
   size = 'default',
   variant = 'dark',
   showTagline = false,
+  textColor,
 }: AnimatedLogoProps) {
   const s = sizeMap[size];
-  const textColor = variant === 'light' ? '#fafafa' : '#18181b';
-  const taglineColor = variant === 'light' ? '#52525b' : '#a1a1aa';
+  const isLight = variant === 'light';
+  const resolvedColor = textColor || (isLight ? '#fafafa' : undefined);
 
   return (
     <div className={`flex items-center ${className}`} style={{ gap: s.gap }}>
@@ -69,12 +72,11 @@ export function AnimatedLogo({
       <div className="flex flex-col">
         <span
           style={{
-            fontFamily: "var(--font-outfit, 'Outfit'), 'Inter', system-ui, sans-serif",
             fontWeight: 800,
-            fontSize: s.text,
-            color: textColor,
             letterSpacing: '-0.5px',
             lineHeight: 1.2,
+            fontSize: s.text,
+            color: resolvedColor,
           }}
         >
           HBC FIELD
@@ -82,12 +84,13 @@ export function AnimatedLogo({
         {showTagline && (
           <span
             style={{
-              fontFamily: "var(--font-outfit, 'Outfit'), 'Inter', system-ui, sans-serif",
               fontWeight: 400,
+              textTransform: 'uppercase' as const,
               fontSize: s.tagline,
-              color: taglineColor,
               letterSpacing: '3px',
               lineHeight: 1.4,
+              color: resolvedColor,
+              opacity: 0.5,
             }}
           >
             DISPATCH · TRACK · DELIVER

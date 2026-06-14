@@ -62,10 +62,10 @@ export class TasksService extends BaseGatewayService {
   }
 
   /**
-   * Get suggested technicians for a task with scoring
+   * Get suggested employees for a task with scoring
    */
-  async getSuggestedTechnicians(data: Record<string, any>) {
-    this.logger.debug(`Getting suggested technicians for task ${data.taskId} via direct microservice call`);
+  async getSuggestedEmployees(data: Record<string, any>) {
+    this.logger.debug(`Getting suggested employees for task ${data.taskId} via direct microservice call`);
     return this.send({ cmd: 'get_suggested_technicians' }, data);
   }
 
@@ -75,5 +75,29 @@ export class TasksService extends BaseGatewayService {
   async getAttachments(data: Record<string, any>) {
     this.logger.debug(`Getting attachments for task ${data.taskId} via direct microservice call`);
     return this.send({ cmd: 'get_attachments' }, data);
+  }
+
+  /**
+   * Get subtasks of a task
+   */
+  async getSubtasks(data: Record<string, any>) {
+    this.logger.debug(`Getting subtasks for task ${data.taskId} via direct microservice call`);
+    return this.send({ cmd: 'get_subtasks' }, data);
+  }
+
+  /**
+   * Get task assignees
+   */
+  async getAssignees(data: Record<string, any>) {
+    this.logger.debug(`Getting assignees for task ${data.taskId} via direct microservice call`);
+    return this.send({ cmd: 'get_task_assignees' }, data);
+  }
+
+  /**
+   * Get task checklist items
+   */
+  async getChecklist(data: Record<string, any>) {
+    this.logger.debug(`Getting checklist for task ${data.taskId} via direct microservice call`);
+    return this.send({ cmd: 'get_task_checklist' }, data);
   }
 }

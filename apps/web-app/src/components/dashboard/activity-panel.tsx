@@ -19,6 +19,7 @@ export interface PendingAction {
   id: string
   initials: string
   color: string
+  imageUrl?: string
   title: string
   description: string
   onApprove?: () => void
@@ -46,7 +47,7 @@ export function ActivityPanel({ events, pending, className }: ActivityPanelProps
   return (
     <div
       className={cn(
-        "border-l border-border bg-card/60 backdrop-blur-sm",
+        "border-l border-border bg-background/80 backdrop-blur-xl",
         "flex flex-col overflow-hidden shrink-0",
         "transition-all duration-300",
         isOpen ? "w-[300px]" : "w-0 border-l-0 opacity-0",
@@ -107,10 +108,14 @@ export function ActivityPanel({ events, pending, className }: ActivityPanelProps
                   className="flex items-center gap-3 px-4 py-2.5 border-b border-border/50 hover:bg-accent/30 transition-colors"
                 >
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0 overflow-hidden"
                     style={{ background: action.color }}
                   >
-                    {action.initials}
+                    {action.imageUrl ? (
+                      <img src={action.imageUrl} alt={action.initials} className="w-full h-full object-cover" />
+                    ) : (
+                      action.initials
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-medium text-foreground truncate">{action.title}</div>

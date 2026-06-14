@@ -10,7 +10,6 @@ import {
 } from '@hbcfield/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
-import { CommentsModule } from './modules/comments/comments.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -18,6 +17,12 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
+import { PhasesModule } from './modules/phases/phases.module';
+import { SprintsModule } from './modules/sprints/sprints.module';
+import { EpicsModule } from './modules/epics/epics.module';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
+import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
+import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.module';
 
 @Module({
   imports: [
@@ -48,7 +53,6 @@ import { TechniciansModule } from './modules/technicians/technicians.module';
     ]),
     PrismaModule,
     TasksModule,
-    CommentsModule,
     AttachmentsModule,
     AssetsModule,
     ReportsModule,
@@ -56,6 +60,12 @@ import { TechniciansModule } from './modules/technicians/technicians.module';
     AttendanceModule,
     OvertimeModule,
     TechniciansModule,
+    PhasesModule,
+    SprintsModule,
+    EpicsModule,
+    WorkflowsModule,
+    CustomFieldsModule,
+    RecurringTasksModule,
   ],
 })
 export class AppModule {}

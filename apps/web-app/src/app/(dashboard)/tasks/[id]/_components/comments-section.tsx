@@ -5,8 +5,8 @@ import { Send, Loader2, MessageCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { cn, formatTimeAgo } from "@/lib/utils"
+import { formatTimeAgo } from "@/lib/utils"
+import { UserAvatar } from "@/components/user-avatar"
 
 export interface CommentData {
   id: string
@@ -15,6 +15,7 @@ export interface CommentData {
   user: {
     firstName: string
     lastName: string
+    avatarUrl?: string | null
   }
 }
 
@@ -26,20 +27,6 @@ interface CommentsSectionProps {
   isSubmitting: boolean
 }
 
-// Generate consistent color based on name
-function getAvatarColor(firstName: string, lastName: string) {
-  const colors = [
-    "from-blue-500 to-blue-600",
-    "from-purple-500 to-purple-600",
-    "from-emerald-500 to-emerald-600",
-    "from-amber-500 to-amber-600",
-    "from-rose-500 to-rose-600",
-    "from-cyan-500 to-cyan-600",
-    "from-indigo-500 to-indigo-600",
-  ]
-  const index = (firstName.charCodeAt(0) + lastName.charCodeAt(0)) % colors.length
-  return colors[index]
-}
 
 export function CommentsSection({
   comments,
@@ -49,6 +36,7 @@ export function CommentsSection({
   isSubmitting,
 }: CommentsSectionProps) {
   const { t } = useTranslation()
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey && newComment.trim()) {
       e.preventDefault()
@@ -57,123 +45,64 @@ export function CommentsSection({
   }
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-border">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <MessageCircle className="size-4 text-muted-foreground" />
-            {t("tasks.comments.title")}
-          </h3>
-          {comments.length > 0 && (
-            <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-              {comments.length}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Comments List */}
-      <div className="p-6">
-        {comments.length > 0 ? (
-          <div className="space-y-4 mb-6 max-h-[320px] overflow-y-auto pr-2">
-            {comments.map((comment, index) => {
-              const avatarColor = getAvatarColor(
-                comment.user.firstName,
-                comment.user.lastName
-              )
-              const isLast = index === comments.length - 1
-
-              return (
-                <div
-                  key={comment.id}
-                  className={cn(
-                    "group",
-                    !isLast && "pb-4 border-b border-border"
-                  )}
-                >
-                  <div className="flex gap-3">
-                    <Avatar className="size-9 ring-2 ring-white shadow-sm">
-                      <AvatarFallback
-                        className={cn(
-                          "bg-gradient-to-br text-white text-xs font-medium",
-                          avatarColor
-                        )}
-                      >
-                        {comment.user.firstName[0]}
-                        {comment.user.lastName[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-foreground">
-                          {comment.user.firstName} {comment.user.lastName}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatTimeAgo(comment.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                        {comment.content}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-8 mb-6">
-            <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-              <MessageCircle className="size-6 text-muted-foreground" />
-            </div>
-            <p className="text-sm text-muted-foreground font-medium">{t("tasks.comments.noComments")}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t("tasks.comments.beTheFirst")}
-            </p>
-          </div>
-        )}
-
-        {/* Add Comment Input */}
-        <div className="relative">
-          <div className="flex gap-3 items-end">
-            <div className="flex-1 relative">
-              <Textarea
-                value={newComment}
-                onChange={(e) => onCommentChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={t("tasks.comments.placeholder")}
-                className={cn(
-                  "resize-none text-sm pr-4 min-h-[80px] rounded-xl",
-                  "border-border focus:border-blue-300 focus:ring-blue-200",
-                  "placeholder:text-muted-foreground transition-all"
-                )}
-                rows={3}
+    <div>
+      {/* Comments list */}
+      {comments.length > 0 ? (
+        <div className="space-y-0 mb-4 max-h-[400px] overflow-y-auto">
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex gap-3 py-3 group">
+              {/* Avatar */}
+              <UserAvatar
+                firstName={comment.user.firstName}
+                lastName={comment.user.lastName}
+                avatarUrl={comment.user.avatarUrl}
+                size="sm"
               />
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2 mb-0.5">
+                  <span className="text-[13px] font-medium text-foreground">
+                    {comment.user.firstName} {comment.user.lastName}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground/60">
+                    {formatTimeAgo(comment.createdAt)}
+                  </span>
+                </div>
+                <p className="text-[13px] text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {comment.content}
+                </p>
+              </div>
             </div>
-            <Button
-              onClick={onSubmit}
-              disabled={!newComment.trim() || isSubmitting}
-              className={cn(
-                "h-10 w-10 rounded-xl p-0 shrink-0",
-                "bg-blue-600 hover:bg-blue-700",
-                "shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40",
-                "transition-all duration-200",
-                "disabled:opacity-50 disabled:shadow-none"
-              )}
-            >
-              {isSubmitting ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4" />
-              )}
-            </Button>
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-2 ml-1">
-            {t("tasks.comments.hint")}
-          </p>
+          ))}
         </div>
+      ) : (
+        <div className="text-center py-6 mb-4">
+          <p className="text-sm text-muted-foreground/60">{t("tasks.comments.noComments")}</p>
+          <p className="text-xs text-muted-foreground/40 mt-0.5">{t("tasks.comments.beTheFirst")}</p>
+        </div>
+      )}
+
+      {/* Input */}
+      <div className="flex gap-2 items-end">
+        <Textarea
+          value={newComment}
+          onChange={(e) => onCommentChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={t("tasks.comments.placeholder")}
+          className="resize-none text-[13px] min-h-[72px] rounded-xl border-border/60 focus:border-foreground/20 focus:ring-foreground/5 placeholder:text-muted-foreground/40"
+          rows={2}
+        />
+        <Button
+          onClick={onSubmit}
+          disabled={!newComment.trim() || isSubmitting}
+          size="sm"
+          className="h-9 w-9 p-0 rounded-xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-30 shrink-0"
+        >
+          {isSubmitting ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+        </Button>
       </div>
+      <p className="text-[10px] text-muted-foreground/40 mt-1.5">{t("tasks.comments.hint")}</p>
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react"
 import { io, Socket } from "socket.io-client"
 import { useAuth } from "./auth-context"
+import { getAccessToken } from "@/lib/api"
 
 // ============================================================================
 // Singleton Socket — ONE connection for the entire app
@@ -36,8 +37,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     // Don't reconnect if already connected
     if (socketRef.current?.connected) return
 
+    const accessToken = getAccessToken()
+    if (!accessToken) return
+
     const socket = io(SOCKET_URL, {
-      auth: { token: "web-dashboard" },
+      auth: { token: accessToken },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: Infinity,

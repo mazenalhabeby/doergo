@@ -208,6 +208,7 @@
 
   "home": {
     "admin": {
+      "welcomeBack": "Welcome back, {{name}}",
       "statsTotal": "Total",
       "statsActive": "Active",
       "statsDone": "Done",

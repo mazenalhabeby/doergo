@@ -166,7 +166,7 @@ describe('AuthService', () => {
 
       await service.register({
         ...registerData,
-        role: 'TECHNICIAN', // Try to pass different role
+        role: 'EMPLOYEE', // Try to pass different role
       });
 
       expect(mockPrismaService.user.create).toHaveBeenCalledWith(

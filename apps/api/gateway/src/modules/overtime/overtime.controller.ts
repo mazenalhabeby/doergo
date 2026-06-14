@@ -35,14 +35,14 @@ export class OvertimeController {
   ) {}
 
   @Get('active')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get active overtime request for current user' })
   async getActive(@Request() req: any) {
     return this.overtimeService.getActive({ userId: req.user.id });
   }
 
   @Post('respond')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Respond YES/NO to overtime prompt' })
   async respond(@Body() dto: RespondToOvertimeDto, @Request() req: any) {
     return this.overtimeQueueService.technicianRespond({
@@ -69,7 +69,7 @@ export class OvertimeController {
   }
 
   @Post(':id/approve-signature')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Approve overtime with leader signature on device (Path B)' })
   async approveSignature(
     @Param('id') id: string,

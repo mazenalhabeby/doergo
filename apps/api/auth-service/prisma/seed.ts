@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, WorkMode, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@prisma/client';
+import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy, CustomFieldType, RecurrenceFrequency } from '@prisma/client';
 import { createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 
@@ -20,6 +20,11 @@ async function main() {
   await prisma.attachment.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.taskEvent.deleteMany();
+  await prisma.customFieldValue.deleteMany();
+  await prisma.customFieldDefinition.deleteMany();
+  await prisma.recurringTaskTemplate.deleteMany();
+  await prisma.$executeRawUnsafe('DELETE FROM "workflow_statuses"');
+  await prisma.$executeRawUnsafe('DELETE FROM "status_workflows"');
   await prisma.task.deleteMany();
   await prisma.technicianSchedule.deleteMany();
   await prisma.timeOff.deleteMany();
@@ -33,6 +38,7 @@ async function main() {
   await prisma.$executeRawUnsafe('DELETE FROM "asset_types"');
   await prisma.$executeRawUnsafe('DELETE FROM "asset_categories"');
   await prisma.user.deleteMany();
+  await prisma.$executeRawUnsafe('DELETE FROM "org_roles"');
   await prisma.organizationAccess.deleteMany();
   await prisma.organization.deleteMany();
 
@@ -66,9 +72,12 @@ async function main() {
       onboardingCompleted: true,
       // ADMIN permissions - full access
       canCreateTasks: true,
+      taskCreationScope: 'ORG',
       canViewAllTasks: true,
       canAssignTasks: true,
       canManageUsers: true,
+      position: 'Office Manager',
+      scheduleType: 'NONE',
     },
   });
 
@@ -84,9 +93,12 @@ async function main() {
       onboardingCompleted: true,
       // DISPATCHER permissions - web only, can view all and assign
       canCreateTasks: false,
+      taskCreationScope: 'SPACE',
       canViewAllTasks: true,
       canAssignTasks: true,
       canManageUsers: false,
+      position: 'Operations Manager',
+      scheduleType: 'FIXED',
     },
   });
 
@@ -102,11 +114,12 @@ async function main() {
       onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
       canCreateTasks: false,
+      taskCreationScope: 'SELF',
       canViewAllTasks: false,
       canAssignTasks: false,
       canManageUsers: false,
-      // Full-time employee - assigned to company locations
-      workMode: WorkMode.ON_SITE,
+      position: 'Field Technician',
+      scheduleType: 'FIXED',
     },
   });
 
@@ -121,11 +134,13 @@ async function main() {
       onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
       canCreateTasks: false,
+      taskCreationScope: 'SELF',
       canViewAllTasks: false,
       canAssignTasks: false,
       canManageUsers: false,
-      // Freelancer - task-based work, no fixed location
-      workMode: WorkMode.ON_ROAD,
+      position: 'Driver',
+      scheduleType: 'FLEXIBLE',
+      monthlyHourBudget: 160,
     },
   });
 
@@ -140,19 +155,127 @@ async function main() {
       organizationId: organization.id,
       onboardingCompleted: true,
       canCreateTasks: false,
+      taskCreationScope: 'SELF',
       canViewAllTasks: false,
       canAssignTasks: false,
       canManageUsers: false,
-      workMode: WorkMode.HYBRID,
+      position: 'Service Engineer',
+      scheduleType: 'FIXED',
     },
   });
 
   console.log('Created users:', clientUser.email, dispatcherUser.email, technician1.email, technician2.email, technician3.email);
 
   // ============================================
+  // Create Organization Roles (custom role system)
+  // ============================================
+
+  const adminRole = await prisma.orgRole.create({
+    data: {
+      organizationId: organization.id,
+      name: 'Administrator',
+      slug: 'administrator',
+      description: 'Full access to all features',
+      color: '#2563eb',
+      isSystem: true,
+      legacyRole: 'ADMIN',
+      position: 0,
+      permissions: {
+        canCreateTasks: true,
+        canViewAllTasks: true,
+        canAssignTasks: true,
+        canDeleteTasks: true,
+        canEditAnyTask: true,
+        canManageUsers: true,
+        canInviteUsers: true,
+        canManageRoles: true,
+        canViewAttendance: true,
+        canApproveTimeOff: true,
+        canApproveOvertime: true,
+        canManageLocations: true,
+        canManageWorkflows: true,
+        canManageOrgSettings: true,
+        taskCreationScope: 'ORG',
+      },
+    },
+  });
+
+  const managerRole = await prisma.orgRole.create({
+    data: {
+      organizationId: organization.id,
+      name: 'Manager',
+      slug: 'manager',
+      description: 'Can manage tasks, team, and attendance',
+      color: '#8b5cf6',
+      isSystem: true,
+      legacyRole: 'DISPATCHER',
+      position: 1,
+      permissions: {
+        canCreateTasks: false,
+        canViewAllTasks: true,
+        canAssignTasks: true,
+        canDeleteTasks: false,
+        canEditAnyTask: true,
+        canManageUsers: false,
+        canInviteUsers: true,
+        canManageRoles: false,
+        canViewAttendance: true,
+        canApproveTimeOff: true,
+        canApproveOvertime: true,
+        canManageLocations: false,
+        canManageWorkflows: false,
+        canManageOrgSettings: false,
+        taskCreationScope: 'SPACE',
+      },
+    },
+  });
+
+  const employeeRole = await prisma.orgRole.create({
+    data: {
+      organizationId: organization.id,
+      name: 'Employee',
+      slug: 'employee',
+      description: 'Can view and execute assigned tasks',
+      color: '#10b981',
+      isSystem: true,
+      legacyRole: 'TECHNICIAN',
+      position: 2,
+      permissions: {
+        canCreateTasks: false,
+        canViewAllTasks: false,
+        canAssignTasks: false,
+        canDeleteTasks: false,
+        canEditAnyTask: false,
+        canManageUsers: false,
+        canInviteUsers: false,
+        canManageRoles: false,
+        canViewAttendance: false,
+        canApproveTimeOff: false,
+        canApproveOvertime: false,
+        canManageLocations: false,
+        canManageWorkflows: false,
+        canManageOrgSettings: false,
+        taskCreationScope: 'SELF',
+      },
+    },
+  });
+
+  console.log('Created org roles:', adminRole.name, managerRole.name, employeeRole.name);
+
+  // Assign roles to users
+  await prisma.user.update({ where: { id: clientUser.id }, data: { orgRoleId: adminRole.id } });
+  await prisma.user.update({ where: { id: dispatcherUser.id }, data: { orgRoleId: managerRole.id } });
+  await prisma.user.update({ where: { id: technician1.id }, data: { orgRoleId: employeeRole.id } });
+  await prisma.user.update({ where: { id: technician2.id }, data: { orgRoleId: employeeRole.id } });
+  await prisma.user.update({ where: { id: technician3.id }, data: { orgRoleId: employeeRole.id } });
+
+  console.log('Assigned org roles to all users');
+
+  // ============================================
   // Create Company Locations for attendance tracking
   // ============================================
 
+  // Note: enabledModules and workflowId are set after workflows are created (see below)
   const mainOffice = await prisma.companyLocation.create({
     data: {
       name: 'Main Office',
@@ -1487,7 +1610,7 @@ async function main() {
       createdById: clientUser.id,
       expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), // 3 days
       status: InvitationStatus.PENDING,
-      workMode: WorkMode.ON_SITE,
+      // workMode removed
       specialty: 'Electrical',
       maxDailyJobs: 5,
     },
@@ -1553,6 +1676,183 @@ async function main() {
   });
 
   console.log('Created pending join request:', joinRequest.id, '(from orphan user to Acme Corp)');
+
+  // ==================== CUSTOM STATUS WORKFLOWS ====================
+  console.log('\nCreating default status workflow...');
+
+  const defaultWorkflow = await prisma.statusWorkflow.create({
+    data: {
+      name: 'Default',
+      isDefault: true,
+      organizationId: organization.id,
+    },
+  });
+
+  // Create statuses matching the existing TaskStatus enum
+  const defaultStatuses = [
+    { key: 'DRAFT', name: 'Draft', color: '#94a3b8', position: 0, isFinal: false, isCanceled: false, transitions: ['NEW'] },
+    { key: 'NEW', name: 'New', color: '#3b82f6', position: 1, isFinal: false, isCanceled: false, transitions: ['ASSIGNED', 'CANCELED'] },
+    { key: 'ASSIGNED', name: 'Assigned', color: '#8b5cf6', position: 2, isFinal: false, isCanceled: false, transitions: ['ACCEPTED', 'CANCELED'] },
+    { key: 'ACCEPTED', name: 'Accepted', color: '#6366f1', position: 3, isFinal: false, isCanceled: false, transitions: ['EN_ROUTE', 'CANCELED'] },
+    { key: 'EN_ROUTE', name: 'En Route', color: '#f59e0b', position: 4, isFinal: false, isCanceled: false, transitions: ['ARRIVED', 'CANCELED'] },
+    { key: 'ARRIVED', name: 'Arrived', color: '#eab308', position: 5, isFinal: false, isCanceled: false, transitions: ['IN_PROGRESS', 'CANCELED'] },
+    { key: 'IN_PROGRESS', name: 'In Progress', color: '#f97316', position: 6, isFinal: false, isCanceled: false, transitions: ['BLOCKED', 'COMPLETED', 'CANCELED'] },
+    { key: 'BLOCKED', name: 'Blocked', color: '#ef4444', position: 7, isFinal: false, isCanceled: false, transitions: ['IN_PROGRESS', 'CANCELED'] },
+    { key: 'COMPLETED', name: 'Completed', color: '#22c55e', position: 8, isFinal: true, isCanceled: false, transitions: ['CLOSED'] },
+    { key: 'CANCELED', name: 'Canceled', color: '#64748b', position: 9, isFinal: false, isCanceled: true, transitions: [] },
+    { key: 'CLOSED', name: 'Closed', color: '#94a3b8', position: 10, isFinal: true, isCanceled: false, transitions: [] },
+  ];
+
+  for (const status of defaultStatuses) {
+    await prisma.workflowStatus.create({
+      data: {
+        workflowId: defaultWorkflow.id,
+        ...status,
+      },
+    });
+  }
+
+  console.log('Created default workflow with', defaultStatuses.length, 'statuses');
+
+  // Create a second "Logistics" workflow for variety
+  const logisticsWorkflow = await prisma.statusWorkflow.create({
+    data: {
+      name: 'Logistics',
+      isDefault: false,
+      organizationId: organization.id,
+    },
+  });
+
+  const logisticsStatuses = [
+    { key: 'PENDING', name: 'Pending', color: '#94a3b8', position: 0, isFinal: false, isCanceled: false, transitions: ['PICKED_UP'] },
+    { key: 'PICKED_UP', name: 'Picked Up', color: '#3b82f6', position: 1, isFinal: false, isCanceled: false, transitions: ['IN_TRANSIT', 'CANCELED'] },
+    { key: 'IN_TRANSIT', name: 'In Transit', color: '#f59e0b', position: 2, isFinal: false, isCanceled: false, transitions: ['DELIVERED', 'FAILED', 'CANCELED'] },
+    { key: 'DELIVERED', name: 'Delivered', color: '#22c55e', position: 3, isFinal: true, isCanceled: false, transitions: [] },
+    { key: 'FAILED', name: 'Failed', color: '#ef4444', position: 4, isFinal: false, isCanceled: false, transitions: ['PICKED_UP', 'CANCELED'] },
+    { key: 'CANCELED', name: 'Canceled', color: '#64748b', position: 5, isFinal: false, isCanceled: true, transitions: [] },
+  ];
+
+  for (const status of logisticsStatuses) {
+    await prisma.workflowStatus.create({
+      data: {
+        workflowId: logisticsWorkflow.id,
+        ...status,
+      },
+    });
+  }
+
+  console.log('Created Logistics workflow with', logisticsStatuses.length, 'statuses');
+
+  // ==================== UPDATE SPACES WITH MODULES & WORKFLOWS ====================
+  console.log('\nUpdating company locations with enabledModules and workflows...');
+
+  await prisma.companyLocation.update({
+    where: { id: mainOffice.id },
+    data: {
+      enabledModules: ['time_tracking'],
+      workflowId: defaultWorkflow.id,
+    },
+  });
+
+  await prisma.companyLocation.update({
+    where: { id: warehouse.id },
+    data: {
+      enabledModules: ['time_tracking', 'sprints'],
+      workflowId: defaultWorkflow.id,
+    },
+  });
+
+  await prisma.companyLocation.update({
+    where: { id: serviceCenter.id },
+    data: {
+      enabledModules: ['time_tracking', 'sprints', 'custom_fields'],
+      workflowId: defaultWorkflow.id,
+    },
+  });
+
+  console.log('Updated spaces with enabledModules and workflow associations');
+
+  // ==================== CUSTOM FIELDS ====================
+  console.log('\nCreating custom field definitions...');
+
+  const customerPoField = await prisma.customFieldDefinition.create({
+    data: {
+      name: 'Customer PO Number',
+      key: 'customer_po',
+      type: CustomFieldType.TEXT,
+      isRequired: false,
+      position: 0,
+      organizationId: organization.id,
+    },
+  });
+
+  const urgencyField = await prisma.customFieldDefinition.create({
+    data: {
+      name: 'Urgency Level',
+      key: 'urgency_level',
+      type: CustomFieldType.DROPDOWN,
+      options: ['Low', 'Normal', 'High', 'Critical'],
+      isRequired: false,
+      position: 1,
+      organizationId: organization.id,
+    },
+  });
+
+  const estimatedCostField = await prisma.customFieldDefinition.create({
+    data: {
+      name: 'Estimated Cost',
+      key: 'estimated_cost',
+      type: CustomFieldType.NUMBER,
+      isRequired: false,
+      position: 2,
+      organizationId: organization.id,
+    },
+  });
+
+  console.log('Created 3 custom field definitions');
+
+  // ==================== RECURRING TASKS ====================
+  console.log('\nCreating recurring task templates...');
+
+  const weeklyInspection = await prisma.recurringTaskTemplate.create({
+    data: {
+      title: 'Weekly Equipment Inspection',
+      description: 'Inspect all equipment in the main office building',
+      priority: TaskPriority.MEDIUM,
+      locationLat: 40.7128,
+      locationLng: -74.006,
+      locationAddress: '123 Business Ave, New York, NY',
+      frequency: RecurrenceFrequency.WEEKLY,
+      dayOfWeek: 1, // Monday
+      startDate: new Date('2026-01-01'),
+      nextRunAt: new Date('2026-05-12'), // next Monday
+      isActive: true,
+      checklist: [
+        { text: 'Check HVAC systems' },
+        { text: 'Inspect electrical panels' },
+        { text: 'Test fire alarms' },
+      ],
+      organizationId: organization.id,
+      createdById: clientUser.id,
+    },
+  });
+
+  const monthlyMaintenance = await prisma.recurringTaskTemplate.create({
+    data: {
+      title: 'Monthly HVAC Maintenance',
+      description: 'Full HVAC system maintenance check',
+      priority: TaskPriority.HIGH,
+      frequency: RecurrenceFrequency.MONTHLY,
+      dayOfMonth: 15,
+      startDate: new Date('2026-01-15'),
+      nextRunAt: new Date('2026-05-15'),
+      isActive: true,
+      organizationId: organization.id,
+      createdById: clientUser.id,
+    },
+  });
+
+  console.log('Created 2 recurring task templates');
 
   console.log('\nSeed completed successfully!');
   console.log('\nTest credentials:');

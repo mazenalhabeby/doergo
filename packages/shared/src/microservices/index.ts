@@ -7,3 +7,4 @@ export {
   createMultipleClientOptions,
 } from './redis.config';
 export { BaseGatewayService } from './base-gateway.service';
+export { RpcHttpExceptionFilter } from './rpc-exception.filter';

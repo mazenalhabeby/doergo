@@ -28,11 +28,11 @@ const EVENT_CONFIG: Record<
 > = {
   CREATED: { icon: Clock, color: "text-blue-500", label: "Task created" },
   UPDATED: { icon: FileEdit, color: "text-muted-foreground", label: "Task updated" },
-  ASSIGNED: { icon: UserPlus, color: "text-purple-500", label: "Technician assigned" },
-  UNASSIGNED: { icon: UserMinus, color: "text-orange-500", label: "Technician unassigned" },
+  ASSIGNED: { icon: UserPlus, color: "text-purple-500", label: "Employee assigned" },
+  UNASSIGNED: { icon: UserMinus, color: "text-orange-500", label: "Employee unassigned" },
   STATUS_CHANGED: { icon: PlayCircle, color: "text-amber-500", label: "Status changed" },
-  EN_ROUTE: { icon: MapPin, color: "text-cyan-500", label: "Technician on the way" },
-  ARRIVED: { icon: MapPin, color: "text-teal-500", label: "Technician arrived" },
+  EN_ROUTE: { icon: MapPin, color: "text-cyan-500", label: "Employee on the way" },
+  ARRIVED: { icon: MapPin, color: "text-teal-500", label: "Employee arrived" },
   IN_PROGRESS: { icon: PlayCircle, color: "text-amber-500", label: "Work in progress" },
   BLOCKED: { icon: AlertTriangle, color: "text-red-500", label: "Task blocked" },
   COMPLETED: { icon: CheckCircle2, color: "text-green-500", label: "Task completed" },
@@ -86,7 +86,6 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
   const { data: events, isLoading, isError } = useQuery({
     queryKey: ["taskTimeline", taskId],
     queryFn: () => tasksApi.getTimeline(taskId),
-    refetchInterval: 30000,
   })
 
   const filteredEvents = events?.filter(

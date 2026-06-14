@@ -25,10 +25,11 @@ import {
   Pause,
 } from "lucide-react"
 import { format, parseISO } from "date-fns"
-import { toast } from "sonner"
+import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
-import { attendanceApi, type TimeEntry, type CompanyLocation, type TimeEntryStatus, type AttendanceSummary, type Break, type BreakType, type BreakSummary } from "@/lib/api"
+import { UserAvatar } from "@/components/user-avatar"
+import { attendanceApi, locationsApi, type TimeEntry, type CompanyLocation, type TimeEntryStatus, type AttendanceSummary, type Break, type BreakType, type BreakSummary } from "@/lib/api"
 import { ReportsTab } from "./_components/reports-tab"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -107,13 +108,13 @@ function GeofenceIndicator({ withinGeofence }: { withinGeofence: boolean }) {
 
 // Flag reason badge for smart auto-approval
 const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
-  OVERTIME: { label: "Overtime", className: "bg-orange-50 text-orange-700 border-orange-200" },
+  OVERTIME: { label: "Overtime", className: "bg-orange-50 dark:bg-orange-500/10 text-orange-700 border-orange-200" },
   MISSED_CLOCK_OUT: { label: "Missed Clock-Out", className: "bg-red-500/10 text-red-700 border-red-200" },
   OUTSIDE_GEOFENCE_IN: { label: "Geofence (In)", className: "bg-amber-500/10 text-amber-700 border-amber-200" },
   OUTSIDE_GEOFENCE_OUT: { label: "Geofence (Out)", className: "bg-amber-500/10 text-amber-700 border-amber-200" },
-  LATE_ARRIVAL: { label: "Late Arrival", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  EARLY_DEPARTURE: { label: "Early Departure", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  UNSCHEDULED_DAY: { label: "Unscheduled", className: "bg-purple-50 text-purple-700 border-purple-200" },
+  LATE_ARRIVAL: { label: "Late Arrival", className: "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 border-yellow-200" },
+  EARLY_DEPARTURE: { label: "Early Departure", className: "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 border-yellow-200" },
+  UNSCHEDULED_DAY: { label: "Unscheduled", className: "bg-purple-50 dark:bg-purple-500/10 text-purple-700 border-purple-200" },
 }
 
 function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
@@ -163,8 +164,8 @@ function StatCard({
 }) {
   const colorClasses = {
     blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    green: "bg-green-500/10 text-green-600",
-    amber: "bg-amber-500/10 text-amber-600",
+    green: "bg-green-500/10 text-green-600 dark:text-green-400",
+    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     slate: "bg-muted text-muted-foreground",
   }
 
@@ -204,15 +205,16 @@ export default function AttendancePage() {
   // reportType and reportLocationId moved to ReportsTab component
 
   // Check role - only ADMIN and DISPATCHER can access
-  const canAccess = user?.role === "ADMIN" || user?.role === "DISPATCHER"
+  const canAccess = user?.role === "ADMIN" || user?.role === "MANAGER"
   const isAdmin = user?.role === "ADMIN"
 
   // Fetch locations
-  const { data: locations = [], isLoading: loadingLocations } = useQuery({
+  const { data: locationsRaw, isLoading: loadingLocations } = useQuery({
     queryKey: ["locations"],
-    queryFn: () => attendanceApi.getLocations(),
+    queryFn: () => locationsApi.list(),
     enabled: canAccess,
   })
+  const locations = locationsRaw?.data || []
 
   // Fetch attendance entries - use getAllEntries for "all" locations, otherwise use getLocationEntries
   const {
@@ -247,19 +249,18 @@ export default function AttendancePage() {
     queryKey: ["scheduler-info"],
     queryFn: () => attendanceApi.getSchedulerInfo(),
     enabled: isAdmin,
-    refetchInterval: 60000, // Refresh every minute
   })
 
   // Trigger auto clock-out mutation
   const triggerAutoClockOut = useMutation({
     mutationFn: (type: "hourly" | "midnight") => attendanceApi.triggerAutoClockOut(type),
     onSuccess: (data) => {
-      toast.success(data?.data?.message || "Auto clock-out triggered")
+      notify.success(data?.data?.message || "Auto clock-out triggered")
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       queryClient.invalidateQueries({ queryKey: ["scheduler-info"] })
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to trigger auto clock-out")
+      notify.error(error instanceof Error ? error.message : "Failed to trigger auto clock-out")
     },
   })
 
@@ -281,7 +282,6 @@ export default function AttendancePage() {
     queryKey: ["attendance-breaks-active"],
     queryFn: () => attendanceApi.getActiveBreaks(),
     enabled: canAccess && activeTab === "breaks",
-    refetchInterval: 30000, // Refresh every 30 seconds
   })
 
   // Fetch break history
@@ -310,12 +310,12 @@ export default function AttendancePage() {
     mutationFn: ({ breakId, notes }: { breakId: string; notes?: string }) =>
       attendanceApi.endBreakManually(breakId, notes),
     onSuccess: () => {
-      toast.success("Break ended successfully")
+      notify.success("Break ended successfully")
       queryClient.invalidateQueries({ queryKey: ["attendance-breaks-active"] })
       queryClient.invalidateQueries({ queryKey: ["attendance-breaks-history"] })
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to end break")
+      notify.error(error instanceof Error ? error.message : "Failed to end break")
     },
   })
 
@@ -325,11 +325,11 @@ export default function AttendancePage() {
   const approveEntry = useMutation({
     mutationFn: (entryId: string) => attendanceApi.approveEntry(entryId),
     onSuccess: () => {
-      toast.success("Entry approved")
+      notify.success("Entry approved")
       queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to approve")
+      notify.error(error instanceof Error ? error.message : "Failed to approve")
     },
   })
 
@@ -339,12 +339,12 @@ export default function AttendancePage() {
     mutationFn: ({ entryId, reason }: { entryId: string; reason: string }) =>
       attendanceApi.rejectEntry(entryId, reason),
     onSuccess: () => {
-      toast.success("Entry rejected")
+      notify.success("Entry rejected")
       setRejectReason("")
       queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to reject")
+      notify.error(error instanceof Error ? error.message : "Failed to reject")
     },
   })
 
@@ -424,21 +424,21 @@ export default function AttendancePage() {
           <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
             <TabsTrigger
               value="tracking"
-              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
               <Clock className="size-3.5 mr-1.5" />
               Tracking
             </TabsTrigger>
             <TabsTrigger
               value="reports"
-              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
               <BarChart3 className="size-3.5 mr-1.5" />
               Reports
             </TabsTrigger>
             <TabsTrigger
               value="approvals"
-              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <ClipboardCheck className="size-3.5 mr-1.5" />
               Approvals
@@ -450,7 +450,7 @@ export default function AttendancePage() {
             </TabsTrigger>
             <TabsTrigger
               value="breaks"
-              className="data-[state=active]:bg-foreground data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <Coffee className="size-3.5 mr-1.5" />
               Breaks
@@ -498,7 +498,7 @@ export default function AttendancePage() {
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (
           <div className="bg-card rounded-2xl border border-amber-200/60 shadow-sm mb-8">
-            <div className="p-5 border-b border-amber-100 bg-amber-50/50 rounded-t-2xl">
+            <div className="p-5 border-b border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5 rounded-t-2xl">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
                   <AlertCircle className="size-5" />
@@ -515,12 +515,15 @@ export default function AttendancePage() {
             </div>
             <div className="divide-y divide-amber-100">
               {geofenceViolations.slice(0, 5).map((entry: TimeEntry) => (
-                <div key={entry.id} className="p-4 flex items-center justify-between hover:bg-amber-50/30">
+                <div key={entry.id} className="p-4 flex items-center justify-between hover:bg-amber-50/30 dark:hover:bg-amber-500/5">
                   <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-medium text-sm">
-                      {entry.user?.firstName?.[0]}
-                      {entry.user?.lastName?.[0]}
-                    </div>
+                    <UserAvatar
+                      firstName={entry.user?.firstName}
+                      lastName={entry.user?.lastName}
+
+                      seed={entry.user?.id}
+                      size="md"
+                    />
                     <div>
                       <p className="font-medium text-foreground">
                         {entry.user?.firstName} {entry.user?.lastName}
@@ -569,7 +572,7 @@ export default function AttendancePage() {
           <details className="bg-card rounded-2xl border border-border/60 shadow-sm mb-8 group">
             <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-accent/50 rounded-2xl transition-colors">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
+                <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600">
                   <Settings className="size-4" />
                 </div>
                 <div>
@@ -610,15 +613,15 @@ export default function AttendancePage() {
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Scheduled</p>
                   <p className="text-lg font-bold text-foreground">{schedulerInfo.repeatableJobs?.length || 0}</p>
                 </div>
-                <div className="p-3 bg-blue-50 rounded-xl">
+                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
                   <p className="text-[10px] font-medium text-blue-600 uppercase tracking-wide mb-1">Active</p>
                   <p className="text-lg font-bold text-blue-700">{schedulerInfo.queueStats?.active || 0}</p>
                 </div>
-                <div className="p-3 bg-green-50 rounded-xl">
+                <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl">
                   <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide mb-1">Completed</p>
                   <p className="text-lg font-bold text-green-700">{schedulerInfo.queueStats?.completed || 0}</p>
                 </div>
-                <div className="p-3 bg-red-50 rounded-xl">
+                <div className="p-3 bg-red-50 dark:bg-red-500/10 rounded-xl">
                   <p className="text-[10px] font-medium text-red-600 uppercase tracking-wide mb-1">Failed</p>
                   <p className="text-lg font-bold text-red-700">{schedulerInfo.queueStats?.failed || 0}</p>
                 </div>
@@ -771,7 +774,7 @@ export default function AttendancePage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/80">
-                    <TableHead className="font-semibold text-muted-foreground">Technician</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">Worker</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">Clock In</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">Clock Out</TableHead>
@@ -785,10 +788,13 @@ export default function AttendancePage() {
                     <TableRow key={entry.id} className="hover:bg-accent/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="size-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-                            {entry.user?.firstName?.[0]}
-                            {entry.user?.lastName?.[0]}
-                          </div>
+                          <UserAvatar
+                            firstName={entry.user?.firstName}
+                            lastName={entry.user?.lastName}
+      
+                            seed={entry.user?.id}
+                            size="md"
+                          />
                           <div>
                             <p className="font-medium text-foreground">
                               {entry.user?.firstName} {entry.user?.lastName}
@@ -952,7 +958,7 @@ export default function AttendancePage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/80">
-                      <TableHead className="font-semibold text-muted-foreground">Technician</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Worker</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Location</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Date</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Clock In</TableHead>
@@ -967,9 +973,13 @@ export default function AttendancePage() {
                       <TableRow key={entry.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="size-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-medium text-sm">
-                              {entry.user?.firstName?.[0]}{entry.user?.lastName?.[0]}
-                            </div>
+                            <UserAvatar
+                              firstName={entry.user?.firstName}
+                              lastName={entry.user?.lastName}
+        
+                              seed={entry.user?.id}
+                              size="md"
+                            />
                             <p className="font-medium text-foreground">
                               {entry.user?.firstName} {entry.user?.lastName}
                             </p>
@@ -990,7 +1000,7 @@ export default function AttendancePage() {
                               size="sm"
                               onClick={() => approveEntry.mutate(entry.id)}
                               disabled={approveEntry.isPending}
-                              className="rounded-lg text-green-600 border-green-200 hover:bg-green-50"
+                              className="rounded-lg bg-foreground text-background hover:bg-foreground/90"
                             >
                               <Check className="size-4 mr-1" />
                               Approve
@@ -1005,7 +1015,7 @@ export default function AttendancePage() {
                                 }
                               }}
                               disabled={rejectEntry.isPending}
-                              className="rounded-lg text-red-600 border-red-200 hover:bg-red-50"
+                              className="rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
                             >
                               <X className="size-4 mr-1" />
                               Reject
@@ -1057,42 +1067,42 @@ export default function AttendancePage() {
               <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-6 mb-6">
                 <h3 className="text-md font-semibold text-foreground mb-4">Breaks by Type</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-amber-50 rounded-xl">
+                  <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <UtensilsCrossed className="size-5 text-amber-600" />
-                      <p className="font-medium text-amber-900">Lunch Breaks</p>
+                      <p className="font-medium text-amber-900 dark:text-amber-300">Lunch Breaks</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-lg font-bold text-amber-900">{breakSummary.breaksByType?.LUNCH?.count || 0}</p>
+                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{breakSummary.breaksByType?.LUNCH?.count || 0}</p>
                         <p className="text-xs text-amber-600">Count</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900">{formatDurationMinutes(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDurationMinutes(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
                         <p className="text-xs text-amber-600">Total</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900">{breakSummary.breaksByType?.LUNCH?.averageMinutes || 0}m</p>
+                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{breakSummary.breaksByType?.LUNCH?.averageMinutes || 0}m</p>
                         <p className="text-xs text-amber-600">Avg</p>
                       </div>
                     </div>
                   </div>
-                  <div className="p-4 bg-blue-50 rounded-xl">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <Coffee className="size-5 text-blue-600" />
-                      <p className="font-medium text-blue-900">Short Breaks</p>
+                      <p className="font-medium text-blue-900 dark:text-blue-300">Short Breaks</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-lg font-bold text-blue-900">{breakSummary.breaksByType?.SHORT?.count || 0}</p>
+                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{breakSummary.breaksByType?.SHORT?.count || 0}</p>
                         <p className="text-xs text-blue-600">Count</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-blue-900">{formatDurationMinutes(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDurationMinutes(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
                         <p className="text-xs text-blue-600">Total</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-blue-900">{breakSummary.breaksByType?.SHORT?.averageMinutes || 0}m</p>
+                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{breakSummary.breaksByType?.SHORT?.averageMinutes || 0}m</p>
                         <p className="text-xs text-blue-600">Avg</p>
                       </div>
                     </div>
@@ -1126,13 +1136,13 @@ export default function AttendancePage() {
               <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-orange-50 text-orange-600">
+                    <div className="p-2.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600">
                       <Coffee className="size-5" />
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-foreground">Active Breaks</h2>
                       <p className="text-sm text-muted-foreground">
-                        Technicians currently on break
+                        Workers currently on break
                       </p>
                     </div>
                   </div>
@@ -1158,7 +1168,7 @@ export default function AttendancePage() {
                 <div className="p-12 text-center">
                   <CheckCircle2 className="size-12 text-green-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground">No active breaks</h3>
-                  <p className="text-muted-foreground mt-1">All technicians are working</p>
+                  <p className="text-muted-foreground mt-1">All workers are currently working</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
@@ -1193,7 +1203,7 @@ export default function AttendancePage() {
                       <div className="flex items-center gap-3">
                         <span className={cn(
                           "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full",
-                          "bg-orange-50 text-orange-700 border border-orange-200"
+                          "bg-orange-50 dark:bg-orange-500/10 text-orange-700 border border-orange-200"
                         )}>
                           <Clock className="size-3.5" />
                           On break
@@ -1208,7 +1218,7 @@ export default function AttendancePage() {
                               }
                             }}
                             disabled={endBreakManually.isPending}
-                            className="rounded-lg text-red-600 border-red-200 hover:bg-red-50"
+                            className="rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           >
                             End Break
                           </Button>
@@ -1286,7 +1296,7 @@ export default function AttendancePage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/80">
-                      <TableHead className="font-semibold text-muted-foreground">Technician</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Worker</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Type</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Started</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Ended</TableHead>
@@ -1299,9 +1309,13 @@ export default function AttendancePage() {
                       <TableRow key={breakItem.id} className="hover:bg-accent/50">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="size-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-                              {breakItem.user?.firstName?.[0]}{breakItem.user?.lastName?.[0]}
-                            </div>
+                            <UserAvatar
+                              firstName={breakItem.user?.firstName}
+                              lastName={breakItem.user?.lastName}
+        
+                              seed={breakItem.user?.id}
+                              size="md"
+                            />
                             <span className="font-medium text-foreground">
                               {breakItem.user?.firstName} {breakItem.user?.lastName}
                             </span>

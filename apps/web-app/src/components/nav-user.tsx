@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
 } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -61,6 +62,7 @@ export function NavUser() {
               className="group rounded-xl border border-border bg-card p-3 transition-all hover:bg-muted hover:border-border data-[state=open]:bg-muted data-[state=open]:border-border"
             >
               <Avatar className="h-9 w-9 rounded-lg ring-2 ring-border">
+                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={fullName} className="rounded-lg object-cover" />}
                 <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-base">
                   {initials}
                 </AvatarFallback>
@@ -83,6 +85,7 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-3 p-2">
                 <Avatar className="h-11 w-11 rounded-xl ring-2 ring-border">
+                  {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={fullName} className="rounded-xl object-cover" />}
                   <AvatarFallback className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold">
                     {initials}
                   </AvatarFallback>

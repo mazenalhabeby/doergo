@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { notify } from '@/lib/toast';
 import { Eye, EyeOff, Mail, Lock, User, Building2, Check } from 'lucide-react';
 import { Button, Input, Label, Checkbox, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
@@ -62,9 +62,7 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
         }
       });
       setValidationErrors(fieldErrors);
-      toast.error(t('auth.register.validationErrorTitle'), {
-        description: result.error.errors[0]?.message || t('auth.register.validationErrorDescription'),
-      });
+      notify.error(result.error.errors[0]?.message || t('auth.register.validationErrorDescription'));
       setIsLoading(false);
       return;
     }
@@ -79,14 +77,10 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
       });
 
       await login(formData.email, formData.password);
-      toast.success(t('auth.register.successTitle'), {
-        description: t('auth.register.successDescription'),
-      });
+      notify.success(t('auth.register.successTitle'), t('auth.register.successDescription'));
       router.push('/dashboard');
     } catch (err) {
-      toast.error(t('auth.register.errorTitle'), {
-        description: err instanceof Error ? err.message : t('auth.register.errorDescription'),
-      });
+      notify.error(err instanceof Error ? err.message : t('auth.register.errorDescription'));
     } finally {
       setIsLoading(false);
     }

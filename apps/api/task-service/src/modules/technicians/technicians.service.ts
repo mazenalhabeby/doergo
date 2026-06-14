@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService, TaskStatus, success } from '@hbcfield/shared';
 import {
-  GetTechnicianStatsDto,
-  GetTechnicianPerformanceDto,
-  GetTechnicianTaskHistoryDto,
+  GetEmployeeStatsDto,
+  GetEmployeePerformanceDto,
+  GetEmployeeTaskHistoryDto,
   SetScheduleDto,
   GetScheduleDto,
   RequestTimeOffDto,
@@ -19,9 +19,9 @@ export class TechniciansService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Get basic stats for a technician
+   * Get basic stats for an employee
    */
-  async getStats(dto: GetTechnicianStatsDto) {
+  async getStats(dto: GetEmployeeStatsDto) {
     const { id, organizationId } = dto;
 
     const tasks = await this.prisma.task.findMany({
@@ -76,9 +76,9 @@ export class TechniciansService {
   }
 
   /**
-   * Get detailed performance metrics for a technician
+   * Get detailed performance metrics for an employee
    */
-  async getPerformance(dto: GetTechnicianPerformanceDto) {
+  async getPerformance(dto: GetEmployeePerformanceDto) {
     const { id, organizationId, startDate, endDate } = dto;
 
     // Default to last 30 days if no date range provided
@@ -187,9 +187,9 @@ export class TechniciansService {
   }
 
   /**
-   * Get task history for a technician
+   * Get task history for an employee
    */
-  async getTaskHistory(dto: GetTechnicianTaskHistoryDto) {
+  async getTaskHistory(dto: GetEmployeeTaskHistoryDto) {
     const { id, organizationId, status, page = 1, limit = 20 } = dto;
 
     const where: any = {
@@ -318,7 +318,7 @@ export class TechniciansService {
     });
 
     if (!technician) {
-      throw new NotFoundException('Technician not found in organization');
+      throw new NotFoundException('Employee not found in organization');
     }
 
     // Validate schedule entries
@@ -329,6 +329,16 @@ export class TechniciansService {
       if (!this.isValidTimeFormat(entry.startTime) || !this.isValidTimeFormat(entry.endTime)) {
         throw new BadRequestException('Time must be in HH:MM format (e.g., "09:00")');
       }
+      // Validate start < end (prevent inverted schedules)
+      if (entry.isActive !== false && entry.startTime >= entry.endTime) {
+        throw new BadRequestException(`Start time (${entry.startTime}) must be before end time (${entry.endTime}) for day ${entry.dayOfWeek}`);
+      }
+    }
+
+    // Check for duplicate days
+    const days = schedule.map(e => e.dayOfWeek);
+    if (new Set(days).size !== days.length) {
+      throw new BadRequestException('Duplicate day entries are not allowed');
     }
 
     // Upsert each schedule entry (delete old, create new for simplicity)
@@ -375,7 +385,7 @@ export class TechniciansService {
     });
 
     if (!technician) {
-      throw new NotFoundException('Technician not found in organization');
+      throw new NotFoundException('Employee not found in organization');
     }
 
     const schedule = await this.prisma.technicianSchedule.findMany({
@@ -410,7 +420,7 @@ export class TechniciansService {
     });
 
     if (!technician) {
-      throw new NotFoundException('Technician not found in organization');
+      throw new NotFoundException('Employee not found in organization');
     }
 
     // Validate dates
@@ -440,6 +450,20 @@ export class TechniciansService {
       throw new BadRequestException('Time-off request overlaps with an existing request');
     }
 
+    // Check coverage — warn if other workers are already off during this period
+    const othersOff = await this.prisma.timeOff.findMany({
+      where: {
+        technicianId: { not: technicianId },
+        status: { in: ['PENDING', 'APPROVED'] },
+        startDate: { lte: end },
+        endDate: { gte: start },
+        technician: { organizationId },
+      },
+      include: {
+        technician: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+
     const timeOff = await this.prisma.timeOff.create({
       data: {
         technicianId,
@@ -455,7 +479,11 @@ export class TechniciansService {
       },
     });
 
-    return success(timeOff);
+    const coverageWarning = othersOff.length > 0
+      ? `Warning: ${othersOff.length} other worker(s) also have time off during this period: ${othersOff.map(o => `${o.technician.firstName} ${o.technician.lastName}`).join(', ')}`
+      : null;
+
+    return success(timeOff, coverageWarning ? coverageWarning : undefined);
   }
 
   /**
@@ -470,7 +498,7 @@ export class TechniciansService {
     });
 
     if (!technician) {
-      throw new NotFoundException('Technician not found in organization');
+      throw new NotFoundException('Employee not found in organization');
     }
 
     const where: any = { technicianId };
@@ -636,7 +664,7 @@ export class TechniciansService {
     const technicians = await this.prisma.user.findMany({
       where: {
         organizationId,
-        role: 'TECHNICIAN',
+        role: 'EMPLOYEE',
         isActive: true,
       },
       select: {
@@ -652,6 +680,14 @@ export class TechniciansService {
             status: 'APPROVED',
             startDate: { lte: rangeEnd },
             endDate: { gte: rangeStart },
+          },
+        },
+        // Include space assignments for grouping
+        assignments: {
+          where: { effectiveTo: null }, // Only active assignments
+          select: {
+            isPrimary: true,
+            location: { select: { id: true, name: true } },
           },
         },
       },
@@ -670,6 +706,11 @@ export class TechniciansService {
         const onTimeOff = !!timeOffRecord;
         const hasSchedule = schedule !== null;
 
+        // Resolve primary space
+        const primaryAssignment = tech.assignments?.find((a: any) => a.isPrimary);
+        const firstAssignment = tech.assignments?.[0];
+        const space = primaryAssignment?.location || firstAssignment?.location || null;
+
         return {
           id: tech.id,
           firstName: tech.firstName,
@@ -677,6 +718,7 @@ export class TechniciansService {
           position: tech.position,
           isAvailable: hasSchedule && !onTimeOff,
           onTimeOff,
+          space: space ? { id: space.id, name: space.name } : null,
           schedule: schedule
             ? {
                 startTime: schedule.startTime,

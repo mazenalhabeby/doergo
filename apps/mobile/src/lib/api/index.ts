@@ -73,3 +73,5 @@ export { joinRequestsApi, membersApi, adminInvitationsApi, orgSettingsApi } from
 export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput } from './admin';
 export { overtimeApi } from './overtime';
 export type { OvertimeRequest } from './overtime';
+export { locationsApi } from './locations';
+export type { LocationAssignment, AssignMemberInput, LocationWithMembers } from './locations';

@@ -40,21 +40,21 @@ export class LocationsQueueService extends BaseQueueService {
   }
 
   /**
-   * Assign a technician to a location
+   * Assign a member to a location
    */
-  async assignTechnician(data: Record<string, any>) {
+  async assignMember(data: Record<string, any>) {
     return this.addJobAndWait(LOCATION_JOB_TYPES.ASSIGN_TECHNICIAN, data);
   }
 
   /**
-   * Update a technician assignment
+   * Update a member assignment
    */
   async updateAssignment(data: Record<string, any>) {
     return this.addJobAndWait(LOCATION_JOB_TYPES.UPDATE_ASSIGNMENT, data);
   }
 
   /**
-   * Remove a technician assignment
+   * Remove a member assignment
    */
   async removeAssignment(data: Record<string, any>) {
     return this.addJobAndWait(LOCATION_JOB_TYPES.REMOVE_ASSIGNMENT, data);

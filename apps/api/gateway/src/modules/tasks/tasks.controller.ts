@@ -9,12 +9,23 @@ import {
   Param,
   Query,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
+import { Role, canCreateTaskFor } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
-import { CreateTaskDto, UpdateTaskDto, AssignTaskDto, UpdateStatusDto } from './dto';
+import {
+  CreateTaskDto,
+  UpdateTaskDto,
+  AssignTaskDto,
+  UpdateStatusDto,
+  AddAssigneeDto,
+  AddChecklistItemDto,
+  UpdateChecklistItemDto,
+  ReorderChecklistDto,
+  CreateDependencyDto,
+} from './dto';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
 
@@ -44,6 +55,21 @@ export class TasksController {
   @RequirePermission('canCreateTasks')
   @ApiOperation({ summary: 'Create a new task' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
+    const scope = req.user.taskCreationScope || 'NONE';
+
+    // NONE scope cannot create tasks (should be caught by canCreateTasks guard, but double-check)
+    if (scope === 'NONE') {
+      throw new ForbiddenException('You do not have permission to create tasks.');
+    }
+
+    // SELF scope: force assignedToId to the current user
+    if (scope === 'SELF') {
+      createTaskDto.assignedToId = req.user.id;
+    }
+
+    // SPACE scope: assignee validation is handled by the task-service (space membership check)
+    // ORG scope: no restrictions on assignee
+
     return this.tasksQueueService.createTask({
       ...createTaskDto,
       userId: req.user.id,
@@ -59,6 +85,7 @@ export class TasksController {
   @ApiQuery({ name: 'startDate', required: false, description: 'Filter tasks with dueDate >= startDate (ISO date)' })
   @ApiQuery({ name: 'endDate', required: false, description: 'Filter tasks with dueDate <= endDate (ISO date)' })
   @ApiQuery({ name: 'includeNoDueDate', required: false, description: 'Include tasks without a dueDate (for Current tab)' })
+  @ApiQuery({ name: 'spaceId', required: false, description: 'Filter by space (CompanyLocation) ID' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async findAll(@Query() query: Record<string, any>, @Request() req: any) {
@@ -87,21 +114,23 @@ export class TasksController {
 
   @Get('counts')
   @ApiOperation({ summary: 'Get task counts grouped by status' })
-  async getStatusCounts(@Request() req: any) {
+  @ApiQuery({ name: 'spaceId', required: false, description: 'Filter counts by space (CompanyLocation) ID' })
+  async getStatusCounts(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getStatusCounts({
       userId: req.user.id,
       userRole: req.user.role,
       organizationId: req.user.organizationId,
+      ...(spaceId && { spaceId }),
     });
   }
 
-  @Get(':id/suggested-technicians')
+  @Get(':id/suggested-employees')
   @RequirePermission('canAssignTasks')
-  @ApiOperation({ summary: 'Get suggested technicians for a task with scoring' })
-  async getSuggestedTechnicians(@Param('id') id: string, @Request() req: any) {
+  @ApiOperation({ summary: 'Get suggested employees for a task with scoring' })
+  async getSuggestedEmployees(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
-    return this.tasksService.getSuggestedTechnicians({
+    return this.tasksService.getSuggestedEmployees({
       taskId: id,
       userId: req.user.id,
       userRole: req.user.role,
@@ -136,7 +165,7 @@ export class TasksController {
 
   @Patch(':id/assign')
   @RequirePermission('canAssignTasks')
-  @ApiOperation({ summary: 'Assign a task to a technician' })
+  @ApiOperation({ summary: 'Assign a task to an employee' })
   async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: any) {
     return this.tasksQueueService.assignTask({
       id,
@@ -148,7 +177,7 @@ export class TasksController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Update task status (role-based: TECHNICIAN can start/block/complete, others can cancel)' })
+  @ApiOperation({ summary: 'Update task status (role-based: EMPLOYEE can start/block/complete, others can cancel)' })
   async updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateStatusDto, @Request() req: any) {
     return this.tasksQueueService.updateTaskStatus({
       id,
@@ -214,6 +243,172 @@ export class TasksController {
       taskId: id,
       userId: req.user.id,
       userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  // ============ Assignee Endpoints ============
+
+  @Post(':id/assignees')
+  @RequirePermission('canAssignTasks')
+  @ApiOperation({ summary: 'Add an assignee to a task' })
+  async addAssignee(
+    @Param('id') id: string,
+    @Body() addAssigneeDto: AddAssigneeDto,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.addAssignee({
+      taskId: id,
+      ...addAssigneeDto,
+      requestUserId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete(':id/assignees/:userId')
+  @RequirePermission('canAssignTasks')
+  @ApiOperation({ summary: 'Remove an assignee from a task' })
+  async removeAssignee(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.removeAssignee({
+      taskId: id,
+      userId,
+      requestUserId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  // ============ Checklist Endpoints ============
+
+  @Post(':id/checklist')
+  @ApiOperation({ summary: 'Add a checklist item to a task' })
+  async addChecklistItem(
+    @Param('id') id: string,
+    @Body() addChecklistItemDto: AddChecklistItemDto,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.addChecklistItem({
+      taskId: id,
+      ...addChecklistItemDto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Patch(':id/checklist/reorder')
+  @ApiOperation({ summary: 'Reorder checklist items' })
+  async reorderChecklist(
+    @Param('id') id: string,
+    @Body() reorderChecklistDto: ReorderChecklistDto,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.reorderChecklist({
+      taskId: id,
+      ...reorderChecklistDto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Patch(':id/checklist/:itemId')
+  @ApiOperation({ summary: 'Update a checklist item (text or toggle completion)' })
+  async updateChecklistItem(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Body() updateChecklistItemDto: UpdateChecklistItemDto,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.updateChecklistItem({
+      taskId: id,
+      itemId,
+      ...updateChecklistItemDto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete(':id/checklist/:itemId')
+  @ApiOperation({ summary: 'Delete a checklist item' })
+  async deleteChecklistItem(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.deleteChecklistItem({
+      taskId: id,
+      itemId,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  // ============ Subtask Endpoints ============
+
+  @Post(':id/subtasks')
+  @RequirePermission('canCreateTasks')
+  @ApiOperation({ summary: 'Create a subtask under a task' })
+  async createSubtask(
+    @Param('id') id: string,
+    @Body() createTaskDto: CreateTaskDto,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.createSubtask({
+      ...createTaskDto,
+      parentId: id,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Get(':id/subtasks')
+  @ApiOperation({ summary: 'Get subtasks of a task' })
+  async getSubtasks(@Param('id') id: string, @Request() req: any) {
+    return this.tasksService.getSubtasks({
+      taskId: id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  // ============ Dependency Endpoints ============
+
+  @Post(':id/dependencies')
+  @RequirePermission('canCreateTasks')
+  @ApiOperation({ summary: 'Add a dependency to a task (this task becomes the successor)' })
+  async addDependency(
+    @Param('id') id: string,
+    @Body() createDependencyDto: CreateDependencyDto,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.addDependency({
+      ...createDependencyDto,
+      successorId: id,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete(':id/dependencies/:depId')
+  @RequirePermission('canCreateTasks')
+  @ApiOperation({ summary: 'Remove a dependency from a task' })
+  async removeDependency(
+    @Param('id') _id: string,
+    @Param('depId') depId: string,
+    @Request() req: any,
+  ) {
+    return this.tasksQueueService.removeDependency({
+      dependencyId: depId,
+      userId: req.user.id,
       organizationId: req.user.organizationId,
     });
   }

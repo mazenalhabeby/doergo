@@ -25,13 +25,13 @@ import type {
   AttendanceSummary as SharedAttendanceSummary,
   AttendanceQueryParams as SharedAttendanceQueryParams,
   PaginatedResponse,
-  TechnicianProfile,
-  TechnicianListItem,
-  TechnicianStats,
+  EmployeeProfile,
+  EmployeeListItem,
+  EmployeeStats,
   PerformanceMetrics,
-  CreateTechnicianInput,
-  UpdateTechnicianInput,
-  TechniciansQueryParams,
+  CreateEmployeeInput,
+  UpdateEmployeeInput,
+  EmployeesQueryParams,
   Invitation,
   InvitationValidation,
   CreateInvitationInput,
@@ -47,13 +47,13 @@ export type {
   Break,
   BreakStatus,
   PaginatedResponse,
-  TechnicianProfile,
-  TechnicianListItem,
-  TechnicianStats,
+  EmployeeProfile,
+  EmployeeListItem,
+  EmployeeStats,
   PerformanceMetrics,
-  CreateTechnicianInput,
-  UpdateTechnicianInput,
-  TechniciansQueryParams,
+  CreateEmployeeInput,
+  UpdateEmployeeInput,
+  EmployeesQueryParams,
   Invitation,
   InvitationValidation,
   CreateInvitationInput,
@@ -62,7 +62,10 @@ export type {
   OrgCodeValidation,
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+// API base URL — proxy through Next.js for regular requests
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+// Direct gateway URL for auth endpoints (cookies need to go directly to the server that sets them)
+const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:4000/api/v1';
 
 interface ApiResponse<T = unknown> {
   data?: T;
@@ -75,41 +78,45 @@ interface AuthTokens {
   refreshToken: string;
 }
 
-// Token storage keys
+// Token storage — the short-lived ACCESS token lives in localStorage (for page
+// reload persistence); the long-lived REFRESH token is kept ONLY in the gateway's
+// httpOnly cookie and is never readable from JS (so XSS can't steal a durable
+// credential). The browser sends the cookie automatically on credentialed
+// requests to /auth/refresh and /auth/logout.
 const ACCESS_TOKEN_KEY = 'hbcfield_access_token';
-const REFRESH_TOKEN_KEY = 'hbcfield_refresh_token';
+
+// In-memory access token (primary) + localStorage backup for page reload persistence
+let memoryAccessToken: string | null = null;
 
 // Token refresh state management - shared promise ensures only one refresh at a time
 let refreshPromise: Promise<boolean> | null = null;
 
-// Get tokens from storage
+// Get access token (memory first, then localStorage fallback)
 export function getAccessToken(): string | null {
+  if (memoryAccessToken) return memoryAccessToken;
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export function getRefreshToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-// Store tokens (always use localStorage for persistence)
+// Store the access token (refresh token is set as an httpOnly cookie by the gateway).
 export function setTokens(tokens: AuthTokens): void {
+  memoryAccessToken = tokens.accessToken;
   if (typeof window === 'undefined') return;
   localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
 }
 
-// Clear tokens
+// Clear the access token (logout also clears the httpOnly cookie server-side).
 export function clearTokens(): void {
+  memoryAccessToken = null;
   if (typeof window === 'undefined') return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  // Best-effort cleanup of any legacy refresh token from before the cookie migration.
+  localStorage.removeItem('hbcfield_refresh_token');
 }
 
-// Check if we have tokens
+// Check if we have an access token (refresh token is in cookie, can't check from JS)
 export function hasTokens(): boolean {
-  return !!getAccessToken() && !!getRefreshToken();
+  return !!getAccessToken();
 }
 
 // Request timeout in milliseconds
@@ -130,12 +137,6 @@ function refreshAccessToken(): Promise<boolean> {
     return refreshPromise;
   }
 
-  const refreshToken = getRefreshToken();
-
-  if (!refreshToken) {
-    return Promise.resolve(false);
-  }
-
   // Create the promise IMMEDIATELY and store it
   // This ensures any concurrent calls will get the same promise
   refreshPromise = (async () => {
@@ -143,12 +144,15 @@ function refreshAccessToken(): Promise<boolean> {
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      // The refresh token rides in the httpOnly cookie (credentials: 'include').
+      // No token is read from JS or sent in the body.
+      const response = await fetch(`${AUTH_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ refreshToken }),
+        credentials: 'include',
+        body: JSON.stringify({}),
         signal: controller.signal,
       });
 
@@ -161,9 +165,10 @@ function refreshAccessToken(): Promise<boolean> {
         return false;
       }
 
-      // API returns { success: true, data: { accessToken, refreshToken } }
+      // We only need the new access token; the rotated refresh token is set
+      // back as an httpOnly cookie by the gateway.
       const data = result.data;
-      if (!data?.accessToken || !data?.refreshToken) {
+      if (!data?.accessToken) {
         clearTokens();
         return false;
       }
@@ -215,20 +220,12 @@ async function apiRequest<T>(
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
+      credentials: 'include', // Always send httpOnly cookies
     });
 
     // Handle 401 - Automatic token refresh
     if (response.status === 401 && retry) {
-      // Check if we have a refresh token before attempting
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        // No refresh token - redirect to login
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        return { status: 401, error: 'Session expired. Please log in again.' };
-      }
-
+      // Attempt refresh — refresh token is in httpOnly cookie
       const refreshed = await refreshAccessToken();
 
       if (refreshed) {
@@ -236,10 +233,8 @@ async function apiRequest<T>(
         return apiRequest<T>(endpoint, options, false);
       }
 
-      // Refresh failed - redirect to login
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
+      // Refresh failed — clear tokens, let auth context detect and redirect gracefully
+      clearTokens();
       return { status: 401, error: 'Session expired. Please log in again.' };
     }
 
@@ -310,7 +305,7 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
 // Auth-specific API methods
 export const authApi = {
   login: async (email: string, password: string) => {
-    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
+    const response = await fetchWithTimeout(`${AUTH_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -322,10 +317,12 @@ export const authApi = {
       throw new Error(result.message || 'Login failed');
     }
 
-    // API returns { success: true, data: { user, accessToken, refreshToken } }
+    // API returns { success: true, data: { user, accessToken, refreshToken } }.
+    // The refresh token is also set as an httpOnly cookie by the gateway; we only
+    // need the access token client-side.
     const data = result.data;
 
-    if (!data?.accessToken || !data?.refreshToken) {
+    if (!data?.accessToken) {
       throw new Error('Invalid server response');
     }
 
@@ -338,10 +335,9 @@ export const authApi = {
   },
 
   logout: async () => {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      await api.post('/auth/logout', { refreshToken }).catch(() => {});
-    }
+    // The refresh token is in the httpOnly cookie; the gateway reads it from the
+    // cookie (credentials are sent by api.post) and clears it server-side.
+    await api.post('/auth/logout', {}).catch(() => {});
     clearTokens();
   },
 
@@ -355,12 +351,17 @@ export const authApi = {
         firstName: string;
         lastName: string;
         organizationId?: string;
+        avatarUrl?: string | null;
         // Permission fields
-        platform: string;
         canCreateTasks: boolean;
+        taskCreationScope?: string;
         canViewAllTasks: boolean;
         canAssignTasks: boolean;
         canManageUsers: boolean;
+        enabledModules?: string[];
+        // Custom role
+        orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
+        rolePermissions?: Record<string, boolean>;
       };
     }>('/auth/me');
 
@@ -380,7 +381,7 @@ export const authApi = {
     companyName: string;
   }) => {
     // Note: Role is NOT sent - backend always sets it to ADMIN for security
-    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/register`, {
+    const response = await fetchWithTimeout(`${AUTH_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -396,7 +397,7 @@ export const authApi = {
   },
 
   forgotPassword: async (email: string) => {
-    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/forgot-password`, {
+    const response = await fetchWithTimeout(`${AUTH_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -412,7 +413,7 @@ export const authApi = {
   },
 
   resetPassword: async (token: string, newPassword: string) => {
-    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/reset-password`, {
+    const response = await fetchWithTimeout(`${AUTH_BASE_URL}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, newPassword }),
@@ -442,6 +443,79 @@ export const authApi = {
 };
 
 // Task types
+export interface TaskAssignee {
+  id: string;
+  userId: string;
+  role: 'LEAD' | 'MEMBER';
+  user: { id: string; firstName: string; lastName: string; avatarUrl?: string | null };
+  createdAt: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+  position: number;
+  createdAt: string;
+}
+
+export interface Phase {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  type: string;
+  organizationId: string;
+  startDate: string | null;
+  endDate: string | null;
+  position: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Sprint {
+  id: string;
+  name: string;
+  goal: string | null;
+  organizationId: string;
+  startDate: string;
+  endDate: string;
+  status: 'PLANNING' | 'ACTIVE' | 'COMPLETED';
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+  tasks?: Task[];
+}
+
+export interface SprintReport {
+  id: string;
+  sprintId: string;
+  committedPoints: number;
+  completedPoints: number;
+  committedTasks: number;
+  completedTasks: number;
+  carriedOverTasks: number;
+  carriedOverPoints: number;
+  addedMidSprint: number;
+  removedMidSprint: number;
+  velocity: number;
+  dailyBurndown: { date: string; remaining: number; ideal: number }[];
+}
+
+export const STORY_POINT_OPTIONS = [1, 2, 3, 5, 8, 13, 21] as const;
+
+export interface TaskDependency {
+  id: string;
+  predecessorId: string;
+  successorId: string;
+  type: 'FINISH_TO_START' | 'START_TO_START' | 'FINISH_TO_FINISH' | 'START_TO_FINISH';
+  lagDays: number;
+  createdAt: string;
+  predecessor?: { id: string; title: string; status: string };
+  successor?: { id: string; title: string; status: string };
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -449,6 +523,8 @@ export interface Task {
   status: string;
   priority: string;
   dueDate: string | null;
+  startDate: string | null;
+  estimatedHours: number | null;
   locationLat: number | null;
   locationLng: number | null;
   locationAddress: string | null;
@@ -461,17 +537,44 @@ export interface Task {
   routeStartedAt: string | null;
   routeEndedAt: string | null;
   routeDistance: number | null;
+  // Hierarchy fields
+  parentId?: string | null;
+  depth?: number;
+  position?: number;
+  phaseId?: string | null;
+  sprintId?: string | null;
+  workflowId?: string | null;
+  // Agile fields
+  storyPoints?: number | null;
+  epicId?: string | null;
+  epic?: Epic | null;
+  // Relations
+  subtasks?: Task[];
+  parent?: { id: string; title: string } | null;
+  phase?: Phase | null;
+  sprint?: Sprint | null;
+  predecessors?: TaskDependency[];
+  successors?: TaskDependency[];
+  _count?: { subtasks?: number };
+  // Space
+  spaceId?: string | null;
+  space?: { id: string; name: string } | null;
+  // Multi-assignee & checklist
+  assignees?: TaskAssignee[];
+  checklistItems?: ChecklistItem[];
   createdBy?: {
     id: string;
     firstName: string;
     lastName: string;
     email?: string;
+    avatarUrl?: string | null;
   };
   assignedTo?: {
     id: string;
     firstName: string;
     lastName: string;
     email?: string;
+    avatarUrl?: string | null;
   } | null;
   organization?: {
     id: string;
@@ -558,10 +661,22 @@ export interface CreateTaskInput {
   description?: string;
   priority?: string;
   dueDate?: string;
+  startDate?: string;
+  estimatedHours?: number;
+  assigneeIds?: string[];
   locationLat?: number;
   locationLng?: number;
   locationAddress?: string;
   assetId?: string;
+  phaseId?: string;
+  sprintId?: string;
+  workflowId?: string;
+  parentId?: string;
+  storyPoints?: number;
+  epicId?: string;
+  spaceId?: string;
+  checklistItems?: { text: string }[];
+  customFieldValues?: { definitionId: string; value: string }[];
 }
 
 export interface UpdateTaskInput {
@@ -569,10 +684,18 @@ export interface UpdateTaskInput {
   description?: string;
   priority?: string;
   dueDate?: string;
+  startDate?: string;
+  estimatedHours?: number;
   locationLat?: number;
   locationLng?: number;
   locationAddress?: string;
   assetId?: string | null;
+  phaseId?: string | null;
+  sprintId?: string | null;
+  storyPoints?: number | null;
+  epicId?: string | null;
+  spaceId?: string | null;
+  position?: number;
 }
 
 export interface TasksQueryParams {
@@ -582,8 +705,8 @@ export interface TasksQueryParams {
   limit?: number;
 }
 
-// Suggested technician response types
-export interface SuggestedTechnician {
+// Suggested employee response types
+export interface SuggestedEmployee {
   id: string;
   firstName: string;
   lastName: string;
@@ -608,11 +731,16 @@ export interface SuggestedTechnician {
   };
 }
 
-export interface SuggestedTechniciansResponse {
+export interface SuggestedEmployeesResponse {
   taskId: string;
-  technicians: SuggestedTechnician[];
+  technicians: SuggestedEmployee[];
   suggestedTechnicianId: string | null;
 }
+
+/** @deprecated Use SuggestedEmployee */
+export type SuggestedTechnician = SuggestedEmployee;
+/** @deprecated Use SuggestedEmployeesResponse */
+export type SuggestedTechniciansResponse = SuggestedEmployeesResponse;
 
 // Tasks API methods
 // User/Worker types
@@ -632,7 +760,7 @@ export interface Worker {
 
 // Users API methods
 export const usersApi = {
-  // Get all technicians (DISPATCHER only)
+  // Get all employees (DISPATCHER only)
   getWorkers: async () => {
     const response = await api.get<{ success: boolean; data: Worker[] }>('/users/workers');
 
@@ -652,6 +780,37 @@ export const usersApi = {
     }
 
     return response.data?.data;
+  },
+
+  // Upload avatar image directly to the API gateway
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/users/avatar/upload`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.message || 'Upload failed');
+    }
+
+    const data = await response.json();
+    return data.data as { avatarUrl: string };
+  },
+
+  // Remove avatar
+  removeAvatar: async () => {
+    const response = await api.delete<{ success: boolean }>('/users/avatar');
+    if (response.error) throw new Error(response.error);
+    return response.data;
   },
 };
 
@@ -735,7 +894,7 @@ export const tasksApi = {
     return response.data;
   },
 
-  // Assign a task to a technician (DISPATCHER only)
+  // Assign a task to an employee (DISPATCHER only)
   assign: async (id: string, workerId: string) => {
     const response = await api.patch<TaskResponse>(`/tasks/${id}/assign`, { workerId });
 
@@ -790,9 +949,98 @@ export const tasksApi = {
     return response.data?.data;
   },
 
-  // Get suggested technicians for a task (with scoring)
-  getSuggestedTechnicians: async (taskId: string) => {
-    const response = await api.get<{ success: boolean; data: SuggestedTechniciansResponse }>(
+  // ── Assignees ──────────────────────────────────────────────────────────────
+  addAssignee: async (taskId: string, userId: string, role?: string) => {
+    const response = await api.post<{ success: boolean; data: TaskAssignee }>(
+      `/tasks/${taskId}/assignees`,
+      { userId, role: role || 'MEMBER' },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  removeAssignee: async (taskId: string, userId: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/tasks/${taskId}/assignees/${userId}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  // ── Checklist ─────────────────────────────────────────────────────────────
+  addChecklistItem: async (taskId: string, text: string) => {
+    const response = await api.post<{ success: boolean; data: ChecklistItem }>(
+      `/tasks/${taskId}/checklist`,
+      { text },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateChecklistItem: async (
+    taskId: string,
+    itemId: string,
+    data: { text?: string; isCompleted?: boolean },
+  ) => {
+    const response = await api.patch<{ success: boolean; data: ChecklistItem }>(
+      `/tasks/${taskId}/checklist/${itemId}`,
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  deleteChecklistItem: async (taskId: string, itemId: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/tasks/${taskId}/checklist/${itemId}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  reorderChecklist: async (taskId: string, itemIds: string[]) => {
+    const response = await api.patch<{ success: boolean; data: ChecklistItem[] }>(
+      `/tasks/${taskId}/checklist/reorder`,
+      { itemIds },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  // ── Subtasks ─────────────────────────────────────────────────────────────
+  createSubtask: async (parentId: string, data: CreateTaskInput) => {
+    const response = await api.post<TaskResponse>(`/tasks/${parentId}/subtasks`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  getSubtasks: async (taskId: string) => {
+    const response = await api.get<{ success: boolean; data: Task[] }>(`/tasks/${taskId}/subtasks`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  // ── Dependencies ────────────────────────────────────────────────────────
+  addDependency: async (taskId: string, predecessorId: string, type?: string, lagDays?: number) => {
+    const response = await api.post<{ success: boolean; data: TaskDependency }>(
+      `/tasks/${taskId}/dependencies`,
+      { predecessorId, type, lagDays },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  removeDependency: async (taskId: string, depId: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/tasks/${taskId}/dependencies/${depId}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  // Get suggested employees for a task (with scoring)
+  getSuggestedEmployees: async (taskId: string) => {
+    const response = await api.get<{ success: boolean; data: SuggestedEmployeesResponse }>(
       `/tasks/${taskId}/suggested-technicians`
     );
 
@@ -1925,13 +2173,13 @@ export const attendanceApi = {
 };
 
 // ============================================================================
-// TECHNICIANS API
+// EMPLOYEES API
 // ============================================================================
 
-export const techniciansApi = {
-  // List technicians with filtering and pagination
-  list: async (params?: TechniciansQueryParams) => {
-    const endpoint = buildUrlWithQuery('/technicians', {
+export const employeesApi = {
+  // List employees with filtering and pagination
+  list: async (params?: EmployeesQueryParams) => {
+    const endpoint = buildUrlWithQuery('/employees', {
       status: params?.status,
       specialty: params?.specialty,
       search: params?.search,
@@ -1943,7 +2191,7 @@ export const techniciansApi = {
 
     const response = await api.get<{
       success: boolean;
-      data: TechnicianListItem[];
+      data: EmployeeListItem[];
       meta: {
         page: number;
         limit: number;
@@ -1959,12 +2207,12 @@ export const techniciansApi = {
     return response.data;
   },
 
-  // Get technician detail with stats
+  // Get employee detail with stats
   getById: async (id: string) => {
     const response = await api.get<{
       success: boolean;
-      data: TechnicianProfile & { stats: TechnicianStats };
-    }>(`/technicians/${id}`);
+      data: EmployeeProfile & { stats: EmployeeStats };
+    }>(`/employees/${id}`);
 
     if (response.error) {
       throw new Error(response.error);
@@ -1973,13 +2221,13 @@ export const techniciansApi = {
     return response.data?.data;
   },
 
-  // Create new technician
-  create: async (input: CreateTechnicianInput) => {
+  // Create new employee
+  create: async (input: CreateEmployeeInput) => {
     const response = await api.post<{
       success: boolean;
-      data: TechnicianProfile;
+      data: EmployeeProfile;
       generatedPassword?: string;
-    }>('/technicians', input);
+    }>('/employees', input);
 
     if (response.error) {
       throw new Error(response.error);
@@ -1988,12 +2236,12 @@ export const techniciansApi = {
     return response.data;
   },
 
-  // Update technician
-  update: async (id: string, input: UpdateTechnicianInput) => {
+  // Update employee
+  update: async (id: string, input: UpdateEmployeeInput) => {
     const response = await api.patch<{
       success: boolean;
-      data: TechnicianProfile;
-    }>(`/technicians/${id}`, input);
+      data: EmployeeProfile;
+    }>(`/employees/${id}`, input);
 
     if (response.error) {
       throw new Error(response.error);
@@ -2002,12 +2250,12 @@ export const techniciansApi = {
     return response.data?.data;
   },
 
-  // Deactivate technician (soft delete)
+  // Deactivate employee (soft delete)
   deactivate: async (id: string) => {
     const response = await api.delete<{
       success: boolean;
       message: string;
-    }>(`/technicians/${id}`);
+    }>(`/employees/${id}`);
 
     if (response.error) {
       throw new Error(response.error);
@@ -2018,7 +2266,7 @@ export const techniciansApi = {
 
   // Get performance metrics
   getPerformance: async (id: string, startDate?: string, endDate?: string) => {
-    const endpoint = buildUrlWithQuery(`/technicians/${id}/performance`, {
+    const endpoint = buildUrlWithQuery(`/employees/${id}/performance`, {
       startDate,
       endDate,
     });
@@ -2037,7 +2285,7 @@ export const techniciansApi = {
 
   // Get task history
   getTasks: async (id: string, params?: { status?: string; page?: number; limit?: number }) => {
-    const endpoint = buildUrlWithQuery(`/technicians/${id}/tasks`, params || {});
+    const endpoint = buildUrlWithQuery(`/employees/${id}/tasks`, params || {});
 
     const response = await api.get<{
       success: boolean;
@@ -2053,7 +2301,7 @@ export const techniciansApi = {
 
   // Get attendance history
   getAttendance: async (id: string, startDate?: string, endDate?: string) => {
-    const endpoint = buildUrlWithQuery(`/technicians/${id}/attendance`, {
+    const endpoint = buildUrlWithQuery(`/employees/${id}/attendance`, {
       startDate,
       endDate,
     });
@@ -2083,7 +2331,7 @@ export const techniciansApi = {
         effectiveTo?: string;
         location: CompanyLocation;
       }[];
-    }>(`/technicians/${id}/assignments`);
+    }>(`/employees/${id}/assignments`);
 
     if (response.error) {
       throw new Error(response.error);
@@ -2096,7 +2344,7 @@ export const techniciansApi = {
   // SCHEDULE MANAGEMENT
   // ========================================================================
 
-  // Get technician weekly schedule
+  // Get employee weekly schedule
   getSchedule: async (id: string) => {
     const response = await api.get<{
       success: boolean;
@@ -2104,7 +2352,7 @@ export const techniciansApi = {
         technician: { id: string; firstName: string; lastName: string };
         schedule: ScheduleEntry[];
       };
-    }>(`/technicians/${id}/schedule`);
+    }>(`/employees/${id}/schedule`);
 
     if (response.error) {
       throw new Error(response.error);
@@ -2113,12 +2361,12 @@ export const techniciansApi = {
     return response.data?.data;
   },
 
-  // Set technician weekly schedule
+  // Set employee weekly schedule
   setSchedule: async (id: string, schedule: ScheduleEntryInput[]) => {
     const response = await api.post<{
       success: boolean;
       data: ScheduleEntry[];
-    }>(`/technicians/${id}/schedule`, { schedule });
+    }>(`/employees/${id}/schedule`, { schedule });
 
     if (response.error) {
       throw new Error(response.error);
@@ -2133,7 +2381,7 @@ export const techniciansApi = {
 
   // Get all time-off requests for the organization
   getOrgTimeOff: async (status?: TimeOffStatus) => {
-    const endpoint = buildUrlWithQuery('/technicians/time-off', { status });
+    const endpoint = buildUrlWithQuery('/employees/time-off', { status });
 
     const response = await api.get<{
       success: boolean;
@@ -2149,9 +2397,9 @@ export const techniciansApi = {
     return response.data?.data || [];
   },
 
-  // Get technician time-off requests
+  // Get employee time-off requests
   getTimeOff: async (id: string, status?: TimeOffStatus) => {
-    const endpoint = buildUrlWithQuery(`/technicians/${id}/time-off`, { status });
+    const endpoint = buildUrlWithQuery(`/employees/${id}/time-off`, { status });
 
     const response = await api.get<{
       success: boolean;
@@ -2170,7 +2418,7 @@ export const techniciansApi = {
     const response = await api.post<{
       success: boolean;
       data: TimeOffRequest;
-    }>(`/technicians/${id}/time-off`, data);
+    }>(`/employees/${id}/time-off`, data);
 
     if (response.error) {
       throw new Error(response.error);
@@ -2184,7 +2432,7 @@ export const techniciansApi = {
     const response = await api.patch<{
       success: boolean;
       data: TimeOffRequest;
-    }>(`/technicians/time-off/${timeOffId}/approve`, { approved, rejectionReason });
+    }>(`/employees/time-off/${timeOffId}/approve`, { approved, rejectionReason });
 
     if (response.error) {
       throw new Error(response.error);
@@ -2198,7 +2446,7 @@ export const techniciansApi = {
     const response = await api.delete<{
       success: boolean;
       data: TimeOffRequest;
-    }>(`/technicians/time-off/${timeOffId}`);
+    }>(`/employees/time-off/${timeOffId}`);
 
     if (response.error) {
       throw new Error(response.error);
@@ -2207,13 +2455,54 @@ export const techniciansApi = {
     return response.data?.data;
   },
 
+  // Bulk approve/reject time-off requests
+  bulkApproveTimeOff: async (timeOffIds: string[], approved: boolean, rejectionReason?: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: { succeeded: number; failed: number; total: number };
+    }>('/employees/time-off/bulk-approve', { timeOffIds, approved, rejectionReason });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  // ========================================================================
+  // SCHEDULE TEMPLATES
+  // ========================================================================
+
+  getScheduleTemplates: async () => {
+    const response = await api.get<{ success: boolean; data: any[] }>('/employees/schedule-templates');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  createScheduleTemplate: async (data: { name: string; description?: string; entries: any[] }) => {
+    const response = await api.post<{ success: boolean; data: any }>('/employees/schedule-templates', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  deleteScheduleTemplate: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/employees/schedule-templates/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  applyScheduleTemplate: async (employeeId: string, templateId: string) => {
+    const response = await api.post<{ success: boolean; data: any }>(
+      `/employees/${employeeId}/schedule/apply-template`,
+      { templateId },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   // ========================================================================
   // AVAILABILITY
   // ========================================================================
 
-  // Get all technicians availability for a date
+  // Get all employees availability for a date
   getAvailability: async (date?: string) => {
-    const endpoint = buildUrlWithQuery('/technicians/availability', { date });
+    const endpoint = buildUrlWithQuery('/employees/availability', { date });
 
     const response = await api.get<{
       success: boolean;
@@ -2229,7 +2518,7 @@ export const techniciansApi = {
 
   // Get availability for a date range (single API call)
   getAvailabilityRange: async (startDate: string, endDate: string) => {
-    const endpoint = buildUrlWithQuery('/technicians/availability', { startDate, endDate });
+    const endpoint = buildUrlWithQuery('/employees/availability', { startDate, endDate });
 
     const response = await api.get<{
       success: boolean;
@@ -2243,6 +2532,9 @@ export const techniciansApi = {
     return response.data?.data || [];
   },
 };
+
+/** @deprecated Use employeesApi */
+export const techniciansApi = employeesApi;
 
 // ========================================================================
 // TYPES FOR AVAILABILITY
@@ -2285,12 +2577,13 @@ export interface TimeOffRequest {
   updatedAt: string;
 }
 
-export interface TechnicianAvailability {
+export interface EmployeeAvailability {
   id: string;
   firstName: string;
   lastName: string;
   isAvailable: boolean;
   onTimeOff: boolean;
+  space?: { id: string; name: string } | null;
   schedule: {
     startTime: string;
     endTime: string;
@@ -2307,7 +2600,7 @@ export interface AvailabilityResponse {
   date: string;
   dayOfWeek: number;
   dayName: string;
-  technicians: TechnicianAvailability[];
+  technicians: EmployeeAvailability[];
   summary: {
     total: number;
     available: number;
@@ -2440,20 +2733,31 @@ export interface OrgMember {
   lastName: string;
   role: string;
   isActive: boolean;
+  avatarUrl?: string | null;
   createdAt: string;
   workMode?: string;
   specialty?: string;
+  position: string | null;
+  scheduleType: string | null;
+  monthlyHourBudget: number | null;
   canCreateTasks: boolean;
+  taskCreationScope?: string;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  orgRoleId?: string | null;
+  orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
 }
 
 export interface UpdateMemberInput {
   firstName?: string;
   lastName?: string;
+  position?: string;
+  scheduleType?: string;
+  monthlyHourBudget?: number;
   role?: string;
   canCreateTasks?: boolean;
+  taskCreationScope?: string;
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
   canManageUsers?: boolean;
@@ -2571,6 +2875,42 @@ export const organizationsApi = {
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
+
+  updateEnabledModules: async (enabledModules: string[]) => {
+    const response = await api.patch<{ success: boolean; data: any }>('/organizations/profile', { enabledModules });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  getAuditLogs: async (params?: {
+    eventType?: string;
+    userId?: string;
+    resourceType?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const endpoint = buildUrlWithQuery('/organizations/audit-logs', params ?? {});
+    const response = await api.get<{
+      data: Array<{
+        id: string;
+        eventType: string;
+        userId: string | null;
+        user: { id: string; firstName: string; lastName: string; email: string } | null;
+        targetUserId: string | null;
+        targetUser: { id: string; firstName: string; lastName: string; email: string } | null;
+        resourceType: string | null;
+        resourceId: string | null;
+        metadata: Record<string, unknown> | null;
+        ipAddress: string | null;
+        createdAt: string;
+      }>;
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
 };
 
 // ============================================================================
@@ -2584,6 +2924,8 @@ export interface CreateLocationInput {
   lng: number;
   geofenceRadius?: number;
   timezone?: string;
+  enabledModules?: string[];
+  workflowId?: string;
 }
 
 export interface UpdateLocationInput {
@@ -2594,6 +2936,8 @@ export interface UpdateLocationInput {
   geofenceRadius?: number;
   timezone?: string;
   isActive?: boolean;
+  enabledModules?: string[];
+  workflowId?: string;
 }
 
 export interface LocationAssignment {
@@ -2616,7 +2960,7 @@ export interface LocationAssignment {
   location?: CompanyLocation;
 }
 
-export interface AssignTechnicianInput {
+export interface AssignMemberInput {
   userId: string;
   isPrimary?: boolean;
   schedule?: string[];
@@ -2673,29 +3017,42 @@ export const locationsApi = {
     return response.data?.data;
   },
 
-  // Technician assignments
-  getAssignedTechnicians: async (locationId: string) => {
-    const response = await api.get<{ success: boolean; data: LocationAssignment[] }>(`/locations/${locationId}/technicians`);
+  // Member assignments
+  getAssignedMembers: async (locationId: string) => {
+    const response = await api.get<{ success: boolean; data: LocationAssignment[] }>(`/locations/${locationId}/members`);
     if (response.error) throw new Error(response.error);
     return response.data?.data || [];
   },
 
-  assignTechnician: async (locationId: string, data: AssignTechnicianInput) => {
-    const response = await api.post<{ success: boolean; data: LocationAssignment }>(`/locations/${locationId}/technicians`, data);
+  /** @deprecated Use getAssignedMembers */
+  getAssignedTechnicians: async (locationId: string) => {
+    const response = await api.get<{ success: boolean; data: LocationAssignment[] }>(`/locations/${locationId}/members`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  assignMember: async (locationId: string, data: AssignMemberInput) => {
+    const response = await api.post<{ success: boolean; data: LocationAssignment }>(`/locations/${locationId}/members`, data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
   updateAssignment: async (locationId: string, assignmentId: string, data: UpdateAssignmentInput) => {
-    const response = await api.patch<{ success: boolean; data: LocationAssignment }>(`/locations/${locationId}/technicians/${assignmentId}`, data);
+    const response = await api.patch<{ success: boolean; data: LocationAssignment }>(`/locations/${locationId}/members/${assignmentId}`, data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
   removeAssignment: async (locationId: string, assignmentId: string) => {
-    const response = await api.delete<{ success: boolean }>(`/locations/${locationId}/technicians/${assignmentId}`);
+    const response = await api.delete<{ success: boolean }>(`/locations/${locationId}/members/${assignmentId}`);
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+
+  getEffectiveModules: async (spaceId: string) => {
+    const response = await api.get<{ success: boolean; data: { enabledModules: string[]; workflowId?: string } }>(`/locations/${spaceId}/modules`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
   },
 };
 
@@ -2760,6 +3117,501 @@ export const overtimeApi = {
     const response = await api.get<{ success: boolean; data: { data: OvertimeRequest[]; meta: any } }>(endpoint);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
+  },
+};
+
+// ============================================================================
+// PHASES API
+// ============================================================================
+
+export const phasesApi = {
+  list: async () => {
+    const response = await api.get<{ success: boolean; data: Phase[] }>('/phases');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  create: async (data: { name: string; description?: string; color?: string; type?: string; startDate?: string; endDate?: string }) => {
+    const response = await api.post<{ success: boolean; data: Phase }>('/phases', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  update: async (id: string, data: Partial<{ name: string; description: string; color: string; type: string; startDate: string; endDate: string; isActive: boolean }>) => {
+    const response = await api.patch<{ success: boolean; data: Phase }>(`/phases/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/phases/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+};
+
+// ============================================================================
+// SPRINTS API
+// ============================================================================
+
+export const sprintsApi = {
+  list: async (status?: string) => {
+    const endpoint = status ? `/sprints?status=${status}` : '/sprints';
+    const response = await api.get<{ success: boolean; data: Sprint[] }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: Sprint }>(`/sprints/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  create: async (data: { name: string; goal?: string; startDate: string; endDate: string }) => {
+    const response = await api.post<{ success: boolean; data: Sprint }>('/sprints', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  update: async (id: string, data: Partial<{ name: string; goal: string; startDate: string; endDate: string }>) => {
+    const response = await api.patch<{ success: boolean; data: Sprint }>(`/sprints/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  start: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: Sprint }>(`/sprints/${id}/start`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  complete: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: Sprint }>(`/sprints/${id}/complete`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/sprints/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  getReport: async (id: string): Promise<SprintReport | undefined> => {
+    const response = await api.get<{ success: boolean; data: SprintReport }>(`/sprints/${id}/report`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  getVelocity: async (): Promise<{ sprintName: string; velocity: number }[]> => {
+    const response = await api.get<{ success: boolean; data: { sprintName: string; velocity: number }[] }>('/sprints/velocity');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+};
+
+// ============================================================================
+// STATUS WORKFLOWS TYPES & API
+// ============================================================================
+
+export interface StatusWorkflow {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  isActive: boolean;
+  organizationId: string;
+  createdAt: string;
+  updatedAt: string;
+  statuses?: WorkflowStatus[];
+}
+
+export interface WorkflowStatus {
+  id: string;
+  workflowId: string;
+  name: string;
+  key: string;
+  color: string;
+  icon: string | null;
+  position: number;
+  isFinal: boolean;
+  isCanceled: boolean;
+  transitions: string[];
+  wipLimit?: number | null;
+  createdAt: string;
+}
+
+export const workflowsApi = {
+  list: async () => {
+    const response = await api.get<{ success: boolean; data: StatusWorkflow[] }>('/workflows');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: StatusWorkflow }>(`/workflows/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  create: async (data: { name: string }) => {
+    const response = await api.post<{ success: boolean; data: StatusWorkflow }>('/workflows', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  update: async (id: string, data: Partial<StatusWorkflow>) => {
+    const response = await api.patch<{ success: boolean; data: StatusWorkflow }>(`/workflows/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/workflows/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  addStatus: async (
+    workflowId: string,
+    data: {
+      name: string;
+      key: string;
+      color: string;
+      position?: number;
+      isFinal?: boolean;
+      isCanceled?: boolean;
+      transitions?: string[];
+      wipLimit?: number | null;
+    },
+  ) => {
+    const response = await api.post<{ success: boolean; data: WorkflowStatus }>(
+      `/workflows/${workflowId}/statuses`,
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateStatus: async (workflowId: string, statusId: string, data: Partial<WorkflowStatus>) => {
+    const response = await api.patch<{ success: boolean; data: WorkflowStatus }>(
+      `/workflows/${workflowId}/statuses/${statusId}`,
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  deleteStatus: async (workflowId: string, statusId: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/workflows/${workflowId}/statuses/${statusId}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  setDefault: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: StatusWorkflow }>(
+      `/workflows/${id}/set-default`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+};
+
+// ============================================================================
+// CUSTOM FIELDS TYPES & API
+// ============================================================================
+
+export type CustomFieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'DROPDOWN' | 'CHECKBOX' | 'URL' | 'EMAIL';
+
+export interface CustomFieldDefinition {
+  id: string;
+  organizationId: string;
+  name: string;
+  key: string;
+  type: CustomFieldType;
+  options: string[] | null;
+  isRequired: boolean;
+  position: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomFieldValue {
+  id: string;
+  definitionId: string;
+  taskId: string;
+  value: string;
+  definition?: CustomFieldDefinition;
+}
+
+export const customFieldsApi = {
+  listDefinitions: async () => {
+    const response = await api.get<{ success: boolean; data: CustomFieldDefinition[] }>('/custom-fields');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  createDefinition: async (data: {
+    name: string;
+    key: string;
+    type: string;
+    options?: string[];
+    isRequired?: boolean;
+  }) => {
+    const response = await api.post<{ success: boolean; data: CustomFieldDefinition }>('/custom-fields', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateDefinition: async (id: string, data: Partial<CustomFieldDefinition>) => {
+    const response = await api.patch<{ success: boolean; data: CustomFieldDefinition }>(
+      `/custom-fields/${id}`,
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  deleteDefinition: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/custom-fields/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  getTaskValues: async (taskId: string) => {
+    const response = await api.get<{ success: boolean; data: CustomFieldValue[] }>(
+      `/tasks/${taskId}/custom-fields`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  setTaskValues: async (taskId: string, values: { definitionId: string; value: string }[]) => {
+    const response = await api.patch<{ success: boolean; data: CustomFieldValue[] }>(
+      `/tasks/${taskId}/custom-fields`,
+      { values },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+};
+
+// ============================================================================
+// RECURRING TASKS TYPES & API
+// ============================================================================
+
+export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'CUSTOM';
+
+export interface RecurringTaskTemplate {
+  id: string;
+  organizationId: string;
+  title: string;
+  description: string | null;
+  priority: string;
+  locationAddress: string | null;
+  assigneeIds: string[] | null;
+  estimatedHours: number | null;
+  checklist: { text: string }[] | null;
+  frequency: RecurringFrequency;
+  customDays: number | null;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
+  startDate: string;
+  endDate: string | null;
+  lastGeneratedAt: string | null;
+  nextRunAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const recurringTasksApi = {
+  list: async () => {
+    const response = await api.get<{ success: boolean; data: RecurringTaskTemplate[] }>('/recurring-tasks');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  create: async (data: Partial<RecurringTaskTemplate>) => {
+    const response = await api.post<{ success: boolean; data: RecurringTaskTemplate }>(
+      '/recurring-tasks',
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  update: async (id: string, data: Partial<RecurringTaskTemplate>) => {
+    const response = await api.patch<{ success: boolean; data: RecurringTaskTemplate }>(
+      `/recurring-tasks/${id}`,
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/recurring-tasks/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  generate: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { taskId: string } }>(
+      `/recurring-tasks/${id}/generate`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+};
+
+// ============================================================================
+// EPICS
+// ============================================================================
+
+export interface Epic {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  status: string;
+  organizationId: string;
+  startDate: string | null;
+  targetDate: string | null;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { tasks: number };
+}
+
+export const epicsApi = {
+  list: async () => {
+    const response = await api.get<{ success: boolean; data: Epic[] }>('/epics');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  create: async (data: { name: string; description?: string; color?: string; startDate?: string; targetDate?: string }) => {
+    const response = await api.post<{ success: boolean; data: Epic }>('/epics', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  update: async (id: string, data: Partial<{ name: string; description: string; color: string; startDate: string; targetDate: string }>) => {
+    const response = await api.patch<{ success: boolean; data: Epic }>(`/epics/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/epics/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+};
+
+// ============================================================================
+// ROLES API
+// ============================================================================
+
+export interface OrgRoleData {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string | null;
+  isSystem: boolean;
+  legacyRole: string | null;
+  position: number;
+  isActive: boolean;
+  permissions: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { users: number };
+}
+
+export const rolesApi = {
+  list: async () => {
+    const response = await api.get<{ success: boolean; data: OrgRoleData[] }>('/roles');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: OrgRoleData }>(`/roles/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  create: async (data: { name: string; description?: string; color?: string }) => {
+    const response = await api.post<{ success: boolean; data: OrgRoleData }>('/roles', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  update: async (id: string, data: { name?: string; description?: string; color?: string }) => {
+    const response = await api.patch<{ success: boolean; data: OrgRoleData }>(`/roles/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updatePermissions: async (id: string, permissions: Record<string, any>) => {
+    const response = await api.patch<{ success: boolean; data: OrgRoleData }>(`/roles/${id}/permissions`, { permissions });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean; message: string }>(`/roles/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+};
+
+export const invoicesApi = {
+  list: async (params?: { status?: string; page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery('/invoices', params ?? {});
+    const response = await api.get<any>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+  getById: async (id: string) => {
+    const response = await api.get<any>(`/invoices/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+  create: async (data: any) => {
+    const response = await api.post<any>('/invoices', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+  update: async (id: string, data: any) => {
+    const response = await api.patch<any>(`/invoices/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+  updateStatus: async (id: string, status: string) => {
+    const response = await api.patch<any>(`/invoices/${id}/status`, { status });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+  delete: async (id: string) => {
+    const response = await api.delete<any>(`/invoices/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+  addItem: async (id: string, item: any) => {
+    const response = await api.post<any>(`/invoices/${id}/items`, item);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+  removeItem: async (id: string, itemId: string) => {
+    const response = await api.delete<any>(`/invoices/${id}/items/${itemId}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
   },
 };
 

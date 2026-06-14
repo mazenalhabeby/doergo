@@ -24,22 +24,24 @@ export class LocationController {
   }
 
   @MessagePattern({ cmd: 'get_worker_location' })
-  async getWorkerLocation(@Payload() data: { workerId: string }) {
-    return this.locationService.getWorkerLocation(data.workerId);
+  async getWorkerLocation(@Payload() data: { workerId: string; organizationId?: string }) {
+    return this.locationService.getWorkerLocation(data.workerId, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_worker_history' })
-  async getWorkerHistory(@Payload() data: { workerId: string; startDate?: string; endDate?: string }) {
-    return this.locationService.getWorkerHistory(data.workerId, data.startDate, data.endDate);
+  async getWorkerHistory(
+    @Payload() data: { workerId: string; startDate?: string; endDate?: string; organizationId?: string },
+  ) {
+    return this.locationService.getWorkerHistory(data.workerId, data.startDate, data.endDate, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_task_route' })
-  async getTaskRoute(@Payload() data: { taskId: string }) {
-    return this.locationService.getTaskRoute(data.taskId);
+  async getTaskRoute(@Payload() data: { taskId: string; organizationId?: string }) {
+    return this.locationService.getTaskRoute(data.taskId, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_worker_current_route' })
-  async getWorkerCurrentRoute(@Payload() data: { workerId: string }) {
-    return this.locationService.getWorkerCurrentRoute(data.workerId);
+  async getWorkerCurrentRoute(@Payload() data: { workerId: string; organizationId?: string }) {
+    return this.locationService.getWorkerCurrentRoute(data.workerId, data.organizationId);
   }
 }

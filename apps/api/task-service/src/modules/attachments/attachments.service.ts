@@ -288,12 +288,12 @@ export class AttachmentsService {
           throw new ForbiddenException('Access denied');
         }
         break;
-      case Role.DISPATCHER:
+      case Role.MANAGER:
         if (task.organizationId !== organizationId) {
           throw new ForbiddenException('Access denied');
         }
         break;
-      case Role.TECHNICIAN:
+      case Role.EMPLOYEE:
         if (task.assignedToId !== userId) {
           throw new ForbiddenException('Access denied');
         }

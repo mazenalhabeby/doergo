@@ -183,7 +183,7 @@ model Task {
   id          String       @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus   @default(NEW)
+  status      String       @default("NEW")
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
 

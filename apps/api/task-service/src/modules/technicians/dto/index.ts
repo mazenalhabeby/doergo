@@ -1,16 +1,16 @@
-export class GetTechnicianStatsDto {
+export class GetEmployeeStatsDto {
   id: string;
   organizationId: string;
 }
 
-export class GetTechnicianPerformanceDto {
+export class GetEmployeePerformanceDto {
   id: string;
   organizationId: string;
   startDate?: string;
   endDate?: string;
 }
 
-export class GetTechnicianTaskHistoryDto {
+export class GetEmployeeTaskHistoryDto {
   id: string;
   organizationId: string;
   status?: string;
@@ -88,3 +88,8 @@ export class GetAvailabilityDto {
   startDate?: string; // For range query
   endDate?: string; // For range query
 }
+
+// Backward-compatible aliases for internal message patterns
+export type GetTechnicianStatsDto = GetEmployeeStatsDto;
+export type GetTechnicianPerformanceDto = GetEmployeePerformanceDto;
+export type GetTechnicianTaskHistoryDto = GetEmployeeTaskHistoryDto;

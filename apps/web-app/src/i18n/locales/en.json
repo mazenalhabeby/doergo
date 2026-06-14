@@ -958,6 +958,7 @@
     "tabs": {
       "general": "General",
       "members": "Members & Access",
+      "modules": "Modules",
       "appearance": "Appearance",
       "notifications": "Notifications"
     },

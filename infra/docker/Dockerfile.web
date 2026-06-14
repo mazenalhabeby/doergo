@@ -1,0 +1,47 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# HBCField Web App — Production Dockerfile
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9 --activate
+WORKDIR /app
+
+# ─── Dependencies ──────────────────────────────────────────────────────────────
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/web-app/package.json apps/web-app/
+COPY packages/shared/package.json packages/shared/
+RUN pnpm install --frozen-lockfile --prod=false
+
+# ─── Build ─────────────────────────────────────────────────────────────────────
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web-app/node_modules ./apps/web-app/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY . .
+
+# Build shared package first
+RUN cd packages/shared && pnpm build
+
+# Build Next.js app
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SOCKET_URL
+ARG NEXT_PUBLIC_USE_MOCK=false
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
+ENV NEXT_PUBLIC_USE_MOCK=$NEXT_PUBLIC_USE_MOCK
+
+RUN cd apps/web-app && npx next build
+
+# ─── Production ────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS production
+WORKDIR /app
+
+COPY --from=build /app/apps/web-app/.next/standalone ./
+COPY --from=build /app/apps/web-app/.next/static ./apps/web-app/.next/static
+COPY --from=build /app/apps/web-app/public ./apps/web-app/public
+
+ENV NODE_ENV=production
+EXPOSE 3000
+
+CMD ["node", "apps/web-app/server.js"]

@@ -1,57 +1,50 @@
 "use client"
 
-import { useState, use, useEffect } from "react"
+import { useState, use, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   RefreshCw,
   AlertCircle,
-  Calendar,
-  Pencil,
-  User,
-  MoreHorizontal,
-  Trash2,
+  ListChecks,
+  Paperclip,
+  MessageCircle,
+  Clock,
+  GitBranch,
+  Link2,
+  FileText,
+  MapPin,
+  Settings2,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
+import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
-import { useTaskEvents } from "@/hooks/use-task-events"
-import { tasksApi, trackingApi, type SuggestedTechnician } from "@/lib/api"
+import { useWorkflow, getTransitionsForStatus } from "@/hooks/use-org-workflow"
+import { tasksApi, trackingApi, sprintsApi, phasesApi, epicsApi, type WorkflowStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { getRequestId, formatShortDate } from "@/lib/utils"
-import { toast } from "sonner"
-import { StatusBadge } from "@/components/tasks/status-badge"
-import { TechnicianAssignDialog } from "@/components/technicians/technician-assign-dialog"
-import type { TechnicianData } from "@/components/technicians/technician-assign-dialog"
+import { notify } from "@/lib/toast"
+import { AssignMemberDialog } from "@/components/assign-member-dialog"
 
 import {
   TaskProgressCard,
   RouteTrackingSection,
   ServiceReportSection,
   AttachmentsSection,
-  RequestDetailsSection,
   CommentsSection,
   ActivitySection,
   EditTaskDialog,
+  ChecklistSection,
+  AssigneesSection,
+  SubtasksSection,
+  DependenciesSection,
+  CustomFieldsSection,
+  CollapsibleSection,
+  TaskDetailHeader,
+  TaskDetailSidebar,
+  DescriptionSection,
 } from "./_components"
 
 export default function TaskDetailPage({
@@ -63,310 +56,331 @@ export default function TaskDetailPage({
   const { t } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, hasModule: orgHasModule } = useAuth()
   const { setOverride, clearOverride } = useBreadcrumbOverride()
-  const isDispatcher = user?.role === "DISPATCHER"
+  const isDispatcher = user?.role === "MANAGER"
   const isAdmin = user?.role === "ADMIN"
 
-  const [newComment, setNewComment] = useState("")
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
 
-  // Real-time updates via Socket.IO
-  useTaskEvents(id)
-
-  // Fetch task
-  const {
-    data: task,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
+  // ─── Queries ────────────────────────────────────────────────────────────
+  const { data: task, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["task", id],
     queryFn: () => tasksApi.getById(id),
   })
 
-  // Fetch route data for the task (only for dispatchers)
   const { data: routeData, isLoading: loadingRoute } = useQuery({
     queryKey: ["task-route", id],
     queryFn: () => trackingApi.getTaskRoute(id),
     enabled: (isDispatcher || isAdmin) && !!task,
   })
 
+  // Fetch sprints, phases, epics for sidebar selectors
+  const { data: sprints } = useQuery({
+    queryKey: ["sprints"],
+    queryFn: () => sprintsApi.list(),
+  })
+  const { data: phases } = useQuery({
+    queryKey: ["phases"],
+    queryFn: () => phasesApi.list(),
+  })
+  const { data: epicsData } = useQuery({
+    queryKey: ["epics"],
+    queryFn: () => epicsApi.list(),
+  })
+
+  // Space-aware module resolution
+  const { hasModule: spaceHasModule } = useSpaceModules(task?.spaceId || null)
+  const hasModule = task?.spaceId ? spaceHasModule : orgHasModule
+
   useEffect(() => {
     if (task?.title) setOverride(id, task.title)
     return () => clearOverride(id)
   }, [id, task?.title, setOverride, clearOverride])
 
+  // ─── Derived State ──────────────────────────────────────────────────────
   const canAssign = isAdmin || isDispatcher
-  const { data: suggestedData, isLoading: loadingSuggested } = useQuery({
-    queryKey: ["suggestedTechnicians", id],
-    queryFn: () => tasksApi.getSuggestedTechnicians(id),
-    enabled: canAssign && showAssignModal,
-    staleTime: 0, // Always refetch when dialog opens
-  })
+  const { statuses: workflowStatuses, hasWorkflow } = useWorkflow(task?.workflowId)
 
-  // Mutations
-  const commentMutation = useMutation({
-    mutationFn: (content: string) => tasksApi.addComment(id, content),
-    onSuccess: () => {
-      toast.success(t("tasks.detail.commentAdded"))
-      setNewComment("")
-      queryClient.invalidateQueries({
-        queryKey: ["task", id],
-        refetchType: "all",
-      })
-      queryClient.invalidateQueries({
-        queryKey: ["taskTimeline", id],
-        refetchType: "all",
-      })
-    },
-    onError: (e: Error) => toast.error(e.message),
-  })
+  const isCanceled = hasWorkflow
+    ? workflowStatuses.some((s) => s.key === task?.status && s.isCanceled)
+    : task?.status === "CANCELED"
+  const isCompleted = hasWorkflow
+    ? workflowStatuses.some((s) => s.key === task?.status && s.isFinal)
+    : task?.status === "COMPLETED" || task?.status === "CLOSED"
+  const hasAssignee = !!task?.assignedTo
+  const canEdit = (isAdmin || isDispatcher) && !isCompleted && !isCanceled
 
+  const allowedTransitions = task?.status && hasWorkflow
+    ? getTransitionsForStatus(task.status, workflowStatuses)
+    : []
+
+  // ─── Mutations ──────────────────────────────────────────────────────────
   const assignMutation = useMutation({
     mutationFn: (workerId: string) => tasksApi.assign(id, workerId),
     onSuccess: () => {
-      toast.success(t("tasks.detail.technicianAssigned"))
+      notify.success(t("tasks.detail.technicianAssigned"))
       setShowAssignModal(false)
-      queryClient.invalidateQueries({
-        queryKey: ["task", id],
-        refetchType: "all",
-      })
-      queryClient.invalidateQueries({
-        queryKey: ["taskTimeline", id],
-        refetchType: "all",
-      })
+      queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   })
 
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.updateStatus(id, "CANCELED"),
     onSuccess: () => {
-      toast.success(t("tasks.detail.requestCancelled"))
+      notify.success(t("tasks.detail.requestCancelled"))
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
       queryClient.invalidateQueries({ queryKey: ["task", id] })
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   })
 
-  // Determine states
-  const isCanceled = task?.status === "CANCELED"
-  const isCompleted = task?.status === "COMPLETED" || task?.status === "CLOSED"
-  const hasAssignee = !!task?.assignedTo
+  const statusChangeMutation = useMutation({
+    mutationFn: (newStatus: string) => tasksApi.updateStatus(id, newStatus),
+    onSuccess: () => {
+      notify.success("Task status updated")
+      queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
 
-  // Transform suggested technicians to dialog format
-  const technicians: TechnicianData[] =
-    suggestedData?.technicians
-      ?.map((tech: SuggestedTechnician) => ({
-        ...tech,
-        avatarUrl: undefined,
-      })) || []
+  // Inline field save
+  const handleFieldSave = useCallback(async (field: string, value: string) => {
+    const parsed = value === "" ? null : (field === "estimatedHours" || field === "storyPoints" ? Number(value) : value)
+    await tasksApi.update(id, { [field]: parsed })
+    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+  }, [id, queryClient])
 
-  // Get suggested technician ID from backend
-  const suggestedTechnicianId = suggestedData?.suggestedTechnicianId
+  // Comments
+  const [newComment, setNewComment] = useState("")
+  const commentMutation = useMutation({
+    mutationFn: (content: string) => tasksApi.addComment(id, content),
+    onSuccess: () => {
+      notify.success(t("tasks.detail.commentAdded"))
+      setNewComment("")
+      queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: ["taskTimeline", id], refetchType: "all" })
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
 
-  // Loading state
+  // ─── Loading ────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-full bg-muted p-8">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <Skeleton className="h-20 w-full rounded-xl mb-4" />
-        <Skeleton className="h-40 w-full rounded-xl mb-4" />
-        <Skeleton className="h-32 w-full rounded-xl" />
+      <div className="min-h-full bg-background p-8 max-w-7xl mx-auto">
+        <Skeleton className="h-10 w-64 mb-3" />
+        <Skeleton className="h-6 w-96 mb-6" />
+        <div className="flex gap-6">
+          <div className="flex-1 space-y-4">
+            <Skeleton className="h-32 w-full rounded-2xl" />
+            <Skeleton className="h-24 w-full rounded-2xl" />
+            <Skeleton className="h-24 w-full rounded-2xl" />
+          </div>
+          <div className="w-[35%] shrink-0">
+            <Skeleton className="h-80 w-full rounded-2xl" />
+          </div>
+        </div>
       </div>
     )
   }
 
-  // Error state
+  // ─── Error ──────────────────────────────────────────────────────────────
   if (isError || !task) {
     return (
-      <div className="min-h-full bg-muted p-8">
-        <h1 className="text-2xl font-semibold text-foreground mb-6">
-          {t("tasks.detail.title")}
-        </h1>
-        <div className="bg-card rounded-2xl shadow-sm p-12 text-center">
-          <AlertCircle className="mx-auto size-12 text-red-400 mb-4" />
-          <p className="font-semibold text-lg mb-2">{t("tasks.detail.failedToLoad")}</p>
-          <p className="text-muted-foreground mb-4">
-            {(error as Error)?.message || t("tasks.detail.notFound")}
-          </p>
-          <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="mr-2 size-4" /> {t("common.retry")}
-          </Button>
+      <div className="min-h-full bg-background p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-card rounded-2xl shadow-sm p-12 text-center">
+            <AlertCircle className="mx-auto size-12 text-red-400 mb-4" />
+            <p className="font-semibold text-lg mb-2">{t("tasks.detail.failedToLoad")}</p>
+            <p className="text-muted-foreground mb-4">{(error as Error)?.message || t("tasks.detail.notFound")}</p>
+            <Button variant="outline" onClick={() => refetch()}>
+              <RefreshCw className="mr-2 size-4" /> {t("common.retry")}
+            </Button>
+          </div>
         </div>
       </div>
     )
   }
 
   const comments = task.comments || []
-  const requestId = getRequestId(task, user?.organizationName)
-  const taskDate = formatShortDate(task.createdAt)
+  const checklistDone = task.checklistItems?.filter((i: any) => i.isCompleted).length ?? 0
+  const checklistTotal = task.checklistItems?.length ?? 0
+  const depCount = (task.predecessors?.length || 0) + (task.successors?.length || 0)
 
   return (
-    <div className="min-h-full bg-muted">
-      {/* Technician Assignment Dialog */}
-      <TechnicianAssignDialog
+    <div className="min-h-full bg-background">
+      {/* Dialogs */}
+      <AssignMemberDialog
         open={showAssignModal}
         onOpenChange={setShowAssignModal}
-        technicians={technicians}
-        isLoading={loadingSuggested}
+        taskId={id}
+        spaceId={task?.spaceId}
+        currentAssigneeId={task?.assignedToId}
+        currentAssigneeIds={task?.assignees?.map((a: any) => a.userId) || []}
         isAssigning={assignMutation.isPending}
-        onAssign={(techId) => assignMutation.mutate(techId)}
-        suggestedTechnicianId={suggestedTechnicianId}
+        onAssign={(memberId) => assignMutation.mutate(memberId)}
+        onSave={async (added, removed) => {
+          const ops: Promise<any>[] = [
+            ...removed.map(uid => tasksApi.removeAssignee(id, uid)),
+            ...added.map(uid => tasksApi.addAssignee(id, uid)),
+          ]
+          await Promise.allSettled(ops)
+          notify.success("Assignees updated")
+          queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+        }}
       />
+      <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />
 
-      {/* Edit Task Dialog */}
-      <EditTaskDialog
-        task={task}
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-      />
+      <div className="p-8 max-w-7xl mx-auto">
+        {/* ─── Header ────────────────────────────────────────────────── */}
+        <TaskDetailHeader
+          task={task}
+          user={user}
+          canEdit={canEdit}
+          canAssign={canAssign}
+          isCompleted={isCompleted}
+          isCanceled={isCanceled}
+          hasAssignee={hasAssignee}
+          hasModule={hasModule}
+          hasWorkflow={hasWorkflow}
+          allowedTransitions={allowedTransitions}
+          onTitleSave={(v) => handleFieldSave("title", v)}
+          onStatusChange={(s) => statusChangeMutation.mutate(s)}
+          onAssignClick={() => setShowAssignModal(true)}
+          onEditClick={() => setShowEditDialog(true)}
+          onCancelTask={() => deleteMutation.mutate()}
+          isStatusChanging={statusChangeMutation.isPending}
+        />
 
-      <div className="p-8 max-w-6xl mx-auto">
-        {/* Page Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground mb-3">
-              {t("tasks.detail.title")}
-            </h1>
-            <div className="flex items-center gap-3 mb-2">
-              <StatusBadge status={task.status} />
-              <span className="text-base font-medium text-foreground">
-                {task.title}
-              </span>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{t("tasks.detail.request", { id: requestId })}</span>
-              <span className="flex items-center gap-1.5">
-                <Calendar className="size-4" />
-                {taskDate}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {canAssign && !isCompleted && !isCanceled && (
-              <Button
-                variant="outline"
-                className="h-9 px-4 text-sm border-amber-200 bg-amber-500/10 text-amber-700 hover:bg-amber-100 hover:border-amber-300"
-                onClick={() => setShowAssignModal(true)}
-              >
-                <User className="size-4 mr-1.5" />
-                {hasAssignee ? t("tasks.detail.reassign") : t("tasks.detail.assign")}
-              </Button>
-            )}
-            {!isCompleted && !isCanceled && (
-              <Button
-                className="h-9 px-4 text-sm bg-blue-600 hover:bg-blue-700"
-                onClick={() => setShowEditDialog(true)}
-              >
-                <Pencil className="size-4 mr-2" />
-                {t("tasks.detail.editTask")}
-              </Button>
-            )}
-
-            {/* More Actions Dropdown */}
-            {!isCompleted && !isCanceled && (
-              <AlertDialog>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-9 w-9 p-0"
-                    >
-                      <MoreHorizontal className="size-4" />
-                      <span className="sr-only">{t("common.moreActions")}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
-                        <Trash2 className="size-4 mr-2" />
-                        {t("tasks.detail.cancelRequest")}
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t("tasks.detail.cancelRequestTitle")}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t("tasks.detail.cancelRequestDescription")}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t("tasks.detail.keepRequest")}</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteMutation.mutate()}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      {t("tasks.detail.cancelRequestConfirm")}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        </div>
-
-        {/* Progress Card with Technician */}
-        {hasAssignee && !isCanceled && (
-          <TaskProgressCard
-            taskId={id}
-            assignedTo={task.assignedTo!}
-            isCompleted={isCompleted}
-            taskStatus={task.status}
-            createdAt={task.createdAt}
-            routeStartedAt={task.routeStartedAt}
-            routeEndedAt={task.routeEndedAt}
-            routeDistance={task.routeDistance}
-          />
-        )}
-
-        {/* Route Tracking Section */}
-        {(isDispatcher || isAdmin) && (
-          <RouteTrackingSection
-            routeData={routeData}
-            isLoading={loadingRoute}
-            hasAssignee={hasAssignee}
-          />
-        )}
-
-        {/* Attachments */}
-        <AttachmentsSection taskId={id} />
-
-        {/* Service Report (only when completed) */}
-        <ServiceReportSection
+        {/* ─── Progress Card — always visible ─────────────────────── */}
+        <TaskProgressCard
           taskId={id}
+          assignees={task.assignees || []}
+          assignedTo={task.assignedTo || null}
+          isCompleted={isCompleted}
           taskStatus={task.status}
+          createdAt={task.createdAt}
+          routeStartedAt={task.routeStartedAt}
+          routeEndedAt={task.routeEndedAt}
+          routeDistance={task.routeDistance}
+          workflowStatuses={hasWorkflow ? workflowStatuses : undefined}
         />
 
-        {/* Request Details and Activity - 60/40 split */}
-        <div className="flex gap-6 mb-6">
-          {/* Request Details - 60% */}
-          <div className="w-[60%]">
-            <RequestDetailsSection task={task} />
+        {/* ─── Two-panel layout ──────────────────────────────────────── */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Left panel — scrollable main content */}
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* Description — always visible */}
+            <DescriptionSection
+              description={task.description}
+              canEdit={canEdit}
+              onSave={(v) => handleFieldSave("description", v)}
+            />
+
+            {/* Subtasks — module: subtasks */}
+            {hasModule("subtasks") && (
+              <CollapsibleSection id="subtasks" icon={GitBranch} title="Subtasks" count={task.subtasks?.length || task._count?.subtasks || 0}>
+                <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} />
+              </CollapsibleSection>
+            )}
+
+            {/* Checklist — module: checklists */}
+            {hasModule("checklists") && (checklistTotal > 0 || !isCanceled) && (
+              <CollapsibleSection id="checklist" icon={ListChecks} title="Checklist" count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : 0}>
+                <ChecklistSection taskId={id} items={task.checklistItems || []} />
+              </CollapsibleSection>
+            )}
+
+            {/* Attachments — module: attachments */}
+            {hasModule("attachments") && (
+              <CollapsibleSection id="attachments" icon={Paperclip} title="Attachments">
+                <AttachmentsSection taskId={id} />
+              </CollapsibleSection>
+            )}
+
+            {/* Dependencies — module: dependencies */}
+            {hasModule("dependencies") && (
+              <CollapsibleSection id="dependencies" icon={Link2} title="Dependencies" count={depCount || undefined}>
+                <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} />
+              </CollapsibleSection>
+            )}
+
+            {/* Custom Fields — module: custom_fields */}
+            {hasModule("custom_fields") && (
+              <CollapsibleSection id="custom-fields" icon={Settings2} title="Custom Fields">
+                <CustomFieldsSection taskId={id} />
+              </CollapsibleSection>
+            )}
+
+            {/* Comments — always visible */}
+            <CollapsibleSection id="comments" icon={MessageCircle} title="Comments" count={comments.length || undefined}>
+              <CommentsSection
+                comments={comments}
+                newComment={newComment}
+                onCommentChange={setNewComment}
+                onSubmit={() => commentMutation.mutate(newComment.trim())}
+                isSubmitting={commentMutation.isPending}
+              />
+            </CollapsibleSection>
+
+            {/* Activity — always visible */}
+            <CollapsibleSection id="activity" icon={Clock} title="Activity">
+              <ActivitySection taskId={id} />
+            </CollapsibleSection>
+
+            {/* Service Report — module: service_reports + must be completed */}
+            {hasModule("service_reports") && (isCompleted || task.status === "CLOSED") && (
+              <CollapsibleSection id="service-report" icon={FileText} title="Service Report">
+                <ServiceReportSection taskId={id} taskStatus={task.status} />
+              </CollapsibleSection>
+            )}
+
+            {/* Route Tracking — module: tracking + role-gated */}
+            {hasModule("tracking") && (isAdmin || isDispatcher) && (
+              <CollapsibleSection id="route-tracking" icon={MapPin} title="Route Tracking">
+                <RouteTrackingSection routeData={routeData} isLoading={loadingRoute} hasAssignee={hasAssignee} />
+              </CollapsibleSection>
+            )}
           </div>
 
-          {/* Activity - 40% */}
-          <div className="w-[40%]">
-            <ActivitySection taskId={id} />
+          {/* Right sidebar — sticky */}
+          <div className="w-full lg:w-[35%] lg:shrink-0 lg:sticky lg:top-6">
+            <TaskDetailSidebar
+              task={task}
+              canEdit={canEdit}
+              hasModule={hasModule}
+              onFieldSave={handleFieldSave}
+              onAssignClick={() => setShowAssignModal(true)}
+              onRemoveAssignee={(assigneeId) => {
+                const assignee = task.assignees?.find((a: any) => a.id === assigneeId)
+                if (assignee) {
+                  tasksApi.removeAssignee(id, assignee.userId).then(() => {
+                    notify.success("Assignee removed")
+                    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+                  }).catch((e: Error) => notify.error(e.message))
+                }
+              }}
+              onSetLead={(assigneeId) => {
+                const assignee = task.assignees?.find((a: any) => a.id === assigneeId)
+                if (assignee) {
+                  tasksApi.removeAssignee(id, assignee.userId).then(() =>
+                    tasksApi.addAssignee(id, assignee.userId, "LEAD")
+                  ).then(() => {
+                    notify.success("Lead updated")
+                    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+                  }).catch((e: Error) => notify.error(e.message))
+                }
+              }}
+              sprints={sprints || []}
+              phases={phases || []}
+              epics={epicsData || []}
+            />
           </div>
         </div>
-
-        {/* Comments Section */}
-        <CommentsSection
-          comments={comments}
-          newComment={newComment}
-          onCommentChange={setNewComment}
-          onSubmit={() => commentMutation.mutate(newComment.trim())}
-          isSubmitting={commentMutation.isPending}
-        />
       </div>
     </div>
   )

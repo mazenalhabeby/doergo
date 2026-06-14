@@ -62,6 +62,7 @@ export class TasksController {
       userId: string;
       userRole: string;
       organizationId: string;
+      spaceId?: string;
     },
   ) {
     return this.tasksService.getStatusCounts(data);
@@ -78,5 +79,46 @@ export class TasksController {
     },
   ) {
     return this.tasksService.getSuggestedTechnicians(data);
+  }
+
+  @MessagePattern({ cmd: 'get_task_assignees' })
+  async getAssignees(
+    @Payload()
+    data: {
+      taskId: string;
+      userId: string;
+      userRole: string;
+      organizationId: string;
+    },
+  ) {
+    return this.tasksService.getAssignees(data);
+  }
+
+  @MessagePattern({ cmd: 'get_task_checklist' })
+  async getChecklist(
+    @Payload()
+    data: {
+      taskId: string;
+      userId: string;
+      userRole: string;
+      organizationId: string;
+    },
+  ) {
+    return this.tasksService.getChecklist(data);
+  }
+
+  // ============ Subtask READ Operations ============
+
+  @MessagePattern({ cmd: 'get_subtasks' })
+  async getSubtasks(
+    @Payload()
+    data: {
+      taskId: string;
+      userId: string;
+      userRole: string;
+      organizationId: string;
+    },
+  ) {
+    return this.tasksService.getSubtasks(data);
   }
 }

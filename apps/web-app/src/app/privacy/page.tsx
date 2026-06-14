@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
           <ul>
             <li><strong>Precise GPS location</strong> — collected only during active work activities:
               <ul>
-                <li>When a technician is driving to a job site (EN_ROUTE status)</li>
+                <li>When an employee is driving to a job site (EN_ROUTE status)</li>
                 <li>When clocking in or out (single GPS fix for attendance verification)</li>
                 <li>When marking arrival at a job site (geofence verification)</li>
               </ul>
@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
             <li>To provide field service management functionality</li>
             <li>To enable real-time location tracking for dispatchers during active work</li>
             <li>To verify attendance via geofencing at company locations</li>
-            <li>To verify technician presence at job sites before starting work</li>
+            <li>To verify employee presence at job sites before starting work</li>
             <li>To send push notifications for task assignments, status updates, and comments</li>
             <li>To generate service reports and maintain work history</li>
             <li>To display route tracking on completed tasks</li>
@@ -90,7 +90,7 @@ export default function PrivacyPolicyPage() {
           <h2>4. Data Sharing</h2>
           <ul>
             <li>We do <strong>not</strong> sell your personal data to third parties.</li>
-            <li>Your data is shared only within your organization — admin and dispatcher users can see technician locations and work activity.</li>
+            <li>Your data is shared only within your organization — admin and dispatcher users can see employee locations and work activity.</li>
             <li>We use the following third-party services:
               <ul>
                 <li><strong>Expo</strong> — Push notification delivery</li>

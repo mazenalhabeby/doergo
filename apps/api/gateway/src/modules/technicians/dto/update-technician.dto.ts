@@ -3,7 +3,6 @@ import {
   IsString,
   IsOptional,
   IsNumber,
-  IsEnum,
   IsBoolean,
   Min,
   Max,
@@ -11,7 +10,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
-export class UpdateTechnicianDto {
+export class UpdateEmployeeDto {
   @ApiPropertyOptional({
     example: 'John',
     description: 'First name',
@@ -33,13 +32,8 @@ export class UpdateTechnicianDto {
   lastName?: string;
 
   @ApiPropertyOptional({
-    description: 'Work mode (ON_SITE, ON_ROAD, or HYBRID)',
-  })
-  @IsOptional()
-
-  @ApiPropertyOptional({
     example: 'Electrical',
-    description: 'Technician specialty',
+    description: 'Employee specialty',
   })
   @IsString()
   @IsOptional()
@@ -58,7 +52,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Whether the technician is active',
+    description: 'Whether the employee is active',
   })
   @IsBoolean()
   @IsOptional()
@@ -66,7 +60,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: 4.5,
-    description: 'Technician rating (1-5)',
+    description: 'Employee rating (1-5)',
   })
   @IsNumber()
   @IsOptional()
@@ -85,7 +79,7 @@ export class UpdateTechnicianDto {
 
   @ApiPropertyOptional({
     example: false,
-    description: 'Whether the technician can create tasks',
+    description: 'Whether the employee can create tasks',
   })
   @IsBoolean()
   @IsOptional()

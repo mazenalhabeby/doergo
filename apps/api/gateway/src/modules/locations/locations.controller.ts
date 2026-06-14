@@ -21,7 +21,7 @@ import { LocationsQueueService } from './locations.queue.service';
 import {
   CreateLocationDto,
   UpdateLocationDto,
-  AssignTechnicianDto,
+  AssignMemberDto,
   UpdateAssignmentDto,
 } from './dto';
 
@@ -102,27 +102,37 @@ export class LocationsController {
     });
   }
 
-  // ==================== TECHNICIAN ASSIGNMENT ENDPOINTS ====================
-
-  @Get(':id/technicians')
+  @Get(':id/modules')
   @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'Get technicians assigned to a location' })
-  async getLocationTechnicians(@Param('id') id: string, @Request() req: any) {
+  @ApiOperation({ summary: 'Get effective modules for a space (falls back to org defaults)' })
+  async getEffectiveModules(@Param('id') id: string, @Request() req: any) {
+    return this.locationsService.getEffectiveModules({
+      id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  // ==================== MEMBER ASSIGNMENT ENDPOINTS ====================
+
+  @Get(':id/members')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Get members assigned to a location' })
+  async getLocationMembers(@Param('id') id: string, @Request() req: any) {
     return this.locationsService.getLocationAssignments({
       locationId: id,
       organizationId: req.user.organizationId,
     });
   }
 
-  @Post(':id/technicians')
+  @Post(':id/members')
   @RequirePermission('canManageUsers')
-  @ApiOperation({ summary: 'Assign a technician to a location' })
-  async assignTechnician(
+  @ApiOperation({ summary: 'Assign a member to a location' })
+  async assignMember(
     @Param('id') locationId: string,
-    @Body() dto: AssignTechnicianDto,
+    @Body() dto: AssignMemberDto,
     @Request() req: any,
   ) {
-    return this.locationsQueueService.assignTechnician({
+    return this.locationsQueueService.assignMember({
       ...dto,
       locationId,
       requestingUserId: req.user.id,
@@ -130,9 +140,9 @@ export class LocationsController {
     });
   }
 
-  @Patch(':id/technicians/:assignmentId')
+  @Patch(':id/members/:assignmentId')
   @RequirePermission('canManageUsers')
-  @ApiOperation({ summary: 'Update a technician assignment' })
+  @ApiOperation({ summary: 'Update a member assignment' })
   async updateAssignment(
     @Param('id') _locationId: string,
     @Param('assignmentId') assignmentId: string,
@@ -146,9 +156,9 @@ export class LocationsController {
     });
   }
 
-  @Delete(':id/technicians/:assignmentId')
+  @Delete(':id/members/:assignmentId')
   @RequirePermission('canManageUsers')
-  @ApiOperation({ summary: 'Remove a technician assignment' })
+  @ApiOperation({ summary: 'Remove a member assignment' })
   async removeAssignment(
     @Param('id') _locationId: string,
     @Param('assignmentId') assignmentId: string,

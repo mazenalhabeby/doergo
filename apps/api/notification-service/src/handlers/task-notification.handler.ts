@@ -33,6 +33,15 @@ export class TaskNotificationHandler {
     } catch (error) {
       this.logger.error(`Failed to send task assigned push: ${error}`);
     }
+
+    // Email notification to assigned worker
+    if (data.workerEmail) {
+      try {
+        await this.emailService.sendTaskAssignedEmail(data.task, data.workerEmail);
+      } catch (error) {
+        this.logger.error(`Failed to send task assigned email: ${error}`);
+      }
+    }
   }
 
   @EventPattern('task_status_changed')
@@ -51,12 +60,27 @@ export class TaskNotificationHandler {
         this.logger.error(`Failed to send status change push: ${error}`);
       }
     }
+
+    // Email notification for task completion
+    if (data.newStatus === 'COMPLETED' && data.creatorEmail) {
+      try {
+        await this.emailService.sendTaskCompletedEmail(data.task, data.creatorEmail);
+      } catch (error) {
+        this.logger.error(`Failed to send task completed email: ${error}`);
+      }
+    }
   }
 
   @EventPattern('task_declined')
   async handleTaskDeclined(@Payload() data: any) {
     this.logger.log(`Task declined: ${data.task.id}`);
     this.websocketGateway.emitTaskDeclined(data.task, data.declinedBy);
+  }
+
+  @EventPattern('task_deleted')
+  async handleTaskDeleted(@Payload() data: { taskId: string; organizationId: string }) {
+    this.logger.log(`Task deleted: ${data.taskId}`);
+    this.websocketGateway.emitTaskDeleted(data.taskId, data.organizationId);
   }
 
   @EventPattern('comment_added')

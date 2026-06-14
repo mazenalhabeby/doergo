@@ -6,13 +6,14 @@ import {
   Body,
   Param,
   Req,
+  Res,
   Inject,
   HttpCode,
   HttpStatus,
   UseGuards,
   HttpException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
@@ -68,7 +69,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 429, description: 'Too many requests - account temporarily locked' })
-  async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+  async login(@Body() loginDto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'login' }, {
         ...loginDto,
@@ -85,6 +86,18 @@ export class AuthController {
       );
     }
 
+    // Set refresh token as httpOnly cookie (web clients)
+    if (result?.data?.refreshToken) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('refreshToken', result.data.refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      });
+    }
+
     return result;
   }
 
@@ -94,9 +107,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    // Read refresh token from httpOnly cookie (web) or body (mobile)
+    const refreshToken = req.cookies?.refreshToken || refreshTokenDto.refreshToken;
+
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'refresh' }, refreshTokenDto),
+      this.authClient.send({ cmd: 'refresh' }, { refreshToken }),
     );
 
     // Check if the result is an error response
@@ -105,6 +121,18 @@ export class AuthController {
         { message: result.message },
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+
+    // Set new refresh token cookie (token rotation)
+    if (result?.data?.refreshToken) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('refreshToken', result.data.refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
     }
 
     return result;
@@ -116,9 +144,15 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(@Body() refreshTokenDto: RefreshTokenDto) {
+  async logout(@Body() refreshTokenDto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    // Read refresh token from cookie or body
+    const refreshToken = req.cookies?.refreshToken || refreshTokenDto.refreshToken;
+
+    // Clear the httpOnly cookie
+    res.clearCookie('refreshToken', { path: '/api/v1/auth' });
+
     return firstValueFrom(
-      this.authClient.send({ cmd: 'logout' }, refreshTokenDto),
+      this.authClient.send({ cmd: 'logout' }, { refreshToken }),
     );
   }
 

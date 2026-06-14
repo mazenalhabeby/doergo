@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import {
   MAX_SESSIONS_PER_USER,
   MAX_FAILED_ATTEMPTS,
@@ -20,6 +21,7 @@ import {
   DEFAULT_PERMISSIONS,
   DEFAULT_PROFILE_BADGES,
   Role,
+  normalizeRole,
   type ProfileBadgesConfig,
 } from '@hbcfield/shared';
 
@@ -55,6 +57,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly auditLog: AuditLogService,
   ) {
     const smtpHost = this.configService.get('SMTP_HOST');
     if (smtpHost) {
@@ -173,6 +176,7 @@ export class AuthService {
               lockedUntil: null,
 
               canCreateTasks: defaultPerms.canCreateTasks,
+              taskCreationScope: defaultPerms.taskCreationScope,
               canViewAllTasks: defaultPerms.canViewAllTasks,
               canAssignTasks: defaultPerms.canAssignTasks,
               canManageUsers: defaultPerms.canManageUsers,
@@ -188,6 +192,7 @@ export class AuthService {
               avatarUrl: true,
 
               canCreateTasks: true,
+              taskCreationScope: true,
               canViewAllTasks: true,
               canAssignTasks: true,
               canManageUsers: true,
@@ -212,6 +217,7 @@ export class AuthService {
             failedLoginAttempts: 0,
             lockedUntil: null,
             canCreateTasks: defaultPerms.canCreateTasks,
+            taskCreationScope: defaultPerms.taskCreationScope,
             canViewAllTasks: defaultPerms.canViewAllTasks,
             canAssignTasks: defaultPerms.canAssignTasks,
             canManageUsers: defaultPerms.canManageUsers,
@@ -225,6 +231,7 @@ export class AuthService {
             organizationId: true,
             onboardingCompleted: true,
             canCreateTasks: true,
+            taskCreationScope: true,
             canViewAllTasks: true,
             canAssignTasks: true,
             canManageUsers: true,
@@ -251,7 +258,10 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { email },
-        include: { organization: { select: { name: true, profileBadges: true } } },
+        include: {
+          organization: { select: { name: true, profileBadges: true, enabledModules: true } },
+          orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
+        },
       });
 
       if (!user || !user.isActive) {
@@ -293,6 +303,18 @@ export class AuthService {
           where: { id: user.id },
           data: updateData,
         });
+
+        // Audit: failed login
+        if (user.organizationId) {
+          this.auditLog.log({
+            eventType: 'USER_LOGIN_FAILED',
+            userId: user.id,
+            organizationId: user.organizationId,
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent,
+            metadata: { email, attemptsRemaining: MAX_FAILED_ATTEMPTS - newFailedAttempts },
+          });
+        }
 
         const attemptsRemaining = MAX_FAILED_ATTEMPTS - newFailedAttempts;
         if (attemptsRemaining > 0) {
@@ -343,10 +365,21 @@ export class AuthService {
         });
       }
 
-      const tokens = await this.generateTokens(user.id, user.email, user.role, {
+      const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
         userAgent: data.userAgent,
         ipAddress: data.ipAddress,
       });
+
+      // Audit: successful login (fire-and-forget, never blocks response)
+      if (user.organizationId) {
+        this.auditLog.log({
+          eventType: 'USER_LOGIN' as any,
+          userId: user.id,
+          organizationId: user.organizationId as string,
+          ipAddress: data.ipAddress,
+          userAgent: data.userAgent,
+        });
+      }
 
       return {
         success: true,
@@ -356,24 +389,34 @@ export class AuthService {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            role: user.role,
+            role: normalizeRole(user.role),
             organizationId: user.organizationId,
             organizationName: user.organization?.name || null,
             onboardingCompleted: user.onboardingCompleted,
             avatarUrl: user.avatarUrl,
             // Permission fields
             canCreateTasks: user.canCreateTasks,
+            taskCreationScope: user.taskCreationScope,
             canViewAllTasks: user.canViewAllTasks,
             canAssignTasks: user.canAssignTasks,
             canManageUsers: user.canManageUsers,
+            // Worker configuration
+            position: user.position,
+            scheduleType: user.scheduleType,
             // Technician-specific fields
             specialty: user.specialty,
             // Profile badge visibility
             profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
+            // Organization enabled modules
+            enabledModules: (user.organization?.enabledModules as string[] | null) || [],
+            // Custom role
+            orgRole: user.orgRole ? { id: user.orgRole.id, name: user.orgRole.name, slug: user.orgRole.slug, color: user.orgRole.color } : null,
+            rolePermissions: (user.orgRole?.permissions as Record<string, boolean>) || {},
           },
           ...tokens,
         },
       };
+
     } catch (error) {
       this.logger.error('Login error:', error);
       return {
@@ -399,25 +442,22 @@ export class AuthService {
 
       // SECURITY: Hash the incoming token to compare with stored hash
       const tokenHash = hashToken(refreshToken);
-      this.logger.log(`Token hash generated (first 20 chars): ${tokenHash.substring(0, 20)}`);
-      this.logger.log(`Incoming token (first 20 chars): ${refreshToken.substring(0, 20)}`);
 
       // Find the stored token by hash
       const storedToken = await this.prisma.refreshToken.findUnique({
         where: { tokenHash },
-        include: { user: { include: { organization: { select: { profileBadges: true } } } } },
+        include: {
+          user: {
+            include: {
+              organization: { select: { profileBadges: true, enabledModules: true } },
+              orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
+            },
+          },
+        },
       });
 
       if (!storedToken) {
         this.logger.warn('Refresh token not found in database');
-        // Debug: List all tokens to see what's in DB
-        const allTokens = await this.prisma.refreshToken.findMany({
-          select: { id: true, tokenHash: true, usedAt: true, expiresAt: true, userId: true },
-        });
-        this.logger.warn(`Total tokens in DB: ${allTokens.length}`);
-        allTokens.forEach((t, i) => {
-          this.logger.warn(`Token ${i}: hash=${t.tokenHash.substring(0, 20)}, usedAt=${t.usedAt}, expires=${t.expiresAt}`);
-        });
         return {
           success: false,
           statusCode: HttpStatus.UNAUTHORIZED,
@@ -569,12 +609,11 @@ export class AuthService {
         storedToken.user.id,
         storedToken.user.email,
         storedToken.user.role,
+        storedToken.user.organizationId,
       );
 
       // Find the new refresh token hash (it was just created by generateTokens)
       const newRefreshTokenHash = hashToken(tokens.refreshToken);
-      this.logger.log(`New refresh token hash (first 20 chars): ${newRefreshTokenHash.substring(0, 20)}`);
-      this.logger.log(`New refresh token (first 20 chars): ${tokens.refreshToken.substring(0, 20)}`);
 
       // Update the token with cached values for grace period
       // Use updateMany to avoid throwing if record was somehow deleted
@@ -594,17 +633,9 @@ export class AuthService {
       } else {
         this.logger.log('Refresh successful - token marked as used with grace period');
 
-        // Schedule deletion of old token after grace period
-        setTimeout(async () => {
-          try {
-            await this.prisma.refreshToken.delete({
-              where: { id: storedToken.id },
-            });
-            this.logger.log(`Deleted old refresh token ${storedToken.id} after grace period`);
-          } catch {
-            // Token might already be deleted by cleanup job or another process
-          }
-        }, (REFRESH_TOKEN_GRACE_PERIOD_SECONDS + 1) * 1000);
+        // Old token cleanup is handled durably by the cleanupExpiredTokens cron
+        // (deletes used tokens past the grace window). An in-process setTimeout
+        // was previously used but is lost on restart/crash, orphaning rows.
       }
 
       return {
@@ -616,16 +647,20 @@ export class AuthService {
             email: storedToken.user.email,
             firstName: storedToken.user.firstName,
             lastName: storedToken.user.lastName,
-            role: storedToken.user.role,
+            role: normalizeRole(storedToken.user.role),
             organizationId: storedToken.user.organizationId,
             onboardingCompleted: storedToken.user.onboardingCompleted,
             avatarUrl: storedToken.user.avatarUrl,
             canCreateTasks: storedToken.user.canCreateTasks,
+            taskCreationScope: storedToken.user.taskCreationScope,
             canViewAllTasks: storedToken.user.canViewAllTasks,
             canAssignTasks: storedToken.user.canAssignTasks,
             canManageUsers: storedToken.user.canManageUsers,
             specialty: storedToken.user.specialty,
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
+            enabledModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
+            orgRole: storedToken.user.orgRole ? { id: storedToken.user.orgRole.id, name: storedToken.user.orgRole.name, slug: storedToken.user.orgRole.slug, color: storedToken.user.orgRole.color } : null,
+            rolePermissions: (storedToken.user.orgRole?.permissions as Record<string, boolean>) || {},
           },
         },
       };
@@ -850,14 +885,20 @@ export class AuthService {
           isActive: true,
           // Permission fields
           canCreateTasks: true,
+          taskCreationScope: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
+          // Worker configuration
+          position: true,
+          scheduleType: true,
           // Technician-specific fields
           specialty: true,
           // Badge config
           profileBadges: true,
-          organization: { select: { profileBadges: true } },
+          organization: { select: { profileBadges: true, enabledModules: true } },
+          // Custom role
+          orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
         },
       });
 
@@ -865,12 +906,19 @@ export class AuthService {
         return { valid: false };
       }
 
-      const { organization, profileBadges, ...userData } = user;
+      const { organization, profileBadges, orgRole, ...userData } = user;
       return {
         valid: true,
         user: {
           ...userData,
+          // Canonicalize the role once at this boundary so every downstream
+          // service (and the gateway's req.user) sees ADMIN/MANAGER/EMPLOYEE,
+          // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.
+          role: normalizeRole(userData.role),
           profileBadges: resolveProfileBadges(profileBadges, organization?.profileBadges),
+          enabledModules: (organization?.enabledModules as string[] | null) || [],
+          orgRole: orgRole ? { id: orgRole.id, name: orgRole.name, slug: orgRole.slug, color: orgRole.color } : null,
+          rolePermissions: (orgRole?.permissions as Record<string, boolean>) || {},
         },
       };
     } catch {
@@ -878,8 +926,12 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, role: string, deviceInfo?: { userAgent?: string; ipAddress?: string }) {
-    const basePayload = { sub: userId, email, role };
+  private async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }) {
+    // organizationId is embedded so downstream services (e.g. the Socket.IO
+    // gateway) can scope rooms from the verified token instead of trusting a
+    // client-supplied org id.
+    const basePayload: Record<string, any> = { sub: userId, email, role };
+    if (organizationId) basePayload.organizationId = organizationId;
 
     // Token expiration from environment variables
     const accessExpiration = this.configService.get('JWT_ACCESS_EXPIRATION') || '15m';

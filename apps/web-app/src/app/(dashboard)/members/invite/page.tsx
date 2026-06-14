@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, UserPlus, Copy, Check, Mail, Send } from "lucide-react"
-import { toast } from "sonner"
+import { notify } from "@/lib/toast"
 
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
@@ -49,7 +49,7 @@ export default function InviteMemberPage() {
   const queryClient = useQueryClient()
 
   // Form state
-  const [role, setRole] = useState<string>("TECHNICIAN")
+  const [role, setRole] = useState<string>("EMPLOYEE")
   const [email, setEmail] = useState("")
   const [expiresInHours, setExpiresInHours] = useState("168")
   const [specialty, setSpecialty] = useState("")
@@ -59,8 +59,8 @@ export default function InviteMemberPage() {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const isDispatcher = user?.role === "DISPATCHER"
-  const isTechnician = role === "TECHNICIAN"
+  const isDispatcher = user?.role === "MANAGER"
+  const isEmployee = role === "EMPLOYEE"
 
   const createMutation = useMutation({
     mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),
@@ -72,11 +72,11 @@ export default function InviteMemberPage() {
 
       // If email provided, the backend will send invitation email
       if (email.trim()) {
-        toast.success(t("members.invite.emailSent"), { description: email })
+        notify.success(t("members.invite.emailSent"), email)
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || t("members.invite.failedToCreate"))
+      notify.error(error.message || t("members.invite.failedToCreate"))
     },
   })
 
@@ -89,7 +89,7 @@ export default function InviteMemberPage() {
       email: email.trim() || undefined,
     }
 
-    if (isTechnician) {
+    if (isEmployee) {
       if (specialty) input.specialty = specialty
       if (maxDailyJobs) input.maxDailyJobs = parseInt(maxDailyJobs)
     }
@@ -101,11 +101,11 @@ export default function InviteMemberPage() {
     if (!generatedCode) return
     await navigator.clipboard.writeText(generatedCode)
     setCopied(true)
-    toast.success(t("common.codeCopiedToClipboard"))
+    notify.copied()
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const canInvite = user?.role === "ADMIN" || user?.role === "DISPATCHER"
+  const canInvite = user?.role === "ADMIN" || user?.role === "MANAGER"
   if (!canInvite) {
     return (
       <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
@@ -217,8 +217,8 @@ export default function InviteMemberPage() {
                   <Select value={role} onValueChange={setRole}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="TECHNICIAN">{t("members.roles.technician")}</SelectItem>
-                      <SelectItem value="DISPATCHER">{t("members.roles.dispatcher")}</SelectItem>
+                      <SelectItem value="EMPLOYEE">{t("members.roles.technician")}</SelectItem>
+                      <SelectItem value="MANAGER">{t("members.roles.dispatcher")}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -255,8 +255,8 @@ export default function InviteMemberPage() {
               </Select>
             </div>
 
-            {/* Technician details */}
-            {isTechnician && (
+            {/* Employee details */}
+            {isEmployee && (
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-foreground">{t("members.invite.workDetails")}</h3>
 

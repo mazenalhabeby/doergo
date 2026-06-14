@@ -36,6 +36,15 @@ export const TASK_JOB_TYPES = {
   GET_PRESIGNED_URL: 'task.getPresignedUrl',
   AVATAR_PRESIGNED_URL: 'task.avatarPresignedUrl',
   AVATAR_DELETE_S3: 'task.avatarDeleteS3',
+  ADD_ASSIGNEE: 'task.addAssignee',
+  REMOVE_ASSIGNEE: 'task.removeAssignee',
+  ADD_CHECKLIST_ITEM: 'task.addChecklistItem',
+  UPDATE_CHECKLIST_ITEM: 'task.updateChecklistItem',
+  DELETE_CHECKLIST_ITEM: 'task.deleteChecklistItem',
+  REORDER_CHECKLIST: 'task.reorderChecklist',
+  CREATE_SUBTASK: 'task.createSubtask',
+  ADD_DEPENDENCY: 'task.addDependency',
+  REMOVE_DEPENDENCY: 'task.removeDependency',
 } as const;
 
 export type TaskJobType = (typeof TASK_JOB_TYPES)[keyof typeof TASK_JOB_TYPES];

@@ -11,14 +11,14 @@ export class AttendanceService extends BaseGatewayService {
   }
 
   /**
-   * Get current attendance status for a technician
+   * Get current attendance status for an employee
    */
   async getStatus(data: { userId: string; organizationId: string }) {
     return this.send({ cmd: 'get_attendance_status' }, data);
   }
 
   /**
-   * Get attendance history for a technician
+   * Get attendance history for an employee
    */
   async getHistory(data: {
     userId: string;

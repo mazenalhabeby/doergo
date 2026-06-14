@@ -2,9 +2,9 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TechniciansService } from './technicians.service';
 import {
-  GetTechnicianStatsDto,
-  GetTechnicianPerformanceDto,
-  GetTechnicianTaskHistoryDto,
+  GetEmployeeStatsDto,
+  GetEmployeePerformanceDto,
+  GetEmployeeTaskHistoryDto,
   SetScheduleDto,
   GetScheduleDto,
   RequestTimeOffDto,
@@ -24,17 +24,17 @@ export class TechniciansController {
   // ========================================================================
 
   @MessagePattern({ cmd: 'get_technician_stats' })
-  async getStats(@Payload() data: GetTechnicianStatsDto) {
+  async getStats(@Payload() data: GetEmployeeStatsDto) {
     return this.techniciansService.getStats(data);
   }
 
   @MessagePattern({ cmd: 'get_technician_performance' })
-  async getPerformance(@Payload() data: GetTechnicianPerformanceDto) {
+  async getPerformance(@Payload() data: GetEmployeePerformanceDto) {
     return this.techniciansService.getPerformance(data);
   }
 
   @MessagePattern({ cmd: 'get_technician_task_history' })
-  async getTaskHistory(@Payload() data: GetTechnicianTaskHistoryDto) {
+  async getTaskHistory(@Payload() data: GetEmployeeTaskHistoryDto) {
     return this.techniciansService.getTaskHistory(data);
   }
 

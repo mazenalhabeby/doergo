@@ -17,7 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
-import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto } from './dto';
+import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto, UpdateOrgProfileDto, UpdateNotificationPrefsDto, UpdateSecuritySettingsDto } from './dto';
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -25,6 +25,7 @@ import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto } from './dt
 export class OrganizationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
   ) {}
 
   @Get('join-code')
@@ -134,9 +135,12 @@ export class OrganizationsController {
         dto: {
           firstName: dto.firstName,
           lastName: dto.lastName,
+          position: dto.position,
+          scheduleType: dto.scheduleType,
+          monthlyHourBudget: dto.monthlyHourBudget,
           role: dto.role,
-          platform: dto.platform,
           canCreateTasks: dto.canCreateTasks,
+          taskCreationScope: dto.taskCreationScope,
           canViewAllTasks: dto.canViewAllTasks,
           canAssignTasks: dto.canAssignTasks,
           canManageUsers: dto.canManageUsers,
@@ -203,6 +207,12 @@ export class OrganizationsController {
       );
     }
 
+    // Force-disconnect removed user's active socket connections
+    this.notificationClient.emit('user_removed', {
+      userId: memberId,
+      organizationId: user.organizationId,
+    });
+
     return result;
   }
 
@@ -221,7 +231,7 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org profile badge visibility config' })
   async updateProfileBadges(
-    @Body() body: { showRole: boolean; showType: boolean; showSpecialty: boolean },
+    @Body() body: { showRole: boolean; showSpecialty: boolean },
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
@@ -253,13 +263,13 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update organization profile (name, industry, address, etc.)' })
   async updateOrgProfile(
-    @Body() body: Record<string, any>,
+    @Body() dto: UpdateOrgProfileDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'update_org_profile' }, {
         organizationId: user.organizationId,
-        updates: body,
+        updates: dto,
       }),
     );
 
@@ -274,13 +284,13 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org notification preferences' })
   async updateNotificationPrefs(
-    @Body() body: Record<string, any>,
+    @Body() dto: UpdateNotificationPrefsDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'update_notification_prefs' }, {
         organizationId: user.organizationId,
-        prefs: body,
+        prefs: dto,
       }),
     );
 
@@ -295,13 +305,13 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org security settings' })
   async updateSecuritySettings(
-    @Body() body: Record<string, any>,
+    @Body() dto: UpdateSecuritySettingsDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'update_security_settings' }, {
         organizationId: user.organizationId,
-        settings: body,
+        settings: dto,
       }),
     );
 
@@ -310,5 +320,38 @@ export class OrganizationsController {
     }
 
     return result;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // AUDIT LOGS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  @Get('audit-logs')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Get organization audit logs (ADMIN only)' })
+  async getAuditLogs(
+    @Query() query: {
+      eventType?: string;
+      userId?: string;
+      resourceType?: string;
+      startDate?: string;
+      endDate?: string;
+      page?: string;
+      limit?: string;
+    },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'audit_log_list' }, {
+        organizationId: user.organizationId,
+        eventType: query.eventType,
+        userId: query.userId,
+        resourceType: query.resourceType,
+        startDate: query.startDate,
+        endDate: query.endDate,
+        page: query.page ? Number(query.page) : undefined,
+        limit: query.limit ? Number(query.limit) : undefined,
+      }),
+    );
   }
 }

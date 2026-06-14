@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
 // Dynamically get API URL based on Expo dev server host
-function getApiUrl(): string {
+export function getApiUrl(): string {
   // If explicitly set in env (non-empty), use that for production
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl && envUrl.trim().length > 0) {

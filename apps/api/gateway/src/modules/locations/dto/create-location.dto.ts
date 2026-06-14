@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsArray,
   MaxLength,
   Min,
   Max,
@@ -66,4 +67,21 @@ export class CreateLocationDto {
   @IsString()
   @IsOptional()
   timezone?: string;
+
+  @ApiPropertyOptional({
+    example: ['time_tracking', 'sprints'],
+    description: 'Enabled modules for this space (overrides org defaults)',
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  enabledModules?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Status workflow ID to associate with this space',
+  })
+  @IsString()
+  @IsOptional()
+  workflowId?: string;
 }

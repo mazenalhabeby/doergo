@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { notify } from '@/lib/toast';
 import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { Button, Input, Label } from '@/components/ui';
 import { AnimatedLogo } from '@/components/auth';
@@ -43,9 +43,7 @@ function ResetPasswordContent() {
 
   useEffect(() => {
     if (!token) {
-      toast.error(t('auth.resetPassword.invalidResetLinkTitle'), {
-        description: t('auth.resetPassword.invalidResetLinkDescription'),
-      });
+      notify.error(t('auth.resetPassword.invalidResetLinkDescription'));
     }
   }, [token]);
 
@@ -65,7 +63,7 @@ function ResetPasswordContent() {
     }
 
     if (!token) {
-      toast.error(t('auth.resetPassword.invalidResetLinkTitle'));
+      notify.error(t('auth.resetPassword.invalidResetLinkTitle'));
       return;
     }
 
@@ -75,18 +73,14 @@ function ResetPasswordContent() {
       await authApi.resetPassword(token, password);
 
       setIsSuccess(true);
-      toast.success(t('auth.resetPassword.successToastTitle'), {
-        description: t('auth.resetPassword.successToastDescription'),
-      });
+      notify.success(t('auth.resetPassword.successToastTitle'), t('auth.resetPassword.successToastDescription'));
 
       // Redirect to login after 3 seconds
       setTimeout(() => {
         router.push('/login');
       }, 3000);
     } catch (err) {
-      toast.error(t('auth.resetPassword.errorTitle'), {
-        description: err instanceof Error ? err.message : t('auth.resetPassword.errorDescription'),
-      });
+      notify.error(err instanceof Error ? err.message : t('auth.resetPassword.errorDescription'));
     } finally {
       setIsLoading(false);
     }

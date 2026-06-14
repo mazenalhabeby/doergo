@@ -9,3 +9,4 @@ export { PersonNode, type PersonNodeProps, type PersonNodeTag, type TagVariant }
 export { WorkspaceBox, type WorkspaceBoxProps } from "./workspace-box"
 export { WorkspaceGrid, type WorkspaceGridProps } from "./workspace-grid"
 export { ActivityPanel, type ActivityPanelProps, type LiveEvent, type PendingAction } from "./activity-panel"
+export { EmployeeDetailPanel, type EmployeeDetailPanelProps } from "./employee-detail-panel"

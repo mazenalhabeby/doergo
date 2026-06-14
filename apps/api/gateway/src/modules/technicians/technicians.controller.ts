@@ -27,16 +27,16 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import {
-  CreateTechnicianDto,
-  UpdateTechnicianDto,
-  ListTechniciansDto,
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  ListEmployeesDto,
 } from './dto';
 
-@ApiTags('technicians')
+@ApiTags('employees')
 @ApiBearerAuth()
-@Controller('technicians')
+@Controller('employees')
 @UseGuards(JwtAuthGuard, RolesGuard)
-export class TechniciansController {
+export class EmployeesController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
@@ -47,11 +47,11 @@ export class TechniciansController {
   // ============================================================================
 
   @Get()
-  @ApiOperation({ summary: 'List technicians with filtering and pagination' })
-  @ApiResponse({ status: 200, description: 'Technicians list retrieved' })
+  @ApiOperation({ summary: 'List employees with filtering and pagination' })
+  @ApiResponse({ status: 200, description: 'Employees list retrieved' })
   @RequirePermission('canViewAllTasks')
-  async listTechnicians(
-    @Query() query: ListTechniciansDto,
+  async listEmployees(
+    @Query() query: ListEmployeesDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
@@ -70,7 +70,7 @@ export class TechniciansController {
   // ============================================================================
 
   @Get('availability')
-  @ApiOperation({ summary: 'Get all technicians availability for a date or date range' })
+  @ApiOperation({ summary: 'Get all employees availability for a date or date range' })
   @ApiResponse({ status: 200, description: 'Availability retrieved' })
   @RequirePermission('canViewAllTasks')
   async getAvailability(
@@ -158,11 +158,51 @@ export class TechniciansController {
     );
   }
 
+  @Post('time-off/bulk-approve')
+  @ApiOperation({ summary: 'Bulk approve or reject time-off requests' })
+  @RequirePermission('canManageUsers')
+  async bulkApproveTimeOff(
+    @Body() body: { timeOffIds: string[]; approved: boolean; rejectionReason?: string },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    if (!body.timeOffIds || body.timeOffIds.length === 0) {
+      return { success: false, message: 'No time-off IDs provided' };
+    }
+    if (body.timeOffIds.length > 50) {
+      return { success: false, message: 'Maximum 50 requests per bulk operation' };
+    }
+
+    const results = await Promise.allSettled(
+      body.timeOffIds.map(timeOffId =>
+        firstValueFrom(
+          this.taskClient.send(
+            { cmd: 'approve_time_off' },
+            {
+              timeOffId,
+              organizationId: user.organizationId,
+              approverId: user.id,
+              approved: body.approved,
+              rejectionReason: body.rejectionReason,
+            },
+          ),
+        ),
+      ),
+    );
+
+    const succeeded = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+
+    return {
+      success: true,
+      data: { succeeded, failed, total: body.timeOffIds.length },
+    };
+  }
+
   @Delete('time-off/:timeOffId')
   @ApiOperation({ summary: 'Cancel a time-off request' })
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @ApiResponse({ status: 200, description: 'Time-off request canceled' })
-  @Roles(Role.TECHNICIAN)
+  @Roles(Role.EMPLOYEE)
   async cancelTimeOff(
     @Param('timeOffId') timeOffId: string,
     @CurrentUser() user: CurrentUserData,
@@ -183,12 +223,12 @@ export class TechniciansController {
   // ============================================================================
 
   @Post()
-  @ApiOperation({ summary: 'Create a new technician' })
-  @ApiResponse({ status: 201, description: 'Technician created' })
+  @ApiOperation({ summary: 'Create a new employee' })
+  @ApiResponse({ status: 201, description: 'Employee created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   @RequirePermission('canManageUsers')
-  async createTechnician(
-    @Body() dto: CreateTechnicianDto,
+  async createEmployee(
+    @Body() dto: CreateEmployeeDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
@@ -207,12 +247,12 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get technician detail with stats' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
-  @ApiResponse({ status: 200, description: 'Technician detail retrieved' })
-  @ApiResponse({ status: 404, description: 'Technician not found' })
+  @ApiOperation({ summary: 'Get employee detail with stats' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
+  @ApiResponse({ status: 200, description: 'Employee detail retrieved' })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermission('canViewAllTasks')
-  async getTechnicianDetail(
+  async getEmployeeDetail(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
@@ -232,11 +272,11 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id/stats')
-  @ApiOperation({ summary: 'Get technician basic task stats' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Get employee basic task stats' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Stats retrieved' })
   @RequirePermission('canViewAllTasks')
-  async getTechnicianStats(
+  async getEmployeeStats(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
@@ -257,14 +297,14 @@ export class TechniciansController {
   // ============================================================================
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a technician' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
-  @ApiResponse({ status: 200, description: 'Technician updated' })
-  @ApiResponse({ status: 404, description: 'Technician not found' })
+  @ApiOperation({ summary: 'Update an employee' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
+  @ApiResponse({ status: 200, description: 'Employee updated' })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermission('canManageUsers')
-  async updateTechnician(
+  async updateEmployee(
     @Param('id') id: string,
-    @Body() dto: UpdateTechnicianDto,
+    @Body() dto: UpdateEmployeeDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
@@ -284,16 +324,16 @@ export class TechniciansController {
   // ============================================================================
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Deactivate a technician (soft delete)' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
-  @ApiResponse({ status: 200, description: 'Technician deactivated' })
-  @ApiResponse({ status: 404, description: 'Technician not found' })
+  @ApiOperation({ summary: 'Deactivate an employee (soft delete)' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
+  @ApiResponse({ status: 200, description: 'Employee deactivated' })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
   @ApiResponse({
     status: 400,
-    description: 'Cannot deactivate technician with active tasks',
+    description: 'Cannot deactivate employee with active tasks',
   })
   @RequirePermission('canManageUsers')
-  async deactivateTechnician(
+  async deactivateEmployee(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
@@ -313,12 +353,12 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id/performance')
-  @ApiOperation({ summary: 'Get technician performance metrics' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Get employee performance metrics' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Performance metrics retrieved' })
-  @ApiResponse({ status: 404, description: 'Technician not found' })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermission('canViewAllTasks')
-  async getTechnicianPerformance(
+  async getEmployeePerformance(
     @Param('id') id: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -343,11 +383,11 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id/tasks')
-  @ApiOperation({ summary: 'Get technician task history' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Get employee task history' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Task history retrieved' })
   @RequirePermission('canViewAllTasks')
-  async getTechnicianTasks(
+  async getEmployeeTasks(
     @Param('id') id: string,
     @Query('status') status?: string,
     @Query('page') page?: number,
@@ -374,11 +414,11 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id/attendance')
-  @ApiOperation({ summary: 'Get technician attendance history' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Get employee attendance history' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Attendance history retrieved' })
   @RequirePermission('canViewAllTasks')
-  async getTechnicianAttendance(
+  async getEmployeeAttendance(
     @Param('id') id: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -402,11 +442,11 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id/assignments')
-  @ApiOperation({ summary: 'Get technician location assignments' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Get employee location assignments' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Assignments retrieved' })
   @RequirePermission('canViewAllTasks')
-  async getTechnicianAssignments(
+  async getEmployeeAssignments(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
@@ -426,16 +466,16 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id/schedule')
-  @ApiOperation({ summary: 'Get technician weekly schedule' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Get employee weekly schedule' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Schedule retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
-  async getTechnicianSchedule(
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  async getEmployeeSchedule(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    // Technicians can only view their own schedule
-    if (user.role === Role.TECHNICIAN && user.id !== id) {
+    // Employees can only view their own schedule
+    if (user.role === Role.EMPLOYEE && user.id !== id) {
       throw new ForbiddenException('You can only view your own schedule');
     }
 
@@ -451,11 +491,11 @@ export class TechniciansController {
   }
 
   @Post(':id/schedule')
-  @ApiOperation({ summary: 'Set technician weekly schedule' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Set employee weekly schedule' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Schedule updated' })
   @RequirePermission('canManageUsers')
-  async setTechnicianSchedule(
+  async setEmployeeSchedule(
     @Param('id') id: string,
     @Body() body: { schedule: Array<{ dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean; notes?: string }> },
     @CurrentUser() user: CurrentUserData,
@@ -478,17 +518,17 @@ export class TechniciansController {
   // ============================================================================
 
   @Get(':id/time-off')
-  @ApiOperation({ summary: 'Get technician time-off requests' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Get employee time-off requests' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Time-off requests retrieved' })
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
-  async getTechnicianTimeOff(
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  async getEmployeeTimeOff(
     @Param('id') id: string,
     @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
     @CurrentUser() user?: CurrentUserData,
   ) {
-    // Technicians can only view their own time-off
-    if (user?.role === Role.TECHNICIAN && user?.id !== id) {
+    // Employees can only view their own time-off
+    if (user?.role === Role.EMPLOYEE && user?.id !== id) {
       throw new ForbiddenException('You can only view your own time-off requests');
     }
 
@@ -505,17 +545,17 @@ export class TechniciansController {
   }
 
   @Post(':id/time-off')
-  @ApiOperation({ summary: 'Request time off for technician' })
-  @ApiParam({ name: 'id', description: 'Technician ID' })
+  @ApiOperation({ summary: 'Request time off for employee' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 201, description: 'Time-off request created' })
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   async requestTimeOff(
     @Param('id') id: string,
     @Body() body: { startDate: string; endDate: string; reason?: string },
     @CurrentUser() user: CurrentUserData,
   ) {
-    // Technicians can only request time off for themselves
-    if (user.role === Role.TECHNICIAN && user.id !== id) {
+    // Employees can only request time off for themselves
+    if (user.role === Role.EMPLOYEE && user.id !== id) {
       throw new ForbiddenException('You can only request time off for yourself');
     }
 

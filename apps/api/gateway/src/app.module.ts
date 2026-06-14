@@ -18,11 +18,19 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
-import { TechniciansModule } from './modules/technicians/technicians.module';
+import { EmployeesModule } from './modules/technicians/technicians.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { PhasesModule } from './modules/phases/phases.module';
+import { SprintsModule } from './modules/sprints/sprints.module';
+import { EpicsModule } from './modules/epics/epics.module';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
+import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
+import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
@@ -69,11 +77,19 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     LocationsModule,
     AttendanceModule,
     OvertimeModule,
-    TechniciansModule,
+    EmployeesModule,
     InvitationsModule,
     OnboardingModule,
     JoinRequestsModule,
     OrganizationsModule,
+    PhasesModule,
+    SprintsModule,
+    EpicsModule,
+    WorkflowsModule,
+    CustomFieldsModule,
+    RecurringTasksModule,
+    RolesModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [

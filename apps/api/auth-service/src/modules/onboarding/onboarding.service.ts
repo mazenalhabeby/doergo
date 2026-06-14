@@ -64,6 +64,7 @@ export class OnboardingService {
           onboardingCompleted: true,
 
           canCreateTasks: defaultPerms.canCreateTasks,
+          taskCreationScope: defaultPerms.taskCreationScope,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
@@ -78,6 +79,7 @@ export class OnboardingService {
           onboardingCompleted: true,
 
           canCreateTasks: true,
+          taskCreationScope: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
@@ -217,7 +219,7 @@ export class OnboardingService {
         data: {
           organizationId: organization.id,
           onboardingCompleted: true,
-          role: 'TECHNICIAN',
+          role: 'EMPLOYEE',
         },
       });
 
@@ -320,7 +322,7 @@ export class OnboardingService {
 
     const role = invitation.targetRole as Role;
     const defaultPerms = DEFAULT_PERMISSIONS[role];
-    const isTechnician = role === Role.TECHNICIAN;
+    const isTechnician = role === Role.EMPLOYEE;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedUser = await tx.user.update({
@@ -331,6 +333,7 @@ export class OnboardingService {
           onboardingCompleted: true,
 
           canCreateTasks: defaultPerms.canCreateTasks,
+          taskCreationScope: defaultPerms.taskCreationScope,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
@@ -352,6 +355,7 @@ export class OnboardingService {
           onboardingCompleted: true,
 
           canCreateTasks: true,
+          taskCreationScope: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
@@ -524,7 +528,7 @@ export class OnboardingService {
 
     const role = data.role as Role;
     const defaultPerms = DEFAULT_PERMISSIONS[role];
-    const isTechnician = role === Role.TECHNICIAN;
+    const isTechnician = role === Role.EMPLOYEE;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Update user with org membership + role + permissions
@@ -535,6 +539,7 @@ export class OnboardingService {
           role: role as any,
           onboardingCompleted: true,
           canCreateTasks: defaultPerms.canCreateTasks,
+          taskCreationScope: defaultPerms.taskCreationScope,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
@@ -724,7 +729,6 @@ export class OnboardingService {
     const valid = profileBadges
       && typeof profileBadges === 'object'
       && typeof profileBadges.showRole === 'boolean'
-      && typeof profileBadges.showType === 'boolean'
       && typeof profileBadges.showSpecialty === 'boolean';
 
     if (!valid) {
@@ -765,6 +769,7 @@ export class OnboardingService {
         profileBadges: true,
         notificationPrefs: true,
         securitySettings: true,
+        enabledModules: true,
         createdAt: true,
         _count: { select: { users: true } },
       },
@@ -778,7 +783,7 @@ export class OnboardingService {
   }
 
   async updateOrgProfile(organizationId: string, updates: any) {
-    const allowedFields = ['name', 'industry', 'address', 'phone', 'email', 'website', 'timezone', 'logoUrl'];
+    const allowedFields = ['name', 'industry', 'address', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'enabledModules'];
     const data: any = {};
 
     for (const key of allowedFields) {
@@ -794,7 +799,7 @@ export class OnboardingService {
     const org = await this.prisma.organization.update({
       where: { id: organizationId },
       data,
-      select: { id: true, name: true, industry: true, address: true, phone: true, email: true, website: true, timezone: true, logoUrl: true },
+      select: { id: true, name: true, industry: true, address: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, enabledModules: true },
     });
 
     return { success: true, data: org };

@@ -1,30 +1,18 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { AppSidebar } from '@/components/app-sidebar';
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { DashboardSkeleton } from '@/components/skeletons';
-import { NotificationBell } from '@/components/notification-bell';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { DashboardSkeleton, PageContentSkeleton } from '@/components/skeletons';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { TopNavbar } from '@/components/top-navbar';
+import { CommandPalette } from '@/components/command-palette';
 import { ActivityPanelProvider } from '@/contexts/activity-panel-context';
+import { CommandPaletteProvider } from '@/contexts/command-palette-context';
 import { useAuth } from '@/contexts/auth-context';
 import { SocketProvider } from '@/contexts/socket-context';
-import { BreadcrumbProvider, useBreadcrumbOverride } from '@/contexts/breadcrumb-context';
+import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
+import { TokenDebugPanel } from '@/components/token-debug';
+import { useRealtimeSync } from '@/hooks/use-realtime-sync';
 
 // ---------------------------------------------------------------------------
 // Route-change progress bar — shows a slim animated bar at the top of the
@@ -69,77 +57,11 @@ function RouteChangeIndicator() {
   );
 }
 
-// Fallback skeleton for Suspense boundary
-function ContentFallback() {
-  return (
-    <div className="p-6 space-y-4 animate-pulse">
-      <div className="h-8 w-64 bg-muted rounded-lg" />
-      <div className="h-4 w-48 bg-muted/50 rounded-lg" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-28 bg-card rounded-xl border border-border" />
-        ))}
-      </div>
-      <div className="h-64 bg-card rounded-xl border border-border mt-4" />
-    </div>
-  );
-}
 
-// Route labels for better breadcrumb display
-const routeLabels: Record<string, string> = {
-  'dashboard': 'Dashboard',
-  'tasks': 'Tasks',
-  'new': 'New Task',
-  'edit': 'Edit',
-  'technicians': 'Technicians',
-  'map': 'Live Map',
-  'settings': 'Settings',
-  'invoices': 'Invoices',
-};
-
-// Breadcrumb navigation component (must be inside BreadcrumbProvider)
-function BreadcrumbNav() {
-  const pathname = usePathname();
-  const { overrides } = useBreadcrumbOverride();
-
-  const segments = pathname.split('/').filter(Boolean);
-
-  const breadcrumbs = segments.map((segment, index) => {
-    const href = '/' + segments.slice(0, index + 1).join('/');
-
-    // Check if there's an override for this segment
-    if (overrides.has(segment)) {
-      return { href, label: overrides.get(segment)! };
-    }
-
-    // Use predefined label or format the segment
-    const label = routeLabels[segment] || segment
-      .replace(/-/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-
-    return { href, label };
-  });
-
-  return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        {breadcrumbs.map((crumb, index) => (
-          <React.Fragment key={crumb.href}>
-            <BreadcrumbItem>
-              {index < breadcrumbs.length - 1 ? (
-                <BreadcrumbLink asChild>
-                  <Link href={crumb.href}>{crumb.label}</Link>
-                </BreadcrumbLink>
-              ) : (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              )}
-            </BreadcrumbItem>
-            {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-          </React.Fragment>
-        ))}
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
+/** Invisible component that runs inside SocketProvider to sync all real-time events */
+function RealtimeSyncLayer() {
+  useRealtimeSync();
+  return null;
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -162,30 +84,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SocketProvider>
+    <RealtimeSyncLayer />
     <ActivityPanelProvider>
+    <CommandPaletteProvider>
     <BreadcrumbProvider>
-      <SidebarProvider>
+      <div className="h-screen flex flex-col">
         <RouteChangeIndicator />
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <BreadcrumbNav />
-            <div className="ml-auto flex items-center gap-1">
-              <ThemeToggle />
-              <NotificationBell />
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col overflow-auto bg-background">
-            <Suspense fallback={<ContentFallback />}>
+        <TopNavbar />
+        <div className="flex-1 overflow-auto bg-background">
+          <ErrorBoundary>
+            <Suspense fallback={<PageContentSkeleton />}>
               {children}
             </Suspense>
-          </div>
-        </SidebarInset>
-        {/* <TokenDisplay /> */}
-      </SidebarProvider>
+          </ErrorBoundary>
+        </div>
+      </div>
+      <CommandPalette />
+      <TokenDebugPanel />
     </BreadcrumbProvider>
+    </CommandPaletteProvider>
     </ActivityPanelProvider>
     </SocketProvider>
   );

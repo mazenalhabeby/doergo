@@ -79,4 +79,46 @@ export class TasksQueueService extends BaseQueueService {
   async deleteAvatarFromS3(data: Record<string, any>) {
     return this.addJobAndWait(TASK_JOB_TYPES.AVATAR_DELETE_S3, data);
   }
+
+  // ============ Assignee Operations ============
+
+  async addAssignee(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.ADD_ASSIGNEE, data);
+  }
+
+  async removeAssignee(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.REMOVE_ASSIGNEE, data);
+  }
+
+  // ============ Subtask & Dependency Operations ============
+
+  async createSubtask(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.CREATE_SUBTASK, data);
+  }
+
+  async addDependency(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.ADD_DEPENDENCY, data);
+  }
+
+  async removeDependency(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.REMOVE_DEPENDENCY, data);
+  }
+
+  // ============ Checklist Operations ============
+
+  async addChecklistItem(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.ADD_CHECKLIST_ITEM, data);
+  }
+
+  async updateChecklistItem(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.UPDATE_CHECKLIST_ITEM, data);
+  }
+
+  async deleteChecklistItem(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.DELETE_CHECKLIST_ITEM, data);
+  }
+
+  async reorderChecklist(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.REORDER_CHECKLIST, data);
+  }
 }

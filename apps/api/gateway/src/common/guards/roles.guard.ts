@@ -4,7 +4,7 @@
  */
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role, ROLES_KEY } from '@hbcfield/shared';
+import { Role, ROLES_KEY, normalizeRole } from '@hbcfield/shared';
 
 /**
  * Guard to check if user has required role(s)
@@ -33,7 +33,13 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User not found in request');
     }
 
-    const hasRole = requiredRoles.some((role: Role) => user.role === role);
+    // Normalize BOTH sides so legacy (CLIENT/DISPATCHER/TECHNICIAN) and canonical
+    // (ADMIN/MANAGER/EMPLOYEE) role names are treated as equivalent — the token
+    // boundary now emits canonical roles, but @Roles decorators may use either.
+    const userRole = normalizeRole(user.role);
+    const hasRole = requiredRoles.some(
+      (role: Role) => userRole === normalizeRole(role),
+    );
 
     if (!hasRole) {
       throw new ForbiddenException(

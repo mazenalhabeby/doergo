@@ -16,12 +16,12 @@ import { EmailField, StrongPasswordField, NameField } from '@hbcfield/shared';
 
 export class CreateInvitationDto {
   @ApiProperty({
-    enum: ['DISPATCHER', 'TECHNICIAN'],
+    enum: ['MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'],
     description: 'Role for the invitee',
   })
   @IsString()
-  @IsEnum(['DISPATCHER', 'TECHNICIAN'], {
-    message: 'Target role must be DISPATCHER or TECHNICIAN',
+  @IsEnum(['MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'], {
+    message: 'Target role must be MANAGER or EMPLOYEE',
   })
   targetRole: string;
 

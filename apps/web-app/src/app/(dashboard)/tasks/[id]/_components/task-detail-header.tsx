@@ -1,0 +1,234 @@
+"use client"
+
+import { useTranslation } from "react-i18next"
+import Link from "next/link"
+import {
+  Calendar,
+  Pencil,
+  User,
+  MoreHorizontal,
+  Trash2,
+  MapPin,
+  ChevronRight,
+} from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { getStatusConfig } from "@/lib/constants"
+import { getRequestId, formatShortDate } from "@/lib/utils"
+import { InlineEditField } from "./inline-edit-field"
+import type { WorkflowStatus } from "@/lib/api"
+
+interface TaskDetailHeaderProps {
+  task: any
+  user: any
+  canEdit: boolean
+  canAssign: boolean
+  isCompleted: boolean
+  isCanceled: boolean
+  hasAssignee: boolean
+  hasModule: (m: string) => boolean
+  hasWorkflow: boolean
+  allowedTransitions: WorkflowStatus[]
+  onTitleSave: (value: string) => Promise<void> | void
+  onStatusChange: (status: string) => void
+  onAssignClick: () => void
+  onEditClick: () => void
+  onCancelTask: () => void
+  isStatusChanging: boolean
+}
+
+export function TaskDetailHeader({
+  task,
+  user,
+  canEdit,
+  canAssign,
+  isCompleted,
+  isCanceled,
+  hasAssignee,
+  hasModule,
+  hasWorkflow,
+  allowedTransitions,
+  onTitleSave,
+  onStatusChange,
+  onAssignClick,
+  onEditClick,
+  onCancelTask,
+  isStatusChanging,
+}: TaskDetailHeaderProps) {
+  const { t } = useTranslation()
+  const requestId = getRequestId(task, user?.organizationName)
+  const taskDate = formatShortDate(task.createdAt)
+  const statusConfig = getStatusConfig(task.status)
+
+  return (
+    <div className="mb-6">
+      {/* Breadcrumb-style context line */}
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+        <span>Tasks</span>
+        <ChevronRight className="size-3" />
+        <span className="text-foreground font-medium">{requestId}</span>
+        <span className="mx-1">·</span>
+        <Calendar className="size-3" />
+        <span>{taskDate}</span>
+      </div>
+
+      {/* Title row */}
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex-1 min-w-0">
+          <InlineEditField
+            value={task.title}
+            onSave={onTitleSave}
+            type="text"
+            disabled={!canEdit}
+            className="text-2xl font-semibold"
+          />
+        </div>
+
+        {/* Actions — clean, minimal */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {!isCompleted && !isCanceled && (
+            <AlertDialog>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={onEditClick}>
+                    <Pencil className="size-4 mr-2" />
+                    {t("tasks.detail.editTask")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
+                      <Trash2 className="size-4 mr-2" />
+                      {t("tasks.detail.cancelRequest")}
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("tasks.detail.cancelRequestTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("tasks.detail.cancelRequestDescription")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("tasks.detail.keepRequest")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={onCancelTask} className="bg-red-600 hover:bg-red-700">
+                    {t("tasks.detail.cancelRequestConfirm")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      </div>
+
+      {/* Status + metadata + transitions — all in one clean row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Status badge */}
+        <span
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+          style={{
+            backgroundColor: `${statusConfig.hex}14`,
+            color: statusConfig.hex,
+          }}
+        >
+          <span className="size-1.5 rounded-full animate-pulse" style={{ backgroundColor: statusConfig.hex }} />
+          {statusConfig.label}
+        </span>
+
+        {/* Workflow transitions as subtle pills */}
+        {hasWorkflow && allowedTransitions.length > 0 && !isCompleted && !isCanceled && (
+          <>
+            <ChevronRight className="size-3 text-muted-foreground/40" />
+            {allowedTransitions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => onStatusChange(s.key)}
+                disabled={isStatusChanging}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-150 hover:shadow-sm disabled:opacity-50"
+                style={{
+                  borderColor: `${s.color}30`,
+                  color: s.color,
+                  backgroundColor: "transparent",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget.style.backgroundColor = `${s.color}10`) }}
+                onMouseLeave={(e) => { (e.currentTarget.style.backgroundColor = "transparent") }}
+              >
+                <span className="size-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+                {s.name}
+              </button>
+            ))}
+          </>
+        )}
+
+        {/* Divider */}
+        <span className="w-px h-4 bg-border/60 mx-1" />
+
+        {/* Space */}
+        {task.space && (
+          <Link href={`/tasks?space=${task.space.id}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors">
+            <MapPin className="size-2.5" />
+            {task.space.name}
+          </Link>
+        )}
+
+        {/* Phase */}
+        {hasModule("phases") && task.phase && (
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+            style={{ backgroundColor: `${task.phase.color}14`, color: task.phase.color }}
+          >
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: task.phase.color }} />
+            {task.phase.name}
+          </span>
+        )}
+
+        {/* Sprint */}
+        {hasModule("sprints") && task.sprint && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-500/10 text-green-700 dark:text-green-400">
+            {task.sprint.name}
+          </span>
+        )}
+
+        {/* Story Points */}
+        {hasModule("story_points") && task.storyPoints != null && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums bg-muted text-muted-foreground">
+            {task.storyPoints} pts
+          </span>
+        )}
+
+        {/* Epic */}
+        {hasModule("epics") && task.epic && (
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+            style={{ backgroundColor: `${task.epic.color}14`, color: task.epic.color }}
+          >
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: task.epic.color }} />
+            {task.epic.name}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}

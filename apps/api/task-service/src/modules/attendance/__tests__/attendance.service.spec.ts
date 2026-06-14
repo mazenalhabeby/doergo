@@ -33,7 +33,7 @@ describe('AttendanceService', () => {
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
-    role: 'TECHNICIAN',
+    role: 'EMPLOYEE',
     
     organizationId: 'org-123',
     isActive: true,

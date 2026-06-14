@@ -4,137 +4,87 @@ import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import {
   Check,
-  Clock,
-  Wrench,
-  Car,
   Phone,
   MessageSquare,
   Timer,
-  MapPin,
-  ClipboardList,
   UserPlus,
-  UserCheck,
-  CircleCheck,
 } from "lucide-react"
 
-import { tasksApi, type TaskEvent } from "@/lib/api"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { cn, formatTimeAgo, formatDurationMs } from "@/lib/utils"
+import { tasksApi, type TaskEvent, type WorkflowStatus } from "@/lib/api"
+import { getStatusConfig } from "@/lib/constants"
+import { cn, formatDurationMs } from "@/lib/utils"
+import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 
 interface AssignedUser {
+  id?: string
   firstName: string
   lastName: string
   email?: string
   phone?: string
   specialty?: string | null
+  avatarUrl?: string | null
+}
+
+interface TaskAssignee {
+  id: string
+  userId: string
+  role: "LEAD" | "MEMBER"
+  user: { id: string; firstName: string; lastName: string; avatarUrl?: string | null }
+  createdAt: string
 }
 
 interface TaskProgressCardProps {
   taskId: string
-  assignedTo: AssignedUser
+  assignees: TaskAssignee[]
+  assignedTo: AssignedUser | null
   isCompleted: boolean
   taskStatus: string
   createdAt: string
   routeStartedAt?: string | null
   routeEndedAt?: string | null
   routeDistance?: number | null
+  workflowStatuses?: WorkflowStatus[]
 }
 
-// Step configuration with icons - 6 steps for clear visibility
-const STEPS = [
-  { key: "submitted", labelKey: "tasks.progress.steps.submitted", icon: ClipboardList },
-  { key: "assigned", labelKey: "tasks.progress.steps.assigned", icon: UserPlus },
-  { key: "confirmed", labelKey: "tasks.progress.steps.confirmed", icon: UserCheck },
-  { key: "en_route", labelKey: "tasks.progress.steps.enRoute", icon: Car },
-  { key: "working", labelKey: "tasks.progress.steps.working", icon: Wrench },
-  { key: "completed", labelKey: "tasks.progress.steps.completed", icon: CircleCheck },
+// ─── Fallback steps ─────────────────────────────────────────────────────────
+
+const FALLBACK_STEPS = [
+  { key: "NEW", label: "Created" },
+  { key: "ASSIGNED", label: "Assigned" },
+  { key: "ACCEPTED", label: "Confirmed" },
+  { key: "EN_ROUTE", label: "En Route" },
+  { key: "IN_PROGRESS", label: "Working" },
+  { key: "COMPLETED", label: "Completed" },
 ]
 
-// Map task status to step index
-function getStepFromStatus(status: string): number {
-  switch (status) {
-    case "NEW":
-    case "DRAFT":
-      return 0
-    case "ASSIGNED":
-      return 1
-    case "ACCEPTED":
-      return 2
-    case "EN_ROUTE":
-      return 3
-    case "ARRIVED":
-    case "IN_PROGRESS":
-    case "BLOCKED":
-      return 4
-    case "COMPLETED":
-    case "CLOSED":
-      return 5
-    default:
-      return 0
-  }
+const FALLBACK_ORDER: Record<string, number> = {
+  DRAFT: 0, NEW: 0, ASSIGNED: 1, ACCEPTED: 2, EN_ROUTE: 3,
+  ARRIVED: 4, IN_PROGRESS: 4, BLOCKED: 4, COMPLETED: 5, CLOSED: 5,
 }
 
-// Estimate arrival time
-function getEstimatedArrival(routeStartedAt: string | null, status: string): string | null {
-  if (status === "ARRIVED" || status === "IN_PROGRESS" || status === "COMPLETED" || status === "CLOSED") {
-    return null // Already arrived
+function buildSteps(workflowStatuses?: WorkflowStatus[]) {
+  if (workflowStatuses && workflowStatuses.length > 0) {
+    return [...workflowStatuses]
+      .filter(s => !s.isCanceled)
+      .sort((a, b) => a.position - b.position)
+      .map(s => ({ key: s.key, label: s.name }))
   }
-  if (!routeStartedAt || status !== "EN_ROUTE") {
-    return null
-  }
-  // Estimate ~20 mins from start (mock ETA)
-  const start = new Date(routeStartedAt)
-  const eta = new Date(start.getTime() + 20 * 60 * 1000)
-  const now = new Date()
-  const diffMins = Math.max(0, Math.floor((eta.getTime() - now.getTime()) / 60000))
-
-  if (diffMins <= 0) return "Any moment"
-  if (diffMins < 60) return `~${diffMins} min`
-  return `~${Math.floor(diffMins / 60)}h ${diffMins % 60}m`
+  return FALLBACK_STEPS
 }
 
-// Get step timestamp from events
-function getStepTimestamp(events: TaskEvent[] | undefined, stepKey: string): string | null {
-  if (!events) return null
-
-  for (const event of events) {
-    const metadata = event.metadata as Record<string, unknown> | null
-    const newStatus = metadata?.newStatus as string
-
-    switch (stepKey) {
-      case "submitted":
-        if (event.eventType === "CREATED") return event.createdAt
-        break
-      case "assigned":
-        if (event.eventType === "ASSIGNED") return event.createdAt
-        break
-      case "confirmed":
-        if (event.eventType === "STATUS_CHANGED" && newStatus === "ACCEPTED") {
-          return event.createdAt
-        }
-        break
-      case "en_route":
-        if (event.eventType === "STATUS_CHANGED" && newStatus === "EN_ROUTE") {
-          return event.createdAt
-        }
-        break
-      case "working":
-        if (event.eventType === "STATUS_CHANGED" && (newStatus === "ARRIVED" || newStatus === "IN_PROGRESS")) {
-          return event.createdAt
-        }
-        break
-      case "completed":
-        if (event.eventType === "STATUS_CHANGED" && newStatus === "COMPLETED") {
-          return event.createdAt
-        }
-        break
-    }
+function getStepIndex(status: string, steps: { key: string }[], workflowStatuses?: WorkflowStatus[]): number {
+  const idx = steps.findIndex(s => s.key === status)
+  if (idx >= 0) return idx
+  if (!workflowStatuses || workflowStatuses.length === 0) {
+    return Math.min(FALLBACK_ORDER[status] ?? 0, steps.length - 1)
   }
-  return null
+  return 0
 }
+
 
 export function TaskProgressCard({
   taskId,
+  assignees,
   assignedTo,
   isCompleted,
   taskStatus,
@@ -142,336 +92,169 @@ export function TaskProgressCard({
   routeStartedAt,
   routeEndedAt,
   routeDistance,
+  workflowStatuses,
 }: TaskProgressCardProps) {
   const { t } = useTranslation()
 
-  // Fetch timeline for real timestamps
   const { data: events } = useQuery({
     queryKey: ["taskTimeline", taskId],
     queryFn: () => tasksApi.getTimeline(taskId),
-    refetchInterval: 30000,
   })
 
-  // Calculate actual step from status
-  const currentStep = getStepFromStatus(taskStatus)
+  const steps = buildSteps(workflowStatuses)
+  const currentStepIndex = getStepIndex(taskStatus, steps, workflowStatuses)
 
-  // Get status info for technician
-  const getStatusInfo = () => {
-    switch (taskStatus) {
-      case "ASSIGNED":
-        return {
-          label: t("tasks.progress.status.pending"),
-          sublabel: t("tasks.progress.status.waitingForAcceptance"),
-          color: "text-amber-600",
-          bgColor: "bg-amber-50",
-          dotColor: "bg-amber-500",
-          pulse: true,
-        }
-      case "ACCEPTED":
-        return {
-          label: t("tasks.progress.status.accepted"),
-          sublabel: t("tasks.progress.status.readyToStart"),
-          color: "text-blue-600",
-          bgColor: "bg-blue-50",
-          dotColor: "bg-blue-500",
-          pulse: false,
-        }
-      case "EN_ROUTE":
-        return {
-          label: t("tasks.progress.status.onTheWay"),
-          sublabel: t("tasks.progress.status.headingToLocation"),
-          color: "text-blue-600",
-          bgColor: "bg-blue-50",
-          dotColor: "bg-blue-500",
-          pulse: true,
-        }
-      case "ARRIVED":
-        return {
-          label: t("tasks.progress.status.onSite"),
-          sublabel: t("tasks.progress.status.hasArrived"),
-          color: "text-green-600",
-          bgColor: "bg-green-50",
-          dotColor: "bg-green-500",
-          pulse: false,
-        }
-      case "IN_PROGRESS":
-        return {
-          label: t("tasks.progress.status.working"),
-          sublabel: t("tasks.progress.status.inProgress"),
-          color: "text-amber-600",
-          bgColor: "bg-amber-50",
-          dotColor: "bg-amber-500",
-          pulse: true,
-        }
-      case "COMPLETED":
-      case "CLOSED":
-        return {
-          label: t("tasks.progress.status.completed"),
-          sublabel: t("tasks.progress.status.jobFinished"),
-          color: "text-green-600",
-          bgColor: "bg-green-50",
-          dotColor: "bg-green-500",
-          pulse: false,
-        }
-      case "BLOCKED":
-        return {
-          label: t("tasks.progress.status.blocked"),
-          sublabel: t("tasks.progress.status.needsAttention"),
-          color: "text-red-600",
-          bgColor: "bg-red-50",
-          dotColor: "bg-red-500",
-          pulse: true,
-        }
-      default:
-        return {
-          label: t("tasks.progress.status.assigned"),
-          sublabel: t("tasks.progress.status.waitingToStart"),
-          color: "text-muted-foreground",
-          bgColor: "bg-muted",
-          dotColor: "bg-muted-foreground",
-          pulse: false,
-        }
-    }
-  }
-
-  const statusInfo = getStatusInfo()
-  const estimatedArrival = getEstimatedArrival(routeStartedAt || null, taskStatus)
-
-  // Calculate elapsed time
-  const getElapsedTime = () => {
+  const elapsedTime = (() => {
     if (isCompleted && routeEndedAt && routeStartedAt) {
-      const start = new Date(routeStartedAt).getTime()
-      const end = new Date(routeEndedAt).getTime()
-      return formatDurationMs(end - start)
+      return formatDurationMs(new Date(routeEndedAt).getTime() - new Date(routeStartedAt).getTime())
     }
     if (routeStartedAt) {
-      const start = new Date(routeStartedAt).getTime()
-      const now = Date.now()
-      return formatDurationMs(now - start)
+      return formatDurationMs(Date.now() - new Date(routeStartedAt).getTime())
     }
     return null
-  }
+  })()
 
-  const elapsedTime = getElapsedTime()
-
-  // Get title based on status
-  const getTitle = () => {
-    if (isCompleted) return t("tasks.progress.serviceCompletedSuccessfully")
-    if (taskStatus === "BLOCKED") return t("tasks.progress.serviceRequiresAttention")
-    if (taskStatus === "ASSIGNED") return t("tasks.progress.awaitingTechnicianAcceptance")
-    if (taskStatus === "ACCEPTED") return t("tasks.progress.technicianAcceptedReadyToStart")
-    if (taskStatus === "EN_ROUTE") return t("tasks.progress.technicianIsOnTheWay")
-    if (taskStatus === "ARRIVED" || taskStatus === "IN_PROGRESS") return t("tasks.progress.workInProgress")
-    return t("tasks.progress.yourServiceRequestIsActive")
-  }
+  // Resolve the primary person: lead from assignees, or single assignee, or assignedTo
+  const lead = assignees.find(a => a.role === "LEAD")
+  const members = assignees.filter(a => a.role === "MEMBER")
+  const primaryUser: AssignedUser | null = lead
+    ? { id: lead.user.id, firstName: lead.user.firstName, lastName: lead.user.lastName, avatarUrl: lead.user.avatarUrl, email: (assignedTo?.id === lead.user.id ? assignedTo?.email : undefined), phone: (assignedTo?.id === lead.user.id ? assignedTo?.phone : undefined) }
+    : assignees.length === 1
+      ? { id: assignees[0]!.user.id, firstName: assignees[0]!.user.firstName, lastName: assignees[0]!.user.lastName, avatarUrl: assignees[0]!.user.avatarUrl, email: assignedTo?.email, phone: assignedTo?.phone }
+      : assignedTo
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
-      {/* Header */}
-      <div className={cn(
-        "px-6 py-4 border-b border-border",
-        isCompleted ? "bg-gradient-to-r from-green-50 to-emerald-50" :
-        taskStatus === "BLOCKED" ? "bg-gradient-to-r from-red-50 to-orange-50" :
-        "bg-gradient-to-r from-blue-50 to-indigo-50"
-      )}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">
-            {getTitle()}
-          </h3>
+    <div className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+      {/* Header row */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Progress</span>
           {elapsedTime && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-sm rounded-lg border border-border/60">
-              <Timer className="size-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">{elapsedTime}</span>
-            </div>
+            <>
+              <span className="w-px h-3.5 bg-border" />
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Timer className="size-3" />
+                {elapsedTime}
+              </span>
+            </>
           )}
         </div>
+
+        {/* Assignee(s) */}
+        {primaryUser ? (
+          <div className="flex items-center gap-2.5">
+            {/* Primary avatar + stacked members */}
+            <div className="flex items-center">
+              <UserAvatar
+                firstName={primaryUser.firstName}
+                lastName={primaryUser.lastName}
+                avatarUrl={primaryUser.avatarUrl}
+                seed={primaryUser.id}
+                size="sm"
+              />
+              {members.length > 0 && (
+                <StackedAvatars
+                  users={members.map(m => ({ id: m.user.id, firstName: m.user.firstName, lastName: m.user.lastName, avatarUrl: m.user.avatarUrl }))}
+                  max={3}
+                  size="xs"
+                  className="-ml-1.5"
+                />
+              )}
+            </div>
+
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-foreground leading-none">
+                {primaryUser.firstName} {primaryUser.lastName}
+              </span>
+              {(lead && members.length > 0) && (
+                <span className="text-[10px] text-muted-foreground/60 leading-none mt-0.5">
+                  Lead · {members.length} member{members.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 ml-1">
+              <button
+                onClick={() => primaryUser.phone && (window.location.href = `tel:${primaryUser.phone}`)}
+                className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                title="Call"
+              >
+                <Phone className="size-3" />
+              </button>
+              <button
+                onClick={() => primaryUser.email && (window.location.href = `mailto:${primaryUser.email}`)}
+                className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                title="Message"
+              >
+                <MessageSquare className="size-3" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
+            <UserPlus className="size-3.5" />
+            <span>Unassigned</span>
+          </div>
+        )}
       </div>
 
-      <div className="p-6">
-        <div className="flex gap-6">
-          {/* Progress Steps - 70% */}
-          <div className="w-[70%] pr-6 flex items-center">
-            <div className="flex items-start justify-between w-full">
-              {STEPS.map((step, index) => {
-                const isActive = index === currentStep
-                const isComplete = index < currentStep
-                const isFuture = index > currentStep
-                const Icon = step.icon
-                const timestamp = getStepTimestamp(events, step.key)
+      {/* Progress steps */}
+      <div className="px-6 py-5">
+        <style>{`
+          @keyframes stepGlow {
+            0%, 100% { box-shadow: 0 0 0 0 hsl(var(--foreground) / 0.15); }
+            50% { box-shadow: 0 0 0 6px hsl(var(--foreground) / 0); }
+          }
+        `}</style>
 
-                return (
-                  <div key={step.key} className="flex flex-col items-center flex-1 relative">
-                    {/* Connector line */}
-                    {index < STEPS.length - 1 && (
-                      <div className="absolute top-[19px] left-1/2 w-full h-0.5">
-                        {/* Background track */}
-                        <div className="w-full h-full bg-muted" />
-                        {/* Progress fill */}
-                        <div
-                          className={cn(
-                            "absolute top-0 left-0 h-full transition-all duration-500",
-                            isComplete ? "w-full bg-blue-600" : "w-0"
-                          )}
-                        />
-                      </div>
+        <div className="flex items-start">
+          {steps.map((step, index) => {
+            const isDone = index < currentStepIndex
+            const isActive = index === currentStepIndex
+            const isFuture = index > currentStepIndex
+
+            return (
+              <div key={step.key} className="flex items-start flex-1 last:flex-none">
+                <div className="flex flex-col items-center w-16">
+                  <div
+                    className={cn(
+                      "size-7 rounded-full flex items-center justify-center transition-all duration-500",
+                      isDone && "bg-foreground text-background",
+                      isActive && "bg-foreground text-background",
+                      isFuture && "bg-muted border border-border/80",
                     )}
-
-                    {/* Step circle */}
-                    <div
-                      className={cn(
-                        "relative z-10 size-10 rounded-full flex items-center justify-center transition-all duration-300",
-                        isComplete && "bg-blue-600 text-white shadow-lg shadow-blue-600/25",
-                        isActive && "bg-blue-600 text-white shadow-lg shadow-blue-600/25",
-                        isFuture && "bg-muted text-muted-foreground border-2 border-border"
-                      )}
-                    >
-                      {isComplete ? (
-                        <Check className="size-5 stroke-[2.5]" />
-                      ) : (
-                        <Icon className="size-5" />
-                      )}
-
-                      {/* Pulse animation for active step */}
-                      {isActive && !isCompleted && (
-                        <span className="absolute inset-0 rounded-full bg-blue-600 animate-ping opacity-25" />
-                      )}
-                    </div>
-
-                    {/* Step label */}
-                    <span
-                      className={cn(
-                        "text-xs mt-3 text-center font-medium max-w-[80px]",
-                        isComplete || isActive ? "text-foreground" : "text-muted-foreground"
-                      )}
-                    >
-                      {t(step.labelKey)}
-                    </span>
-
-                    {/* Timestamp */}
-                    {timestamp && (isComplete || isActive) && (
-                      <span className="text-[10px] text-muted-foreground mt-1">
-                        {formatTimeAgo(timestamp)}
-                      </span>
+                    style={isActive && !isCompleted ? { animation: "stepGlow 2.5s ease-in-out infinite" } : undefined}
+                  >
+                    {isDone ? (
+                      <Check className="size-3.5 stroke-[2.5]" />
+                    ) : isActive ? (
+                      <span className="size-2 rounded-full bg-background" />
+                    ) : (
+                      <span className="size-1.5 rounded-full bg-muted-foreground/20" />
                     )}
                   </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Technician Card - 30% */}
-          <div className="w-[30%] border-l border-border pl-6">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4">
-              {t("tasks.progress.assignedTechnician")}
-            </p>
-
-            {/* Two column layout */}
-            <div className="flex gap-4 mb-4">
-              {/* Left column - Avatar & Info */}
-              <div className="flex-1">
-                <div className="flex items-center gap-2.5">
-                  <Avatar className="size-9 ring-2 ring-white shadow">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-semibold">
-                      {assignedTo.firstName[0]}
-                      {assignedTo.lastName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {assignedTo.firstName} {assignedTo.lastName}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {assignedTo.specialty || t("tasks.progress.fieldTechnician")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right column - Status & ETA */}
-              <div className="flex-1">
-                {/* Status badge */}
-                <div className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium mb-1.5",
-                  statusInfo.bgColor,
-                  statusInfo.color
-                )}>
-                  <span className="relative flex size-1.5">
-                    <span className={cn(
-                      "absolute inline-flex h-full w-full rounded-full opacity-75",
-                      statusInfo.dotColor,
-                      statusInfo.pulse && "animate-ping"
-                    )} />
-                    <span className={cn(
-                      "relative inline-flex size-1.5 rounded-full",
-                      statusInfo.dotColor
-                    )} />
+                  <span
+                    className={cn(
+                      "text-[10px] mt-2 text-center font-medium leading-tight",
+                      isDone || isActive ? "text-foreground" : "text-muted-foreground/40",
+                    )}
+                  >
+                    {step.label}
                   </span>
-                  {statusInfo.label}
                 </div>
 
-                {/* ETA or arrival info */}
-                {estimatedArrival ? (
-                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Clock className="size-3" />
-                    <span>{estimatedArrival === "Any moment" ? t("tasks.progress.eta.anyMoment") : t("tasks.progress.eta.arrivesIn", { time: estimatedArrival })}</span>
+                {index < steps.length - 1 && (
+                  <div className="flex-1 mt-3.5 mx-0 h-px relative">
+                    <div className="absolute inset-0 bg-border" />
+                    <div
+                      className="absolute inset-y-0 left-0 bg-foreground transition-all duration-700 ease-out"
+                      style={{ width: isDone ? "100%" : isActive ? "50%" : "0%" }}
+                    />
                   </div>
-                ) : taskStatus === "ASSIGNED" ? (
-                  <div className="flex items-center gap-1 text-[11px] text-amber-600">
-                    <Clock className="size-3" />
-                    <span>{t("tasks.progress.eta.awaitingResponse")}</span>
-                  </div>
-                ) : taskStatus === "ARRIVED" || taskStatus === "IN_PROGRESS" ? (
-                  <div className="flex items-center gap-1 text-[11px] text-green-600">
-                    <MapPin className="size-3" />
-                    <span>{t("tasks.progress.eta.atYourLocation")}</span>
-                  </div>
-                ) : taskStatus === "COMPLETED" || taskStatus === "CLOSED" ? (
-                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <CircleCheck className="size-3" />
-                    <span>{t("tasks.progress.eta.jobCompleted")}</span>
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">{statusInfo.sublabel}</p>
                 )}
               </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  if (assignedTo.phone) {
-                    window.location.href = `tel:${assignedTo.phone}`
-                  }
-                }}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 h-9 rounded-lg",
-                  "bg-blue-600 text-white",
-                  "hover:bg-blue-700 shadow-sm hover:shadow-md",
-                  "active:scale-[0.97] transition-all duration-150"
-                )}
-              >
-                <Phone className="size-4" />
-                <span className="text-sm font-medium">{t("tasks.progress.call")}</span>
-              </button>
-              <button
-                onClick={() => {
-                  if (assignedTo.email) {
-                    window.location.href = `mailto:${assignedTo.email}`
-                  }
-                }}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 h-9 rounded-lg",
-                  "bg-card border border-blue-600 text-blue-600",
-                  "hover:bg-blue-50",
-                  "active:scale-[0.97] transition-all duration-150"
-                )}
-              >
-                <MessageSquare className="size-4" />
-                <span className="text-sm font-medium">{t("tasks.progress.message")}</span>
-              </button>
-            </div>
-          </div>
+            )
+          })}
         </div>
       </div>
     </div>

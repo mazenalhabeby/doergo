@@ -30,7 +30,14 @@ export class LocationsService extends BaseGatewayService {
   }
 
   /**
-   * Get all technicians assigned to a location
+   * Get effective modules for a space (falls back to org modules)
+   */
+  async getEffectiveModules(data: { id: string; organizationId: string }) {
+    return this.send({ cmd: 'get_effective_modules' }, data);
+  }
+
+  /**
+   * Get all members assigned to a location
    */
   async getLocationAssignments(data: {
     locationId: string;
@@ -40,9 +47,9 @@ export class LocationsService extends BaseGatewayService {
   }
 
   /**
-   * Get all location assignments for a technician
+   * Get all location assignments for an employee
    */
-  async getTechnicianAssignments(data: {
+  async getEmployeeAssignments(data: {
     userId: string;
     organizationId: string;
   }) {

@@ -374,8 +374,8 @@ export function TaskNewPageSkeleton() {
   )
 }
 
-/** Technicians list page */
-export function TechniciansPageSkeleton() {
+/** Employees list page */
+export function EmployeesPageSkeleton() {
   return (
     <div className={PAGE_OUTER}>
       <div className={PAGE_INNER}>
@@ -419,8 +419,8 @@ export function TechniciansPageSkeleton() {
   )
 }
 
-/** Technician detail page */
-export function TechnicianDetailPageSkeleton() {
+/** Employee detail page */
+export function EmployeeDetailPageSkeleton() {
   return (
     <div className={PAGE_OUTER}>
       <div className={PAGE_INNER}>
@@ -464,8 +464,8 @@ export function TechnicianDetailPageSkeleton() {
   )
 }
 
-/** Technician new page */
-export function TechnicianNewPageSkeleton() {
+/** New employee page */
+export function EmployeeNewPageSkeleton() {
   return <TaskNewPageSkeleton />
 }
 
@@ -633,31 +633,67 @@ export function AttendancePageSkeleton() {
   )
 }
 
-/** Live map page */
-export function LiveMapPageSkeleton() {
+/** Generic list page skeleton (invoices, payments, assets, etc.) */
+export function GenericListPageSkeleton({ titleW = "w-40" }: { titleW?: string }) {
   return (
-    <div className="flex h-[calc(100vh-4rem)] animate-in fade-in duration-200">
-      {/* Sidebar list */}
-      <div className="w-80 border-r border-border bg-card p-4 space-y-3">
-        <S className="h-11 w-full rounded-xl" />
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl">
-            <S className="w-10 h-10 rounded-full flex-shrink-0" />
-            <div className="flex-1 space-y-1.5">
-              <S className="h-4 w-28 rounded" />
-              <S className="h-3 w-20 rounded" />
-            </div>
-            <S className="w-2.5 h-2.5 rounded-full" />
-          </div>
-        ))}
+    <div className={PAGE_OUTER}>
+      <div className={PAGE_INNER}>
+        <PageHeader titleW={titleW} controls={1} hasAction={false} />
+        <SummaryLine />
+        <SimpleTableSkeleton cols={5} rows={6} />
       </div>
-      {/* Map area */}
-      <div className="flex-1 bg-muted flex items-center justify-center">
-        <div className="text-center">
-          <S className="w-14 h-14 rounded-full mx-auto mb-3" />
-          <S className="w-24 h-3 rounded mx-auto" />
+    </div>
+  )
+}
+
+/** Schedule page */
+export function SchedulePageSkeleton() {
+  return (
+    <div className={PAGE_OUTER}>
+      <div className={PAGE_INNER}>
+        <PageHeader titleW="w-36" controls={2} hasAction={false} />
+        <TabStrip count={3} />
+        {/* Calendar grid */}
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
+          <div className="grid grid-cols-7 gap-2">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <S key={i} className="h-6 w-full rounded" />
+            ))}
+            {Array.from({ length: 35 }).map((_, i) => (
+              <S key={i} className="h-20 w-full rounded-lg" />
+            ))}
+          </div>
         </div>
       </div>
     </div>
   )
 }
+
+/** Sprints page */
+export function SprintsPageSkeleton() {
+  return (
+    <div className={PAGE_OUTER}>
+      <div className={PAGE_INNER}>
+        <PageHeader titleW="w-32" controls={1} />
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <S className={cn("h-5 rounded", i === 0 ? "w-32" : "w-40")} />
+                <S className="h-5 w-20 rounded-full" />
+              </div>
+              <S className="h-2 w-full rounded-full" />
+              <div className="flex gap-3">
+                <S className="h-3.5 w-16 rounded" />
+                <S className="h-3.5 w-20 rounded" />
+                <S className="h-3.5 w-16 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Live map page */

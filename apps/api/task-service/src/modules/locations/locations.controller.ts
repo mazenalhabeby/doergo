@@ -16,6 +16,11 @@ export class LocationsController {
     return this.locationsService.findOne(data);
   }
 
+  @MessagePattern({ cmd: 'get_effective_modules' })
+  async getEffectiveModules(@Payload() data: any) {
+    return this.locationsService.getEffectiveModules(data);
+  }
+
   @MessagePattern({ cmd: 'get_location_assignments' })
   async getLocationAssignments(@Payload() data: any) {
     return this.locationsService.getLocationAssignments(data);

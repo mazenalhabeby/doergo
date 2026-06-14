@@ -128,7 +128,7 @@ export class ReportsService {
         },
         include: {
           completedBy: {
-            select: { id: true, firstName: true, lastName: true },
+            select: { id: true, firstName: true, lastName: true, avatarUrl: true },
           },
           partsUsed: true,
           attachments: true,
@@ -142,8 +142,8 @@ export class ReportsService {
           status: TaskStatus.COMPLETED,
         },
         include: {
-          assignedTo: { select: { id: true, firstName: true, lastName: true } },
-          createdBy: { select: { id: true, firstName: true, lastName: true } },
+          assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
         },
       });
 
@@ -211,11 +211,10 @@ export class ReportsService {
       },
     });
 
-    if (!report) {
-      throw new NotFoundException('Service report not found for this task');
-    }
-
-    return success(report);
+    // A task with no service report is a normal state (report only exists after
+    // completion) — return null rather than throwing, so the endpoint responds
+    // 200 with data:null instead of an error the clients have to special-case.
+    return success(report ?? null);
   }
 
   /**
@@ -243,7 +242,7 @@ export class ReportsService {
     }
 
     // Authorization: Only CLIENT and DISPATCHER can view asset maintenance history
-    if (data.userRole === Role.TECHNICIAN) {
+    if (data.userRole === Role.EMPLOYEE) {
       throw new ForbiddenException('Technicians cannot view asset maintenance history');
     }
 
@@ -262,7 +261,7 @@ export class ReportsService {
             select: { id: true, title: true, priority: true },
           },
           completedBy: {
-            select: { id: true, firstName: true, lastName: true },
+            select: { id: true, firstName: true, lastName: true, avatarUrl: true },
           },
           partsUsed: {
             select: { id: true, name: true, quantity: true, unitCost: true },
@@ -341,7 +340,7 @@ export class ReportsService {
       },
       include: {
         completedBy: {
-          select: { id: true, firstName: true, lastName: true },
+          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
         },
         partsUsed: true,
         attachments: true,
@@ -492,7 +491,7 @@ export class ReportsService {
     }
 
     // Technician who completed or ADMIN/DISPATCHER in the same org can add attachments
-    if (report.completedById !== data.userId && data.userRole === Role.TECHNICIAN) {
+    if (report.completedById !== data.userId && data.userRole === Role.EMPLOYEE) {
       throw new ForbiddenException('You can only add attachments to reports you created');
     }
     if (report.organizationId !== data.organizationId) {
@@ -581,7 +580,7 @@ export class ReportsService {
     }
 
     // Technician who completed or ADMIN/DISPATCHER in the same org can upload
-    if (report.completedById !== data.userId && data.userRole === Role.TECHNICIAN) {
+    if (report.completedById !== data.userId && data.userRole === Role.EMPLOYEE) {
       throw new ForbiddenException('You can only upload attachments to reports you created');
     }
     if (report.organizationId !== data.organizationId) {
@@ -629,14 +628,14 @@ export class ReportsService {
         }
         break;
 
-      case Role.DISPATCHER:
+      case Role.MANAGER:
         // DISPATCHER can access all tasks in their org
         if (task.organizationId !== organizationId) {
           throw new ForbiddenException('Access denied');
         }
         break;
 
-      case Role.TECHNICIAN:
+      case Role.EMPLOYEE:
         // TECHNICIAN can only access tasks assigned to them
         if (task.assignedToId !== userId) {
           throw new ForbiddenException('Access denied');

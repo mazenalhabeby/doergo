@@ -67,7 +67,7 @@ export function exportCSV({ report, filteredByUser, filteredByLocation, location
   if (filteredByLocation.length > 0) {
     rows.push([])
     rows.push(["--- BY LOCATION ---"])
-    rows.push(["Location", "Total Hours", "Shifts", "Technicians"])
+    rows.push(["Location", "Total Hours", "Shifts", "Employees"])
     for (const loc of filteredByLocation) {
       rows.push([`"${loc.location.name}"`, loc.totalHours, loc.shifts, loc.uniqueTechnicians])
     }

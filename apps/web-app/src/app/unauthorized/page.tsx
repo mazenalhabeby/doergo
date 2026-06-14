@@ -29,7 +29,7 @@ export default function UnauthorizedPage() {
         <h1 className="text-2xl font-bold text-foreground mb-2">{t('unauthorized.title')}</h1>
         <p className="text-muted-foreground mb-6">
           {t('unauthorized.description')}
-          {user?.role === 'TECHNICIAN' && (
+          {user?.role === 'EMPLOYEE' && (
             <> {t('unauthorized.technicianHint')}</>
           )}
         </p>

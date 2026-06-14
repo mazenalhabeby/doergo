@@ -9,7 +9,6 @@ import {
   clearTokens,
   type User,
   type LoginResponse,
-  ApiError,
 } from '../lib/api';
 
 const USER_KEY = 'hbcfield_user';
@@ -95,14 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // authApi.login saves tokens internally
     const response = await authApi.login(email, password);
 
-    // Platform-based access check (replaces TECHNICIAN-only check)
-    // Any role with platform=MOBILE or platform=BOTH can access mobile app
-    const userPlatform = response.user.platform;
-    if (userPlatform !== 'MOBILE' && userPlatform !== 'BOTH') {
-      await clearTokens();
-      throw new ApiError('Access denied. Your account cannot access the mobile app.', 403);
-    }
-
+    // Mobile access is gated per-feature via enabledModules/hasModule, not a
+    // platform flag (the User.platform field was removed in the module refactor).
     await saveUser(response.user);
     setUser(response.user);
   };

@@ -9,8 +9,8 @@ import {
   IsDateString,
 } from 'class-validator';
 
-export class AssignTechnicianDto {
-  @ApiProperty({ description: 'User ID of the technician to assign' })
+export class AssignMemberDto {
+  @ApiProperty({ description: 'User ID of the member to assign' })
   @IsString()
   @IsNotEmpty()
   userId: string;

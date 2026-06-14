@@ -7,9 +7,9 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 
-export class ListTechniciansDto {
+export class ListEmployeesDto {
   @ApiPropertyOptional({
     enum: ['active', 'inactive', 'all'],
     example: 'active',
@@ -19,13 +19,6 @@ export class ListTechniciansDto {
   @IsOptional()
   @IsEnum(['active', 'inactive', 'all'])
   status?: 'active' | 'inactive' | 'all';
-
-  @ApiPropertyOptional({
-    example: 'all',
-    description: 'Filter by work mode',
-    default: 'all',
-  })
-  @IsOptional()
 
   @ApiPropertyOptional({
     example: 'Electrical',

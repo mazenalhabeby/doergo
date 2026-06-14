@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { notify } from '@/lib/toast';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button, Input, Label, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
@@ -47,23 +47,17 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
         if (err.path[0] === 'password') fieldErrors.password = err.message;
       });
       setValidationErrors(fieldErrors);
-      toast.error(t('auth.login.validationErrorTitle'), {
-        description: result.error.errors[0]?.message || t('auth.login.validationErrorDescription'),
-      });
+      notify.error(result.error.errors[0]?.message || t('auth.login.validationErrorDescription'));
       setIsLoading(false);
       return;
     }
 
     try {
       await login(email, password);
-      toast.success(t('auth.login.successTitle'), {
-        description: t('auth.login.successDescription'),
-      });
+      notify.success(t('auth.login.successTitle'), t('auth.login.successDescription'));
       router.push('/dashboard');
     } catch (err) {
-      toast.error(t('auth.login.errorTitle'), {
-        description: err instanceof Error ? err.message : t('auth.login.errorDescription'),
-      });
+      notify.error(err instanceof Error ? err.message : t('auth.login.errorDescription'));
     } finally {
       setIsLoading(false);
     }

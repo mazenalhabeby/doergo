@@ -11,9 +11,17 @@ export interface PersonNodeTag {
   variant: TagVariant
 }
 
+export type AbsenceReason = "time_off" | "sick" | "day_off" | "unexcused"
+
 export interface PersonNodeProps extends WorkerAvatarProps {
   name: string
   tag?: PersonNodeTag
+  absenceReason?: AbsenceReason
+  userId?: string
+  role?: string
+  currentTask?: string
+  dimmed?: boolean
+  onPersonClick?: (userId: string) => void
   className?: string
 }
 
@@ -28,15 +36,35 @@ const TAG_CLASSES: Record<TagVariant, string> = {
 export const PersonNode = React.memo(function PersonNode({
   name,
   tag,
+  dimmed,
+  onPersonClick,
+  userId,
   className,
   ...avatarProps
 }: PersonNodeProps) {
+  const isClickable = !!onPersonClick && !!userId
+
+  const handleClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (isClickable) {
+        e.stopPropagation()
+        onPersonClick!(userId!)
+      }
+    },
+    [isClickable, onPersonClick, userId],
+  )
+
   return (
     <div
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={handleClick}
+      onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); onPersonClick!(userId!) } } : undefined}
       className={cn(
-        "flex flex-col items-center cursor-pointer",
+        "flex flex-col items-center",
         "gap-2.5 w-[8cqw] min-w-[60px]",
-        "transition-transform duration-150 hover:scale-105",
+        dimmed && "opacity-30",
+        isClickable && "cursor-pointer hover:opacity-80 transition-opacity",
         className,
       )}
     >

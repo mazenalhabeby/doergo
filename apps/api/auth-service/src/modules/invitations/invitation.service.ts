@@ -55,7 +55,7 @@ export class InvitationService {
     maxDailyJobs?: number;
   }) {
     // Permission check: DISPATCHER can only invite TECHNICIAN
-    if (data.creatorRole === Role.DISPATCHER && data.targetRole !== Role.TECHNICIAN) {
+    if (data.creatorRole === Role.MANAGER && data.targetRole !== Role.EMPLOYEE) {
       return {
         success: false,
         statusCode: HttpStatus.FORBIDDEN,
@@ -73,7 +73,7 @@ export class InvitationService {
     }
 
     // Validate target role
-    if (data.targetRole !== Role.DISPATCHER && data.targetRole !== Role.TECHNICIAN) {
+    if (data.targetRole !== Role.MANAGER && data.targetRole !== Role.EMPLOYEE) {
       return {
         success: false,
         statusCode: HttpStatus.BAD_REQUEST,
@@ -125,11 +125,12 @@ export class InvitationService {
     );
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
-    const isTechnician = data.targetRole === Role.TECHNICIAN;
+    const isTechnician = data.targetRole === Role.EMPLOYEE;
 
     const invitation = await this.prisma.invitation.create({
       data: {
-        code,
+        // Persist ONLY the hash — the plaintext code is returned once below and
+        // never stored, so a read-only DB compromise can't recover usable codes.
         codeHash: codeHashValue,
         targetRole: data.targetRole as any,
         organizationId: data.organizationId,
@@ -287,10 +288,11 @@ export class InvitationService {
           role: invitation.targetRole,
           organizationId: invitation.organizationId,
           canCreateTasks: defaultPerms.canCreateTasks,
+          taskCreationScope: defaultPerms.taskCreationScope,
           canViewAllTasks: defaultPerms.canViewAllTasks,
           canAssignTasks: defaultPerms.canAssignTasks,
           canManageUsers: defaultPerms.canManageUsers,
-          ...(invitation.targetRole === 'TECHNICIAN'
+          ...(invitation.targetRole === 'EMPLOYEE'
             ? {
 
                 position: invitation.position || 'HYBRID',
@@ -307,6 +309,7 @@ export class InvitationService {
           role: true,
           organizationId: true,
           canCreateTasks: true,
+          taskCreationScope: true,
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,

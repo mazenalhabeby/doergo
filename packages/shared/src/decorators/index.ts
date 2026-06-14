@@ -64,9 +64,17 @@ export interface CurrentUserData {
   avatarUrl?: string | null;
   // Permission fields
   canCreateTasks: boolean;
+  taskCreationScope?: string;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  // Worker configuration
+  position?: string | null;
+  scheduleType?: string | null;
+  // Custom role
+  orgRoleId?: string | null;
+  orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
+  rolePermissions?: Record<string, boolean>;
   // Technician-specific fields
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {

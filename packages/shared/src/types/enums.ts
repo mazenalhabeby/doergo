@@ -2,10 +2,12 @@
 
 export enum Role {
   ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  EMPLOYEE = 'EMPLOYEE',
+  // Legacy — kept for backward compatibility (normalizeRole maps these)
   CLIENT = 'CLIENT',
   DISPATCHER = 'DISPATCHER',
   TECHNICIAN = 'TECHNICIAN',
-  EMPLOYEE = 'EMPLOYEE',
 }
 
 export const WORKER_ROLE = 'WORKER' as const;
@@ -53,6 +55,16 @@ export enum TaskEventType {
   COMMENT_ADDED = 'COMMENT_ADDED',
   ATTACHMENT_ADDED = 'ATTACHMENT_ADDED',
   ATTACHMENT_REMOVED = 'ATTACHMENT_REMOVED',
+  ASSIGNEE_ADDED = 'ASSIGNEE_ADDED',
+  ASSIGNEE_REMOVED = 'ASSIGNEE_REMOVED',
+  CHECKLIST_ITEM_ADDED = 'CHECKLIST_ITEM_ADDED',
+  CHECKLIST_ITEM_TOGGLED = 'CHECKLIST_ITEM_TOGGLED',
+  CHECKLIST_ITEM_REMOVED = 'CHECKLIST_ITEM_REMOVED',
+}
+
+export enum TaskAssigneeRole {
+  LEAD = 'LEAD',
+  MEMBER = 'MEMBER',
 }
 
 export enum AttachmentType {
@@ -107,4 +119,66 @@ export enum ApprovalStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
   AUTO = 'AUTO',
+}
+
+export enum DependencyType {
+  FINISH_TO_START = 'FINISH_TO_START',
+  START_TO_START = 'START_TO_START',
+  FINISH_TO_FINISH = 'FINISH_TO_FINISH',
+  START_TO_FINISH = 'START_TO_FINISH',
+}
+
+export enum SprintStatus {
+  PLANNING = 'PLANNING',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+}
+
+export enum EpicStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE',
+}
+
+export enum TaskCreationScope {
+  NONE = 'NONE',
+  SELF = 'SELF',
+  SPACE = 'SPACE',
+  ORG = 'ORG',
+}
+
+export enum CustomFieldType {
+  TEXT = 'TEXT',
+  NUMBER = 'NUMBER',
+  DATE = 'DATE',
+  DROPDOWN = 'DROPDOWN',
+  CHECKBOX = 'CHECKBOX',
+  URL = 'URL',
+  EMAIL = 'EMAIL',
+}
+
+export enum RecurrenceFrequency {
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  BIWEEKLY = 'BIWEEKLY',
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  YEARLY = 'YEARLY',
+  CUSTOM = 'CUSTOM',
+}
+
+export enum TimeOffStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CANCELED = 'CANCELED',
+}
+
+export enum InvoiceStatus {
+  DRAFT = 'DRAFT',
+  SENT = 'SENT',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+  CANCELED = 'CANCELED',
+  REFUNDED = 'REFUNDED',
 }

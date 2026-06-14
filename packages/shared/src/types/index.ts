@@ -1,27 +1,39 @@
 // Re-export all enums from dedicated file (avoids require cycles with sub-modules)
 export {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority, TaskEventType,
-  AttachmentType, AssetStatus, ReportAttachmentType,
+  AttachmentType, AssetStatus, ReportAttachmentType, TaskAssigneeRole,
   ContractType, OvertimePolicy, OvertimeDetectionSource,
   TimeEntryStatus, BreakType, ApprovalStatus, WORKER_ROLE,
+  DependencyType, SprintStatus, EpicStatus,
+  CustomFieldType, RecurrenceFrequency,
+  TaskCreationScope, TimeOffStatus, InvoiceStatus,
 } from './enums';
+
+export { getDefaultModules, hasModule, getModuleLabel, type MobileModule, DEFAULT_MODULES, ALL_MODULES } from './modules';
+export * from './schedule';
 
 import {
   Role, AccessLevel, TaskStatus, TaskPriority,
   AttachmentType, AssetStatus, ReportAttachmentType, TaskEventType,
+  DependencyType, SprintStatus, CustomFieldType, RecurrenceFrequency,
+  TaskCreationScope,
 } from './enums';
 
 // Legacy role aliases for backward compatibility during migration
 export const LegacyRoleMap = {
   PARTNER: Role.ADMIN,
-  OFFICE: Role.DISPATCHER,
-  WORKER: Role.TECHNICIAN,
+  OFFICE: Role.MANAGER,
+  WORKER: Role.EMPLOYEE,
   CLIENT: Role.ADMIN,
+  DISPATCHER: Role.MANAGER,
+  TECHNICIAN: Role.EMPLOYEE,
 } as const;
 
 // Helper to normalize role (handles backward compatibility)
 export function normalizeRole(role: string): Role {
   if (role === 'CLIENT') return Role.ADMIN;
+  if (role === 'DISPATCHER') return Role.MANAGER;
+  if (role === 'TECHNICIAN' || role === 'WORKER') return Role.EMPLOYEE;
   return role as Role;
 }
 
@@ -30,11 +42,11 @@ export function getRoleLabel(role: string): string {
   const normalized = normalizeRole(role);
   switch (normalized) {
     case Role.ADMIN:
-      return 'Administrator';
-    case Role.DISPATCHER:
-      return 'Dispatcher';
-    case Role.TECHNICIAN:
-      return 'Technician';
+      return 'Admin';
+    case Role.MANAGER:
+      return 'Manager';
+    case Role.EMPLOYEE:
+      return 'Employee';
     default:
       return role;
   }
@@ -50,6 +62,7 @@ export const SocketEvents = {
   TASK_STATUS_CHANGED: 'task.statusChanged',
   TASK_COMMENT_ADDED: 'task.commentAdded',
   TASK_ATTACHMENT_ADDED: 'task.attachmentAdded',
+  TASK_DELETED: 'task.deleted',
   // Worker events
   WORKER_LOCATION_UPDATED: 'worker.locationUpdated',
   // Attendance events
@@ -103,6 +116,7 @@ export interface User extends BaseEntity {
   onboardingCompleted: boolean;
   // Permission fields
   canCreateTasks: boolean;
+  taskCreationScope?: string;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
@@ -112,12 +126,14 @@ export interface User extends BaseEntity {
 // Default permissions by role
 export const DEFAULT_PERMISSIONS: Record<Role, {
   canCreateTasks: boolean;
+  taskCreationScope: TaskCreationScope;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
 }> = {
   [Role.ADMIN]: {
     canCreateTasks: true,
+    taskCreationScope: TaskCreationScope.ORG,
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: true,
@@ -125,24 +141,36 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
   [Role.CLIENT]: {
     // Deprecated, same as ADMIN for backward compatibility
     canCreateTasks: true,
+    taskCreationScope: TaskCreationScope.ORG,
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: true,
   },
-  [Role.DISPATCHER]: {
+  [Role.MANAGER]: {
     canCreateTasks: false,
+    taskCreationScope: TaskCreationScope.SPACE,
+    canViewAllTasks: true,
+    canAssignTasks: true,
+    canManageUsers: false,
+  },
+  [Role.DISPATCHER]: {
+    // Legacy — same as MANAGER
+    canCreateTasks: false,
+    taskCreationScope: TaskCreationScope.SPACE,
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: false,
   },
   [Role.TECHNICIAN]: {
     canCreateTasks: false,
+    taskCreationScope: TaskCreationScope.SELF,
     canViewAllTasks: false,
     canAssignTasks: false,
     canManageUsers: false,
   },
   [Role.EMPLOYEE]: {
     canCreateTasks: false,
+    taskCreationScope: TaskCreationScope.SELF,
     canViewAllTasks: false,
     canAssignTasks: false,
     canManageUsers: false,
@@ -162,17 +190,42 @@ export const DEFAULT_PROFILE_BADGES: ProfileBadgesConfig = {
   showSpecialty: true,
 };
 
+// ==================== ORGANIZATION MODULES ====================
+
+/** Available optional modules that admins can enable per organization or space */
+export const AVAILABLE_MODULES = [
+  // Task sections
+  { key: 'subtasks', label: 'Subtasks', description: 'Break tasks into smaller child tasks' },
+  { key: 'checklists', label: 'Checklists', description: 'Add step-by-step checklists to tasks' },
+  { key: 'attachments', label: 'Attachments', description: 'Upload files and images to tasks' },
+  { key: 'dependencies', label: 'Dependencies', description: 'Define task sequencing and blockers' },
+  { key: 'custom_fields', label: 'Custom Fields', description: 'Add custom data fields to tasks' },
+  // Field service
+  { key: 'tracking', label: 'Route Tracking', description: 'GPS tracking, route visualization, and progress card' },
+  { key: 'service_reports', label: 'Service Reports', description: 'Completion reports with photos and signatures' },
+  { key: 'time_tracking', label: 'Time Tracking', description: 'Track estimated and actual hours' },
+  // Agile
+  { key: 'sprints', label: 'Sprints', description: 'Organize work into time-boxed iterations' },
+  { key: 'story_points', label: 'Story Points', description: 'Estimate task complexity with fibonacci points' },
+  { key: 'epics', label: 'Epics', description: 'Group related tasks into larger projects' },
+  { key: 'phases', label: 'Phases', description: 'Organize tasks into project phases' },
+] as const;
+
+/** Union type of all available module keys */
+export type ModuleKey = typeof AVAILABLE_MODULES[number]['key'];
+
 // Organization interface
 export interface Organization extends BaseEntity {
   name: string;
   isActive: boolean;
+  enabledModules?: ModuleKey[] | null;
 }
 
 // CompanyLocation, Break, TimeEntry, AttendanceStatus
 // are defined in ./attendance.ts and re-exported below via `export * from './attendance'`
 
-// Technician Assignment interface (many-to-many: User ↔ CompanyLocation)
-export interface TechnicianAssignment extends BaseEntity {
+// Employee Assignment interface (many-to-many: User ↔ CompanyLocation)
+export interface EmployeeAssignment extends BaseEntity {
   userId: string;
   locationId: string;
   isPrimary: boolean;
@@ -195,6 +248,9 @@ export interface TechnicianAssignment extends BaseEntity {
   };
 }
 
+/** @deprecated Use EmployeeAssignment */
+export type TechnicianAssignment = EmployeeAssignment;
+
 // Organization Access (delegation between orgs)
 export interface OrganizationAccess extends BaseEntity {
   grantorOrgId: string;    // The org granting access
@@ -204,6 +260,32 @@ export interface OrganizationAccess extends BaseEntity {
   canAssignWorkers: boolean;
   canViewWorkers: boolean;
   canViewTracking: boolean;
+}
+
+// Task Assignee interface (many-to-many: Task ↔ User)
+export interface TaskAssignee {
+  id: string;
+  taskId: string;
+  userId: string;
+  role: import('./enums').TaskAssigneeRole;
+  createdAt: Date;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  };
+}
+
+// Checklist Item interface
+export interface ChecklistItem {
+  id: string;
+  taskId: string;
+  text: string;
+  isCompleted: boolean;
+  position: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Task interface
@@ -217,13 +299,149 @@ export interface Task extends BaseEntity {
   assignedToId?: string;
   assetId?: string;
   dueDate?: Date;
+  startDate?: Date;
+  estimatedHours?: number;
   location?: {
     lat: number;
     lng: number;
     address?: string;
   };
-  // Populated relation
+  // Subtask hierarchy
+  parentId?: string;
+  depth?: number;
+  position?: number;
+  // Agile fields
+  storyPoints?: number;
+  // Phase, Sprint & Epic associations
+  phaseId?: string;
+  sprintId?: string;
+  epicId?: string;
+  // Space (CompanyLocation) association
+  spaceId?: string | null;
+  space?: { id: string; name: string } | null;
+  // Populated relations
   asset?: Asset;
+  assignees?: TaskAssignee[];
+  checklistItems?: ChecklistItem[];
+  subtasks?: Task[];
+  parent?: { id: string; title: string };
+  phase?: Phase;
+  sprint?: Sprint;
+  epic?: Epic;
+  predecessors?: TaskDependencyWithTask[];
+  successors?: TaskDependencyWithTask[];
+  _count?: { subtasks?: number };
+}
+
+// Phase interface (project phase or milestone)
+export interface Phase extends BaseEntity {
+  name: string;
+  description?: string;
+  color: string;
+  type: string; // "phase" or "milestone"
+  organizationId: string;
+  startDate?: Date;
+  endDate?: Date;
+  position: number;
+  isActive: boolean;
+  _count?: { tasks?: number };
+}
+
+// Sprint interface (agile sprint)
+export interface Sprint extends BaseEntity {
+  name: string;
+  goal?: string;
+  organizationId: string;
+  startDate: Date;
+  endDate: Date;
+  status: SprintStatus;
+  position: number;
+  tasks?: Task[];
+  _count?: { tasks?: number };
+}
+
+// Epic interface (agile epic for grouping tasks)
+export interface Epic extends BaseEntity {
+  name: string;
+  description?: string;
+  color: string;
+  status: string;
+  organizationId: string;
+  startDate?: Date;
+  targetDate?: Date;
+  position: number;
+  tasks?: Task[];
+  _count?: { tasks?: number };
+}
+
+// Sprint Report interface (generated when sprint completes)
+export interface SprintReport {
+  id: string;
+  sprintId: string;
+  organizationId: string;
+  committedPoints: number;
+  completedPoints: number;
+  committedTasks: number;
+  completedTasks: number;
+  carriedOverTasks: number;
+  carriedOverPoints: number;
+  addedMidSprint: number;
+  removedMidSprint: number;
+  velocity: number;
+  dailyBurndown: { date: string; remaining: number; ideal: number }[];
+  createdAt: string;
+}
+
+// Definition of Done interface
+export interface DefinitionOfDone {
+  id: string;
+  organizationId: string;
+  workflowId: string | null;
+  items: { text: string; isRequired: boolean }[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Velocity data point for charts
+export interface VelocityDataPoint {
+  sprintName: string;
+  committedPoints: number;
+  completedPoints: number;
+  velocity: number;
+}
+
+/** Fibonacci story point options */
+export const STORY_POINT_OPTIONS = [1, 2, 3, 5, 8, 13, 21] as const;
+
+/** Schedule type options for members */
+export const SCHEDULE_TYPES = [
+  { key: 'NONE', label: 'No tracking', description: 'Time is not tracked' },
+  { key: 'FIXED', label: 'Fixed schedule', description: 'Set working hours (e.g., Mon-Fri 9:00-17:00)' },
+  { key: 'FLEXIBLE', label: 'Flexible hours', description: 'Monthly hour budget (e.g., 160h/month)' },
+] as const;
+
+/** Common position/title suggestions */
+export const POSITION_SUGGESTIONS = [
+  'Technician', 'Driver', 'Accountant', 'HR Manager', 'Sales Representative',
+  'Office Manager', 'Warehouse Worker', 'Service Engineer', 'Project Manager',
+  'Designer', 'Developer', 'Customer Support', 'Delivery Driver', 'Inspector',
+] as const;
+
+// Task Dependency interface
+export interface TaskDependency {
+  id: string;
+  predecessorId: string;
+  successorId: string;
+  type: DependencyType;
+  lagDays: number;
+  createdAt: Date;
+}
+
+// Task Dependency with populated task info
+export interface TaskDependencyWithTask extends TaskDependency {
+  predecessor?: { id: string; title: string; status: TaskStatus };
+  successor?: { id: string; title: string; status: TaskStatus };
 }
 
 // Comment interface
@@ -381,10 +599,138 @@ export interface CompleteTaskInput {
   }[];
 }
 
+// ==================== CUSTOM WORKFLOWS ====================
+
+// Status Workflow interface
+export interface StatusWorkflow extends BaseEntity {
+  organizationId: string;
+  name: string;
+  isDefault: boolean;
+  isActive: boolean;
+  statuses?: WorkflowStatus[];
+  _count?: { tasks?: number };
+}
+
+// Workflow Status interface (individual status within a workflow)
+export interface WorkflowStatus {
+  id: string;
+  workflowId: string;
+  name: string;
+  key: string;
+  color: string;
+  icon?: string;
+  position: number;
+  isFinal: boolean;
+  isCanceled: boolean;
+  transitions: string[];
+  createdAt: Date;
+}
+
+// ==================== CUSTOM FIELDS ====================
+
+// Custom Field Definition interface
+export interface CustomFieldDefinition extends BaseEntity {
+  organizationId: string;
+  name: string;
+  key: string;
+  type: CustomFieldType;
+  options?: unknown; // JSON: string[] for DROPDOWN
+  isRequired: boolean;
+  position: number;
+  isActive: boolean;
+}
+
+// Custom Field Value interface
+export interface CustomFieldValue {
+  id: string;
+  definitionId: string;
+  taskId: string;
+  value: string;
+  createdAt: Date;
+  updatedAt: Date;
+  definition?: CustomFieldDefinition;
+}
+
+// ==================== RECURRING TASKS ====================
+
+// Recurring Task Template interface
+export interface RecurringTaskTemplate extends BaseEntity {
+  organizationId: string;
+  title: string;
+  description?: string;
+  priority: TaskPriority;
+  locationLat?: number;
+  locationLng?: number;
+  locationAddress?: string;
+  assigneeIds?: string[];
+  estimatedHours?: number;
+  checklist?: { text: string }[];
+  frequency: RecurrenceFrequency;
+  customDays?: number;
+  dayOfWeek?: number;
+  dayOfMonth?: number;
+  startDate: Date;
+  endDate?: Date;
+  lastGeneratedAt?: Date;
+  nextRunAt?: Date;
+  isActive: boolean;
+  createdById: string;
+  createdBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+// ==================== CUSTOM ROLES & PERMISSIONS ====================
+
+export const PERMISSION_SCHEMA = [
+  { group: 'Tasks', permissions: [
+    { key: 'canCreateTasks', label: 'Create tasks', description: 'Can create new tasks' },
+    { key: 'canViewAllTasks', label: 'View all tasks', description: 'Can see all tasks in the organization' },
+    { key: 'canAssignTasks', label: 'Assign tasks', description: 'Can assign tasks to team members' },
+    { key: 'canDeleteTasks', label: 'Delete tasks', description: 'Can delete tasks' },
+    { key: 'canEditAnyTask', label: 'Edit any task', description: 'Can edit tasks created by others' },
+  ]},
+  { group: 'Team', permissions: [
+    { key: 'canManageUsers', label: 'Manage members', description: 'Can add, edit, and remove team members' },
+    { key: 'canInviteUsers', label: 'Invite members', description: 'Can send invitations' },
+    { key: 'canManageRoles', label: 'Manage roles', description: 'Can create and edit roles' },
+  ]},
+  { group: 'Time & Attendance', permissions: [
+    { key: 'canViewAttendance', label: 'View attendance', description: 'Can see attendance records' },
+    { key: 'canApproveTimeOff', label: 'Approve time off', description: 'Can approve time-off requests' },
+    { key: 'canApproveOvertime', label: 'Approve overtime', description: 'Can approve overtime requests' },
+  ]},
+  { group: 'Spaces & Settings', permissions: [
+    { key: 'canManageLocations', label: 'Manage spaces', description: 'Can create and configure spaces' },
+    { key: 'canManageWorkflows', label: 'Manage workflows', description: 'Can create and edit workflows' },
+    { key: 'canManageOrgSettings', label: 'Organization settings', description: 'Can change organization settings' },
+  ]},
+] as const;
+
+export type PermissionKey = typeof PERMISSION_SCHEMA[number]['permissions'][number]['key'];
+
+export interface OrgRoleData {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string | null;
+  isSystem: boolean;
+  legacyRole: string | null;
+  position: number;
+  isActive: boolean;
+  permissions: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { users: number };
+}
+
 // Export attendance types
 export * from './attendance';
 
-// Export technician types
+// Export employee types (file still named technician.ts for git history)
 export * from './technician';
 
 // Export invitation types

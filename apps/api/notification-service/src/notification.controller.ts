@@ -1,4 +1,4 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import { Controller, Get, Headers, ForbiddenException, Logger } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { EmailService } from './modules/email/email.service';
 import { PushService } from './modules/push/push.service';
@@ -19,12 +19,18 @@ export class NotificationController {
   // =========================================================================
 
   @Get('socket/stats')
-  getSocketStats() {
+  getSocketStats(@Headers('authorization') authHeader: string) {
+    if (!this.websocketGateway.verifyStatsAccess(authHeader)) {
+      throw new ForbiddenException('Valid admin/manager JWT required to access socket stats');
+    }
     return this.websocketGateway.getStats();
   }
 
   @Get('socket/clients')
-  getConnectedClients() {
+  getConnectedClients(@Headers('authorization') authHeader: string) {
+    if (!this.websocketGateway.verifyStatsAccess(authHeader)) {
+      throw new ForbiddenException('Valid admin/manager JWT required to access socket clients');
+    }
     return this.websocketGateway.getConnectedClients();
   }
 
@@ -71,6 +77,16 @@ export class NotificationController {
   //
   // Only invitation_created is handled here (no handler file).
   // =========================================================================
+
+  // =========================================================================
+  // USER REMOVAL EVENTS
+  // =========================================================================
+
+  @EventPattern('user_removed')
+  async handleUserRemoved(@Payload() data: { userId: string; organizationId: string }) {
+    this.logger.log(`User removed: ${data.userId} from org ${data.organizationId}`);
+    this.websocketGateway.forceDisconnectUser(data.userId);
+  }
 
   // =========================================================================
   // INVITATION EVENTS
