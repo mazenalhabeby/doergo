@@ -578,11 +578,26 @@ export class AttendanceService {
     const now = new Date();
     const maxDurationMs = ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS * 60 * 60 * 1000;
 
+    // Batch the per-entry lookups up front to avoid an N+1 over open shifts:
+    // one query for all overtime requests, one for all active schedules.
+    const entryIds = openEntries.map((e) => e.id);
+    const userIds = [...new Set(openEntries.map((e) => e.userId))];
+
+    const overtimeRequests = await this.prisma.overtimeRequest.findMany({
+      where: { timeEntryId: { in: entryIds } },
+    });
+    const overtimeByEntry = new Map(overtimeRequests.map((o) => [o.timeEntryId, o]));
+
+    const activeSchedules = await this.prisma.technicianSchedule.findMany({
+      where: { technicianId: { in: userIds }, isActive: true },
+    });
+    const scheduleByUserDay = new Map(
+      activeSchedules.map((s) => [`${s.technicianId}:${s.dayOfWeek}`, s]),
+    );
+
     for (const entry of openEntries) {
       // Skip entries that are in the overtime flow (pending, approved, or waiting approval)
-      const activeOvertimeRequest = await this.prisma.overtimeRequest.findUnique({
-        where: { timeEntryId: entry.id },
-      });
+      const activeOvertimeRequest = overtimeByEntry.get(entry.id);
       if (activeOvertimeRequest && ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'].includes(activeOvertimeRequest.status)) {
         this.logger.debug(`Skipping entry ${entry.id}: active overtime request (${activeOvertimeRequest.status})`);
         continue;
@@ -610,13 +625,9 @@ export class AttendanceService {
       // 3. Check if shift has ended (schedule-based) with grace period
       //    Instead of immediate clock-out, initiate overtime request flow
       if (!reason) {
-        const schedule = await this.prisma.technicianSchedule.findFirst({
-          where: {
-            technicianId: entry.userId,
-            dayOfWeek: this.getLocalDayOfWeek(entry.clockInAt, tz),
-            isActive: true,
-          },
-        });
+        const schedule = scheduleByUserDay.get(
+          `${entry.userId}:${this.getLocalDayOfWeek(entry.clockInAt, tz)}`,
+        );
 
         if (schedule?.endTime) {
           const localNow = this.getLocalTime(now, tz);
@@ -626,10 +637,8 @@ export class AttendanceService {
           const gracePeriod = ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES;
 
           if (nowMinutes >= endMinutes + gracePeriod) {
-            // Check if overtime request already exists
-            const existingOT = await this.prisma.overtimeRequest.findUnique({
-              where: { timeEntryId: entry.id },
-            });
+            // Check if overtime request already exists (from the batched map)
+            const existingOT = overtimeByEntry.get(entry.id);
             if (!existingOT) {
               // Initiate overtime flow instead of clock-out
               await this.overtimeQueue.add(OVERTIME_JOB_TYPES.INITIATE, {

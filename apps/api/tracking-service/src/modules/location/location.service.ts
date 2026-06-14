@@ -1,5 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter } from '@hbcfield/shared';
 import { catchError, of } from 'rxjs';
@@ -17,6 +18,43 @@ export class LocationService {
     @Inject(SERVICE_NAMES.NOTIFICATION)
     private readonly notificationClient: ClientProxy,
   ) {}
+
+  /**
+   * Retention: prune GPS points older than LOCATION_HISTORY_RETENTION_DAYS
+   * (default 90). LocationHistory grows unbounded and dominates query/storage
+   * cost, so we delete in capped batches nightly to avoid a single huge DELETE
+   * holding a long lock.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneOldLocationHistory(): Promise<number> {
+    const days = Number(process.env.LOCATION_HISTORY_RETENTION_DAYS) || 90;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const BATCH = 5000;
+
+    let totalDeleted = 0;
+    // Cap iterations as a safety backstop (≤ 1M rows per run).
+    for (let i = 0; i < 200; i++) {
+      const batch = await this.prisma.locationHistory.findMany({
+        where: { timestamp: { lt: cutoff } },
+        select: { id: true },
+        take: BATCH,
+      });
+      if (batch.length === 0) break;
+
+      const res = await this.prisma.locationHistory.deleteMany({
+        where: { id: { in: batch.map((b) => b.id) } },
+      });
+      totalDeleted += res.count;
+      if (batch.length < BATCH) break;
+    }
+
+    if (totalDeleted > 0) {
+      this.logger.log(
+        `Pruned ${totalDeleted} location history points older than ${days}d`,
+      );
+    }
+    return totalDeleted;
+  }
 
   async updateLocation(
     userId: string,
