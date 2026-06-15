@@ -50,6 +50,20 @@ export class AttendanceController {
     return this.attendanceService.getLocationEntries(data);
   }
 
+  @MessagePattern({ cmd: 'get_location_entries_batch' })
+  async getLocationEntriesBatch(
+    @Payload()
+    data: {
+      locationIds: string[];
+      organizationId: string;
+      date?: string;
+      requesterId?: string;
+      requesterCanViewAll?: boolean;
+    },
+  ) {
+    return this.attendanceService.getLocationEntriesBatch(data);
+  }
+
   @MessagePattern({ cmd: 'get_all_entries' })
   async getAllEntries(
     @Payload()

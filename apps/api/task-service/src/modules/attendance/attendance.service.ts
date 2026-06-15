@@ -567,6 +567,49 @@ export class AttendanceService {
   }
 
   /**
+   * Today's entries for MANY locations in 2 queries (vs 4-per-location) — backs
+   * the dashboard. Full-access roles get all requested org spaces; otherwise the
+   * set is narrowed to the spaces the requester is a roster member of.
+   */
+  async getLocationEntriesBatch(data: {
+    locationIds: string[];
+    organizationId: string;
+    date?: Date | string;
+    requesterId?: string;
+    requesterCanViewAll?: boolean;
+  }) {
+    const ids = (data.locationIds || []).filter(Boolean);
+    if (!ids.length) return success([]);
+
+    const locs = await this.prisma.companyLocation.findMany({
+      where: { id: { in: ids }, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    let validIds = locs.map((l) => l.id);
+
+    if (!data.requesterCanViewAll && validIds.length) {
+      const memberships = await this.prisma.technicianAssignment.findMany({
+        where: { userId: data.requesterId, locationId: { in: validIds } },
+        select: { locationId: true },
+      });
+      const allowed = new Set(memberships.map((m) => m.locationId));
+      validIds = validIds.filter((id) => allowed.has(id));
+    }
+    if (!validIds.length) return success([]);
+
+    const entries = await this.prisma.timeEntry.findMany({
+      where: {
+        locationId: { in: validIds },
+        clockInAt: buildSingleDayFilter(data.date || new Date().toISOString()),
+      },
+      include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+      orderBy: { clockInAt: 'desc' },
+      take: 500,
+    });
+    return success(entries);
+  }
+
+  /**
    * Auto clock-out for entries that exceeded max duration
    * @param type - 'hourly' checks only overdue entries, 'midnight' closes all open entries
    */

@@ -26,6 +26,11 @@ export class LocationsController {
     return this.locationsService.getLocationAssignments(data);
   }
 
+  @MessagePattern({ cmd: 'get_location_assignments_batch' })
+  async getLocationAssignmentsBatch(@Payload() data: any) {
+    return this.locationsService.getLocationAssignmentsBatch(data);
+  }
+
   @MessagePattern({ cmd: 'get_technician_assignments' })
   async getTechnicianAssignments(@Payload() data: any) {
     return this.locationsService.getTechnicianAssignments(data);

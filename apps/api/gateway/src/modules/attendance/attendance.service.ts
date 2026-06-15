@@ -46,6 +46,16 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_location_entries' }, data);
   }
 
+  async getLocationEntriesBatch(data: {
+    locationIds: string[];
+    organizationId: string;
+    date?: string;
+    requesterId?: string;
+    requesterCanViewAll?: boolean;
+  }) {
+    return this.send({ cmd: 'get_location_entries_batch' }, data);
+  }
+
   /**
    * Get all time entries for an organization (admin view)
    */

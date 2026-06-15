@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useCallback, useState } from "react"
-import { useQuery, useQueries } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -228,39 +228,32 @@ export function ClientDashboard() {
     [allLocations],
   )
 
-  const assignmentQueries = useQueries({
-    queries: locationIds.map((locId: string) => ({
-      queryKey: ["locationAssignments", locId],
-      queryFn: () => locationsApi.getAssignedMembers(locId).catch(() => [] as LocationAssignment[]),
-      staleTime: 60000,
-    })),
+  const locKey = locationIds.join(",")
+
+  // Batched rosters (with each member's current task) for ALL visible spaces in
+  // ONE request — replaces the previous one-request-per-location fan-out.
+  const { data: rostersData } = useQuery({
+    queryKey: ["locationRosters", locKey],
+    queryFn: () => locationsApi.getRosters(locationIds),
+    enabled: locationIds.length > 0,
+    staleTime: 60000,
+  })
+  const rosters: LocationAssignment[] = useMemo(() => rostersData || [], [rostersData])
+
+  // Batched attendance for employees (admins use the org-wide query above), again
+  // one request for all their spaces instead of one per space.
+  const { data: batchAttendance } = useQuery({
+    queryKey: ["locationAttendanceBatch", locKey, getTodayString()],
+    queryFn: () => attendanceApi.getEntriesBatch(locationIds, getTodayString()),
+    enabled: !isAdminOrDispatcher && locationIds.length > 0,
+    staleTime: 30000,
   })
 
-  // Stable key derived from query results (avoids useMemo size changes)
-  const assignmentDataKey = assignmentQueries.map(q => q.dataUpdatedAt).join(",")
-
-  // Employees can't read org-wide attendance, but CAN read attendance for the
-  // spaces they're a member of — fetch presence per visible space.
-  const attendanceQueries = useQueries({
-    queries: (isAdminOrDispatcher ? [] : locationIds).map((locId: string) => ({
-      queryKey: ["locationAttendance", locId],
-      queryFn: () =>
-        attendanceApi
-          .getLocationEntries(locId, { date: getTodayString(), limit: 200 })
-          .catch(() => ({ data: [] as TimeEntry[] })),
-      staleTime: 30000,
-    })),
-  })
-  const attendanceDataKey = attendanceQueries.map(q => q.dataUpdatedAt).join(",")
-
-  // Today's presence entries: admins read org-wide; employees combine per-space.
+  // Today's presence entries: admins read org-wide; employees use the batch.
   const todayEntries: TimeEntry[] = useMemo(() => {
     if (isAdminOrDispatcher) return attendanceData?.data || []
-    return attendanceQueries.flatMap(
-      (q) => ((q.data as { data?: TimeEntry[] } | undefined)?.data) || [],
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdminOrDispatcher, attendanceData, attendanceDataKey])
+    return batchAttendance || []
+  }, [isAdminOrDispatcher, attendanceData, batchAttendance])
 
   // Build the member lookup. Admins/managers get the full org member list; for
   // employees (who can't read /organizations/members) we fall back to the user
@@ -268,20 +261,15 @@ export function ClientDashboard() {
   // shows real names/avatars without exposing the whole directory.
   const memberMap = useMemo(() => {
     const map = new Map<string, OrgMember>()
-    for (const q of assignmentQueries) {
-      const data = q.data as LocationAssignment[] | undefined
-      if (!data) continue
-      for (const a of data) {
-        if (a.user && !map.has(a.user.id)) {
-          map.set(a.user.id, { ...a.user, isActive: true, role: "EMPLOYEE" } as unknown as OrgMember)
-        }
+    for (const a of rosters) {
+      if (a.user && !map.has(a.user.id)) {
+        map.set(a.user.id, { ...a.user, isActive: true, role: "EMPLOYEE" } as unknown as OrgMember)
       }
     }
     // Full member records take precedence (richer data) when available.
     for (const m of members) map.set(m.id, m)
     return map
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [members, assignmentDataKey])
+  }, [members, rosters])
 
   // Set of user IDs currently clocked in (active today, no clock-out)
   const clockedInUserIds = useMemo(() => {
@@ -334,33 +322,24 @@ export function ClientDashboard() {
   // colleagues are currently working (presence parity with the admin view).
   const rosterActiveTaskMap = useMemo(() => {
     const map = new Map<string, { title: string; status: string }>()
-    for (const q of assignmentQueries) {
-      const data = q.data as LocationAssignment[] | undefined
-      if (!data) continue
-      for (const a of data) {
-        if (a.currentTask) {
-          map.set(a.userId, { title: a.currentTask, status: a.currentTaskStatus || "IN_PROGRESS" })
-        }
+    for (const a of rosters) {
+      if (a.currentTask) {
+        map.set(a.userId, { title: a.currentTask, status: a.currentTaskStatus || "IN_PROGRESS" })
       }
     }
     return map
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignmentDataKey])
+  }, [rosters])
 
   // Assignments per location: locationId -> userId[]
   const assignmentsPerLocation = useMemo(() => {
     const map = new Map<string, Set<string>>()
-    locationIds.forEach((locId: string, i: number) => {
-      const data = assignmentQueries[i]?.data as LocationAssignment[] | undefined
-      const userIds = new Set<string>()
-      if (data) {
-        for (const a of data) userIds.add(a.userId)
-      }
-      map.set(locId, userIds)
-    })
+    for (const locId of locationIds) map.set(locId, new Set<string>())
+    for (const a of rosters) {
+      if (!map.has(a.locationId)) map.set(a.locationId, new Set<string>())
+      map.get(a.locationId)!.add(a.userId)
+    }
     return map
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationIds, assignmentDataKey])
+  }, [locationIds, rosters])
 
   // ── Loading ────────────────────────────────────────────────────────────────
 

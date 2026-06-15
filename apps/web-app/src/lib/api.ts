@@ -1889,6 +1889,15 @@ export const attendanceApi = {
   },
 
   // Get time entries for a specific location
+  // Batched: today's entries for many spaces in one request (member-scoped).
+  getEntriesBatch: async (locationIds: string[], date?: string) => {
+    if (locationIds.length === 0) return [] as TimeEntry[];
+    const endpoint = buildUrlWithQuery('/attendance/entries', { ids: locationIds.join(','), date });
+    const response = await api.get<{ success: boolean; data: TimeEntry[] }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
   getLocationEntries: async (locationId: string, params?: AttendanceQueryParams) => {
     const endpoint = buildUrlWithQuery(`/attendance/locations/${locationId}/entries`, {
       date: params?.date,
@@ -3045,6 +3054,14 @@ export const locationsApi = {
   // Member assignments
   getAssignedMembers: async (locationId: string) => {
     const response = await api.get<{ success: boolean; data: LocationAssignment[] }>(`/locations/${locationId}/members`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  // Batched: rosters (with current task) for many spaces in one request.
+  getRosters: async (locationIds: string[]) => {
+    if (locationIds.length === 0) return [] as LocationAssignment[];
+    const response = await api.get<{ success: boolean; data: LocationAssignment[] }>(`/locations/rosters?ids=${locationIds.join(',')}`);
     if (response.error) throw new Error(response.error);
     return response.data?.data || [];
   },

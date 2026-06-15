@@ -474,6 +474,58 @@ export class LocationsService {
   }
 
   /**
+   * Rosters for MANY locations in 3 queries total (vs 3-per-location) — backs the
+   * dashboard so it makes one request instead of one per space. Returns a flat
+   * array of assignments (each carries locationId + currentTask); the client
+   * groups by location.
+   */
+  async getLocationAssignmentsBatch(data: { locationIds: string[]; organizationId: string }) {
+    const ids = (data.locationIds || []).filter(Boolean);
+    if (!ids.length) return success([]);
+
+    const locs = await this.prisma.companyLocation.findMany({
+      where: { id: { in: ids }, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    const validIds = locs.map((l) => l.id);
+    if (!validIds.length) return success([]);
+
+    const assignments = await this.prisma.technicianAssignment.findMany({
+      where: {
+        locationId: { in: validIds },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+      },
+      include: { user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } } },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+    });
+
+    const ACTIVE_STATUSES = ['IN_PROGRESS', 'ARRIVED', 'EN_ROUTE', 'BLOCKED'];
+    const TASK_PRIORITY: Record<string, number> = { IN_PROGRESS: 4, ARRIVED: 3, EN_ROUTE: 2, BLOCKED: 1 };
+    const memberIds = [...new Set(assignments.map((a) => a.userId))];
+    const activeTasks = memberIds.length
+      ? await this.prisma.task.findMany({
+          where: { spaceId: { in: validIds }, assignedToId: { in: memberIds }, status: { in: ACTIVE_STATUSES as any } },
+          select: { assignedToId: true, spaceId: true, title: true, status: true },
+        })
+      : [];
+    // Key by (user, location) so a member in multiple spaces gets the right task.
+    const taskByKey = new Map<string, { title: string; status: string }>();
+    for (const t of activeTasks) {
+      if (!t.assignedToId || !t.spaceId) continue;
+      const key = `${t.assignedToId}:${t.spaceId}`;
+      const ex = taskByKey.get(key);
+      if (!ex || (TASK_PRIORITY[t.status] || 0) > (TASK_PRIORITY[ex.status] || 0)) {
+        taskByKey.set(key, { title: t.title, status: t.status });
+      }
+    }
+    const enriched = assignments.map((a) => {
+      const t = taskByKey.get(`${a.userId}:${a.locationId}`);
+      return { ...a, currentTask: t?.title ?? null, currentTaskStatus: t?.status ?? null };
+    });
+    return success(enriched);
+  }
+
+  /**
    * Get all location assignments for an employee
    */
   async getTechnicianAssignments(data: {

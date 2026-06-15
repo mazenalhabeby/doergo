@@ -90,6 +90,18 @@ export class LocationsController {
     });
   }
 
+  // Batched rosters for the dashboard — one request instead of one per space.
+  // Declared before @Get(':id') so 'rosters' isn't matched as an id.
+  @Get('rosters')
+  @ApiOperation({ summary: 'Rosters (with current task) for multiple spaces at once' })
+  @ApiQuery({ name: 'ids', required: true, description: 'Comma-separated company-location IDs' })
+  async getRosters(@Query('ids') ids: string, @Request() req: any) {
+    return this.locationsService.getLocationAssignmentsBatch({
+      locationIds: (ids || '').split(',').map((s) => s.trim()).filter(Boolean),
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get(':id')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a company location by ID' })

@@ -97,6 +97,25 @@ export class AttendanceController {
     });
   }
 
+  @Get('entries')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @ApiOperation({ summary: "Today's entries for multiple spaces at once (member-scoped for non-admins)" })
+  @ApiQuery({ name: 'ids', required: true, description: 'Comma-separated company-location IDs' })
+  @ApiQuery({ name: 'date', required: false, type: String })
+  async getLocationEntriesBatch(
+    @Query('ids') ids: string,
+    @Query('date') date?: string,
+    @Request() req?: any,
+  ) {
+    return this.attendanceService.getLocationEntriesBatch({
+      locationIds: (ids || '').split(',').map((s) => s.trim()).filter(Boolean),
+      organizationId: req.user.organizationId,
+      date,
+      requesterId: req.user.id,
+      requesterCanViewAll: !!req.user.canViewAllTasks,
+    });
+  }
+
   @Get('locations/:id/entries')
   @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get time entries for a location (admins, or members of that space)' })
