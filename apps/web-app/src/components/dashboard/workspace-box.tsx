@@ -643,6 +643,8 @@ function WorkerDropdownContent({
   const userId = person.userId!
   // O(1) identity check — you can't message/call yourself; show self actions.
   const isSelf = !!user?.id && user.id === userId
+  const selfClock = isSelf && hasAccessModule(user ?? {}, "clock")
+  const selfTimeOff = isSelf && hasAccessModule(user ?? {}, "time_off")
 
   const { data: detail } = useQuery({
     queryKey: ["employee", userId],
@@ -780,83 +782,85 @@ function WorkerDropdownContent({
         </div>
       )}
 
-      <div className="h-px bg-border" />
-
-      {/* ── Actions: self gets profile + self-service; others get contact ── */}
       {isSelf ? (
-        <div className="px-3 py-2 flex items-center gap-1.5">
-          <button
-            onClick={(e) => { e.stopPropagation(); onClose(); router.push("/profile") }}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
-          >
-            <User className="size-3.5" />
-            Edit my profile
-          </button>
-          {hasAccessModule(user ?? {}, "clock") && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/attendance") }}
-              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-              title="My attendance"
-            >
-              <Clock className="size-3.5" />
-            </button>
-          )}
-          {hasAccessModule(user ?? {}, "time_off") && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/time-off") }}
-              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-              title="Request time off"
-            >
-              <CalendarOff className="size-3.5" />
-            </button>
-          )}
-        </div>
+        /* Self: profile lives in the top-right user menu — only show useful
+           self-service shortcuts (no Message/Call, no profile/tasks links). */
+        (selfClock || selfTimeOff) && (
+          <>
+            <div className="h-px bg-border" />
+            <div className="px-3 py-2 flex items-center gap-1.5">
+              {selfClock && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/attendance") }}
+                  className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-muted/60 border border-border/50 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Clock className="size-3.5" />
+                  Attendance
+                </button>
+              )}
+              {selfTimeOff && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/time-off") }}
+                  className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-muted/60 border border-border/50 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <CalendarOff className="size-3.5" />
+                  Time off
+                </button>
+              )}
+            </div>
+          </>
+        )
       ) : (
-        <div className="px-3 py-2 flex items-center gap-1.5">
-          <button
-            onClick={(e) => { e.stopPropagation(); notify.success("Messaging coming soon") }}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
-          >
-            <MessageCircle className="size-3.5" />
-            Message
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); notify.success("Voice call coming soon") }}
-            className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-            title="Voice Call"
-          >
-            <Phone className="size-3.5" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); notify.success("Video call coming soon") }}
-            className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-            title="Video Call"
-          >
-            <Video className="size-3.5" />
-          </button>
-        </div>
+        <>
+          <div className="h-px bg-border" />
+
+          {/* ── Communication ── */}
+          <div className="px-3 py-2 flex items-center gap-1.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); notify.success("Messaging coming soon") }}
+              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
+            >
+              <MessageCircle className="size-3.5" />
+              Message
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); notify.success("Voice call coming soon") }}
+              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+              title="Voice Call"
+            >
+              <Phone className="size-3.5" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); notify.success("Video call coming soon") }}
+              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+              title="Video Call"
+            >
+              <Video className="size-3.5" />
+            </button>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* ── Footer Links ── */}
+          <div className="px-3 py-1.5 flex items-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose(); onPersonClick?.(userId) }}
+              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              <User className="size-3" />
+              Profile
+            </button>
+            <div className="w-px h-4 bg-border" />
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose(); router.push(`/tasks`) }}
+              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              <ClipboardList className="size-3" />
+              Tasks
+            </button>
+          </div>
+        </>
       )}
-
-      <div className="h-px bg-border" />
-
-      {/* ── Footer Links ── */}
-      <div className="px-3 py-1.5 flex items-center gap-1">
-        <button
-          onClick={(e) => { e.stopPropagation(); onClose(); isSelf ? router.push("/profile") : onPersonClick?.(userId) }}
-          className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-        >
-          <User className="size-3" />
-          {isSelf ? "My profile" : "Profile"}
-        </button>
-        <div className="w-px h-4 bg-border" />
-        <button
-          onClick={(e) => { e.stopPropagation(); onClose(); router.push(`/tasks`) }}
-          className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-        >
-          <ClipboardList className="size-3" />
-          Tasks
-        </button>
-      </div>
     </>
   )
 }
