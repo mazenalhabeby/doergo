@@ -329,6 +329,24 @@ export function ClientDashboard() {
     return map
   }, [tasks])
 
+  // Active task per member as computed server-side on the roster. Employees can
+  // only read their own tasks, so this is how their dashboard learns which
+  // colleagues are currently working (presence parity with the admin view).
+  const rosterActiveTaskMap = useMemo(() => {
+    const map = new Map<string, { title: string; status: string }>()
+    for (const q of assignmentQueries) {
+      const data = q.data as LocationAssignment[] | undefined
+      if (!data) continue
+      for (const a of data) {
+        if (a.currentTask) {
+          map.set(a.userId, { title: a.currentTask, status: a.currentTaskStatus || "IN_PROGRESS" })
+        }
+      }
+    }
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentDataKey])
+
   // Assignments per location: locationId -> userId[]
   const assignmentsPerLocation = useMemo(() => {
     const map = new Map<string, Set<string>>()
@@ -400,13 +418,17 @@ export function ClientDashboard() {
 
         accountedWorkerIds.add(userId)
 
-        const activeTask = activeTaskMap.get(userId)
+        // Own tasks come from the tasks query; colleague tasks come from the
+        // server-computed roster (employees can't read others' tasks directly).
+        const ownTask = activeTaskMap.get(userId)
+        const rosterTask = rosterActiveTaskMap.get(userId)
+        const activeTaskTitle = ownTask?.title ?? rosterTask?.title
         const isCurrentlyClockedIn = clockedInUserIds.has(userId)
         const clockedInLocationId = attendanceLocationMap.get(userId)
         const workMode = member.workMode || "HYBRID"
 
         // Determine employee status based on ATTENDANCE (not task)
-        const hasActiveTask = !!activeTask
+        const hasActiveTask = !!ownTask || !!rosterTask
         const isOnBreak = onBreakUserIds.has(userId)
 
         const { status, tag } = getEmployeeStatus({
@@ -416,7 +438,7 @@ export function ClientDashboard() {
           hasActiveTask,
         })
 
-        const node = memberToPersonNode(member, status, tag, activeTask?.title)
+        const node = memberToPersonNode(member, status, tag, activeTaskTitle)
 
         if (!isCurrentlyClockedIn && !hasActiveTask) {
           // Not clocked in, no task → off duty
@@ -536,7 +558,7 @@ export function ClientDashboard() {
     return boxes
   }, [
     locations, tasks, members, assignmentsPerLocation,
-    memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, activeTaskMap,
+    memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, activeTaskMap, rosterActiveTaskMap,
     handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
     isAdminOrDispatcher,
   ])

@@ -433,7 +433,44 @@ export class LocationsService {
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
 
-    return success(assignments);
+    // Attach each member's current active task at this location, computed
+    // server-side. Employees can only read their OWN tasks, so this is how their
+    // dashboard learns which colleagues are working (presence parity with admin).
+    const ACTIVE_STATUSES = ['IN_PROGRESS', 'ARRIVED', 'EN_ROUTE', 'BLOCKED'];
+    const TASK_PRIORITY: Record<string, number> = {
+      IN_PROGRESS: 4,
+      ARRIVED: 3,
+      EN_ROUTE: 2,
+      BLOCKED: 1,
+    };
+    const memberIds = assignments.map((a) => a.userId);
+    const activeTasks = memberIds.length
+      ? await this.prisma.task.findMany({
+          where: {
+            spaceId: data.locationId,
+            assignedToId: { in: memberIds },
+            status: { in: ACTIVE_STATUSES as any },
+          },
+          select: { assignedToId: true, title: true, status: true },
+        })
+      : [];
+
+    const taskByUser = new Map<string, { title: string; status: string }>();
+    for (const t of activeTasks) {
+      if (!t.assignedToId) continue;
+      const existing = taskByUser.get(t.assignedToId);
+      if (!existing || (TASK_PRIORITY[t.status] || 0) > (TASK_PRIORITY[existing.status] || 0)) {
+        taskByUser.set(t.assignedToId, { title: t.title, status: t.status });
+      }
+    }
+
+    const enriched = assignments.map((a) => ({
+      ...a,
+      currentTask: taskByUser.get(a.userId)?.title ?? null,
+      currentTaskStatus: taskByUser.get(a.userId)?.status ?? null,
+    }));
+
+    return success(enriched);
   }
 
   /**

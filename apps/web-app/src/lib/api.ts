@@ -2973,8 +2973,13 @@ export interface LocationAssignment {
     lastName: string;
     email: string;
     workMode?: string;
+    avatarUrl?: string | null;
   };
   location?: CompanyLocation;
+  // Server-computed presence: the member's current active task at this location
+  // (so employees, who can't read colleagues' tasks, still see who is working).
+  currentTask?: string | null;
+  currentTaskStatus?: string | null;
 }
 
 export interface AssignMemberInput {
