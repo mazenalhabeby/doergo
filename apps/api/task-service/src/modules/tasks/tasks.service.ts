@@ -19,6 +19,7 @@ import {
   paginated,
   buildDateRangeFilter,
   haversineDistance,
+  getTaskCapabilities,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -374,8 +375,15 @@ export class TasksService {
             _count: { select: { subtasks: true, checklistItems: true } },
           },
         },
-        // Space
-        space: { select: { id: true, name: true, enabledModules: true, workflowId: true } },
+        // Space (+ its workflow as a fallback flow source)
+        space: {
+          select: {
+            id: true, name: true, enabledModules: true, workflowId: true,
+            workflow: { include: { statuses: { orderBy: { position: 'asc' } } } },
+          },
+        },
+        // The task's own workflow drives its status flow + capabilities
+        workflow: { include: { statuses: { orderBy: { position: 'asc' } } } },
         // Phase & Sprint
         phase: { select: { id: true, name: true, color: true, type: true } },
         sprint: { select: { id: true, name: true, status: true } },
@@ -430,7 +438,19 @@ export class TasksService {
         (ACTIVE_OR_DONE.includes(task.status as any) ? task.createdAt : null);
     }
 
-    return success({ ...task, acceptedAt, completedAt });
+    // Effective flow = the task's own workflow, else its space's workflow.
+    // Capabilities are derived from the workflow (defaults to field-service).
+    const effectiveWorkflow =
+      (task as any).workflow ?? (task as any).space?.workflow ?? null;
+    const capabilities = getTaskCapabilities(effectiveWorkflow?.name);
+
+    return success({
+      ...task,
+      acceptedAt,
+      completedAt,
+      capabilities,
+      workflow: effectiveWorkflow,
+    });
   }
 
   /**

@@ -16,6 +16,7 @@ export {
   DEFAULT_MODULES, ALL_MODULES,
 } from './modules';
 export * from './schedule';
+export * from './task-flow';
 
 import {
   Role, AccessLevel, TaskStatus, TaskPriority,
