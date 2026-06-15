@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { createMicroserviceOptions } from '@hbcfield/shared';
 import { AppModule } from './app.module';
+import { RedisIoAdapter } from './redis-io.adapter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -19,6 +20,12 @@ async function bootstrap() {
     ],
     credentials: true,
   });
+
+  // Use the Redis-backed Socket.IO adapter so realtime events fan out across all
+  // notification-service instances (must be set before the server starts).
+  const redisIoAdapter = new RedisIoAdapter(app);
+  redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   // Connect to Redis microservice for pub/sub events
   app.connectMicroservice<MicroserviceOptions>(createMicroserviceOptions());
