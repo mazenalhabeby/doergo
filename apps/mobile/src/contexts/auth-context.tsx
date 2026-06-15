@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
@@ -50,10 +51,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserRefreshedCallback(handleUserRefreshed);
   }, [handleAuthFailure, handleUserRefreshed]);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const updatedUser = await userApi.me();
+      await saveUser(updatedUser);
+      setUser(updatedUser);
+      console.log('[AuthContext] User refreshed, onboardingCompleted:', updatedUser.onboardingCompleted);
+    } catch (error) {
+      console.error('[AuthContext] Error refreshing user:', error);
+    }
+  }, []);
+
   // Load stored auth state on mount
   useEffect(() => {
     loadStoredAuth();
   }, []);
+
+  // Reconcile the Access Profile when the app returns to the foreground, so a
+  // change an admin made on the web (enabledModules/platform/scope) takes effect
+  // without needing a cold restart. Only fires on background→active transitions
+  // while authenticated.
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const isAuthedRef = useRef(false);
+  isAuthedRef.current = !!user;
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      const prev = appStateRef.current;
+      appStateRef.current = next;
+      if (next === 'active' && prev.match(/inactive|background/) && isAuthedRef.current) {
+        void refreshUser();
+      }
+    });
+    return () => sub.remove();
+  }, [refreshUser]);
 
   const loadStoredAuth = async () => {
     try {
@@ -109,17 +139,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     await saveUser(response.user);
     setUser(response.user);
-  };
-
-  const refreshUser = async () => {
-    try {
-      const updatedUser = await userApi.me();
-      await saveUser(updatedUser);
-      setUser(updatedUser);
-      console.log('[AuthContext] User refreshed, onboardingCompleted:', updatedUser.onboardingCompleted);
-    } catch (error) {
-      console.error('[AuthContext] Error refreshing user:', error);
-    }
   };
 
   const logout = async () => {
