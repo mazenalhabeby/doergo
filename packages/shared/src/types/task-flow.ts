@@ -78,10 +78,30 @@ export function hasCapability(caps: TaskCapability[] | undefined, c: TaskCapabil
   return Array.isArray(caps) && caps.includes(c);
 }
 
-/** Ordered flow steps from a task's workflow, or the field-service default. */
-export function getFlowSteps(workflow?: { statuses?: FlowStatus[] } | null): FlowStatus[] {
+/**
+ * Ordered flow steps from a task's workflow, or the field-service default.
+ * Normalizes the DB WorkflowStatus shape (which uses `name`) into FlowStatus
+ * (which uses `label`) and fills sane defaults — so consumers never read
+ * undefined labels/transitions.
+ */
+export function getFlowSteps(
+  workflow?: { statuses?: Array<Partial<FlowStatus> & { name?: string }> } | null,
+): FlowStatus[] {
   const st = workflow?.statuses;
-  if (st && st.length) return [...st].sort((a, b) => a.position - b.position);
+  if (st && st.length) {
+    return st
+      .map((s) => ({
+        key: s.key ?? '',
+        label: s.label ?? s.name ?? s.key ?? '',
+        icon: s.icon ?? null,
+        color: s.color ?? '#3b82f6',
+        position: s.position ?? 0,
+        isFinal: !!s.isFinal,
+        isCanceled: !!s.isCanceled,
+        transitions: s.transitions ?? [],
+      }))
+      .sort((a, b) => a.position - b.position);
+  }
   return FIELD_SERVICE_FLOW;
 }
 
