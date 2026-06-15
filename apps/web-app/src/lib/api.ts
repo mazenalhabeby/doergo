@@ -1870,6 +1870,21 @@ export interface AttendanceListResponse {
 
 // Attendance API methods (ADMIN/DISPATCHER only)
 export const attendanceApi = {
+  // Employee self-service: my current clock status
+  getMyStatus: async () => {
+    const response = await api.get<{ success: boolean; data: unknown }>(`/attendance/status`);
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
+  // Employee self-service: my own time-entry history (paginated envelope)
+  getMyHistory: async (params?: { page?: number; limit?: number }) => {
+    const endpoint = buildUrlWithQuery('/attendance/history', params ?? {});
+    const response = await api.get<{ data: TimeEntry[]; meta?: unknown }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
   // Get time entries for a specific location
   getLocationEntries: async (locationId: string, params?: AttendanceQueryParams) => {
     const endpoint = buildUrlWithQuery(`/attendance/locations/${locationId}/entries`, {

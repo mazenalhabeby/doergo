@@ -41,6 +41,7 @@ import { BacklogToolbar, sortBacklogTasks, type BacklogSortField, type BacklogSo
 import { SprintCapacityBar } from "./_components/sprint-capacity"
 import { SprintFormDialog, CompleteSprintDialog, DeleteSprintDialog, EpicFormDialog } from "./_components/sprint-management"
 import type { TaskContextMenuActions } from "./_components/task-context-menu"
+import { hasAccessModule } from "@hbcfield/shared/client"
 
 // Priority sort order
 const PRIORITY_ORDER: Record<string, number> = {
@@ -830,7 +831,8 @@ export default function TasksPage() {
   const totalPages = meta?.totalPages || 1
   const total = meta?.total || 0
 
-  const canCreateTasks = user?.canCreateTasks ?? false
+  // Create requires BOTH the permission and the create_task access module.
+  const canCreateTasks = (user?.canCreateTasks ?? false) && hasAccessModule(user ?? {}, "create_task")
   const canAssignTasks = user?.canAssignTasks ?? false
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────

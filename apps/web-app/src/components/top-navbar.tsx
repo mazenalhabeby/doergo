@@ -25,6 +25,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
+import { hasAccessModule } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
@@ -128,6 +129,13 @@ export function TopNavbar() {
   const showSpaces = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
+
+  // Employee module-driven items (Access Profile). Only for non-admins; admins
+  // get the full nav above. hasAccessModule reflects the per-user profile.
+  const isEmployee = !showTeam
+  const showMyTimeOff = isEmployee && hasAccessModule(user, "time_off")
+  const showMyAttendance = isEmployee && hasAccessModule(user, "clock")
+  const showManage = isEmployee && hasAccessModule(user, "manage")
   // Overflow items go into "More" menu
   const overflowItems: { label: string; href: string; icon: typeof MapPin }[] = []
 
@@ -151,6 +159,9 @@ export function TopNavbar() {
         showSpaces={showSpaces}
         showSchedule={showSchedule}
         showAttendance={showAttendance}
+        showMyTimeOff={showMyTimeOff}
+        showMyAttendance={showMyAttendance}
+        showManage={showManage}
       />
 
       {/* Desktop Navigation */}
@@ -230,6 +241,23 @@ export function TopNavbar() {
             )}
           >
             Attendance
+          </Link>
+        )}
+
+        {/* Employee module-driven items */}
+        {showMyTimeOff && (
+          <Link href="/my/time-off" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+            Time Off
+          </Link>
+        )}
+        {showMyAttendance && (
+          <Link href="/my/attendance" className={cn(navItemBase, isActive(pathname, "/my/attendance") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+            Attendance
+          </Link>
+        )}
+        {showManage && (
+          <Link href="/manage" className={cn(navItemBase, isActive(pathname, "/manage") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+            Manage
           </Link>
         )}
 
@@ -332,12 +360,18 @@ function MobileMenu({
   showSpaces,
   showSchedule,
   showAttendance,
+  showMyTimeOff,
+  showMyAttendance,
+  showManage,
 }: {
   pathname: string
   showTeam: boolean
   showSpaces: boolean
   showSchedule: boolean
   showAttendance: boolean
+  showMyTimeOff: boolean
+  showMyAttendance: boolean
+  showManage: boolean
 }) {
   const [open, setOpen] = useState(false)
 
@@ -447,6 +481,35 @@ function MobileMenu({
             >
               <Clock className="h-4 w-4" />
               Attendance
+            </Link>
+          </DropdownMenuItem>
+        )}
+
+        {/* Employee module-driven items */}
+        {showMyTimeOff && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/my/time-off" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/my/time-off") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <Calendar className="h-4 w-4" />
+              Time Off
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showMyAttendance && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/my/attendance" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/my/attendance") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <Clock className="h-4 w-4" />
+              Attendance
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showManage && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/manage" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/manage") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <Settings className="h-4 w-4" />
+              Manage
             </Link>
           </DropdownMenuItem>
         )}
