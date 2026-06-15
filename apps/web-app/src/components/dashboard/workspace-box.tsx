@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import { employeesApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
+import { useAuth } from "@/contexts/auth-context"
+import { hasAccessModule } from "@hbcfield/shared/client"
 import { PersonNode, type PersonNodeProps } from "./person-node"
 import { WorkerAvatar } from "./worker-avatar"
 import {
@@ -637,12 +639,16 @@ function WorkerDropdownContent({
   onClose: () => void
 }) {
   const router = useRouter()
+  const { user } = useAuth()
   const userId = person.userId!
+  // O(1) identity check — you can't message/call yourself; show self actions.
+  const isSelf = !!user?.id && user.id === userId
 
   const { data: detail } = useQuery({
     queryKey: ["employee", userId],
     queryFn: () => employeesApi.getById(userId),
     staleTime: 30000,
+    enabled: !isSelf,
   })
 
   const emp = (detail as any)?.data || detail
@@ -689,7 +695,9 @@ function WorkerDropdownContent({
             />
           </div>
           <div className="flex-1 min-w-0 pb-0.5">
-            <p className="text-sm font-bold text-white truncate drop-shadow-sm">{person.name}</p>
+            <p className="text-sm font-bold text-white truncate drop-shadow-sm">
+              {person.name}{isSelf ? " (You)" : ""}
+            </p>
             <p className="text-[11px] text-white/70">{emp?.position || person.role || "Employee"}</p>
           </div>
           {person.tag && (
@@ -774,41 +782,71 @@ function WorkerDropdownContent({
 
       <div className="h-px bg-border" />
 
-      {/* ── Communication ── */}
-      <div className="px-3 py-2 flex items-center gap-1.5">
-        <button
-          onClick={(e) => { e.stopPropagation(); notify.success("Messaging coming soon") }}
-          className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
-        >
-          <MessageCircle className="size-3.5" />
-          Message
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); notify.success("Voice call coming soon") }}
-          className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-          title="Voice Call"
-        >
-          <Phone className="size-3.5" />
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); notify.success("Video call coming soon") }}
-          className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-          title="Video Call"
-        >
-          <Video className="size-3.5" />
-        </button>
-      </div>
+      {/* ── Actions: self gets profile + self-service; others get contact ── */}
+      {isSelf ? (
+        <div className="px-3 py-2 flex items-center gap-1.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); onClose(); router.push("/profile") }}
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
+          >
+            <User className="size-3.5" />
+            Edit my profile
+          </button>
+          {hasAccessModule(user ?? {}, "clock") && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/attendance") }}
+              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+              title="My attendance"
+            >
+              <Clock className="size-3.5" />
+            </button>
+          )}
+          {hasAccessModule(user ?? {}, "time_off") && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/time-off") }}
+              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+              title="Request time off"
+            >
+              <CalendarOff className="size-3.5" />
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="px-3 py-2 flex items-center gap-1.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); notify.success("Messaging coming soon") }}
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
+          >
+            <MessageCircle className="size-3.5" />
+            Message
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); notify.success("Voice call coming soon") }}
+            className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+            title="Voice Call"
+          >
+            <Phone className="size-3.5" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); notify.success("Video call coming soon") }}
+            className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+            title="Video Call"
+          >
+            <Video className="size-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="h-px bg-border" />
 
       {/* ── Footer Links ── */}
       <div className="px-3 py-1.5 flex items-center gap-1">
         <button
-          onClick={(e) => { e.stopPropagation(); onClose(); onPersonClick?.(userId) }}
+          onClick={(e) => { e.stopPropagation(); onClose(); isSelf ? router.push("/profile") : onPersonClick?.(userId) }}
           className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <User className="size-3" />
-          Profile
+          {isSelf ? "My profile" : "Profile"}
         </button>
         <div className="w-px h-4 bg-border" />
         <button
