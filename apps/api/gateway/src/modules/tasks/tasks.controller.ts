@@ -25,6 +25,7 @@ import {
   UpdateChecklistItemDto,
   ReorderChecklistDto,
   CreateDependencyDto,
+  AddCommentDto,
 } from './dto';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
@@ -225,7 +226,7 @@ export class TasksController {
 
   @Post(':id/comments')
   @ApiOperation({ summary: 'Add a comment to a task' })
-  async addComment(@Param('id') id: string, @Body() body: { content: string }, @Request() req: any) {
+  async addComment(@Param('id') id: string, @Body() body: AddCommentDto, @Request() req: any) {
     return this.tasksQueueService.addComment({
       taskId: id,
       ...body,
@@ -446,6 +447,7 @@ export class TasksController {
       fileType: body.fileType,
       fileSize: body.fileSize,
       uploadedById: req.user.id,
+      userRole: req.user.role,
       organizationId: req.user.organizationId,
     });
   }

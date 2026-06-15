@@ -636,8 +636,8 @@ export class ReportsService {
         break;
 
       case Role.EMPLOYEE:
-        // TECHNICIAN can only access tasks assigned to them
-        if (task.assignedToId !== userId) {
+        // Employee can only access tasks in their org that are assigned to them
+        if (task.organizationId !== organizationId || task.assignedToId !== userId) {
           throw new ForbiddenException('Access denied');
         }
         break;

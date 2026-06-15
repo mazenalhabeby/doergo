@@ -38,12 +38,15 @@ async function bootstrap() {
     const { method, url, body } = req;
     const isQuiet = QUIET_ROUTES.some((r) => url.includes(r));
 
-    // Log request (skip noisy polling endpoints)
+    // Log request (skip noisy polling endpoints). Never log bodies in
+    // production; redact secrets/tokens/signatures everywhere.
     if (!isQuiet) {
       console.log(`\n→ ${method} ${url}`);
-      if (body && Object.keys(body).length > 0) {
+      const isProd = process.env.NODE_ENV === 'production';
+      if (!isProd && body && Object.keys(body).length > 0) {
+        const SENSITIVE = ['password', 'currentPassword', 'newPassword', 'refreshToken', 'accessToken', 'token', 'code', 'technicianSignature', 'customerSignature'];
         const safeBody = { ...body };
-        if (safeBody.password) safeBody.password = '***';
+        for (const k of SENSITIVE) if (k in safeBody) safeBody[k] = '***';
         console.log(`  Body:`, safeBody);
       }
     }

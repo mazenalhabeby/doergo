@@ -206,3 +206,11 @@ export class CreateDependencyDto {
   @IsOptional()
   lagDays?: number;
 }
+
+export class AddCommentDto {
+  @ApiProperty({ description: 'Comment text', example: 'Looks good to me' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(5000)
+  content!: string;
+}

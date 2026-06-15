@@ -47,19 +47,32 @@ export class AttachmentsService {
   async create(data: {
     taskId: string;
     uploadedById: string;
+    userRole?: string;
     fileName: string;
     fileUrl: string;
     fileType: AttachmentType;
     fileSize: number;
     organizationId: string;
   }) {
-    // Verify task exists and belongs to user's org
+    // Verify task exists, then apply the SAME access check as upload/list/delete
+    // (not just an org check) — an unassigned employee must not attach to a task.
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    if (task.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Task is not in your organization');
+    this.checkTaskAccess(task, data.uploadedById, data.userRole || '', data.organizationId);
+
+    // The confirmed URL must be the presigned object for THIS task — never an
+    // arbitrary client-supplied URL (would be stored-XSS/phishing in the gallery).
+    const expectedPrefix = `${this.s3Endpoint}/${this.s3Bucket}/attachments/${data.taskId}/`;
+    if (typeof data.fileUrl !== 'string' || !data.fileUrl.startsWith(expectedPrefix)) {
+      throw new BadRequestException('Invalid file URL');
+    }
+    if (typeof data.fileSize !== 'number' || data.fileSize <= 0 || data.fileSize > MAX_FILE_SIZE) {
+      throw new BadRequestException('Invalid file size');
+    }
+    if (!data.fileName || data.fileName.length > 255) {
+      throw new BadRequestException('Invalid file name');
     }
 
     const attachment = await this.prisma.attachment.create({
@@ -294,7 +307,7 @@ export class AttachmentsService {
         }
         break;
       case Role.EMPLOYEE:
-        if (task.assignedToId !== userId) {
+        if (task.organizationId !== organizationId || task.assignedToId !== userId) {
           throw new ForbiddenException('Access denied');
         }
         break;
