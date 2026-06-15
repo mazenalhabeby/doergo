@@ -45,11 +45,12 @@ import {
   RADIUS,
   FONT_SIZE,
   FONT_WEIGHT,
-  PROGRESS_STEPS,
+  getProgressSteps,
   getDetailProgressIndex,
   getStatusAction,
   formatElapsedTime,
 } from '../../../src/components/task-detail';
+import { getFlowSteps, hasCapability, type TaskCapability } from '@hbcfield/shared/client';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -359,8 +360,13 @@ export default function TaskDetailScreen() {
       return;
     }
 
-    // Show completion modal for COMPLETED status
-    if (newStatus === TaskStatus.COMPLETED) {
+    // Completion: only workflows with the 'report' capability collect a service
+    // report on the final status (field-service). Others just mark it done.
+    const caps = (task as any)?.capabilities as TaskCapability[] | undefined;
+    const flow = getFlowSteps((task as any).workflow);
+    const targetIsFinal =
+      newStatus === TaskStatus.COMPLETED || !!flow.find((s) => s.key === newStatus)?.isFinal;
+    if (targetIsFinal && hasCapability(caps, 'report')) {
       setCompletionSummary('');
       setCompletionDetails('');
       setShowCompletionModal(true);
@@ -764,17 +770,22 @@ export default function TaskDetailScreen() {
 
   const statusStyle = getStatusStyle(task.status, colors);
   const priorityStyle = getPriorityStyle(task.priority, colors);
-  const progressIndex = getDetailProgressIndex(task.status);
+  // Flow + capabilities are data-driven by the task's workflow (defaults to
+  // field-service when absent — existing behaviour preserved).
+  const flowSteps = getFlowSteps((task as any).workflow);
+  const progressSteps = getProgressSteps(flowSteps);
+  const caps = ((task as any).capabilities as TaskCapability[] | undefined);
+  const progressIndex = getDetailProgressIndex(task.status, flowSteps);
   const jobId = getJobId(task.id);
   // Timer is visible from accept through execution (counts from acceptedAt).
-  const showTimer = !isAdmin && !!task.acceptedAt && [
+  const showTimer = !isAdmin && hasCapability(caps, 'timer') && !!task.acceptedAt && [
     TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED,
     TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED,
   ].includes(task.status as any);
-  const statusAction = getStatusAction(task.status);
-  const showLocationToggle = !isAdmin && task.status === TaskStatus.EN_ROUTE;
+  const statusAction = getStatusAction(task.status, flowSteps);
+  const showLocationToggle = !isAdmin && hasCapability(caps, 'gps') && task.status === TaskStatus.EN_ROUTE;
   const showBottomBar = ![TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(task.status);
-  const currentStepLabel = PROGRESS_STEPS[progressIndex]?.label;
+  const currentStepLabel = progressSteps[progressIndex]?.label;
 
   // Due date gate — cannot accept a task scheduled for a future date
   const isFutureTask = (() => {
@@ -1158,10 +1169,10 @@ export default function TaskDetailScreen() {
           <View style={[styles.progressCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.progressLabel, { color: colors.textMuted }]}>{t('taskDetail.progress')}</Text>
             <View style={styles.progressDotsRow}>
-              {PROGRESS_STEPS.map((step, index) => {
+              {progressSteps.map((step, index) => {
                 const isCompleted = index < progressIndex;
                 const isCurrent = index === progressIndex;
-                const isLast = index === PROGRESS_STEPS.length - 1;
+                const isLast = index === progressSteps.length - 1;
                 return (
                   <View key={step.key} style={[styles.progressDotWrapper, isLast && styles.progressDotWrapperLast]}>
                     <View

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { TaskStatus } from '../../lib/api';
+import { FlowStatus, getNextStep, FIELD_SERVICE_FLOW } from '@hbcfield/shared/client';
 
-// Progress steps configuration for the detail view (6-step flow)
+// Fallback field-service stepper (used when a task has no workflow).
 export const PROGRESS_STEPS = [
   { key: TaskStatus.ASSIGNED, label: 'Assigned', icon: 'checkmark' as const },
   { key: TaskStatus.ACCEPTED, label: 'Accepted', icon: 'checkmark' as const },
@@ -11,26 +12,46 @@ export const PROGRESS_STEPS = [
   { key: TaskStatus.COMPLETED, label: 'Completed', icon: 'checkmark' as const },
 ] as const;
 
-// Map task status to progress step index (specific to the 6-step detail view)
-export function getDetailProgressIndex(status: string): number {
+// Default Ionicons for the canonical field-service status keys.
+const ICON_BY_KEY: Record<string, string> = {
+  ASSIGNED: 'checkmark', ACCEPTED: 'checkmark', EN_ROUTE: 'car',
+  ARRIVED: 'location', IN_PROGRESS: 'construct', BLOCKED: 'alert',
+  COMPLETED: 'checkmark', DELIVERED: 'checkmark', DONE: 'checkmark',
+  SUBMITTED: 'checkmark', PICKED_UP: 'cube', IN_TRANSIT: 'car',
+  VISITED: 'location', SCHEDULED: 'calendar', OUTCOME: 'document-text',
+};
+
+/** Stepper steps from a flow (cancel states excluded, icon resolved). */
+export function getProgressSteps(flowSteps: FlowStatus[]): { key: string; label: string; icon: string }[] {
+  return flowSteps
+    .filter((s) => !s.isCanceled)
+    .map((s) => ({ key: s.key, label: s.label, icon: s.icon || ICON_BY_KEY[s.key] || 'ellipse' }));
+}
+
+// Index of the current status within the (visible) flow steps.
+export function getDetailProgressIndex(status: string, flowSteps?: FlowStatus[]): number {
+  const steps = flowSteps && flowSteps.length ? getProgressSteps(flowSteps) : null;
+  if (steps) {
+    const i = steps.findIndex((s) => s.key === status);
+    if (i >= 0) return i;
+    if (status === TaskStatus.BLOCKED) {
+      const ip = steps.findIndex((s) => s.key === TaskStatus.IN_PROGRESS);
+      return ip >= 0 ? ip : Math.max(0, steps.length - 2);
+    }
+    if (status === TaskStatus.CLOSED) return steps.length - 1;
+    return -1;
+  }
+  // Legacy field-service mapping (no workflow)
   switch (status) {
-    case TaskStatus.ASSIGNED:
-      return 0;
-    case TaskStatus.ACCEPTED:
-      return 1;
-    case TaskStatus.EN_ROUTE:
-      return 2;
-    case TaskStatus.ARRIVED:
-      return 3;
-    case TaskStatus.IN_PROGRESS:
-      return 4;
+    case TaskStatus.ASSIGNED: return 0;
+    case TaskStatus.ACCEPTED: return 1;
+    case TaskStatus.EN_ROUTE: return 2;
+    case TaskStatus.ARRIVED: return 3;
+    case TaskStatus.IN_PROGRESS: return 4;
     case TaskStatus.COMPLETED:
-    case TaskStatus.CLOSED:
-      return 5;
-    case TaskStatus.BLOCKED:
-      return 4; // Show as at in-progress step
-    default:
-      return -1;
+    case TaskStatus.CLOSED: return 5;
+    case TaskStatus.BLOCKED: return 4;
+    default: return -1;
   }
 }
 
@@ -41,23 +62,31 @@ export interface StatusAction {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-export function getStatusAction(status: string): StatusAction | null {
-  switch (status) {
-    case TaskStatus.ASSIGNED:
-      return { nextStatus: TaskStatus.ACCEPTED, label: 'Accept Job', icon: 'checkmark-circle' };
-    case TaskStatus.ACCEPTED:
-      return { nextStatus: TaskStatus.EN_ROUTE, label: 'Start Driving', icon: 'car' };
-    case TaskStatus.EN_ROUTE:
-      return { nextStatus: TaskStatus.ARRIVED, label: "I've Arrived", icon: 'location' };
-    case TaskStatus.ARRIVED:
-      return { nextStatus: TaskStatus.IN_PROGRESS, label: 'Start Work', icon: 'construct' };
-    case TaskStatus.IN_PROGRESS:
-      return { nextStatus: TaskStatus.COMPLETED, label: 'Finish Job', icon: 'checkmark-done' };
-    case TaskStatus.BLOCKED:
-      return { nextStatus: TaskStatus.IN_PROGRESS, label: 'Resume Job', icon: 'play' };
-    default:
-      return null;
+// Nicer labels/icons for the canonical field-service transitions, keyed by the
+// CURRENT status. Custom workflows fall back to a generic "Next: <label>".
+const BUILTIN_ACTIONS: Record<string, { next: string; label: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  [TaskStatus.ASSIGNED]:    { next: TaskStatus.ACCEPTED,    label: 'Accept Job',    icon: 'checkmark-circle' },
+  [TaskStatus.ACCEPTED]:    { next: TaskStatus.EN_ROUTE,    label: 'Start Driving', icon: 'car' },
+  [TaskStatus.EN_ROUTE]:    { next: TaskStatus.ARRIVED,     label: "I've Arrived",  icon: 'location' },
+  [TaskStatus.ARRIVED]:     { next: TaskStatus.IN_PROGRESS, label: 'Start Work',    icon: 'construct' },
+  [TaskStatus.IN_PROGRESS]: { next: TaskStatus.COMPLETED,   label: 'Finish Job',    icon: 'checkmark-done' },
+  [TaskStatus.BLOCKED]:     { next: TaskStatus.IN_PROGRESS, label: 'Resume Job',    icon: 'play' },
+};
+
+export function getStatusAction(status: string, flowSteps?: FlowStatus[]): StatusAction | null {
+  const steps = flowSteps && flowSteps.length ? flowSteps : FIELD_SERVICE_FLOW;
+  const next = getNextStep(steps, status);
+  const builtin = BUILTIN_ACTIONS[status];
+  if (next) {
+    return {
+      nextStatus: next.key as TaskStatus,
+      label: builtin?.label ?? `Next: ${next.label}`,
+      icon: builtin?.icon ?? 'arrow-forward-circle',
+    };
   }
+  // BLOCKED (a side state not in the linear flow) resumes via the builtin map.
+  if (builtin) return { nextStatus: builtin.next as TaskStatus, label: builtin.label, icon: builtin.icon };
+  return null;
 }
 
 // Format elapsed time for timer display (HH:MM:SS)
