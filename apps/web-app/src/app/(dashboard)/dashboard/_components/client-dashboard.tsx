@@ -149,6 +149,7 @@ export function ClientDashboard() {
   const { t } = useTranslation()
   const router = useRouter()
   const { isOpen: panelOpen } = useActivityPanel()
+  const isAdminOrDispatcher = user?.role === "ADMIN" || user?.role === "MANAGER"
 
   const handleEditLocation = useCallback((locationId: string) => {
     router.push(`/locations?edit=${locationId}`)
@@ -188,18 +189,21 @@ export function ClientDashboard() {
     staleTime: 60000,
   })
 
-  // Attendance entries for today — who is clocked in?
+  // Attendance entries for today — who is clocked in? Admins read org-wide;
+  // employees can't (403), so they fetch presence per visible space below.
   const { data: attendanceData } = useQuery({
     queryKey: ["attendance-today"],
     queryFn: () => attendanceApi.getAllEntries({ date: getTodayString(), limit: 500 }),
     staleTime: 30000,
+    enabled: isAdminOrDispatcher,
   })
 
-  // Active breaks — who is currently on break?
+  // Active breaks — who is currently on break? (admin-only endpoint)
   const { data: activeBreaksData } = useQuery({
     queryKey: ["active-breaks"],
     queryFn: () => attendanceApi.getActiveBreaks().catch(() => ({ data: [] })),
     staleTime: 30000,
+    enabled: isAdminOrDispatcher,
   })
 
   // ── Derived Data ───────────────────────────────────────────────────────────
@@ -207,7 +211,6 @@ export function ClientDashboard() {
   const tasks: Task[] = tasksData?.data || []
   const allLocations = locationsData?.data || []
   const members: OrgMember[] = membersData?.data || []
-  const todayEntries: TimeEntry[] = attendanceData?.data || []
   const activeBreaks = (activeBreaksData as any)?.data || []
 
   // Set of user IDs currently on break
@@ -235,6 +238,29 @@ export function ClientDashboard() {
 
   // Stable key derived from query results (avoids useMemo size changes)
   const assignmentDataKey = assignmentQueries.map(q => q.dataUpdatedAt).join(",")
+
+  // Employees can't read org-wide attendance, but CAN read attendance for the
+  // spaces they're a member of — fetch presence per visible space.
+  const attendanceQueries = useQueries({
+    queries: (isAdminOrDispatcher ? [] : locationIds).map((locId: string) => ({
+      queryKey: ["locationAttendance", locId],
+      queryFn: () =>
+        attendanceApi
+          .getLocationEntries(locId, { date: getTodayString(), limit: 200 })
+          .catch(() => ({ data: [] as TimeEntry[] })),
+      staleTime: 30000,
+    })),
+  })
+  const attendanceDataKey = attendanceQueries.map(q => q.dataUpdatedAt).join(",")
+
+  // Today's presence entries: admins read org-wide; employees combine per-space.
+  const todayEntries: TimeEntry[] = useMemo(() => {
+    if (isAdminOrDispatcher) return attendanceData?.data || []
+    return attendanceQueries.flatMap(
+      (q) => ((q.data as { data?: TimeEntry[] } | undefined)?.data) || [],
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdminOrDispatcher, attendanceData, attendanceDataKey])
 
   // Build the member lookup. Admins/managers get the full org member list; for
   // employees (who can't read /organizations/members) we fall back to the user
@@ -327,7 +353,6 @@ export function ClientDashboard() {
   //   scope 'tasks' → NO spaces (tasks-only landing)
   //   scope 'all'   → read-only overview of every space
   //   scope 'own'   → only the spaces they're a roster member of (or assigned a task in)
-  const isAdminOrDispatcher = user?.role === "ADMIN" || user?.role === "MANAGER"
   const spaceScope = getSpaceScope(user ?? {})
   const locations = useMemo(() => {
     if (isAdminOrDispatcher) return allLocations

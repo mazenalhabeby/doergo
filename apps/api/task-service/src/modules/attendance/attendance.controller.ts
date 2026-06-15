@@ -43,6 +43,8 @@ export class AttendanceController {
       date?: string;
       page?: number;
       limit?: number;
+      requesterId?: string;
+      requesterCanViewAll?: boolean;
     },
   ) {
     return this.attendanceService.getLocationEntries(data);

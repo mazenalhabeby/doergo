@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -503,6 +504,8 @@ export class AttendanceService {
     date?: Date | string;
     page?: number;
     limit?: number;
+    requesterId?: string;
+    requesterCanViewAll?: boolean;
   }) {
     // Verify location belongs to organization
     const location = await this.prisma.companyLocation.findFirst({
@@ -514,6 +517,18 @@ export class AttendanceService {
 
     if (!location) {
       throw new NotFoundException('Location not found');
+    }
+
+    // Authorization: full-access roles see any location; otherwise the requester
+    // must be a roster member of this location (employees viewing their own space).
+    if (!data.requesterCanViewAll) {
+      const member = await this.prisma.technicianAssignment.findFirst({
+        where: { locationId: data.locationId, userId: data.requesterId },
+        select: { id: true },
+      });
+      if (!member) {
+        throw new ForbiddenException('Not a member of this space');
+      }
     }
 
     const page = data.page ?? 1;

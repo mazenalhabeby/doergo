@@ -98,8 +98,8 @@ export class AttendanceController {
   }
 
   @Get('locations/:id/entries')
-  @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'Get time entries for a location (admin view)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Get time entries for a location (admins, or members of that space)' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Date in ISO format (defaults to today)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -110,12 +110,16 @@ export class AttendanceController {
     @Query('limit') limit?: number,
     @Request() req?: any,
   ) {
+    // Full-access roles see any location; otherwise the service verifies the
+    // requester is a roster member of the space.
     return this.attendanceService.getLocationEntries({
       locationId,
       organizationId: req.user.organizationId,
       date,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      requesterId: req.user.id,
+      requesterCanViewAll: !!req.user.canViewAllTasks,
     });
   }
 

@@ -40,6 +40,8 @@ export class AttendanceService extends BaseGatewayService {
     date?: string;
     page?: number;
     limit?: number;
+    requesterId?: string;
+    requesterCanViewAll?: boolean;
   }) {
     return this.send({ cmd: 'get_location_entries' }, data);
   }
