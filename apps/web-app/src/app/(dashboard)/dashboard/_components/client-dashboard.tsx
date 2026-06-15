@@ -827,29 +827,36 @@ export function ClientDashboard() {
   if (!isAdminOrDispatcher) {
     const myTasks = tasks.filter((tk) => tk.assignedToId === user?.id)
     return (
-      <div style={{ display: "flex", width: "100%", height: "100%" }}>
-        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-          <div className="px-6 pt-6">
+      <div className="h-full overflow-y-auto">
+        <div className="mx-auto max-w-[1440px] px-6 py-6">
+          {/* Header */}
+          <div className="mb-6">
             <p className="text-[13px] font-medium text-muted-foreground">{greeting}</p>
             <h1 className="text-2xl font-semibold text-foreground">
               {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
             </h1>
           </div>
-          <div className="max-w-[1440px] mx-auto px-6 py-6">
-            <WorkspaceGrid boxes={workspaceBoxes} />
+
+          {/* Balanced two columns: Spaces | My Tasks (stacks on small screens) */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
+            {/* Spaces */}
+            <section>
+              <h2 className="mb-3 text-sm font-semibold text-foreground">My Spaces</h2>
+              <WorkspaceGrid boxes={workspaceBoxes} />
+            </section>
+
+            {/* My Tasks — always present */}
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">My Tasks</h2>
+                <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
+              </div>
+              <div className="rounded-2xl border border-border bg-card px-4 py-2">
+                <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
+              </div>
+            </section>
           </div>
         </div>
-
-        {/* My Tasks — always present for employees */}
-        <aside className="hidden lg:flex w-[340px] shrink-0 flex-col border-l border-border h-full overflow-y-auto bg-card/30">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">My Tasks</h2>
-            <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
-          </div>
-          <div className="px-3 py-2">
-            <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
-          </div>
-        </aside>
       </div>
     )
   }
