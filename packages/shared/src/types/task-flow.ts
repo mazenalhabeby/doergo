@@ -79,6 +79,46 @@ export function hasCapability(caps: TaskCapability[] | undefined, c: TaskCapabil
 }
 
 /**
+ * Per-status capabilities — which execution widgets are active AT each step,
+ * keyed by [normalized workflow][status key]. This is what makes every screen
+ * in the flow distinct (GPS only while travelling, report only at completion).
+ * The field-service map reproduces the original technician behaviour exactly and
+ * is the default for workflow-less tasks, so nothing regresses.
+ */
+export const STATUS_CAPABILITIES: Record<string, Record<string, TaskCapability[]>> = {
+  'field-service': {
+    ASSIGNED: [], ACCEPTED: ['timer'], EN_ROUTE: ['gps', 'timer'],
+    ARRIVED: ['timer'], IN_PROGRESS: ['timer'], BLOCKED: ['timer'],
+    COMPLETED: ['report', 'photos', 'signature'],
+  },
+  'logistics': {
+    ASSIGNED: [], ACCEPTED: ['gps'], PICKED_UP: ['timer'],
+    IN_TRANSIT: ['gps', 'timer'], DELIVERED: ['photos', 'signature'],
+  },
+  'office': { TODO: [], DOING: ['timer', 'checklist'], DONE: [] },
+  'sales': {
+    SCHEDULED: [], EN_ROUTE: ['gps', 'timer'], VISITED: ['gps', 'timer', 'form'], OUTCOME: ['form'],
+  },
+  'inspection': {
+    ASSIGNED: [], IN_PROGRESS: ['timer', 'checklist', 'photos'], SUBMITTED: ['signature'],
+  },
+};
+
+/**
+ * Capabilities active at a given status. Falls back to the field-service map for
+ * unknown/absent workflows so workflow-less tasks behave exactly as before.
+ */
+export function getStatusCapabilities(workflowName: string | null | undefined, statusKey: string): TaskCapability[] {
+  const key = normalizeWorkflowKey(workflowName) || 'field-service';
+  let perWf = STATUS_CAPABILITIES[key];
+  if (!perWf) {
+    const partial = Object.keys(STATUS_CAPABILITIES).find((k) => key.includes(k));
+    perWf = partial ? STATUS_CAPABILITIES[partial]! : STATUS_CAPABILITIES['field-service']!;
+  }
+  return perWf[statusKey] ?? [];
+}
+
+/**
  * Ordered flow steps from a task's workflow, or the field-service default.
  * Normalizes the DB WorkflowStatus shape (which uses `name`) into FlowStatus
  * (which uses `label`) and fills sane defaults — so consumers never read

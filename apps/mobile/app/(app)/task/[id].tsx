@@ -50,7 +50,7 @@ import {
   getStatusAction,
   formatElapsedTime,
 } from '../../../src/components/task-detail';
-import { getFlowSteps, hasCapability, type TaskCapability } from '@hbcfield/shared/client';
+import { getFlowSteps, hasCapability, getStatusCapabilities, type TaskCapability } from '@hbcfield/shared/client';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -360,13 +360,13 @@ export default function TaskDetailScreen() {
       return;
     }
 
-    // Completion: only workflows with the 'report' capability collect a service
-    // report on the final status (field-service). Others just mark it done.
-    const caps = (task as any)?.capabilities as TaskCapability[] | undefined;
+    // Completion: collect a service report only when the TARGET status has the
+    // 'report' capability (field-service COMPLETED). Others just mark it done.
     const flow = getFlowSteps((task as any).workflow);
     const targetIsFinal =
       newStatus === TaskStatus.COMPLETED || !!flow.find((s) => s.key === newStatus)?.isFinal;
-    if (targetIsFinal && hasCapability(caps, 'report')) {
+    const targetCaps = getStatusCapabilities((task as any)?.workflow?.name, newStatus);
+    if (targetIsFinal && hasCapability(targetCaps, 'report')) {
       setCompletionSummary('');
       setCompletionDetails('');
       setShowCompletionModal(true);
@@ -783,7 +783,9 @@ export default function TaskDetailScreen() {
     TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED,
   ].includes(task.status as any);
   const statusAction = getStatusAction(task.status, flowSteps);
-  const showLocationToggle = !isAdmin && hasCapability(caps, 'gps') && task.status === TaskStatus.EN_ROUTE;
+  // GPS toggle is purely capability-driven now: it shows on whatever status has
+  // the 'gps' capability (field-service → En route, logistics → In transit, …).
+  const showLocationToggle = !isAdmin && hasCapability(caps, 'gps');
   const showBottomBar = ![TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(task.status);
   const currentStepLabel = progressSteps[progressIndex]?.label;
 

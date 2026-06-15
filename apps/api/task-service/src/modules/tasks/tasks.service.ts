@@ -19,7 +19,7 @@ import {
   paginated,
   buildDateRangeFilter,
   haversineDistance,
-  getTaskCapabilities,
+  getStatusCapabilities,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -459,7 +459,9 @@ export class TasksService {
     // Capabilities are derived from the workflow (defaults to field-service).
     const effectiveWorkflow =
       (task as any).workflow ?? (task as any).space?.workflow ?? null;
-    const capabilities = getTaskCapabilities(effectiveWorkflow?.name);
+    // Capabilities active AT the current status (per-step) — drives which
+    // execution widgets render right now.
+    const capabilities = getStatusCapabilities(effectiveWorkflow?.name, task.status);
 
     return success({
       ...task,
