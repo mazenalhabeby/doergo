@@ -151,27 +151,30 @@ export default function TaskDetailScreen() {
   const fetchingRef = useRef(false);
   const lastFetchedIdRef = useRef<string | null>(null);
 
-  // Timer logic - starts when task is IN_PROGRESS, seeded from real start time
+  // Timer — DB-anchored to acceptedAt so it never resets when the task is
+  // reopened. Recomputed from the timestamp each tick (now − acceptedAt), runs
+  // while the task is active, and freezes at completedAt.
   useEffect(() => {
-    if (task?.status === TaskStatus.IN_PROGRESS) {
-      // Tick every second — elapsedTime was seeded with the correct offset on fetch
-      timerRef.current = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setElapsedTime(0);
-    }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
 
+    const acceptedAt = task?.acceptedAt ? new Date(task.acceptedAt).getTime() : null;
+    if (!acceptedAt) { setElapsedTime(0); return; }
+
+    const end = task?.completedAt ? new Date(task.completedAt).getTime() : null;
+    const compute = () => Math.max(0, Math.floor(((end ?? Date.now()) - acceptedAt) / 1000));
+    setElapsedTime(compute());
+
+    const ACTIVE = [
+      TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED,
+      TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED,
+    ];
+    if (end || !ACTIVE.includes(task?.status as any)) return; // frozen / not active
+
+    timerRef.current = setInterval(() => setElapsedTime(compute()), 1000);
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     };
-  }, [task?.status]);
+  }, [task?.acceptedAt, task?.completedAt, task?.status]);
 
   // Auto-start/stop location tracking based on task status
   // Tracking lives in app-level context — survives screen navigation
@@ -763,7 +766,11 @@ export default function TaskDetailScreen() {
   const priorityStyle = getPriorityStyle(task.priority, colors);
   const progressIndex = getDetailProgressIndex(task.status);
   const jobId = getJobId(task.id);
-  const showTimer = !isAdmin && task.status === TaskStatus.IN_PROGRESS;
+  // Timer is visible from accept through execution (counts from acceptedAt).
+  const showTimer = !isAdmin && !!task.acceptedAt && [
+    TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED,
+    TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED,
+  ].includes(task.status as any);
   const statusAction = getStatusAction(task.status);
   const showLocationToggle = !isAdmin && task.status === TaskStatus.EN_ROUTE;
   const showBottomBar = ![TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(task.status);

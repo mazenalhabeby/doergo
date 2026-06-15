@@ -537,6 +537,9 @@ export interface Task {
   routeStartedAt: string | null;
   routeEndedAt: string | null;
   routeDistance: number | null;
+  // DB-derived task-time anchors (timer counts from acceptedAt; freezes at completedAt)
+  acceptedAt?: string | null;
+  completedAt?: string | null;
   // Hierarchy fields
   parentId?: string | null;
   depth?: number;

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import {
@@ -10,6 +11,7 @@ import {
   Trash2,
   MapPin,
   ChevronRight,
+  Clock,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -157,6 +159,9 @@ export function TaskDetailHeader({
           {statusConfig.label}
         </span>
 
+        {/* Time on task — DB-anchored, live; same value on web, mobile & for admins */}
+        <TaskTimer acceptedAt={task.acceptedAt} completedAt={task.completedAt} />
+
         {/* Workflow transitions as subtle pills */}
         {hasWorkflow && allowedTransitions.length > 0 && !isCompleted && !isCanceled && (
           <>
@@ -230,5 +235,48 @@ export function TaskDetailHeader({
         )}
       </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// TaskTimer — live "time on task", anchored to the DB acceptedAt timestamp so
+// it is identical on web & mobile and never resets. Ticks while running, shows
+// the frozen total once completedAt is set. Renders nothing before accept.
+// ---------------------------------------------------------------------------
+function formatTaskDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds))
+  const d = Math.floor(s / 86400)
+  const h = Math.floor((s % 86400) / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (d > 0) return `${d}d ${h}h ${m}m`
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m ${sec}s`
+  return `${sec}s`
+}
+
+function TaskTimer({ acceptedAt, completedAt }: { acceptedAt?: string | null; completedAt?: string | null }) {
+  const accepted = acceptedAt ? new Date(acceptedAt).getTime() : null
+  const end = completedAt ? new Date(completedAt).getTime() : null
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!accepted || end) return // not started, or frozen → no ticking
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [accepted, end])
+
+  if (!accepted) return null
+  const elapsed = ((end ?? now) - accepted) / 1000
+  const running = !end
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tabular-nums bg-muted text-foreground"
+      title={running ? "Time since the task was accepted" : "Total time on task"}
+    >
+      <Clock className="size-3" />
+      {formatTaskDuration(elapsed)}
+    </span>
   )
 }

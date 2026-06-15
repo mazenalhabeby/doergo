@@ -122,6 +122,9 @@ export interface Task {
   assignedToId?: string;
   createdAt: string;
   updatedAt: string;
+  // DB-derived task-time anchors (timer counts from acceptedAt; freezes at completedAt)
+  acceptedAt?: string | null;
+  completedAt?: string | null;
   createdBy?: {
     id: string;
     firstName: string;

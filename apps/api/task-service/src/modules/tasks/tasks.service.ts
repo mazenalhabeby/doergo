@@ -400,7 +400,37 @@ export class TasksService {
     // Authorization check
     await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
 
-    return success(task);
+    // Derive task-time anchors from the status history (no schema change), so the
+    // timer is DB-backed and identical on web, mobile and the admin view:
+    //   acceptedAt  = when the employee first accepted (status → ACCEPTED)
+    //   completedAt = when it was completed/closed (freezes the running timer)
+    const statusEvents = await this.prisma.taskEvent.findMany({
+      where: { taskId: data.id, eventType: TaskEventType.STATUS_CHANGED },
+      orderBy: { createdAt: 'asc' },
+      select: { createdAt: true, metadata: true },
+    });
+    const ACTIVE = [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
+    let acceptedAt: Date | null = null;
+    let completedAt: Date | null = null;
+    for (const ev of statusEvents) {
+      const ns = (ev.metadata as any)?.newStatus;
+      if (!acceptedAt && ns === TaskStatus.ACCEPTED) acceptedAt = ev.createdAt;
+      if (!completedAt && (ns === TaskStatus.COMPLETED || ns === TaskStatus.CLOSED)) completedAt = ev.createdAt;
+    }
+    // Fallback chain for tasks with no recorded ACCEPTED event (e.g. created
+    // directly in an active state, or seed data): first active transition →
+    // route start → the task's creation time. Always stable/DB-backed so the
+    // timer never resets on reopen.
+    if (!acceptedAt) {
+      const firstActive = statusEvents.find((ev) => ACTIVE.includes((ev.metadata as any)?.newStatus));
+      const ACTIVE_OR_DONE = [...ACTIVE, TaskStatus.BLOCKED, TaskStatus.COMPLETED, TaskStatus.CLOSED];
+      acceptedAt =
+        firstActive?.createdAt ??
+        (task as any).routeStartedAt ??
+        (ACTIVE_OR_DONE.includes(task.status as any) ? task.createdAt : null);
+    }
+
+    return success({ ...task, acceptedAt, completedAt });
   }
 
   /**
