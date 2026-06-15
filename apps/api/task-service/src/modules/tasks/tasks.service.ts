@@ -268,9 +268,16 @@ export class TasksService {
     if (dateFilter) {
       const shouldIncludeNoDueDate = includeNoDueDate === 'true' || includeNoDueDate === true;
       if (shouldIncludeNoDueDate) {
-        andConditions.push({
-          OR: [{ dueDate: dateFilter }, { dueDate: null }],
-        });
+        // "Current" tab: tasks due in range, OR with no due date, OR overdue but
+        // still active (an in-progress task due last month is still current work).
+        const orClauses: any[] = [{ dueDate: dateFilter }, { dueDate: null }];
+        if (startDate) {
+          orClauses.push({
+            dueDate: { lt: new Date(startDate) },
+            status: { notIn: [TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED] },
+          });
+        }
+        andConditions.push({ OR: orClauses });
       } else {
         andConditions.push({ dueDate: dateFilter });
       }
@@ -290,8 +297,10 @@ export class TasksService {
       });
     }
 
+    // IMPORTANT: append, never overwrite — role scoping (e.g. an employee's
+    // own-tasks filter) is already stored on where.AND above.
     if (andConditions.length > 0) {
-      where.AND = andConditions;
+      where.AND = [...(where.AND || []), ...andConditions];
     }
 
     const [tasks, total] = await Promise.all([
