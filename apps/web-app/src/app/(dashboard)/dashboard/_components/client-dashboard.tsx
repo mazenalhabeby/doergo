@@ -839,10 +839,10 @@ export function ClientDashboard() {
 
           {/* Balanced two columns: Spaces | My Tasks (stacks on small screens) */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
-            {/* Spaces */}
+            {/* Spaces — a single space opens automatically */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-foreground">My Spaces</h2>
-              <WorkspaceGrid boxes={workspaceBoxes} />
+              <WorkspaceGrid boxes={workspaceBoxes} autoExpandSingle />
             </section>
 
             {/* My Tasks — always present */}

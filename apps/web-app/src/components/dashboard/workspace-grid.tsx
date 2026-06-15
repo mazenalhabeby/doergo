@@ -7,6 +7,8 @@ import { WorkspaceBox, type WorkspaceBoxProps } from "./workspace-box"
 export interface WorkspaceGridProps {
   boxes: WorkspaceBoxProps[]
   className?: string
+  /** When there is exactly one box, open it by default (employee single-space view). */
+  autoExpandSingle?: boolean
 }
 
 type BoxLayout = { cols: number; rows: number; forceVertical: boolean }
@@ -81,6 +83,7 @@ function getVisibleCount(box: WorkspaceBoxProps): number {
 export const WorkspaceGrid = React.memo(function WorkspaceGrid({
   boxes,
   className,
+  autoExpandSingle = false,
 }: WorkspaceGridProps) {
   const [expandedTitle, setExpandedTitle] = useState<string | null>(null)
   const [visualExpanded, setVisualExpanded] = useState<string | null>(null)
@@ -116,6 +119,13 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
   }, [boxes])
 
   const filteredBoxes = sortedBoxes
+
+  // Single-space view (employees): open the only box by default so its members
+  // are visible without a click. The user can still collapse it.
+  useEffect(() => {
+    const only = filteredBoxes.length === 1 ? filteredBoxes[0] : null
+    if (autoExpandSingle && only) setExpandedTitle(only.title)
+  }, [autoExpandSingle, filteredBoxes])
 
   const layoutMap = useMemo(() => computeLayout(filteredBoxes), [filteredBoxes])
 
