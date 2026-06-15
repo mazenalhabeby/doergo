@@ -60,14 +60,16 @@ export class TasksService {
     let locationLat = data.locationLat;
     let locationLng = data.locationLng;
     let locationAddress = data.locationAddress;
+    let spaceWorkflowId: string | null = null;
     if (data.spaceId) {
       const space = await this.prisma.companyLocation.findUnique({
         where: { id: data.spaceId },
-        select: { organizationId: true, lat: true, lng: true, address: true },
+        select: { organizationId: true, lat: true, lng: true, address: true, workflowId: true },
       });
       if (!space) {
         throw new NotFoundException('Space not found');
       }
+      spaceWorkflowId = space.workflowId ?? null;
       if (space.organizationId !== data.organizationId) {
         throw new ForbiddenException('Cannot create task in a space outside your organization');
       }
@@ -90,13 +92,28 @@ export class TasksService {
       }
     }
 
+    // Task type = workflow: explicit, else inherited from the space. A new task
+    // starts at that workflow's first status (e.g. Office → TODO, Sales →
+    // SCHEDULED); with no workflow it uses the canonical NEW/ASSIGNED.
+    const effWorkflowId: string | null = (data.workflowId as string | undefined) ?? spaceWorkflowId ?? null;
+    let initialStatus: string = hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW;
+    if (effWorkflowId) {
+      const firstStatus = await this.prisma.workflowStatus.findFirst({
+        where: { workflowId: effWorkflowId, isCanceled: false },
+        orderBy: { position: 'asc' },
+        select: { key: true },
+      });
+      if (firstStatus) initialStatus = firstStatus.key;
+    }
+
     const task = await this.prisma.$transaction(async (tx) => {
       const createdTask = await tx.task.create({
         data: {
           title: data.title,
           description: data.description,
           priority: data.priority || 'MEDIUM',
-          status: hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW,
+          status: initialStatus,
+          workflowId: effWorkflowId,
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           startDate: data.startDate ? new Date(data.startDate) : null,
           estimatedHours: data.estimatedHours ?? null,
