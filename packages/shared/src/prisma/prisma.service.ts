@@ -21,6 +21,19 @@ import { PrismaClient } from '@prisma/client';
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  constructor() {
+    // Bound the connection pool per service instance so (pool × instances) stays
+    // under Postgres max_connections at horizontal scale. Tune via
+    // PRISMA_CONNECTION_LIMIT (default 10); respects a limit already in the URL.
+    const url = process.env.DATABASE_URL || '';
+    const limit = process.env.PRISMA_CONNECTION_LIMIT || '10';
+    const pooledUrl =
+      url && !url.includes('connection_limit')
+        ? `${url}${url.includes('?') ? '&' : '?'}connection_limit=${limit}`
+        : url;
+    super(pooledUrl ? { datasources: { db: { url: pooledUrl } } } : undefined);
+  }
+
   async onModuleInit(): Promise<void> {
     await this.$connect();
   }

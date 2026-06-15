@@ -8,8 +8,11 @@ import {
   IsInt,
   Min,
   IsArray,
+  IsIn,
   ValidateNested,
 } from 'class-validator';
+
+const TASK_CAPABILITIES = ['gps', 'timer', 'checklist', 'photos', 'signature', 'report', 'form'];
 import { Type } from 'class-transformer';
 
 // ==================== Workflow DTOs ====================
@@ -93,7 +96,7 @@ export class CreateWorkflowStatusDto {
 
   @ApiPropertyOptional({ description: 'Execution widgets active at this step', example: ['gps', 'timer'], type: [String] })
   @IsArray()
-  @IsString({ each: true })
+  @IsIn(TASK_CAPABILITIES, { each: true })
   @IsOptional()
   capabilities?: string[];
 }
@@ -139,7 +142,7 @@ export class UpdateWorkflowStatusDto {
 
   @ApiPropertyOptional({ description: 'Execution widgets active at this step', example: ['gps', 'timer'], type: [String] })
   @IsArray()
-  @IsString({ each: true })
+  @IsIn(TASK_CAPABILITIES, { each: true })
   @IsOptional()
   capabilities?: string[];
 }
