@@ -718,9 +718,30 @@ export class TasksService {
       throw new ForbiddenException('Access denied');
     }
 
-    // Validate status transition
-    const allowedTransitions = STATUS_TRANSITIONS[task.status as TaskStatus] || [];
-    if (!allowedTransitions.includes(data.status as TaskStatus)) {
+    // Validate status transition — honor the task's workflow (its own, else its
+    // space's) when present; otherwise the canonical field-service machine.
+    let effWorkflowId: string | null = (task as any).workflowId ?? null;
+    if (!effWorkflowId && (task as any).spaceId) {
+      const sp = await this.prisma.companyLocation.findUnique({
+        where: { id: (task as any).spaceId },
+        select: { workflowId: true },
+      });
+      effWorkflowId = sp?.workflowId ?? null;
+    }
+    let allowedTransitions: string[] | null = null;
+    if (effWorkflowId) {
+      const cur = await this.prisma.workflowStatus.findFirst({
+        where: { workflowId: effWorkflowId, key: task.status },
+        select: { transitions: true },
+      });
+      if (cur) allowedTransitions = cur.transitions;
+    }
+    // Fallback to the canonical machine when there's no workflow, or the current
+    // status isn't part of it (mixed/legacy data).
+    if (allowedTransitions === null) {
+      allowedTransitions = STATUS_TRANSITIONS[task.status as TaskStatus] || [];
+    }
+    if (!allowedTransitions.includes(data.status as string)) {
       throw new BadRequestException(
         `Invalid status transition from ${task.status} to ${data.status}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
       );
