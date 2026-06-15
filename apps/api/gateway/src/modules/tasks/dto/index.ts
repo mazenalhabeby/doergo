@@ -97,6 +97,11 @@ export class CreateTaskDto {
   @IsOptional()
   spaceId?: string;
 
+  @ApiPropertyOptional({ description: 'Workflow (task type) ID — overrides the space default' })
+  @IsString()
+  @IsOptional()
+  workflowId?: string;
+
   @ApiPropertyOptional({ description: 'Story points (Fibonacci: 1,2,3,5,8,13,21)', example: 5 })
   @IsInt()
   @IsOptional()

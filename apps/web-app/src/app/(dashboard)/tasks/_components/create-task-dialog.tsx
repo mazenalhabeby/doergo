@@ -34,6 +34,7 @@ import {
   customFieldsApi,
   organizationsApi,
   locationsApi,
+  workflowsApi,
   STORY_POINT_OPTIONS,
   type CreateTaskInput,
   type Phase,
@@ -279,6 +280,16 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const availableSpaces = spacesData?.data || []
   const hasSpaces = availableSpaces.length > 0
 
+  // ── Fetch workflows (task types) — "auto" inherits the space's default ──
+  const { data: workflowsList } = useQuery({
+    queryKey: ["workflows"],
+    queryFn: () => workflowsApi.list(),
+    staleTime: 300000,
+    enabled: open,
+  })
+  const workflows = workflowsList || []
+  const [workflowId, setWorkflowId] = useState<string>("auto")
+
   // ── Submission state ──
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false)
 
@@ -372,6 +383,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       epicId: epicId !== "none" ? epicId : undefined,
       parentId: parentTaskId !== "none" ? parentTaskId : undefined,
       spaceId: spaceId !== "none" ? spaceId : undefined,
+      workflowId: workflowId !== "auto" ? workflowId : undefined,
       checklistItems: checklistItems.length > 0
         ? checklistItems.map((text) => ({ text }))
         : undefined,
@@ -493,6 +505,24 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         {s.name}
                       </div>
                     </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Type / workflow — "Auto" inherits the selected space's default */}
+          {workflows.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Type</Label>
+              <Select value={workflowId} onValueChange={setWorkflowId} disabled={isSubmitting}>
+                <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
+                  <SelectValue placeholder="Auto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto (from space)</SelectItem>
+                  {workflows.map((w: { id: string; name: string }) => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
