@@ -68,6 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // before user requests can use it
         console.log('[AuthContext] Found stored tokens, restoring session');
         setUser(JSON.parse(storedUser));
+        // Reconcile in the background: an admin may have changed this user's
+        // Access Profile (enabledModules/platform/scope) on the web while they
+        // were logged in here. Pull the latest /auth/me so tab/module visibility
+        // reflects server state on every app launch — not just after re-login.
+        void refreshUser();
       } else {
         console.log('[AuthContext] No stored session found');
       }

@@ -64,7 +64,10 @@ export interface User {
   canManageUsers: boolean;
   // Technician-specific fields
   position?: string | null;
-  enabledModules?: string[] | null;
+  // Either a legacy string[] (org-level default) or a per-user AccessProfile
+  // object ({ modules, platforms, spaceScope, canContact }). Read via the
+  // shared getModules/hasModule/getAccessPlatforms helpers — never indexed directly.
+  enabledModules?: string[] | Record<string, unknown> | null;
   specialty?: string | null;
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {
