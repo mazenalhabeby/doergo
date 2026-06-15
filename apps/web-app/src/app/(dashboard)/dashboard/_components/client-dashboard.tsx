@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button"
 import {
   WorkspaceGrid,
   ActivityPanel,
+  RecentTasks,
+  type RecentTask,
   type WorkspaceBoxProps,
   type PersonNodeProps,
   type WorkerStatus,
@@ -113,6 +115,19 @@ function memberToPersonNode(
     userId: member.id,
     role: member.role === "EMPLOYEE" ? "Employee" : member.role === "MANAGER" ? "Manager" : "Admin",
     currentTask,
+  }
+}
+
+/** Map a Task to the compact RecentTask shape used by the dashboard list. */
+function toRecentTask(tk: Task): RecentTask {
+  return {
+    id: tk.id,
+    title: tk.title,
+    status: tk.status,
+    priority: tk.priority || "MEDIUM",
+    dueDate: tk.dueDate ? new Date(tk.dueDate) : undefined,
+    location: tk.locationAddress || undefined,
+    createdAt: new Date(tk.updatedAt || Date.now()),
   }
 }
 
@@ -667,29 +682,9 @@ export function ClientDashboard() {
             <h2 className="text-sm font-semibold text-foreground">My tasks</h2>
             <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
           </div>
-          {myTasks.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
-              No tasks assigned right now.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {myTasks.map((tk) => (
-                <Link
-                  key={tk.id}
-                  href={`/tasks/${tk.id}`}
-                  className="block rounded-xl border border-border bg-card px-4 py-3 transition hover:shadow-sm"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="truncate text-sm font-medium text-foreground">{tk.title}</span>
-                    <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">{tk.status}</span>
-                  </div>
-                  {tk.locationAddress && (
-                    <span className="text-[11px] text-muted-foreground">{tk.locationAddress}</span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="rounded-2xl border border-border bg-card px-4 py-2">
+            <RecentTasks tasks={myTasks.map(toRecentTask)} showViewAll={false} />
+          </div>
         </div>
       )
     }
@@ -851,28 +846,8 @@ export function ClientDashboard() {
             <h2 className="text-sm font-semibold text-foreground">My Tasks</h2>
             <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
           </div>
-          <div className="p-3 space-y-2">
-            {myTasks.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card py-10 text-center text-sm text-muted-foreground">
-                No tasks assigned right now.
-              </div>
-            ) : (
-              myTasks.slice(0, 12).map((tk) => (
-                <Link
-                  key={tk.id}
-                  href={`/tasks/${tk.id}`}
-                  className="block rounded-xl border border-border bg-card px-3 py-2.5 transition hover:shadow-sm"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium text-foreground">{tk.title}</span>
-                    <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">{tk.status}</span>
-                  </div>
-                  {tk.locationAddress && (
-                    <span className="text-[11px] text-muted-foreground">{tk.locationAddress}</span>
-                  )}
-                </Link>
-              ))
-            )}
+          <div className="px-3 py-2">
+            <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
           </div>
         </aside>
       </div>
