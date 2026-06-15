@@ -358,7 +358,7 @@ export const authApi = {
         canViewAllTasks: boolean;
         canAssignTasks: boolean;
         canManageUsers: boolean;
-        enabledModules?: string[];
+        enabledModules?: string[] | Record<string, unknown>;
         // Custom role
         orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
         rolePermissions?: Record<string, boolean>;
@@ -2761,6 +2761,8 @@ export interface UpdateMemberInput {
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
   canManageUsers?: boolean;
+  /** Per-user Access Profile object, or a legacy module string[]. */
+  enabledModules?: Record<string, unknown> | string[];
 }
 
 export const organizationsApi = {
@@ -3053,6 +3055,25 @@ export const locationsApi = {
     const response = await api.get<{ success: boolean; data: { enabledModules: string[]; workflowId?: string } }>(`/locations/${spaceId}/modules`);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
+  },
+};
+
+export interface Colleague {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string | null;
+  position?: string | null;
+  role?: string;
+  spaceName?: string | null;
+}
+
+export const teamApi = {
+  /** Colleagues in the current user's visible spaces. */
+  list: async (): Promise<Colleague[]> => {
+    const response = await api.get<{ success: boolean; data: Colleague[] }>('/locations/team');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
   },
 };
 

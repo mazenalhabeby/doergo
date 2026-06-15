@@ -220,4 +220,8 @@ export class UpdateMemberDto {
   @IsOptional()
   @IsBoolean()
   canManageUsers?: boolean;
+
+  @ApiPropertyOptional({ description: 'Per-user Access Profile (modules, spaceScope, platforms, canContact, webScreens) or a module string[]' })
+  @IsOptional()
+  enabledModules?: unknown;
 }

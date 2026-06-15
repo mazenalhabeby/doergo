@@ -906,6 +906,8 @@ export class UsersService {
     if (dto.position !== undefined) data.position = dto.position;
     if (dto.scheduleType !== undefined) data.scheduleType = dto.scheduleType;
     if (dto.monthlyHourBudget !== undefined) data.monthlyHourBudget = dto.monthlyHourBudget;
+    // Per-user Access Profile (modules / spaceScope / platforms / canContact / webScreens)
+    if ((dto as any).enabledModules !== undefined) data.enabledModules = (dto as any).enabledModules;
 
     // Role/permission fields — only if role is provided
     if (dto.role !== undefined) {

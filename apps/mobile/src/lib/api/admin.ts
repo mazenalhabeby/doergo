@@ -166,3 +166,24 @@ export const orgSettingsApi = {
     });
   },
 };
+
+// ============================================================================
+// TEAM API (colleagues in the user's visible spaces)
+// ============================================================================
+
+export interface Colleague {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string | null;
+  position?: string | null;
+  role?: string;
+  spaceName?: string | null;
+}
+
+export const teamApi = {
+  list: async (): Promise<Colleague[]> => {
+    const result = await fetchWithAuth<any>('/locations/team');
+    return Array.isArray(result) ? result : result?.data || [];
+  },
+};

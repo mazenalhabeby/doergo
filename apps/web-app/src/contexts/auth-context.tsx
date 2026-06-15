@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
+import { getModules } from '@hbcfield/shared/client';
 import { DashboardSkeleton } from '@/components/skeletons';
 
 // User type
@@ -28,7 +29,7 @@ export interface User {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   // Organization enabled modules (e.g. ["story_points", "epics", "sprints"])
-  enabledModules: string[];
+  enabledModules: string[] | Record<string, unknown>;
   // Avatar
   avatarUrl?: string | null;
   // Custom role
@@ -249,9 +250,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  // Check if an organization module is enabled
+  // Check if a module is enabled. `enabledModules` may be a legacy string[] or
+  // a per-user Access Profile object ({ modules, ... }) — getModules handles both.
   const hasModule = useCallback((module: string) => {
-    return user?.enabledModules?.includes(module) ?? false;
+    return getModules(user ?? {}).includes(module as any);
   }, [user?.enabledModules]);
 
   // Check if user has a specific permission

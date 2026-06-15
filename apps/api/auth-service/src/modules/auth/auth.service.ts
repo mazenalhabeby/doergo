@@ -408,7 +408,8 @@ export class AuthService {
             // Profile badge visibility
             profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
             // Organization enabled modules
-            enabledModules: (user.organization?.enabledModules as string[] | null) || [],
+            // Per-user Access Profile overrides the org-wide modules when set.
+            enabledModules: (user.enabledModules ?? user.organization?.enabledModules) || [],
             // Custom role
             orgRole: user.orgRole ? { id: user.orgRole.id, name: user.orgRole.name, slug: user.orgRole.slug, color: user.orgRole.color } : null,
             rolePermissions: (user.orgRole?.permissions as Record<string, boolean>) || {},
@@ -658,7 +659,7 @@ export class AuthService {
             canManageUsers: storedToken.user.canManageUsers,
             specialty: storedToken.user.specialty,
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
-            enabledModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
+            enabledModules: (storedToken.user.enabledModules ?? storedToken.user.organization?.enabledModules) || [],
             orgRole: storedToken.user.orgRole ? { id: storedToken.user.orgRole.id, name: storedToken.user.orgRole.name, slug: storedToken.user.orgRole.slug, color: storedToken.user.orgRole.color } : null,
             rolePermissions: (storedToken.user.orgRole?.permissions as Record<string, boolean>) || {},
           },
@@ -896,6 +897,7 @@ export class AuthService {
           specialty: true,
           // Badge config
           profileBadges: true,
+          enabledModules: true,
           organization: { select: { profileBadges: true, enabledModules: true } },
           // Custom role
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
@@ -906,7 +908,7 @@ export class AuthService {
         return { valid: false };
       }
 
-      const { organization, profileBadges, orgRole, ...userData } = user;
+      const { organization, profileBadges, orgRole, enabledModules: userModules, ...userData } = user;
       return {
         valid: true,
         user: {
@@ -916,7 +918,8 @@ export class AuthService {
           // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.
           role: normalizeRole(userData.role),
           profileBadges: resolveProfileBadges(profileBadges, organization?.profileBadges),
-          enabledModules: (organization?.enabledModules as string[] | null) || [],
+          // Per-user Access Profile overrides the org-wide modules when set.
+          enabledModules: (userModules ?? organization?.enabledModules) || [],
           orgRole: orgRole ? { id: orgRole.id, name: orgRole.name, slug: orgRole.slug, color: orgRole.color } : null,
           rolePermissions: (orgRole?.permissions as Record<string, boolean>) || {},
         },

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
   authApi,
   userApi,
@@ -94,8 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // authApi.login saves tokens internally
     const response = await authApi.login(email, password);
 
-    // Mobile access is gated per-feature via enabledModules/hasModule, not a
-    // platform flag (the User.platform field was removed in the module refactor).
+    // Platform hard-block: a web-only Access Profile may not use the mobile app.
+    // (Per-feature access within mobile is still gated by enabledModules/hasModule.)
+    if (getAccessPlatforms(response.user) === 'web') {
+      await clearStorage();
+      throw new Error('This account is restricted to the web app. Please sign in at the web portal.');
+    }
+
     await saveUser(response.user);
     setUser(response.user);
   };

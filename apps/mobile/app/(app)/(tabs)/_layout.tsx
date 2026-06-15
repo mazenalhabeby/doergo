@@ -9,7 +9,7 @@ import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-import { Role, hasModule } from '@hbcfield/shared/client';
+import { Role, hasModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
 
 // Logo icon for header left
 function HeaderLogo() {
@@ -108,6 +108,8 @@ function TabItem({
     iconName = isFocused ? 'time' : 'time-outline';
   } else if (route.name === 'time-off') {
     iconName = isFocused ? 'calendar' : 'calendar-outline';
+  } else if (route.name === 'team') {
+    iconName = isFocused ? 'people' : 'people-outline';
   } else {
     iconName = isFocused ? 'person' : 'person-outline';
   }
@@ -153,25 +155,28 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
-  const isTechnician = user?.role === Role.TECHNICIAN;
-  // Module-based tab visibility
-  const showTechTasks = hasModule(user || {}, 'tasks');
-  const showAttendance = isTechnician && hasModule(user || {}, 'clock');
+  const isAdmin = normalizeRole(user?.role || '') === Role.ADMIN;
+  // Tab visibility is purely module-driven (the per-user Access Profile).
+  const showTasks = hasModule(user || {}, 'tasks');
+  const showAttendance = hasModule(user || {}, 'clock');
+  const showTimeOff = hasModule(user || {}, 'time_off');
+  const showTeam = canContactColleagues(user || {});
 
   // Filter routes based on role and modules (profile is in header, not tab bar)
   const visibleRoutes = state.routes.filter((route: any) => {
     if (route.name === 'profile') return false;
+    if (route.name === 'team') return showTeam;
     if (isAdmin) {
       if (route.name === 'attendance') return false;
       if (route.name === 'time-off') return false;
       return true;
     }
-    // TECHNICIAN: no manage, create-task only if permitted
+    // Employees: no manage; create-task only if permitted; rest by module.
     if (route.name === 'manage') return false;
     if (route.name === 'create-task') return !!user?.canCreateTasks;
-    if (route.name === 'tasks') return showTechTasks;
+    if (route.name === 'tasks') return showTasks;
     if (route.name === 'attendance') return showAttendance;
+    if (route.name === 'time-off') return showTimeOff;
     return true;
   });
 
@@ -228,10 +233,11 @@ export default function TabsLayout() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
-  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
-  const isTechnician = user?.role === Role.TECHNICIAN;
+  const isAdmin = normalizeRole(user?.role || '') === Role.ADMIN;
   const showTechTasks = hasModule(user || {}, 'tasks');
-  const showAttendance = isTechnician && hasModule(user || {}, 'clock');
+  const showAttendance = hasModule(user || {}, 'clock');
+  const showTimeOff = hasModule(user || {}, 'time_off');
+  const showTeam = canContactColleagues(user || {});
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -298,12 +304,20 @@ export default function TabsLayout() {
             href: showAttendance ? '/attendance' : null,
           }}
         />
-        {/* Time Off tab - TECHNICIAN only */}
+        {/* Time Off tab - module-driven */}
         <Tabs.Screen
           name="time-off"
           options={{
             title: t('tabs.timeOff'),
-            href: isTechnician ? '/time-off' : null,
+            href: showTimeOff ? '/time-off' : null,
+          }}
+        />
+        {/* Team tab - when the user can contact colleagues */}
+        <Tabs.Screen
+          name="team"
+          options={{
+            title: t('tabs.team'),
+            href: showTeam ? '/team' : null,
           }}
         />
         <Tabs.Screen

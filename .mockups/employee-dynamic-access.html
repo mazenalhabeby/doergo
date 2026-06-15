@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dynamic Employee Access — Mockup</title>
+<style>
+:root{--bg:#0a0a10;--surface:#121219;--card:#1a1a24;--raised:#23232f;--border:rgba(255,255,255,.08);
+--text:#f2f3f7;--muted:#8b8d98;--muted2:#5c5e6b;--primary:#2563EB;--green:#10b981;--blue:#3b82f6;
+--amber:#f59e0b;--purple:#8b5cf6;--red:#ef4444;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
+body{background:#05050a;color:var(--text);padding:34px 22px 70px}
+h1{font-size:23px;font-weight:800;text-align:center}
+.lead{color:var(--muted);font-size:13px;text-align:center;max-width:720px;margin:8px auto 30px;line-height:1.6}
+.sec{max-width:1180px;margin:0 auto 44px}
+.sec-h{font-size:12px;font-weight:800;letter-spacing:1.5px;color:var(--primary);text-transform:uppercase;margin-bottom:4px}
+.sec-d{font-size:12px;color:var(--muted);margin-bottom:18px}
+.flow{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--muted2);font-size:11px;font-weight:600;margin-bottom:26px;flex-wrap:wrap}
+.flow b{color:var(--text)}.flow .arr{color:var(--primary)}
+
+/* builder */
+.builder{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;max-width:760px;margin:0 auto}
+.b-head{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.b-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.b-name{font-size:16px;font-weight:700}.b-role{font-size:11px;color:var(--muted)}
+.b-chip{margin-left:auto;font-size:10px;font-weight:700;background:rgba(16,185,129,.15);color:var(--green);padding:4px 10px;border-radius:20px}
+.row{margin-bottom:18px}
+.lab{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.seg{display:inline-flex;background:var(--raised);border-radius:10px;padding:3px}
+.seg div{padding:8px 18px;font-size:12px;font-weight:600;border-radius:8px;color:var(--muted);cursor:default}
+.seg div.on{background:var(--primary);color:#fff}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-size:12px;font-weight:600;padding:7px 13px;border-radius:9px;border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;gap:6px}
+.pill.on{border-color:var(--primary);background:rgba(37,99,235,.14);color:#9bbcff}
+.pill .x{font-size:11px}
+.radios{display:flex;flex-direction:column;gap:8px}
+.radio{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:11px}
+.radio.on{border-color:var(--primary);background:rgba(37,99,235,.08)}
+.dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted2);margin-top:1px;flex-shrink:0}
+.radio.on .dot{border-color:var(--primary);background:radial-gradient(circle,var(--primary) 40%,transparent 45%)}
+.radio .t{font-size:13px;font-weight:600}.radio .s{font-size:11px;color:var(--muted);margin-top:2px}
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--border);border-radius:11px}
+.tg{width:42px;height:24px;border-radius:14px;background:var(--green);position:relative}
+.tg::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;right:3px}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:680px){.cols2{grid-template-columns:1fr}}
+
+/* phones */
+.frames{display:flex;gap:30px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.col{display:flex;flex-direction:column;align-items:center;gap:12px;width:270px}
+.cap{font-size:13px;font-weight:700}.cap .tag{font-size:10px;font-weight:700;color:var(--primary);background:rgba(37,99,235,.14);padding:2px 8px;border-radius:10px;margin-left:6px}
+.cap-d{font-size:11px;color:var(--muted);text-align:center;min-height:32px;line-height:1.4}
+.phone{width:270px;height:560px;background:var(--bg);border-radius:34px;border:9px solid #1c1c24;box-shadow:0 26px 50px rgba(0,0,0,.5);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:110px;height:24px;background:#1c1c24;border-radius:0 0 14px 14px;z-index:30}
+.sb{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:11px;color:var(--muted)}
+.scr{flex:1;overflow:hidden;padding:0 13px;position:relative}
+.greet{font-size:11px;color:var(--muted);margin-top:4px}.welc{font-size:19px;font-weight:700;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px}
+.sp-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.sp-n{font-size:13px;font-weight:700}.sp-c{font-size:10px;color:var(--muted);background:var(--raised);padding:2px 7px;border-radius:7px}
+.ppl{display:flex;gap:12px}.p{display:flex;flex-direction:column;align-items:center;gap:4px;width:46px}
+.pa{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.pn{font-size:9px;color:var(--muted)}
+.task{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.task .tt{font-size:13px;font-weight:600}.task .tl{font-size:10px;color:var(--muted);margin-top:2px}
+.pill2{font-size:9px;font-weight:700;padding:2px 7px;border-radius:9px;white-space:nowrap}
+.pw{background:rgba(245,158,11,.18);color:#fbbf24}.pb{background:rgba(59,130,246,.18);color:#60a5fa}.pn2{background:rgba(139,92,246,.18);color:#b794f6}
+.shead{font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;margin:14px 2px 9px}
+.stats{display:flex;gap:8px;margin-bottom:12px}
+.stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:10px 6px;text-align:center}
+.stat .v{font-size:18px;font-weight:800}.stat .l{font-size:8.5px;color:var(--muted);margin-top:2px}
+.tabs{position:absolute;bottom:0;left:0;right:0;height:52px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 4px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:8.5px;color:var(--muted2)}
+.tab.on{color:var(--green)}.tab .ic{font-size:15px}
+.contact{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:9px 11px;margin-bottom:8px}
+.contact .ci{flex:1;min-width:0}.contact .cn{font-size:12px;font-weight:600}.contact .cr{font-size:10px;color:var(--muted)}
+.cbtn{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.cmsg{background:var(--primary);color:#fff}.ccall{background:var(--raised);color:var(--muted)}
+
+/* web frame */
+.web{width:760px;max-width:100%;height:430px;background:var(--bg);border-radius:14px;border:1px solid var(--border);overflow:hidden;box-shadow:0 26px 50px rgba(0,0,0,.5);margin:0 auto}
+.wbar{height:34px;background:#1c1c24;display:flex;align-items:center;gap:7px;padding:0 12px}
+.wdot{width:10px;height:10px;border-radius:50%}.r{background:#ff5f57}.y{background:#febc2e}.g{background:#28c840}
+.wurl{margin-left:10px;font-size:11px;color:var(--muted);background:#0a0a10;border-radius:6px;padding:3px 12px}
+.wnav{height:48px;display:flex;align-items:center;gap:22px;padding:0 22px;border-bottom:1px solid var(--border)}
+.wlogo{font-size:13px;font-weight:800}.wlink{font-size:12px;color:var(--muted)}.wlink.on{color:var(--text);font-weight:600}
+.wbody{padding:20px 22px;display:flex;gap:18px}
+.wcol{flex:1}
+.wh{font-size:18px;font-weight:700;margin-bottom:2px}.wsub{font-size:11px;color:var(--muted);margin-bottom:14px}
+.note{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;max-width:540px;margin-left:auto;margin-right:auto;line-height:1.5}
+.legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--muted)}
+.legend b{color:var(--text)}
+</style></head><body>
+
+<h1>Dynamic Employee Access</h1>
+<p class="lead">Compose each person's experience instead of hard-coding it to a role. An admin builds an <b>Access Profile</b> — platform → screens → space scope → collaboration — and the web &amp; mobile apps render exactly that. The same model works for any role.</p>
+
+<div class="flow"><b>1 · Platform</b> <span class="arr">→</span> <b>2 · Screens</b> <span class="arr">→</span> <b>3 · Space scope</b> <span class="arr">→</span> <b>4 · Collaboration</b></div>
+
+<!-- ============ ACCESS BUILDER ============ -->
+<div class="sec">
+  <div class="sec-h">① The Access Builder — admin side</div>
+  <div class="sec-d">One config panel per member. Toggling anything updates their apps instantly. (Mike shown.)</div>
+  <div class="builder">
+    <div class="b-head">
+      <div class="b-av">MW</div>
+      <div><div class="b-name">Mike Weber</div><div class="b-role">Employee · Field Technician · Main Office</div></div>
+      <div class="b-chip">● Active</div>
+    </div>
+
+    <div class="row">
+      <div class="lab">▸ Platform access</div>
+      <div class="seg"><div>Web only</div><div>Mobile only</div><div class="on">Both</div></div>
+    </div>
+
+    <div class="cols2">
+      <div class="row">
+        <div class="lab">▸ Mobile screens</div>
+        <div class="pills">
+          <span class="pill on">Home <span class="x">✓</span></span>
+          <span class="pill on">Tasks <span class="x">✓</span></span>
+          <span class="pill on">Clock <span class="x">✓</span></span>
+          <span class="pill on">Time Off <span class="x">✓</span></span>
+          <span class="pill on">Team <span class="x">✓</span></span>
+          <span class="pill">Reports</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lab">▸ Web screens</div>
+        <div class="pills">
+          <span class="pill on">Dashboard <span class="x">✓</span></span>
+          <span class="pill on">Tasks <span class="x">✓</span></span>
+          <span class="pill on">Team <span class="x">✓</span></span>
+          <span class="pill on">Schedule <span class="x">✓</span></span>
+          <span class="pill" style="opacity:.5">Invoices 🔒</span>
+          <span class="pill" style="opacity:.5">Settings 🔒</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="lab">▸ Space visibility</div>
+      <div class="radios">
+        <div class="radio on"><div class="dot"></div><div><div class="t">My spaces only</div><div class="s">Sees the space(s) they're assigned to + everyone working there. (selected)</div></div></div>
+        <div class="radio"><div class="dot"></div><div><div class="t">Tasks only</div><div class="s">No space view at all — just their own task list. Cleanest for pure field workers.</div></div></div>
+        <div class="radio"><div class="dot"></div><div><div class="t">All spaces</div><div class="s">Read-only overview of every org space. For coordinators / leads.</div></div></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="lab">▸ Collaboration</div>
+      <div class="toggle"><div><div class="t" style="font-size:13px;font-weight:600">Can contact colleagues</div><div class="s" style="font-size:11px;color:var(--muted)">Message &amp; call teammates in their visible spaces</div></div><div class="tg"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MOBILE VARIANTS BY SPACE SCOPE ============ -->
+<div class="sec">
+  <div class="sec-h">② Mobile home — driven by "Space visibility"</div>
+  <div class="sec-d">Same employee, three different scope settings → three different home screens. This is the "dynamic" part.</div>
+  <div class="frames">
+
+    <!-- A: My spaces only -->
+    <div class="col">
+      <div class="phone"><div class="notch"></div>
+        <div class="sb"><span>09:21</span><span>5G ▮▮</span></div>
+        <div class="scr">
+          <div class="greet">Good morning,</div><div class="welc">Mike!</div>
+          <div class="card">
+            <div class="sp-h"><span class="sp-n">▣ Main Office</span><span class="sp-c">my space</span></div>
+            <div class="ppl">
+              <div class="p"><div class="pa" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">MW</div><span class="pn">You</span></div>
+              <div class="p"><div class="pa" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS</div><span class="pn">Noor</span></div>
+              <div class="p"><div class="pa" style="background:linear-gradient(135deg,#10b981,#059669)">LA</div><span class="pn">Lisa</span></div>
+            </div>
+          </div>
+          <div class="shead">My tasks here</div>
+          <div class="task"><div><div class="tt">HVAC Maintenance</div><div class="tl">Main Office · Floor 2</div></div><span class="pill2 pw">Working</span></div>
+          <div class="task"><div><div class="tt">Filter replacement</div><div class="tl">Main Office</div></div><span class="pill2 pn2">New</span></div>
+          <div class="tabs"><div class="tab on"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">▤</span>Tasks</div><div class="tab"><span class="ic">◷</span>Clock</div><div class="tab"><span class="ic">👥</span>Team</div></div>
+        </div>
+      </div>
+      <div class="cap">A · My spaces only</div>
+      <div class="cap-d">Sees their space + teammates there, and their tasks within it.</div>
+    </div>
+
+    <!-- B: Tasks only -->
+    <div class="col">
+      <div class="phone"><div class="notch"></div>
+        <div class="sb"><span>09:21</span><span>5G ▮▮</span></div>
+        <div class="scr">
+          <div class="greet">Good morning,</div><div class="welc">Mike!</div>
+          <div class="stats">
+            <div class="stat"><div class="v">3</div><div class="l">Today</div></div>
+            <div class="stat"><div class="v">1</div><div class="l">Active</div></div>
+            <div class="stat"><div class="v">0</div><div class="l">Done</div></div>
+          </div>
+          <div class="shead">Today's jobs</div>
+          <div class="task"><div><div class="tt">HVAC Maintenance</div><div class="tl">Main Office · Floor 2</div></div><span class="pill2 pw">Working</span></div>
+          <div class="task"><div><div class="tt">Generator Test</div><div class="tl">Service Center</div></div><span class="pill2 pb">En route</span></div>
+          <div class="task"><div><div class="tt">Filter replacement</div><div class="tl">Main Office</div></div><span class="pill2 pn2">New</span></div>
+          <div class="tabs"><div class="tab on"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">▤</span>Tasks</div><div class="tab"><span class="ic">◷</span>Clock</div><div class="tab"><span class="ic">◔</span>Time Off</div></div>
+        </div>
+      </div>
+      <div class="cap">B · Tasks only</div>
+      <div class="cap-d">No space view — a clean personal job list. (Today's current behaviour.)</div>
+    </div>
+
+    <!-- C: All spaces -->
+    <div class="col">
+      <div class="phone"><div class="notch"></div>
+        <div class="sb"><span>09:21</span><span>5G ▮▮</span></div>
+        <div class="scr">
+          <div class="greet">Good morning,</div><div class="welc">Mike!</div>
+          <div class="card" style="padding:10px">
+            <div class="sp-h"><span class="sp-n">▣ Main Office</span><span class="sp-c">2/4</span></div>
+            <div class="ppl"><div class="p"><div class="pa" style="background:linear-gradient(135deg,#3b82f6,#06b6d4);width:30px;height:30px;font-size:10px">MW</div></div><div class="p"><div class="pa" style="background:linear-gradient(135deg,#ec4899,#db2777);width:30px;height:30px;font-size:10px">NS</div></div></div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div class="sp-h"><span class="sp-n">▣ Service Center</span><span class="sp-c">2/2</span></div>
+            <div class="ppl"><div class="p"><div class="pa" style="background:linear-gradient(135deg,#f59e0b,#d97706);width:30px;height:30px;font-size:10px">KA</div></div><div class="p"><div class="pa" style="background:linear-gradient(135deg,#14b8a6,#0d9488);width:30px;height:30px;font-size:10px">DK</div></div></div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div class="sp-h"><span class="sp-n">▣ Warehouse</span><span class="sp-c">1/2</span></div>
+            <div class="ppl"><div class="p"><div class="pa" style="background:linear-gradient(135deg,#8b5cf6,#a855f7);width:30px;height:30px;font-size:10px">HB</div></div></div>
+          </div>
+          <div class="tabs"><div class="tab on"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">▤</span>Tasks</div><div class="tab"><span class="ic">◷</span>Clock</div><div class="tab"><span class="ic">👥</span>Team</div></div>
+        </div>
+      </div>
+      <div class="cap">C · All spaces <span class="tag">read-only</span></div>
+      <div class="cap-d">Org-wide overview (no Assign/Manage) — for leads &amp; coordinators.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ WEB DASHBOARD = SAME WORKSPACE AS ADMIN ============ -->
+<div class="sec">
+  <div class="sec-h">③ Web Dashboard — the SAME space view as the admin (scoped &amp; read-only)</div>
+  <div class="sec-d">The employee web home reuses the admin workspace grid — identical look — but limited by "Space visibility" and with no Assign / Manage / New Space. (Mike · "My spaces only".)</div>
+  <div class="web" style="height:auto;min-height:360px">
+    <div class="wbar"><span class="wdot r"></span><span class="wdot y"></span><span class="wdot g"></span><span class="wurl">app.hbcfield.com/dashboard</span></div>
+    <div class="wnav"><span class="wlogo">◆ HBC FIELD</span><span class="wlink on">Dashboard</span><span class="wlink">Tasks</span><span class="wlink">Team</span><span class="wlink">Schedule</span><span style="margin-left:auto" class="wlink">Mike W. ▾</span></div>
+    <div style="padding:18px 22px">
+      <div class="wh">Good morning, Mike</div><div class="wsub">Main Office · read-only view</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px">
+        <div class="card" style="width:320px;margin:0;padding:14px">
+          <div class="sp-h"><span class="sp-n">▣ MAIN OFFICE</span><span class="sp-c">2 / 4 active</span></div>
+          <div class="ppl" style="gap:16px">
+            <div class="p" style="width:54px"><div class="pa" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">MW</div><span class="pn">You</span></div>
+            <div class="p" style="width:54px"><div class="pa" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS</div><span class="pn">Noor S.</span></div>
+          </div>
+          <div class="shead" style="margin:12px 0 8px">Off duty</div>
+          <div class="ppl" style="gap:16px;opacity:.55">
+            <div class="p" style="width:54px"><div class="pa" style="background:linear-gradient(135deg,#10b981,#059669)">LA</div><span class="pn">Lisa A.</span></div>
+            <div class="p" style="width:54px"><div class="pa" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)">SW</div><span class="pn">Sarah W.</span></div>
+          </div>
+          <div style="margin-top:12px;font-size:10px;color:var(--muted2);border-top:1px solid var(--border);padding-top:9px">View only · tap a teammate to message</div>
+        </div>
+        <div style="width:240px">
+          <div class="wh" style="font-size:13px">My tasks here</div><div class="wsub">Main Office</div>
+          <div class="task" style="margin-bottom:8px"><div><div class="tt">HVAC Maintenance</div><div class="tl">Floor 2 · today</div></div><span class="pill2 pw">Working</span></div>
+          <div class="task"><div><div class="tt">Filter replacement</div><div class="tl">Main Office</div></div><span class="pill2 pn2">New</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cap-d" style="margin-top:10px;text-align:center">"All spaces" scope → every space card shows (read-only). "Tasks only" scope → this is replaced by a plain task list. No Assign / Manage / New Space / Invoices / Settings.</div>
+</div>
+
+<!-- ============ TEAM — MOBILE + WEB ============ -->
+<div class="sec">
+  <div class="sec-h">④ Team — on mobile AND web</div>
+  <div class="sec-d">Shown when "Can contact colleagues" is on. Same data on both platforms; lists teammates in the employee's visible spaces with message + call.</div>
+  <div class="frames">
+
+    <!-- mobile Team -->
+    <div class="col">
+      <div class="phone"><div class="notch"></div>
+        <div class="sb"><span>09:22</span><span>5G ▮▮</span></div>
+        <div class="scr">
+          <div class="welc" style="margin-top:8px">Team</div>
+          <div class="shead" style="margin-top:0">Main Office</div>
+          <div class="contact"><div class="pa" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS</div><div class="ci"><div class="cn">Noor Shah</div><div class="cr">Plumber · ● Available</div></div><div class="cbtn cmsg">✉</div><div class="cbtn ccall">📞</div></div>
+          <div class="contact"><div class="pa" style="background:linear-gradient(135deg,#10b981,#059669)">LA</div><div class="ci"><div class="cn">Lisa Adler</div><div class="cr">Electrician · ● Working</div></div><div class="cbtn cmsg">✉</div><div class="cbtn ccall">📞</div></div>
+          <div class="shead">Lead</div>
+          <div class="contact"><div class="pa" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">AM</div><div class="ci"><div class="cn">Anna Müller</div><div class="cr">Manager · ● Online</div></div><div class="cbtn cmsg">✉</div><div class="cbtn ccall">📞</div></div>
+          <div class="tabs"><div class="tab"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">▤</span>Tasks</div><div class="tab"><span class="ic">◷</span>Clock</div><div class="tab on"><span class="ic">👥</span>Team</div></div>
+        </div>
+      </div>
+      <div class="cap">Mobile · Team</div>
+      <div class="cap-d">Message + call. Scope follows space visibility.</div>
+    </div>
+
+    <!-- web Team -->
+    <div style="flex:1;min-width:520px">
+      <div class="cap" style="text-align:center;margin-bottom:10px">Web · Team</div>
+      <div class="web" style="height:auto;min-height:300px">
+        <div class="wbar"><span class="wdot r"></span><span class="wdot y"></span><span class="wdot g"></span><span class="wurl">app.hbcfield.com/team</span></div>
+        <div class="wnav"><span class="wlogo">◆ HBC FIELD</span><span class="wlink">Dashboard</span><span class="wlink">Tasks</span><span class="wlink on">Team</span><span class="wlink">Schedule</span><span style="margin-left:auto" class="wlink">Mike W. ▾</span></div>
+        <div style="padding:18px 22px">
+          <div class="wh">Team</div><div class="wsub">Main Office · 3 teammates</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
+            <div class="contact" style="margin:0"><div class="pa" style="background:linear-gradient(135deg,#ec4899,#db2777)">NS</div><div class="ci"><div class="cn">Noor Shah</div><div class="cr">Plumber · ● Available</div></div><div class="cbtn cmsg">✉</div><div class="cbtn ccall">📞</div></div>
+            <div class="contact" style="margin:0"><div class="pa" style="background:linear-gradient(135deg,#10b981,#059669)">LA</div><div class="ci"><div class="cn">Lisa Adler</div><div class="cr">Electrician · ● Working</div></div><div class="cbtn cmsg">✉</div><div class="cbtn ccall">📞</div></div>
+            <div class="contact" style="margin:0"><div class="pa" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">AM</div><div class="ci"><div class="cn">Anna Müller</div><div class="cr">Manager · ● Online</div></div><div class="cbtn cmsg">✉</div><div class="cbtn ccall">📞</div></div>
+            <div class="contact" style="margin:0"><div class="pa" style="background:linear-gradient(135deg,#f59e0b,#d97706)">KA</div><div class="ci"><div class="cn">Karim Ahmad</div><div class="cr">HVAC · ● Off-site</div></div><div class="cbtn cmsg">✉</div><div class="cbtn ccall">📞</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="cap-d" style="margin-top:8px">Identical contact list on web — scoped to the employee's visible spaces.</div>
+    </div>
+  </div>
+</div>
+
+<p class="note">Under the hood this is an <b>Access Profile</b> on each user: <b>platforms</b> (web/mobile/both) · <b>screens[]</b> per platform · <b>spaceScope</b> (own / tasks-only / all) · <b>canContactColleagues</b>. It generalises the existing <code>enabledModules</code> + permission flags, and replaces the hard-coded role→screen logic that currently breaks for EMPLOYEE.</p>
+<div class="legend"><span>● <b>Green</b> = enabled</span><span>🔒 = gated out</span><span><b>read-only</b> = view, no manage</span></div>
+
+</body></html>

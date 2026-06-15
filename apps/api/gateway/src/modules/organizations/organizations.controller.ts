@@ -144,6 +144,7 @@ export class OrganizationsController {
           canViewAllTasks: dto.canViewAllTasks,
           canAssignTasks: dto.canAssignTasks,
           canManageUsers: dto.canManageUsers,
+          enabledModules: dto.enabledModules,
         },
       }),
     );

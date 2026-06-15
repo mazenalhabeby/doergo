@@ -9,7 +9,12 @@ export {
   TaskCreationScope, TimeOffStatus, InvoiceStatus,
 } from './enums';
 
-export { getDefaultModules, hasModule, getModuleLabel, type MobileModule, DEFAULT_MODULES, ALL_MODULES } from './modules';
+export {
+  getDefaultModules, hasModule, getModuleLabel, getModules,
+  getSpaceScope, getAccessPlatforms, canContactColleagues, getWebScreens,
+  type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform, type WebScreen,
+  DEFAULT_MODULES, ALL_MODULES,
+} from './modules';
 export * from './schedule';
 
 import {

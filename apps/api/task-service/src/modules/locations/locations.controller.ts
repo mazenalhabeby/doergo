@@ -30,4 +30,9 @@ export class LocationsController {
   async getTechnicianAssignments(@Payload() data: any) {
     return this.locationsService.getTechnicianAssignments(data);
   }
+
+  @MessagePattern({ cmd: 'get_colleagues' })
+  async getColleagues(@Payload() data: any) {
+    return this.locationsService.getColleagues(data);
+  }
 }

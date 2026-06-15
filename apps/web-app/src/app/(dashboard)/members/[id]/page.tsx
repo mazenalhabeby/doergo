@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
+import { AccessBuilder } from "@/components/access-builder"
 import {
   organizationsApi,
   employeesApi,
@@ -89,7 +90,7 @@ export default function MemberProfilePage({
   const isAdmin = user?.role === "ADMIN"
 
   // Fetch member info from org members list
-  const { data: memberData, isLoading: memberLoading } = useQuery({
+  const { data: memberData, isLoading: memberLoading, refetch: refetchMember } = useQuery({
     queryKey: ["orgMember", memberId],
     queryFn: async () => {
       // Fetch org members and find this one
@@ -306,6 +307,11 @@ export default function MemberProfilePage({
             )}
           </div>
         </div>
+
+        {/* ── Access Builder (admins, non-admin members) ─────────────── */}
+        {isAdmin && member.role !== "ADMIN" && (
+          <AccessBuilder member={member} onSaved={() => refetchMember()} />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ── Recent Tasks ─────────────────────────────────────────── */}

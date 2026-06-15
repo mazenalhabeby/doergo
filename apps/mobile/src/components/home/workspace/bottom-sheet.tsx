@@ -6,14 +6,20 @@ import {
   Animated,
   Pressable,
   Dimensions,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { useTheme } from '../../../contexts/theme-context';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
-  /** Sheet height as a fraction of screen height (0–1). */
+  /** Sheet height as a fraction of screen height (0–1). Used as a fixed height,
+   * or as the MAX height when `dynamicHeight` is set. */
   heightRatio?: number;
+  /** When true the sheet hugs its content height (capped at heightRatio of the
+   * screen) instead of using a fixed height — avoids empty space under short
+   * content. */
+  dynamicHeight?: boolean;
   children: React.ReactNode;
 }
 
@@ -21,30 +27,57 @@ const SCREEN_H = Dimensions.get('window').height;
 
 /**
  * Reusable animated bottom sheet: backdrop fade + spring slide-up, tap-outside
- * to dismiss, drag grip. Encapsulates the Modal/Animated boilerplate so feature
- * sheets (activity, assign-member) only describe their content (DRY / SRP).
+ * to dismiss, drag grip. Supports a fixed height (default) or a content-hugging
+ * dynamic height (`dynamicHeight`). Encapsulates the Modal/Animated boilerplate
+ * so feature sheets only describe their content (DRY / SRP).
  */
-export function BottomSheet({ visible, onClose, heightRatio = 0.72, children }: Props) {
+export function BottomSheet({
+  visible,
+  onClose,
+  heightRatio = 0.72,
+  dynamicHeight = false,
+  children,
+}: Props) {
   const { colors } = useTheme();
-  const height = Math.round(SCREEN_H * heightRatio);
-  const translateY = useRef(new Animated.Value(height)).current;
+  const fixedHeight = Math.round(SCREEN_H * heightRatio);
+  const maxHeight = Math.round(SCREEN_H * (dynamicHeight ? Math.max(heightRatio, 0.9) : heightRatio));
+
+  const translateY = useRef(new Animated.Value(SCREEN_H)).current;
   const backdrop = useRef(new Animated.Value(0)).current;
+  const measuredRef = useRef(SCREEN_H);
+  const openedRef = useRef(false);
 
   useEffect(() => {
     if (visible) {
-      translateY.setValue(height);
-      Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 4, speed: 14 }),
-        Animated.timing(backdrop, { toValue: 1, duration: 200, useNativeDriver: true }),
-      ]).start();
+      openedRef.current = false;
+      translateY.setValue(SCREEN_H); // start off-screen
+      Animated.timing(backdrop, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      if (!dynamicHeight) {
+        // Fixed height is known up front — animate immediately.
+        openedRef.current = true;
+        translateY.setValue(fixedHeight);
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 4, speed: 14 }).start();
+      }
+      // Dynamic height: the open spring is kicked off in onLayout once the real
+      // content height is known (so it travels exactly the sheet's height).
     }
-  }, [visible, height, translateY, backdrop]);
+  }, [visible, dynamicHeight, fixedHeight, translateY, backdrop]);
 
   const handleClose = () => {
     Animated.parallel([
-      Animated.timing(translateY, { toValue: height, duration: 220, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: measuredRef.current, duration: 220, useNativeDriver: true }),
       Animated.timing(backdrop, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start(() => onClose());
+  };
+
+  const onSheetLayout = (e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    measuredRef.current = h;
+    if (dynamicHeight && visible && !openedRef.current) {
+      openedRef.current = true;
+      translateY.setValue(h); // position just off-screen, then spring up exactly h
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 4, speed: 14 }).start();
+    }
   };
 
   return (
@@ -55,7 +88,12 @@ export function BottomSheet({ visible, onClose, heightRatio = 0.72, children }: 
         </Animated.View>
 
         <Animated.View
-          style={[styles.sheet, { height, backgroundColor: colors.surface, transform: [{ translateY }] }]}
+          onLayout={onSheetLayout}
+          style={[
+            styles.sheet,
+            dynamicHeight ? { maxHeight } : { height: fixedHeight },
+            { backgroundColor: colors.surface, transform: [{ translateY }] },
+          ]}
         >
           <View style={styles.grip} />
           {children}
@@ -72,6 +110,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     paddingHorizontal: 16,
+    paddingBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.25,

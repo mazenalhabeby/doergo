@@ -217,12 +217,29 @@ export function ClientDashboard() {
     })),
   })
 
-  // Build maps for fast lookup
+  // Stable key derived from query results (avoids useMemo size changes)
+  const assignmentDataKey = assignmentQueries.map(q => q.dataUpdatedAt).join(",")
+
+  // Build the member lookup. Admins/managers get the full org member list; for
+  // employees (who can't read /organizations/members) we fall back to the user
+  // details embedded in the scoped location rosters — so their space still
+  // shows real names/avatars without exposing the whole directory.
   const memberMap = useMemo(() => {
     const map = new Map<string, OrgMember>()
+    for (const q of assignmentQueries) {
+      const data = q.data as LocationAssignment[] | undefined
+      if (!data) continue
+      for (const a of data) {
+        if (a.user && !map.has(a.user.id)) {
+          map.set(a.user.id, { ...a.user, isActive: true, role: "EMPLOYEE" } as unknown as OrgMember)
+        }
+      }
+    }
+    // Full member records take precedence (richer data) when available.
     for (const m of members) map.set(m.id, m)
     return map
-  }, [members])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, assignmentDataKey])
 
   // Set of user IDs currently clocked in (active today, no clock-out)
   const clockedInUserIds = useMemo(() => {
@@ -271,8 +288,6 @@ export function ClientDashboard() {
   }, [tasks])
 
   // Assignments per location: locationId -> userId[]
-  // Use a stable key derived from query results to avoid useMemo size change
-  const assignmentDataKey = assignmentQueries.map(q => q.dataUpdatedAt).join(",")
   const assignmentsPerLocation = useMemo(() => {
     const map = new Map<string, Set<string>>()
     locationIds.forEach((locId: string, i: number) => {
@@ -391,8 +406,9 @@ export function ClientDashboard() {
         activeCount,
         locationId: locId,
         alerts: locAlerts,
-        onEdit: handleEditLocation,
-        onAssign: handleAssignWorkers,
+        // Manage/assign are admin-only; employees get a read-only space view.
+        onEdit: isAdminOrDispatcher ? handleEditLocation : undefined,
+        onAssign: isAdminOrDispatcher ? handleAssignWorkers : undefined,
         onViewTasks: handleViewTasks,
         onPersonClick: handleNavigateToProfile,
       })
@@ -471,6 +487,7 @@ export function ClientDashboard() {
     locations, tasks, members, assignmentsPerLocation,
     memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, activeTaskMap,
     handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
+    isAdminOrDispatcher,
   ])
 
   // ── Live Events ────────────────────────────────────────────────────────────
@@ -623,8 +640,48 @@ export function ClientDashboard() {
 
   const hasFixedLocations = workspaceBoxes.some(b => b.type === "fixed")
 
-  // Empty state — no fixed locations created
+  // Empty state — no fixed locations to show
   if (!hasFixedLocations) {
+    // Employees with no space view (tasks-only scope, or unassigned) get a
+    // compact task-focused landing — NOT the admin "set up workspace" screen.
+    if (!isAdminOrDispatcher) {
+      const myTasks = tasks.filter((tk) => tk.assignedToId === user?.id).slice(0, 6)
+      return (
+        <div className="mx-auto max-w-2xl px-6 py-8">
+          <p className="text-[13px] font-medium text-muted-foreground">{greeting}</p>
+          <h1 className="text-2xl font-semibold text-foreground mb-6">
+            {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
+          </h1>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">My tasks</h2>
+            <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
+          </div>
+          {myTasks.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
+              No tasks assigned right now.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {myTasks.map((tk) => (
+                <Link
+                  key={tk.id}
+                  href={`/tasks/${tk.id}`}
+                  className="block rounded-xl border border-border bg-card px-4 py-3 transition hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate text-sm font-medium text-foreground">{tk.title}</span>
+                    <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">{tk.status}</span>
+                  </div>
+                  {tk.locationAddress && (
+                    <span className="text-[11px] text-muted-foreground">{tk.locationAddress}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
     return (
       <div className="flex flex-1 items-center justify-center relative overflow-hidden min-h-[calc(100vh-4rem)]">
         {/* Layer 1: Gradient blobs */}
@@ -714,31 +771,44 @@ export function ClientDashboard() {
           ))}
         </div>
 
-        {/* Content */}
+        {/* Content — admins get the setup CTA; everyone else a neutral message */}
         <div className="relative text-center max-w-md space-y-10 z-10 px-6">
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-              Set up your<br />workspace
-            </h1>
-            <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-              Create spaces, add your team, and track everyone in real time — all from one view.
-            </p>
-          </div>
+          {isAdminOrDispatcher ? (
+            <>
+              <div className="space-y-4">
+                <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
+                  Set up your<br />workspace
+                </h1>
+                <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
+                  Create spaces, add your team, and track everyone in real time — all from one view.
+                </p>
+              </div>
 
-          <div className="flex items-center justify-center gap-3">
-            <Button asChild size="lg" className="gap-2 h-12 px-6 text-sm shadow-lg shadow-primary/25">
-              <Link href="/locations">
-                <Plus className="h-4 w-4" />
-                Add Space
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="gap-2 h-12 px-6 text-sm">
-              <Link href="/members">
-                <Users className="h-4 w-4" />
-                Invite Team
-              </Link>
-            </Button>
-          </div>
+              <div className="flex items-center justify-center gap-3">
+                <Button asChild size="lg" className="gap-2 h-12 px-6 text-sm shadow-lg shadow-primary/25">
+                  <Link href="/locations">
+                    <Plus className="h-4 w-4" />
+                    Add Space
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="gap-2 h-12 px-6 text-sm">
+                  <Link href="/members">
+                    <Users className="h-4 w-4" />
+                    Invite Team
+                  </Link>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-3">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                No spaces assigned yet
+              </h1>
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">
+                You haven&apos;t been added to a space. Check the Tasks tab for your assigned work, or ask your manager to add you.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -757,12 +827,14 @@ export function ClientDashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild size="sm" variant="outline" className="gap-1.5 text-xs">
-              <Link href="/locations">
-                <Plus className="h-3.5 w-3.5" />
-                New Space
-              </Link>
-            </Button>
+            {isAdminOrDispatcher && (
+              <Button asChild size="sm" variant="outline" className="gap-1.5 text-xs">
+                <Link href="/locations">
+                  <Plus className="h-3.5 w-3.5" />
+                  New Space
+                </Link>
+              </Button>
+            )}
             <ActivityPanelToggle />
           </div>
         </div>

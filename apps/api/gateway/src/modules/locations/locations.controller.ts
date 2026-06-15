@@ -16,6 +16,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { RequirePermission } from '../../common/decorators';
+import { getSpaceScope } from '@hbcfield/shared';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';
 import {
@@ -46,8 +47,7 @@ export class LocationsController {
   }
 
   @Get()
-  @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'Get all company locations for the organization' })
+  @ApiOperation({ summary: 'Get company locations for the organization (scoped for employees)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'includeInactive', required: false, type: Boolean })
@@ -57,11 +57,36 @@ export class LocationsController {
     @Query('includeInactive') includeInactive?: boolean,
     @Request() req?: any,
   ) {
-    return this.locationsService.findAll({
+    const result: any = await this.locationsService.findAll({
       organizationId: req.user.organizationId,
       page: page ? Math.max(1, Number(page) || 1) : 1,
       limit: Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500),
       includeInactive: includeInactive === true || includeInactive === 'true' as any,
+    });
+    // Scope by the employee's Access Profile (admins/managers keep full view):
+    //   'all'   → every space   ·   'own' → only their assigned spaces
+    //   'tasks' → NO spaces (task-only view)
+    if (!req.user.canViewAllTasks && Array.isArray(result?.data)) {
+      const scope = getSpaceScope(req.user);
+      if (scope === 'tasks') {
+        result.data = [];
+      } else if (scope !== 'all') {
+        result.data = result.data.filter((loc: any) =>
+          (loc.assignments || []).some((a: any) => a.userId === req.user.id),
+        );
+      }
+    }
+    return result;
+  }
+
+  // NOTE: must be declared before @Get(':id') so 'team' isn't matched as an id.
+  @Get('team')
+  @ApiOperation({ summary: 'Colleagues in the requesting user\'s visible spaces' })
+  async getTeam(@Request() req: any) {
+    return this.locationsService.getColleagues({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      spaceScope: getSpaceScope(req.user),
     });
   }
 
@@ -115,7 +140,8 @@ export class LocationsController {
   // ==================== MEMBER ASSIGNMENT ENDPOINTS ====================
 
   @Get(':id/members')
-  @RequirePermission('canViewAllTasks')
+  // Read-only roster of a space — any member of the org may view it (org-scoped
+  // in the service); employees use it for their own space view + Team.
   @ApiOperation({ summary: 'Get members assigned to a location' })
   async getLocationMembers(@Param('id') id: string, @Request() req: any) {
     return this.locationsService.getLocationAssignments({

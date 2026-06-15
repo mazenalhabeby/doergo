@@ -25,6 +25,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
+import { canContactColleagues } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
@@ -123,6 +124,9 @@ export function TopNavbar() {
 
   // Build visible nav items based on permissions
   const showTeam = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
+  // Employees who can contact colleagues get a simple Team page (not the admin
+  // members dropdown).
+  const showContactTeam = !showTeam && canContactColleagues(user)
   const showSpaces = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
@@ -181,8 +185,21 @@ export function TopNavbar() {
           Tasks
         </Link>
 
-        {/* Team dropdown */}
+        {/* Team dropdown (admins) */}
         {showTeam && <TeamDropdown pathname={pathname} onOpen={prefetch.prefetchTeam} />}
+
+        {/* Team page (employees who can contact colleagues) */}
+        {showContactTeam && (
+          <Link
+            href="/team"
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/team") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
+            )}
+          >
+            Team
+          </Link>
+        )}
 
         {/* Spaces */}
         {showSpaces && (
@@ -561,28 +578,33 @@ function UserDropdown({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-            <Link href="/settings" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              <Settings className="h-4 w-4 text-muted-foreground" />
-              Settings
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-            <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              Invoices
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-            <Link href="/payments" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              <History className="h-4 w-4 text-muted-foreground" />
-              Payment History
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        {/* Org settings & billing — admins only */}
+        {canManageUsers && (
+          <>
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+                <Link href="/settings" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+                <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Invoices
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+                <Link href="/payments" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  Payment History
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
 
-        <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
+          </>
+        )}
 
         <ThemeToggleItem />
 

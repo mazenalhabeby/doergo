@@ -9,6 +9,8 @@ import { CommandPalette } from '@/components/command-palette';
 import { ActivityPanelProvider } from '@/contexts/activity-panel-context';
 import { CommandPaletteProvider } from '@/contexts/command-palette-context';
 import { useAuth } from '@/contexts/auth-context';
+import { getAccessPlatforms } from '@hbcfield/shared/client';
+import { Smartphone } from 'lucide-react';
 import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
 import { TokenDebugPanel } from '@/components/token-debug';
@@ -80,6 +82,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Platform hard-block: a mobile-only Access Profile may not use the web portal.
+  if (user && getAccessPlatforms(user) === 'mobile') {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+          <Smartphone className="h-8 w-8" />
+        </div>
+        <h1 className="text-xl font-semibold text-slate-800">Mobile-only account</h1>
+        <p className="max-w-sm text-sm text-slate-500">
+          Your account is set up for the mobile app. Please use the HBCField app on your phone to continue.
+        </p>
+      </div>
+    );
   }
 
   return (

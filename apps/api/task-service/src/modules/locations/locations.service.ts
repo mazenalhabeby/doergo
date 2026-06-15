@@ -331,6 +331,7 @@ export class LocationsService {
             firstName: true,
             lastName: true,
             email: true,
+            avatarUrl: true,
           },
         },
       },
@@ -343,6 +344,56 @@ export class LocationsService {
   /**
    * Get all members assigned to a location
    */
+  /**
+   * Colleagues for the "Team" screen — the people who share the requester's
+   * visible spaces, scoped by their Access Profile spaceScope. Deduplicated,
+   * excludes the requester. 2-3 queries (no N+1).
+   */
+  async getColleagues(data: {
+    userId: string;
+    organizationId: string;
+    spaceScope?: 'own' | 'tasks' | 'all';
+  }) {
+    // Determine which space ids the requester may see.
+    let locationIds: string[];
+    if (data.spaceScope === 'all') {
+      const locs = await this.prisma.companyLocation.findMany({
+        where: { organizationId: data.organizationId, isActive: true },
+        select: { id: true },
+      });
+      locationIds = locs.map((l) => l.id);
+    } else {
+      const mine = await this.prisma.technicianAssignment.findMany({
+        where: { userId: data.userId, location: { organizationId: data.organizationId } },
+        select: { locationId: true },
+      });
+      locationIds = mine.map((a) => a.locationId);
+    }
+
+    if (locationIds.length === 0) return success([]);
+
+    const rosters = await this.prisma.technicianAssignment.findMany({
+      where: {
+        locationId: { in: locationIds },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+      },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true } },
+        location: { select: { id: true, name: true } },
+      },
+    });
+
+    // Dedupe by user, keep first space name, drop the requester.
+    const byUser = new Map<string, any>();
+    for (const r of rosters) {
+      if (!r.user || r.user.id === data.userId) continue;
+      if (!byUser.has(r.user.id)) {
+        byUser.set(r.user.id, { ...r.user, spaceName: r.location?.name || null });
+      }
+    }
+    return success([...byUser.values()]);
+  }
+
   async getLocationAssignments(data: {
     locationId: string;
     organizationId: string;
@@ -375,6 +426,7 @@ export class LocationsService {
             firstName: true,
             lastName: true,
             email: true,
+            avatarUrl: true,
           },
         },
       },
@@ -489,6 +541,7 @@ export class LocationsService {
             firstName: true,
             lastName: true,
             email: true,
+            avatarUrl: true,
           },
         },
       },

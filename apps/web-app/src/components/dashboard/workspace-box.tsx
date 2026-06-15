@@ -328,20 +328,24 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
           className="shrink-0 flex items-center justify-center gap-2 px-4 pb-3 pt-1"
           style={{ animation: `fadeIn 0.5s ${APPLE_EASE} 0.3s both` }}
         >
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit?.(locationId || "") }}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-foreground/70 bg-foreground/[0.08] hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 hover:scale-[1.02]"
-          >
-            <Settings className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90" />
-            Manage Space
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onAssign?.(locationId || "") }}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-primary-foreground bg-primary/80 hover:bg-primary transition-all duration-200 hover:scale-[1.02] shadow-sm shadow-primary/20"
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            Add Member
-          </button>
+          {onEdit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(locationId || "") }}
+              className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-foreground/70 bg-foreground/[0.08] hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 hover:scale-[1.02]"
+            >
+              <Settings className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90" />
+              Manage Space
+            </button>
+          )}
+          {onAssign && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAssign(locationId || "") }}
+              className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-primary-foreground bg-primary/80 hover:bg-primary transition-all duration-200 hover:scale-[1.02] shadow-sm shadow-primary/20"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Add Member
+            </button>
+          )}
           {onViewTasks && (
             <button
               onClick={(e) => { e.stopPropagation(); onViewTasks(locationId || "") }}

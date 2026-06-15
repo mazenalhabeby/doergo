@@ -32,6 +32,7 @@ import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card
 import { type PersonNodeData } from './workspace/person-node';
 import { ActivitySheet, type LiveEvent, type PendingActionItem } from './workspace/activity-sheet';
 import { AssignMemberSheet } from './workspace/assign-member-sheet';
+import { MemberDetailSheet, type MemberSummary } from './workspace/member-detail-sheet';
 import {
   getInitials,
   shortName,
@@ -91,6 +92,7 @@ export function AdminDashboard() {
 
   const [activityOpen, setActivityOpen] = useState(false);
   const [assignLocationId, setAssignLocationId] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
@@ -366,15 +368,22 @@ export function AdminDashboard() {
     return h < 12 ? t('common.greeting.morning') : h < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening');
   }, [t]);
 
-  const handlePersonPress = useCallback(() => {
-    router.push('/(app)/manage/members' as any);
+  // Tapping a person opens an in-place detail sheet (not a navigation away).
+  const handlePersonPress = useCallback((userId: string) => {
+    setSelectedMemberId(userId);
   }, []);
   const handleViewTasks = useCallback(() => {
+    setSelectedMemberId(null);
     router.push(ROUTES.tasks as any);
   }, []);
   const handleOpenTask = useCallback((taskId: string) => {
     setActivityOpen(false);
+    setSelectedMemberId(null);
     router.push(ROUTES.taskDetail(taskId) as any);
+  }, []);
+  const handleMemberProfile = useCallback(() => {
+    setSelectedMemberId(null);
+    router.push('/(app)/manage/members' as any);
   }, []);
 
   const assignLocationName = useMemo(
@@ -385,6 +394,35 @@ export function AdminDashboard() {
     () => new Set(assignLocationId ? assignments[assignLocationId] || [] : []),
     [assignments, assignLocationId],
   );
+
+  // Selected member detail (name/avatar/status from loaded data) + their active
+  // tasks derived from already-loaded tasks — only stats are fetched in the sheet.
+  const selectedMember = useMemo<MemberSummary | null>(() => {
+    if (!selectedMemberId) return null;
+    const m = memberMap.get(selectedMemberId);
+    if (!m) return null;
+    const { status } = getEmployeeStatus({
+      isClockedIn: clockedInUserIds.has(m.id),
+      isOnBreak: onBreakUserIds.has(m.id),
+      isLate: false,
+      hasActiveTask: activeTaskMap.has(m.id),
+    });
+    return {
+      userId: m.id,
+      name: shortName(m.firstName, m.lastName),
+      initials: getInitials(m.firstName, m.lastName),
+      imageUrl: m.avatarUrl || undefined,
+      position: m.position,
+      email: m.email,
+      status,
+    };
+  }, [selectedMemberId, memberMap, clockedInUserIds, onBreakUserIds, activeTaskMap]);
+
+  const selectedMemberTasks = useMemo(() => {
+    if (!selectedMemberId) return [];
+    const ACTIVE = ['IN_PROGRESS', 'EN_ROUTE', 'ARRIVED', 'BLOCKED', 'ASSIGNED', 'ACCEPTED'];
+    return tasks.filter((tk) => tk.assignedToId === selectedMemberId && ACTIVE.includes(tk.status));
+  }, [selectedMemberId, tasks]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -485,6 +523,16 @@ export function AdminDashboard() {
         assignedUserIds={assignedUserIdsForLocation}
         onClose={() => setAssignLocationId(null)}
         onAssigned={() => load(true)}
+      />
+
+      <MemberDetailSheet
+        visible={!!selectedMember}
+        member={selectedMember}
+        activeTasks={selectedMemberTasks}
+        onClose={() => setSelectedMemberId(null)}
+        onOpenTask={handleOpenTask}
+        onViewTasks={handleViewTasks}
+        onProfile={handleMemberProfile}
       />
     </View>
   );

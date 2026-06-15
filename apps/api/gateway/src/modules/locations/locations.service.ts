@@ -55,4 +55,13 @@ export class LocationsService extends BaseGatewayService {
   }) {
     return this.send({ cmd: 'get_technician_assignments' }, data);
   }
+
+  /** Colleagues in the requester's visible spaces (Team screen). */
+  async getColleagues(data: {
+    userId: string;
+    organizationId: string;
+    spaceScope?: string;
+  }) {
+    return this.send({ cmd: 'get_colleagues' }, data);
+  }
 }
