@@ -69,7 +69,9 @@ export abstract class BaseQueueService {
   ): Promise<T> {
     const job = await this.queue.add(jobType, data, {
       ...DEFAULT_JOB_OPTIONS.CRITICAL,
-      // Add unique job ID to prevent duplicates from rapid retries
+      // Unique job ID per call (this is a request/response addJobAndWait flow, so
+      // each write is intentionally a distinct job — not deduped). If true
+      // idempotency is ever needed, derive jobId from the payload instead.
       jobId: `${jobType}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
     });
 

@@ -18,7 +18,7 @@
  */
 import { HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom, timeout, catchError } from 'rxjs';
+import { firstValueFrom, timeout, catchError, retry, timer } from 'rxjs';
 
 interface ServiceError {
   name?: string;
@@ -47,6 +47,19 @@ export abstract class BaseGatewayService {
       const result = await firstValueFrom(
         this.client.send<T>(pattern, data).pipe(
           timeout(this.TIMEOUT_MS),
+          // Retry only TRANSIENT transport failures (timeout / connection) — never
+          // business errors (a 4xx carries a status, so we re-throw immediately).
+          // Safe because these are READ operations. Backoff 150ms, 300ms.
+          retry({
+            count: 2,
+            delay: (err, retryCount) => {
+              const e = err as ServiceError;
+              const hasStatus = e?.status ?? e?.statusCode ?? e?.response?.statusCode;
+              if (hasStatus) throw err;
+              this.logger.warn(`RPC retry ${retryCount} for ${pattern.cmd}: ${e?.message ?? err}`);
+              return timer(150 * retryCount);
+            },
+          }),
           catchError((err: Error) => {
             this.logger.error(`Service error: ${err.message}`);
             throw err;
