@@ -206,6 +206,7 @@ export class WorkflowsService {
     isFinal?: boolean;
     isCanceled?: boolean;
     transitions?: string[];
+    capabilities?: string[];
   }) {
     const workflow = await this.prisma.statusWorkflow.findUnique({
       where: { id: data.workflowId },
@@ -241,6 +242,7 @@ export class WorkflowsService {
         isFinal: data.isFinal || false,
         isCanceled: data.isCanceled || false,
         transitions: data.transitions || [],
+        capabilities: data.capabilities || [],
       },
     });
 
@@ -261,6 +263,7 @@ export class WorkflowsService {
     isFinal?: boolean;
     isCanceled?: boolean;
     transitions?: string[];
+    capabilities?: string[];
   }) {
     const workflow = await this.prisma.statusWorkflow.findUnique({
       where: { id: data.workflowId },
@@ -292,6 +295,7 @@ export class WorkflowsService {
         ...(data.isFinal !== undefined && { isFinal: data.isFinal }),
         ...(data.isCanceled !== undefined && { isCanceled: data.isCanceled }),
         ...(data.transitions !== undefined && { transitions: data.transitions }),
+        ...(data.capabilities !== undefined && { capabilities: data.capabilities }),
       },
     });
 

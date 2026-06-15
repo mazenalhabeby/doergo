@@ -82,10 +82,18 @@ const CAP_LABEL: Record<string, string> = {
   gps: "📍 GPS", timer: "⏱ Timer", checklist: "✅ Checklist",
   photos: "📷 Photos", signature: "✍️ Signature", report: "📝 Report", form: "🗒 Form",
 }
+const ALL_CAPS = ["gps", "timer", "checklist", "photos", "signature", "report", "form"]
 
 function WorkflowCard({ wf, onChanged, onDelete }: { wf: StatusWorkflow; onChanged: () => void; onDelete: () => void }) {
   const [statusName, setStatusName] = useState("")
   const statuses = [...(wf.statuses ?? [])].sort((a, b) => a.position - b.position)
+
+  const toggleCap = useMutation({
+    mutationFn: ({ statusId, capabilities }: { statusId: string; capabilities: string[] }) =>
+      workflowsApi.updateStatus(wf.id, statusId, { capabilities }),
+    onSuccess: onChanged,
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Couldn't update"),
+  })
 
   const addStatus = useMutation({
     mutationFn: () =>
@@ -116,19 +124,30 @@ function WorkflowCard({ wf, onChanged, onDelete }: { wf: StatusWorkflow; onChang
       <div className="flex flex-wrap items-stretch gap-2">
         {statuses.length === 0 && <span className="text-xs text-muted-foreground">No steps yet.</span>}
         {statuses.map((s: WorkflowStatus) => {
-          const caps = getStatusCapabilities(wf.name, s.key)
+          const caps = s.capabilities ?? getStatusCapabilities(wf.name, s.key)
           return (
             <div key={s.id} className="rounded-xl border border-border px-3 py-2">
               <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: s.color }} />
                 {s.name}{s.isFinal ? " ✓" : ""}
               </div>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {caps.length === 0 ? (
-                  <span className="text-[10px] text-muted-foreground/60">—</span>
-                ) : caps.map((c) => (
-                  <span key={c} className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{CAP_LABEL[c] ?? c}</span>
-                ))}
+              {/* Toggle which widgets are active at this step */}
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {ALL_CAPS.map((c) => {
+                  const on = caps.includes(c)
+                  return (
+                    <button
+                      key={c}
+                      disabled={toggleCap.isPending}
+                      onClick={() =>
+                        toggleCap.mutate({ statusId: s.id, capabilities: on ? caps.filter((x) => x !== c) : [...caps, c] })
+                      }
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${on ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground/50 hover:text-muted-foreground"}`}
+                    >
+                      {CAP_LABEL[c] ?? c}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )

@@ -1658,6 +1658,7 @@ model WorkflowStatus {
   isFinal    Boolean        @default(false) // marks completion states
   isCanceled Boolean        @default(false) // marks cancellation states
   transitions String[]      // array of WorkflowStatus keys this status can transition TO
+  capabilities String[]     @default([]) // execution widgets active at this step (gps, timer, …)
   createdAt  DateTime       @default(now())
 
   @@unique([workflowId, key])

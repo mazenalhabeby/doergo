@@ -3281,6 +3281,7 @@ export interface WorkflowStatus {
   isFinal: boolean;
   isCanceled: boolean;
   transitions: string[];
+  capabilities?: string[];
   wipLimit?: number | null;
   createdAt: string;
 }
@@ -3326,6 +3327,7 @@ export const workflowsApi = {
       isFinal?: boolean;
       isCanceled?: boolean;
       transitions?: string[];
+      capabilities?: string[];
       wipLimit?: number | null;
     },
   ) => {

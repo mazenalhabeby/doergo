@@ -459,9 +459,13 @@ export class TasksService {
     // Capabilities are derived from the workflow (defaults to field-service).
     const effectiveWorkflow =
       (task as any).workflow ?? (task as any).space?.workflow ?? null;
-    // Capabilities active AT the current status (per-step) — drives which
-    // execution widgets render right now.
-    const capabilities = getStatusCapabilities(effectiveWorkflow?.name, task.status);
+    // Capabilities active AT the current status (per-step). The status's own
+    // DB-stored capabilities are authoritative (admin-editable); fall back to the
+    // shared map only when there's no matching workflow status (legacy tasks).
+    const currentStatus = effectiveWorkflow?.statuses?.find((s: any) => s.key === task.status);
+    const capabilities = currentStatus
+      ? (currentStatus.capabilities ?? [])
+      : getStatusCapabilities(effectiveWorkflow?.name, task.status);
 
     return success({
       ...task,

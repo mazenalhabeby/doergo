@@ -30,6 +30,7 @@ export interface FlowStatus {
   isFinal: boolean;
   isCanceled: boolean;
   transitions: string[];
+  capabilities?: TaskCapability[];
 }
 
 /**
@@ -139,6 +140,7 @@ export function getFlowSteps(
         isFinal: !!s.isFinal,
         isCanceled: !!s.isCanceled,
         transitions: s.transitions ?? [],
+        capabilities: (s as { capabilities?: TaskCapability[] }).capabilities ?? undefined,
       }))
       .sort((a, b) => a.position - b.position);
   }

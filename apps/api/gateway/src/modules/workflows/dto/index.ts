@@ -90,6 +90,12 @@ export class CreateWorkflowStatusDto {
   @IsString({ each: true })
   @IsOptional()
   transitions?: string[];
+
+  @ApiPropertyOptional({ description: 'Execution widgets active at this step', example: ['gps', 'timer'], type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  capabilities?: string[];
 }
 
 export class UpdateWorkflowStatusDto {
@@ -130,6 +136,12 @@ export class UpdateWorkflowStatusDto {
   @IsString({ each: true })
   @IsOptional()
   transitions?: string[];
+
+  @ApiPropertyOptional({ description: 'Execution widgets active at this step', example: ['gps', 'timer'], type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  capabilities?: string[];
 }
 
 // ==================== Definition of Done DTOs ====================
