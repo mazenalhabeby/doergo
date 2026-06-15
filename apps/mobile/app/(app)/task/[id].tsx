@@ -100,6 +100,11 @@ export default function TaskDetailScreen() {
   const [customerSignature, setCustomerSignature] = useState<string>('');
   const [customerName, setCustomerName] = useState('');
 
+  // Per-step widget state (visit form notes + inline signature)
+  const [stepNote, setStepNote] = useState('');
+  const [savingStepNote, setSavingStepNote] = useState(false);
+  const [stepSignature, setStepSignature] = useState('');
+
   // Admin modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -577,6 +582,35 @@ export default function TaskDetailScreen() {
     setTaskAttachmentProgress(new Map());
     setIsUploadingTaskAttachment(false);
   };
+
+  // Per-step: save visit notes as a comment (reuses the comments thread).
+  const handleSaveStepNote = useCallback(async () => {
+    if (!task || !stepNote.trim()) return;
+    setSavingStepNote(true);
+    try {
+      const comment = await tasksApi.addComment(task.id, stepNote.trim());
+      setComments((prev) => [comment, ...prev]);
+      setStepNote('');
+      toast.success(t('common.success'), '');
+    } catch {
+      toast.error(t('common.error'), '');
+    } finally {
+      setSavingStepNote(false);
+    }
+  }, [task, stepNote, t]);
+
+  // Per-step: capture an inline signature and persist it as a task attachment.
+  const handleStepSignature = useCallback(async (base64: string) => {
+    setStepSignature(base64);
+    if (!task || !base64) return;
+    try {
+      await handleUploadTaskAttachment([
+        { uri: base64, fileName: `signature_${Date.now()}.png`, fileType: 'image/png', width: 600, height: 200 } as unknown as PickedImage,
+      ]);
+    } catch {
+      // best-effort — the captured signature remains visible locally
+    }
+  }, [task]);
 
   // Delete a task attachment
   const handleDeleteTaskAttachment = (attachmentId: string, fileName: string) => {
@@ -1205,7 +1239,7 @@ export default function TaskDetailScreen() {
         )}
 
         {/* Per-step widgets — driven by the current status's capabilities */}
-        {!isAdmin && (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos')) && (
+        {!isAdmin && (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos') || hasCapability(caps, 'form') || hasCapability(caps, 'signature')) && (
           <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>This step</Text>
 
@@ -1255,6 +1289,39 @@ export default function TaskDetailScreen() {
                 {isUploadingTaskAttachment && (
                   <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>Uploading…</Text>
                 )}
+              </View>
+            )}
+
+            {/* Visit form (notes) — saved to the task thread */}
+            {hasCapability(caps, 'form') && (
+              <View style={{ marginTop: (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos')) ? 14 : 0 }}>
+                <TextInput
+                  value={stepNote}
+                  onChangeText={setStepNote}
+                  placeholder="Visit notes…"
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  style={{ minHeight: 70, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, color: colors.textPrimary, fontSize: 14, textAlignVertical: 'top' }}
+                />
+                <TouchableOpacity
+                  onPress={handleSaveStepNote}
+                  disabled={!stepNote.trim() || savingStepNote}
+                  style={{ marginTop: 8, height: 42, borderRadius: 12, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', opacity: (!stepNote.trim() || savingStepNote) ? 0.5 : 1 }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{savingStepNote ? 'Saving…' : 'Save note'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Inline signature */}
+            {hasCapability(caps, 'signature') && (
+              <View style={{ marginTop: (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos') || hasCapability(caps, 'form')) ? 14 : 0 }}>
+                <SignatureCapture
+                  title="Signature"
+                  onSave={handleStepSignature}
+                  onClear={() => setStepSignature('')}
+                  existingSignature={stepSignature}
+                />
               </View>
             )}
           </View>
