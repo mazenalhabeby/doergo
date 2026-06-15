@@ -257,14 +257,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthedRef = useRef(false);
   isAuthedRef.current = !!user;
   useEffect(() => {
+    let lastRefresh = Date.now();
+    // Debounced: only re-fetch /auth/me if it's been >60s since the last one, so
+    // rapid focus/visibility events don't hammer the gateway. The interval is a
+    // slow safety net (access changes also propagate on the gateway's auth cache).
     const refreshIfAuthed = () => {
-      if (isAuthedRef.current && typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        void refreshUser();
-      }
+      if (!isAuthedRef.current || typeof document === 'undefined' || document.visibilityState !== 'visible') return;
+      if (Date.now() - lastRefresh < 60_000) return;
+      lastRefresh = Date.now();
+      void refreshUser();
     };
     window.addEventListener('focus', refreshIfAuthed);
     document.addEventListener('visibilitychange', refreshIfAuthed);
-    const id = window.setInterval(refreshIfAuthed, 45000);
+    const id = window.setInterval(refreshIfAuthed, 300_000);
     return () => {
       window.removeEventListener('focus', refreshIfAuthed);
       document.removeEventListener('visibilitychange', refreshIfAuthed);

@@ -15,7 +15,7 @@ import { AttachmentsService } from '../attachments/attachments.service';
  * are handled via direct microservice communication (MessagePattern) for better performance.
  * Only WRITE operations go through BullMQ for exactly-once guarantees.
  */
-@Processor(QUEUE_NAMES.TASKS)
+@Processor(QUEUE_NAMES.TASKS, { concurrency: 10 })
 export class TasksProcessor extends WorkerHost {
   private readonly logger = new Logger(TasksProcessor.name);
 

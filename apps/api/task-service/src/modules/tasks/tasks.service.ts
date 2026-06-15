@@ -376,19 +376,22 @@ export class TasksService {
           take: 20,
           include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
         },
-        attachments: { orderBy: { createdAt: 'desc' } },
+        attachments: { orderBy: { createdAt: 'desc' }, take: 50 },
         assignees: {
+          take: 20,
           include: {
             user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
           },
         },
         checklistItems: {
           orderBy: { position: 'asc' },
+          take: 100,
         },
         // Subtask hierarchy
         parent: { select: { id: true, title: true } },
         subtasks: {
           orderBy: { position: 'asc' },
+          take: 50,
           include: {
             assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
             _count: { select: { subtasks: true, checklistItems: true } },
@@ -402,11 +405,13 @@ export class TasksService {
         sprint: { select: { id: true, name: true, status: true } },
         // Dependencies
         predecessors: {
+          take: 50,
           include: {
             predecessor: { select: { id: true, title: true, status: true } },
           },
         },
         successors: {
+          take: 50,
           include: {
             successor: { select: { id: true, title: true, status: true } },
           },
@@ -947,6 +952,7 @@ export class TasksService {
     const events = await this.prisma.taskEvent.findMany({
       where: { taskId: data.id },
       orderBy: { createdAt: 'desc' },
+      take: 100,
       include: {
         user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       },
@@ -1494,9 +1500,13 @@ export class TasksService {
     }
     counts['all'] = total;
 
-    // Cache for 30 seconds
+    // Cache for 30 seconds + index the key per org so invalidation never needs
+    // a blocking KEYS scan.
     try {
       await this.redis.setex(cacheKey, STATUS_COUNTS_TTL, JSON.stringify(counts));
+      const idxKey = `status_counts:idx:${organizationId}`;
+      await this.redis.sadd(idxKey, cacheKey);
+      await this.redis.expire(idxKey, STATUS_COUNTS_TTL + 5);
     } catch (err) {
       this.logger.warn('Redis cache write failed for status counts', err);
     }
@@ -1510,10 +1520,12 @@ export class TasksService {
    */
   private async invalidateStatusCountsCache(organizationId: string) {
     try {
-      const keys = await this.redis.keys(`status_counts:*:*:${organizationId}`);
+      const idxKey = `status_counts:idx:${organizationId}`;
+      const keys = await this.redis.smembers(idxKey);
       if (keys.length > 0) {
         await this.redis.del(...keys);
       }
+      await this.redis.del(idxKey);
     } catch (err) {
       this.logger.warn('Failed to invalidate status counts cache', err);
     }

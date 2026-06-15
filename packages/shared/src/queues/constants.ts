@@ -144,6 +144,7 @@ export const DEFAULT_JOB_OPTIONS = {
     },
     removeOnFail: {
       age: 86400, // Keep failed jobs for 24 hours
+      count: 5000, // cap so a failure storm can't grow the failed set unbounded
     },
   },
   // For non-critical operations (notifications)
@@ -159,6 +160,7 @@ export const DEFAULT_JOB_OPTIONS = {
     },
     removeOnFail: {
       age: 43200, // Keep failed for 12 hours
+      count: 2000,
     },
   },
   // For time-sensitive operations

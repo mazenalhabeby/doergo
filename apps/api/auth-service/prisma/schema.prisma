@@ -1086,6 +1086,7 @@ model TimeEntry {
 
   @@index([userId, clockInAt])
   @@index([locationId])
+  @@index([locationId, clockInAt])     // per-location attendance by day
   @@index([organizationId])
   @@index([status])
   @@index([approvalStatus])
