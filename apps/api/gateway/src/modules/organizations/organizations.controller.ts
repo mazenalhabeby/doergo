@@ -17,6 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto, UpdateOrgProfileDto, UpdateNotificationPrefsDto, UpdateSecuritySettingsDto } from './dto';
 
 @ApiTags('organizations')
@@ -26,6 +27,7 @@ export class OrganizationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    private readonly authCache: AuthTokenCache,
   ) {}
 
   @Get('join-code')
@@ -155,6 +157,11 @@ export class OrganizationsController {
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
+
+    // Purge the member's cached session so the new access profile (modules,
+    // platform, scope, permissions) takes effect on their next request — no
+    // logout/login required.
+    await this.authCache.invalidateUser(memberId);
 
     return result;
   }

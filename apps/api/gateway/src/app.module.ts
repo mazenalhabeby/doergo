@@ -32,12 +32,14 @@ import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.
 import { RolesModule } from './modules/roles/roles.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { AuthCacheModule } from './common/cache/auth-cache.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 
 @Module({
   imports: [
+    AuthCacheModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

@@ -7,12 +7,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { createHash } from 'crypto';
-import Redis from 'ioredis';
 import { IS_PUBLIC_KEY } from '@hbcfield/shared';
+import { AuthTokenCache } from '../cache/auth-token-cache.service';
 
 /**
  * Authenticates every non-public request by validating the access token.
@@ -27,27 +25,12 @@ import { IS_PUBLIC_KEY } from '@hbcfield/shared';
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   private readonly logger = new Logger(JwtAuthGuard.name);
-  private readonly redis: Redis;
-  private readonly cacheTtl: number;
 
   constructor(
     private reflector: Reflector,
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    config: ConfigService,
-  ) {
-    this.cacheTtl = Number(config.get('AUTH_CACHE_TTL_SECONDS')) || 60;
-    this.redis = new Redis({
-      host: config.get<string>('REDIS_HOST') || 'localhost',
-      port: Number(config.get('REDIS_PORT')) || 6379,
-      // Fail fast to the RPC fallback instead of queueing when Redis is down.
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 1,
-      lazyConnect: false,
-    });
-    this.redis.on('error', (err) =>
-      this.logger.warn(`Auth cache Redis error: ${err.message}`),
-    );
-  }
+    private readonly cache: AuthTokenCache,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is public
@@ -67,10 +50,8 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('No token provided');
     }
 
-    const cacheKey = `auth:tok:${createHash('sha256').update(token).digest('hex')}`;
-
     // ── Cache hit: skip the validate_token RPC + DB read entirely ──
-    const cachedUser = await this.readCache(cacheKey);
+    const cachedUser = await this.cache.get(token);
     if (cachedUser) {
       request.user = cachedUser;
       return true;
@@ -86,39 +67,18 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token');
       }
 
-      // Attach user to request and cache the validated user.
+      // Attach user to request and cache the validated user (TTL capped to the
+      // token's remaining lifetime so an entry can never outlive its token).
       request.user = result.user;
-      await this.writeCache(cacheKey, result.user, token);
+      const exp = this.getTokenExpSeconds(token);
+      const remaining = exp ? exp - Math.floor(Date.now() / 1000) : this.cache.ttl;
+      await this.cache.set(token, result.user, Math.min(this.cache.ttl, remaining));
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
       throw new UnauthorizedException('Token validation failed');
-    }
-  }
-
-  /** Read a cached validated user; never throws (Redis-down → null → RPC). */
-  private async readCache(key: string): Promise<any | null> {
-    try {
-      const cached = await this.redis.get(key);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  /** Cache the validated user, TTL capped to the token's remaining lifetime. */
-  private async writeCache(key: string, user: unknown, token: string): Promise<void> {
-    try {
-      const exp = this.getTokenExpSeconds(token);
-      const remaining = exp ? exp - Math.floor(Date.now() / 1000) : this.cacheTtl;
-      const ttl = Math.min(this.cacheTtl, remaining);
-      if (ttl > 0) {
-        await this.redis.set(key, JSON.stringify(user), 'EX', ttl);
-      }
-    } catch {
-      // Cache write failures must never break auth.
     }
   }
 

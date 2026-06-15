@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -249,6 +250,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Ignore errors
     }
   }, []);
+
+  // Reconcile the session when the tab regains focus or periodically, so an
+  // access-profile change an admin makes takes effect without a re-login. The
+  // gateway purges the member's auth cache on update, so /auth/me returns fresh.
+  const isAuthedRef = useRef(false);
+  isAuthedRef.current = !!user;
+  useEffect(() => {
+    const refreshIfAuthed = () => {
+      if (isAuthedRef.current && typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        void refreshUser();
+      }
+    };
+    window.addEventListener('focus', refreshIfAuthed);
+    document.addEventListener('visibilitychange', refreshIfAuthed);
+    const id = window.setInterval(refreshIfAuthed, 45000);
+    return () => {
+      window.removeEventListener('focus', refreshIfAuthed);
+      document.removeEventListener('visibilitychange', refreshIfAuthed);
+      window.clearInterval(id);
+    };
+  }, [refreshUser]);
 
   // Check if a module is enabled. `enabledModules` may be a legacy string[] or
   // a per-user Access Profile object ({ modules, ... }) — getModules handles both.
