@@ -10,7 +10,7 @@ export {
 } from './enums';
 
 export {
-  getDefaultModules, hasModule, getModuleLabel, getModules,
+  getDefaultModules, hasModule, hasAccessModule, getModuleLabel, getModules,
   getSpaceScope, getAccessPlatforms, canContactColleagues, getWebScreens,
   type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform, type WebScreen,
   DEFAULT_MODULES, ALL_MODULES,

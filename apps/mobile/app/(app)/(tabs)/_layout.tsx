@@ -9,7 +9,7 @@ import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-import { Role, hasModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
+import { Role, hasAccessModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
 
 // Logo icon for header left
 function HeaderLogo() {
@@ -156,10 +156,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
   const isAdmin = normalizeRole(user?.role || '') === Role.ADMIN;
-  // Tab visibility is purely module-driven (the per-user Access Profile).
-  const showTasks = hasModule(user || {}, 'tasks');
-  const showAttendance = hasModule(user || {}, 'clock');
-  const showTimeOff = hasModule(user || {}, 'time_off');
+  // Tab visibility is driven by the per-user Access Profile. hasAccessModule
+  // defaults to ON for users without a profile (admins/managers), so the admin
+  // branch below still governs their tabs.
+  const showTasks = hasAccessModule(user || {}, 'tasks');
+  const showAttendance = hasAccessModule(user || {}, 'clock');
+  const showTimeOff = hasAccessModule(user || {}, 'time_off');
+  const showCreate = hasAccessModule(user || {}, 'create_task') && !!user?.canCreateTasks;
   const showTeam = canContactColleagues(user || {});
 
   // Filter routes based on role and modules (profile is in header, not tab bar)
@@ -171,9 +174,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       if (route.name === 'time-off') return false;
       return true;
     }
-    // Employees: no manage; create-task only if permitted; rest by module.
+    // Employees: no manage; create-task by module + permission; rest by module.
     if (route.name === 'manage') return false;
-    if (route.name === 'create-task') return !!user?.canCreateTasks;
+    if (route.name === 'create-task') return showCreate;
     if (route.name === 'tasks') return showTasks;
     if (route.name === 'attendance') return showAttendance;
     if (route.name === 'time-off') return showTimeOff;
@@ -234,9 +237,10 @@ export default function TabsLayout() {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const isAdmin = normalizeRole(user?.role || '') === Role.ADMIN;
-  const showTechTasks = hasModule(user || {}, 'tasks');
-  const showAttendance = hasModule(user || {}, 'clock');
-  const showTimeOff = hasModule(user || {}, 'time_off');
+  const showTechTasks = hasAccessModule(user || {}, 'tasks');
+  const showAttendance = hasAccessModule(user || {}, 'clock');
+  const showTimeOff = hasAccessModule(user || {}, 'time_off');
+  const showCreate = hasAccessModule(user || {}, 'create_task') && !!user?.canCreateTasks;
   const showTeam = canContactColleagues(user || {});
 
   return (
@@ -285,7 +289,7 @@ export default function TabsLayout() {
           name="create-task"
           options={{
             title: t('tabs.createTask'),
-            href: (isAdmin || user?.canCreateTasks) ? '/create-task' : null,
+            href: (isAdmin || showCreate) ? '/create-task' : null,
           }}
         />
         {/* Manage tab - ADMIN only */}

@@ -7,6 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Plus, Users } from "lucide-react"
 
+import { getSpaceScope } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import {
   tasksApi,
@@ -306,19 +307,29 @@ export function ClientDashboard() {
 
   const isDataLoading = loadingTasks || loadingLocations
 
-  // Role-based location filtering
+  // Role-based + Access-Profile space-scope filtering.
+  //   admin/manager → all spaces
+  //   scope 'tasks' → NO spaces (tasks-only landing)
+  //   scope 'all'   → read-only overview of every space
+  //   scope 'own'   → only the spaces they're a roster member of (or assigned a task in)
   const isAdminOrDispatcher = user?.role === "ADMIN" || user?.role === "MANAGER"
+  const spaceScope = getSpaceScope(user ?? {})
   const locations = useMemo(() => {
     if (isAdminOrDispatcher) return allLocations
+    if (spaceScope === "tasks") return []
+    if (spaceScope === "all") return allLocations
+    // 'own' — spaces where the user is on the roster, plus any space a task of
+    // theirs lives in (covers ad-hoc assignments without a roster entry).
     const userSpaceIds = new Set<string>()
-    for (const task of tasks) {
-      if (task.assignedToId === user?.id && task.spaceId) {
-        userSpaceIds.add(task.spaceId)
-      }
+    for (const [locId, ids] of assignmentsPerLocation) {
+      if (user?.id && ids.has(user.id)) userSpaceIds.add(locId)
     }
-    if (userSpaceIds.size === 0) return allLocations
+    for (const task of tasks) {
+      if (task.assignedToId === user?.id && task.spaceId) userSpaceIds.add(task.spaceId)
+    }
+    if (userSpaceIds.size === 0) return []
     return allLocations.filter((loc: { id: string }) => userSpaceIds.has(loc.id))
-  }, [isAdminOrDispatcher, allLocations, tasks, user?.id])
+  }, [isAdminOrDispatcher, spaceScope, allLocations, tasks, user?.id, assignmentsPerLocation])
 
   // ── Build Workspace Boxes ─────────────────────────────────────────────────
 
@@ -810,6 +821,60 @@ export function ClientDashboard() {
             </div>
           )}
         </div>
+      </div>
+    )
+  }
+
+  // Employees with spaces get a 2-column layout: their (read-only) spaces on the
+  // left, their own tasks always on the right. Admins/managers keep the live
+  // Activity panel. Tasks are ALWAYS present for employees (here, or full-width
+  // in the no-spaces landing above).
+  if (!isAdminOrDispatcher) {
+    const myTasks = tasks.filter((tk) => tk.assignedToId === user?.id)
+    return (
+      <div style={{ display: "flex", width: "100%", height: "100%" }}>
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+          <div className="px-6 pt-6">
+            <p className="text-[13px] font-medium text-muted-foreground">{greeting}</p>
+            <h1 className="text-2xl font-semibold text-foreground">
+              {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
+            </h1>
+          </div>
+          <div className="max-w-[1440px] mx-auto px-6 py-6">
+            <WorkspaceGrid boxes={workspaceBoxes} />
+          </div>
+        </div>
+
+        {/* My Tasks — always present for employees */}
+        <aside className="hidden lg:flex w-[340px] shrink-0 flex-col border-l border-border h-full overflow-y-auto bg-card/30">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">My Tasks</h2>
+            <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
+          </div>
+          <div className="p-3 space-y-2">
+            {myTasks.length === 0 ? (
+              <div className="rounded-xl border border-border bg-card py-10 text-center text-sm text-muted-foreground">
+                No tasks assigned right now.
+              </div>
+            ) : (
+              myTasks.slice(0, 12).map((tk) => (
+                <Link
+                  key={tk.id}
+                  href={`/tasks/${tk.id}`}
+                  className="block rounded-xl border border-border bg-card px-3 py-2.5 transition hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-medium text-foreground">{tk.title}</span>
+                    <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">{tk.status}</span>
+                  </div>
+                  {tk.locationAddress && (
+                    <span className="text-[11px] text-muted-foreground">{tk.locationAddress}</span>
+                  )}
+                </Link>
+              ))
+            )}
+          </div>
+        </aside>
       </div>
     )
   }

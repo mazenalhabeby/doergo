@@ -92,6 +92,23 @@ export function hasModule(user: { enabledModules?: unknown }, module: MobileModu
 }
 
 /**
+ * EMPLOYEE access gate for the closed set of access modules
+ * (tasks/clock/time_off/create_task/manage).
+ *
+ * Distinct from `hasModule` (which also serves org/space task-feature flags like
+ * sprints/epics and reads whatever array is stored): a per-user Access Profile
+ * only ever *restricts* an employee, so users WITHOUT a profile object (admins,
+ * managers, legacy array-form users) implicitly get ALL access modules. This
+ * prevents a member's mobile-module selection from ever clobbering another
+ * user's web task features.
+ */
+export function hasAccessModule(user: { enabledModules?: unknown }, module: MobileModule): boolean {
+  const profile = asProfile(user.enabledModules);
+  if (!profile) return true; // no per-user profile → full access
+  return Array.isArray(profile.modules) ? profile.modules.includes(module) : false;
+}
+
+/**
  * Get display label for a module
  */
 export function getModuleLabel(module: MobileModule): string {

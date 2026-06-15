@@ -25,7 +25,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { canContactColleagues } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
@@ -124,9 +123,8 @@ export function TopNavbar() {
 
   // Build visible nav items based on permissions
   const showTeam = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
-  // Employees who can contact colleagues get a simple Team page (not the admin
-  // members dropdown).
-  const showContactTeam = !showTeam && canContactColleagues(user)
+  // Employees collaborate INSIDE their space (members appear in the space view),
+  // so there is no separate employee "Team" nav item on web.
   const showSpaces = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
@@ -187,19 +185,6 @@ export function TopNavbar() {
 
         {/* Team dropdown (admins) */}
         {showTeam && <TeamDropdown pathname={pathname} onOpen={prefetch.prefetchTeam} />}
-
-        {/* Team page (employees who can contact colleagues) */}
-        {showContactTeam && (
-          <Link
-            href="/team"
-            className={cn(
-              navItemBase,
-              isActive(pathname, "/team") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
-            )}
-          >
-            Team
-          </Link>
-        )}
 
         {/* Spaces */}
         {showSpaces && (
