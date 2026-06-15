@@ -5,13 +5,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import { success } from '@hbcfield/shared';
 
 @Injectable()
 export class WorkflowsService {
   private readonly logger = new Logger(WorkflowsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowCache: WorkflowConfigCache,
+  ) {}
 
   /**
    * List all workflows for an organization
@@ -82,6 +86,7 @@ export class WorkflowsService {
       },
     });
 
+    await this.workflowCache.invalidate(data.organizationId);
     return success(workflow);
   }
 
@@ -118,6 +123,7 @@ export class WorkflowsService {
       },
     });
 
+    await this.workflowCache.invalidate(data.organizationId);
     return success(workflow);
   }
 
@@ -150,6 +156,7 @@ export class WorkflowsService {
 
     await this.prisma.statusWorkflow.delete({ where: { id: data.id } });
 
+    await this.workflowCache.invalidate(data.organizationId);
     return success(null, 'Workflow deleted successfully');
   }
 
@@ -189,6 +196,7 @@ export class WorkflowsService {
       },
     });
 
+    await this.workflowCache.invalidate(data.organizationId);
     return success(workflow);
   }
 
@@ -246,6 +254,7 @@ export class WorkflowsService {
       },
     });
 
+    await this.workflowCache.invalidate(data.organizationId);
     return success(status);
   }
 
@@ -299,6 +308,7 @@ export class WorkflowsService {
       },
     });
 
+    await this.workflowCache.invalidate(data.organizationId);
     return success(status);
   }
 
@@ -444,6 +454,7 @@ export class WorkflowsService {
 
     await this.prisma.workflowStatus.delete({ where: { id: data.statusId } });
 
+    await this.workflowCache.invalidate(data.organizationId);
     return success(null, 'Status deleted successfully');
   }
 }

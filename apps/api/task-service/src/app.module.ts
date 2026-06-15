@@ -9,6 +9,7 @@ import {
   QUEUE_NAMES,
 } from '@hbcfield/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { WorkflowCacheModule } from './common/cache/workflow-cache.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AssetsModule } from './modules/assets/assets.module';
@@ -52,6 +53,7 @@ import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.
       createClientOptions(SERVICE_NAMES.NOTIFICATION),
     ]),
     PrismaModule,
+    WorkflowCacheModule,
     TasksModule,
     AttachmentsModule,
     AssetsModule,

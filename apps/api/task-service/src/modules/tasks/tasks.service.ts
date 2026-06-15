@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import Redis from 'ioredis';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -38,6 +39,7 @@ export class TasksService {
     private readonly prisma: PrismaService,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     configService: ConfigService,
+    private readonly workflowCache: WorkflowConfigCache,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
@@ -392,15 +394,9 @@ export class TasksService {
             _count: { select: { subtasks: true, checklistItems: true } },
           },
         },
-        // Space (+ its workflow as a fallback flow source)
-        space: {
-          select: {
-            id: true, name: true, enabledModules: true, workflowId: true,
-            workflow: { include: { statuses: { orderBy: { position: 'asc' } } } },
-          },
-        },
-        // The task's own workflow drives its status flow + capabilities
-        workflow: { include: { statuses: { orderBy: { position: 'asc' } } } },
+        // Space — only need its workflowId; the workflow itself comes from the
+        // per-org cache (no workflow_statuses join on the hot path).
+        space: { select: { id: true, name: true, enabledModules: true, workflowId: true } },
         // Phase & Sprint
         phase: { select: { id: true, name: true, color: true, type: true } },
         sprint: { select: { id: true, name: true, status: true } },
@@ -455,10 +451,10 @@ export class TasksService {
         (ACTIVE_OR_DONE.includes(task.status as any) ? task.createdAt : null);
     }
 
-    // Effective flow = the task's own workflow, else its space's workflow.
-    // Capabilities are derived from the workflow (defaults to field-service).
-    const effectiveWorkflow =
-      (task as any).workflow ?? (task as any).space?.workflow ?? null;
+    // Effective flow = the task's own workflow, else its space's workflow —
+    // resolved from the per-org cache (Redis) instead of a DB join.
+    const effWorkflowId = (task as any).workflowId ?? (task as any).space?.workflowId ?? null;
+    const effectiveWorkflow = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
     // Capabilities active AT the current status (per-step). The status's own
     // DB-stored capabilities are authoritative (admin-editable); fall back to the
     // shared map only when there's no matching workflow status (legacy tasks).
