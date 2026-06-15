@@ -6,7 +6,6 @@ import { EpicsService } from './epics.service';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
   ],
   controllers: [EpicsController],
   providers: [EpicsService],

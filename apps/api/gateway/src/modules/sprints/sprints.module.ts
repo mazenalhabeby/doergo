@@ -6,7 +6,6 @@ import { SprintsService } from './sprints.service';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
   ],
   controllers: [SprintsController],
   providers: [SprintsService],

@@ -6,7 +6,6 @@ import { PhasesService } from './phases.service';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
   ],
   controllers: [PhasesController],
   providers: [PhasesService],

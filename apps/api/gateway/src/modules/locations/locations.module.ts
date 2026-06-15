@@ -15,7 +15,6 @@ import { LocationsQueueService } from './locations.queue.service';
 @Module({
   imports: [
     // Microservice client for READ operations
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
     // BullMQ queue for WRITE operations
     BullModule.registerQueue({ name: QUEUE_NAMES.LOCATIONS }),
     // Bull Board for monitoring

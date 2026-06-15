@@ -5,9 +5,6 @@ import { JoinRequestsController } from './join-requests.controller';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([
-      createClientOptions(SERVICE_NAMES.NOTIFICATION),
-    ]),
   ],
   controllers: [JoinRequestsController],
 })

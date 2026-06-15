@@ -15,7 +15,6 @@ import { AttendanceQueueService } from './attendance.queue.service';
 @Module({
   imports: [
     // Microservice client for READ operations
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
     // BullMQ queue for WRITE operations
     BullModule.registerQueue({ name: QUEUE_NAMES.ATTENDANCE }),
     // Bull Board for monitoring

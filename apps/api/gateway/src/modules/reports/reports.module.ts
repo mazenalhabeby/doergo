@@ -10,9 +10,6 @@ import { ReportsService } from './reports.service';
 
 @Module({
   imports: [
-    // Register task-service client for direct read operations
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
-    // Register the reports queue for write operations
     BullModule.registerQueue({
       name: QUEUE_NAMES.REPORTS,
     }),

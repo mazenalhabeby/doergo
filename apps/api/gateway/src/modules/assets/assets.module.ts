@@ -11,7 +11,6 @@ import { AssetCategoriesController, AssetTypesController } from './asset-categor
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
     BullModule.registerQueue({ name: QUEUE_NAMES.ASSETS }),
     BullBoardModule.forFeature({
       name: QUEUE_NAMES.ASSETS,

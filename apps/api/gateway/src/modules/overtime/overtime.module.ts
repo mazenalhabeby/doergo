@@ -10,7 +10,6 @@ import { OvertimeQueueService } from './overtime.queue.service';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
     BullModule.registerQueue({ name: QUEUE_NAMES.OVERTIME }),
     BullBoardModule.forFeature({
       name: QUEUE_NAMES.OVERTIME,

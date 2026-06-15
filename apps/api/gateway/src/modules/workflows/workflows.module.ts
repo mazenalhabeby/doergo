@@ -6,7 +6,6 @@ import { WorkflowsService } from './workflows.service';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
   ],
   controllers: [WorkflowsController],
   providers: [WorkflowsService],

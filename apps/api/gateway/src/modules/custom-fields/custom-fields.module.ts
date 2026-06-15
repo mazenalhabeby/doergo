@@ -6,7 +6,6 @@ import { CustomFieldsService } from './custom-fields.service';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
   ],
   controllers: [CustomFieldsController, TaskCustomFieldsController],
   providers: [CustomFieldsService],

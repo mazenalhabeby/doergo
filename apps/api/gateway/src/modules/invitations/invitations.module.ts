@@ -5,9 +5,6 @@ import { InvitationsController } from './invitations.controller';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([
-      createClientOptions(SERVICE_NAMES.NOTIFICATION),
-    ]),
   ],
   controllers: [InvitationsController],
 })

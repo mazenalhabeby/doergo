@@ -10,9 +10,6 @@ import { TasksService } from './tasks.service';
 
 @Module({
   imports: [
-    // Register task-service client for direct read operations
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
-    // Register the tasks queue for write operations (create, update, delete, etc.)
     BullModule.registerQueue({
       name: QUEUE_NAMES.TASKS,
     }),

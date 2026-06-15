@@ -6,7 +6,6 @@ import { RecurringTasksService } from './recurring-tasks.service';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
   ],
   controllers: [RecurringTasksController],
   providers: [RecurringTasksService],
