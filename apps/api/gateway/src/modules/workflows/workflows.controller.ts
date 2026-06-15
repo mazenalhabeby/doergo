@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators';
 import {
   CreateWorkflowDto,
   UpdateWorkflowDto,
@@ -53,7 +54,7 @@ export class WorkflowsController {
   }
 
   @Post('definition-of-done')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Create or update a Definition of Done' })
   async upsertDefinitionOfDone(
     @Body() dto: UpsertDefinitionOfDoneDto,
@@ -66,7 +67,7 @@ export class WorkflowsController {
   }
 
   @Delete('definition-of-done/:dodId')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Delete a Definition of Done' })
   async removeDefinitionOfDone(
     @Param('dodId') id: string,
@@ -91,7 +92,7 @@ export class WorkflowsController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Create a new workflow' })
   async create(@Body() dto: CreateWorkflowDto, @Request() req: any) {
     return this.workflowsService.create({
@@ -101,7 +102,7 @@ export class WorkflowsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a workflow' })
   async update(
     @Param('id') id: string,
@@ -116,7 +117,7 @@ export class WorkflowsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Delete a workflow (not if default)' })
   async remove(@Param('id') id: string, @Request() req: any) {
     return this.workflowsService.remove({
@@ -126,7 +127,7 @@ export class WorkflowsController {
   }
 
   @Post(':id/set-default')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Set workflow as organization default' })
   async setDefault(@Param('id') id: string, @Request() req: any) {
     return this.workflowsService.setDefault({
@@ -136,7 +137,7 @@ export class WorkflowsController {
   }
 
   @Post(':id/statuses')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Add a status to a workflow' })
   async addStatus(
     @Param('id') workflowId: string,
@@ -151,7 +152,7 @@ export class WorkflowsController {
   }
 
   @Patch(':id/statuses/:statusId')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a status in a workflow' })
   async updateStatus(
     @Param('id') workflowId: string,
@@ -168,7 +169,7 @@ export class WorkflowsController {
   }
 
   @Delete(':id/statuses/:statusId')
-  @Roles(Role.ADMIN)
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Delete a status from a workflow' })
   async removeStatus(
     @Param('id') workflowId: string,

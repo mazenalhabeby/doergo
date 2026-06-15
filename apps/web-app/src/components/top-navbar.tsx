@@ -341,6 +341,11 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
             Join Requests
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+          <Link href="/task-types" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+            Task Types
+          </Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

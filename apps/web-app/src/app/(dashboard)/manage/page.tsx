@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight } from "lucide-react"
+import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight, Workflow } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { hasAccessModule } from "@hbcfield/shared/client"
 
@@ -27,6 +27,7 @@ export default function ManagePage() {
     { href: "/join-requests", label: "Join Requests", desc: "Approve or reject join requests", icon: UserPlus, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
     { href: "/schedule", label: "Schedule", desc: "Team availability and schedules", icon: Calendar, show: !!user?.canViewAllTasks },
     { href: "/locations", label: "Spaces", desc: "Manage workspaces and rosters", icon: MapPin, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
+    { href: "/task-types", label: "Task Types", desc: "Workflows + per-step widgets", icon: Workflow, show: !!user?.canManageUsers },
   ]
   const visible = items.filter((i) => i.show)
 
