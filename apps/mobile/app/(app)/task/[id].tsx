@@ -1204,6 +1204,62 @@ export default function TaskDetailScreen() {
           </View>
         )}
 
+        {/* Per-step widgets — driven by the current status's capabilities */}
+        {!isAdmin && (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos')) && (
+          <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>This step</Text>
+
+            {hasCapability(caps, 'checklist') && (
+              <View style={{ marginBottom: hasCapability(caps, 'photos') ? 14 : 0 }}>
+                {(((task as any).checklistItems?.length ?? 0) === 0) ? (
+                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>No checklist items.</Text>
+                ) : (
+                  (task as any).checklistItems.map((it: any) => {
+                    const done = it.completed ?? it.isCompleted ?? false;
+                    return (
+                      <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 }}>
+                        <Ionicons name={done ? 'checkbox' : 'square-outline'} size={20} color={done ? '#16A34A' : colors.textMuted} />
+                        <Text style={{ color: colors.textPrimary, fontSize: 14, flex: 1 }}>{it.text ?? it.title}</Text>
+                      </View>
+                    );
+                  })
+                )}
+              </View>
+            )}
+
+            {hasCapability(caps, 'photos') && (
+              <View>
+                {taskAttachments.length > 0 && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                    {taskAttachments.slice(0, 6).map((a: any) => (
+                      <Image key={a.id} source={{ uri: a.fileUrl }} style={{ width: 60, height: 60, borderRadius: 10 }} />
+                    ))}
+                  </View>
+                )}
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity
+                    onPress={async () => { const p = await takePhoto(); if (p) handleUploadTaskAttachment([p]); }}
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, borderRadius: 12, backgroundColor: colors.surfaceRaised }}
+                  >
+                    <Ionicons name="camera-outline" size={18} color={colors.textPrimary} />
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '600' }}>Camera</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={async () => { const ps = await pickFromGallery(); if (ps?.length) handleUploadTaskAttachment(ps); }}
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, borderRadius: 12, backgroundColor: colors.surfaceRaised }}
+                  >
+                    <Ionicons name="images-outline" size={18} color={colors.textPrimary} />
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '600' }}>Gallery</Text>
+                  </TouchableOpacity>
+                </View>
+                {isUploadingTaskAttachment && (
+                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>Uploading…</Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Section 3: Info Rows Card */}
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('taskDetail.details')}</Text>
