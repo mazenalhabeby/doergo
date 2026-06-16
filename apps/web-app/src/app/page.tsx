@@ -243,6 +243,9 @@ export default function Home() {
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <AnimatedLogo size="small" variant="light" />
             <div className="flex items-center gap-5">
+              <Link href="/download" className="text-sm text-zinc-500 hover:text-white transition-colors hidden sm:block">
+                {t('landing.nav.getApp', 'Get the app')}
+              </Link>
               <Link href="/login" className="text-sm text-zinc-500 hover:text-white transition-colors hidden sm:block">
                 {t('landing.nav.signIn')}
               </Link>

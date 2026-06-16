@@ -4,10 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 // ─── Configuration ──────────────────────────────────────────────────────────────
-// Update these when releasing new builds
-const APP_VERSION = '1.0.0';
-const ANDROID_APK_URL = '/downloads/hbcfield.apk';
-const TESTFLIGHT_URL = 'https://testflight.apple.com/join/XXXXXXXX'; // Replace with your TestFlight public link
+// Driven by env so new builds can be swapped without a code change / redeploy.
+// Set in apps/web-app/.env.local (or the prod env):
+//   NEXT_PUBLIC_APP_VERSION       e.g. 1.0.0
+//   NEXT_PUBLIC_ANDROID_APK_URL   EAS build URL, or /downloads/hbcfield.apk if self-hosted
+//   NEXT_PUBLIC_TESTFLIGHT_URL    public TestFlight invite link
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
+const ANDROID_APK_URL = process.env.NEXT_PUBLIC_ANDROID_APK_URL || '/downloads/hbcfield.apk';
+const TESTFLIGHT_URL =
+  process.env.NEXT_PUBLIC_TESTFLIGHT_URL || 'https://testflight.apple.com/join/XXXXXXXX';
 
 // ─── Platform Detection ─────────────────────────────────────────────────────────
 type Platform = 'android' | 'ios' | 'desktop';
