@@ -136,6 +136,9 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Required by the websocket gateway to verify JWTs on socket connections.
+      # Must match the auth-service / gateway value (same secret signs the tokens).
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
