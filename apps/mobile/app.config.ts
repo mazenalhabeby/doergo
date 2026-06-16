@@ -45,7 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
       package: 'com.hbcfield.app',
-      versionCode: 2,
+      versionCode: 3,
       config: {
         googleMaps: {
           apiKey: googleMapsApiKey,
