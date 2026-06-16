@@ -21,7 +21,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.hbcfield.app',
-      buildNumber: '1',
+      buildNumber: '3',
       config: {
         googleMapsApiKey,
       },
