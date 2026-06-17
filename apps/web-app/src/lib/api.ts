@@ -2642,18 +2642,20 @@ export interface AvailabilityResponse {
 
 export const invitationsApi = {
   // Create a new invitation (ADMIN/DISPATCHER)
+  // API returns { success, data: { code, ...invitation } } — the plaintext code
+  // is only present here, at creation time. Unwrap so callers get `code` flat.
   create: async (input: CreateInvitationInput) => {
     const response = await api.post<{
       success: boolean;
-      code: string;
-      invitation: Invitation;
+      data: { code: string } & Invitation;
     }>('/invitations', input);
 
     if (response.error) {
       throw new Error(response.error);
     }
 
-    return response.data;
+    const payload = response.data?.data;
+    return { code: payload?.code as string, invitation: payload as unknown as Invitation };
   },
 
   // List organization invitations (ADMIN/DISPATCHER)
