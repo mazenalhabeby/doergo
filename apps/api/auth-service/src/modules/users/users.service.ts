@@ -867,6 +867,15 @@ export class UsersService {
     await this.prisma.$transaction([
       this.prisma.technicianAssignment.deleteMany({ where: { userId: memberId } }),
       this.prisma.technicianSchedule.deleteMany({ where: { technicianId: memberId } }),
+      // Unassign their still-active tasks so they stop showing in activity/pending;
+      // completed/closed/canceled tasks keep the assignee for history.
+      this.prisma.task.updateMany({
+        where: {
+          assignedToId: memberId,
+          status: { notIn: ['COMPLETED', 'CLOSED', 'CANCELED'] },
+        },
+        data: { assignedToId: null },
+      }),
       this.prisma.user.update({
         where: { id: memberId },
         data: {
