@@ -375,6 +375,8 @@ export class LocationsService {
     const rosters = await this.prisma.technicianAssignment.findMany({
       where: {
         locationId: { in: locationIds },
+        // Drop ghosts of users removed from the org (org nulled / deactivated).
+        user: { is: { organizationId: data.organizationId, isActive: true } },
         OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
       },
       include: {
@@ -413,6 +415,8 @@ export class LocationsService {
     const assignments = await this.prisma.technicianAssignment.findMany({
       where: {
         locationId: data.locationId,
+        // Only active members still in this org (drop removed-user ghosts)
+        user: { is: { organizationId: data.organizationId, isActive: true } },
         // Only show active assignments (not expired)
         OR: [
           { effectiveTo: null },
@@ -493,6 +497,8 @@ export class LocationsService {
     const assignments = await this.prisma.technicianAssignment.findMany({
       where: {
         locationId: { in: validIds },
+        // Drop ghosts of users removed from the org (org nulled / deactivated).
+        user: { is: { organizationId: data.organizationId, isActive: true } },
         OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
       },
       include: { user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } } },

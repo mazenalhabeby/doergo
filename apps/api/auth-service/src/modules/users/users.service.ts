@@ -862,15 +862,20 @@ export class UsersService {
       }
     }
 
-    // Remove from org (set organizationId to null, deactivate)
-    await this.prisma.user.update({
-      where: { id: memberId },
-      data: {
-        organizationId: null,
-        isActive: false,
-        onboardingCompleted: false,
-      },
-    });
+    // Remove from org and clean up org-scoped associations so the user no
+    // longer appears in space rosters, schedules, or dashboards.
+    await this.prisma.$transaction([
+      this.prisma.technicianAssignment.deleteMany({ where: { userId: memberId } }),
+      this.prisma.technicianSchedule.deleteMany({ where: { technicianId: memberId } }),
+      this.prisma.user.update({
+        where: { id: memberId },
+        data: {
+          organizationId: null,
+          isActive: false,
+          onboardingCompleted: false,
+        },
+      }),
+    ]);
 
     return { success: true, message: 'Member removed successfully' };
   }

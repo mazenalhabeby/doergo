@@ -184,9 +184,12 @@ export function ClientDashboard() {
 
   // All org members (for worker info: name, avatar, workMode, role)
   const { data: membersData } = useQuery({
-    queryKey: ["orgMembers-dashboard"],
+    // Keep under the "orgMembers" namespace so member add/remove/role mutations
+    // (which invalidate ["orgMembers"]) also refresh this dashboard list.
+    queryKey: ["orgMembers", "dashboard"],
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
-    staleTime: 60000,
+    staleTime: 30000,
+    refetchOnMount: true,
   })
 
   // Attendance entries for today — who is clocked in? Admins read org-wide;
