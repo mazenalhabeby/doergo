@@ -129,8 +129,9 @@ export class InvitationService {
 
     const invitation = await this.prisma.invitation.create({
       data: {
-        // Persist ONLY the hash — the plaintext code is returned once below and
-        // never stored, so a read-only DB compromise can't recover usable codes.
+        // Store the plaintext code (so admins can view/copy it from the list any
+        // time) alongside the hash used for fast lookup on validate/accept.
+        code,
         codeHash: codeHashValue,
         targetRole: data.targetRole as any,
         organizationId: data.organizationId,
