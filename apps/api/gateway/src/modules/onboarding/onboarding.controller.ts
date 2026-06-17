@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@ne
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { SkipOnboardingCheck, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import {
   CreateOrganizationDto,
   SubmitJoinRequestDto,
@@ -26,6 +27,7 @@ import {
 export class OnboardingController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly authCache: AuthTokenCache,
   ) {}
 
   @Post('create-org')
@@ -52,6 +54,9 @@ export class OnboardingController {
       );
     }
 
+    // Onboarding just completed — drop the cached (pre-onboarding) user so the
+    // next /auth/me reflects the new org + onboardingCompleted immediately.
+    await this.authCache.invalidateUser(user.id);
     return result;
   }
 
@@ -119,6 +124,9 @@ export class OnboardingController {
       );
     }
 
+    // Onboarding just completed — drop the cached (pre-onboarding) user so the
+    // next /auth/me reflects the new org + onboardingCompleted immediately.
+    await this.authCache.invalidateUser(user.id);
     return result;
   }
 

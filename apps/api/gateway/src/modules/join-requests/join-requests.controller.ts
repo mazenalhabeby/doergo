@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@ne
 import { firstValueFrom } from 'rxjs';
 import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import {
   ListJoinRequestsDto,
   ApproveJoinRequestDto,
@@ -27,6 +28,7 @@ export class JoinRequestsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    private readonly authCache: AuthTokenCache,
   ) {}
 
   @Get()
@@ -70,6 +72,13 @@ export class JoinRequestsController {
         { message: result.message },
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+
+    // Approved user just got an org + onboardingCompleted — drop their cached
+    // (pre-approval) user so their next /auth/me lets them into the app without
+    // a restart.
+    if (result?.data?.userId) {
+      await this.authCache.invalidateUser(result.data.userId);
     }
 
     // Emit notification event
