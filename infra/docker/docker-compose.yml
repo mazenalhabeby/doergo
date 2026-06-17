@@ -240,6 +240,10 @@ services:
       dockerfile: apps/web-app/Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}/api/v1
+        # Auth + socket calls are made from the browser; without these they fall
+        # back to localhost and break in production. Same origin as the API.
+        - NEXT_PUBLIC_AUTH_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}/api/v1
+        - NEXT_PUBLIC_SOCKET_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
         - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
     container_name: hbcfield-web-app
     restart: unless-stopped
