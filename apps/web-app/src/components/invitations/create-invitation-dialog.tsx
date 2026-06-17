@@ -224,7 +224,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="MANAGER">Manager</SelectItem>
+                {/* Management is granted via permissions, not a MANAGER role */}
                 <SelectItem value="EMPLOYEE">Employee</SelectItem>
               </SelectContent>
             </Select>

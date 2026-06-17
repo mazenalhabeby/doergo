@@ -369,7 +369,6 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" side="top" className="w-[160px]">
           <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "ADMIN")}>Admin</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "MANAGER")}>Manager</DropdownMenuItem>
           <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "EMPLOYEE")}>Employee</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -996,7 +995,6 @@ export default function MembersPage() {
               <SelectContent>
                 <SelectItem value="all">All roles</SelectItem>
                 <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="MANAGER">Manager</SelectItem>
                 <SelectItem value="EMPLOYEE">Employee</SelectItem>
               </SelectContent>
             </Select>
@@ -1348,7 +1346,6 @@ export default function MembersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="MANAGER">Manager</SelectItem>
                     <SelectItem value="EMPLOYEE">Employee</SelectItem>
                   </SelectContent>
                 </Select>

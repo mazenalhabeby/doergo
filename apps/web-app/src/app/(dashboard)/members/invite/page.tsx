@@ -217,8 +217,8 @@ export default function InviteMemberPage() {
                   <Select value={role} onValueChange={setRole}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      {/* Management is granted via permissions, not a MANAGER role */}
                       <SelectItem value="EMPLOYEE">{t("members.roles.technician")}</SelectItem>
-                      <SelectItem value="MANAGER">{t("members.roles.dispatcher")}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

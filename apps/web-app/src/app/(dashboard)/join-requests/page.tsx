@@ -114,7 +114,7 @@ export default function JoinRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<JoinRequest | null>(null)
 
   // Approve form state
-  const [approveRole, setApproveRole] = useState<"MANAGER" | "EMPLOYEE">("EMPLOYEE")
+  const [approveRole, setApproveRole] = useState<"EMPLOYEE">("EMPLOYEE")
   const [approveSpecialty, setApproveSpecialty] = useState<string>("")
   const [approveMaxDailyJobs, setApproveMaxDailyJobs] = useState("")
 
@@ -426,14 +426,14 @@ export default function JoinRequestsPage() {
               <Label>{t("joinRequests.approveDialog.roleLabel")}</Label>
               <Select
                 value={approveRole}
-                onValueChange={(v) => setApproveRole(v as "MANAGER" | "EMPLOYEE")}
+                onValueChange={(v) => setApproveRole(v as "EMPLOYEE")}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Management is granted via permissions, not a MANAGER role */}
                   <SelectItem value="EMPLOYEE">{t("members.roles.technician")}</SelectItem>
-                  <SelectItem value="MANAGER">{t("members.roles.dispatcher")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
