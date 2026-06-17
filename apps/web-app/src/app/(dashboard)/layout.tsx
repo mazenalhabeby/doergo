@@ -117,7 +117,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
       <CommandPalette />
-      <TokenDebugPanel />
+      {/* Debug-only token countdown — hidden in production unless explicitly enabled */}
+      {(process.env.NODE_ENV !== 'production' ||
+        process.env.NEXT_PUBLIC_SHOW_TOKEN_MONITOR === 'true') && <TokenDebugPanel />}
     </BreadcrumbProvider>
     </CommandPaletteProvider>
     </ActivityPanelProvider>
