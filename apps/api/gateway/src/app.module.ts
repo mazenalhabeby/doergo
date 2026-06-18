@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
@@ -29,13 +29,13 @@ import { EpicsModule } from './modules/epics/epics.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
 import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.module';
-import { RolesModule } from './modules/roles/roles.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthCacheModule } from './common/cache/auth-cache.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 @Module({
   imports: [
@@ -90,7 +90,6 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     WorkflowsModule,
     CustomFieldsModule,
     RecurringTasksModule,
-    RolesModule,
     InvoicesModule,
   ],
   controllers: [AppController],
@@ -116,6 +115,11 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    // Auto-audit every mutating request (after guards, around the handler).
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

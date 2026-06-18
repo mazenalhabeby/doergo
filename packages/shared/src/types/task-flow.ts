@@ -147,6 +147,114 @@ export function getFlowSteps(
   return FIELD_SERVICE_FLOW;
 }
 
+// ============================================================================
+// Task-type templates — ready-made flows so a new task type isn't built from
+// scratch. ONE source of truth, used by the web "New Task Type" picker AND by
+// the backend that seeds a new org's default type. (DRY)
+// ============================================================================
+
+export interface WorkflowTemplateStatus {
+  name: string;
+  key: string;
+  color: string;
+  icon?: string;
+  position: number;
+  isFinal: boolean;
+  isCanceled: boolean;
+  transitions: string[];
+  capabilities: TaskCapability[];
+}
+
+export interface WorkflowTemplate {
+  /** Stable id used by the picker (also the normalized capability key). */
+  id: string;
+  name: string;
+  description: string;
+  statuses: WorkflowTemplateStatus[];
+}
+
+const C = {
+  slate: '#64748b',
+  blue: '#2563EB',
+  purple: '#7c3aed',
+  amber: '#CA8A04',
+  green: '#16A34A',
+  red: '#DC2626',
+};
+
+export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
+  {
+    id: 'field-service',
+    name: 'Field Service',
+    description: 'Dispatch → travel → on-site work → completion, with GPS, photos & sign-off.',
+    statuses: [
+      { name: 'Assigned',    key: 'ASSIGNED',    color: C.slate,  icon: 'checkmark', position: 0, isFinal: false, isCanceled: false, transitions: ['ACCEPTED', 'CANCELED'], capabilities: [] },
+      { name: 'Accepted',    key: 'ACCEPTED',    color: C.blue,   icon: 'checkmark', position: 1, isFinal: false, isCanceled: false, transitions: ['EN_ROUTE', 'CANCELED'], capabilities: ['timer'] },
+      { name: 'On The Way',  key: 'EN_ROUTE',    color: C.blue,   icon: 'car',       position: 2, isFinal: false, isCanceled: false, transitions: ['ARRIVED'], capabilities: ['gps', 'timer'] },
+      { name: 'Arrived',     key: 'ARRIVED',     color: C.purple, icon: 'location',  position: 3, isFinal: false, isCanceled: false, transitions: ['IN_PROGRESS'], capabilities: ['timer'] },
+      { name: 'In Progress', key: 'IN_PROGRESS', color: C.amber,  icon: 'construct', position: 4, isFinal: false, isCanceled: false, transitions: ['COMPLETED', 'BLOCKED'], capabilities: ['timer'] },
+      { name: 'Blocked',     key: 'BLOCKED',     color: C.red,    icon: 'alert',     position: 5, isFinal: false, isCanceled: false, transitions: ['IN_PROGRESS'], capabilities: ['timer'] },
+      { name: 'Completed',   key: 'COMPLETED',   color: C.green,  icon: 'checkmark', position: 6, isFinal: true,  isCanceled: false, transitions: [], capabilities: ['report', 'photos', 'signature'] },
+      { name: 'Canceled',    key: 'CANCELED',    color: C.slate,  icon: 'close',     position: 7, isFinal: false, isCanceled: true,  transitions: [], capabilities: [] },
+    ],
+  },
+  {
+    id: 'logistics',
+    name: 'Delivery / Logistics',
+    description: 'Pick-up → in-transit → delivered, with GPS tracking and proof of delivery.',
+    statuses: [
+      { name: 'Assigned',   key: 'ASSIGNED',   color: C.slate,  icon: 'checkmark', position: 0, isFinal: false, isCanceled: false, transitions: ['ACCEPTED', 'CANCELED'], capabilities: [] },
+      { name: 'Accepted',   key: 'ACCEPTED',   color: C.blue,   icon: 'checkmark', position: 1, isFinal: false, isCanceled: false, transitions: ['PICKED_UP', 'CANCELED'], capabilities: ['gps'] },
+      { name: 'Picked Up',  key: 'PICKED_UP',  color: C.purple, icon: 'cube',      position: 2, isFinal: false, isCanceled: false, transitions: ['IN_TRANSIT'], capabilities: ['timer', 'photos'] },
+      { name: 'In Transit', key: 'IN_TRANSIT', color: C.blue,   icon: 'car',       position: 3, isFinal: false, isCanceled: false, transitions: ['DELIVERED'], capabilities: ['gps', 'timer'] },
+      { name: 'Delivered',  key: 'DELIVERED',  color: C.green,  icon: 'checkmark', position: 4, isFinal: true,  isCanceled: false, transitions: [], capabilities: ['photos', 'signature'] },
+      { name: 'Canceled',   key: 'CANCELED',   color: C.slate,  icon: 'close',     position: 5, isFinal: false, isCanceled: true,  transitions: [], capabilities: [] },
+    ],
+  },
+  {
+    id: 'office',
+    name: 'Office Task',
+    description: 'A simple to-do board: To Do → Doing → Done, with a time-on-task timer.',
+    statuses: [
+      { name: 'To Do',    key: 'TODO',     color: C.slate, icon: 'list',      position: 0, isFinal: false, isCanceled: false, transitions: ['DOING', 'CANCELED'], capabilities: [] },
+      { name: 'Doing',    key: 'DOING',    color: C.amber, icon: 'construct', position: 1, isFinal: false, isCanceled: false, transitions: ['DONE', 'CANCELED'], capabilities: ['timer', 'checklist'] },
+      { name: 'Done',     key: 'DONE',     color: C.green, icon: 'checkmark', position: 2, isFinal: true,  isCanceled: false, transitions: [], capabilities: [] },
+      { name: 'Canceled', key: 'CANCELED', color: C.slate, icon: 'close',     position: 3, isFinal: false, isCanceled: true,  transitions: [], capabilities: [] },
+    ],
+  },
+  {
+    id: 'sales',
+    name: 'Sales Visit',
+    description: 'Scheduled → on the way → visited → outcome, with GPS and a visit form.',
+    statuses: [
+      { name: 'Scheduled', key: 'SCHEDULED', color: C.slate,  icon: 'calendar',  position: 0, isFinal: false, isCanceled: false, transitions: ['EN_ROUTE', 'CANCELED'], capabilities: [] },
+      { name: 'On The Way', key: 'EN_ROUTE', color: C.blue,   icon: 'car',       position: 1, isFinal: false, isCanceled: false, transitions: ['VISITED'], capabilities: ['gps', 'timer'] },
+      { name: 'Visited',   key: 'VISITED',   color: C.purple, icon: 'location',  position: 2, isFinal: false, isCanceled: false, transitions: ['OUTCOME'], capabilities: ['gps', 'timer', 'form'] },
+      { name: 'Outcome',   key: 'OUTCOME',   color: C.green,  icon: 'checkmark', position: 3, isFinal: true,  isCanceled: false, transitions: [], capabilities: ['form'] },
+      { name: 'Canceled',  key: 'CANCELED',  color: C.slate,  icon: 'close',     position: 4, isFinal: false, isCanceled: true,  transitions: [], capabilities: [] },
+    ],
+  },
+  {
+    id: 'inspection',
+    name: 'Inspection / Audit',
+    description: 'On-site inspection with a checklist, evidence photos and a final sign-off.',
+    statuses: [
+      { name: 'Assigned',    key: 'ASSIGNED',    color: C.slate, icon: 'checkmark', position: 0, isFinal: false, isCanceled: false, transitions: ['IN_PROGRESS', 'CANCELED'], capabilities: [] },
+      { name: 'In Progress', key: 'IN_PROGRESS', color: C.amber, icon: 'construct', position: 1, isFinal: false, isCanceled: false, transitions: ['SUBMITTED', 'BLOCKED'], capabilities: ['timer', 'checklist', 'photos'] },
+      { name: 'Blocked',     key: 'BLOCKED',     color: C.red,   icon: 'alert',     position: 2, isFinal: false, isCanceled: false, transitions: ['IN_PROGRESS'], capabilities: ['timer'] },
+      { name: 'Submitted',   key: 'SUBMITTED',   color: C.green, icon: 'checkmark', position: 3, isFinal: true,  isCanceled: false, transitions: [], capabilities: ['signature'] },
+      { name: 'Canceled',    key: 'CANCELED',    color: C.slate, icon: 'close',     position: 4, isFinal: false, isCanceled: true,  transitions: [], capabilities: [] },
+    ],
+  },
+];
+
+/** The template seeded as a new organization's default task type. */
+export const DEFAULT_WORKFLOW_TEMPLATE: WorkflowTemplate = WORKFLOW_TEMPLATES[0]!;
+
+export function getWorkflowTemplate(id: string): WorkflowTemplate | undefined {
+  return WORKFLOW_TEMPLATES.find((t) => t.id === id);
+}
+
 /** Index of a status key within the flow (−1 if absent). */
 export function getFlowIndex(steps: FlowStatus[], statusKey: string): number {
   return steps.findIndex((s) => s.key === statusKey);

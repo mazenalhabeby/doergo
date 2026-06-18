@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ClipboardList,
   Plus,
+  Repeat,
   LayoutList,
   Kanban,
   CalendarDays,
@@ -36,6 +37,7 @@ import { TimelineView } from "./_components/timeline-view"
 import { CalendarView } from "./_components/calendar-view"
 import { EpicRoadmap } from "./_components/epic-roadmap"
 import { CreateTaskDialog } from "./_components/create-task-dialog"
+import { RecurringPanel } from "./recurring/page"
 import { BulkActionBar } from "./_components/bulk-action-bar"
 import { BacklogToolbar, sortBacklogTasks, type BacklogSortField, type BacklogSortDir } from "./_components/backlog-toolbar"
 import { SprintCapacityBar } from "./_components/sprint-capacity"
@@ -242,6 +244,7 @@ export default function TasksPage() {
 
   // Create task dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [recurringView, setRecurringView] = useState(false)
 
   // Assign dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
@@ -1047,6 +1050,22 @@ export default function TasksPage() {
             ))}
           </div>
 
+          {/* Recurring view toggle (admins) */}
+          {user?.role === "ADMIN" && (
+            <Button
+              size="sm"
+              variant={recurringView ? "default" : "outline"}
+              onClick={() => setRecurringView((v) => !v)}
+              className={cn(
+                "h-8 px-3.5 rounded-lg font-medium text-sm",
+                recurringView && "bg-blue-600 text-white hover:bg-blue-700",
+              )}
+            >
+              <Repeat className="size-4 mr-1.5" />
+              Recurring
+            </Button>
+          )}
+
           {/* Create Task */}
           {canCreateTasks && (
             <Button
@@ -1115,6 +1134,11 @@ export default function TasksPage() {
             <div className="h-px bg-border/50" />
           </div>
         )}
+
+        {recurringView ? (
+          <RecurringPanel embedded spaceId={selectedSpaceId} />
+        ) : (
+          <>
 
         {/* ── Line 2: Status tabs — hidden everywhere (status shown per row/column) ── */}
         <div className="hidden">
@@ -1509,6 +1533,8 @@ export default function TasksPage() {
               </div>
             )}
           </div>
+        )}
+          </>
         )}
       </div>
 

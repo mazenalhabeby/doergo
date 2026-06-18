@@ -3,15 +3,38 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  OnModuleInit,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success } from '@hbcfield/shared';
 
 @Injectable()
-export class RecurringTasksService {
+export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RecurringTasksService.name);
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  /** How often the scheduler scans for due templates. */
+  private readonly POLL_INTERVAL_MS = 5 * 60 * 1000;
 
   constructor(private readonly prisma: PrismaService) {}
+
+  onModuleInit() {
+    // Poll for due recurring templates and auto-generate their tasks. One
+    // indexed query per tick (`[nextRunAt, isActive]`), claims each template
+    // atomically so multiple instances can't double-generate.
+    this.pollTimer = setInterval(() => {
+      this.runDue().catch((e) => this.logger.error(`Recurring scheduler error: ${e}`));
+    }, this.POLL_INTERVAL_MS);
+    this.logger.log('Recurring task scheduler started (every 5 min)');
+    // Run once shortly after boot so a just-due template doesn't wait a full tick.
+    setTimeout(() => {
+      this.runDue().catch((e) => this.logger.error(`Recurring scheduler error: ${e}`));
+    }, 15_000);
+  }
+
+  onModuleDestroy() {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+  }
 
   /**
    * List all recurring task templates for an organization
@@ -24,6 +47,8 @@ export class RecurringTasksService {
       skip: data.offset || 0,
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true } },
+        space: { select: { id: true, name: true } },
+        workflow: { select: { id: true, name: true } },
       },
     });
 
@@ -37,6 +62,8 @@ export class RecurringTasksService {
     title: string;
     description?: string;
     priority?: string;
+    spaceId?: string;
+    workflowId?: string;
     locationLat?: number;
     locationLng?: number;
     locationAddress?: string;
@@ -54,6 +81,9 @@ export class RecurringTasksService {
   }) {
     // Validate frequency-specific fields
     this.validateFrequencyFields(data.frequency, data);
+
+    // Validate space + task type belong to this org (if provided)
+    await this.assertSpaceAndWorkflow(data.organizationId, data.spaceId, data.workflowId);
 
     const startDate = new Date(data.startDate);
 
@@ -85,6 +115,8 @@ export class RecurringTasksService {
         title: data.title,
         description: data.description,
         priority: (data.priority as any) || 'MEDIUM',
+        spaceId: data.spaceId ?? null,
+        workflowId: data.workflowId ?? null,
         locationLat: data.locationLat,
         locationLng: data.locationLng,
         locationAddress: data.locationAddress,
@@ -118,6 +150,8 @@ export class RecurringTasksService {
     title?: string;
     description?: string;
     priority?: string;
+    spaceId?: string | null;
+    workflowId?: string | null;
     locationLat?: number;
     locationLng?: number;
     locationAddress?: string;
@@ -142,6 +176,13 @@ export class RecurringTasksService {
     if (existing.organizationId !== data.organizationId) {
       throw new NotFoundException('Recurring task template not found');
     }
+
+    // Validate any newly-set space / task type belong to this org
+    await this.assertSpaceAndWorkflow(
+      data.organizationId,
+      data.spaceId === undefined ? undefined : data.spaceId ?? undefined,
+      data.workflowId === undefined ? undefined : data.workflowId ?? undefined,
+    );
 
     // If frequency changed, validate and recalculate nextRunAt
     const frequency = data.frequency || existing.frequency;
@@ -172,6 +213,8 @@ export class RecurringTasksService {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.priority !== undefined && { priority: data.priority as any }),
+        ...(data.spaceId !== undefined && { spaceId: data.spaceId }),
+        ...(data.workflowId !== undefined && { workflowId: data.workflowId }),
         ...(data.locationLat !== undefined && { locationLat: data.locationLat }),
         ...(data.locationLng !== undefined && { locationLng: data.locationLng }),
         ...(data.locationAddress !== undefined && { locationAddress: data.locationAddress }),
@@ -240,69 +283,8 @@ export class RecurringTasksService {
       throw new BadRequestException('Template end date has passed');
     }
 
-    // Create the task
-    const task = await this.prisma.task.create({
-      data: {
-        title: template.title,
-        description: template.description,
-        priority: template.priority,
-        status: 'NEW',
-        locationLat: template.locationLat,
-        locationLng: template.locationLng,
-        locationAddress: template.locationAddress,
-        estimatedHours: template.estimatedHours,
-        organizationId: template.organizationId,
-        createdById: data.userId,
-      },
-    });
-
-    // Create checklist items if template has them
-    const checklist = Array.isArray(template.checklist) ? template.checklist as { text: string }[] : [];
-    if (checklist.length > 0) {
-      await this.prisma.checklistItem.createMany({
-        data: checklist.map((item, index) => ({
-          taskId: task.id,
-          text: item.text,
-          position: index,
-        })),
-      });
-    }
-
-    // Create assignees if template has them
-    const assigneeIds = Array.isArray(template.assigneeIds) ? template.assigneeIds as string[] : [];
-    if (assigneeIds.length > 0) {
-      // Set first assignee as legacy assignedToId
-      await this.prisma.task.update({
-        where: { id: task.id },
-        data: {
-          assignedToId: assigneeIds[0],
-          status: 'ASSIGNED',
-        },
-      });
-
-      // Create multi-assignee records
-      await this.prisma.taskAssignee.createMany({
-        data: assigneeIds.map((userId, index) => ({
-          taskId: task.id,
-          userId,
-          role: index === 0 ? 'LEAD' : 'MEMBER',
-        })),
-      });
-    }
-
-    // Create task event
-    await this.prisma.taskEvent.create({
-      data: {
-        taskId: task.id,
-        userId: data.userId,
-        eventType: 'CREATED',
-        metadata: {
-          source: 'recurring_template',
-          templateId: template.id,
-          templateTitle: template.title,
-        },
-      },
-    });
+    // Create the task (space-, type- and flow-aware)
+    const task = await this.materializeTask(template, data.userId);
 
     // Update template: set lastGeneratedAt and calculate next run
     const now = new Date();
@@ -443,5 +425,162 @@ export class RecurringTasksService {
     }
 
     return next;
+  }
+
+  /** Ensure a referenced space / task type belongs to the org. */
+  private async assertSpaceAndWorkflow(
+    organizationId: string,
+    spaceId?: string,
+    workflowId?: string,
+  ) {
+    if (spaceId) {
+      const space = await this.prisma.companyLocation.findFirst({
+        where: { id: spaceId, organizationId },
+        select: { id: true },
+      });
+      if (!space) throw new BadRequestException('Space not found in this organization');
+    }
+    if (workflowId) {
+      const wf = await this.prisma.statusWorkflow.findFirst({
+        where: { id: workflowId, organizationId },
+        select: { id: true },
+      });
+      if (!wf) throw new BadRequestException('Task Type not found in this organization');
+    }
+  }
+
+  /** First non-cancel status of a task type (the flow's starting point). */
+  private async resolveInitialStatus(workflowId: string | null): Promise<string> {
+    if (!workflowId) return 'NEW';
+    const first = await this.prisma.workflowStatus.findFirst({
+      where: { workflowId, isCanceled: false },
+      orderBy: { position: 'asc' },
+      select: { key: true },
+    });
+    return first?.key ?? 'NEW';
+  }
+
+  /**
+   * Create one real Task from a template — space-, type- and flow-aware. Shared
+   * by the manual "Generate" action and the scheduler.
+   */
+  private async materializeTask(
+    template: {
+      id: string;
+      title: string;
+      description: string | null;
+      priority: any;
+      spaceId: string | null;
+      workflowId: string | null;
+      locationLat: number | null;
+      locationLng: number | null;
+      locationAddress: string | null;
+      estimatedHours: number | null;
+      organizationId: string;
+      assigneeIds: unknown;
+      checklist: unknown;
+    },
+    userId: string,
+  ): Promise<{ id: string }> {
+    const assigneeIds = Array.isArray(template.assigneeIds) ? (template.assigneeIds as string[]) : [];
+    const checklist = Array.isArray(template.checklist) ? (template.checklist as { text: string }[]) : [];
+
+    let status = await this.resolveInitialStatus(template.workflowId ?? null);
+    // Legacy field-service behaviour: an assigned task with no custom type starts ASSIGNED.
+    if (assigneeIds.length > 0 && !template.workflowId) status = 'ASSIGNED';
+
+    const task = await this.prisma.task.create({
+      data: {
+        title: template.title,
+        description: template.description,
+        priority: template.priority,
+        status: status as any,
+        spaceId: template.spaceId ?? null,
+        workflowId: template.workflowId ?? null,
+        locationLat: template.locationLat,
+        locationLng: template.locationLng,
+        locationAddress: template.locationAddress,
+        estimatedHours: template.estimatedHours,
+        organizationId: template.organizationId,
+        createdById: userId,
+        ...(assigneeIds.length > 0 ? { assignedToId: assigneeIds[0] } : {}),
+      },
+    });
+
+    if (checklist.length > 0) {
+      await this.prisma.checklistItem.createMany({
+        data: checklist.map((item, index) => ({ taskId: task.id, text: item.text, position: index })),
+      });
+    }
+    if (assigneeIds.length > 0) {
+      await this.prisma.taskAssignee.createMany({
+        data: assigneeIds.map((uid, index) => ({
+          taskId: task.id,
+          userId: uid,
+          role: index === 0 ? 'LEAD' : 'MEMBER',
+        })),
+      });
+    }
+    await this.prisma.taskEvent.create({
+      data: {
+        taskId: task.id,
+        userId,
+        eventType: 'CREATED',
+        metadata: {
+          source: 'recurring_template',
+          templateId: template.id,
+          templateTitle: template.title,
+        },
+      },
+    });
+
+    return task;
+  }
+
+  /**
+   * Scheduler tick: find every active template whose nextRunAt has arrived,
+   * claim each atomically (compare-and-swap on nextRunAt so concurrent workers
+   * don't double-generate), then create its task.
+   */
+  async runDue(): Promise<number> {
+    const now = new Date();
+    const due = await this.prisma.recurringTaskTemplate.findMany({
+      where: {
+        isActive: true,
+        nextRunAt: { lte: now },
+        OR: [{ endDate: null }, { endDate: { gte: now } }],
+      },
+      take: 200,
+    });
+
+    let generated = 0;
+    for (const template of due) {
+      const next = this.calculateNextRun(
+        template.frequency,
+        template.startDate,
+        now,
+        template.dayOfWeek ?? undefined,
+        template.dayOfMonth ?? undefined,
+        template.customDays ?? undefined,
+      );
+      const finalNext = template.endDate && next && next > template.endDate ? null : next;
+
+      // Claim: only proceed if nextRunAt is still exactly what we read.
+      const claim = await this.prisma.recurringTaskTemplate.updateMany({
+        where: { id: template.id, nextRunAt: template.nextRunAt },
+        data: { lastGeneratedAt: now, nextRunAt: finalNext },
+      });
+      if (claim.count !== 1) continue;
+
+      try {
+        await this.materializeTask(template, template.createdById);
+        generated++;
+      } catch (e) {
+        this.logger.error(`Recurring generate failed for template ${template.id}: ${e}`);
+      }
+    }
+
+    if (generated > 0) this.logger.log(`Recurring scheduler generated ${generated} task(s)`);
+    return generated;
   }
 }

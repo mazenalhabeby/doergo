@@ -24,6 +24,13 @@ export class CreateOrganizationDto {
   @MaxLength(50, { message: 'Industry must not exceed 50 characters' })
   @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   industry?: string;
+
+  @ApiPropertyOptional({ example: 'Main Office', description: "Name of the org's first space" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60, { message: 'Space name must not exceed 60 characters' })
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  firstSpaceName?: string;
 }
 
 /**

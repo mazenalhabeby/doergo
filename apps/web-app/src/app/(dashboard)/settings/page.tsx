@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback, lazy, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Copy,
@@ -24,8 +24,6 @@ import {
   Clock,
   AlertCircle,
   GitBranch,
-  ListChecks,
-  Repeat,
   Puzzle,
 } from "lucide-react"
 import NextLink from "next/link"
@@ -36,9 +34,6 @@ import { useAuth } from "@/contexts/auth-context"
 
 // Lazy-load sub-pages so they render inline in the settings content area
 const WorkflowsPage = lazy(() => import("./workflows/page"))
-const RolesPage = lazy(() => import("./roles/page"))
-const CustomFieldsPage = lazy(() => import("./custom-fields/page"))
-const RecurringPage = lazy(() => import("./recurring/page"))
 const AuditLogPage = lazy(() => import("./audit-log/page"))
 
 function LazyFallback() {
@@ -57,13 +52,9 @@ function EmbeddedPage({ children }: { children: React.ReactNode }) {
 }
 
 function LazyWorkflows() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><WorkflowsPage /></EmbeddedPage></Suspense> }
-function LazyRoles() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><RolesPage /></EmbeddedPage></Suspense> }
-function LazyCustomFields() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><CustomFieldsPage /></EmbeddedPage></Suspense> }
-function LazyRecurring() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><RecurringPage /></EmbeddedPage></Suspense> }
 function LazyAuditLog() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><AuditLogPage /></EmbeddedPage></Suspense> }
-import { organizationsApi, JoinPolicy } from "@/lib/api"
+import { organizationsApi, usersApi, authApi, JoinPolicy } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
-import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -76,6 +67,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
+import { PhoneInput } from "@/components/ui/phone-input"
+import { getCountries } from "@/lib/countries"
 
 // ============================================================================
 // Constants
@@ -96,9 +98,33 @@ const TIMEZONE_OPTIONS = [
   "Pacific/Auckland",
 ] as const
 
+/** Current UTC offset for a zone, e.g. "UTC+2" / "UTC+5:30" (reflects DST today). */
+function tzOffset(tz: string): string {
+  try {
+    const part = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+      .formatToParts(new Date())
+      .find((p) => p.type === "timeZoneName")?.value
+    return (part || "UTC+0").replace("GMT", "UTC")
+  } catch {
+    return ""
+  }
+}
+
+/** Full IANA timezone list (falls back to the curated set on old browsers). */
+function allTimezones(): string[] {
+  try {
+    const all = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
+      .supportedValuesOf?.("timeZone")
+    if (Array.isArray(all) && all.length) return all
+  } catch {
+    /* noop */
+  }
+  return [...TIMEZONE_OPTIONS]
+}
+
 type SettingsSection =
   // Organization
-  | "general" | "members" | "modules" | "workflows" | "roles" | "custom-fields" | "recurring" | "audit-log"
+  | "general" | "members" | "modules" | "workflows" | "audit-log"
   // Personal
   | "profile" | "security" | "notifications"
 
@@ -111,18 +137,17 @@ interface NavItem {
 const ORG_NAV_ITEMS: NavItem[] = [
   { key: "general", icon: Building2, label: "General" },
   { key: "members", icon: Users, label: "Members" },
-  { key: "modules", icon: Puzzle, label: "Modules" },
-  { key: "workflows", icon: GitBranch, label: "Workflows" },
-  { key: "roles", icon: Shield, label: "Roles" },
-  { key: "custom-fields", icon: ListChecks, label: "Custom Fields" },
-  { key: "recurring", icon: Repeat, label: "Recurring Tasks" },
+  { key: "workflows", icon: GitBranch, label: "Task Types" },
+  // Org-level notification policy (who gets emailed on task/join events) —
+  // these prefs are org-scoped + admin-gated, so they belong here, not under
+  // Personal (where non-admins would 403 loading/saving them).
+  { key: "notifications", icon: Bell, label: "Notifications" },
   { key: "audit-log", icon: Clock, label: "Audit Log" },
 ]
 
 const PERSONAL_NAV_ITEMS: NavItem[] = [
   { key: "profile", icon: Users, label: "Profile" },
   { key: "security", icon: Key, label: "Password & Security" },
-  { key: "notifications", icon: Bell, label: "Notifications" },
 ]
 
 const NAV_ITEMS = [...ORG_NAV_ITEMS, ...PERSONAL_NAV_ITEMS]
@@ -262,7 +287,8 @@ function GeneralSection() {
   })
 
   const [form, setForm] = useState({
-    name: "", industry: "", address: "", phone: "", email: "", website: "", timezone: "",
+    name: "", industry: "", phone: "", email: "", website: "", timezone: "",
+    addressLine1: "", addressLine2: "", city: "", state: "", postalCode: "", country: "",
   })
   const [initialized, setInitialized] = useState(false)
 
@@ -270,9 +296,13 @@ function GeneralSection() {
     if (profile && !initialized) {
       setForm({
         name: profile.name ?? "", industry: profile.industry ?? "",
-        address: profile.address ?? "", phone: profile.phone ?? "",
-        email: profile.email ?? "", website: profile.website ?? "",
-        timezone: profile.timezone ?? "",
+        phone: profile.phone ?? "", email: profile.email ?? "",
+        website: profile.website ?? "", timezone: profile.timezone ?? "",
+        // Seed structured address; fall back to the legacy single line on line 1.
+        addressLine1: profile.addressLine1 ?? profile.address ?? "",
+        addressLine2: profile.addressLine2 ?? "",
+        city: profile.city ?? "", state: profile.state ?? "",
+        postalCode: profile.postalCode ?? "", country: profile.country ?? "",
       })
       setInitialized(true)
     }
@@ -288,6 +318,30 @@ function GeneralSection() {
   })
 
   const set = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }))
+
+  const industryOptions: ComboboxOption[] = useMemo(
+    () =>
+      INDUSTRY_OPTIONS.filter(k => k !== "other").map(k => ({
+        value: k,
+        label: t(`settings.general.industries.${k}`),
+      })),
+    [t],
+  )
+
+  const timezoneOptions: ComboboxOption[] = useMemo(
+    () =>
+      allTimezones().map(tz => ({
+        value: tz,
+        label: `${tz.replace(/_/g, " ")} (${tzOffset(tz)})`,
+        keywords: tzOffset(tz),
+      })),
+    [],
+  )
+
+  const countryOptions: ComboboxOption[] = useMemo(
+    () => getCountries().map(c => ({ value: c.code, label: c.name, keywords: c.code })),
+    [],
+  )
 
   if (isLoading) {
     return (
@@ -311,54 +365,80 @@ function GeneralSection() {
             <Input
               value={form.name}
               onChange={e => set("name", e.target.value)}
+              placeholder={t("settings.general.orgNamePlaceholder", "e.g. Acme Corporation")}
               className="h-11 rounded-xl"
             />
           </FormField>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormField icon={Tag} label={t("settings.general.industry")}>
-              <Select value={form.industry} onValueChange={v => set("industry", v)}>
-                <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue placeholder={t("settings.general.industry")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {INDUSTRY_OPTIONS.map(key => (
-                    <SelectItem key={key} value={key}>
-                      {t(`settings.general.industries.${key}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                value={form.industry}
+                onChange={v => set("industry", v)}
+                options={industryOptions}
+                placeholder={t("settings.general.industry")}
+                creatable
+                createLabel={q => `Add “${q}”`}
+              />
             </FormField>
 
             <FormField icon={Clock} label={t("settings.general.timezone")}>
-              <Select value={form.timezone} onValueChange={v => set("timezone", v)}>
-                <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue placeholder={t("settings.general.timezone")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIMEZONE_OPTIONS.map(tz => (
-                    <SelectItem key={tz} value={tz}>{tz.replace(/_/g, " ")}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                value={form.timezone}
+                onChange={v => set("timezone", v)}
+                options={timezoneOptions}
+                placeholder={t("settings.general.timezone")}
+              />
             </FormField>
           </div>
 
-          <FormField icon={MapPin} label={t("settings.general.address")}>
+          <FormField icon={MapPin} label={t("settings.general.streetAddress", "Street address")}>
             <Input
-              value={form.address}
-              onChange={e => set("address", e.target.value)}
+              value={form.addressLine1}
+              onChange={e => set("addressLine1", e.target.value)}
+              placeholder={t("settings.general.streetAddressPlaceholder", "e.g. Arbeiterheimstraße 32")}
+              className="h-11 rounded-xl"
+            />
+          </FormField>
+
+          <FormField label={t("settings.general.addressLine2", "Address line 2 (optional)")}>
+            <Input
+              value={form.addressLine2}
+              onChange={e => set("addressLine2", e.target.value)}
+              placeholder={t("settings.general.addressLine2Placeholder", "Suite, floor, unit…")}
               className="h-11 rounded-xl"
             />
           </FormField>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormField label={t("settings.general.city", "City")}>
+              <Input value={form.city} onChange={e => set("city", e.target.value)} placeholder={t("settings.general.cityPlaceholder", "e.g. Vienna")} className="h-11 rounded-xl" />
+            </FormField>
+            <FormField label={t("settings.general.state", "State / Province / Region")}>
+              <Input value={form.state} onChange={e => set("state", e.target.value)} placeholder={t("settings.general.statePlaceholder", "e.g. Upper Austria")} className="h-11 rounded-xl" />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormField label={t("settings.general.postalCode", "Postal / ZIP code")}>
+              <Input value={form.postalCode} onChange={e => set("postalCode", e.target.value)} placeholder={t("settings.general.postalCodePlaceholder", "e.g. 4663")} className="h-11 rounded-xl" />
+            </FormField>
+            <FormField icon={Globe} label={t("settings.general.country", "Country")}>
+              <Combobox
+                value={form.country}
+                onChange={v => set("country", v)}
+                options={countryOptions}
+                placeholder={t("settings.general.selectCountry", "Select country")}
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormField icon={Phone} label={t("settings.general.phone")}>
-              <Input
+              <PhoneInput
                 value={form.phone}
-                onChange={e => set("phone", e.target.value)}
-                className="h-11 rounded-xl"
+                onChange={v => set("phone", v)}
+                defaultCountry={form.country || "AT"}
               />
             </FormField>
             <FormField icon={Mail} label={t("settings.general.email")}>
@@ -366,6 +446,7 @@ function GeneralSection() {
                 type="email"
                 value={form.email}
                 onChange={e => set("email", e.target.value)}
+                placeholder={t("settings.general.emailPlaceholder", "e.g. office@company.com")}
                 className="h-11 rounded-xl"
               />
             </FormField>
@@ -375,7 +456,7 @@ function GeneralSection() {
             <Input
               value={form.website}
               onChange={e => set("website", e.target.value)}
-              placeholder="https://"
+              placeholder={t("settings.general.websitePlaceholder", "https://www.company.com")}
               className="h-11 rounded-xl"
             />
           </FormField>
@@ -550,68 +631,6 @@ function MembersSection() {
   )
 }
 
-function AppearanceSection() {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-
-  const [badges, setBadges] = useState({ showRole: true, showType: true, showSpecialty: true })
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["organization-profile-badges"],
-    queryFn: () => organizationsApi.getProfileBadges(),
-  })
-
-  useEffect(() => {
-    if (data?.profileBadges) setBadges(data.profileBadges)
-  }, [data])
-
-  const mutation = useMutation({
-    mutationFn: (d: typeof badges) => organizationsApi.updateProfileBadges(d),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organization-profile-badges"] })
-      notify.success(t("settings.profileBadges.updated"))
-    },
-    onError: (e: Error) => notify.error(e.message || t("settings.profileBadges.failed")),
-  })
-
-  const toggle = useCallback((field: keyof typeof badges, value: boolean) => {
-    const updated = { ...badges, [field]: value }
-    setBadges(updated)
-    mutation.mutate(updated)
-  }, [badges, mutation])
-
-  if (isLoading) return <Skeleton className="h-[300px] w-full rounded-2xl" />
-
-  const BADGE_TOGGLES = [
-    { key: "showRole" as const, label: t("settings.profileBadges.showRole") },
-    { key: "showType" as const, label: t("settings.profileBadges.showType") },
-    { key: "showSpecialty" as const, label: t("settings.profileBadges.showSpecialty") },
-  ]
-
-  return (
-    <SettingCard
-      icon={Tag}
-      iconColor="text-emerald-600"
-      iconBg="bg-emerald-50"
-      title={t("settings.profileBadges.title")}
-      description={t("settings.profileBadges.description")}
-    >
-      <div className="divide-y divide-border">
-        {BADGE_TOGGLES.map(item => (
-          <ToggleRow
-            key={item.key}
-            id={`badge-${item.key}`}
-            label={item.label}
-            checked={badges[item.key]}
-            onChange={v => toggle(item.key, v)}
-            disabled={mutation.isPending}
-          />
-        ))}
-      </div>
-    </SettingCard>
-  )
-}
-
 function NotificationsSection() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -681,75 +700,92 @@ function NotificationsSection() {
   )
 }
 
-function ModulesSection() {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const { user, refreshUser } = useAuth()
-
-  const [modules, setModules] = useState<string[]>([])
-  const [initialized, setInitialized] = useState(false)
-
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ["organization-profile"],
-    queryFn: () => organizationsApi.getProfile(),
-  })
-
-  useEffect(() => {
-    if (profile && !initialized) {
-      setModules((profile.enabledModules as string[] | null) || [])
-      setInitialized(true)
-    }
-  }, [profile, initialized])
-
-  const mutation = useMutation({
-    mutationFn: (enabledModules: string[]) => organizationsApi.updateEnabledModules(enabledModules),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
-      refreshUser()
-      notify.success("Modules updated")
-    },
-    onError: (e: Error) => notify.error(e.message || "Failed to update modules"),
-  })
-
-  const toggle = useCallback((key: string, enabled: boolean) => {
-    const updated = enabled
-      ? [...modules, key]
-      : modules.filter(m => m !== key)
-    setModules(updated)
-    mutation.mutate(updated)
-  }, [modules, mutation])
-
-  if (isLoading) return <Skeleton className="h-[400px] w-full rounded-2xl" />
-
-  return (
-    <SettingCard
-      icon={Puzzle}
-      iconColor="text-orange-600"
-      iconBg="bg-orange-50"
-      title="Modules"
-      description="Enable optional features for your organization. Disabled modules are hidden from all users."
-    >
-      <div className="divide-y divide-border">
-        {AVAILABLE_MODULES.map(mod => (
-          <ToggleRow
-            key={mod.key}
-            id={`module-${mod.key}`}
-            label={mod.label}
-            description={mod.description}
-            checked={modules.includes(mod.key)}
-            onChange={v => toggle(mod.key, v)}
-            disabled={mutation.isPending}
-          />
-        ))}
-      </div>
-    </SettingCard>
-  )
-}
-
 // ============================================================================
 // ============================================================================
 // PERSONAL SECTIONS
 // ============================================================================
+
+function ChangeEmailDialog({
+  open,
+  onOpenChange,
+  currentEmail,
+  onChanged,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  currentEmail: string
+  onChanged: () => void
+}) {
+  const [newEmail, setNewEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const reset = () => { setNewEmail(""); setPassword("") }
+
+  const submit = async () => {
+    if (!newEmail.trim() || !password) return
+    setSaving(true)
+    try {
+      await usersApi.updateMyEmail({ newEmail: newEmail.trim(), currentPassword: password })
+      notify.success("Email updated")
+      onChanged()
+      reset()
+      onOpenChange(false)
+    } catch (e: any) {
+      notify.error(e.message || "Couldn't change email")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o) }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Change email</DialogTitle>
+          <DialogDescription>
+            Your email is your login. Enter a new one and confirm with your current password.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div>
+            <Label className="text-xs text-muted-foreground">Current email</Label>
+            <Input value={currentEmail} disabled className="mt-1 bg-muted" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">New email</Label>
+            <Input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="mt-1"
+              autoFocus
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Current password</Label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="mt-1"
+              onKeyDown={(e) => e.key === "Enter" && newEmail.trim() && password && submit()}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={!newEmail.trim() || !password || saving}>
+            {saving && <Loader2 className="size-4 mr-1.5 animate-spin" />}
+            Change email
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function ProfileSection() {
   const { user, refreshUser } = useAuth()
@@ -759,6 +795,7 @@ function ProfileSection() {
   const [saving, setSaving] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [avatarRemoving, setAvatarRemoving] = useState(false)
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -767,11 +804,16 @@ function ProfileSection() {
     }
   }, [user])
 
+  const dirty =
+    firstName.trim() !== (user?.firstName || "") || lastName.trim() !== (user?.lastName || "")
+  const canSave = dirty && firstName.trim() !== "" && lastName.trim() !== "" && !saving
+
   const handleSave = async () => {
+    if (!canSave) return
     setSaving(true)
     try {
-      const { organizationsApi } = await import("@/lib/api")
-      await organizationsApi.updateMember(user!.id, { firstName, lastName })
+      // Self-service — works for any user (not the admin member endpoint).
+      await usersApi.updateMe({ firstName: firstName.trim(), lastName: lastName.trim() })
       notify.success("Profile updated")
       queryClient.invalidateQueries({ queryKey: ["user"] })
       refreshUser()
@@ -800,7 +842,6 @@ function ProfileSection() {
 
     setAvatarUploading(true)
     try {
-      const { usersApi } = await import("@/lib/api")
       // Upload file directly to the API gateway
       await usersApi.uploadAvatar(file)
 
@@ -819,7 +860,6 @@ function ProfileSection() {
   const handleAvatarRemove = async () => {
     setAvatarRemoving(true)
     try {
-      const { usersApi } = await import("@/lib/api")
       await usersApi.removeAvatar()
       await refreshUser()
       notify.success("Avatar removed")
@@ -892,16 +932,33 @@ function ProfileSection() {
         </div>
         <div>
           <Label className="text-xs text-muted-foreground">Email</Label>
-          <Input value={user?.email || ""} disabled className="mt-1 bg-muted" />
-          <p className="text-[11px] text-muted-foreground mt-1">Email cannot be changed. Contact support if needed.</p>
+          <div className="flex gap-2 mt-1">
+            <Input value={user?.email || ""} disabled className="bg-muted flex-1" />
+            <Button type="button" variant="outline" size="sm" onClick={() => setEmailDialogOpen(true)}>
+              Change
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Your email is also your login. Changing it requires your password.
+          </p>
         </div>
         <div className="flex justify-end pt-2">
-          <Button onClick={handleSave} disabled={saving} size="sm">
+          <Button onClick={handleSave} disabled={!canSave} size="sm">
             {saving ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Save className="size-4 mr-1.5" />}
             Save Changes
           </Button>
         </div>
       </div>
+
+      <ChangeEmailDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        currentEmail={user?.email || ""}
+        onChanged={() => {
+          refreshUser()
+          queryClient.invalidateQueries({ queryKey: ["user"] })
+        }}
+      />
     </SettingCard>
   )
 }
@@ -912,20 +969,26 @@ function SecuritySection() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [saving, setSaving] = useState(false)
 
+  // Must match the backend StrongPasswordField policy (lower + upper + number, 8+).
+  const STRONG_PW = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       notify.error("Passwords do not match")
       return
     }
-    if (newPassword.length < 8) {
-      notify.error("Password must be at least 8 characters")
+    if (!STRONG_PW.test(newPassword)) {
+      notify.error("Password must be 8+ characters with an uppercase letter, a lowercase letter, and a number")
+      return
+    }
+    if (newPassword === currentPassword) {
+      notify.error("New password must be different from your current password")
       return
     }
     setSaving(true)
     try {
-      const { authApi } = await import("@/lib/api")
       await authApi.changePassword(currentPassword, newPassword)
-      notify.success("Password changed successfully")
+      notify.success("Password changed", "You may need to sign in again on other devices.")
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
@@ -959,9 +1022,9 @@ function SecuritySection() {
             <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1" />
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground">Password must be at least 8 characters with a mix of letters and numbers.</p>
+        <p className="text-[11px] text-muted-foreground">At least 8 characters with an uppercase letter, a lowercase letter, and a number.</p>
         <div className="flex justify-end pt-2">
-          <Button onClick={handleChangePassword} disabled={saving || !currentPassword || !newPassword} size="sm">
+          <Button onClick={handleChangePassword} disabled={saving || !currentPassword || !newPassword || !confirmPassword} size="sm">
             {saving ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Key className="size-4 mr-1.5" />}
             Change Password
           </Button>
@@ -987,6 +1050,19 @@ export default function SettingsPage() {
   const defaultSection: SettingsSection = canManage ? "general" : "profile"
   const initialSection = (searchParams.get("section") as SettingsSection) || defaultSection
   const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection)
+  const router = useRouter()
+
+  // Header reflects which group you're in (org vs personal).
+  const isPersonalSection = PERSONAL_NAV_ITEMS.some((i) => i.key === activeSection)
+
+  // Switch section AND reflect it in the URL so a refresh stays put.
+  const selectSection = useCallback(
+    (key: SettingsSection) => {
+      setActiveSection(key)
+      router.replace(`/settings?section=${key}`, { scroll: false })
+    },
+    [router],
+  )
 
   return (
     <div className="min-h-full bg-background">
@@ -994,10 +1070,10 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            {t("settings.title")}
+            {isPersonalSection ? t("settings.personalTitle") : t("settings.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {t("settings.subtitle")}
+            {isPersonalSection ? t("settings.personalSubtitle") : t("settings.subtitle")}
           </p>
         </div>
 
@@ -1017,7 +1093,7 @@ export default function SettingsPage() {
                     return (
                       <button
                         key={item.key}
-                        onClick={() => setActiveSection(item.key)}
+                        onClick={() => selectSection(item.key)}
                         className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                           isActive
                             ? "bg-foreground/[0.06] text-foreground"
@@ -1043,7 +1119,7 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={item.key}
-                    onClick={() => setActiveSection(item.key)}
+                    onClick={() => selectSection(item.key)}
                     className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                       isActive
                         ? "bg-foreground/[0.06] text-foreground"
@@ -1065,7 +1141,7 @@ export default function SettingsPage() {
               return (
                 <button
                   key={item.key}
-                  onClick={() => setActiveSection(item.key)}
+                  onClick={() => selectSection(item.key)}
                   className={`flex-none flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
                     isActive ? "text-foreground" : "text-muted-foreground"
                   }`}
@@ -1082,17 +1158,13 @@ export default function SettingsPage() {
             {/* Organization sections — inline */}
             {activeSection === "general" && <GeneralSection />}
             {activeSection === "members" && <MembersSection />}
-            {activeSection === "modules" && <ModulesSection />}
+            {activeSection === "notifications" && <NotificationsSection />}
             {/* Organization sections — lazy loaded from sub-pages */}
             {activeSection === "workflows" && <LazyWorkflows />}
-            {activeSection === "roles" && <LazyRoles />}
-            {activeSection === "custom-fields" && <LazyCustomFields />}
-            {activeSection === "recurring" && <LazyRecurring />}
             {activeSection === "audit-log" && <LazyAuditLog />}
             {/* Personal sections */}
             {activeSection === "profile" && <ProfileSection />}
             {activeSection === "security" && <SecuritySection />}
-            {activeSection === "notifications" && <NotificationsSection />}
           </div>
         </div>
       </div>

@@ -10,7 +10,6 @@ import {
   LogOut,
   Settings,
   Shield,
-  User,
   FileText,
   History,
   MapPin,
@@ -341,11 +340,6 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
             Join Requests
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-          <Link href="/task-types" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            Task Types
-          </Link>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -631,27 +625,20 @@ function UserDropdown({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* My Profile — everyone */}
+        {/* Settings — everyone. No ?section so the page picks the role-appropriate
+            landing (admins → General, others → their Profile). Replaces the old
+            "My Profile" item, which redirected into this same settings page. */}
         <DropdownMenuGroup>
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-            <Link href="/profile" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              My Profile
+            <Link href="/settings" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              Settings
             </Link>
           </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
 
-        {/* Org settings & billing — admins only */}
-        {canManageUsers && (
-          <>
-            <DropdownMenuGroup>
-              <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-                <Link href="/settings" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
+          {/* Billing — admins only */}
+          {canManageUsers && (
+            <>
               <DropdownMenuItem asChild className="rounded-md cursor-pointer">
                 <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">
                   <FileText className="h-4 w-4 text-muted-foreground" />
@@ -664,11 +651,10 @@ function UserDropdown({
                   Payment History
                 </Link>
               </DropdownMenuItem>
-            </DropdownMenuGroup>
-
-            <DropdownMenuSeparator />
-          </>
-        )}
+            </>
+          )}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
 
         <ThemeToggleItem />
 

@@ -14,7 +14,7 @@ export class CustomFieldsService extends BaseGatewayService {
     super(taskClient, CustomFieldsService.name);
   }
 
-  async findAll(data: { organizationId: string }) {
+  async findAll(data: { organizationId: string; forWorkflow?: string }) {
     return this.send({ cmd: 'find_all_custom_fields' }, data);
   }
 

@@ -97,6 +97,7 @@ export interface CreateTaskInput {
   locationLat?: number;
   locationLng?: number;
   assignedToId?: string;
+  spaceId?: string;
 }
 
 export interface UpdateTaskInput {
@@ -170,6 +171,18 @@ export interface LocationUpdate {
   lng: number;
   accuracy?: number;
   taskId?: string;
+}
+
+export interface LocationPoint {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  timestamp?: string;
+}
+
+export interface LocationBatchUpdate {
+  taskId?: string;
+  points: LocationPoint[];
 }
 
 export interface LocationResponse {

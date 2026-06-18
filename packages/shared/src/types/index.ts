@@ -12,6 +12,7 @@ export {
 export {
   getDefaultModules, hasModule, hasAccessModule, getModuleLabel, getModules,
   getSpaceScope, getAccessPlatforms, canContactColleagues, getWebScreens,
+  getFeatureModules, hasFeatureModule, DEFAULT_ORG_MODULES,
   type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform, type WebScreen,
   DEFAULT_MODULES, ALL_MODULES,
 } from './modules';
@@ -201,21 +202,37 @@ export const DEFAULT_PROFILE_BADGES: ProfileBadgesConfig = {
 /** Available optional modules that admins can enable per organization or space */
 export const AVAILABLE_MODULES = [
   // Task sections
-  { key: 'subtasks', label: 'Subtasks', description: 'Break tasks into smaller child tasks' },
-  { key: 'checklists', label: 'Checklists', description: 'Add step-by-step checklists to tasks' },
-  { key: 'attachments', label: 'Attachments', description: 'Upload files and images to tasks' },
-  { key: 'dependencies', label: 'Dependencies', description: 'Define task sequencing and blockers' },
-  { key: 'custom_fields', label: 'Custom Fields', description: 'Add custom data fields to tasks' },
+  { key: 'subtasks', label: 'Subtasks', description: 'Break tasks into smaller child tasks', group: 'task' },
+  { key: 'checklists', label: 'Checklists', description: 'Add step-by-step checklists to tasks', group: 'task' },
+  { key: 'attachments', label: 'Attachments', description: 'Upload files and images to tasks', group: 'task' },
+  { key: 'dependencies', label: 'Dependencies', description: 'Define task sequencing and blockers', group: 'task' },
+  { key: 'custom_fields', label: 'Custom Fields', description: 'Add custom data fields to tasks', group: 'task' },
   // Field service
-  { key: 'tracking', label: 'Route Tracking', description: 'GPS tracking, route visualization, and progress card' },
-  { key: 'service_reports', label: 'Service Reports', description: 'Completion reports with photos and signatures' },
-  { key: 'time_tracking', label: 'Time Tracking', description: 'Track estimated and actual hours' },
+  { key: 'tracking', label: 'Route Tracking', description: 'GPS tracking, route visualization, and progress card', group: 'field' },
+  { key: 'service_reports', label: 'Service Reports', description: 'Completion reports with photos and signatures', group: 'field' },
+  { key: 'time_tracking', label: 'Time Tracking', description: 'Track estimated and actual hours', group: 'field' },
   // Agile
-  { key: 'sprints', label: 'Sprints', description: 'Organize work into time-boxed iterations' },
-  { key: 'story_points', label: 'Story Points', description: 'Estimate task complexity with fibonacci points' },
-  { key: 'epics', label: 'Epics', description: 'Group related tasks into larger projects' },
-  { key: 'phases', label: 'Phases', description: 'Organize tasks into project phases' },
+  { key: 'sprints', label: 'Sprints', description: 'Organize work into time-boxed iterations', group: 'agile' },
+  { key: 'story_points', label: 'Story Points', description: 'Estimate task complexity with fibonacci points', group: 'agile' },
+  { key: 'epics', label: 'Epics', description: 'Group related tasks into larger projects', group: 'agile' },
+  { key: 'phases', label: 'Phases', description: 'Organize tasks into project phases', group: 'agile' },
 ] as const;
+
+/** Display groups for the module catalog. */
+export const MODULE_GROUPS = [
+  { key: 'task', label: 'Task sections', description: 'Extra detail inside a task' },
+  { key: 'field', label: 'Field service', description: 'On-site / mobile work' },
+  { key: 'agile', label: 'Project / Agile', description: 'Project-style planning' },
+] as const;
+
+/** One-click module bundles by business type. */
+export const MODULE_PRESETS: { key: string; label: string; modules: string[] }[] = [
+  { key: 'field_service', label: 'Field Service', modules: ['subtasks', 'checklists', 'attachments', 'tracking', 'service_reports', 'time_tracking'] },
+  { key: 'logistics', label: 'Logistics', modules: ['subtasks', 'checklists', 'attachments', 'tracking', 'time_tracking'] },
+  { key: 'project', label: 'Project / Agile', modules: ['subtasks', 'checklists', 'attachments', 'dependencies', 'custom_fields', 'time_tracking', 'sprints', 'story_points', 'epics', 'phases'] },
+  { key: 'minimal', label: 'Minimal', modules: ['checklists', 'attachments'] },
+  { key: 'everything', label: 'Everything', modules: ['subtasks', 'checklists', 'attachments', 'dependencies', 'custom_fields', 'tracking', 'service_reports', 'time_tracking', 'sprints', 'story_points', 'epics', 'phases'] },
+];
 
 /** Union type of all available module keys */
 export type ModuleKey = typeof AVAILABLE_MODULES[number]['key'];
@@ -690,28 +707,18 @@ export interface RecurringTaskTemplate extends BaseEntity {
 
 // ==================== CUSTOM ROLES & PERMISSIONS ====================
 
+// Only the permissions that are actually ENFORCED server-side (mapped to User
+// columns and checked by the permissions guard) live here, so every toggle in
+// the UI is real. Reach/scope (platform, space visibility, collaboration) and
+// feature tabs are NOT permissions — they live on the per-user Access Profile.
 export const PERMISSION_SCHEMA = [
   { group: 'Tasks', permissions: [
     { key: 'canCreateTasks', label: 'Create tasks', description: 'Can create new tasks' },
     { key: 'canViewAllTasks', label: 'View all tasks', description: 'Can see all tasks in the organization' },
     { key: 'canAssignTasks', label: 'Assign tasks', description: 'Can assign tasks to team members' },
-    { key: 'canDeleteTasks', label: 'Delete tasks', description: 'Can delete tasks' },
-    { key: 'canEditAnyTask', label: 'Edit any task', description: 'Can edit tasks created by others' },
   ]},
   { group: 'Team', permissions: [
     { key: 'canManageUsers', label: 'Manage members', description: 'Can add, edit, and remove team members' },
-    { key: 'canInviteUsers', label: 'Invite members', description: 'Can send invitations' },
-    { key: 'canManageRoles', label: 'Manage roles', description: 'Can create and edit roles' },
-  ]},
-  { group: 'Time & Attendance', permissions: [
-    { key: 'canViewAttendance', label: 'View attendance', description: 'Can see attendance records' },
-    { key: 'canApproveTimeOff', label: 'Approve time off', description: 'Can approve time-off requests' },
-    { key: 'canApproveOvertime', label: 'Approve overtime', description: 'Can approve overtime requests' },
-  ]},
-  { group: 'Spaces & Settings', permissions: [
-    { key: 'canManageLocations', label: 'Manage spaces', description: 'Can create and configure spaces' },
-    { key: 'canManageWorkflows', label: 'Manage workflows', description: 'Can create and edit workflows' },
-    { key: 'canManageOrgSettings', label: 'Organization settings', description: 'Can change organization settings' },
   ]},
 ] as const;
 

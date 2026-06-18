@@ -128,7 +128,7 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
             type="submit"
             disabled={isLoading}
             className={cn(
-              'relative w-full h-10 sm:h-11 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-semibold text-sm rounded-lg transition-all duration-300 border-0 shadow-sm hover:shadow-md hover:shadow-brand-600/20',
+              'relative w-full h-10 sm:h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-sm rounded-lg transition-all duration-300 border-0 shadow-sm hover:shadow-md hover:shadow-blue-600/20',
               !isLoading && 'active:scale-[0.98]'
             )}
           >
@@ -198,7 +198,7 @@ function EmailField({
         <Mail
           className={cn(
             'absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200',
-            isFocused ? 'text-brand-600' : 'text-slate-400'
+            isFocused ? 'text-blue-600' : 'text-slate-400'
           )}
         />
         <Input
@@ -212,7 +212,7 @@ function EmailField({
           className={cn(
             'pl-10 h-10 sm:h-11 text-sm transition-all duration-200',
             error && 'border-error focus-visible:ring-error',
-            isFocused && 'border-brand-600 ring-2 ring-brand-100'
+            isFocused && 'border-blue-600 ring-2 ring-blue-100'
           )}
           disabled={isLoading}
         />
@@ -266,7 +266,7 @@ function PasswordField({
         </Label>
         <Link
           href="/forgot-password"
-          className="text-xs text-brand-600 hover:text-brand-700 font-medium hover:underline transition-all"
+          className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline transition-all"
         >
           {t('auth.login.forgotPassword')}
         </Link>
@@ -280,7 +280,7 @@ function PasswordField({
         <Lock
           className={cn(
             'absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200',
-            isFocused ? 'text-brand-600' : 'text-slate-400'
+            isFocused ? 'text-blue-600' : 'text-slate-400'
           )}
         />
         <Input
@@ -294,7 +294,7 @@ function PasswordField({
           className={cn(
             'pl-10 pr-10 h-10 sm:h-11 text-sm transition-all duration-200',
             error && 'border-error focus-visible:ring-error',
-            isFocused && 'border-brand-600 ring-2 ring-brand-100'
+            isFocused && 'border-blue-600 ring-2 ring-blue-100'
           )}
           disabled={isLoading}
         />

@@ -138,7 +138,8 @@ export class InvitationService {
         createdById: data.createdById,
         expiresAt,
 
-        position: isTechnician ? (data.position as any) || 'HYBRID' : null,
+        // Job title (e.g. "Plumber"). Blank → null, NOT a work-mode value.
+        position: isTechnician ? (data.position?.trim() || null) : null,
         specialty: isTechnician ? data.specialty || null : null,
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
       },
@@ -295,8 +296,7 @@ export class InvitationService {
           canManageUsers: defaultPerms.canManageUsers,
           ...(invitation.targetRole === 'EMPLOYEE'
             ? {
-
-                position: invitation.position || 'HYBRID',
+                position: invitation.position || null,
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
               }

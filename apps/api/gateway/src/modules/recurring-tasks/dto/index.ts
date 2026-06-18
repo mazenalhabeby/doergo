@@ -42,6 +42,16 @@ export class CreateRecurringTaskDto {
   @IsOptional()
   priority?: TaskPriority;
 
+  @ApiPropertyOptional({ description: 'Space the generated tasks belong to' })
+  @IsString()
+  @IsOptional()
+  spaceId?: string;
+
+  @ApiPropertyOptional({ description: 'Task Type the generated tasks use' })
+  @IsString()
+  @IsOptional()
+  workflowId?: string;
+
   @ApiPropertyOptional({ example: 40.7128 })
   @IsNumber()
   @IsOptional()
@@ -126,6 +136,16 @@ export class UpdateRecurringTaskDto {
   @IsEnum(TaskPriority)
   @IsOptional()
   priority?: TaskPriority;
+
+  @ApiPropertyOptional({ description: 'Space the generated tasks belong to' })
+  @IsString()
+  @IsOptional()
+  spaceId?: string;
+
+  @ApiPropertyOptional({ description: 'Task Type the generated tasks use' })
+  @IsString()
+  @IsOptional()
+  workflowId?: string;
 
   @ApiPropertyOptional()
   @IsNumber()

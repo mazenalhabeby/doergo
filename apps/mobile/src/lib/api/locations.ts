@@ -49,6 +49,13 @@ export const locationsApi = {
     return Array.isArray(result) ? result : result?.data || [];
   },
 
+  create: async (data: { name: string; address?: string; lat?: number; lng?: number }): Promise<CompanyLocation> => {
+    return fetchWithAuth<CompanyLocation>('/locations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   getAssignedMembers: async (locationId: string): Promise<LocationAssignment[]> => {
     const result = await fetchWithAuth<any>(`/locations/${locationId}/members`);
     return Array.isArray(result) ? result : result?.data || [];

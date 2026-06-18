@@ -34,37 +34,16 @@ import {
 } from "@/components/dashboard"
 import { ActivityPanelToggle } from "@/components/activity-panel-toggle"
 import { useActivityPanel } from "@/contexts/activity-panel-context"
-import { getGreeting } from "./helpers"
+import {
+  getGreeting,
+  getInitials,
+  getAvatarColor,
+  isClockedIn,
+  getTodayString,
+} from "./helpers"
+import { buildRecentActivity, buildPendingActions } from "./dashboard-activity"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-const AVATAR_COLORS = [
-  "linear-gradient(135deg, #6366f1, #8b5cf6)",
-  "linear-gradient(135deg, #3b82f6, #06b6d4)",
-  "linear-gradient(135deg, #10b981, #059669)",
-  "linear-gradient(135deg, #f59e0b, #d97706)",
-  "linear-gradient(135deg, #ef4444, #dc2626)",
-  "linear-gradient(135deg, #ec4899, #db2777)",
-  "linear-gradient(135deg, #8b5cf6, #a855f7)",
-  "linear-gradient(135deg, #14b8a6, #0d9488)",
-]
-
-function getInitials(firstName?: string, lastName?: string): string {
-  return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase()
-}
-
-function hashString(str: string): number {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function getAvatarColor(id: string): string {
-  return AVATAR_COLORS[hashString(id) % AVATAR_COLORS.length]!
-}
 
 /** Employee status based on ATTENDANCE (not task status) */
 function getEmployeeStatus(opts: {
@@ -86,16 +65,6 @@ function getEmployeeStatus(opts: {
     return { status: "busy", tag: { text: "Working", variant: "task" } }
   }
   return { status: "on", tag: { text: "Available", variant: "hrs" } }
-}
-
-/** Check if a time entry is "currently clocked in" (no clock-out yet) */
-function isClockedIn(entry: TimeEntry): boolean {
-  return entry.status === "CLOCKED_IN" && !entry.clockOutAt
-}
-
-/** Get today's date string in YYYY-MM-DD format */
-function getTodayString(): string {
-  return new Date().toISOString().split("T")[0]!
 }
 
 /** Build a PersonNodeProps from an OrgMember */
@@ -129,17 +98,6 @@ function toRecentTask(tk: Task): RecentTask {
     location: tk.locationAddress || undefined,
     createdAt: new Date(tk.updatedAt || Date.now()),
   }
-}
-
-/** Time elapsed since a date, human readable */
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "just now"
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -547,142 +505,17 @@ export function ClientDashboard() {
 
   // ── Live Events ────────────────────────────────────────────────────────────
 
-  const liveEvents: LiveEvent[] = useMemo(() => {
-    const events: LiveEvent[] = []
-
-    // Recent task activity (sorted by updatedAt descending)
-    const sortedTasks = [...tasks]
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      .slice(0, 10)
-
-    const dotMap: Record<string, LiveEvent["dot"]> = {
-      IN_PROGRESS: "green",
-      EN_ROUTE: "blue",
-      ARRIVED: "green",
-      COMPLETED: "blue",
-      BLOCKED: "red",
-      ASSIGNED: "amber",
-      ACCEPTED: "green",
-      NEW: "purple",
-      CANCELED: "red",
-    }
-    const actionMap: Record<string, string> = {
-      IN_PROGRESS: "started working on",
-      EN_ROUTE: "en route to",
-      ARRIVED: "arrived at",
-      COMPLETED: "completed",
-      BLOCKED: "blocked on",
-      ASSIGNED: "was assigned to",
-      ACCEPTED: "accepted",
-      NEW: "created",
-      CANCELED: "canceled",
-    }
-
-    for (const task of sortedTasks) {
-      const assignee = task.assignedTo
-      const name = assignee
-        ? `${assignee.firstName} ${assignee.lastName?.[0] || ""}.`
-        : "Someone"
-      const action = actionMap[task.status] || "updated"
-
-      events.push({
-        id: `task-${task.id}`,
-        dot: dotMap[task.status] || "blue",
-        message: (
-          <>
-            <strong>{name}</strong> {action} <strong>{task.title}</strong>
-          </>
-        ),
-        time: timeAgo(task.updatedAt),
-      })
-    }
-
-    // Recent attendance events (clock-ins from today)
-    const recentClockIns = [...todayEntries]
-      .sort((a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime())
-      .slice(0, 5)
-
-    for (const entry of recentClockIns) {
-      const member = memberMap.get(entry.userId)
-      const name = member
-        ? `${member.firstName} ${member.lastName?.[0] || ""}.`
-        : entry.user
-          ? `${entry.user.firstName} ${entry.user.lastName?.[0] || ""}.`
-          : "Someone"
-      const locationName = entry.location?.name || "a location"
-
-      if (isClockedIn(entry)) {
-        events.push({
-          id: `clock-in-${entry.id}`,
-          dot: "green",
-          message: (
-            <>
-              <strong>{name}</strong> clocked in at <strong>{locationName}</strong>
-            </>
-          ),
-          time: timeAgo(entry.clockInAt),
-        })
-      } else if (entry.clockOutAt) {
-        events.push({
-          id: `clock-out-${entry.id}`,
-          dot: "blue",
-          message: (
-            <>
-              <strong>{name}</strong> clocked out from <strong>{locationName}</strong>
-            </>
-          ),
-          time: timeAgo(entry.clockOutAt),
-        })
-      }
-    }
-
-    // Sort all events by time (most recent first) and take top 12
-    return events.slice(0, 12)
-  }, [tasks, todayEntries, memberMap])
+  const liveEvents: LiveEvent[] = useMemo(
+    () => buildRecentActivity({ tasks, todayEntries, memberMap }),
+    [tasks, todayEntries, memberMap],
+  )
 
   // ── Pending Actions ────────────────────────────────────────────────────────
 
-  const pendingActions: PendingAction[] = useMemo(() => {
-    const actions: PendingAction[] = []
-
-    // Blocked tasks need attention
-    const blockedTasks = tasks.filter(t => t.status === "BLOCKED")
-    for (const task of blockedTasks.slice(0, 3)) {
-      const assignee = task.assignedTo
-      const name = assignee
-        ? `${assignee.firstName} ${assignee.lastName?.[0] || ""}.`
-        : "Unassigned"
-      const initials = assignee
-        ? getInitials(assignee.firstName, assignee.lastName)
-        : "?"
-
-      actions.push({
-        id: `blocked-${task.id}`,
-        initials,
-        color: getAvatarColor(assignee?.id || "x"),
-        imageUrl: assignee?.avatarUrl || undefined,
-        title: `${name} - Blocked`,
-        description: task.title,
-        onApprove: () => router.push(`/tasks/${task.id}`),
-        onReject: () => {},
-      })
-    }
-
-    // New unassigned tasks need assignment
-    const newTasks = tasks.filter(t => t.status === "NEW" && !t.assignedToId)
-    for (const task of newTasks.slice(0, 3)) {
-      actions.push({
-        id: `new-${task.id}`,
-        initials: "?",
-        color: AVATAR_COLORS[4]!,
-        title: "Unassigned - New Task",
-        description: task.title,
-        onApprove: () => router.push(`/tasks/${task.id}`),
-      })
-    }
-
-    return actions.slice(0, 5)
-  }, [tasks, router])
+  const pendingActions: PendingAction[] = useMemo(
+    () => buildPendingActions({ tasks, onView: (id) => router.push(`/tasks/${id}`) }),
+    [tasks, router],
+  )
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

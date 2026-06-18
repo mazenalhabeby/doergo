@@ -309,12 +309,8 @@ export default function TaskDetailPage({
               </CollapsibleSection>
             )}
 
-            {/* Custom Fields — module: custom_fields */}
-            {hasModule("custom_fields") && (
-              <CollapsibleSection id="custom-fields" icon={Settings2} title="Custom Fields">
-                <CustomFieldsSection taskId={id} />
-              </CollapsibleSection>
-            )}
+            {/* Custom Fields — type-scoped; self-hides when the task type has none */}
+            <CustomFieldsSection taskId={id} />
 
             {/* Comments — always visible */}
             <CollapsibleSection id="comments" icon={MessageCircle} title="Comments" count={comments.length || undefined}>

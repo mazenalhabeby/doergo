@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
-import { getModules } from '@hbcfield/shared/client';
+import { hasFeatureModule } from '@hbcfield/shared/client';
 import { DashboardSkeleton } from '@/components/skeletons';
 
 // User type
@@ -29,8 +29,10 @@ export interface User {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
-  // Organization enabled modules (e.g. ["story_points", "epics", "sprints"])
+  // Access Profile (mobile tabs / web screens) — array or object form.
   enabledModules: string[] | Record<string, unknown>;
+  // Org FEATURE modules (sprints, checklists, tracking…) — drives hasModule().
+  orgModules?: string[];
   // Avatar
   avatarUrl?: string | null;
   // Custom role
@@ -146,6 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           canCreateTasks: userData.role === 'ADMIN' || userData.role === 'MANAGER' || (userData.taskCreationScope || 'NONE') !== 'NONE',
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
+          orgModules: userData.orgModules || [],
           orgRole: userData.orgRole || null,
           rolePermissions: userData.rolePermissions || {},
         });
@@ -211,6 +214,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       canCreateTasks: u.role === 'ADMIN' || u.role === 'MANAGER' || (u.taskCreationScope || 'NONE') !== 'NONE',
       avatarUrl: u.avatarUrl || null,
       enabledModules: u.enabledModules || [],
+      orgModules: u.orgModules || [],
       orgRole: u.orgRole || null,
       rolePermissions: u.rolePermissions || {},
     });
@@ -242,6 +246,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           canCreateTasks: userData.role === 'ADMIN' || userData.role === 'MANAGER' || (userData.taskCreationScope || 'NONE') !== 'NONE',
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
+          orgModules: userData.orgModules || [],
           orgRole: userData.orgRole || null,
           rolePermissions: userData.rolePermissions || {},
         });
@@ -277,11 +282,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [refreshUser]);
 
-  // Check if a module is enabled. `enabledModules` may be a legacy string[] or
-  // a per-user Access Profile object ({ modules, ... }) — getModules handles both.
+  // Check if a FEATURE module (sprints, checklists, tracking…) is enabled.
+  // Resolves from the org's feature modules (orgModules) for ALL users —
+  // never from the per-user access profile, so org settings apply to everyone.
   const hasModule = useCallback((module: string) => {
-    return getModules(user ?? {}).includes(module as any);
-  }, [user?.enabledModules]);
+    return hasFeatureModule(user ?? {}, module);
+  }, [user?.orgModules]);
 
   // Check if user has a specific permission
   const hasPermission = useCallback((perm: string) => {

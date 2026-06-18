@@ -28,6 +28,28 @@ export class CreateWorkflowDto {
   @IsBoolean()
   @IsOptional()
   isDefault?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Optional initial statuses (e.g. when starting from a template)',
+    type: () => [CreateWorkflowStatusDto],
+  })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateWorkflowStatusDto)
+  statuses?: CreateWorkflowStatusDto[];
+}
+
+export class ReorderStatusesDto {
+  @ApiProperty({
+    description: 'All status ids of the workflow, in the desired order',
+    example: ['id-a', 'id-b', 'id-c'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  statusIds: string[];
 }
 
 export class UpdateWorkflowDto {

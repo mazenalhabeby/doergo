@@ -30,23 +30,25 @@ export class CreateLocationDto {
   @MaxLength(ATTENDANCE_CONSTANTS.LOCATION_ADDRESS_MAX_LENGTH)
   address?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 40.7128,
-    description: 'Latitude coordinate',
+    description: 'Latitude — only for physical locations (attendance/geofence)',
   })
   @IsNumber()
+  @IsOptional()
   @Min(-90)
   @Max(90)
-  lat: number;
+  lat?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: -74.006,
-    description: 'Longitude coordinate',
+    description: 'Longitude — only for physical locations (attendance/geofence)',
   })
   @IsNumber()
+  @IsOptional()
   @Min(-180)
   @Max(180)
-  lng: number;
+  lng?: number;
 
   @ApiPropertyOptional({
     example: 15,

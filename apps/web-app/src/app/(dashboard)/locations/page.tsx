@@ -9,7 +9,6 @@ import {
   MapPin,
   Plus,
   MoreHorizontal,
-  Pencil,
   Users,
   Loader2,
   Settings2,
@@ -17,11 +16,14 @@ import {
   ToggleRight,
   ToggleLeft,
   Building2,
+  Boxes,
   ChevronRight,
+  ChevronDown,
   X,
   UserPlus,
 } from "lucide-react"
-import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
+import { cn } from "@/lib/utils"
+import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS } from "@hbcfield/shared/client"
 
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -62,7 +64,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -138,7 +139,6 @@ export default function SpacesPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [configureTarget, setConfigureTarget] = useState<CompanyLocation | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CompanyLocation | null>(null)
-  const [editTarget, setEditTarget] = useState<CompanyLocation | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ["locations", "all"],
@@ -233,7 +233,6 @@ export default function SpacesPage() {
                 isAdmin={isAdmin}
                 index={index}
                 onConfigure={() => setConfigureTarget(location)}
-                onEdit={() => setEditTarget(location)}
                 onDelete={() => setDeleteTarget(location)}
                 onReactivate={() => reactivateMutation.mutate(location.id)}
                 onViewTasks={() => router.push(`/tasks?space=${location.id}`)}
@@ -263,20 +262,6 @@ export default function SpacesPage() {
             onSuccess={() => {
               queryClient.invalidateQueries({ queryKey: ["locations"] })
               setConfigureTarget(null)
-            }}
-          />
-        )}
-
-        {/* Edit Space Dialog (General only - lightweight) */}
-        {editTarget && (
-          <EditSpaceDialog
-            space={editTarget}
-            workflows={workflows || []}
-            open={!!editTarget}
-            onOpenChange={(open) => { if (!open) setEditTarget(null) }}
-            onSuccess={() => {
-              queryClient.invalidateQueries({ queryKey: ["locations"] })
-              setEditTarget(null)
             }}
           />
         )}
@@ -341,7 +326,6 @@ const SpaceCard = memo(function SpaceCard({
   isAdmin,
   index,
   onConfigure,
-  onEdit,
   onDelete,
   onReactivate,
   onViewTasks,
@@ -351,7 +335,6 @@ const SpaceCard = memo(function SpaceCard({
   isAdmin: boolean
   index: number
   onConfigure: () => void
-  onEdit: () => void
   onDelete: () => void
   onReactivate: () => void
   onViewTasks: () => void
@@ -465,11 +448,6 @@ const SpaceCard = memo(function SpaceCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEdit}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 {space.isActive ? (
                   <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
                     <ToggleLeft className="mr-2 h-4 w-4" />
@@ -506,15 +484,17 @@ function CreateSpaceDialog({
   onSuccess: () => void
 }) {
   const [name, setName] = useState("")
+  const [type, setType] = useState<"workspace" | "physical">("workspace")
   const [address, setAddress] = useState("")
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
   const [radius, setRadius] = useState("200")
   const [timezone, setTimezone] = useState("Europe/Berlin")
   const [workflowId, setWorkflowId] = useState("")
-  const [enabledModules, setEnabledModules] = useState<string[]>(["time_tracking"])
-  const [showMap, setShowMap] = useState(false)
+  const [enabledModules, setEnabledModules] = useState<string[]>([...DEFAULT_ORG_MODULES])
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
+  const isPhysical = type === "physical"
   const defaultWorkflow = workflows.find((w) => w.isDefault)
 
   const mutation = useMutation({
@@ -529,14 +509,15 @@ function CreateSpaceDialog({
 
   const resetForm = () => {
     setName("")
+    setType("workspace")
     setAddress("")
     setLat(null)
     setLng(null)
     setRadius("200")
     setTimezone("Europe/Berlin")
     setWorkflowId("")
-    setEnabledModules(["time_tracking"])
-    setShowMap(false)
+    setEnabledModules([...DEFAULT_ORG_MODULES])
+    setShowAdvanced(false)
   }
 
   const toggleModule = useCallback((key: string) => {
@@ -551,8 +532,10 @@ function CreateSpaceDialog({
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
-      lat: lat ?? 0,
-      lng: lng ?? 0,
+      // Leave coords empty for a logical workspace (only physical locations
+      // need lat/lng for attendance geofencing).
+      lat: lat ?? undefined,
+      lng: lng ?? undefined,
       geofenceRadius: parseInt(radius) || 200,
       timezone,
       enabledModules,
@@ -571,52 +554,101 @@ function CreateSpaceDialog({
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          {/* Name + Address */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="create-name">Name <span className="text-red-500">*</span></Label>
-              <Input
-                id="create-name"
-                placeholder="e.g. Main Office"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="create-address">Address</Label>
-              <Input
-                id="create-address"
-                placeholder="123 Business Ave"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
+          {/* Name */}
+          <div className="space-y-2">
+            <Label htmlFor="create-name">Name <span className="text-red-500">*</span></Label>
+            <Input
+              id="create-name"
+              placeholder="e.g. Main Office, Downtown Crew"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          {/* Type — workspace vs physical (drives which fields show) */}
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setType("workspace")}
+                className={cn(
+                  "rounded-xl border p-4 text-left transition-all",
+                  !isPhysical
+                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800"
+                    : "border-border hover:border-muted-foreground/30",
+                )}
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Boxes className="h-4 w-4 text-blue-600" /> Workspace
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">A team or project — no physical location.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setType("physical")}
+                className={cn(
+                  "rounded-xl border p-4 text-left transition-all",
+                  isPhysical
+                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800"
+                    : "border-border hover:border-muted-foreground/30",
+                )}
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <MapPin className="h-4 w-4 text-blue-600" /> Physical location
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">A site with an address — for attendance clock-in.</p>
+              </button>
             </div>
           </div>
 
-          {/* Map picker toggle */}
-          <div>
-            <button
-              type="button"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-              onClick={() => setShowMap(!showMap)}
-            >
-              <MapPin className="h-3.5 w-3.5" />
-              {showMap ? "Hide map" : "Pick location on map (optional)"}
-            </button>
-            {showMap && (
-              <div className="mt-3">
-                <LocationPicker
-                  lat={lat}
-                  lng={lng}
-                  radius={parseInt(radius) || 200}
-                  address={address}
-                  onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
-                  onAddressChange={setAddress}
+          {/* Physical-only: address + map + geofence */}
+          {isPhysical && (
+            <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-address">Address</Label>
+                <Input
+                  id="create-address"
+                  placeholder="Street, city"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
                 />
               </div>
-            )}
-          </div>
+              <LocationPicker
+                lat={lat}
+                lng={lng}
+                radius={parseInt(radius) || 200}
+                address={address}
+                onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
+                onAddressChange={setAddress}
+              />
+              <div className="space-y-2">
+                <Label htmlFor="create-radius">Geofence radius</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    id="create-radius"
+                    type="number"
+                    min={5}
+                    max={500}
+                    value={radius}
+                    onChange={(e) => setRadius(e.target.value)}
+                    className="w-24"
+                  />
+                  <input
+                    type="range"
+                    min={5}
+                    max={500}
+                    value={radius}
+                    onChange={(e) => setRadius(e.target.value)}
+                    className="flex-1 accent-blue-600"
+                  />
+                  <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Workers can clock in within this distance of the pin.</p>
+              </div>
+            </div>
+          )}
 
           {/* Workflow */}
           <WorkflowSelector
@@ -626,45 +658,82 @@ function CreateSpaceDialog({
             allowCreate
           />
 
-          {/* Modules */}
-          <div className="space-y-3">
-            <Label>Modules</Label>
-            <div className="space-y-2">
-              {AVAILABLE_MODULES.map((mod) => (
-                <label
-                  key={mod.key}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={enabledModules.includes(mod.key)}
-                    onChange={() => toggleModule(mod.key)}
-                    className="mt-0.5 rounded border-border text-blue-600 focus:ring-blue-500"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-foreground">{mod.label}</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
+          {/* Advanced — modules (collapsed; sensible defaults already set) */}
+          <div className="rounded-xl border border-border">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-muted/30 transition-colors rounded-xl"
+            >
+              <span className="font-medium text-foreground">Advanced — Modules</span>
+              <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                {enabledModules.length} enabled
+                {showAdvanced ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </span>
+            </button>
+            {showAdvanced && (
+              <div className="border-t border-border p-3 space-y-3 max-h-[340px] overflow-y-auto">
+                {/* What modules are */}
+                <p className="text-xs text-muted-foreground">
+                  Modules add optional features to this space&apos;s tasks (checklists, GPS tracking,
+                  sprints…). Start from a preset, then fine-tune below.
+                </p>
 
-          {/* Geofence Radius */}
-          <div className="space-y-2">
-            <Label htmlFor="create-radius">Geofence Radius</Label>
-            <div className="flex items-center gap-3">
-              <Input
-                id="create-radius"
-                type="number"
-                min={5}
-                max={500}
-                value={radius}
-                onChange={(e) => setRadius(e.target.value)}
-                className="w-24"
-              />
-              <span className="text-sm text-muted-foreground">{radius}m</span>
-            </div>
+                {/* Presets — one click to set a sensible bundle */}
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Presets</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {MODULE_PRESETS.map((p) => {
+                      const active =
+                        p.modules.length === enabledModules.length &&
+                        p.modules.every((m) => enabledModules.includes(m))
+                      return (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => setEnabledModules([...p.modules])}
+                          className={cn(
+                            "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                            active
+                              ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                              : "border-border text-muted-foreground hover:bg-muted/50",
+                          )}
+                        >
+                          {p.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Grouped modules with a one-line description per group */}
+                {MODULE_GROUPS.map((grp) => (
+                  <div key={grp.key} className="space-y-1">
+                    <div className="px-1 pt-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{grp.label}</p>
+                      <p className="text-[11px] text-muted-foreground/70">{grp.description}</p>
+                    </div>
+                    {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => (
+                      <label
+                        key={mod.key}
+                        className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={enabledModules.includes(mod.key)}
+                          onChange={() => toggleModule(mod.key)}
+                          className="mt-0.5 rounded border-border text-blue-600 focus:ring-blue-500"
+                        />
+                        <div>
+                          <span className="text-sm font-medium text-foreground">{mod.label}</span>
+                          <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -672,108 +741,6 @@ function CreateSpaceDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={mutation.isPending}>
             {mutation.isPending ? "Creating..." : "Create Space"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-// ============================================================================
-// EDIT SPACE DIALOG (lightweight - general fields only)
-// ============================================================================
-
-function EditSpaceDialog({
-  space,
-  workflows,
-  open,
-  onOpenChange,
-  onSuccess,
-}: {
-  space: CompanyLocation
-  workflows: StatusWorkflow[]
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess: () => void
-}) {
-  const [name, setName] = useState(space.name)
-  const [address, setAddress] = useState(space.address || "")
-  const [lat, setLat] = useState<number | null>(space.lat)
-  const [lng, setLng] = useState<number | null>(space.lng)
-  const [radius, setRadius] = useState(space.geofenceRadius.toString())
-  const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
-
-  const mutation = useMutation({
-    mutationFn: (data: UpdateLocationInput) => locationsApi.update(space.id, data),
-    onSuccess: () => {
-      notify.success("Space updated")
-      onSuccess()
-    },
-    onError: (err: Error) => notify.error(err.message || "Failed to update space"),
-  })
-
-  const handleSubmit = () => {
-    if (!name.trim()) return notify.error("Name is required")
-
-    mutation.mutate({
-      name: name.trim(),
-      address: address.trim() || undefined,
-      lat: lat ?? undefined,
-      lng: lng ?? undefined,
-      geofenceRadius: parseInt(radius) || 200,
-      timezone,
-    })
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Space</DialogTitle>
-          <DialogDescription>Update the details for {space.name}.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label htmlFor="edit-name">Name <span className="text-red-500">*</span></Label>
-            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-
-          <LocationPicker
-            lat={lat}
-            lng={lng}
-            radius={parseInt(radius) || 200}
-            address={address}
-            onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
-            onAddressChange={setAddress}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-radius">Geofence Radius (meters)</Label>
-            <div className="flex items-center gap-3">
-              <Input id="edit-radius" type="number" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="w-24" />
-              <input type="range" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="flex-1 accent-blue-600" />
-              <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-timezone">Timezone</Label>
-            <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TIMEZONES.map((tz) => (
-                  <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={mutation.isPending}>
-            {mutation.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -949,40 +916,81 @@ function ModulesTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
     })
   }
 
+  const applyPreset = (modules: string[]) => {
+    setEnabledModules([...modules])
+    setHasChanges(true)
+  }
+
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Toggle modules on or off for this space.
+        Modules add optional features to this space&apos;s tasks. Pick a preset, then fine-tune.
       </p>
-      <div className="space-y-2">
-        {AVAILABLE_MODULES.map((mod) => {
-          const isEnabled = enabledModules.includes(mod.key)
-          return (
-            <label
-              key={mod.key}
-              className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                isEnabled
-                  ? "border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30"
-                  : "border-border hover:bg-muted/50"
-              }`}
-            >
-              <div className="flex-1 min-w-0 mr-3">
-                <span className="text-sm font-medium text-foreground">{mod.label}</span>
-                <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
-              </div>
-              <div className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input
-                  type="checkbox"
-                  checked={isEnabled}
-                  onChange={() => toggleModule(mod.key)}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
-              </div>
-            </label>
-          )
-        })}
+
+      {/* Presets — one click to set a sensible bundle */}
+      <div className="space-y-1.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Presets</p>
+        <div className="flex flex-wrap gap-1.5">
+          {MODULE_PRESETS.map((p) => {
+            const active =
+              p.modules.length === enabledModules.length &&
+              p.modules.every((m) => enabledModules.includes(m))
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => applyPreset(p.modules)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  active
+                    ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                    : "border-border text-muted-foreground hover:bg-muted/50",
+                )}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
+
+      {/* Grouped modules with a one-line description per group */}
+      {MODULE_GROUPS.map((grp) => (
+        <div key={grp.key} className="space-y-2">
+          <div className="px-1 pt-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{grp.label}</p>
+            <p className="text-[11px] text-muted-foreground/70">{grp.description}</p>
+          </div>
+          {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => {
+            const isEnabled = enabledModules.includes(mod.key)
+            return (
+              <label
+                key={mod.key}
+                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                  isEnabled
+                    ? "border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30"
+                    : "border-border hover:bg-muted/50"
+                }`}
+              >
+                <div className="flex-1 min-w-0 mr-3">
+                  <span className="text-sm font-medium text-foreground">{mod.label}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
+                </div>
+                <div className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={isEnabled}
+                    onChange={() => toggleModule(mod.key)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                </div>
+              </label>
+            )
+          })}
+        </div>
+      ))}
+
       {hasChanges && (
         <div className="flex justify-end pt-2">
           <Button onClick={() => mutation.mutate(enabledModules)} disabled={mutation.isPending} size="sm">

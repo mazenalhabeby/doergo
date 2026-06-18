@@ -50,6 +50,10 @@ export class WorkflowsService extends BaseGatewayService {
     return this.send({ cmd: 'delete_workflow_status' }, data);
   }
 
+  async reorderStatuses(data: { workflowId: string; organizationId: string; statusIds: string[] }) {
+    return this.send({ cmd: 'reorder_workflow_statuses' }, data);
+  }
+
   // Definition of Done
   async getDefinitionOfDone(data: { organizationId: string; workflowId?: string }) {
     return this.send({ cmd: 'get_definition_of_done' }, data);

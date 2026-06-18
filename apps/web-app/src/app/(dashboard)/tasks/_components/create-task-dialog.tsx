@@ -21,7 +21,9 @@ import {
   Trash2,
   GitBranch,
   Upload,
+  Repeat,
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
@@ -35,6 +37,7 @@ import {
   organizationsApi,
   locationsApi,
   workflowsApi,
+  recurringTasksApi,
   STORY_POINT_OPTIONS,
   type CreateTaskInput,
   type Phase,
@@ -42,6 +45,7 @@ import {
   type Epic,
   type CustomFieldDefinition,
   type OrgMember,
+  type RecurringFrequency,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -171,6 +175,17 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   // ── Schedule section ──
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined)
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+
+  // ── Repeat (recurring) section ──
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [frequency, setFrequency] = useState<RecurringFrequency>("WEEKLY")
+  const [customDays, setCustomDays] = useState<number>(7)
+  const [dayOfWeek, setDayOfWeek] = useState<number>(1)
+  const [dayOfMonth, setDayOfMonth] = useState<number>(1)
+  const [recurStart, setRecurStart] = useState<string>(
+    () => new Date().toISOString().split("T")[0]!,
+  )
+  const [recurEnd, setRecurEnd] = useState<string>("")
   const [estimatedHours, setEstimatedHours] = useState("")
 
   // ── Location section ──
@@ -280,6 +295,18 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const availableSpaces = spacesData?.data || []
   const hasSpaces = availableSpaces.length > 0
 
+  // Every task belongs to a space — once spaces load, default the picker to the
+  // org's "General" (default) space instead of leaving it unselected.
+  useEffect(() => {
+    if (open && spaceId === "none" && !defaultSpaceId && availableSpaces.length) {
+      const def =
+        availableSpaces.find((s: any) => s.isDefault) ??
+        availableSpaces.find((s: any) => s.name === "General") ??
+        availableSpaces[0]
+      if (def?.id) setSpaceId(def.id)
+    }
+  }, [open, availableSpaces, defaultSpaceId, spaceId])
+
   // ── Fetch workflows (task types) — "auto" inherits the space's default ──
   const { data: workflowsList } = useQuery({
     queryKey: ["workflows"],
@@ -289,6 +316,13 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   })
   const workflows = workflowsList || []
   const [workflowId, setWorkflowId] = useState<string>("auto")
+
+  // Fields applicable to the chosen Task Type: globals always, plus the selected
+  // type's own fields. ("auto" = type decided at creation → globals only here.)
+  const applicableCustomFields = useMemo(
+    () => activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === workflowId),
+    [activeCustomFields, workflowId],
+  )
 
   // ── Submission state ──
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false)
@@ -327,12 +361,26 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     },
   })
 
+  // Recurring template create (when the Repeat toggle is on)
+  const recurringMutation = useMutation({
+    mutationFn: (input: Record<string, unknown>) => recurringTasksApi.create(input),
+    onSuccess: () => {
+      notify.success("Recurring task created", "It will generate on schedule.")
+      onOpenChange(false)
+      queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
+    },
+    onError: (error: Error) => {
+      notify.error(error.message || "Could not create recurring task")
+      setIsSubmittingLocal(false)
+    },
+  })
+
   // ── Validation ──
   const isFormValid = title.trim() !== ""
-  const isSubmitting = isSubmittingLocal || createMutation.isPending
+  const isSubmitting = isSubmittingLocal || createMutation.isPending || recurringMutation.isPending
 
   // ── Custom field validation ──
-  const requiredCustomFieldsMissing = activeCustomFields
+  const requiredCustomFieldsMissing = applicableCustomFields
     .filter((f) => f.isRequired)
     .some((f) => !customFieldValues[f.id]?.trim())
 
@@ -365,6 +413,29 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     const assigneeIds: string[] = []
     if (isSelfScope && user?.id) {
       assigneeIds.push(user.id)
+    }
+
+    // Recurring path — create a template instead of a one-off task. Reuses the
+    // same title/space/type/priority/checklist already filled in above.
+    if (isRecurring) {
+      recurringMutation.mutate({
+        title: title.trim(),
+        description: description.trim() || null,
+        priority,
+        spaceId: spaceId !== "none" ? spaceId : null,
+        workflowId: workflowId !== "auto" ? workflowId : null,
+        frequency,
+        customDays: frequency === "CUSTOM" ? customDays : null,
+        dayOfWeek: ["WEEKLY", "BIWEEKLY"].includes(frequency) ? dayOfWeek : null,
+        dayOfMonth: ["MONTHLY", "QUARTERLY", "YEARLY"].includes(frequency) ? dayOfMonth : null,
+        startDate: new Date(recurStart).toISOString(),
+        endDate: recurEnd ? new Date(recurEnd).toISOString() : null,
+        estimatedHours: parsedHours && !isNaN(parsedHours) ? parsedHours : null,
+        locationAddress: locationAddress.trim() || null,
+        checklist: checklistItems.length > 0 ? checklistItems.map((text) => ({ text })) : null,
+        assigneeIds: assigneeIds.length > 0 ? assigneeIds : null,
+      })
+      return
     }
 
     createMutation.mutate({
@@ -473,7 +544,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   const hasPhases = (phases ?? []).length > 0
   const hasSprints = (sprints ?? []).length > 0
-  const hasCustomFields = activeCustomFields.length > 0
+  const hasCustomFields = applicableCustomFields.length > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -497,7 +568,6 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                   <SelectValue placeholder="Select a space" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No space</SelectItem>
                   {availableSpaces.map((s: { id: string; name: string }) => (
                     <SelectItem key={s.id} value={s.id}>
                       <div className="flex items-center gap-2">
@@ -555,6 +625,88 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
               {t("tasks.create.priorityLabel")}
             </Label>
             <PrioritySelector value={priority} onChange={setPriority} disabled={isSubmitting} />
+          </div>
+
+          {/* Repeat (recurring) */}
+          <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Repeat className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Repeat this task</span>
+              </div>
+              <Switch checked={isRecurring} onCheckedChange={setIsRecurring} disabled={isSubmitting} />
+            </div>
+
+            {isRecurring && (
+              <div className="space-y-3 pt-1">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Frequency</Label>
+                    <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)} disabled={isSubmitting}>
+                      <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"].map((f) => (
+                          <SelectItem key={f} value={f}>{f.charAt(0) + f.slice(1).toLowerCase()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {frequency === "CUSTOM" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Every N days</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={customDays}
+                        onChange={(e) => setCustomDays(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="h-9 rounded-lg text-sm"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  )}
+                  {["WEEKLY", "BIWEEKLY"].includes(frequency) && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Day of week</Label>
+                      <Select value={String(dayOfWeek)} onValueChange={(v) => setDayOfWeek(parseInt(v))} disabled={isSubmitting}>
+                        <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((d, i) => (
+                            <SelectItem key={i} value={String(i)}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {["MONTHLY", "QUARTERLY", "YEARLY"].includes(frequency) && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Day of month</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={dayOfMonth}
+                        onChange={(e) => setDayOfMonth(Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))}
+                        className="h-9 rounded-lg text-sm"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Start date</Label>
+                    <Input type="date" value={recurStart} onChange={(e) => setRecurStart(e.target.value)} className="h-9 rounded-lg text-sm" disabled={isSubmitting} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">End date (optional)</Label>
+                    <Input type="date" value={recurEnd} onChange={(e) => setRecurEnd(e.target.value)} className="h-9 rounded-lg text-sm" disabled={isSubmitting} />
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Generates a task in the chosen space &amp; type on this schedule. Due date &amp; attachments don&apos;t apply.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Collapsible Sections */}
@@ -813,7 +965,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             )}
 
             {/* More Options (Story Points, Epic, Workflow, Custom Fields) */}
-            {(hasModule('story_points') || hasModule('epics') || (hasCustomFields && hasModule('custom_fields'))) && (
+            {(hasModule('story_points') || hasModule('epics') || hasCustomFields) && (
             <CollapsibleSection
               icon={SlidersHorizontal}
               label="More Options"
@@ -872,7 +1024,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
 
               {/* Custom Fields */}
-              {hasModule('custom_fields') && hasCustomFields && activeCustomFields.map((field: CustomFieldDefinition) => (
+              {hasCustomFields && applicableCustomFields.map((field: CustomFieldDefinition) => (
                 <div key={field.id} className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">
                     {field.name}
@@ -969,7 +1121,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                 Creating...
               </>
             ) : (
-              "Create Task"
+              isRecurring ? "Create Recurring Task" : "Create Task"
             )}
           </Button>
         </form>

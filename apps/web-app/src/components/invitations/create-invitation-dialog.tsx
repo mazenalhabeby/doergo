@@ -39,7 +39,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   // Form state
   const [mode, setMode] = useState<"email" | "code">("email")
   const [email, setEmail] = useState("")
-  const [role, setRole] = useState("EMPLOYEE")
+  const [position, setPosition] = useState("")
   const [spaceId, setSpaceId] = useState("none")
 
   // Success state
@@ -74,10 +74,12 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   })
 
   const handleSubmit = useCallback(() => {
-    const input: CreateInvitationInput = { targetRole: role }
+    // Invitations are always for Employees; management is granted via permissions.
+    const input: CreateInvitationInput = { targetRole: "EMPLOYEE" }
     if (mode === "email" && email.trim()) input.email = email.trim()
+    if (position.trim()) input.position = position.trim()
     createMutation.mutate(input)
-  }, [mode, email, role, createMutation])
+  }, [mode, email, position, createMutation])
 
   const handleCopyCode = useCallback(async () => {
     if (!generatedCode) return
@@ -91,6 +93,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     setGeneratedCode(null)
     setSuccess(false)
     setEmail("")
+    setPosition("")
     setCodeCopied(false)
   }, [])
 
@@ -99,7 +102,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     setTimeout(() => {
       setMode("email")
       setEmail("")
-      setRole("EMPLOYEE")
+      setPosition("")
       setSpaceId("none")
       setGeneratedCode(null)
       setSuccess(false)
@@ -218,16 +221,17 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             </div>
           )}
 
-          {/* Role */}
+          {/* Position / title */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {/* Management is granted via permissions, not a MANAGER role */}
-                <SelectItem value="EMPLOYEE">Employee</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-xs font-medium text-muted-foreground">
+              Position <span className="text-muted-foreground/50">(optional)</span>
+            </Label>
+            <Input
+              placeholder="e.g. Plumber, Field Technician"
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              className="h-9"
+            />
           </div>
 
           {/* Space (optional) */}

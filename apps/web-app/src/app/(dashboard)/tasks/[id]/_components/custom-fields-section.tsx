@@ -11,7 +11,9 @@ import {
   Link2,
   Mail,
   Loader2,
+  Settings2,
 } from "lucide-react"
+import { CollapsibleSection } from "./collapsible-section"
 
 import {
   customFieldsApi,
@@ -195,13 +197,8 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
   const [localValues, setLocalValues] = useState<Record<string, string>>({})
   const [initialized, setInitialized] = useState(false)
 
-  // Fetch definitions
-  const { data: definitions, isLoading: loadingDefs } = useQuery({
-    queryKey: ["customFieldDefinitions"],
-    queryFn: () => customFieldsApi.listDefinitions(),
-  })
-
-  // Fetch task values
+  // Fetch the task's applicable fields + values in one call (resolved server-side
+  // from the task's Task Type + global fields).
   const { data: taskValues, isLoading: loadingValues } = useQuery({
     queryKey: ["customFieldValues", taskId],
     queryFn: () => customFieldsApi.getTaskValues(taskId),
@@ -249,10 +246,12 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
     [debouncedSave],
   )
 
-  // Filter to active definitions only
-  const activeDefinitions = (definitions || []).filter((d) => d.isActive)
+  // Definitions come back attached to each applicable field row.
+  const activeDefinitions = (taskValues || [])
+    .map((v) => v.definition)
+    .filter((d): d is CustomFieldDefinition => !!d && d.isActive)
 
-  if (loadingDefs || loadingValues) {
+  if (loadingValues) {
     return null
   }
 
@@ -262,37 +261,39 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
   }
 
   return (
-    <div>
-      {saveMutation.isPending && (
-        <div className="flex justify-end mb-2">
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Saving...
-          </span>
+    <CollapsibleSection id="custom-fields" icon={Settings2} title="Custom Fields">
+      <div>
+        {saveMutation.isPending && (
+          <div className="flex justify-end mb-2">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Saving...
+            </span>
+          </div>
+        )}
+        <div className="space-y-4">
+          {activeDefinitions
+            .sort((a, b) => a.position - b.position)
+            .map((def) => (
+              <div key={def.id} className="space-y-1.5">
+                {def.type !== "CHECKBOX" && (
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    {def.name}
+                    {def.isRequired && (
+                      <span className="text-red-500">*</span>
+                    )}
+                  </label>
+                )}
+                <FieldInput
+                  definition={def}
+                  value={localValues[def.id] || ""}
+                  onChange={(value) => handleChange(def.id, value)}
+                />
+              </div>
+            ))}
         </div>
-      )}
-      <div className="space-y-4">
-        {activeDefinitions
-          .sort((a, b) => a.position - b.position)
-          .map((def) => (
-            <div key={def.id} className="space-y-1.5">
-              {def.type !== "CHECKBOX" && (
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                  {def.name}
-                  {def.isRequired && (
-                    <span className="text-red-500">*</span>
-                  )}
-                </label>
-              )}
-              <FieldInput
-                definition={def}
-                value={localValues[def.id] || ""}
-                onChange={(value) => handleChange(def.id, value)}
-              />
-            </div>
-          ))}
       </div>
-    </div>
+    </CollapsibleSection>
   )
 }
 

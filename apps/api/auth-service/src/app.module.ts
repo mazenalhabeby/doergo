@@ -7,7 +7,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { InvitationModule } from './modules/invitations/invitation.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
-import { RolesModule } from './modules/roles/roles.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { InvoiceModule } from './modules/invoices/invoice.module';
 
@@ -48,7 +47,6 @@ import { InvoiceModule } from './modules/invoices/invoice.module';
     UsersModule,
     InvitationModule,
     OnboardingModule,
-    RolesModule,
     AuditLogModule,
     InvoiceModule,
   ],

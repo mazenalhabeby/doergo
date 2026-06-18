@@ -54,11 +54,11 @@ export function ActivityPanel({ events, pending, className }: ActivityPanelProps
         className,
       )}
     >
-        {/* Live Activity — 2/3 */}
+        {/* Recent Activity — 2/3 */}
         <div className="flex-[2] flex flex-col overflow-hidden min-h-0">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 bg-foreground/[0.03]">
             <span className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider">
-              Live Activity
+              Recent Activity
             </span>
             {events.length > 0 && (
               <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">

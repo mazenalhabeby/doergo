@@ -50,6 +50,11 @@ export class CreateCustomFieldDto {
   @IsOptional()
   @Min(0)
   position?: number;
+
+  @ApiPropertyOptional({ description: 'Task Type (workflow) this field belongs to; omit for a global field' })
+  @IsString()
+  @IsOptional()
+  workflowId?: string;
 }
 
 export class UpdateCustomFieldDto {

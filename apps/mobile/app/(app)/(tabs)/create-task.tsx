@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
+import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, locationsApi, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
 import { TechnicianPicker } from '../../../src/components';
@@ -47,6 +47,8 @@ export default function CreateTaskScreen() {
   const [locationLng, setLocationLng] = useState<number | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState<TechnicianListItem | null>(null);
   const [showTechnicianPicker, setShowTechnicianPicker] = useState(false);
+  const [spaces, setSpaces] = useState<{ id: string; name: string }[]>([]);
+  const [spaceId, setSpaceId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -55,6 +57,19 @@ export default function CreateTaskScreen() {
   const { pickFromGallery, takePhoto } = useImagePicker();
   const canAssign = user?.canAssignTasks ?? false;
   const [photos, setPhotos] = useState<PickedImage[]>([]);
+
+  // Load spaces and default to the org's "General" space (every task needs one).
+  useEffect(() => {
+    locationsApi
+      .list()
+      .then((list) => {
+        const opts = list.map((l) => ({ id: l.id, name: l.name, isDefault: (l as { isDefault?: boolean }).isDefault }));
+        setSpaces(opts.map(({ id, name }) => ({ id, name })));
+        const def = opts.find((o) => o.isDefault) ?? opts.find((o) => o.name === 'General') ?? opts[0];
+        if (def) setSpaceId(def.id);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -73,6 +88,7 @@ export default function CreateTaskScreen() {
         locationAddress: locationAddress.trim() || undefined,
         locationLat: locationLat ?? undefined,
         locationLng: locationLng ?? undefined,
+        ...(spaceId && { spaceId }),
         ...(canAssign && selectedTechnician?.id && { assignedToId: selectedTechnician.id }),
       };
 
@@ -155,6 +171,40 @@ export default function CreateTaskScreen() {
             textAlignVertical="top"
           />
         </View>
+
+        {/* Space */}
+        {spaces.length > 1 && (
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>{t('createTask.spaceLabel', 'Space')}</Text>
+            <View style={styles.priorityRow}>
+              {spaces.map((s) => {
+                const isSelected = spaceId === s.id;
+                return (
+                  <TouchableOpacity
+                    key={s.id}
+                    style={[
+                      styles.priorityChip,
+                      { backgroundColor: isSelected ? COLORS.primary + '20' : colors.card, borderColor: isSelected ? COLORS.primary : colors.border },
+                    ]}
+                    onPress={() => setSpaceId(s.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="grid-outline" size={14} color={isSelected ? COLORS.primary : colors.textSecondary} />
+                    <Text
+                      style={[
+                        styles.priorityText,
+                        { color: isSelected ? COLORS.primary : colors.textSecondary },
+                        isSelected && { fontWeight: FONT_WEIGHT.semibold },
+                      ]}
+                    >
+                      {s.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Priority */}
         <View style={styles.field}>

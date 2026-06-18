@@ -7,7 +7,7 @@ export const onboardingApi = {
     return fetchWithAuth<{ needsOnboarding: boolean; hasPendingJoinRequest: boolean; pendingRequest: any }>('/onboarding/status');
   },
 
-  createOrganization: async (data: { name: string; address?: string; industry?: string }): Promise<{ organization: { id: string; name: string }; joinCode: string; user: User }> => {
+  createOrganization: async (data: { name: string; address?: string; industry?: string; firstSpaceName?: string }): Promise<{ organization: { id: string; name: string }; joinCode: string; user: User }> => {
     return fetchWithAuth<any>('/onboarding/create-org', {
       method: 'POST',
       body: JSON.stringify(data),

@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import {
   MAX_SESSIONS_PER_USER,
@@ -20,6 +21,7 @@ import {
   ErrorCodes,
   DEFAULT_PERMISSIONS,
   DEFAULT_PROFILE_BADGES,
+  DEFAULT_ORG_MODULES,
   Role,
   normalizeRole,
   type ProfileBadgesConfig,
@@ -123,6 +125,7 @@ export class AuthService {
     lastName: string;
     role: string;
     companyName?: string;
+    firstSpaceName?: string;
   }) {
     try {
       // Sanitize inputs: email to lowercase, names preserve case (capitalized by DTO)
@@ -160,8 +163,17 @@ export class AuthService {
             data: {
               name: companyName,
               isActive: true,
+              enabledModules: DEFAULT_ORG_MODULES,
             },
           });
+
+          // The org's first space is created in the dedicated "Set up your first
+          // space" onboarding step (so it can have a type, address & map pin) —
+          // not here. The org starts with no space.
+
+          // Seed the org's default task type (Field Service) so Task Types isn't
+          // empty and new tasks have a capability-rich flow out of the box.
+          await seedDefaultWorkflow(tx, organization.id);
 
           const newUser = await tx.user.create({
             data: {
@@ -407,9 +419,11 @@ export class AuthService {
             specialty: user.specialty,
             // Profile badge visibility
             profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
-            // Organization enabled modules
-            // Per-user Access Profile overrides the org-wide modules when set.
+            // Access Profile (mobile tabs / web screens) — per-user overrides org.
             enabledModules: (user.enabledModules ?? user.organization?.enabledModules) || [],
+            // Org FEATURE modules (sprints, checklists, tracking…) — always the
+            // org's set, never the user's access profile. Drives hasModule/hasFeature.
+            orgModules: (user.organization?.enabledModules as string[] | null) || [],
             // Custom role
             orgRole: user.orgRole ? { id: user.orgRole.id, name: user.orgRole.name, slug: user.orgRole.slug, color: user.orgRole.color } : null,
             rolePermissions: (user.orgRole?.permissions as Record<string, boolean>) || {},
@@ -660,6 +674,7 @@ export class AuthService {
             specialty: storedToken.user.specialty,
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
             enabledModules: (storedToken.user.enabledModules ?? storedToken.user.organization?.enabledModules) || [],
+            orgModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
             orgRole: storedToken.user.orgRole ? { id: storedToken.user.orgRole.id, name: storedToken.user.orgRole.name, slug: storedToken.user.orgRole.slug, color: storedToken.user.orgRole.color } : null,
             rolePermissions: (storedToken.user.orgRole?.permissions as Record<string, boolean>) || {},
           },
@@ -920,6 +935,8 @@ export class AuthService {
           profileBadges: resolveProfileBadges(profileBadges, organization?.profileBadges),
           // Per-user Access Profile overrides the org-wide modules when set.
           enabledModules: (userModules ?? organization?.enabledModules) || [],
+          // Org FEATURE modules — always the org's set (drives hasModule/hasFeature).
+          orgModules: (organization?.enabledModules as string[] | null) || [],
           orgRole: orgRole ? { id: orgRole.id, name: orgRole.name, slug: orgRole.slug, color: orgRole.color } : null,
           rolePermissions: (orgRole?.permissions as Record<string, boolean>) || {},
         },
@@ -1133,12 +1150,22 @@ export class AuthService {
         };
       }
 
-      // Validate new password
+      // Validate new password (strength is enforced at the gateway DTO too)
       if (data.newPassword.length < 8) {
         return {
           success: false,
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'New password must be at least 8 characters long.',
+        };
+      }
+
+      // Reject reusing the current password
+      const sameAsCurrent = await bcrypt.compare(data.newPassword, user.passwordHash);
+      if (sameAsCurrent) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'New password must be different from your current password.',
         };
       }
 
@@ -1148,6 +1175,10 @@ export class AuthService {
         where: { id: data.userId },
         data: { passwordHash: newPasswordHash },
       });
+
+      // SECURITY: revoke all refresh tokens so other sessions/devices are signed
+      // out after a password change (consistent with the reset-password flow).
+      await this.prisma.refreshToken.deleteMany({ where: { userId: data.userId } });
 
       this.logger.log(`Password changed for user ${data.userId}`);
 

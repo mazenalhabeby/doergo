@@ -123,13 +123,11 @@ export class AttendanceService {
       );
     }
 
-    // Calculate distance to location
-    const distance = haversineDistance(
-      data.lat,
-      data.lng,
-      location.lat,
-      location.lng,
-    );
+    // Calculate distance to location (logical spaces have no coords → no geofence)
+    const distance =
+      location.lat == null || location.lng == null
+        ? 0
+        : haversineDistance(data.lat, data.lng, location.lat, location.lng);
 
     const withinGeofence = distance <= location.geofenceRadius;
 
@@ -233,13 +231,11 @@ export class AttendanceService {
       throw new BadRequestException('You are not currently clocked in');
     }
 
-    // Calculate distance to location for clock-out
-    const distance = haversineDistance(
-      data.lat,
-      data.lng,
-      entry.location.lat,
-      entry.location.lng,
-    );
+    // Calculate distance to location for clock-out (no coords → no geofence)
+    const distance =
+      entry.location.lat == null || entry.location.lng == null
+        ? 0
+        : haversineDistance(data.lat, data.lng, entry.location.lat, entry.location.lng);
 
     const withinGeofence = distance <= entry.location.geofenceRadius;
 
@@ -359,7 +355,10 @@ export class AttendanceService {
       return success({ withinGeofence: true, distance: 0, autoClockedOut: false }, 'No active entry');
     }
 
-    const distance = haversineDistance(data.lat, data.lng, entry.location.lat, entry.location.lng);
+    const distance =
+      entry.location.lat == null || entry.location.lng == null
+        ? 0
+        : haversineDistance(data.lat, data.lng, entry.location.lat, entry.location.lng);
     const withinGeofence = distance <= entry.location.geofenceRadius;
     const autoClockOutDistance = ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_DISTANCE_METERS;
 

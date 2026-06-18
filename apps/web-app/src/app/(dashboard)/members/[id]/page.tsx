@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useMemo } from "react"
+import { use, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
@@ -12,12 +12,16 @@ import {
   Clock,
   Timer,
   CalendarDays,
+  LayoutGrid,
+  ShieldCheck,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
 import { AccessBuilder } from "@/components/access-builder"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { EditMemberDialog } from "../_components/edit-member-dialog"
 import {
   organizationsApi,
   employeesApi,
@@ -88,6 +92,7 @@ export default function MemberProfilePage({
   const router = useRouter()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
+  const [editOpen, setEditOpen] = useState(false)
 
   // Fetch member info from org members list
   const { data: memberData, isLoading: memberLoading, refetch: refetchMember } = useQuery({
@@ -218,22 +223,32 @@ export default function MemberProfilePage({
         </Button>
 
         {/* ── Header Card ──────────────────────────────────────────────── */}
-        <div className="bg-card rounded-xl border border-border/80 p-6">
+        <div className="bg-card rounded-2xl border border-border/60 p-6 shadow-sm">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-5">
               {/* Avatar */}
-              <UserAvatar
-                firstName={member.firstName}
-                lastName={member.lastName}
-                avatarUrl={member.avatarUrl}
-                seed={member.id}
-                size="2xl"
-              />
+              <div className="shrink-0 rounded-full ring-4 ring-background shadow-md">
+                <UserAvatar
+                  firstName={member.firstName}
+                  lastName={member.lastName}
+                  avatarUrl={member.avatarUrl}
+                  seed={member.id}
+                  size="2xl"
+                />
+              </div>
 
               <div className="space-y-1.5">
-                <h1 className="text-xl font-bold text-foreground">
-                  {member.firstName} {member.lastName}
-                </h1>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                    {member.firstName} {member.lastName}
+                  </h1>
+                  {member.isActive && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      Active
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {member.position && (
                     <span className="text-sm text-muted-foreground">{member.position}</span>
@@ -293,29 +308,36 @@ export default function MemberProfilePage({
               </div>
             </div>
 
-            {/* Edit button */}
+            {/* Edit button — opens the same dialog inline (no redirect) */}
             {isAdmin && member.id !== user?.id && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push(`/members?edit=${member.id}`)}
-                className="rounded-lg"
+                onClick={() => setEditOpen(true)}
+                className="rounded-lg shadow-sm"
               >
                 <Pencil className="h-3.5 w-3.5 mr-1.5" />
                 Edit
               </Button>
             )}
+
+            <EditMemberDialog
+              member={editOpen ? member : null}
+              onClose={() => setEditOpen(false)}
+              onSaved={() => refetchMember()}
+            />
           </div>
         </div>
 
-        {/* ── Access Builder (admins, non-admin members) ─────────────── */}
-        {isAdmin && member.role !== "ADMIN" && (
-          <AccessBuilder member={member} onSaved={() => refetchMember()} />
-        )}
+        {/* ── Tabbed content ───────────────────────────────────────────── */}
+        {(() => {
+          const showAccessTab = isAdmin && member.role !== "ADMIN"
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          const overview = (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ── Recent Tasks ─────────────────────────────────────────── */}
-          <div className="bg-card rounded-xl border border-border/80 overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-border/60">
               <h2 className="text-sm font-semibold text-foreground">Recent Tasks</h2>
             </div>
@@ -351,7 +373,7 @@ export default function MemberProfilePage({
                         <Badge
                           variant="outline"
                           className="text-[11px] font-medium border flex-shrink-0"
-                          style={{ borderColor: statusConfig.hex, color: statusConfig.hex }}
+                          style={{ borderColor: `${statusConfig.hex}33`, color: statusConfig.hex, backgroundColor: `${statusConfig.hex}14` }}
                         >
                           <span
                             className="h-1.5 w-1.5 rounded-full mr-1.5 flex-shrink-0"
@@ -380,7 +402,7 @@ export default function MemberProfilePage({
           </div>
 
           {/* ── Schedule ─────────────────────────────────────────────── */}
-          <div className="bg-card rounded-xl border border-border/80 overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-border/60">
               <h2 className="text-sm font-semibold text-foreground">Schedule</h2>
             </div>
@@ -466,7 +488,41 @@ export default function MemberProfilePage({
               <p className="text-sm text-muted-foreground">No recent activity</p>
             </div>
           )}
-        </div>
+              </div>
+            </div>
+          )
+
+          if (!showAccessTab) return overview
+
+          return (
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
+                <TabsTrigger
+                  value="overview"
+                  className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
+                >
+                  <LayoutGrid className="size-3.5 mr-1.5" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="access"
+                  className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
+                >
+                  <ShieldCheck className="size-3.5 mr-1.5" />
+                  Access
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="mt-6">
+                {overview}
+              </TabsContent>
+
+              <TabsContent value="access" className="mt-6">
+                <AccessBuilder member={member} onSaved={() => refetchMember()} />
+              </TabsContent>
+            </Tabs>
+          )
+        })()}
       </div>
     </div>
   )

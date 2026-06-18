@@ -16,11 +16,33 @@ export class CustomFieldsService {
   /**
    * List all custom field definitions for an organization
    */
-  async findAll(data: { organizationId: string; limit?: number; offset?: number }) {
+  async findAll(data: {
+    organizationId: string;
+    /**
+     * Scope filter:
+     *  - undefined        → ALL org definitions (admin/editor view, incl. inactive)
+     *  - '__none__'       → active GLOBAL fields only (workflowId null)
+     *  - a workflow id    → active fields applicable to that Task Type (type + global)
+     */
+    forWorkflow?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    let where: any = { organizationId: data.organizationId };
+    if (data.forWorkflow === '__none__') {
+      where = { organizationId: data.organizationId, isActive: true, workflowId: null };
+    } else if (data.forWorkflow) {
+      where = {
+        organizationId: data.organizationId,
+        isActive: true,
+        OR: [{ workflowId: data.forWorkflow }, { workflowId: null }],
+      };
+    }
+
     const definitions = await this.prisma.customFieldDefinition.findMany({
-      where: { organizationId: data.organizationId },
+      where,
       orderBy: { position: 'asc' },
-      take: data.limit || 100,
+      take: data.limit || 200,
       skip: data.offset || 0,
     });
 
@@ -37,6 +59,8 @@ export class CustomFieldsService {
     options?: any;
     isRequired?: boolean;
     position?: number;
+    /** Task Type this field belongs to; null/undefined → global (all tasks). */
+    workflowId?: string | null;
     organizationId: string;
   }) {
     // Validate DROPDOWN type has options
@@ -44,11 +68,24 @@ export class CustomFieldsService {
       throw new BadRequestException('DROPDOWN fields must have at least one option');
     }
 
-    // Determine position if not provided
+    const workflowId = data.workflowId ?? null;
+
+    // If scoped to a Task Type, make sure it belongs to this org.
+    if (workflowId) {
+      const wf = await this.prisma.statusWorkflow.findFirst({
+        where: { id: workflowId, organizationId: data.organizationId },
+        select: { id: true },
+      });
+      if (!wf) {
+        throw new BadRequestException('Task Type not found in this organization');
+      }
+    }
+
+    // Determine position within the same scope if not provided
     let position = data.position;
     if (position === undefined || position === null) {
       const lastField = await this.prisma.customFieldDefinition.findFirst({
-        where: { organizationId: data.organizationId },
+        where: { organizationId: data.organizationId, workflowId },
         orderBy: { position: 'desc' },
         select: { position: true },
       });
@@ -63,6 +100,7 @@ export class CustomFieldsService {
         options: data.options,
         isRequired: data.isRequired || false,
         position,
+        workflowId,
         organizationId: data.organizationId,
       },
     });
@@ -133,29 +171,49 @@ export class CustomFieldsService {
    * Get custom field values for a task
    */
   async getTaskValues(data: { taskId: string; organizationId: string }) {
-    // Verify task belongs to org
+    // Verify task belongs to org + read its Task Type
     const task = await this.prisma.task.findUnique({
       where: { id: data.taskId },
-      select: { organizationId: true },
+      select: { organizationId: true, workflowId: true },
     });
 
-    if (!task) {
+    if (!task || task.organizationId !== data.organizationId) {
       throw new NotFoundException('Task not found');
     }
 
-    if (task.organizationId !== data.organizationId) {
-      throw new NotFoundException('Task not found');
-    }
+    // Applicable definitions = this task's Task Type fields + global fields.
+    const where = task.workflowId
+      ? {
+          organizationId: data.organizationId,
+          isActive: true,
+          OR: [{ workflowId: task.workflowId }, { workflowId: null }],
+        }
+      : { organizationId: data.organizationId, isActive: true, workflowId: null };
 
-    const values = await this.prisma.customFieldValue.findMany({
+    const definitions = await this.prisma.customFieldDefinition.findMany({
+      where,
+      orderBy: { position: 'asc' },
+    });
+
+    const stored = await this.prisma.customFieldValue.findMany({
       where: { taskId: data.taskId },
-      include: {
-        definition: true,
-      },
-      orderBy: { definition: { position: 'asc' } },
+    });
+    const valueById = new Map(stored.map((v) => [v.definitionId, v]));
+
+    // Return one row per applicable definition (value may be empty/unset), so
+    // the client renders exactly the fields this task type should capture.
+    const merged = definitions.map((def) => {
+      const v = valueById.get(def.id);
+      return {
+        id: v?.id ?? `unset-${def.id}`,
+        definitionId: def.id,
+        taskId: data.taskId,
+        value: v?.value ?? '',
+        definition: def,
+      };
     });
 
-    return success(values);
+    return success(merged);
   }
 
   /**

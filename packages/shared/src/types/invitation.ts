@@ -60,6 +60,7 @@ export interface CreateInvitationInput {
   expiresInHours?: number;
   email?: string;
 
+  position?: string;
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;

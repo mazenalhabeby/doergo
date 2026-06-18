@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HBCField — Org Creation Flow</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+  colors: {
+    brand: { 50:'#EFF6FF',100:'#DBEAFE',500:'#3B82F6',600:'#2563EB',700:'#1D4ED8' },
+    em: { 50:'#ECFDF5',100:'#D1FAE5',500:'#10B981',600:'#059669',700:'#047857' },
+  },
+  boxShadow: { modal:'0 24px 48px -12px rgba(15,23,42,.18), 0 8px 18px -8px rgba(15,23,42,.10)' },
+}}}
+</script>
+<style>
+  body{font-family:Inter,system-ui,sans-serif}
+  .stepbadge{font-size:11px;font-weight:700;letter-spacing:.03em}
+  .sectitle{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;font-weight:700}
+  /* logo arrow */
+  .arrowico{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#2563EB,#06B6D4);display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body class="bg-slate-200/60 p-8">
+  <div class="max-w-[1400px] mx-auto">
+    <h1 class="text-2xl font-bold text-slate-800">New-organization flow</h1>
+    <p class="text-sm text-slate-500 mt-1 mb-2 max-w-3xl">Your real auth/onboarding design. The first space is folded into org setup — pre-filled, editable, with a Physical-location vs Workspace choice. Joiners skip it.</p>
+
+    <!-- ===================== WEB ===================== -->
+    <div class="sectitle mt-8 mb-4 border-b border-slate-200 pb-2">🖥️ Web — create an organization</div>
+    <div class="flex gap-5 items-stretch overflow-x-auto pb-3">
+
+      <!-- card wrapper = the real auth page background -->
+      <!-- STEP 1 -->
+      <div class="shrink-0 w-[340px] rounded-3xl p-5 bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100">
+        <div class="bg-white rounded-2xl shadow-modal p-7">
+          <div class="flex flex-col items-center mb-6">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="arrowico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11L21 3l-8 18-2-7-8-3z" fill="#fff"/></svg></div>
+              <span class="font-extrabold tracking-tight text-slate-900" style="font-size:20px">HBC FIELD</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-slate-900">Create your account</h1>
+            <p class="text-sm text-slate-500 mt-2 text-center">Start your organization on HBCField.</p>
+          </div>
+          <div class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700">Full name</label>
+              <div class="relative"><svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div class="pl-10 h-11 flex items-center text-sm text-slate-400 border border-slate-200 rounded-md bg-white">Anna Holub</div></div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700">Work email</label>
+              <div class="relative"><svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                <div class="pl-10 h-11 flex items-center text-sm text-slate-400 border border-slate-200 rounded-md bg-white">anna@acme.com</div></div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700">Password</label>
+              <div class="relative"><svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                <div class="pl-10 h-11 flex items-center text-sm text-slate-400 border border-slate-200 rounded-md bg-white">••••••••</div></div>
+            </div>
+            <button class="w-full h-11 bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold text-sm rounded-lg shadow-sm">Create account</button>
+            <p class="text-center text-sm text-slate-500">Already have an account? <span class="text-brand-600 font-medium">Sign in</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center text-slate-300 text-3xl shrink-0">→</div>
+
+      <!-- STEP 2 -->
+      <div class="shrink-0 w-[340px] rounded-3xl p-5 bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100">
+        <div class="bg-white rounded-2xl shadow-modal p-7">
+          <div class="flex flex-col items-center mb-6">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="arrowico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11L21 3l-8 18-2-7-8-3z" fill="#fff"/></svg></div>
+              <span class="font-extrabold tracking-tight text-slate-900" style="font-size:20px">HBC FIELD</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-slate-900">Set up your organization</h1>
+            <p class="text-sm text-slate-500 mt-2 text-center">Name your company and your first space — where your tasks live.</p>
+          </div>
+          <div class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700">Organization name</label>
+              <div class="relative"><svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                <div class="pl-10 h-11 flex items-center text-sm text-slate-900 border border-slate-200 rounded-md bg-white">Acme HVAC</div></div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700">Your first space</label>
+              <div class="relative"><svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.7l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.7l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+                <div class="pl-10 h-11 flex items-center text-sm text-slate-900 border border-brand-600 ring-2 ring-brand-100 rounded-md bg-white">Main Office</div></div>
+              <p class="text-xs text-slate-400 mt-1">You can rename it or add more spaces later.</p>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-slate-700">Space type</label>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="rounded-lg border border-brand-600 bg-brand-50 p-3">
+                  <div class="flex items-center gap-2 text-[13px] font-semibold text-slate-800"><span class="w-3.5 h-3.5 rounded-full border-2 border-brand-600 bg-[radial-gradient(circle,#2563EB_40%,transparent_44%)]"></span>📍 Location</div>
+                  <p class="text-[11px] text-slate-500 mt-1.5 leading-snug">Address &amp; geofence — for attendance.</p>
+                </div>
+                <div class="rounded-lg border border-slate-200 p-3">
+                  <div class="flex items-center gap-2 text-[13px] font-semibold text-slate-800"><span class="w-3.5 h-3.5 rounded-full border-2 border-slate-300"></span>🗂️ Workspace</div>
+                  <p class="text-[11px] text-slate-500 mt-1.5 leading-snug">A team or project — no location.</p>
+                </div>
+              </div>
+            </div>
+            <button class="w-full h-11 bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold text-sm rounded-lg shadow-sm">Continue</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center text-slate-300 text-3xl shrink-0">→</div>
+
+      <!-- STEP 3 dashboard -->
+      <div class="shrink-0 w-[360px] rounded-3xl bg-slate-50 border border-slate-200 shadow-modal overflow-hidden">
+        <div class="flex items-center gap-3 px-4 h-12 border-b border-slate-200 bg-white">
+          <div class="arrowico" style="width:26px;height:26px;border-radius:7px"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 11L21 3l-8 18-2-7-8-3z" fill="#fff"/></svg></div>
+          <span class="font-bold text-slate-800 text-sm">HBC FIELD</span>
+          <span class="ml-1 text-xs font-medium text-brand-600 bg-brand-50 border border-brand-100 rounded-full px-2.5 py-1">📦 Main Office</span>
+          <span class="ml-auto text-xs font-medium text-white bg-brand-600 rounded-lg px-3 py-1.5">＋ New task</span>
+        </div>
+        <div class="p-6">
+          <span class="stepbadge text-em-600 bg-em-50 px-2.5 py-1 rounded-full">DONE · YOU'RE IN</span>
+          <h2 class="text-xl font-bold text-slate-800 mt-3">Welcome, Anna 👋</h2>
+          <p class="text-sm text-slate-500 mt-1">Your workspace is ready. Tasks land in <b class="text-slate-700">Main Office</b>.</p>
+          <div class="mt-5 border-[1.5px] border-dashed border-slate-300 rounded-xl py-9 text-center text-slate-400 text-sm">No tasks yet — create your first one</div>
+          <p class="text-xs text-slate-400 mt-4">🧭 The <b>Spaces</b> menu stays hidden until you add a second space.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== MOBILE ===================== -->
+    <div class="sectitle mt-10 mb-4 border-b border-slate-200 pb-2">📱 Mobile — create an organization</div>
+    <div class="flex gap-5 items-center overflow-x-auto pb-3">
+
+      <!-- phone 1 account -->
+      <div class="shrink-0 w-[230px] bg-slate-900 rounded-[34px] p-2 shadow-modal">
+        <div class="bg-white rounded-[28px] overflow-hidden min-h-[470px] px-5 pt-6 pb-5">
+          <div class="flex flex-col items-center text-center">
+            <div class="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center" style="background:linear-gradient(135deg,#10B981,#059669)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <h2 class="text-[22px] font-bold text-slate-900">Create account</h2>
+            <p class="text-[13px] text-slate-500 mt-1">Join HBCField in a minute.</p>
+          </div>
+          <div class="mt-5 space-y-3.5 text-left">
+            <div><label class="text-[13px] font-semibold text-slate-700">Name</label><div class="mt-1 h-12 flex items-center px-3 gap-2 border-[1.5px] border-slate-200 rounded-xl text-[14px] text-slate-400"><span>👤</span>Anna Holub</div></div>
+            <div><label class="text-[13px] font-semibold text-slate-700">Email</label><div class="mt-1 h-12 flex items-center px-3 gap-2 border-[1.5px] border-slate-200 rounded-xl text-[14px] text-slate-400"><span>✉️</span>anna@acme.com</div></div>
+            <div><label class="text-[13px] font-semibold text-slate-700">Password</label><div class="mt-1 h-12 flex items-center px-3 gap-2 border-[1.5px] border-slate-200 rounded-xl text-[14px] text-slate-400"><span>🔒</span>••••••••</div></div>
+            <div class="h-[50px] rounded-xl flex items-center justify-center text-white font-bold text-[15px] mt-2" style="background:linear-gradient(135deg,#10B981,#059669)">Get started</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-slate-300 text-2xl shrink-0">→</div>
+
+      <!-- phone 2 choose path -->
+      <div class="shrink-0 w-[230px] bg-slate-900 rounded-[34px] p-2 shadow-modal">
+        <div class="bg-white rounded-[28px] overflow-hidden min-h-[470px] px-5 pt-7 pb-5">
+          <h2 class="text-[22px] font-bold text-slate-900">Get started</h2>
+          <p class="text-[13px] text-slate-500 mt-1 mb-4">How do you want to begin?</p>
+          <div class="rounded-2xl border-2 border-em-600 bg-em-50 p-3.5 flex gap-3 items-start mb-2.5">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style="background:#D1FAE5">🏢</div>
+            <div><div class="font-semibold text-[14px] text-slate-800">Create organization</div><div class="text-[11.5px] text-slate-500 mt-0.5 leading-snug">Start fresh &amp; invite your team.</div></div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 p-3.5 flex gap-3 items-start mb-2.5">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style="background:#EDE9FE">🔑</div>
+            <div><div class="font-semibold text-[14px] text-slate-800">Join with a code</div><div class="text-[11.5px] text-slate-500 mt-0.5 leading-snug">Your org gave you a join code.</div></div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 p-3.5 flex gap-3 items-start">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style="background:#CFFAFE">✉️</div>
+            <div><div class="font-semibold text-[14px] text-slate-800">Use an invitation</div><div class="text-[11.5px] text-slate-500 mt-0.5 leading-snug">You received an invite code.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-slate-300 text-2xl shrink-0">→</div>
+
+      <!-- phone 3 create org + first space -->
+      <div class="shrink-0 w-[230px] bg-slate-900 rounded-[34px] p-2 shadow-modal">
+        <div class="bg-white rounded-[28px] overflow-hidden min-h-[470px] px-5 pt-6 pb-5">
+          <div class="flex flex-col items-center text-center">
+            <div class="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center" style="background:linear-gradient(135deg,#10B981,#059669)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></div>
+            <h2 class="text-[22px] font-bold text-slate-900">Create organization</h2>
+            <p class="text-[13px] text-slate-500 mt-1">Your company &amp; first space.</p>
+          </div>
+          <div class="mt-4 space-y-3 text-left">
+            <div><label class="text-[13px] font-semibold text-slate-700">Organization name</label><div class="mt-1 h-12 flex items-center px-3 gap-2 border-[1.5px] border-slate-200 rounded-xl text-[14px] text-slate-800"><span>🏢</span>Acme HVAC</div></div>
+            <div><label class="text-[13px] font-semibold text-slate-700">Your first space</label><div class="mt-1 h-12 flex items-center px-3 gap-2 border-[1.5px] border-em-600 rounded-xl text-[14px] text-slate-800" style="box-shadow:0 0 0 3px #D1FAE5"><span>📦</span>Main Office</div><p class="text-[10.5px] text-slate-400 mt-1">Rename or add more later.</p></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="rounded-xl border-2 border-em-600 bg-em-50 py-2 text-center text-[12px] font-semibold text-slate-800">📍 Location</div>
+              <div class="rounded-xl border border-slate-200 py-2 text-center text-[12px] font-semibold text-slate-600">🗂️ Workspace</div>
+            </div>
+            <div class="h-[50px] rounded-xl flex items-center justify-center text-white font-bold text-[15px] mt-1" style="background:linear-gradient(135deg,#10B981,#059669)">Create</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-slate-300 text-2xl shrink-0">→</div>
+
+      <!-- phone 4 home -->
+      <div class="shrink-0 w-[230px] bg-slate-900 rounded-[34px] p-2 shadow-modal">
+        <div class="bg-white rounded-[28px] overflow-hidden min-h-[470px]">
+          <div class="flex items-center gap-2 px-4 h-12 border-b border-slate-100">
+            <span class="text-xs font-semibold text-em-600 bg-em-50 border border-em-100 rounded-full px-2.5 py-1">📦 Main Office</span>
+            <span class="ml-auto text-em-600 text-lg font-bold">＋</span>
+          </div>
+          <div class="px-5 pt-5">
+            <span class="stepbadge text-em-600 bg-em-50 px-2.5 py-1 rounded-full">DONE</span>
+            <h2 class="text-[22px] font-bold text-slate-900 mt-3">Home</h2>
+            <p class="text-[13px] text-slate-500 mt-1">Tasks land in <b>Main Office</b>.</p>
+            <div class="mt-5 border-[1.5px] border-dashed border-slate-200 rounded-xl py-10 text-center text-slate-300 text-[13px]">No tasks yet</div>
+            <p class="text-[11px] text-slate-400 mt-4">🧭 “Spaces” appears once you add a second.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- joiners -->
+    <div class="sectitle mt-10 mb-3 border-b border-slate-200 pb-2">🔁 People who JOIN (not create) — skip the space step</div>
+    <div class="bg-em-50 border border-em-100 rounded-2xl p-5 max-w-3xl text-[13.5px] text-em-700 leading-relaxed">
+      <b>Joining an existing org (code or invitation) does NOT create a space.</b> Joiners land straight in the org and work inside the spaces the admin already set up — so the “first space” step only ever shows for the person <b>creating</b> the org.
+      <div class="text-[12px] text-slate-500 mt-2"><b>Safety net:</b> if an org ever has zero spaces (last one deleted), creating a task shows “Create a space first” instead of failing — never an auto-“General”.</div>
+    </div>
+  </div>
+</body>
+</html>

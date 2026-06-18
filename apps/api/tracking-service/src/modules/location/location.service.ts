@@ -138,6 +138,116 @@ export class LocationService {
     return success(location);
   }
 
+  /**
+   * Batch variant of updateLocation — used by the mobile background route
+   * tracker, which buffers GPS points while the phone is locked/backgrounded
+   * and flushes them in one request. Appending the whole burst in a single
+   * transaction (one ownership check, one distance increment) is far cheaper on
+   * the device radio and the DB than N separate /location calls.
+   */
+  async updateLocationBatch(
+    userId: string,
+    taskId: string | undefined,
+    points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[],
+  ) {
+    if (!Array.isArray(points) || points.length === 0) {
+      return success(null);
+    }
+
+    // Drop garbage coordinates, then order by device timestamp so the route
+    // keeps its real shape (turns) even when points arrive batched out of order.
+    const valid = points
+      .filter(
+        (p) =>
+          typeof p.lat === 'number' && typeof p.lng === 'number' &&
+          p.lat >= -90 && p.lat <= 90 && p.lng >= -180 && p.lng <= 180,
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.timestamp ?? 0).getTime() - new Date(b.timestamp ?? 0).getTime(),
+      );
+
+    if (valid.length === 0) {
+      throw new Error('Invalid coordinates');
+    }
+
+    const latest = valid[valid.length - 1];
+
+    // Upsert worker's last location with the newest point (for the live map).
+    const location = await this.prisma.workerLastLocation.upsert({
+      where: { userId },
+      update: { lat: latest.lat, lng: latest.lng, accuracy: latest.accuracy },
+      create: { userId, lat: latest.lat, lng: latest.lng, accuracy: latest.accuracy },
+    });
+
+    if (taskId) {
+      const task = await this.prisma.task.findUnique({
+        where: { id: taskId },
+        select: { status: true, assignedToId: true },
+      });
+
+      // Only record history if the task is EN_ROUTE and owned by the caller.
+      if (task && task.status === 'EN_ROUTE' && task.assignedToId === userId) {
+        const lastPoint = await this.prisma.locationHistory.findFirst({
+          where: { taskId, userId },
+          orderBy: { timestamp: 'desc' },
+          select: { lat: true, lng: true },
+        });
+
+        let prevLat = lastPoint?.lat ?? null;
+        let prevLng = lastPoint?.lng ?? null;
+        let totalIncrement = 0;
+
+        const creates = valid.map((p) => {
+          if (prevLat !== null && prevLng !== null) {
+            totalIncrement += haversineDistance(prevLat, prevLng, p.lat, p.lng);
+          }
+          prevLat = p.lat;
+          prevLng = p.lng;
+          return this.prisma.locationHistory.create({
+            data: {
+              userId,
+              taskId,
+              lat: p.lat,
+              lng: p.lng,
+              accuracy: p.accuracy,
+              ...(p.timestamp ? { timestamp: new Date(p.timestamp) } : {}),
+            },
+          });
+        });
+
+        await this.prisma.$transaction([
+          ...creates,
+          ...(totalIncrement > 0
+            ? [
+                this.prisma.task.update({
+                  where: { id: taskId },
+                  data: { routeDistance: { increment: totalIncrement } },
+                }),
+              ]
+            : []),
+        ]);
+      }
+    }
+
+    // Emit only the latest point to the live map (no need to replay the burst).
+    this.notificationClient
+      .emit('worker_location_updated', {
+        workerId: userId,
+        taskId,
+        location: { lat: latest.lat, lng: latest.lng, accuracy: latest.accuracy, timestamp: new Date() },
+      })
+      .pipe(
+        catchError((err) => {
+          this.logger.warn(`Failed to emit location update: ${err.message}`);
+          return of(null);
+        }),
+      )
+      .subscribe();
+
+    return success(location);
+  }
+
   async getActiveWorkers(organizationId?: string) {
     const where: any = {
       user: {

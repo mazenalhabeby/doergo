@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
 import * as Location from 'expo-location';
 import { trackingApi } from '../lib/api';
+import {
+  startRouteTracking,
+  stopRouteTracking,
+  isRouteTrackingRunning,
+  getActiveRouteTaskId,
+} from '../services/background-route-tracking';
 
-const UPDATE_INTERVAL_MS = 15000; // 15 seconds — more points for accurate route
-const LOCATION_TIMEOUT_MS = 10000; // 10 second timeout for GPS
+const LOCATION_TIMEOUT_MS = 10000; // 10 second timeout for one-shot GPS fixes
 
 interface LocationData {
   lat: number;
@@ -20,6 +24,16 @@ interface LocationTrackingState {
   permissionStatus: 'undetermined' | 'granted' | 'denied';
 }
 
+/**
+ * Route tracking hook.
+ *
+ * Continuous capture now runs in a background TaskManager task (see
+ * `background-route-tracking.ts`), so the member's full path is recorded even
+ * with the screen off. This hook is the thin React-facing controller: it starts
+ * / stops that background task, seeds an immediate first point, and exposes the
+ * same surface the screens already use. One-shot helpers (clock-in / geofence)
+ * stay foreground-only.
+ */
 export function useLocationTracking() {
   const [state, setState] = useState<LocationTrackingState>({
     isTracking: false,
@@ -29,29 +43,31 @@ export function useLocationTracking() {
     permissionStatus: 'undetermined',
   });
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const taskIdRef = useRef<string | null>(null);
 
-  // Check permission on mount
+  // On mount: sync with any background tracking already running (e.g. the user
+  // navigated away and back, or relaunched mid-route).
   useEffect(() => {
     (async () => {
       const { status } = await Location.getForegroundPermissionsAsync();
+      const running = await isRouteTrackingRunning();
+      const activeTaskId = running ? await getActiveRouteTaskId() : null;
+      taskIdRef.current = activeTaskId;
       setState((prev) => ({
         ...prev,
         permissionStatus: status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined',
+        isTracking: running,
+        activeTaskId,
       }));
     })();
   }, []);
 
+  // One-shot foreground fix → also seeds lastLocation and sends an immediate
+  // point so the route starts the instant the member taps "Start Driving".
   const sendLocationUpdate = useCallback(async () => {
     try {
-      // Use Balanced accuracy during tracking — good enough for road tracking,
-      // saves significant battery vs High accuracy. High is only used for
-      // one-time checks (geofence verification in task detail).
       const location = await Promise.race([
-        Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        }),
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Location request timed out')), LOCATION_TIMEOUT_MS),
         ),
@@ -60,18 +76,9 @@ export function useLocationTracking() {
       const { latitude: lat, longitude: lng } = location.coords;
       const accuracy = location.coords.accuracy ?? undefined;
 
-      await trackingApi.updateLocation({
-        lat,
-        lng,
-        accuracy,
-        taskId: taskIdRef.current ?? undefined,
-      });
+      await trackingApi.updateLocation({ lat, lng, accuracy, taskId: taskIdRef.current ?? undefined });
 
-      setState((prev) => ({
-        ...prev,
-        lastLocation: { lat, lng, accuracy },
-        error: null,
-      }));
+      setState((prev) => ({ ...prev, lastLocation: { lat, lng, accuracy }, error: null }));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update location';
       setState((prev) => ({ ...prev, error: message }));
@@ -79,79 +86,36 @@ export function useLocationTracking() {
   }, []);
 
   const startTracking = useCallback(async (taskId: string) => {
-    // Prevent duplicate intervals
-    if (intervalRef.current) {
-      // Update taskId if tracking is already active for a different task
-      taskIdRef.current = taskId;
-      setState((prev) => ({ ...prev, activeTaskId: taskId }));
-      return true;
-    }
+    // Already tracking — just re-point at the (possibly different) task.
+    taskIdRef.current = taskId;
 
-    try {
-      const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
-      if (foregroundStatus !== 'granted') {
-        setState((prev) => ({ ...prev, error: 'Location permission denied', permissionStatus: 'denied' }));
-        return false;
-      }
-
-      setState((prev) => ({ ...prev, permissionStatus: 'granted' }));
-
-      taskIdRef.current = taskId;
-      setState((prev) => ({ ...prev, isTracking: true, activeTaskId: taskId, error: null }));
-
-      // Send initial location immediately
-      await sendLocationUpdate();
-
-      // Start periodic updates
-      intervalRef.current = setInterval(sendLocationUpdate, UPDATE_INTERVAL_MS);
-
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to start tracking';
-      setState((prev) => ({ ...prev, error: message }));
+    const fg = await Location.requestForegroundPermissionsAsync();
+    if (fg.status !== 'granted') {
+      setState((prev) => ({ ...prev, error: 'Location permission denied', permissionStatus: 'denied' }));
       return false;
     }
+    setState((prev) => ({ ...prev, permissionStatus: 'granted', isTracking: true, activeTaskId: taskId, error: null }));
+
+    // Seed the route with an immediate point (don't wait for the first 25m).
+    await sendLocationUpdate();
+
+    // Hand off continuous capture to the background task.
+    const ok = await startRouteTracking(taskId);
+    if (!ok) {
+      setState((prev) => ({ ...prev, error: 'Could not start background tracking' }));
+    }
+    return ok;
   }, [sendLocationUpdate]);
 
   const stopTracking = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
     taskIdRef.current = null;
     setState((prev) => ({ ...prev, isTracking: false, activeTaskId: null }));
+    // Fire-and-forget; the screen doesn't need to await teardown.
+    stopRouteTracking();
   }, []);
 
-  // Resume tracking when app returns to foreground (setInterval pauses in background)
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
-      if (nextState === 'active' && taskIdRef.current && !intervalRef.current) {
-        // App came back to foreground — restart interval and send immediate update
-        sendLocationUpdate();
-        intervalRef.current = setInterval(sendLocationUpdate, UPDATE_INTERVAL_MS);
-      } else if (nextState === 'background' && intervalRef.current) {
-        // App going to background — clear interval (it won't fire anyway)
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        // Send one last location update before backgrounding
-        sendLocationUpdate();
-      }
-    });
-
-    return () => sub.remove();
-  }, [sendLocationUpdate]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  // One-time high-accuracy location for actions (clock in/out, geofence check)
-  // Does NOT start continuous tracking — single GPS fix then stops
+  // One-time high-accuracy location for actions (clock in/out, geofence check).
+  // Does NOT start continuous tracking — single GPS fix then stops.
   const getOnDemandLocation = useCallback(async (): Promise<LocationData | null> => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();

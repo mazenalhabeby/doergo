@@ -78,7 +78,8 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
 
       await login(formData.email, formData.password);
       notify.success(t('auth.register.successTitle'), t('auth.register.successDescription'));
-      router.push('/dashboard');
+      // New org owners set up their first space before entering the app.
+      router.push('/welcome');
     } catch (err) {
       notify.error(err instanceof Error ? err.message : t('auth.register.errorDescription'));
     } finally {
@@ -94,7 +95,7 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
     cn(
       'h-9 sm:h-10 text-sm transition-all duration-200',
       hasError && 'border-error',
-      focusedField === field && 'border-brand-600 ring-2 ring-brand-100',
+      focusedField === field && 'border-blue-600 ring-2 ring-blue-100',
       focusedField === field && !isMobile && 'scale-[1.02]'
     );
 
@@ -143,6 +144,7 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
           inputClass={inputClass}
           transitionDelay={getTransitionDelay(0.1)}
         />
+
 
         {/* Email */}
         <EmailField
@@ -197,18 +199,18 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
             id="reg-terms"
             checked={formData.acceptTerms}
             onCheckedChange={(checked) => updateField('acceptTerms', checked as boolean)}
-            className="mt-0.5 data-[state=checked]:bg-brand-600 data-[state=checked]:border-brand-600"
+            className="mt-0.5 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
           />
           <Label
             htmlFor="reg-terms"
             className="text-[10px] sm:text-[11px] text-slate-600 cursor-pointer leading-tight hover:text-slate-900 transition-colors"
           >
             {t('auth.register.termsPrefix')}{' '}
-            <Link href="/terms" className="text-brand-600 hover:text-brand-700 hover:underline">
+            <Link href="/terms" className="text-blue-600 hover:text-blue-700 hover:underline">
               {t('auth.register.termsOfService')}
             </Link>{' '}
             {t('auth.register.termsAnd')}{' '}
-            <Link href="/privacy" className="text-brand-600 hover:text-brand-700 hover:underline">
+            <Link href="/privacy" className="text-blue-600 hover:text-blue-700 hover:underline">
               {t('auth.register.privacyPolicy')}
             </Link>
           </Label>
@@ -226,7 +228,7 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
             type="submit"
             disabled={isLoading}
             className={cn(
-              'relative w-full h-9 sm:h-10 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-semibold text-sm rounded-lg transition-all duration-300 border-0 shadow-sm hover:shadow-md hover:shadow-brand-600/20',
+              'relative w-full h-9 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-sm rounded-lg transition-all duration-300 border-0 shadow-sm hover:shadow-md hover:shadow-blue-600/20',
               !isLoading && 'active:scale-[0.98]'
             )}
           >
@@ -298,7 +300,7 @@ function NameFields({
           <User
             className={cn(
               'absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors',
-              focusedField === 'firstName' ? 'text-brand-600' : 'text-slate-400'
+              focusedField === 'firstName' ? 'text-blue-600' : 'text-slate-400'
             )}
           />
           <Input
@@ -373,7 +375,7 @@ function CompanyField({
         <Building2
           className={cn(
             'absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors',
-            focusedField === 'company' ? 'text-brand-600' : 'text-slate-400'
+            focusedField === 'company' ? 'text-blue-600' : 'text-slate-400'
           )}
         />
         <Input
@@ -431,7 +433,7 @@ function EmailField({
         <Mail
           className={cn(
             'absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors',
-            focusedField === 'reg-email' ? 'text-brand-600' : 'text-slate-400'
+            focusedField === 'reg-email' ? 'text-blue-600' : 'text-slate-400'
           )}
         />
         <Input
@@ -501,7 +503,7 @@ function PasswordField({
         <Lock
           className={cn(
             'absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors',
-            focusedField === 'reg-password' ? 'text-brand-600' : 'text-slate-400'
+            focusedField === 'reg-password' ? 'text-blue-600' : 'text-slate-400'
           )}
         />
         <Input
@@ -588,7 +590,7 @@ function ConfirmPasswordField({
         <Lock
           className={cn(
             'absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors',
-            focusedField === 'confirmPassword' ? 'text-brand-600' : 'text-slate-400'
+            focusedField === 'confirmPassword' ? 'text-blue-600' : 'text-slate-400'
           )}
         />
         <Input

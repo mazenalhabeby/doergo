@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, memo } from "react"
+import { useState, useCallback, memo, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -9,6 +9,7 @@ import {
   Pencil,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Star,
   Loader2,
   GitBranch,
@@ -25,6 +26,8 @@ import {
   type StatusWorkflow,
   type WorkflowStatus,
 } from "@/lib/api"
+import { WORKFLOW_TEMPLATES } from "@hbcfield/shared/client"
+import { CustomFieldsManager } from "@/components/custom-fields-manager"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -59,6 +62,17 @@ const STATUS_COLORS = [
   "#64748b", "#0ea5e9",
 ]
 
+// Execution widgets that can be active at a step.
+const ALL_CAPABILITIES: { key: string; label: string }[] = [
+  { key: "gps", label: "GPS" },
+  { key: "timer", label: "Timer" },
+  { key: "checklist", label: "Checklist" },
+  { key: "photos", label: "Photos" },
+  { key: "signature", label: "Signature" },
+  { key: "report", label: "Report" },
+  { key: "form", label: "Form" },
+]
+
 // ============================================================================
 // Status Badge Component
 // ============================================================================
@@ -82,12 +96,22 @@ const StatusRow = memo(function StatusRow({
   allStatuses,
   onEdit,
   onDelete,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
+  reorderDisabled,
 }: {
   status: WorkflowStatus
   workflowId: string
   allStatuses: WorkflowStatus[]
   onEdit: (s: WorkflowStatus) => void
   onDelete: (s: WorkflowStatus) => void
+  onMoveUp: (s: WorkflowStatus) => void
+  onMoveDown: (s: WorkflowStatus) => void
+  isFirst: boolean
+  isLast: boolean
+  reorderDisabled: boolean
 }) {
   const transitionNames = status.transitions
     .map((key) => allStatuses.find((s) => s.key === key)?.name)
@@ -128,6 +152,26 @@ const StatusRow = memo(function StatusRow({
         )}
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex flex-col">
+          <button
+            type="button"
+            aria-label="Move up"
+            disabled={isFirst || reorderDisabled}
+            className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-default"
+            onClick={() => onMoveUp(status)}
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Move down"
+            disabled={isLast || reorderDisabled}
+            className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-default"
+            onClick={() => onMoveDown(status)}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -169,7 +213,56 @@ const WorkflowCard = memo(function WorkflowCard({
   onDeleteStatus: (workflowId: string, status: WorkflowStatus) => void
 }) {
   const [expanded, setExpanded] = useState(false)
+  const queryClient = useQueryClient()
   const statuses = workflow.statuses || []
+  const sorted = useMemo(
+    () => [...statuses].sort((a, b) => a.position - b.position),
+    [statuses],
+  )
+
+  // Reorder all statuses in ONE request, with an optimistic cache update so the
+  // row moves instantly and the server round-trip is invisible.
+  const reorderMutation = useMutation({
+    mutationFn: (statusIds: string[]) =>
+      workflowsApi.reorderStatuses(workflow.id, statusIds),
+    onMutate: async (statusIds) => {
+      await queryClient.cancelQueries({ queryKey: ["workflows"] })
+      const prev = queryClient.getQueryData<StatusWorkflow[]>(["workflows"])
+      queryClient.setQueryData<StatusWorkflow[]>(["workflows"], (old) =>
+        old?.map((w) =>
+          w.id === workflow.id
+            ? {
+                ...w,
+                statuses: statusIds.map((id, i) => {
+                  const s = (w.statuses || []).find((x) => x.id === id)!
+                  return { ...s, position: i }
+                }),
+              }
+            : w,
+        ),
+      )
+      return { prev }
+    },
+    onError: (e: Error, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["workflows"], ctx.prev)
+      notify.error(e.message)
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["workflows"] }),
+  })
+
+  const move = useCallback(
+    (statusId: string, dir: -1 | 1) => {
+      const index = sorted.findIndex((s) => s.id === statusId)
+      const target = index + dir
+      if (index < 0 || target < 0 || target >= sorted.length) return
+      const ids = sorted.map((s) => s.id)
+      const tmp = ids[index]!
+      ids[index] = ids[target]!
+      ids[target] = tmp
+      reorderMutation.mutate(ids)
+    },
+    [sorted, reorderMutation],
+  )
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-shadow hover:shadow-md">
@@ -238,18 +331,21 @@ const WorkflowCard = memo(function WorkflowCard({
                 <p className="text-sm text-muted-foreground">No statuses defined yet</p>
               </div>
             ) : (
-              statuses
-                .sort((a, b) => a.position - b.position)
-                .map((status) => (
-                  <StatusRow
-                    key={status.id}
-                    status={status}
-                    workflowId={workflow.id}
-                    allStatuses={statuses}
-                    onEdit={(s) => onEditStatus(workflow.id, s)}
-                    onDelete={(s) => onDeleteStatus(workflow.id, s)}
-                  />
-                ))
+              sorted.map((status, index) => (
+                <StatusRow
+                  key={status.id}
+                  status={status}
+                  workflowId={workflow.id}
+                  allStatuses={sorted}
+                  onEdit={(s) => onEditStatus(workflow.id, s)}
+                  onDelete={(s) => onDeleteStatus(workflow.id, s)}
+                  onMoveUp={(s) => move(s.id, -1)}
+                  onMoveDown={(s) => move(s.id, 1)}
+                  isFirst={index === 0}
+                  isLast={index === sorted.length - 1}
+                  reorderDisabled={reorderMutation.isPending}
+                />
+              ))
             )}
           </div>
           <div className="px-4 pb-4">
@@ -262,6 +358,14 @@ const WorkflowCard = memo(function WorkflowCard({
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Add Status
             </Button>
+          </div>
+
+          {/* Custom fields for this Task Type */}
+          <div className="px-4 pb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              Fields
+            </p>
+            <CustomFieldsManager workflowId={workflow.id} />
           </div>
         </div>
       )}
@@ -282,45 +386,154 @@ function CreateWorkflowDialog({
 }) {
   const queryClient = useQueryClient()
   const [name, setName] = useState("")
+  // null = "Blank" (start with no statuses); otherwise a template id.
+  const [templateId, setTemplateId] = useState<string | null>(
+    WORKFLOW_TEMPLATES[0]?.id ?? null,
+  )
+
+  const selectedTemplate = WORKFLOW_TEMPLATES.find((t) => t.id === templateId) ?? null
+
+  const reset = () => {
+    setName("")
+    setTemplateId(WORKFLOW_TEMPLATES[0]?.id ?? null)
+  }
 
   const mutation = useMutation({
-    mutationFn: () => workflowsApi.create({ name }),
+    mutationFn: () =>
+      workflowsApi.create({
+        name: name.trim() || selectedTemplate?.name || "",
+        statuses: selectedTemplate?.statuses,
+      }),
     onSuccess: () => {
-      notify.success("Workflow created")
+      notify.success("Task type created")
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
-      setName("")
+      reset()
       onOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
   })
 
+  // A name is required only when starting blank; templates supply their own.
+  const canSubmit = (!!selectedTemplate || name.trim().length > 0) && !mutation.isPending
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset()
+        onOpenChange(o)
+      }}
+    >
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create Workflow</DialogTitle>
+          <DialogTitle>Create Task Type</DialogTitle>
           <DialogDescription>
-            Create a new status workflow for your organization.
+            Start from a ready-made template, or build your own from scratch.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label>Start from</Label>
+            <div className="grid gap-2 max-h-[280px] overflow-y-auto pr-1">
+              {WORKFLOW_TEMPLATES.map((t) => {
+                const active = templateId === t.id
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setTemplateId(t.id)
+                      if (!name.trim()) setName("")
+                    }}
+                    className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                      active
+                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500 dark:bg-blue-900/20"
+                        : "border-border hover:border-muted-foreground/30 hover:bg-muted/50"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                        active ? "border-blue-600 bg-blue-600" : "border-muted-foreground/40"
+                      }`}
+                    >
+                      {active && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">{t.name}</span>
+                        <span className="text-xs text-muted-foreground/70">
+                          {t.statuses.length} steps
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t.description}</p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                        {t.statuses.map((s, i) => (
+                          <span key={s.key} className="flex items-center gap-1">
+                            <span
+                              className="inline-block h-2 w-2 rounded-full"
+                              style={{ backgroundColor: s.color }}
+                            />
+                            <span className="text-[10px] text-muted-foreground">{s.name}</span>
+                            {i < t.statuses.length - 1 && (
+                              <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+              {/* Blank option */}
+              <button
+                type="button"
+                onClick={() => setTemplateId(null)}
+                className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                  templateId === null
+                    ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500 dark:bg-blue-900/20"
+                    : "border-border hover:border-muted-foreground/30 hover:bg-muted/50"
+                }`}
+              >
+                <div
+                  className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                    templateId === null ? "border-blue-600 bg-blue-600" : "border-muted-foreground/40"
+                  }`}
+                >
+                  {templateId === null && <Check className="h-3 w-3 text-white" />}
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-foreground">Blank</span>
+                  <p className="text-xs text-muted-foreground">
+                    Start empty and add every status yourself.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Name {selectedTemplate && <span className="text-muted-foreground/70">(optional)</span>}</Label>
             <Input
-              placeholder="e.g. Field Service, Bug Tracking..."
+              placeholder={selectedTemplate ? selectedTemplate.name : "e.g. Field Service, Bug Tracking..."}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && name.trim() && mutation.mutate()}
+              onKeyDown={(e) => e.key === "Enter" && canSubmit && mutation.mutate()}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              reset()
+              onOpenChange(false)
+            }}
+          >
             Cancel
           </Button>
           <Button
             onClick={() => mutation.mutate()}
-            disabled={!name.trim() || mutation.isPending}
+            disabled={!canSubmit}
             className="bg-blue-600 hover:bg-blue-700"
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -363,6 +576,7 @@ function StatusDialog({
   const [selectedTransitions, setSelectedTransitions] = useState<string[]>(
     existingStatus?.transitions || [],
   )
+  const [capabilities, setCapabilities] = useState<string[]>(existingStatus?.capabilities || [])
 
   const autoKey = useCallback((n: string) => {
     return n.toUpperCase().replace(/\s+/g, "_").replace(/[^A-Z0-9_]/g, "")
@@ -380,6 +594,7 @@ function StatusDialog({
         isFinal,
         isCanceled,
         transitions: selectedTransitions,
+        capabilities,
         position: allStatuses.length,
         wipLimit: effectiveWipLimit ?? null,
       }),
@@ -399,6 +614,7 @@ function StatusDialog({
         isFinal,
         isCanceled,
         transitions: selectedTransitions,
+        capabilities,
         wipLimit: effectiveWipLimit ?? null,
       } as Partial<WorkflowStatus>),
     onSuccess: () => {
@@ -428,7 +644,7 @@ function StatusDialog({
           <DialogDescription>
             {isEditing
               ? "Update the status properties."
-              : "Add a new status to this workflow."}
+              : "Add a new status to this task type."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-5 py-4">
@@ -545,6 +761,33 @@ function StatusDialog({
               </div>
             </div>
           )}
+
+          {/* Capabilities — execution widgets active at this step */}
+          <div className="space-y-2">
+            <Label>Capabilities at this step</Label>
+            <div className="flex flex-wrap gap-2">
+              {ALL_CAPABILITIES.map((c) => {
+                const on = capabilities.includes(c.key)
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() =>
+                      setCapabilities((prev) => (on ? prev.filter((x) => x !== c.key) : [...prev, c.key]))
+                    }
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      on
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                        : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {c.label}
+                    {on && <Check className="h-3 w-3" />}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -601,7 +844,7 @@ export default function WorkflowsSettingsPage() {
   const setDefaultMutation = useMutation({
     mutationFn: (id: string) => workflowsApi.setDefault(id),
     onSuccess: () => {
-      notify.success("Default workflow updated")
+      notify.success("Default task type updated")
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -610,7 +853,7 @@ export default function WorkflowsSettingsPage() {
   const deleteWorkflowMutation = useMutation({
     mutationFn: (id: string) => workflowsApi.delete(id),
     onSuccess: () => {
-      notify.success("Workflow deleted")
+      notify.success("Task type deleted")
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
       setDeleteTarget(null)
     },
@@ -646,9 +889,9 @@ export default function WorkflowsSettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Status Workflows</h1>
+            <h1 className="text-2xl font-semibold text-foreground">Task Types</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Define custom status flows for your tasks
+              Define each task type&apos;s status flow, capabilities &amp; fields. Spaces pick a type; tasks can override.
             </p>
           </div>
           <Button
@@ -656,8 +899,19 @@ export default function WorkflowsSettingsPage() {
             className="bg-blue-600 hover:bg-blue-700 rounded-xl"
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Workflow
+            New Task Type
           </Button>
+        </div>
+
+        {/* Global fields — apply to every task, regardless of type */}
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-sm font-semibold text-foreground">Global fields</h2>
+            <span className="text-xs text-muted-foreground">
+              shown on every task, regardless of type
+            </span>
+          </div>
+          <CustomFieldsManager workflowId={null} />
         </div>
 
         {/* Content */}

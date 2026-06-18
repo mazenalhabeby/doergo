@@ -1,6 +1,6 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
-import type { Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse } from './types';
+import type { Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate } from './types';
 
 export interface TasksListParams {
   status?: string;
@@ -83,6 +83,13 @@ export const tasksApi = {
 export const trackingApi = {
   updateLocation: async (data: LocationUpdate): Promise<LocationResponse> => {
     return fetchWithAuth<LocationResponse>('/tracking/location', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  // Flush a buffered burst of route points in one request (background tracker).
+  updateLocationBatch: async (data: LocationBatchUpdate): Promise<LocationResponse> => {
+    return fetchWithAuth<LocationResponse>('/tracking/location/batch', {
       method: 'POST',
       body: JSON.stringify(data),
     });

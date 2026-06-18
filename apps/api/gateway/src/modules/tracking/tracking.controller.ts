@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
-import { UpdateTrackingLocationDto } from './dto';
+import { UpdateTrackingLocationDto, BatchTrackingLocationDto } from './dto';
 
 @ApiTags('tracking')
 @ApiBearerAuth()
@@ -22,6 +22,19 @@ export class TrackingController {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'update_location' }, {
         ...updateLocationDto,
+        userId: req.user.id, // Always use authenticated user's ID
+      }),
+    );
+  }
+
+  @Post('location/batch')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Batch-update route points (mobile background tracker flush)' })
+  async updateLocationBatch(@Body() batchDto: BatchTrackingLocationDto, @Request() req: any) {
+    return firstValueFrom(
+      this.trackingClient.send({ cmd: 'update_location_batch' }, {
+        taskId: batchDto.taskId,
+        points: batchDto.points,
         userId: req.user.id, // Always use authenticated user's ID
       }),
     );

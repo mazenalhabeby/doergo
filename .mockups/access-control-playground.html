@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Access Control Playground — HBCField</title>
+<style>
+  :root{
+    --brand:#2563EB; --brand-700:#1D4ED8; --brand-50:#EFF4FF; --brand-100:#DBEAFE;
+    --ink:#1e293b; --muted:#64748b; --faint:#94a3b8; --bg:#f1f5f9; --surface:#fff;
+    --border:#e2e8f0; --green:#16A34A; --amber:#CA8A04; --red:#DC2626;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);padding:24px;line-height:1.45}
+  h1{font-size:20px;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .wrap{display:grid;grid-template-columns:340px 1fr;gap:24px;max-width:1400px;margin:20px auto 0}
+  @media(max-width:1100px){.wrap{grid-template-columns:1fr}}
+
+  /* ---- Control panel ---- */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;align-self:start;position:sticky;top:24px}
+  .panel-h{padding:16px 18px;border-bottom:1px solid var(--border)}
+  .panel-h h3{font-size:14px;font-weight:600}
+  .panel-h p{font-size:12px;color:var(--muted)}
+  .panel-b{padding:18px;display:flex;flex-direction:column;gap:22px}
+  .field>.lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px}
+  .seg{display:inline-flex;background:#f1f5f9;border-radius:10px;padding:4px;gap:2px;width:100%}
+  .seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:500;padding:7px 6px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:.15s}
+  .seg button.on{background:var(--brand);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+  .pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{border:1px solid var(--border);background:#fff;color:var(--muted);font:inherit;font-size:12px;font-weight:500;padding:7px 11px;border-radius:9px;cursor:pointer;transition:.15s}
+  .pill.on{border-color:var(--brand);background:var(--brand-50);color:var(--brand)}
+  .radios{display:flex;flex-direction:column;gap:8px}
+  .radio{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;transition:.15s;text-align:left;background:#fff;font:inherit}
+  .radio.on{border-color:var(--brand);background:rgba(37,99,235,.06)}
+  .dot{width:16px;height:16px;border-radius:50%;border:2px solid #cbd5e1;flex:none;margin-top:1px}
+  .radio.on .dot{border-color:var(--brand);background:var(--brand)}
+  .radio b{font-size:13px;font-weight:600;display:block}
+  .radio span{font-size:11px;color:var(--muted)}
+  .switch-row{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+  .switch-row b{font-size:13px}.switch-row p{font-size:11px;color:var(--muted)}
+  .sw{width:42px;height:24px;border-radius:99px;background:#cbd5e1;position:relative;cursor:pointer;transition:.18s;border:0;flex:none}
+  .sw.on{background:var(--brand)}
+  .sw::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.18s}
+  .sw.on::after{left:21px}
+  .summary{font-size:11px;color:var(--faint);border-top:1px dashed var(--border);padding-top:12px;font-family:ui-monospace,monospace;word-break:break-word}
+
+  /* ---- Previews ---- */
+  .previews{display:grid;grid-template-columns:1fr 360px;gap:24px}
+  @media(max-width:900px){.previews{grid-template-columns:1fr}}
+  .prev-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .chip{font-size:10px;font-weight:600;background:var(--brand-100);color:var(--brand-700);padding:2px 8px;border-radius:99px;letter-spacing:0}
+
+  /* Web browser frame */
+  .browser{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(2,6,23,.08)}
+  .bbar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--border)}
+  .bbar i{width:11px;height:11px;border-radius:50%;background:#e2e8f0;display:block}
+  .url{flex:1;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:11px;color:var(--muted);padding:4px 10px;margin-left:8px}
+  .web-app{display:flex;min-height:430px}
+  .web-side{width:172px;background:#fff;border-right:1px solid var(--border);padding:14px 10px;flex:none}
+  .web-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:4px 8px 14px}
+  .web-logo .g{width:22px;height:22px;border-radius:7px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .nav-i{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);padding:8px 10px;border-radius:8px;margin-bottom:2px;font-weight:500}
+  .nav-i.act{background:var(--brand-50);color:var(--brand);font-weight:600}
+  .newpill{font-size:9px;font-weight:700;background:var(--brand);color:#fff;padding:1px 6px;border-radius:99px;margin-left:auto}
+  .nav-i .ic{font-size:15px;width:18px;text-align:center}
+  .web-main{flex:1;padding:20px;background:#f8fafc;overflow:auto}
+  .web-h{font-size:17px;font-weight:700;margin-bottom:3px}
+  .web-h2{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dash2{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;align-items:start}
+  .spacecol{display:flex;flex-direction:column;gap:10px}
+  .col-h{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .scard{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px}
+  .scard .t{font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px}
+  .scard .m{font-size:11px;color:var(--muted);margin-top:6px}
+  .scard .ro{margin-top:4px}
+  .sc-team{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
+  .sc-av{display:flex;align-items:center}
+  .sc-av .av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;border:2px solid #fff;margin-left:-6px}
+  .sc-av .av:first-child{margin-left:0}
+  .sc-more{font-size:10px;color:var(--muted);margin-left:6px;font-weight:600}
+  .sc-msg{border:1px solid var(--brand);color:var(--brand);background:var(--brand-50);font:inherit;font-size:11px;font-weight:600;padding:4px 10px;border-radius:8px;cursor:pointer}
+  .tasklist{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .trow{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px}
+  .trow:last-child{border-bottom:0}
+  .tdot{width:8px;height:8px;border-radius:50%;flex:none}
+  .tmeta{margin-left:auto;font-size:11px;color:var(--faint)}
+  .blockscreen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:40px;background:#f8fafc}
+  .blockscreen .bi{width:60px;height:60px;border-radius:16px;background:var(--brand-100);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:28px}
+  .blockscreen b{font-size:16px}.blockscreen p{font-size:12px;color:var(--muted);max-width:240px}
+  .badge-ro{display:inline-block;font-size:9px;font-weight:600;color:var(--amber);background:#fef9c3;padding:2px 7px;border-radius:99px;letter-spacing:.3px}
+
+  /* Phone frame */
+  .phone{width:330px;margin:0 auto;background:#0f172a;border-radius:38px;padding:11px;box-shadow:0 18px 45px rgba(2,6,23,.22)}
+  .screen{background:#f8fafc;border-radius:28px;overflow:hidden;height:600px;display:flex;flex-direction:column;position:relative}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:110px;height:20px;background:#0f172a;border-radius:0 0 14px 14px;z-index:5}
+  .m-head{background:#fff;border-bottom:1px solid var(--border);padding:30px 16px 12px;display:flex;align-items:center;justify-content:space-between}
+  .m-logo{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px}
+  .m-logo .g{width:20px;height:20px;border-radius:6px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .m-av{width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .m-body{flex:1;overflow:auto;padding:16px}
+  .m-greet{font-size:18px;font-weight:700}
+  .m-greet span{color:var(--muted);font-size:12px;font-weight:500;display:block;margin-top:2px}
+  .m-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .m-stat{background:#fff;border:1px solid var(--border);border-radius:14px;padding:13px}
+  .m-stat .n{font-size:20px;font-weight:700}
+  .m-stat .l{font-size:11px;color:var(--muted)}
+  .m-sec{font-size:13px;font-weight:600;margin:18px 0 9px}
+  .m-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:13px;display:flex;align-items:center;gap:11px;margin-bottom:9px}
+  .m-ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+  .m-card b{font-size:13px;display:block}.m-card p{font-size:11px;color:var(--muted)}
+  .m-tabs{background:#fff;border-top:1px solid var(--border);display:flex;padding:8px 6px 10px}
+  .m-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--faint);font-weight:500}
+  .m-tab.act{color:var(--brand)}
+  .m-tab .ti{width:34px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .m-tab.act .ti{background:var(--brand-50)}
+  .empty{text-align:center;color:var(--muted);font-size:12px;padding:30px 16px;border:1px dashed var(--border);border-radius:14px;background:#fff}
+  .pulse{animation:pl .4s ease}
+  @keyframes pl{from{transform:scale(.97);opacity:.5}to{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+  <div style="max-width:1400px;margin:0 auto">
+    <h1>Access Control Playground</h1>
+    <p class="sub">Toggle the controls on the left — the web &amp; mobile previews update live to show exactly what an employee with that Access Profile would see.</p>
+  </div>
+
+  <div class="wrap">
+    <!-- ===== CONTROL PANEL ===== -->
+    <div class="panel">
+      <div class="panel-h">
+        <h3>Access — Sample Employee</h3>
+        <p>What this member can see on web &amp; mobile.</p>
+      </div>
+      <div class="panel-b">
+        <div class="field">
+          <div class="lbl">Platform access</div>
+          <div class="seg" id="seg-platform">
+            <button data-v="web">🖥️ Web</button>
+            <button data-v="mobile">📱 Mobile</button>
+            <button data-v="both" class="on">🔁 Both</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="lbl">Screens &amp; modules <span style="text-transform:none;letter-spacing:0;color:var(--faint);font-weight:500">· web + mobile</span></div>
+          <div class="pills" id="pills-modules">
+            <button data-m="tasks" class="on">Tasks</button>
+            <button data-m="clock">Clock</button>
+            <button data-m="time_off">Time Off</button>
+            <button data-m="create_task">Create Task</button>
+            <button data-m="manage">Manage</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="lbl">Space visibility</div>
+          <div class="radios" id="rad-scope">
+            <button class="radio on" data-s="own"><span class="dot"></span><span><b>My spaces only</b><span>Only the spaces they're assigned to.</span></span></button>
+            <button class="radio" data-s="tasks"><span class="dot"></span><span><b>Tasks only</b><span>No space view — just their task list.</span></span></button>
+            <button class="radio" data-s="all"><span class="dot"></span><span><b>All spaces</b><span>Read-only overview of every space.</span></span></button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="lbl">Team</div>
+          <div class="switch-row">
+            <div><b>Team access</b><p>Web: members appear inside the space. Mobile: a Team tab lists colleagues.</p></div>
+            <button class="sw on" id="sw-contact"></button>
+          </div>
+        </div>
+
+        <div class="summary" id="summary"></div>
+      </div>
+    </div>
+
+    <!-- ===== PREVIEWS ===== -->
+    <div class="previews">
+      <!-- WEB -->
+      <div>
+        <div class="prev-title">🖥️ Web portal <span class="chip" id="web-chip">localhost:3000</span></div>
+        <div class="browser">
+          <div class="bbar"><i></i><i></i><i></i><div class="url" id="web-url">hbcfield.app/dashboard</div></div>
+          <div class="web-app" id="web-app"></div>
+        </div>
+      </div>
+
+      <!-- MOBILE -->
+      <div>
+        <div class="prev-title">📱 Mobile app</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <div id="m-screen" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const state = { platform:'both', modules:new Set(['tasks']), scope:'own', contact:true };
+
+// ---- wire controls ----
+document.getElementById('seg-platform').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  state.platform=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  render();
+});
+document.getElementById('pills-modules').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  const m=b.dataset.m;
+  if(state.modules.has(m))state.modules.delete(m); else state.modules.add(m);
+  b.classList.toggle('on',state.modules.has(m));
+  render();
+});
+document.getElementById('rad-scope').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  state.scope=b.dataset.s;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  render();
+});
+document.getElementById('sw-contact').addEventListener('click',e=>{
+  state.contact=!state.contact; e.target.classList.toggle('on',state.contact); render();
+});
+
+const has = m => state.modules.has(m);
+
+// ---- WEB preview ----
+function renderWeb(){
+  const el=document.getElementById('web-app');
+  const url=document.getElementById('web-url');
+  // platform block
+  if(state.platform==='mobile'){
+    url.textContent='hbcfield.app/dashboard';
+    el.innerHTML=`<div class="blockscreen"><div class="bi">📱</div><b>Mobile-only account</b><p>This account is set up for the mobile app. Use the HBCField app on your phone to continue.</p></div>`;
+    return;
+  }
+  // Dashboard + Tasks are ALWAYS present on the website. Modules now light up
+  // their WEB surface too: create_task → "＋ New" on Tasks, time_off → Time Off,
+  // clock → Attendance, manage → Manage. Team appears INSIDE the space.
+  const nav=[
+    `<div class="nav-i act"><span class="ic">▦</span> Dashboard</div>`,
+    `<div class="nav-i"><span class="ic">▣</span> Tasks${has('create_task')?'<span class="newpill">＋ New</span>':''}</div>`,
+  ];
+  if(has('time_off')) nav.push(`<div class="nav-i"><span class="ic">🗓</span> Time Off</div>`);
+  if(has('clock'))    nav.push(`<div class="nav-i"><span class="ic">⏱</span> Attendance</div>`);
+  if(has('manage'))   nav.push(`<div class="nav-i"><span class="ic">⚙</span> Manage</div>`);
+
+  // Tasks ALWAYS appear on the employee dashboard. Spaces are optional:
+  //   scope 'tasks'     → spaces hidden → tasks full width
+  //   scope 'own'/'all' → spaces shown  → 2-column layout (Spaces | Tasks)
+  url.textContent='hbcfield.app/dashboard';
+  let main='';
+  const tasksPanel = `
+    <div class="col-h">▣ My Tasks <span class="badge-ro" style="color:#2563EB;background:#DBEAFE">4 ASSIGNED</span></div>
+    <div class="tasklist">
+      ${taskRow('#16A34A','Replace HVAC filter','Main Office · Today')}
+      ${taskRow('#CA8A04','Inspect generator','Warehouse · Tomorrow')}
+      ${taskRow('#2563EB','Calibrate sensors','Service Center · Fri')}
+      ${taskRow('#94a3b8','Monthly safety check','Next week')}
+    </div>`;
+
+  if(state.scope==='tasks'){
+    const teamNote = state.contact ? `<div class="web-h2" style="margin-top:14px;color:#94a3b8">👥 Team lives inside spaces — you have no shared spaces, so no teammates are shown.</div>` : '';
+    main=`<div class="web-h">Dashboard</div><div class="web-h2">Spaces are hidden for you — here are your tasks.</div>${tasksPanel}${teamNote}`;
+  } else {
+    const all = state.scope==='all';
+    const spacesPanel = `
+      <div class="col-h">${all?'🗂 All Spaces':'🗂 My Spaces'} <span class="badge-ro">READ-ONLY</span></div>
+      <div class="spacecol">
+        ${spaceCard('🏢','Main Office','6 members · 3 open')}
+        ${all?spaceCard('📦','Warehouse','4 members · 1 open'):spaceCard('🛠','Service Center','3 members · 2 open')}
+        ${all?spaceCard('🛠','Service Center','3 members · 2 open'):''}
+      </div>`;
+    main=`<div class="web-h">Dashboard</div><div class="web-h2">Your spaces and tasks.</div>
+      <div class="dash2"><div>${spacesPanel}</div><div>${tasksPanel}</div></div>`;
+  }
+
+  el.innerHTML=`
+    <div class="web-side">
+      <div class="web-logo"><span class="g">⚙</span> HBCField</div>
+      ${nav.join('')}
+      <div style="font-size:10px;color:#cbd5e1;margin-top:14px;padding:0 10px;line-height:1.5">Dashboard + Tasks always show.<br>Other modules light up their web screen.</div>
+    </div>
+    <div class="web-main pulse">${main}</div>`;
+}
+function taskRow(c,t,m){return `<div class="trow"><span class="tdot" style="background:${c}"></span> ${t}<span class="tmeta">${m}</span></div>`}
+function avatar(ini,c){return `<span class="av" style="background:${c}">${ini}</span>`}
+function spaceCard(ic,t,m){
+  // When "Team" is on, the space itself surfaces its members + contact action —
+  // there is NO separate Team page on web.
+  const team = state.contact ? `
+    <div class="sc-team">
+      <div class="sc-av">${avatar('AM','#2563EB')}${avatar('SW','#16A34A')}${avatar('KA','#CA8A04')}<span class="sc-more">+2 members</span></div>
+      <button class="sc-msg">💬 Message</button>
+    </div>` : '';
+  return `<div class="scard"><div class="t">${ic} ${t}</div><div class="m">${m}</div>${team}<div class="ro" style="margin-top:8px"><span class="badge-ro">VIEW ONLY</span></div></div>`
+}
+
+// ---- MOBILE preview ----
+function renderMobile(){
+  const el=document.getElementById('m-screen');
+  if(state.platform==='web'){
+    el.innerHTML=`<div class="blockscreen" style="border-radius:0"><div class="bi">🖥️</div><b>Web-only account</b><p>This account is restricted to the web app. Please sign in at the web portal.</p></div>`;
+    return;
+  }
+  // bottom tabs: Home always; Tasks; Clock; Time Off; Create; Team
+  const tabs=[];
+  tabs.push(tab('🏠','Home',true));
+  if(has('tasks'))      tabs.push(tab('📋','Tasks'));
+  if(has('create_task'))tabs.push(tab('➕','Create'));
+  if(has('clock'))      tabs.push(tab('⏱','Clock'));
+  if(has('time_off'))   tabs.push(tab('🗓','Time Off'));
+  if(state.contact)     tabs.push(tab('👥','Team'));
+
+  // home content — adapts to modules
+  let body='';
+  const greet=`<div class="m-greet">Good morning, Sam<span>${homeLabel()}</span></div>`;
+  if(has('tasks')&&has('clock')){ // hybrid
+    body=greet+`
+      <div class="m-stats">
+        ${stat('4','Today')}${stat('1','Active')}${stat('12','Done')}${stat('2','Pending')}
+      </div>
+      <div class="m-sec">Quick actions</div>
+      ${mcard('⏱','#EFF4FF','Clock in','Start your shift at Main Office')}
+      ${mcard('📋','#ECFDF5','Todays tasks','4 jobs scheduled')}`;
+  } else if(has('clock')&&!has('tasks')){ // clock-focused
+    body=greet+`
+      ${mcard('⏱','#EFF4FF','Clock in','You are scheduled 09:00–17:00')}
+      ${has('time_off')?mcard('🗓','#FEF9C3','Request time off','2 days remaining this month'):''}
+      <div class="m-sec">This week</div>
+      <div class="m-stat" style="margin-bottom:0"><div class="n">38h 20m</div><div class="l">Hours logged</div></div>`;
+  } else if(has('tasks')){ // task-focused
+    body=greet+`
+      <div class="m-sec">Your tasks</div>
+      ${mcard('🟢','#ECFDF5','Replace HVAC filter','Main Office · Today')}
+      ${mcard('🟡','#FEF9C3','Inspect generator','Warehouse · Tomorrow')}
+      ${mcard('🔵','#EFF4FF','Calibrate sensors','Service Center · Fri')}`;
+  } else {
+    body=greet+`<div style="margin-top:18px">${has('time_off')?mcard('🗓','#FEF9C3','Request time off','2 days remaining'):'<div class="empty">No modules enabled.<br>Ask your admin for access.</div>'}</div>`;
+  }
+
+  el.innerHTML=`
+    <div class="m-head">
+      <div class="m-logo"><span class="g">⚙</span> HBCField</div>
+      <div class="m-av">S</div>
+    </div>
+    <div class="m-body pulse">${body}</div>
+    <div class="m-tabs">${tabs.join('')}</div>`;
+}
+function homeLabel(){
+  if(has('tasks')&&has('clock'))return 'Hybrid · tasks + clock';
+  if(has('clock')&&!has('tasks'))return 'On-site · clock-focused';
+  if(has('tasks'))return 'On-road · task-focused';
+  return 'No modules';
+}
+function tab(i,l,act){return `<div class="m-tab ${act?'act':''}"><div class="ti">${i}</div>${l}</div>`}
+function stat(n,l){return `<div class="m-stat"><div class="n">${n}</div><div class="l">${l}</div></div>`}
+function mcard(ic,bg,t,p){return `<div class="m-card"><div class="m-ic" style="background:${bg}">${ic}</div><div><b>${t}</b><p>${p}</p></div></div>`}
+
+function renderSummary(){
+  document.getElementById('summary').textContent =
+    'enabledModules = '+JSON.stringify({modules:[...state.modules],platforms:state.platform,spaceScope:state.scope,canContact:state.contact});
+}
+
+function render(){ renderWeb(); renderMobile(); renderSummary(); }
+render();
+</script>
+</body>
+</html>

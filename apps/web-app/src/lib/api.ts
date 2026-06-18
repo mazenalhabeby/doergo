@@ -288,6 +288,10 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
 
   try {
     const response = await fetch(url, {
+      // Always send/receive the httpOnly refresh-token cookie. Without this the
+      // browser discards the Set-Cookie from a cross-origin login/register
+      // response, so refresh later has no cookie → every refresh 401s → logout.
+      credentials: 'include',
       ...options,
       signal: controller.signal,
     });
@@ -359,6 +363,7 @@ export const authApi = {
         canAssignTasks: boolean;
         canManageUsers: boolean;
         enabledModules?: string[] | Record<string, unknown>;
+        orgModules?: string[];
         // Custom role
         orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
         rolePermissions?: Record<string, boolean>;
@@ -379,6 +384,7 @@ export const authApi = {
     firstName: string;
     lastName: string;
     companyName: string;
+    firstSpaceName?: string;
   }) => {
     // Note: Role is NOT sent - backend always sets it to ADMIN for security
     const response = await fetchWithTimeout(`${AUTH_BASE_URL}/auth/register`, {
@@ -763,6 +769,26 @@ export interface Worker {
 
 // Users API methods
 export const usersApi = {
+  // Update your OWN profile (any authenticated user — no admin permission).
+  updateMe: async (data: { firstName?: string; lastName?: string }) => {
+    const response = await api.patch<{ success: boolean; data: { id: string; firstName: string; lastName: string } }>(
+      '/users/me',
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  // Change your OWN email — requires current password, enforces uniqueness.
+  updateMyEmail: async (data: { newEmail: string; currentPassword: string }) => {
+    const response = await api.patch<{ success: boolean; data: { id: string; email: string } }>(
+      '/users/me/email',
+      data,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   // Get all employees (DISPATCHER only)
   getWorkers: async () => {
     const response = await api.get<{ success: boolean; data: Worker[] }>('/users/workers');
@@ -2951,8 +2977,8 @@ export const organizationsApi = {
 export interface CreateLocationInput {
   name: string;
   address?: string;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
   geofenceRadius?: number;
   timezone?: string;
   enabledModules?: string[];
@@ -3318,7 +3344,21 @@ export const workflowsApi = {
     return response.data?.data;
   },
 
-  create: async (data: { name: string }) => {
+  create: async (data: {
+    name: string;
+    isDefault?: boolean;
+    statuses?: Array<{
+      name: string;
+      key: string;
+      color?: string;
+      icon?: string;
+      position?: number;
+      isFinal?: boolean;
+      isCanceled?: boolean;
+      transitions?: string[];
+      capabilities?: string[];
+    }>;
+  }) => {
     const response = await api.post<{ success: boolean; data: StatusWorkflow }>('/workflows', data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
@@ -3375,6 +3415,15 @@ export const workflowsApi = {
     return response.data;
   },
 
+  reorderStatuses: async (workflowId: string, statusIds: string[]) => {
+    const response = await api.post<{ success: boolean; data: StatusWorkflow }>(
+      `/workflows/${workflowId}/statuses/reorder`,
+      { statusIds },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   setDefault: async (id: string) => {
     const response = await api.post<{ success: boolean; data: StatusWorkflow }>(
       `/workflows/${id}/set-default`,
@@ -3393,6 +3442,8 @@ export type CustomFieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'DROPDOWN' | 'CHECKBO
 export interface CustomFieldDefinition {
   id: string;
   organizationId: string;
+  /** Task Type this field belongs to; null = global (all tasks). */
+  workflowId: string | null;
   name: string;
   key: string;
   type: CustomFieldType;
@@ -3413,8 +3464,11 @@ export interface CustomFieldValue {
 }
 
 export const customFieldsApi = {
-  listDefinitions: async () => {
-    const response = await api.get<{ success: boolean; data: CustomFieldDefinition[] }>('/custom-fields');
+  // No param → ALL definitions (editor). forWorkflow=<id> → that Task Type's
+  // fields + globals. forWorkflow='__none__' → globals only.
+  listDefinitions: async (params?: { forWorkflow?: string }) => {
+    const qs = params?.forWorkflow ? `?forWorkflow=${encodeURIComponent(params.forWorkflow)}` : '';
+    const response = await api.get<{ success: boolean; data: CustomFieldDefinition[] }>(`/custom-fields${qs}`);
     if (response.error) throw new Error(response.error);
     return response.data?.data || [];
   },
@@ -3425,6 +3479,7 @@ export const customFieldsApi = {
     type: string;
     options?: string[];
     isRequired?: boolean;
+    workflowId?: string | null;
   }) => {
     const response = await api.post<{ success: boolean; data: CustomFieldDefinition }>('/custom-fields', data);
     if (response.error) throw new Error(response.error);
@@ -3473,6 +3528,10 @@ export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | '
 export interface RecurringTaskTemplate {
   id: string;
   organizationId: string;
+  spaceId: string | null;
+  workflowId: string | null;
+  space?: { id: string; name: string } | null;
+  workflow?: { id: string; name: string } | null;
   title: string;
   description: string | null;
   priority: string;
@@ -3573,64 +3632,6 @@ export const epicsApi = {
 
   delete: async (id: string) => {
     const response = await api.delete<{ success: boolean; message: string }>(`/epics/${id}`);
-    if (response.error) throw new Error(response.error);
-    return response.data;
-  },
-};
-
-// ============================================================================
-// ROLES API
-// ============================================================================
-
-export interface OrgRoleData {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  color: string | null;
-  isSystem: boolean;
-  legacyRole: string | null;
-  position: number;
-  isActive: boolean;
-  permissions: Record<string, any>;
-  createdAt: string;
-  updatedAt: string;
-  _count?: { users: number };
-}
-
-export const rolesApi = {
-  list: async () => {
-    const response = await api.get<{ success: boolean; data: OrgRoleData[] }>('/roles');
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
-  },
-
-  getById: async (id: string) => {
-    const response = await api.get<{ success: boolean; data: OrgRoleData }>(`/roles/${id}`);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
-  },
-
-  create: async (data: { name: string; description?: string; color?: string }) => {
-    const response = await api.post<{ success: boolean; data: OrgRoleData }>('/roles', data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
-  },
-
-  update: async (id: string, data: { name?: string; description?: string; color?: string }) => {
-    const response = await api.patch<{ success: boolean; data: OrgRoleData }>(`/roles/${id}`, data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
-  },
-
-  updatePermissions: async (id: string, permissions: Record<string, any>) => {
-    const response = await api.patch<{ success: boolean; data: OrgRoleData }>(`/roles/${id}/permissions`, { permissions });
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
-  },
-
-  delete: async (id: string) => {
-    const response = await api.delete<{ success: boolean; message: string }>(`/roles/${id}`);
     if (response.error) throw new Error(response.error);
     return response.data;
   },

@@ -65,25 +65,58 @@ export class WorkflowsService {
     name: string;
     isDefault?: boolean;
     organizationId: string;
+    /** Optional initial statuses — e.g. when starting from a template. */
+    statuses?: Array<{
+      name: string;
+      key: string;
+      color?: string;
+      icon?: string;
+      position?: number;
+      isFinal?: boolean;
+      isCanceled?: boolean;
+      transitions?: string[];
+      capabilities?: string[];
+    }>;
   }) {
-    // If setting as default, unset previous default
-    if (data.isDefault) {
-      await this.prisma.statusWorkflow.updateMany({
-        where: { organizationId: data.organizationId, isDefault: true },
-        data: { isDefault: false },
-      });
-    }
+    const workflow = await this.prisma.$transaction(async (tx) => {
+      // If setting as default, unset previous default
+      if (data.isDefault) {
+        await tx.statusWorkflow.updateMany({
+          where: { organizationId: data.organizationId, isDefault: true },
+          data: { isDefault: false },
+        });
+      }
 
-    const workflow = await this.prisma.statusWorkflow.create({
-      data: {
-        name: data.name,
-        isDefault: data.isDefault || false,
-        organizationId: data.organizationId,
-      },
-      include: {
-        statuses: { orderBy: { position: 'asc' } },
-        _count: { select: { tasks: true } },
-      },
+      const created = await tx.statusWorkflow.create({
+        data: {
+          name: data.name,
+          isDefault: data.isDefault || false,
+          organizationId: data.organizationId,
+          ...(data.statuses?.length
+            ? {
+                statuses: {
+                  create: data.statuses.map((s, i) => ({
+                    name: s.name,
+                    key: s.key.toUpperCase(),
+                    color: s.color || '#3b82f6',
+                    icon: s.icon,
+                    position: s.position ?? i,
+                    isFinal: s.isFinal || false,
+                    isCanceled: s.isCanceled || false,
+                    transitions: s.transitions || [],
+                    capabilities: s.capabilities || [],
+                  })),
+                },
+              }
+            : {}),
+        },
+        include: {
+          statuses: { orderBy: { position: 'asc' } },
+          _count: { select: { tasks: true } },
+        },
+      });
+
+      return created;
     });
 
     await this.workflowCache.invalidate(data.organizationId);
@@ -310,6 +343,57 @@ export class WorkflowsService {
 
     await this.workflowCache.invalidate(data.organizationId);
     return success(status);
+  }
+
+  /**
+   * Reorder all statuses in a workflow in one shot — positions are assigned from
+   * the given id order. Single transaction + single cache invalidation, so a
+   * drag/move-up-down costs one round-trip regardless of how many statuses move.
+   */
+  async reorderStatuses(data: {
+    workflowId: string;
+    organizationId: string;
+    statusIds: string[];
+  }) {
+    const workflow = await this.prisma.statusWorkflow.findUnique({
+      where: { id: data.workflowId },
+      include: { statuses: { select: { id: true } } },
+    });
+
+    if (!workflow || workflow.organizationId !== data.organizationId) {
+      throw new NotFoundException('Workflow not found');
+    }
+
+    const existingIds = new Set(workflow.statuses.map((s) => s.id));
+    if (
+      data.statusIds.length !== existingIds.size ||
+      !data.statusIds.every((id) => existingIds.has(id))
+    ) {
+      throw new BadRequestException(
+        'statusIds must contain exactly the statuses of this workflow.',
+      );
+    }
+
+    await this.prisma.$transaction(
+      data.statusIds.map((id, index) =>
+        this.prisma.workflowStatus.update({
+          where: { id },
+          data: { position: index },
+        }),
+      ),
+    );
+
+    await this.workflowCache.invalidate(data.organizationId);
+
+    const updated = await this.prisma.statusWorkflow.findUnique({
+      where: { id: data.workflowId },
+      include: {
+        statuses: { orderBy: { position: 'asc' } },
+        _count: { select: { tasks: true } },
+      },
+    });
+
+    return success(updated);
   }
 
   // ==================== Definition of Done ====================

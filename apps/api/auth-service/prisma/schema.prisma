@@ -303,7 +303,13 @@ model Organization {
 
   // Organization profile
   industry    String?   // e.g. "HVAC", "Plumbing", "Electrical", "General Contracting"
-  address     String?   // Physical address
+  address     String?   // Legacy single-line address (kept for back-compat)
+  addressLine1 String?  // Street address
+  addressLine2 String?  // Suite / floor / unit (optional)
+  city        String?
+  state       String?   // State / province / region
+  postalCode  String?   // ZIP / postal code
+  country     String?   // ISO 3166-1 alpha-2 code (e.g. "DE", "AT")
   phone       String?   // Contact phone
   email       String?   // Contact email (org-level, not user)
   website     String?   // Website URL
@@ -955,16 +961,19 @@ model PartUsed {
   @@map("parts_used")
 }
 
-// Company location for full-time technician attendance (clock in/out)
+// A "space" — either a physical location (lat/lng set, used for attendance
+// geofencing) or a logical workspace/project (no coordinates). Every task
+// belongs to a space; modules + workflow are configured per space.
 model CompanyLocation {
   id             String  @id @default(cuid())
-  name           String  // "Main Office", "Warehouse A"
+  name           String  // "Main Office", "Warehouse A", "General"
   address        String? // Full address string
-  lat            Float   // Latitude
-  lng            Float   // Longitude
+  lat            Float?  // Latitude (only for physical locations / attendance)
+  lng            Float?  // Longitude (only for physical locations / attendance)
   geofenceRadius Int     @default(15) // Radius in meters for clock-in zone
   timezone       String  @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   isActive       Boolean @default(true)
+  isDefault      Boolean @default(false) // The org's default space (holds otherwise-unassigned tasks)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -979,6 +988,9 @@ model CompanyLocation {
 
   // Tasks linked to this space
   tasks          Task[]
+
+  // Recurring task templates that generate into this space
+  recurringTemplates RecurringTaskTemplate[]
 
   // Technicians assigned to this location
   assignments TechnicianAssignment[]
@@ -1282,7 +1294,10 @@ model JoinRequest {
 // Activity log for audit trail
 model ActivityLog {
   id              String              @id @default(cuid())
-  eventType       MonitoringEventType
+  // Free-form action string (e.g. "USER_LOGIN", "MEMBER_ROLE_CHANGED",
+  // "TASK_DELETED", "LOCATIONS_UPDATED") so any mutation can be audited without
+  // an enum migration. The gateway audit interceptor writes these.
+  eventType       String
 
   // Who performed the action
   userId          String?
@@ -1640,6 +1655,8 @@ model StatusWorkflow {
   statuses       WorkflowStatus[]
   tasks          Task[]
   spaces         CompanyLocation[]
+  customFields   CustomFieldDefinition[]
+  recurringTemplates RecurringTaskTemplate[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -1674,6 +1691,10 @@ model CustomFieldDefinition {
   id             String          @id @default(cuid())
   organizationId String
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Scope: a field belongs to a Task Type (workflowId) OR is global (null → all tasks).
+  // A task collects its type's fields + the global fields (cascade, like workflows).
+  workflowId     String?
+  workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   name           String          // "Customer PO Number", "Equipment Model"
   key            String          // "customer_po", "equipment_model"
   type           CustomFieldType
@@ -1685,8 +1706,9 @@ model CustomFieldDefinition {
   updatedAt      DateTime        @updatedAt
   values         CustomFieldValue[]
 
-  @@unique([organizationId, key])
+  @@unique([organizationId, workflowId, key])
   @@index([organizationId])
+  @@index([workflowId])
   @@map("custom_field_definitions")
 }
 
@@ -1713,6 +1735,12 @@ model RecurringTaskTemplate {
   id             String              @id @default(cuid())
   organizationId String
   organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Generated tasks land in this space and carry this Task Type, so they fit the
+  // space-centric / type-driven model (not orphaned, org-level generic tasks).
+  spaceId        String?
+  space          CompanyLocation?    @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  workflowId     String?
+  workflow       StatusWorkflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   title          String
   description    String?
   priority       TaskPriority        @default(MEDIUM)
@@ -1738,6 +1766,8 @@ model RecurringTaskTemplate {
 
   @@index([organizationId])
   @@index([nextRunAt, isActive])
+  @@index([spaceId])
+  @@index([workflowId])
   @@map("recurring_task_templates")
 }
 

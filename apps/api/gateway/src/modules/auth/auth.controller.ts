@@ -148,8 +148,9 @@ export class AuthController {
     // Read refresh token from cookie or body
     const refreshToken = req.cookies?.refreshToken || refreshTokenDto.refreshToken;
 
-    // Clear the httpOnly cookie
-    res.clearCookie('refreshToken', { path: '/api/v1/auth' });
+    // Clear the httpOnly cookie — path MUST match the one used when setting it
+    // ('/'), otherwise the browser keeps the cookie after logout.
+    res.clearCookie('refreshToken', { path: '/' });
 
     return firstValueFrom(
       this.authClient.send({ cmd: 'logout' }, { refreshToken }),

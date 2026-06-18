@@ -10,7 +10,8 @@ import { CreateOrgIcon } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { onboardingApi } from '../../src/lib/api';
+import { onboardingApi, locationsApi } from '../../src/lib/api';
+import { LocationSearchPicker } from '../../src/components/location-search-picker';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
 export default function CreateOrgScreen() {
@@ -22,7 +23,11 @@ export default function CreateOrgScreen() {
   const { t } = useTranslation();
 
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
+  const [firstSpaceName, setFirstSpaceName] = useState('Main Office');
+  const [spaceType, setSpaceType] = useState<'workspace' | 'physical'>('workspace');
+  const [spaceAddress, setSpaceAddress] = useState('');
+  const [spaceLat, setSpaceLat] = useState<number | null>(null);
+  const [spaceLng, setSpaceLng] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,8 +41,19 @@ export default function CreateOrgScreen() {
     try {
       await onboardingApi.createOrganization({
         name: trimmedName,
-        address: address.trim() || undefined,
       });
+      // Create the org's first space (becomes the default). A logical workspace;
+      // it can be turned into a physical location later.
+      try {
+        await locationsApi.create({
+          name: firstSpaceName.trim() || 'Main Office',
+          address: spaceType === 'physical' ? spaceAddress.trim() || undefined : undefined,
+          lat: spaceType === 'physical' ? spaceLat ?? undefined : undefined,
+          lng: spaceType === 'physical' ? spaceLng ?? undefined : undefined,
+        });
+      } catch {
+        // non-fatal — the user can create a space later
+      }
       await refreshUser();
       // Navigation guard will redirect to /(app)
     } catch (err) {
@@ -80,15 +96,54 @@ export default function CreateOrgScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.createOrg.addressLabel')}</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.createOrg.firstSpaceLabel', 'Your first space')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
-                  <Ionicons name="location-outline" size={18} color={colors.textMuted} />
+                  <Ionicons name="grid-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('onboarding.createOrg.addressPlaceholder')} placeholderTextColor={colors.textMuted}
-                  value={address} onChangeText={setAddress} autoCapitalize="words" />
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="e.g. Main Office" placeholderTextColor={colors.textMuted}
+                  value={firstSpaceName} onChangeText={setFirstSpaceName} autoCapitalize="words" />
+              </View>
+              <Text style={[styles.errorText, { color: colors.textMuted }]}>Rename it or add more spaces later.</Text>
+            </View>
+
+            {/* Space type */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Type</Text>
+              <View style={styles.typeRow}>
+                {([
+                  { key: 'workspace' as const, icon: 'grid-outline' as const, label: 'Workspace', desc: 'A team or project' },
+                  { key: 'physical' as const, icon: 'location-outline' as const, label: 'Physical location', desc: 'A site for attendance' },
+                ]).map((opt) => {
+                  const on = spaceType === opt.key;
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[styles.typeCard, { borderColor: on ? COLORS.primary : colors.inputBorder, backgroundColor: on ? COLORS.primaryLight : colors.card }]}
+                      onPress={() => setSpaceType(opt.key)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name={opt.icon} size={18} color={on ? COLORS.primary : colors.textMuted} />
+                      <Text style={[styles.typeLabel, { color: on ? COLORS.primary : colors.textPrimary }]}>{opt.label}</Text>
+                      <Text style={[styles.typeDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
+
+            {/* Physical location → address + map */}
+            {spaceType === 'physical' && (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Location</Text>
+                <LocationSearchPicker
+                  address={spaceAddress}
+                  lat={spaceLat}
+                  lng={spaceLng}
+                  onLocationChange={(a, la, ln) => { setSpaceAddress(a); setSpaceLat(la); setSpaceLng(ln); }}
+                />
+              </View>
+            )}
           </View>
 
           <TouchableOpacity style={[styles.button, isLoading && styles.buttonDisabled]} onPress={handleCreate} disabled={isLoading} activeOpacity={0.9}>
@@ -113,6 +168,10 @@ const styles = StyleSheet.create({
   form: { gap: SPACING.lg },
   inputGroup: { gap: SPACING.sm },
   label: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
+  typeRow: { flexDirection: 'row', gap: SPACING.sm },
+  typeCard: { flex: 1, borderWidth: 1.5, borderRadius: RADIUS.md, padding: SPACING.md, gap: 4 },
+  typeLabel: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, marginTop: 4 },
+  typeDesc: { fontSize: FONT_SIZE.sm },
   inputContainer: {
     flexDirection: 'row', alignItems: 'center', borderRadius: RADIUS.md,
     borderWidth: 1.5, height: 48, overflow: 'hidden',

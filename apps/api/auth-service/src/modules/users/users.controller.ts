@@ -123,6 +123,23 @@ export class UsersController {
     );
   }
 
+  @MessagePattern({ cmd: 'update_own_profile' })
+  async updateOwnProfile(
+    @Payload() data: { userId: string; dto: { firstName?: string; lastName?: string } },
+  ) {
+    return this.usersService.updateOwnProfile(data.userId, data.dto);
+  }
+
+  @MessagePattern({ cmd: 'update_own_email' })
+  async updateOwnEmail(
+    @Payload() data: { userId: string; newEmail: string; currentPassword: string },
+  ) {
+    return this.usersService.updateOwnEmail(data.userId, {
+      newEmail: data.newEmail,
+      currentPassword: data.currentPassword,
+    });
+  }
+
   @MessagePattern({ cmd: 'admin_reset_member_password' })
   async adminResetMemberPassword(
     @Payload()

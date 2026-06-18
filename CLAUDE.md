@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-02-11 (Schedule & Members Web UI)
+> **Last Updated**: 2026-06-18 (Background GPS route tracking)
 
 ---
 
@@ -283,7 +283,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 ### Tracking (`/tracking`)
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
-| POST | `/tracking/location` | Update technician location (stores history if EN_ROUTE) | TECHNICIAN |
+| POST | `/tracking/location` | Update technician location (stores history if EN_ROUTE) | ADMIN, MANAGER, EMPLOYEE |
+| POST | `/tracking/location/batch` | Batch-flush buffered route points (mobile background tracker) | ADMIN, MANAGER, EMPLOYEE |
 | GET | `/tracking/workers` | Get all technician locations | ADMIN, DISPATCHER |
 | GET | `/tracking/workers/:id` | Get specific technician | ADMIN, DISPATCHER |
 | GET | `/tracking/workers/:id/current-route` | Get active route for worker | ADMIN, DISPATCHER |
@@ -809,6 +810,16 @@ pnpm build            # Build all packages
 - [x] Web DISPATCHER: route visualization (polyline on map)
 - [x] Web DISPATCHER: route info panel (distance, time, points)
 - [x] Web: task detail shows route tracking data
+- [x] Web: route map snaps GPS points to roads via OSRM map-matching (`route-map-view.tsx`)
+- [x] **Background route capture** ✅ (2026-06-18) — exact path, not a start→end line
+  - [x] Mobile: `src/services/background-route-tracking.ts` — `expo-location` background updates via a `TaskManager` task (`ROUTE_TRACKING`); keeps recording when phone is locked / app backgrounded
+  - [x] Battery-aware: distance-based sampling (`distanceInterval: 25m`, only fires while moving), `deferredUpdatesInterval: 12s` to batch radio wake-ups, `Accuracy.High`, AutomotiveNavigation, Android foreground service
+  - [x] Active task id persisted in SecureStore (`active_route_task_id`) so the headless task knows which task to attribute points to
+  - [x] `useLocationTracking.ts` rewritten as a thin controller (same public interface); seeds one immediate point on EN_ROUTE then hands off to the background task; one-shot helpers (clock-in/geofence) stay foreground-only
+  - [x] Batch upload: `POST /tracking/location/batch` → `update_location_batch` → `LocationService.updateLocationBatch` (one ownership/EN_ROUTE check, points sorted by device timestamp, single `routeDistance` increment in one transaction)
+  - [x] Graceful fallback: if the batch endpoint is missing (404) or fails, `flushPoints()` falls back to sequential per-point `POST /tracking/location`
+  - [x] Native config already in `app.config.ts` (iOS `UIBackgroundModes: location`, Android `ACCESS_BACKGROUND_LOCATION` + foreground service, expo-location plugin)
+  - ⚠️ Requires a dev/production (EAS) build — background location does NOT run in Expo Go; member must grant "Always allow" location
 
 ### Phase 6: Notifications ✅ COMPLETE (Push) 🔶 PARTIAL (Email)
 - [x] BullMQ job queue (task queue)
@@ -1059,6 +1070,16 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: Phase 7.3 - Technician Assignment (next up)
+
+### Recently Completed (2026-06-18)
+- **Background GPS Route Tracking** (Phase 5):
+  - Fixed "straight line between start and end" — root cause was mobile capture (foreground-only `setInterval` stopped when the app backgrounded); backend already stored every point and the web map already road-snapped them
+  - Mobile: new `background-route-tracking.ts` — `expo-location` + `TaskManager` background task records the exact path even when the phone is locked
+  - Battery-aware: distance-based sampling (25m), deferred/batched delivery (12s), foreground service; active task id in SecureStore
+  - `useLocationTracking.ts` rewritten as thin controller over the background task (same public interface)
+  - New batch endpoint `POST /tracking/location/batch` (`update_location_batch` → `LocationService.updateLocationBatch`) — one transaction per burst
+  - Graceful per-point fallback (`flushPoints`) when the batch endpoint is absent (404) or fails
+  - ⚠️ Needs an EAS dev/prod build (not Expo Go) + "Always allow" location; tracking-service + gateway must be redeployed for the batch endpoint
 
 ### Recently Completed (2026-04-02)
 - **Task Attachments** (Phase 4):

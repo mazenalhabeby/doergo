@@ -61,10 +61,40 @@ export class UpdateOrgProfileDto {
   @IsString()
   industry?: string;
 
-  @ApiPropertyOptional({ description: 'Address' })
+  @ApiPropertyOptional({ description: 'Address (legacy single line)' })
   @IsOptional()
   @IsString()
   address?: string;
+
+  @ApiPropertyOptional({ description: 'Street address' })
+  @IsOptional()
+  @IsString()
+  addressLine1?: string;
+
+  @ApiPropertyOptional({ description: 'Address line 2 (suite/floor)' })
+  @IsOptional()
+  @IsString()
+  addressLine2?: string;
+
+  @ApiPropertyOptional({ description: 'City' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional({ description: 'State / province / region' })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @ApiPropertyOptional({ description: 'Postal / ZIP code' })
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
+  @ApiPropertyOptional({ description: 'Country (ISO 3166-1 alpha-2)' })
+  @IsOptional()
+  @IsString()
+  country?: string;
 
   @ApiPropertyOptional({ description: 'Phone number' })
   @IsOptional()

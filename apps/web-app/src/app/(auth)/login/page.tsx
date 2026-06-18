@@ -1,169 +1,122 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { notify } from '@/lib/toast';
-import {
-  AuthSkeleton,
-  LoginForm,
-  RegisterForm,
-  MobileHeader,
-  MobileTabSwitcher,
-  OverlayPanel,
-} from '@/components/auth';
+import { AuthSkeleton, LoginForm, RegisterForm } from '@/components/auth';
 import { useAuth } from '@/contexts/auth-context';
+import { AnimatedLogo } from '@hbcfield/shared/components';
 import { cn } from '@/lib/utils';
+
+const HERO_BG = 'linear-gradient(135deg,#1D4ED8 0%,#2563EB 45%,#06B6D4 130%)';
+const GRID =
+  'linear-gradient(rgba(255,255,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.10) 1px,transparent 1px)';
 
 function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [isLoginActive, setIsLoginActive] = useState(true);
-  const [mounted, setMounted] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
 
-  // Check for registered query param
+  // "Account created" → switch to sign-in
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
       notify.success('Account created successfully!', 'Please sign in with your new credentials.');
-      setIsLoginActive(true);
+      setIsLogin(true);
       router.replace('/login', { scroll: false });
     }
   }, [searchParams, router]);
 
-  // Redirect if already authenticated
+  // Redirect if already signed in
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.push('/dashboard');
-    }
+    if (!authLoading && isAuthenticated) router.push('/dashboard');
   }, [authLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (authLoading) return <AuthSkeleton />;
 
-  // Show skeleton while checking auth
-  if (authLoading) {
-    return <AuthSkeleton />;
-  }
+  const tab = (active: boolean) =>
+    cn(
+      'flex-1 text-center py-2 text-sm font-semibold rounded-lg transition-all',
+      active ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600',
+    );
 
   return (
-    <div
-      className={cn(
-        'w-full max-w-[900px] mx-auto transition-all duration-700',
-        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-      )}
-    >
-      {/* Mobile Layout */}
-      <MobileLayout isLoginActive={isLoginActive} onTabChange={setIsLoginActive} />
+    <div className="force-light fixed inset-0 z-10 flex flex-col lg:flex-row overflow-y-auto bg-white text-slate-900">
+      {/* ── Left: brand hero (desktop only) ───────────────────────────── */}
+      <aside
+        className="relative hidden lg:flex lg:w-[54%] flex-col justify-between overflow-hidden p-10 xl:p-14 text-white"
+        style={{ background: HERO_BG }}
+      >
+        <div className="absolute inset-0 opacity-40" style={{ backgroundImage: GRID, backgroundSize: '34px 34px' }} />
+        <div
+          className="absolute -right-20 -top-20 h-80 w-80 rounded-full"
+          style={{ background: 'radial-gradient(circle,rgba(34,211,238,.45),transparent 60%)' }}
+        />
 
-      {/* Desktop Layout */}
-      <DesktopLayout isLoginActive={isLoginActive} onTabChange={setIsLoginActive} />
+        <div className="relative">
+          <AnimatedLogo variant="light" size="default" />
+        </div>
 
-      {/* Footer */}
-      <Footer />
-    </div>
-  );
-}
+        <div className="relative">
+          <h2 className="text-4xl xl:text-5xl font-extrabold leading-[1.05] tracking-tight">
+            Dispatch.<br />Track. Deliver.
+          </h2>
+          <p className="mt-4 max-w-sm text-[15px] text-white/75">
+            Run your whole field operation — tasks, technicians, routes and attendance — in one place.
+          </p>
 
-// ============================================================================
-// Layout Components
-// ============================================================================
-
-interface LayoutProps {
-  isLoginActive: boolean;
-  onTabChange: (isLogin: boolean) => void;
-}
-
-function MobileLayout({ isLoginActive, onTabChange }: LayoutProps) {
-  return (
-    <div className="md:hidden">
-      <div className="bg-white rounded-2xl shadow-modal p-5 sm:p-6">
-        <MobileHeader />
-        <MobileTabSwitcher isLoginActive={isLoginActive} onTabChange={onTabChange} />
-
-        {/* Mobile Forms */}
-        <div className="relative overflow-hidden">
-          <div
-            className={cn(
-              'transition-all duration-500 ease-in-out',
-              isLoginActive
-                ? 'opacity-100 translate-x-0'
-                : 'opacity-0 -translate-x-full absolute inset-0 pointer-events-none'
-            )}
-          >
-            <LoginForm isActive={isLoginActive} isMobile />
-          </div>
-          <div
-            className={cn(
-              'transition-all duration-500 ease-in-out',
-              !isLoginActive
-                ? 'opacity-100 translate-x-0'
-                : 'opacity-0 translate-x-full absolute inset-0 pointer-events-none'
-            )}
-          >
-            <RegisterForm isActive={!isLoginActive} isMobile />
+          <div className="mt-8 flex gap-3">
+            <div className="w-[170px] rounded-xl border border-white/20 bg-white/[.14] p-3.5 backdrop-blur">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                <span className="text-[11px] text-white/80">In progress</span>
+              </div>
+              <div className="mt-1 text-[13px] font-semibold">HVAC repair · #5102</div>
+              <div className="mt-1 text-[10px] text-white/60">Mike W. · 2.3 km away</div>
+            </div>
+            <div className="w-[128px] rounded-xl border border-white/20 bg-white/[.14] p-3.5 backdrop-blur">
+              <div className="text-[10px] text-white/70">Today</div>
+              <div className="mt-0.5 text-[24px] font-extrabold leading-none">18</div>
+              <div className="mt-1 text-[10px] text-white/60">tasks completed</div>
+            </div>
           </div>
         </div>
-      </div>
+
+        <div className="relative text-[11px] text-white/55">© HBCField — Field Service Management</div>
+      </aside>
+
+      {/* ── Right: form ───────────────────────────────────────────────── */}
+      <main className="flex flex-1 flex-col justify-center bg-white px-6 py-12 sm:px-10 lg:px-16">
+        <div className="mx-auto w-full max-w-md">
+          {/* mobile logo */}
+          <div className="mb-9 mt-2 flex justify-center lg:hidden">
+            <AnimatedLogo size="large" />
+          </div>
+
+          <h1 className="text-[26px] font-bold tracking-tight text-slate-900">
+            {isLogin ? 'Welcome back' : 'Create your account'}
+          </h1>
+          <p className="mt-1 mb-6 text-sm text-slate-500">
+            {isLogin ? 'Sign in to your workspace.' : 'Start your organization on HBCField.'}
+          </p>
+
+          {/* tabs */}
+          <div className="mb-6 flex gap-1 rounded-[10px] bg-slate-100 p-1">
+            <button type="button" onClick={() => setIsLogin(true)} className={tab(isLogin)}>
+              Sign in
+            </button>
+            <button type="button" onClick={() => setIsLogin(false)} className={tab(!isLogin)}>
+              Create account
+            </button>
+          </div>
+
+          {isLogin ? <LoginForm isActive isMobile /> : <RegisterForm isActive isMobile />}
+        </div>
+      </main>
     </div>
   );
 }
-
-function DesktopLayout({ isLoginActive, onTabChange }: LayoutProps) {
-  return (
-    <div className="hidden md:block relative bg-white rounded-2xl shadow-modal overflow-hidden min-h-[600px]">
-      {/* Forms Container */}
-      <div className="flex h-full min-h-[600px]">
-        {/* Register Form - Left Side */}
-        <div
-          className={cn(
-            'w-1/2 p-6 lg:p-8 transition-all duration-500 ease-in-out',
-            isLoginActive ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'
-          )}
-        >
-          <RegisterForm isActive={!isLoginActive} />
-        </div>
-
-        {/* Login Form - Right Side */}
-        <div
-          className={cn(
-            'w-1/2 p-6 lg:p-8 transition-all duration-500 ease-in-out',
-            isLoginActive ? 'opacity-100 scale-100' : 'opacity-0 pointer-events-none scale-95'
-          )}
-        >
-          <LoginForm isActive={isLoginActive} />
-        </div>
-      </div>
-
-      {/* Sliding Overlay Panel */}
-      <OverlayPanel isLoginActive={isLoginActive} onToggle={onTabChange} />
-    </div>
-  );
-}
-
-function Footer() {
-  return (
-    <p
-      className="text-center text-xs sm:text-sm text-slate-500 mt-4 sm:mt-6 animate-fade-in px-4"
-      style={{ animationDelay: '0.5s' }}
-    >
-      By continuing, you agree to our{' '}
-      <Link href="/terms" className="text-slate-700 hover:text-brand-600 transition-colors">
-        Terms
-      </Link>{' '}
-      and{' '}
-      <Link href="/privacy" className="text-slate-700 hover:text-brand-600 transition-colors">
-        Privacy Policy
-      </Link>
-    </p>
-  );
-}
-
-// ============================================================================
-// Main Export with Suspense
-// ============================================================================
 
 export default function AuthPage() {
   return (

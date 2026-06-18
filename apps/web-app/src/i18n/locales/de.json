@@ -955,6 +955,8 @@
   "settings": {
     "title": "Organisationseinstellungen",
     "subtitle": "Verwalten Sie die Einstellungen, Mitgliedschaft und Praeferenzen Ihrer Organisation",
+    "personalTitle": "Kontoeinstellungen",
+    "personalSubtitle": "Verwalten Sie Ihr Profil, Passwort und Benachrichtigungen",
     "tabs": {
       "general": "Allgemein",
       "members": "Mitglieder & Zugang",
@@ -1015,7 +1017,7 @@
       "description": "Legen Sie fest, wie Personen Ihrer Organisation beitreten können",
       "open": "Offen",
       "openDescription": "Jeder mit Ihrem Organisationscode kann sofort ohne Genehmigung beitreten.",
-      "inviteOnly": "Nur mit Einladung",
+      "inviteOnly": "Genehmigung erforderlich",
       "inviteOnlyDescription": "Personen können mit Ihrem Organisationscode einen Beitritt beantragen, aber ein Administrator muss jede Anfrage genehmigen.",
       "closed": "Geschlossen",
       "closedDescription": "Niemand kann über den Organisationscode beitreten. Mitglieder können nur über Einladungen hinzugefügt werden.",

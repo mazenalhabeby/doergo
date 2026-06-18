@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated } from '@hbcfield/shared';
+import { success, paginated, DEFAULT_ORG_MODULES } from '@hbcfield/shared';
 
 // Valid schedule days
 const VALID_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -22,8 +22,8 @@ export class LocationsService {
   async create(data: {
     name: string;
     address?: string;
-    lat: number;
-    lng: number;
+    lat?: number;
+    lng?: number;
     geofenceRadius?: number;
     enabledModules?: string[];
     workflowId?: string;
@@ -32,16 +32,24 @@ export class LocationsService {
   }) {
     this.logger.log(`Creating company location: ${data.name}`);
 
+    // The org's first space becomes its default (holds otherwise-unassigned tasks).
+    const existingDefault = await this.prisma.companyLocation.count({
+      where: { organizationId: data.organizationId, isDefault: true },
+    });
+
     const location = await this.prisma.companyLocation.create({
       data: {
         name: data.name,
         address: data.address,
-        lat: data.lat,
-        lng: data.lng,
+        lat: data.lat ?? null,
+        lng: data.lng ?? null,
         geofenceRadius: data.geofenceRadius ?? 15,
-        enabledModules: data.enabledModules ?? undefined,
+        // Each space owns its module set; new spaces start with the standard
+        // default (the org-level Modules tab was removed — modules live on spaces).
+        enabledModules: data.enabledModules ?? DEFAULT_ORG_MODULES,
         workflowId: data.workflowId ?? undefined,
         organizationId: data.organizationId,
+        isDefault: existingDefault === 0,
       },
     });
 

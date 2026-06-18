@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Query,
@@ -18,11 +19,12 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsNotEmpty } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { TasksQueueService } from '../tasks/tasks.queue.service';
@@ -39,6 +41,25 @@ class RegisterPushTokenDto {
   deviceId?: string;
 }
 
+class UpdateMeDto {
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+}
+
+class UpdateMyEmailDto {
+  @IsEmail({}, { message: 'A valid email is required' })
+  newEmail: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Current password is required' })
+  currentPassword: string;
+}
+
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
@@ -49,6 +70,7 @@ export class UsersController {
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
     private readonly tasksQueueService: TasksQueueService,
+    private readonly authCache: AuthTokenCache,
   ) {}
 
   @Get('me')
@@ -57,6 +79,30 @@ export class UsersController {
     return firstValueFrom(
       this.authClient.send({ cmd: 'get_profile' }, { userId: user.id }),
     );
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Update your own profile (name) — any authenticated user' })
+  async updateMe(@CurrentUser() user: CurrentUserData, @Body() dto: UpdateMeDto) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'update_own_profile' }, { userId: user.id, dto }),
+    );
+    // Drop the cached session so the new name takes effect on the next request.
+    await this.authCache.invalidateUser(user.id);
+    return result;
+  }
+
+  @Patch('me/email')
+  @ApiOperation({ summary: 'Change your own email (requires current password)' })
+  async updateMyEmail(@CurrentUser() user: CurrentUserData, @Body() dto: UpdateMyEmailDto) {
+    const result = await firstValueFrom(
+      this.authClient.send(
+        { cmd: 'update_own_email' },
+        { userId: user.id, newEmail: dto.newEmail, currentPassword: dto.currentPassword },
+      ),
+    );
+    await this.authCache.invalidateUser(user.id);
+    return result;
   }
 
   // =========================================================================

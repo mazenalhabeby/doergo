@@ -999,6 +999,83 @@ export class UsersService {
   }
 
   /**
+   * Self-service profile update — a user updating their OWN record. Scoped to
+   * `userId` (the authenticated caller), so it needs no permission: unlike
+   * `updateMemberProfile` (admin managing others), anyone can edit themselves.
+   */
+  async updateOwnProfile(
+    userId: string,
+    dto: { firstName?: string; lastName?: string },
+  ) {
+    const data: { firstName?: string; lastName?: string } = {};
+    if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
+    if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        role: true,
+      },
+    });
+
+    return { success: true, data: updated };
+  }
+
+  /**
+   * Self-service email change — requires the current password (email is the
+   * login identity, so we confirm it's really them) and enforces uniqueness.
+   * Everything internal keys off userId, so only login is affected.
+   */
+  async updateOwnEmail(
+    userId: string,
+    data: { newEmail: string; currentPassword: string },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const validPassword = await bcrypt.compare(data.currentPassword, user.passwordHash);
+    if (!validPassword) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const newEmail = data.newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      throw new BadRequestException('Invalid email address');
+    }
+    if (newEmail === user.email.toLowerCase()) {
+      throw new BadRequestException('That is already your email');
+    }
+
+    const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('That email is already in use');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { email: newEmail },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        role: true,
+      },
+    });
+
+    return { success: true, data: updated };
+  }
+
+  /**
    * Admin resets a member's password, returning a temporary password
    */
   async adminResetMemberPassword(

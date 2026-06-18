@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo, useEffect, memo } from "react"
+import { useState, useCallback, useMemo, memo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -10,10 +10,6 @@ import {
   Pencil,
   UserMinus,
   UserPlus,
-  Copy,
-  Check,
-  KeyRound,
-  AlertTriangle,
   MapPin,
   Users,
   Mail,
@@ -24,24 +20,19 @@ import {
   ChevronUp,
   Plus,
   Trash2,
-  ChevronsUpDown,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
+import { EditMemberDialog } from "./_components/edit-member-dialog"
 import { cn } from "@/lib/utils"
 import {
   organizationsApi,
   invitationsApi,
   locationsApi,
-  rolesApi,
-  employeesApi,
   type OrgMember,
-  type UpdateMemberInput,
-  type OrgRoleData,
-  type ScheduleEntryInput,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -49,8 +40,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -83,20 +72,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -119,205 +94,6 @@ const ROLE_CONFIG: Record<string, { label: string; className: string; gradient: 
     gradient: "from-emerald-500 to-emerald-600",
   },
 }
-
-const DEFAULT_ROLE_PERMISSIONS: Record<
-  string,
-  { canCreateTasks: boolean; taskCreationScope: string; canViewAllTasks: boolean; canAssignTasks: boolean; canManageUsers: boolean }
-> = {
-  ADMIN: { canCreateTasks: true, taskCreationScope: "ORG", canViewAllTasks: true, canAssignTasks: true, canManageUsers: true },
-  MANAGER: { canCreateTasks: false, taskCreationScope: "SPACE", canViewAllTasks: true, canAssignTasks: true, canManageUsers: false },
-  EMPLOYEE: { canCreateTasks: false, taskCreationScope: "SELF", canViewAllTasks: false, canAssignTasks: false, canManageUsers: false },
-}
-
-const POSITION_SUGGESTIONS = [
-  "Technician", "Driver", "Accountant", "HR Manager", "Sales Representative",
-  "Office Manager", "Warehouse Worker", "Service Engineer", "Project Manager",
-  "Designer", "Developer", "Customer Support", "Delivery Driver", "Inspector",
-]
-
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
-interface EditableScheduleRow {
-  dayOfWeek: number
-  startTime: string
-  endTime: string
-  isActive: boolean
-}
-
-function createDefaultSchedule(): EditableScheduleRow[] {
-  return Array.from({ length: 7 }, (_, i) => ({
-    dayOfWeek: i,
-    startTime: "09:00",
-    endTime: "17:00",
-    isActive: i >= 1 && i <= 5,
-  }))
-}
-
-// ---------------------------------------------------------------------------
-// Position Combobox component
-// ---------------------------------------------------------------------------
-
-const PositionCombobox = memo(function PositionCombobox({
-  value,
-  onChange,
-  usedPositions,
-}: {
-  value: string
-  onChange: (value: string) => void
-  usedPositions: string[]
-}) {
-  const [open, setOpen] = useState(false)
-  const [inputValue, setInputValue] = useState(value)
-
-  // Suggestions that are not already used in the org
-  const unusedSuggestions = POSITION_SUGGESTIONS.filter(
-    (s) => !usedPositions.some((u) => u.toLowerCase() === s.toLowerCase())
-  )
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between h-9 font-normal text-sm"
-        >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || "Select or type a title..."}
-          </span>
-          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command shouldFilter={true}>
-          <div className="p-2 pb-1">
-            <CommandInput
-              placeholder="Search or type custom..."
-              value={inputValue}
-              onValueChange={(v) => {
-                setInputValue(v)
-                onChange(v)
-              }}
-            />
-          </div>
-          <div className="max-h-[200px] overflow-y-auto overflow-x-hidden overscroll-contain" onWheel={(e) => e.stopPropagation()}>
-          <CommandList className="max-h-none overflow-visible">
-            <CommandEmpty>
-              <button
-                type="button"
-                className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
-                onClick={() => {
-                  onChange(inputValue)
-                  setOpen(false)
-                }}
-              >
-                Use &quot;{inputValue}&quot;
-              </button>
-            </CommandEmpty>
-            {usedPositions.length > 0 && (
-              <CommandGroup heading="Used in your org">
-                {usedPositions.map((pos) => (
-                  <CommandItem
-                    key={`used-${pos}`}
-                    value={pos}
-                    onSelect={() => {
-                      onChange(pos)
-                      setInputValue(pos)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check className={cn("mr-2 h-3.5 w-3.5", value === pos ? "opacity-100" : "opacity-0")} />
-                    {pos}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-            {unusedSuggestions.length > 0 && (
-              <>
-                {usedPositions.length > 0 && <CommandSeparator />}
-                <CommandGroup heading="Suggestions">
-                  {unusedSuggestions.map((pos) => (
-                    <CommandItem
-                      key={`sug-${pos}`}
-                      value={pos}
-                      onSelect={() => {
-                        onChange(pos)
-                        setInputValue(pos)
-                        setOpen(false)
-                      }}
-                    >
-                      <Check className={cn("mr-2 h-3.5 w-3.5", value === pos ? "opacity-100" : "opacity-0")} />
-                      {pos}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </>
-            )}
-          </CommandList>
-          </div>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
-})
-
-// ---------------------------------------------------------------------------
-// Compact Schedule Editor (for dialog)
-// ---------------------------------------------------------------------------
-
-const CompactScheduleEditor = memo(function CompactScheduleEditor({
-  rows,
-  onChange,
-}: {
-  rows: EditableScheduleRow[]
-  onChange: (rows: EditableScheduleRow[]) => void
-}) {
-  const updateRow = (dayOfWeek: number, field: keyof EditableScheduleRow, value: string | boolean) => {
-    onChange(rows.map((row) => (row.dayOfWeek === dayOfWeek ? { ...row, [field]: value } : row)))
-  }
-
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs font-medium text-muted-foreground">Weekly hours</Label>
-      <div className="border rounded-lg divide-y divide-border/60 bg-muted/20">
-        {rows.map((row) => (
-          <div
-            key={row.dayOfWeek}
-            className={cn(
-              "grid grid-cols-[44px_1fr_1fr_36px] items-center gap-2 px-3 py-1.5 transition-opacity",
-              !row.isActive && "opacity-40"
-            )}
-          >
-            <span className="text-xs font-medium text-foreground">{DAY_NAMES[row.dayOfWeek]}</span>
-            <Input
-              type="time"
-              value={row.startTime}
-              onChange={(e) => updateRow(row.dayOfWeek, "startTime", e.target.value)}
-              className="h-7 text-xs px-2"
-              disabled={!row.isActive}
-            />
-            <Input
-              type="time"
-              value={row.endTime}
-              onChange={(e) => updateRow(row.dayOfWeek, "endTime", e.target.value)}
-              className="h-7 text-xs px-2"
-              disabled={!row.isActive}
-            />
-            <div className="flex justify-center">
-              <Switch
-                checked={row.isActive}
-                onCheckedChange={(checked) => updateRow(row.dayOfWeek, "isActive", !!checked)}
-                className="scale-75"
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-})
-
 // ---------------------------------------------------------------------------
 // Bulk Action Bar for members
 // ---------------------------------------------------------------------------
@@ -443,6 +219,102 @@ interface MemberRowProps {
   onNavigate: (id: string) => void
 }
 
+// Shared grid template \u2014 keeps the header and desktop rows perfectly aligned.
+const TABLE_GRID =
+  "grid grid-cols-[28px_44px_minmax(0,1.5fr)_minmax(0,1fr)_110px_110px_minmax(0,1.3fr)_40px] items-center gap-4 px-5"
+
+// \u2500\u2500 Row sub-pieces (reused by the desktop table row AND the mobile card) \u2500\u2500\u2500\u2500\u2500\u2500
+
+function RoleBadge({ member }: { member: OrgMember }) {
+  if (member.orgRole) {
+    return (
+      <Badge
+        variant="outline"
+        className="text-xs font-medium border gap-1.5"
+        style={{ borderColor: member.orgRole.color || undefined, color: member.orgRole.color || undefined }}
+      >
+        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: member.orgRole.color || "#6b7280" }} />
+        {member.orgRole.name}
+      </Badge>
+    )
+  }
+  const conf = ROLE_CONFIG[member.role] || ROLE_CONFIG.EMPLOYEE!
+  return <Badge variant="outline" className={cn("text-xs font-medium border", conf.className)}>{conf.label}</Badge>
+}
+
+function ScheduleBadge({ member }: { member: OrgMember }) {
+  const fixed = member.scheduleType === "FIXED"
+  const flexible = member.scheduleType === "FLEXIBLE"
+  if (!fixed && !flexible) return <span className="text-sm text-muted-foreground/40">{"\u2014"}</span>
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "text-xs font-medium border gap-1",
+        fixed
+          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50"
+          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
+      )}
+    >
+      {fixed ? <Clock className="h-3 w-3" /> : <Timer className="h-3 w-3" />}
+      {fixed ? "Fixed" : "Flexible"}
+    </Badge>
+  )
+}
+
+function SpacesCell({ spaceNames }: { spaceNames: string[] }) {
+  if (spaceNames.length === 0) return <span className="text-sm text-muted-foreground/50 italic">No spaces</span>
+  return (
+    <Link
+      href="/locations"
+      className="inline-flex items-center gap-1.5 min-w-0 text-muted-foreground hover:text-primary transition-colors"
+    >
+      <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+      <span className="text-sm truncate">{spaceNames.join(", ")}</span>
+    </Link>
+  )
+}
+
+function RowActions({
+  show,
+  member,
+  onEdit,
+  onRemove,
+  alwaysVisible,
+}: {
+  show: boolean
+  member: OrgMember
+  onEdit: (m: OrgMember) => void
+  onRemove: (m: OrgMember) => void
+  alwaysVisible?: boolean
+}) {
+  if (!show) return <div className="w-8" />
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("h-8 w-8 transition-opacity", !alwaysVisible && "opacity-0 group-hover:opacity-100")}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onClick={() => onEdit(member)}>
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => onRemove(member)}>
+          <UserMinus className="h-4 w-4 mr-2" />
+          Remove
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 const MemberRow = memo(function MemberRow({
   member,
   isSelf,
@@ -456,151 +328,74 @@ const MemberRow = memo(function MemberRow({
   onRemove,
   onNavigate,
 }: MemberRowProps) {
-  const roleConfig = member.orgRole
-    ? { label: member.orgRole.name, className: "", gradient: "from-gray-500 to-gray-600" }
-    : ROLE_CONFIG[member.role] || ROLE_CONFIG.EMPLOYEE!
+  const canManage = isAdmin && !isSelf
+  const hasSchedule = member.scheduleType === "FIXED" || member.scheduleType === "FLEXIBLE"
 
-  const scheduleLabel = member.scheduleType === "FIXED"
-    ? "Fixed"
-    : member.scheduleType === "FLEXIBLE"
-      ? "Flexible"
-      : null
+  const nameButton = (
+    <button
+      type="button"
+      className="font-medium text-foreground truncate hover:underline text-left"
+      onClick={() => onNavigate(member.id)}
+    >
+      {member.firstName} {member.lastName}
+    </button>
+  )
 
   return (
     <div
       className={cn(
-        "group grid grid-cols-[28px_40px_1fr_120px_90px_100px_180px_40px] items-center gap-4 px-5 py-4 hover:bg-accent/40 transition-colors",
-        isSelected && "bg-accent/30"
+        "group border-b border-border/50 last:border-0 transition-colors hover:bg-accent/30",
+        isSelected && "bg-accent/30",
       )}
       style={{ animation: `fadeSlideIn 0.25s ease-out ${index * 40}ms both` }}
     >
-      {/* Checkbox */}
-      <div className={cn("transition-opacity", anySelected || isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
-        {isAdmin && !isSelf ? (
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => onSelect(member.id, !!checked)}
-            className="h-4 w-4"
-          />
-        ) : (
-          <div className="h-4 w-4" />
-        )}
-      </div>
-
-      {/* Avatar */}
-      <UserAvatar firstName={member.firstName} lastName={member.lastName} avatarUrl={member.avatarUrl} seed={member.id} size="lg" />
-
-      {/* Name + email */}
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="font-medium text-foreground truncate hover:underline text-left"
-            onClick={() => onNavigate(member.id)}
-          >
-            {member.firstName} {member.lastName}
-          </button>
-          {isSelf && (
-            <span className="text-[11px] text-muted-foreground/70 font-medium">you</span>
+      {/* \u2500\u2500 Desktop: aligned table row \u2500\u2500 */}
+      <div className={cn(TABLE_GRID, "hidden md:grid py-3.5")}>
+        <div className={cn("transition-opacity", anySelected || isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
+          {canManage ? (
+            <Checkbox checked={isSelected} onCheckedChange={(c) => onSelect(member.id, !!c)} className="h-4 w-4" />
+          ) : (
+            <div className="h-4 w-4" />
           )}
         </div>
-        <p className="text-sm text-muted-foreground truncate">{member.email}</p>
-      </div>
-
-      {/* Title/Position */}
-      <div className="hidden md:block min-w-0">
-        <span className={cn("text-sm truncate", member.position ? "text-foreground" : "text-muted-foreground/50")}>
+        <UserAvatar firstName={member.firstName} lastName={member.lastName} avatarUrl={member.avatarUrl} seed={member.id} size="md" />
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {nameButton}
+            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">you</span>}
+          </div>
+          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+        </div>
+        <span className={cn("text-sm truncate", member.position ? "text-foreground" : "text-muted-foreground/40")}>
           {member.position || "\u2014"}
         </span>
+        <div><RoleBadge member={member} /></div>
+        <div><ScheduleBadge member={member} /></div>
+        <div className="min-w-0"><SpacesCell spaceNames={spaceNames} /></div>
+        <RowActions show={canManage} member={member} onEdit={onEdit} onRemove={onRemove} />
       </div>
 
-      {/* Role badge */}
-      {member.orgRole ? (
-        <Badge
-          variant="outline"
-          className="text-xs font-medium border gap-1"
-          style={{ borderColor: member.orgRole.color || undefined, color: member.orgRole.color || undefined }}
-        >
-          <div
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: member.orgRole.color || "#6b7280" }}
-          />
-          {member.orgRole.name}
-        </Badge>
-      ) : (
-        <Badge variant="outline" className={cn("text-xs font-medium border", roleConfig.className)}>
-          {roleConfig.label}
-        </Badge>
-      )}
-
-      {/* Schedule badge */}
-      <div className="hidden md:block">
-        {scheduleLabel ? (
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-xs font-medium border gap-1",
-              member.scheduleType === "FIXED"
-                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50"
-                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50"
-            )}
-          >
-            {member.scheduleType === "FIXED" ? (
-              <Clock className="h-3 w-3" />
-            ) : (
-              <Timer className="h-3 w-3" />
-            )}
-            {scheduleLabel}
-          </Badge>
-        ) : (
-          <span className="text-sm text-muted-foreground/50">{"\u2014"}</span>
+      {/* \u2500\u2500 Mobile: stacked card \u2500\u2500 */}
+      <div className="md:hidden flex items-start gap-3 px-4 py-3.5">
+        {canManage && (
+          <Checkbox checked={isSelected} onCheckedChange={(c) => onSelect(member.id, !!c)} className="h-4 w-4 mt-1" />
         )}
+        <UserAvatar firstName={member.firstName} lastName={member.lastName} avatarUrl={member.avatarUrl} seed={member.id} size="md" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {nameButton}
+            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">you</span>}
+          </div>
+          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
+            <RoleBadge member={member} />
+            {member.position && <span className="text-xs text-muted-foreground">{member.position}</span>}
+            {hasSchedule && <ScheduleBadge member={member} />}
+            {spaceNames.length > 0 && <SpacesCell spaceNames={spaceNames} />}
+          </div>
+        </div>
+        <RowActions show={canManage} member={member} onEdit={onEdit} onRemove={onRemove} alwaysVisible />
       </div>
-
-      {/* Spaces */}
-      <div className="hidden md:flex items-center gap-1.5 min-w-0">
-        {spaceNames.length > 0 ? (
-          <Link href="/locations" className="flex items-center gap-1.5 min-w-0 hover:text-primary transition-colors">
-            <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-            <span className="text-sm text-muted-foreground truncate hover:text-primary">
-              {spaceNames.join(", ")}
-            </span>
-          </Link>
-        ) : (
-          <span className="text-sm text-muted-foreground/50 italic">No spaces</span>
-        )}
-      </div>
-
-      {/* Actions */}
-      {isAdmin && !isSelf ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => onEdit(member)}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-red-600 focus:text-red-600"
-              onClick={() => onRemove(member)}
-            >
-              <UserMinus className="h-4 w-4 mr-2" />
-              Remove
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <div className="w-8" />
-      )}
     </div>
   )
 })
@@ -623,26 +418,6 @@ export default function MembersPage() {
   const [editTarget, setEditTarget] = useState<OrgMember | null>(null)
   const [removeTarget, setRemoveTarget] = useState<OrgMember | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
-
-  // Edit form state
-  const [editFirstName, setEditFirstName] = useState("")
-  const [editLastName, setEditLastName] = useState("")
-  const [editPosition, setEditPosition] = useState("")
-  const [editScheduleType, setEditScheduleType] = useState("NONE")
-  const [editMonthlyHourBudget, setEditMonthlyHourBudget] = useState<number | "">("")
-  const [editScheduleRows, setEditScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
-  const [editRole, setEditRole] = useState("")
-  const [editPerms, setEditPerms] = useState({
-    canCreateTasks: false,
-    canViewAllTasks: false,
-    canAssignTasks: false,
-    canManageUsers: false,
-  })
-  const [editTaskCreationScope, setEditTaskCreationScope] = useState("NONE")
-
-  // Password reset
-  const [tempPassword, setTempPassword] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
 
   // Pending invitations
   const [showPending, setShowPending] = useState(true)
@@ -667,13 +442,6 @@ export default function MembersPage() {
     queryKey: ["locations-all"],
     queryFn: () => locationsApi.list({ limit: 100 }),
     staleTime: 60000,
-  })
-
-  // Fetch org roles for dynamic role dropdown
-  const { data: orgRoles = [] } = useQuery({
-    queryKey: ["roles"],
-    queryFn: rolesApi.list,
-    enabled: isAdmin,
   })
 
   // Fetch all assignments per location to build member->spaces map
@@ -719,71 +487,11 @@ export default function MembersPage() {
   })
 
   const pendingInvitations = pendingInvitationsData?.data || []
-
-  // Fetch schedule when editing a member with FIXED schedule
-  const { data: editScheduleData } = useQuery({
-    queryKey: ["employeeSchedule", editTarget?.id],
-    queryFn: () => employeesApi.getSchedule(editTarget!.id),
-    enabled: !!editTarget && editScheduleType === "FIXED",
-  })
-
-  // Populate schedule rows when data loads
-  useEffect(() => {
-    if (editScheduleData?.schedule && editScheduleData.schedule.length > 0) {
-      const rows = createDefaultSchedule()
-      for (const entry of editScheduleData.schedule) {
-        const row = rows[entry.dayOfWeek]
-        if (row) {
-          row.startTime = entry.startTime
-          row.endTime = entry.endTime
-          row.isActive = entry.isActive
-        }
-      }
-      setEditScheduleRows(rows)
-    }
-  }, [editScheduleData])
-
   const members = data?.data || []
   const meta = data?.meta
   const totalCount = meta?.total ?? 0
 
-  // Compute used positions across the org for the combobox
-  const usedPositions = useMemo(() => {
-    const positions = new Set<string>()
-    for (const m of members) {
-      if (m.position) positions.add(m.position)
-    }
-    return Array.from(positions).sort()
-  }, [members])
-
   // ── Mutations ────────────────────────────────────────────────────────
-
-  const updateMemberMutation = useMutation({
-    mutationFn: ({ memberId, data }: { memberId: string; data: UpdateMemberInput }) =>
-      organizationsApi.updateMember(memberId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
-      setEditTarget(null)
-      setTempPassword(null)
-      notify.success("Member updated")
-    },
-    onError: (error: Error) => {
-      notify.error(error.message || "Failed to update member")
-    },
-  })
-
-  const resetPasswordMutation = useMutation({
-    mutationFn: (memberId: string) => organizationsApi.resetMemberPassword(memberId),
-    onSuccess: (data) => {
-      if (data?.temporaryPassword) {
-        setTempPassword(data.temporaryPassword)
-        setCopied(false)
-      }
-    },
-    onError: (error: Error) => {
-      notify.error(error.message || "Failed to reset password")
-    },
-  })
 
   const removeMutation = useMutation({
     mutationFn: (memberId: string) => organizationsApi.removeMember(memberId),
@@ -805,17 +513,6 @@ export default function MembersPage() {
     },
     onError: (error: Error) => {
       notify.error(error.message || "Failed to revoke invitation")
-    },
-  })
-
-  const saveScheduleMutation = useMutation({
-    mutationFn: ({ memberId, schedule }: { memberId: string; schedule: ScheduleEntryInput[] }) =>
-      employeesApi.setSchedule(memberId, schedule),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["employeeSchedule"] })
-    },
-    onError: (error: Error) => {
-      notify.error(error.message || "Failed to save schedule")
     },
   })
 
@@ -875,79 +572,6 @@ export default function MembersPage() {
       notify.error(error.message || "Failed to remove members")
     }
   }, [queryClient])
-
-  const openEditDialog = useCallback((member: OrgMember) => {
-    setEditTarget(member)
-    setEditFirstName(member.firstName)
-    setEditLastName(member.lastName)
-    setEditPosition(member.position || "")
-    setEditScheduleType(member.scheduleType || "NONE")
-    setEditMonthlyHourBudget(member.monthlyHourBudget ?? "")
-    setEditRole(member.role)
-    setEditPerms({
-      canCreateTasks: member.canCreateTasks,
-      canViewAllTasks: member.canViewAllTasks,
-      canAssignTasks: member.canAssignTasks,
-      canManageUsers: member.canManageUsers,
-    })
-    setEditTaskCreationScope(member.taskCreationScope || "NONE")
-    setEditScheduleRows(createDefaultSchedule())
-    setTempPassword(null)
-    setCopied(false)
-  }, [])
-
-  const handleRoleChange = (role: string) => {
-    setEditRole(role)
-    const defaults = DEFAULT_ROLE_PERMISSIONS[role]
-    if (defaults) {
-      setEditPerms({
-        canCreateTasks: defaults.canCreateTasks,
-        canViewAllTasks: defaults.canViewAllTasks,
-        canAssignTasks: defaults.canAssignTasks,
-        canManageUsers: defaults.canManageUsers,
-      })
-      setEditTaskCreationScope(defaults.taskCreationScope)
-    }
-  }
-
-  const handleSave = () => {
-    if (!editTarget) return
-
-    // Save schedule if FIXED
-    if (editScheduleType === "FIXED") {
-      saveScheduleMutation.mutate({
-        memberId: editTarget.id,
-        schedule: editScheduleRows.map((row) => ({
-          dayOfWeek: row.dayOfWeek,
-          startTime: row.startTime,
-          endTime: row.endTime,
-          isActive: row.isActive,
-        })),
-      })
-    }
-
-    updateMemberMutation.mutate({
-      memberId: editTarget.id,
-      data: {
-        firstName: editFirstName,
-        lastName: editLastName,
-        position: editPosition || undefined,
-        scheduleType: editScheduleType,
-        monthlyHourBudget: editScheduleType === "FLEXIBLE" && editMonthlyHourBudget !== ""
-          ? Number(editMonthlyHourBudget)
-          : undefined,
-        role: editRole,
-      },
-    })
-  }
-
-  const handleCopyPassword = async () => {
-    if (!tempPassword) return
-    await navigator.clipboard.writeText(tempPassword)
-    setCopied(true)
-    notify.copied("password")
-    setTimeout(() => setCopied(false), 3000)
-  }
 
   // ── Render ───────────────────────────────────────────────────────────
 
@@ -1044,7 +668,7 @@ export default function MembersPage() {
           ) : members.length > 0 ? (
             <>
               {/* Table header */}
-              <div className="grid grid-cols-[28px_40px_1fr_120px_90px_100px_180px_40px] items-center gap-4 px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border/60">
+              <div className={cn(TABLE_GRID, "hidden md:grid py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border/60")}>
                 <div>
                   {isAdmin && (
                     <Checkbox
@@ -1056,10 +680,10 @@ export default function MembersPage() {
                 </div>
                 <div /> {/* Avatar spacer */}
                 <div>Member</div>
-                <div className="hidden md:block">Title</div>
+                <div>Title</div>
                 <div>Role</div>
-                <div className="hidden md:block">Schedule</div>
-                <div className="hidden md:block">Spaces</div>
+                <div>Schedule</div>
+                <div>Spaces</div>
                 <div /> {/* Actions spacer */}
               </div>
               <div className="divide-y divide-border/60">
@@ -1074,7 +698,7 @@ export default function MembersPage() {
                     isSelected={selectedIds.has(member.id)}
                     anySelected={selectedIds.size > 0}
                     onSelect={handleSelectMember}
-                    onEdit={openEditDialog}
+                    onEdit={setEditTarget}
                     onRemove={setRemoveTarget}
                     onNavigate={(id) => router.push(`/members/${id}`)}
                   />
@@ -1208,348 +832,12 @@ export default function MembersPage() {
         )}
       </div>
 
-      {/* ── Edit Member Dialog ─────────────────────────────────────────── */}
-      <Dialog
-        open={!!editTarget}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditTarget(null)
-            setTempPassword(null)
-          }
-        }}
-      >
-        <DialogContent className="max-w-lg px-6">
-          <DialogHeader>
-            <DialogTitle>Edit Member</DialogTitle>
-            <DialogDescription>
-              {editTarget && `Update settings for ${editTarget.firstName} ${editTarget.lastName}`}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-5 py-2 max-h-[65vh] overflow-y-auto overflow-x-hidden px-1">
-            {/* Name */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="editFirstName" className="text-xs font-medium text-muted-foreground">First name</Label>
-                <Input
-                  id="editFirstName"
-                  value={editFirstName}
-                  onChange={(e) => setEditFirstName(e.target.value)}
-                  className="h-9 focus-visible:ring-offset-0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="editLastName" className="text-xs font-medium text-muted-foreground">Last name</Label>
-                <Input
-                  id="editLastName"
-                  value={editLastName}
-                  onChange={(e) => setEditLastName(e.target.value)}
-                  className="h-9 focus-visible:ring-offset-0"
-                />
-              </div>
-            </div>
-
-            {/* Title / Position */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Title</Label>
-              <PositionCombobox
-                value={editPosition}
-                onChange={setEditPosition}
-                usedPositions={usedPositions}
-              />
-            </div>
-
-            {/* Email (read-only) */}
-            {editTarget && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Email</Label>
-                <p className="text-sm text-foreground/70 py-1">{editTarget.email}</p>
-              </div>
-            )}
-
-            <Separator />
-
-            {/* Schedule Type */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Schedule</Label>
-              <Select value={editScheduleType} onValueChange={(v) => {
-                setEditScheduleType(v)
-                if (v === "FIXED") {
-                  setEditScheduleRows(createDefaultSchedule())
-                }
-              }}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NONE">No tracking</SelectItem>
-                  <SelectItem value="FIXED">Fixed schedule</SelectItem>
-                  <SelectItem value="FLEXIBLE">Flexible hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Fixed Schedule Editor */}
-            {editScheduleType === "FIXED" && (
-              <CompactScheduleEditor
-                rows={editScheduleRows}
-                onChange={setEditScheduleRows}
-              />
-            )}
-
-            {/* Monthly Hour Budget (FLEXIBLE only) */}
-            {editScheduleType === "FLEXIBLE" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="editBudget" className="text-xs font-medium text-muted-foreground">Monthly hour budget</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="editBudget"
-                    type="number"
-                    min={0}
-                    max={744}
-                    value={editMonthlyHourBudget}
-                    onChange={(e) => setEditMonthlyHourBudget(e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="160"
-                    className="h-9 w-28 focus-visible:ring-offset-0"
-                  />
-                  <span className="text-sm text-muted-foreground">hours/month</span>
-                </div>
-              </div>
-            )}
-
-            {/* Role */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Role</Label>
-              {orgRoles.length > 0 ? (
-                <Select value={editRole} onValueChange={handleRoleChange}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {orgRoles.map((r) => (
-                      <SelectItem key={r.legacyRole || r.slug} value={r.legacyRole || r.slug}>
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="h-2 w-2 rounded-full inline-block"
-                            style={{ backgroundColor: r.color || "#6b7280" }}
-                          />
-                          {r.name}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Select value={editRole} onValueChange={handleRoleChange}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="EMPLOYEE">Employee</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            {/* Role permissions summary */}
-            {editRole && (
-              <div className="rounded-lg bg-muted/50 dark:bg-muted/20 border border-border/50 px-3 py-2.5">
-                <p className="text-[11px] text-muted-foreground mb-1.5">
-                  Permissions are managed by the role. <a href="/settings/roles" className="text-primary hover:underline">Edit roles →</a>
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {(() => {
-                    const role = orgRoles.find((r: any) => (r.legacyRole || r.slug) === editRole)
-                    if (!role) return null
-                    const perms = (role as any).permissions || {}
-                    const activePerms = Object.entries(perms).filter(([k, v]) => v === true && k !== 'taskCreationScope').map(([k]) => k)
-                    const labels: Record<string, string> = {
-                      canCreateTasks: 'Create tasks', canViewAllTasks: 'View all', canAssignTasks: 'Assign',
-                      canDeleteTasks: 'Delete tasks', canEditAnyTask: 'Edit any', canManageUsers: 'Manage team',
-                      canInviteUsers: 'Invite', canManageRoles: 'Manage roles', canViewAttendance: 'Attendance',
-                      canApproveTimeOff: 'Approve time off', canApproveOvertime: 'Approve overtime',
-                      canManageLocations: 'Manage spaces', canManageWorkflows: 'Workflows', canManageOrgSettings: 'Settings',
-                    }
-                    const scope = perms.taskCreationScope
-                    const scopeLabel = scope === 'ORG' ? 'All spaces' : scope === 'SPACE' ? 'Their spaces' : scope === 'SELF' ? 'Self only' : null
-                    return (
-                      <>
-                        {activePerms.map((key) => (
-                          <span key={key} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                            {labels[key] || key}
-                          </span>
-                        ))}
-                        {scopeLabel && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
-                            Create: {scopeLabel}
-                          </span>
-                        )}
-                        {activePerms.length === 0 && !scopeLabel && (
-                          <span className="text-[10px] text-muted-foreground/50 italic">No permissions</span>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* Space assignments - display current ones */}
-            {editTarget && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">Spaces</Label>
-                  <div className="flex flex-wrap gap-1.5 items-center">
-                    {(() => {
-                      const memberAssignments = (allAssignments || []).filter(
-                        (a: any) => a.userId === editTarget.id || a.technicianId === editTarget.id
-                      )
-                      const assignedLocationIds = new Set(memberAssignments.map((a: any) => a.locationId || a.companyLocationId))
-                      const assignedLocations = (locations || []).filter((l: any) => assignedLocationIds.has(l.id))
-                      const unassignedLocations = (locations || []).filter((l: any) => !assignedLocationIds.has(l.id))
-
-                      return (
-                        <>
-                          {assignedLocations.length > 0 ? (
-                            assignedLocations.map((loc: any) => {
-                              const assignment = memberAssignments.find((a: any) => (a.locationId || a.companyLocationId) === loc.id)
-                              return (
-                                <Badge
-                                  key={loc.id}
-                                  variant="secondary"
-                                  className="text-xs font-normal py-0.5 px-2 pr-1 gap-1 group/chip"
-                                >
-                                  <MapPin className="h-3 w-3" />
-                                  {loc.name}
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      if (!assignment?.id) return
-                                      try {
-                                        await locationsApi.removeAssignment(loc.id, assignment.id)
-                                        queryClient.invalidateQueries({ queryKey: ["allAssignments"] })
-                                        notify.success(`Removed from ${loc.name}`)
-                                      } catch { notify.error("Failed to remove") }
-                                    }}
-                                    className="ml-0.5 p-0.5 rounded hover:bg-destructive/20 transition-colors"
-                                  >
-                                    <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                                  </button>
-                                </Badge>
-                              )
-                            })
-                          ) : (
-                            <span className="text-sm text-muted-foreground/50 italic">No spaces</span>
-                          )}
-                          {unassignedLocations.length > 0 && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-6 px-2 text-xs rounded-full gap-1">
-                                  <Plus className="h-3 w-3" />
-                                  Add
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="w-48">
-                                {unassignedLocations.map((loc: any) => (
-                                  <DropdownMenuItem
-                                    key={loc.id}
-                                    onClick={async () => {
-                                      try {
-                                        await locationsApi.assignMember(loc.id, { userId: editTarget.id })
-                                        queryClient.invalidateQueries({ queryKey: ["allAssignments"] })
-                                        notify.success(`Assigned to ${loc.name}`)
-                                      } catch { notify.error("Failed to assign") }
-                                    }}
-                                  >
-                                    <MapPin className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                                    {loc.name}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </>
-                      )
-                    })()}
-                  </div>
-                </div>
-              </>
-            )}
-
-            <Separator />
-
-            {/* Password reset */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium text-muted-foreground">Password</Label>
-                {!tempPassword && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => editTarget && resetPasswordMutation.mutate(editTarget.id)}
-                    disabled={resetPasswordMutation.isPending}
-                    className="h-7 text-xs"
-                  >
-                    <KeyRound className="h-3 w-3 mr-1.5" />
-                    {resetPasswordMutation.isPending ? "Generating..." : "Reset password"}
-                  </Button>
-                )}
-              </div>
-              {tempPassword ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                    <p className="text-xs text-amber-700 dark:text-amber-300">
-                      Copy this password now. It will not be shown again.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      readOnly
-                      value={tempPassword}
-                      className="font-mono text-sm h-9"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleCopyPassword}
-                      className="h-9 w-9 flex-shrink-0"
-                    >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditTarget(null)
-                setTempPassword(null)
-              }}
-              className="rounded-lg"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={updateMemberMutation.isPending || !editFirstName.trim() || !editLastName.trim()}
-              className="rounded-lg"
-            >
-              {updateMemberMutation.isPending ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* ── Edit Member Dialog (shared component) ───────────────────────── */}
+      <EditMemberDialog
+        member={editTarget}
+        onClose={() => setEditTarget(null)}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ["orgMembers"] })}
+      />
 
       {/* ── Invite Dialog (shared component) ─────────────────────────── */}
       <CreateInvitationDialog open={inviteOpen} onOpenChange={setInviteOpen} />

@@ -75,3 +75,5 @@ export { overtimeApi } from './overtime';
 export type { OvertimeRequest } from './overtime';
 export { locationsApi } from './locations';
 export type { LocationAssignment, AssignMemberInput, LocationWithMembers } from './locations';
+export { customFieldsApi } from './custom-fields';
+export type { MobileCustomFieldDefinition, MobileCustomFieldValue, MobileCustomFieldType } from './custom-fields';

@@ -68,7 +68,9 @@ export function AnimatedLogo({
 
   return (
     <div className={`flex items-center ${className}`} style={{ gap: s.gap }}>
-      <FieldArrowIcon size={s.icon} variant="color" />
+      {/* On dark backgrounds (variant="light") render the icon in white so the
+          blue half of the arrow doesn't disappear into the background. */}
+      <FieldArrowIcon size={s.icon} variant={isLight ? 'white' : 'color'} />
       <div className="flex flex-col">
         <span
           style={{

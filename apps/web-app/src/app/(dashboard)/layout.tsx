@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { DashboardSkeleton, PageContentSkeleton } from '@/components/skeletons';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { TopNavbar } from '@/components/top-navbar';
+import { FirstSpaceGate } from '@/components/first-space-gate';
 import { CommandPalette } from '@/components/command-palette';
 import { ActivityPanelProvider } from '@/contexts/activity-panel-context';
 import { CommandPaletteProvider } from '@/contexts/command-palette-context';
@@ -106,6 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <CommandPaletteProvider>
     <BreadcrumbProvider>
       <div className="h-screen flex flex-col">
+        <FirstSpaceGate />
         <RouteChangeIndicator />
         <TopNavbar />
         <div className="flex-1 overflow-auto bg-background">

@@ -14,6 +14,9 @@ import {
   Calendar,
   Clock,
   Repeat,
+  ChevronLeft,
+  MapPin,
+  GitBranch,
   X,
   AlertCircle,
 } from "lucide-react"
@@ -22,6 +25,8 @@ import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import {
   recurringTasksApi,
+  workflowsApi,
+  locationsApi,
   type RecurringTaskTemplate,
   type RecurringFrequency,
 } from "@/lib/api"
@@ -136,10 +141,18 @@ const TemplateCard = memo(function TemplateCard({
                 {template.description}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <Repeat className="h-3 w-3" />
                 {getFrequencyLabel(template.frequency, template.customDays)}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {template.space?.name ?? "No space"}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <GitBranch className="h-3 w-3" />
+                {template.workflow?.name ?? "Default type"}
               </span>
               {template.nextRunAt && (
                 <span className="inline-flex items-center gap-1">
@@ -202,10 +215,13 @@ function TemplateDialog({
   open,
   onOpenChange,
   existingTemplate,
+  defaultSpaceId = null,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   existingTemplate: RecurringTaskTemplate | null
+  /** Pre-selected space when creating new (e.g. the active space filter). */
+  defaultSpaceId?: string | null
 }) {
   const queryClient = useQueryClient()
   const isEditing = !!existingTemplate
@@ -213,6 +229,18 @@ function TemplateDialog({
   const [title, setTitle] = useState(existingTemplate?.title || "")
   const [description, setDescription] = useState(existingTemplate?.description || "")
   const [priority, setPriority] = useState(existingTemplate?.priority || "MEDIUM")
+  const [spaceId, setSpaceId] = useState(existingTemplate?.spaceId || defaultSpaceId || "none")
+  const [workflowId, setWorkflowId] = useState(existingTemplate?.workflowId || "none")
+
+  const { data: spacesResp } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => locationsApi.list({ limit: 100 }),
+  })
+  const spaces = spacesResp?.data ?? []
+  const { data: taskTypes = [] } = useQuery({
+    queryKey: ["workflows"],
+    queryFn: () => workflowsApi.list(),
+  })
   const [frequency, setFrequency] = useState<RecurringFrequency>(
     existingTemplate?.frequency || "WEEKLY",
   )
@@ -240,6 +268,8 @@ function TemplateDialog({
     title,
     description: description || null,
     priority,
+    spaceId: spaceId === "none" ? null : spaceId,
+    workflowId: workflowId === "none" ? null : workflowId,
     frequency,
     customDays: frequency === "CUSTOM" ? customDays : null,
     dayOfWeek: ["WEEKLY", "BIWEEKLY"].includes(frequency) ? dayOfWeek : null,
@@ -314,6 +344,42 @@ function TemplateDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
             />
+          </div>
+
+          {/* Space & Task Type — where generated tasks land + their type */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Space</Label>
+              <Select value={spaceId} onValueChange={setSpaceId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a space" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No space</SelectItem>
+                  {spaces.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Task Type</Label>
+              <Select value={workflowId} onValueChange={setWorkflowId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Default</SelectItem>
+                  {taskTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Priority & Frequency */}
@@ -505,7 +571,14 @@ function TemplateDialog({
 // Main Page
 // ============================================================================
 
-export default function RecurringTasksPage() {
+export function RecurringPanel({
+  embedded = false,
+  spaceId = null,
+}: {
+  embedded?: boolean
+  /** When set, only show templates that generate into this space. */
+  spaceId?: string | null
+}) {
   const { user } = useAuth()
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -515,7 +588,7 @@ export default function RecurringTasksPage() {
   const [deleteTarget, setDeleteTarget] = useState<RecurringTaskTemplate | null>(null)
 
   if (user?.role !== "ADMIN") {
-    router.push("/dashboard")
+    if (!embedded) router.push("/dashboard")
     return null
   }
 
@@ -523,6 +596,11 @@ export default function RecurringTasksPage() {
     queryKey: ["recurringTasks"],
     queryFn: () => recurringTasksApi.list(),
   })
+
+  // Narrow to the selected space tab (null = all spaces).
+  const visibleTemplates = (templates ?? []).filter(
+    (t) => !spaceId || t.spaceId === spaceId,
+  )
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
@@ -554,11 +632,20 @@ export default function RecurringTasksPage() {
   })
 
   return (
-    <div className="min-h-full bg-muted/30">
-      <div className="max-w-[1440px] mx-auto px-6 py-6">
+    <div className={embedded ? "" : "min-h-full bg-muted/30"}>
+      <div className={embedded ? "" : "max-w-[1440px] mx-auto px-6 py-6"}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
+            {!embedded && (
+              <button
+                onClick={() => router.push("/tasks")}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1.5 transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Tasks
+              </button>
+            )}
             <h1 className="text-2xl font-semibold text-foreground">
               Recurring Tasks
             </h1>
@@ -585,13 +672,13 @@ export default function RecurringTasksPage() {
               <Skeleton key={i} className="h-24 rounded-2xl" />
             ))}
           </div>
-        ) : !templates || templates.length === 0 ? (
+        ) : visibleTemplates.length === 0 ? (
           <div className="bg-card rounded-2xl border border-border shadow-sm p-12 text-center">
             <div className="flex items-center justify-center h-14 w-14 mx-auto rounded-2xl bg-violet-50 dark:bg-violet-900/20 mb-4">
               <Repeat className="h-7 w-7 text-violet-500" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
-              No recurring templates yet
+              {spaceId ? "No recurring templates in this space" : "No recurring templates yet"}
             </h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
               Create templates to automatically generate tasks on a daily,
@@ -610,7 +697,7 @@ export default function RecurringTasksPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {templates.map((template) => (
+            {visibleTemplates.map((template) => (
               <TemplateCard
                 key={template.id}
                 template={template}
@@ -638,6 +725,7 @@ export default function RecurringTasksPage() {
             if (!open) setEditingTemplate(null)
           }}
           existingTemplate={editingTemplate}
+          defaultSpaceId={spaceId}
         />
       )}
 
@@ -666,4 +754,9 @@ export default function RecurringTasksPage() {
       </AlertDialog>
     </div>
   )
+}
+
+// Standalone route — the same panel, full-page.
+export default function RecurringRoutePage() {
+  return <RecurringPanel />
 }

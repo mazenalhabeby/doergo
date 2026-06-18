@@ -18,6 +18,13 @@ export class LocationController {
     return this.locationService.updateLocation(data.userId, data.lat, data.lng, data.accuracy, data.taskId);
   }
 
+  @MessagePattern({ cmd: 'update_location_batch' })
+  async updateLocationBatch(
+    @Payload() data: { userId: string; taskId?: string; points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[] },
+  ) {
+    return this.locationService.updateLocationBatch(data.userId, data.taskId, data.points);
+  }
+
   @MessagePattern({ cmd: 'get_active_workers' })
   async getActiveWorkers(@Payload() data: { organizationId?: string }) {
     return this.locationService.getActiveWorkers(data.organizationId);

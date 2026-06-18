@@ -12,7 +12,7 @@ export class CustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}
 
   @MessagePattern({ cmd: 'find_all_custom_fields' })
-  async findAll(@Payload() data: { organizationId: string }) {
+  async findAll(@Payload() data: { organizationId: string; forWorkflow?: string }) {
     return this.customFieldsService.findAll(data);
   }
 

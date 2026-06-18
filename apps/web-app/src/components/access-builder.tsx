@@ -8,15 +8,22 @@ import { getModules, getSpaceScope, getAccessPlatforms, canContactColleagues } f
 import type { MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 
-const MODULES: { key: MobileModule; label: string }[] = [
+// Feature tabs only — `create_task` and `manage` are NOT stored here; they
+// derive from the Create / Manage permissions below (single source of truth).
+const FEATURE_TABS: { key: MobileModule; label: string }[] = [
   { key: "tasks", label: "Tasks" },
   { key: "clock", label: "Clock" },
   { key: "time_off", label: "Time Off" },
-  { key: "create_task", label: "Create Task" },
-  { key: "manage", label: "Manage" },
 ]
 
 const PLATFORMS: { key: AccessPlatform; label: string; icon: typeof Monitor }[] = [
@@ -31,22 +38,45 @@ const SCOPES: { key: SpaceScope; label: string; desc: string }[] = [
   { key: "all", label: "All spaces", desc: "Read-only overview of every space." },
 ]
 
+const TASK_SCOPES = [
+  { key: "SELF", label: "Their own tasks" },
+  { key: "SPACE", label: "Tasks in their spaces" },
+  { key: "ORG", label: "Any task in the org" },
+]
+
 /**
- * Access Builder — composes a member's per-user Access Profile (platform →
- * modules → space scope → collaboration) and saves it to `enabledModules`.
+ * Access Builder — the single place to configure a member: reach (platform,
+ * space visibility, collaboration), feature tabs, AND the enforced permissions
+ * (create / assign / view-all / manage). Saving writes the Access Profile and
+ * the permission fields together, so the navigation UI and the server-side
+ * permission guard can never disagree.
  */
 export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?: () => void }) {
   const initial = useMemo(() => ({
-    modules: getModules(member as any),
+    modules: getModules(member as any).filter((m) =>
+      FEATURE_TABS.some((t) => t.key === m),
+    ),
     platforms: getAccessPlatforms(member as any),
     spaceScope: getSpaceScope(member as any),
     canContact: canContactColleagues(member as any),
+    canCreateTasks: !!member.canCreateTasks,
+    taskScope: (member.taskCreationScope as string) || "SELF",
+    canAssignTasks: !!member.canAssignTasks,
+    canViewAllTasks: !!member.canViewAllTasks,
+    canManageUsers: !!member.canManageUsers,
   }), [member])
 
   const [modules, setModules] = useState<MobileModule[]>(initial.modules)
   const [platforms, setPlatforms] = useState<AccessPlatform>(initial.platforms)
   const [spaceScope, setSpaceScope] = useState<SpaceScope>(initial.spaceScope)
   const [canContact, setCanContact] = useState<boolean>(initial.canContact)
+  const [canCreateTasks, setCanCreateTasks] = useState<boolean>(initial.canCreateTasks)
+  const [taskScope, setTaskScope] = useState<string>(
+    initial.taskScope === "NONE" ? "SELF" : initial.taskScope,
+  )
+  const [canAssignTasks, setCanAssignTasks] = useState<boolean>(initial.canAssignTasks)
+  const [canViewAllTasks, setCanViewAllTasks] = useState<boolean>(initial.canViewAllTasks)
+  const [canManageUsers, setCanManageUsers] = useState<boolean>(initial.canManageUsers)
   const [saving, setSaving] = useState(false)
 
   const toggleModule = (m: MobileModule) =>
@@ -56,13 +86,23 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     JSON.stringify(modules.slice().sort()) !== JSON.stringify(initial.modules.slice().sort()) ||
     platforms !== initial.platforms ||
     spaceScope !== initial.spaceScope ||
-    canContact !== initial.canContact
+    canContact !== initial.canContact ||
+    canCreateTasks !== initial.canCreateTasks ||
+    (canCreateTasks && taskScope !== initial.taskScope) ||
+    canAssignTasks !== initial.canAssignTasks ||
+    canViewAllTasks !== initial.canViewAllTasks ||
+    canManageUsers !== initial.canManageUsers
 
   const save = async () => {
     try {
       setSaving(true)
       await organizationsApi.updateMember(member.id, {
         enabledModules: { modules, platforms, spaceScope, canContact },
+        canCreateTasks,
+        taskCreationScope: canCreateTasks ? taskScope : "NONE",
+        canAssignTasks,
+        canViewAllTasks,
+        canManageUsers,
       })
       notify.success("Access updated", `${member.firstName}'s apps will update on next sign-in.`)
       onSaved?.()
@@ -78,7 +118,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Access</h3>
-          <p className="text-xs text-muted-foreground">What {member.firstName} can see on web &amp; mobile.</p>
+          <p className="text-xs text-muted-foreground">What {member.firstName} can do &amp; see on web &amp; mobile.</p>
         </div>
         <Button size="sm" className="gap-1.5" disabled={!dirty || saving} onClick={save}>
           <Save className="h-3.5 w-3.5" />
@@ -106,10 +146,55 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
           </div>
         </Field>
 
-        {/* Modules / screens */}
-        <Field label="Screens & modules">
+        {/* Permissions — the enforced authorization toggles */}
+        <Field label="Permissions">
+          <div className="space-y-2">
+            <PermissionRow
+              title="Create tasks"
+              desc="Open new tasks."
+              checked={canCreateTasks}
+              onChange={setCanCreateTasks}
+            >
+              {canCreateTasks && (
+                <Select value={taskScope} onValueChange={setTaskScope}>
+                  <SelectTrigger className="h-8 w-[190px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_SCOPES.map((s) => (
+                      <SelectItem key={s.key} value={s.key} className="text-xs">
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </PermissionRow>
+            <PermissionRow
+              title="Assign tasks"
+              desc="Assign tasks to other people."
+              checked={canAssignTasks}
+              onChange={setCanAssignTasks}
+            />
+            <PermissionRow
+              title="View all tasks"
+              desc="See every task in the organization, not just their own."
+              checked={canViewAllTasks}
+              onChange={setCanViewAllTasks}
+            />
+            <PermissionRow
+              title="Manage members"
+              desc="Invite, edit and remove people. Opens the Manage hub."
+              checked={canManageUsers}
+              onChange={setCanManageUsers}
+            />
+          </div>
+        </Field>
+
+        {/* Feature tabs */}
+        <Field label="Feature tabs">
           <div className="flex flex-wrap gap-2">
-            {MODULES.map((m) => {
+            {FEATURE_TABS.map((m) => {
               const on = modules.includes(m.key)
               return (
                 <button
@@ -165,6 +250,33 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
             <Switch checked={canContact} onCheckedChange={setCanContact} />
           </div>
         </Field>
+      </div>
+    </div>
+  )
+}
+
+function PermissionRow({
+  title,
+  desc,
+  checked,
+  onChange,
+  children,
+}: {
+  title: string
+  desc: string
+  checked: boolean
+  onChange: (v: boolean) => void
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        {children}
+        <Switch checked={checked} onCheckedChange={onChange} />
       </div>
     </div>
   )

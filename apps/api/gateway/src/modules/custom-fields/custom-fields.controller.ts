@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -26,10 +27,11 @@ export class CustomFieldsController {
 
   @Get()
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'List organization custom field definitions' })
-  async findAll(@Request() req: any) {
+  @ApiOperation({ summary: 'List custom field definitions (optionally scoped to a Task Type)' })
+  async findAll(@Request() req: any, @Query('forWorkflow') forWorkflow?: string) {
     return this.customFieldsService.findAll({
       organizationId: req.user.organizationId,
+      forWorkflow,
     });
   }
 
@@ -86,7 +88,7 @@ export class TaskCustomFieldsController {
   }
 
   @Patch(':id/custom-fields')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   @ApiOperation({ summary: "Set/update a task's custom field values (batch)" })
   async setTaskValues(
     @Param('id') taskId: string,

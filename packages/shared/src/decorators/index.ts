@@ -75,6 +75,10 @@ export interface CurrentUserData {
   orgRoleId?: string | null;
   orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
   rolePermissions?: Record<string, boolean>;
+  // Access Profile (mobile tabs / web screens) — legacy string[] or object form.
+  enabledModules?: unknown;
+  // Org FEATURE modules (sprints, checklists, tracking…) — drives hasFeature().
+  orgModules?: string[];
   // Technician-specific fields
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {

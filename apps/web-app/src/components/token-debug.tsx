@@ -4,6 +4,19 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 
+// Decode a JWT's iat/exp (no verification — display only).
+function decodeIatExp(token?: string | null): { iat?: number; exp?: number } {
+  if (!token) return {}
+  try {
+    const part = token.split(".")[1]
+    if (!part) return {}
+    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")))
+    return { iat: json.iat, exp: json.exp }
+  } catch {
+    return {}
+  }
+}
+
 export function TokenDebugPanel() {
   const { tokenInfo, manualRefresh, isAuthenticated } = useAuth()
   const [now, setNow] = useState(Date.now())
@@ -24,7 +37,14 @@ export function TokenDebugPanel() {
   const accessMinutes = Math.floor(accessRemaining / 60)
   const accessSeconds = accessRemaining % 60
   const accessExpired = accessRemaining <= 0
-  const accessWarning = accessRemaining > 0 && accessRemaining < 120 // < 2 min
+
+  // Total token lifetime (exp − iat) drives the progress bar so it's accurate
+  // for ANY JWT_ACCESS_EXPIRATION (1m, 15m, …), not a hardcoded 15m.
+  const { iat, exp } = decodeIatExp(tokenInfo.accessToken)
+  const totalLifetime = iat && exp && exp > iat ? exp - iat : 900
+  // Warn in the last 20% of the token's life (capped at 2 min for long tokens).
+  const warnThreshold = Math.min(120, Math.ceil(totalLifetime * 0.2))
+  const accessWarning = accessRemaining > 0 && accessRemaining < warnThreshold
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -82,7 +102,7 @@ export function TokenDebugPanel() {
                 "h-full rounded-full transition-all duration-1000",
                 accessExpired ? "bg-red-500" : accessWarning ? "bg-amber-500" : "bg-green-500",
               )}
-              style={{ width: `${Math.min(100, (accessRemaining / 900) * 100)}%` }}
+              style={{ width: `${Math.min(100, (accessRemaining / totalLifetime) * 100)}%` }}
             />
           </div>
         </div>

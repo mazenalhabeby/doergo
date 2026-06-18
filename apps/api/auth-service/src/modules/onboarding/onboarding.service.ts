@@ -1,5 +1,6 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import {
   Role,
   DEFAULT_PERMISSIONS,
@@ -9,6 +10,7 @@ import {
   JOIN_REQUEST_MAX_PENDING_PER_ORG,
   JOIN_REQUEST_MESSAGE_MAX_LENGTH,
   INVITATION_CODE_CHARSET,
+  DEFAULT_ORG_MODULES,
   hashCode,
   generateSecureCode,
 } from '@hbcfield/shared';
@@ -23,7 +25,7 @@ export class OnboardingService {
    * Path A: Create organization for an orphan user.
    * Creates org with join code, updates user to ADMIN with onboardingCompleted=true.
    */
-  async createOrganization(userId: string, data: { name: string; address?: string; industry?: string }) {
+  async createOrganization(userId: string, data: { name: string; address?: string; industry?: string; firstSpaceName?: string }) {
     // Verify user exists and needs onboarding
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
@@ -52,9 +54,17 @@ export class OnboardingService {
           isActive: true,
           joinCodeHash,
           joinPolicy: 'INVITE_ONLY',
+          enabledModules: DEFAULT_ORG_MODULES,
         },
         select: { id: true, name: true },
       });
+
+      // The org's first space is created in the dedicated "Set up your first
+      // space" onboarding step — not here. The org starts with no space.
+
+      // Seed the org's default task type (Field Service) so Task Types isn't
+      // empty and new tasks have a capability-rich flow out of the box.
+      await seedDefaultWorkflow(tx, organization.id);
 
       const updatedUser = await tx.user.update({
         where: { id: userId },
@@ -760,6 +770,12 @@ export class OnboardingService {
         name: true,
         industry: true,
         address: true,
+        addressLine1: true,
+        addressLine2: true,
+        city: true,
+        state: true,
+        postalCode: true,
+        country: true,
         phone: true,
         email: true,
         website: true,
@@ -783,7 +799,7 @@ export class OnboardingService {
   }
 
   async updateOrgProfile(organizationId: string, updates: any) {
-    const allowedFields = ['name', 'industry', 'address', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'enabledModules'];
+    const allowedFields = ['name', 'industry', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'enabledModules'];
     const data: any = {};
 
     for (const key of allowedFields) {
@@ -799,7 +815,7 @@ export class OnboardingService {
     const org = await this.prisma.organization.update({
       where: { id: organizationId },
       data,
-      select: { id: true, name: true, industry: true, address: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, enabledModules: true },
+      select: { id: true, name: true, industry: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, enabledModules: true },
     });
 
     return { success: true, data: org };

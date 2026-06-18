@@ -7,10 +7,13 @@ import {
   Body,
   Param,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
+import { ModuleGuard } from '../../common/guards/module.guard';
 import { CreateEpicDto, UpdateEpicDto } from './dto';
 import { EpicsService } from './epics.service';
 
@@ -31,6 +34,8 @@ export class EpicsController {
 
   @Post()
   @Roles(Role.ADMIN, Role.MANAGER)
+  @UseGuards(ModuleGuard)
+  @RequireModule('epics')
   @ApiOperation({ summary: 'Create a new epic' })
   async create(@Body() createEpicDto: CreateEpicDto, @Request() req: any) {
     return this.epicsService.create({

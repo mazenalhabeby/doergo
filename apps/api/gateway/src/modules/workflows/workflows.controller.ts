@@ -18,6 +18,7 @@ import {
   UpdateWorkflowDto,
   CreateWorkflowStatusDto,
   UpdateWorkflowStatusDto,
+  ReorderStatusesDto,
   UpsertDefinitionOfDoneDto,
 } from './dto';
 import { WorkflowsService } from './workflows.service';
@@ -147,6 +148,21 @@ export class WorkflowsController {
     return this.workflowsService.addStatus({
       workflowId,
       ...dto,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post(':id/statuses/reorder')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Reorder all statuses in a workflow' })
+  async reorderStatuses(
+    @Param('id') workflowId: string,
+    @Body() dto: ReorderStatusesDto,
+    @Request() req: any,
+  ) {
+    return this.workflowsService.reorderStatuses({
+      workflowId,
+      statusIds: dto.statusIds,
       organizationId: req.user.organizationId,
     });
   }

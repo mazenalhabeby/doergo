@@ -35,6 +35,7 @@ import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePic
 import { PhotoGrid } from '../../../src/components/photo-grid';
 import { SignatureCapture } from '../../../src/components/signature-capture';
 import { TechnicianPicker, LoadingState, ErrorState, ConfirmSheet } from '../../../src/components';
+import { CustomFieldsCard } from '../../../src/components/custom-fields-card';
 import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
 import { getJobId, formatRelativeDate, formatTimeAgo } from '../../../src/lib/utils';
 import {
@@ -1395,6 +1396,9 @@ export default function TaskDetailScreen() {
             <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{task.description}</Text>
           </View>
         ) : null}
+
+        {/* Custom Fields — type-scoped; self-hides when the task type has none */}
+        <CustomFieldsCard taskId={task.id} />
 
         {/* Section 5: Location Card */}
         {task.locationLat && task.locationLng ? (

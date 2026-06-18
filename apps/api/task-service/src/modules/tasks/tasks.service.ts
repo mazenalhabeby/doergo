@@ -58,6 +58,16 @@ export class TasksService {
       throw new ForbiddenException('Task creation scope is SPACE — you must select a space');
     }
 
+    // Space-centric: every task belongs to a space. If none was chosen, fall
+    // back to the org's default ("General") space so no task is ever space-less.
+    if (!data.spaceId) {
+      const defaultSpace = await this.prisma.companyLocation.findFirst({
+        where: { organizationId: data.organizationId, isDefault: true },
+        select: { id: true },
+      });
+      if (defaultSpace) data.spaceId = defaultSpace.id;
+    }
+
     // If spaceId provided, validate it belongs to the org and auto-populate location
     let locationLat = data.locationLat;
     let locationLng = data.locationLng;
@@ -754,11 +764,10 @@ export class TasksService {
     }
     let allowedTransitions: string[] | null = null;
     if (effWorkflowId) {
-      const cur = await this.prisma.workflowStatus.findFirst({
-        where: { workflowId: effWorkflowId, key: task.status },
-        select: { transitions: true },
-      });
-      if (cur) allowedTransitions = cur.transitions;
+      // Read from the per-org workflow cache (Redis) instead of the DB.
+      const wf = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
+      const cur = wf?.statuses?.find((s: { key: string }) => s.key === task.status);
+      if (cur) allowedTransitions = cur.transitions ?? [];
     }
     // Fallback to the canonical machine when there's no workflow, or the current
     // status isn't part of it (mixed/legacy data).

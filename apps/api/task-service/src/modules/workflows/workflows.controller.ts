@@ -56,6 +56,11 @@ export class WorkflowsController {
     return this.workflowsService.removeStatus(data);
   }
 
+  @MessagePattern({ cmd: 'reorder_workflow_statuses' })
+  async reorderStatuses(@Payload() data: { workflowId: string; organizationId: string; statusIds: string[] }) {
+    return this.workflowsService.reorderStatuses(data);
+  }
+
   // ==================== Definition of Done ====================
 
   @MessagePattern({ cmd: 'get_definition_of_done' })

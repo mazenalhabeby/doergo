@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 import {
   EmailField,
   PasswordField,
@@ -50,6 +50,12 @@ export class RegisterDto {
   @ApiPropertyOptional({ example: 'Acme Inc.', description: 'Company name (omit to register without organization)' })
   @CompanyNameField({ optional: true })
   companyName?: string;
+
+  @ApiPropertyOptional({ example: 'Main Office', description: "Name of the org's first space" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  firstSpaceName?: string;
 
   // NOTE: Role is NOT accepted from user input - always set to ADMIN on backend
 }

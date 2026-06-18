@@ -18,13 +18,7 @@ import { cn, formatTimeAgo } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 
 const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   USER_LOGIN: { label: "Login", color: "text-green-600" },
@@ -38,6 +32,26 @@ const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   TASK_STATUS_CHANGED: { label: "Status Changed", color: "text-amber-600" },
   TASK_COMPLETED: { label: "Task Completed", color: "text-green-600" },
   TASK_DELETED: { label: "Task Deleted", color: "text-red-600" },
+  TASK_TYPE_CREATED: { label: "Task Type Created", color: "text-blue-600" },
+  TASK_TYPE_DELETED: { label: "Task Type Deleted", color: "text-red-600" },
+  CUSTOM_FIELD_CREATED: { label: "Custom Field Created", color: "text-blue-600" },
+  CUSTOM_FIELD_DELETED: { label: "Custom Field Deleted", color: "text-red-600" },
+  MEMBER_ROLE_CHANGED: { label: "Member Role Changed", color: "text-amber-600" },
+  MEMBER_REMOVED: { label: "Member Removed", color: "text-red-600" },
+  ORG_SETTINGS_UPDATED: { label: "Org Settings Updated", color: "text-amber-600" },
+  ORG_JOIN_CODE_REGENERATED: { label: "Join Code Regenerated", color: "text-amber-600" },
+  INVITATION_CREATED: { label: "Invitation Created", color: "text-blue-600" },
+  INVITATION_REVOKED: { label: "Invitation Revoked", color: "text-red-600" },
+  INVITATION_ACCEPTED: { label: "Invitation Accepted", color: "text-green-600" },
+  JOIN_REQUEST_APPROVED: { label: "Join Approved", color: "text-green-600" },
+  JOIN_REQUEST_REJECTED: { label: "Join Rejected", color: "text-red-600" },
+  SPACE_CREATED: { label: "Space Created", color: "text-blue-600" },
+  SPACE_DELETED: { label: "Space Deleted", color: "text-red-600" },
+  RECURRING_CREATED: { label: "Recurring Created", color: "text-blue-600" },
+  RECURRING_DELETED: { label: "Recurring Deleted", color: "text-red-600" },
+  RECURRING_GENERATED: { label: "Recurring Generated", color: "text-purple-600" },
+  TECHNICIAN_CREATED: { label: "Technician Created", color: "text-blue-600" },
+  TECHNICIAN_DEACTIVATED: { label: "Technician Deactivated", color: "text-red-600" },
   CLOCK_IN: { label: "Clock In", color: "text-green-600" },
   CLOCK_OUT: { label: "Clock Out", color: "text-slate-600" },
   GEOFENCE_VIOLATION: { label: "Geofence Violation", color: "text-red-600" },
@@ -51,13 +65,39 @@ export default function AuditLogPage() {
 
   const [page, setPage] = useState(1)
   const [eventFilter, setEventFilter] = useState<string>("__all__")
+  const [userFilter, setUserFilter] = useState<string>("__all__")
+  const [startDate, setStartDate] = useState<string>("")
+  const [endDate, setEndDate] = useState<string>("")
+
+  const { data: membersResp } = useQuery({
+    queryKey: ["members-for-audit"],
+    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    enabled: isAdmin,
+  })
+  const members = membersResp?.data ?? []
+
+  const eventOptions = [
+    { value: "__all__", label: "All events" },
+    ...EVENT_TYPES.map((t) => ({ value: t, label: EVENT_LABELS[t]?.label || t, keywords: t })),
+  ]
+  const userOptions = [
+    { value: "__all__", label: "All users" },
+    ...members.map((m) => ({
+      value: m.id,
+      label: `${m.firstName} ${m.lastName}`,
+      keywords: m.email,
+    })),
+  ]
 
   const { data, isLoading } = useQuery({
-    queryKey: ["audit-logs", page, eventFilter],
+    queryKey: ["audit-logs", page, eventFilter, userFilter, startDate, endDate],
     queryFn: () => organizationsApi.getAuditLogs({
       page,
       limit: 50,
       eventType: eventFilter !== "__all__" ? eventFilter : undefined,
+      userId: userFilter !== "__all__" ? userFilter : undefined,
+      startDate: startDate ? new Date(startDate).toISOString() : undefined,
+      endDate: endDate ? new Date(endDate + "T23:59:59").toISOString() : undefined,
     }),
     enabled: isAdmin,
   })
@@ -91,19 +131,49 @@ export default function AuditLogPage() {
         {/* Filters */}
         <div className="flex items-center gap-3 mb-4">
           <Filter className="size-4 text-muted-foreground" />
-          <Select value={eventFilter} onValueChange={(v) => { setEventFilter(v); setPage(1) }}>
-            <SelectTrigger className="h-8 text-sm w-[200px]">
-              <SelectValue placeholder="All events" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All events</SelectItem>
-              {EVENT_TYPES.map(type => (
-                <SelectItem key={type} value={type}>
-                  {EVENT_LABELS[type]?.label || type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            value={eventFilter}
+            onChange={(v) => { setEventFilter(v); setPage(1) }}
+            options={eventOptions}
+            placeholder="All events"
+            searchPlaceholder="Search events…"
+            className="h-8 rounded-lg text-sm w-[200px]"
+            contentClassName="w-[240px]"
+          />
+          <Combobox
+            value={userFilter}
+            onChange={(v) => { setUserFilter(v); setPage(1) }}
+            options={userOptions}
+            placeholder="All users"
+            searchPlaceholder="Search users…"
+            className="h-8 rounded-lg text-sm w-[180px]"
+            contentClassName="w-[240px]"
+          />
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
+            className="h-8 text-sm w-[150px]"
+            title="From date"
+          />
+          <span className="text-xs text-muted-foreground">to</span>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
+            className="h-8 text-sm w-[150px]"
+            title="To date"
+          />
+          {(startDate || endDate || eventFilter !== "__all__" || userFilter !== "__all__") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => { setStartDate(""); setEndDate(""); setEventFilter("__all__"); setUserFilter("__all__"); setPage(1) }}
+            >
+              Clear
+            </Button>
+          )}
           {meta && (
             <span className="text-xs text-muted-foreground ml-auto">{meta.total} total events</span>
           )}
@@ -139,7 +209,10 @@ export default function AuditLogPage() {
                     <span className={cn("text-xs font-semibold", evt.color)}>{evt.label}</span>
                     {log.metadata && (
                       <span className="text-[11px] text-muted-foreground truncate">
-                        {log.metadata.email || log.metadata.reason || ""}
+                        {log.metadata.email || log.metadata.reason ||
+                          (log.metadata.method && log.metadata.path
+                            ? `${log.metadata.method} ${log.metadata.path}`
+                            : "")}
                       </span>
                     )}
                   </div>

@@ -36,7 +36,7 @@ export class RecurringTasksController {
     return this.recurringTasksService.create({
       ...dto,
       organizationId: req.user.organizationId,
-      createdById: req.user.userId,
+      createdById: req.user.id,
     });
   }
 
@@ -72,7 +72,7 @@ export class RecurringTasksController {
     return this.recurringTasksService.generate({
       id,
       organizationId: req.user.organizationId,
-      userId: req.user.userId,
+      userId: req.user.id,
     });
   }
 }

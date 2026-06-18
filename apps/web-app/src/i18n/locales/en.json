@@ -955,6 +955,8 @@
   "settings": {
     "title": "Organization Settings",
     "subtitle": "Manage your organization settings, membership, and preferences",
+    "personalTitle": "Account Settings",
+    "personalSubtitle": "Manage your profile, password, and notifications",
     "tabs": {
       "general": "General",
       "members": "Members & Access",
@@ -1015,8 +1017,8 @@
       "description": "Control how people can join your organization",
       "open": "Open",
       "openDescription": "Anyone with your organization code can join immediately without approval.",
-      "inviteOnly": "Invite Only",
-      "inviteOnlyDescription": "People can request to join using your org code, but an admin must approve each request.",
+      "inviteOnly": "Approval Required",
+      "inviteOnlyDescription": "People can request to join with your org code, but an admin must approve each request.",
       "closed": "Closed",
       "closedDescription": "No one can join via org code. Members can only be added through invitations.",
       "updatedSuccessfully": "Join policy updated successfully"
