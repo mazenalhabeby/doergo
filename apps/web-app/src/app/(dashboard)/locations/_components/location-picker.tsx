@@ -3,10 +3,11 @@
 import { useState, useCallback, useRef, useEffect } from "react"
 import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
-import { Search, Loader2, MapPin, Keyboard } from "lucide-react"
+import { Search, Loader2, MapPin, Keyboard, LocateFixed } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { notify } from "@/lib/toast"
 
 import "leaflet/dist/leaflet.css"
 
@@ -67,6 +68,7 @@ export default function LocationPicker({
   const [showResults, setShowResults] = useState(false)
   const [manualLat, setManualLat] = useState(lat?.toString() || "")
   const [manualLng, setManualLng] = useState(lng?.toString() || "")
+  const [locating, setLocating] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -186,6 +188,31 @@ export default function LocationPicker({
     [onLocationChange, onAddressChange]
   )
 
+  // Use the browser's geolocation, then drop the pin + reverse-geocode (reusing
+  // the same flow as a map click). Requires HTTPS + user permission.
+  const useMyLocation = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      notify.error("Location isn't supported on this device")
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false)
+        handleMapClick(pos.coords.latitude, pos.coords.longitude)
+      },
+      (err) => {
+        setLocating(false)
+        notify.error(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied — allow it in your browser to use this."
+            : "Couldn't get your location. Try again or pick on the map.",
+        )
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    )
+  }, [handleMapClick])
+
   const applyManualCoords = (newLat: string, newLng: string) => {
     const latNum = parseFloat(newLat)
     const lngNum = parseFloat(newLng)
@@ -241,7 +268,22 @@ export default function LocationPicker({
       </div>
 
       {/* Map */}
-      <div className="rounded-lg overflow-hidden border border-border" style={{ height: 280 }}>
+      <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: 280 }}>
+        {/* Locate-me button overlaid on the map */}
+        <button
+          type="button"
+          onClick={useMyLocation}
+          disabled={locating}
+          title="Use my current location"
+          className="absolute right-2 top-2 z-[1000] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card disabled:opacity-60"
+        >
+          {locating ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+          ) : (
+            <LocateFixed className="h-3.5 w-3.5 text-blue-600" />
+          )}
+          {locating ? "Locating…" : "My location"}
+        </button>
         <MapContainer
           center={mapCenter}
           zoom={lat && lng ? 16 : 12}
