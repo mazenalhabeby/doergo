@@ -154,9 +154,9 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
         scrollWheelZoom={false}
         bounds={bounds || undefined}
         boundsOptions={{ padding: [50, 50] }}
+        attributionControl={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 

@@ -1,8 +1,10 @@
 // Attendance and geofencing constants
 
 export const ATTENDANCE_CONSTANTS = {
-  // Geofence radius limits (in meters)
-  DEFAULT_GEOFENCE_RADIUS: 15,
+  // Geofence radius limits (in meters). Default 50m balances phone-GPS scatter
+  // (~5–30m) against false clock-ins — small enough to be the site, large
+  // enough not to reject someone standing at the building.
+  DEFAULT_GEOFENCE_RADIUS: 50,
   MIN_GEOFENCE_RADIUS: 10,
   MAX_GEOFENCE_RADIUS: 100,
 

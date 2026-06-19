@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-lea
 import L from "leaflet"
 import { MapPin, Search, X, Loader2, Navigation } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { formatNominatimAddress, type NominatimAddress } from "@/lib/geocode"
 
 // Custom marker icon
 const markerIcon = new L.Icon({
@@ -20,6 +21,7 @@ const markerIcon = new L.Icon({
 interface NominatimResult {
   place_id: number
   display_name: string
+  address?: NominatimAddress
   lat: string
   lon: string
 }
@@ -111,30 +113,34 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
   const handleMapClick = useCallback(
     async (clickLat: number, clickLng: number) => {
       if (disabled) return
-      onLocationChange("", clickLat, clickLng)
+      // Keep any address the user already typed; just move the pin.
+      onLocationChange(address, clickLat, clickLng)
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickLat}&lon=${clickLng}&addressdetails=1`,
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
           { headers: { "Accept-Language": "en" } }
         )
         const data = await res.json()
-        if (data.display_name) {
-          onLocationChange(data.display_name, clickLat, clickLng)
-          setQuery(data.display_name)
+        const formatted = formatNominatimAddress(data.address, data.display_name)
+        // Only auto-fill when the field is empty — never clobber a typed address.
+        if (formatted && !address.trim()) {
+          onLocationChange(formatted, clickLat, clickLng)
+          setQuery(formatted)
         }
       } catch {
         // Keep coords even if reverse geocode fails
       }
     },
-    [disabled, onLocationChange]
+    [disabled, onLocationChange, address]
   )
 
   // Select from autocomplete
   const handleSelect = (result: NominatimResult) => {
     const selectedLat = parseFloat(result.lat)
     const selectedLng = parseFloat(result.lon)
-    onLocationChange(result.display_name, selectedLat, selectedLng)
-    setQuery(result.display_name)
+    const formatted = formatNominatimAddress(result.address, result.display_name)
+    onLocationChange(formatted, selectedLat, selectedLng)
+    setQuery(formatted)
     setShowResults(false)
   }
 
@@ -190,7 +196,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
                 className="flex items-start gap-2 w-full px-3 py-2.5 text-left hover:bg-accent transition-colors"
               >
                 <MapPin className="size-4 text-blue-500 mt-0.5 shrink-0" />
-                <span className="text-sm text-foreground line-clamp-2">{r.display_name}</span>
+                <span className="text-sm text-foreground line-clamp-2">{formatNominatimAddress(r.address, r.display_name)}</span>
               </button>
             ))}
           </div>
@@ -204,9 +210,9 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
           zoom={lat && lng ? 15 : 4}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom={true}
+          attributionControl={false}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <MapClickHandler onClick={handleMapClick} />

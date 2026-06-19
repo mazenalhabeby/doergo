@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { notify } from "@/lib/toast"
+import { formatNominatimAddress, formatPhotonFeature } from "@/lib/geocode"
 
 import "leaflet/dist/leaflet.css"
 
@@ -102,25 +103,19 @@ export default function LocationPicker({
           .then((r) => r.json())
           .then((data) =>
             (data.features || []).map((f: any) => ({
-              display_name: [
-                f.properties.name,
-                f.properties.street,
-                f.properties.city,
-                f.properties.state,
-                f.properties.country,
-              ].filter(Boolean).join(", "),
+              display_name: formatPhotonFeature(f.properties),
               lat: f.geometry.coordinates[1].toString(),
               lon: f.geometry.coordinates[0].toString(),
             }))
           ),
         fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=3`,
+          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}&limit=3`,
           { headers: { "Accept-Language": "en,de" } }
         )
           .then((r) => r.json())
           .then((data) =>
             data.map((r: any) => ({
-              display_name: r.display_name,
+              display_name: formatNominatimAddress(r.address, r.display_name),
               lat: r.lat,
               lon: r.lon,
             }))
@@ -171,21 +166,25 @@ export default function LocationPicker({
   const handleMapClick = useCallback(
     async (clickLat: number, clickLng: number) => {
       onLocationChange(clickLat, clickLng)
-      // Reverse geocode with Nominatim
+      // Reverse geocode with Nominatim — zoom=18 for building-level detail, then
+      // compose a clean address from the structured fields (not display_name).
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickLat}&lon=${clickLng}&addressdetails=1`,
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
           { headers: { "Accept-Language": "en,de" } }
         )
         const data = await res.json()
-        if (data.display_name) {
-          onAddressChange(data.display_name)
+        const formatted = formatNominatimAddress(data.address, data.display_name)
+        // Only auto-fill when the field is empty — never clobber an address the
+        // user typed/pasted (e.g. a precise house number OSM search can't find).
+        if (formatted && !address.trim()) {
+          onAddressChange(formatted)
         }
       } catch {
         // Ignore
       }
     },
-    [onLocationChange, onAddressChange]
+    [onLocationChange, onAddressChange, address]
   )
 
   // Use the browser's geolocation, then drop the pin + reverse-geocode (reusing
@@ -289,9 +288,9 @@ export default function LocationPicker({
           zoom={lat && lng ? 16 : 12}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom={true}
+          attributionControl={false}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <MapClickHandler onClick={handleMapClick} />

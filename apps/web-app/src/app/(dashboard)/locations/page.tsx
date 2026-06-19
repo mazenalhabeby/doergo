@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useCallback, memo } from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Loader2 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import {
   Plus,
@@ -18,7 +20,20 @@ import {
   UserPlus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS } from "@hbcfield/shared/client"
+import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
+
+const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
+
+// Same map picker used by the New-Space form — reused here so Configure shows
+// the identical location experience (DRY).
+const LocationPicker = dynamic(() => import("./_components/location-picker"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/40">
+      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+})
 
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -542,9 +557,15 @@ function ConfigureSpaceDialog({
 function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: () => void }) {
   const [name, setName] = useState(space.name)
   const [address, setAddress] = useState(space.address || "")
+  const [lat, setLat] = useState<number | null>(space.lat ?? null)
+  const [lng, setLng] = useState<number | null>(space.lng ?? null)
   const [radius, setRadius] = useState(space.geofenceRadius.toString())
   const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
   const [isActive, setIsActive] = useState(space.isActive)
+
+  // Physical spaces (those with coordinates) get the map; logical workspaces don't.
+  const isPhysical = space.lat != null && space.lng != null
+  const clampRadius = () => Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
 
   const mutation = useMutation({
     mutationFn: (data: UpdateLocationInput) => locationsApi.update(space.id, data),
@@ -560,7 +581,9 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
-      geofenceRadius: parseInt(radius) || 200,
+      lat: lat ?? undefined,
+      lng: lng ?? undefined,
+      geofenceRadius: clampRadius(),
       timezone,
       isActive,
     })
@@ -572,15 +595,27 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
         <Label htmlFor="cfg-name">Name</Label>
         <Input id="cfg-name" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="cfg-address">Address</Label>
-        <Input id="cfg-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-      </div>
+      {isPhysical ? (
+        // Same map picker as the New-Space form (address + map + coordinates).
+        <LocationPicker
+          lat={lat}
+          lng={lng}
+          radius={clampRadius()}
+          address={address}
+          onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
+          onAddressChange={setAddress}
+        />
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="cfg-address">Address</Label>
+          <Input id="cfg-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="cfg-radius">Geofence Radius</Label>
           <div className="flex items-center gap-2">
-            <Input id="cfg-radius" type="number" min={5} max={500} value={radius} onChange={(e) => setRadius(e.target.value)} className="w-24" />
+            <Input id="cfg-radius" type="number" min={GEO_MIN} max={GEO_MAX} value={radius} onChange={(e) => setRadius(e.target.value)} className="w-24" />
             <span className="text-sm text-muted-foreground">{radius}m</span>
           </div>
         </div>
