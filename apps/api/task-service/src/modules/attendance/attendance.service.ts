@@ -323,6 +323,18 @@ export class AttendanceService {
       timeEntry: updatedEntry,
     });
 
+    // Entry landed in the approvals queue → nudge managers (bell + push).
+    if (approvalStatus === 'PENDING') {
+      await this.sendPendingApprovalAlert({
+        entryId: updatedEntry.id,
+        userId: data.userId,
+        organizationId: data.organizationId,
+        locationName: entry.location.name,
+        flagReasons: uniqueFlags,
+        totalMinutes,
+      });
+    }
+
     return success(
       updatedEntry,
       `Clocked out from ${entry.location.name}. Total time: ${hours}h ${minutes}m`,
@@ -340,7 +352,7 @@ export class AttendanceService {
     accuracy?: number;
     organizationId: string;
   }) {
-    this.logger.log(`Heartbeat from user ${data.userId} at ${data.lat},${data.lng}`);
+    this.logger.debug(`Heartbeat from user ${data.userId} at ${data.lat},${data.lng}`);
 
     // Find active clock-in entry
     const entry = await this.prisma.timeEntry.findFirst({
@@ -501,6 +513,7 @@ export class AttendanceService {
     locationId: string;
     organizationId: string;
     date?: Date | string;
+    search?: string;
     page?: number;
     limit?: number;
     requesterId?: string;
@@ -537,10 +550,22 @@ export class AttendanceService {
     // Default to today if no date provided
     const targetDate = data.date || new Date().toISOString();
 
-    const where = {
+    const where: any = {
       locationId: data.locationId,
       clockInAt: buildSingleDayFilter(targetDate),
     };
+
+    // Name / email search
+    if (data.search?.trim()) {
+      const q = data.search.trim();
+      where.user = {
+        OR: [
+          { firstName: { contains: q, mode: 'insensitive' } },
+          { lastName: { contains: q, mode: 'insensitive' } },
+          { email: { contains: q, mode: 'insensitive' } },
+        ],
+      };
+    }
 
     const [entries, total] = await Promise.all([
       this.prisma.timeEntry.findMany({
@@ -632,6 +657,10 @@ export class AttendanceService {
 
     const results: string[] = [];
     const reasons: Record<string, string> = {};
+    // Each due entry's clock-out write is collected here and flushed in parallel
+    // after the scan — instead of N sequential round-trips (e.g. a whole org's
+    // shifts closing at once on the midnight rollover).
+    const clockOutWrites: Promise<void>[] = [];
     const now = new Date();
     const maxDurationMs = ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS * 60 * 60 * 1000;
 
@@ -726,37 +755,47 @@ export class AttendanceService {
         shift_ended: `Auto clock-out: shift ended + ${ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES}min grace period`,
       };
 
-      await this.prisma.timeEntry.update({
-        where: { id: entry.id },
-        data: {
-          status: TimeEntryStatus.AUTO_OUT,
-          clockOutAt: now,
-          totalMinutes,
-          notes: reasonNotes[reason] || 'Auto clock-out',
-          flagReasons: mergedFlags,
-          approvalStatus: 'PENDING',
-        },
-      });
-
+      const dueReason = reason;
       results.push(entry.id);
-      reasons[entry.id] = reason;
+      reasons[entry.id] = dueReason;
 
-      this.notificationClient.emit('attendance_auto_clock_out', {
-        userId: entry.user.id,
-        userEmail: entry.user.email,
-        userName: `${entry.user.firstName} ${entry.user.lastName}`,
-        locationName: entry.location?.name || 'Unknown',
-        clockInTime: format(entry.clockInAt, 'MMM d, yyyy h:mm a'),
-        clockOutTime: format(now, 'MMM d, yyyy h:mm a'),
-        totalHours,
-        reason,
-        organizationId: entry.organizationId,
-      });
+      // Collect the write; emit + log happen once it lands. The notification
+      // emit is fire-and-forget so it doesn't gate the parallel batch.
+      clockOutWrites.push(
+        this.prisma.timeEntry
+          .update({
+            where: { id: entry.id },
+            data: {
+              status: TimeEntryStatus.AUTO_OUT,
+              clockOutAt: now,
+              totalMinutes,
+              notes: reasonNotes[dueReason] || 'Auto clock-out',
+              flagReasons: mergedFlags,
+              approvalStatus: 'PENDING',
+            },
+          })
+          .then(() => {
+            this.notificationClient.emit('attendance_auto_clock_out', {
+              userId: entry.user.id,
+              userEmail: entry.user.email,
+              userName: `${entry.user.firstName} ${entry.user.lastName}`,
+              locationName: entry.location?.name || 'Unknown',
+              clockInTime: format(entry.clockInAt, 'MMM d, yyyy h:mm a'),
+              clockOutTime: format(now, 'MMM d, yyyy h:mm a'),
+              totalHours,
+              reason: dueReason,
+              organizationId: entry.organizationId,
+            });
 
-      this.logger.warn(
-        `Auto clock-out (${reason}): entry=${entry.id}, user=${entry.user.firstName} ${entry.user.lastName}, tz=${tz}, duration=${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
+            this.logger.warn(
+              `Auto clock-out (${dueReason}): entry=${entry.id}, user=${entry.user.firstName} ${entry.user.lastName}, tz=${tz}, duration=${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
+            );
+          }),
       );
     }
+
+    // Flush all clock-out writes concurrently.
+    await Promise.all(clockOutWrites);
 
     return success({
       processedCount: results.length,
@@ -766,12 +805,16 @@ export class AttendanceService {
     });
   }
 
-  /**
-   * Get local time components in a specific timezone
-   */
-  private getLocalTime(date: Date, timezone: string): { hours: number; minutes: number; date: string } {
-    try {
-      const options: Intl.DateTimeFormatOptions = {
+  // Cached Intl formatters keyed by timezone. Constructing an Intl.DateTimeFormat
+  // is comparatively expensive, and the auto-clock-out sweep calls these 2–3×
+  // per open entry — so reuse one formatter per timezone across the process.
+  private readonly tzTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+  private readonly tzWeekdayFormatters = new Map<string, Intl.DateTimeFormat>();
+
+  private getTimeFormatter(timezone: string): Intl.DateTimeFormat {
+    let fmt = this.tzTimeFormatters.get(timezone);
+    if (!fmt) {
+      fmt = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         hour: 'numeric',
         minute: 'numeric',
@@ -779,8 +822,27 @@ export class AttendanceService {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
-      };
-      const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date);
+      });
+      this.tzTimeFormatters.set(timezone, fmt);
+    }
+    return fmt;
+  }
+
+  private getWeekdayFormatter(timezone: string): Intl.DateTimeFormat {
+    let fmt = this.tzWeekdayFormatters.get(timezone);
+    if (!fmt) {
+      fmt = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short' });
+      this.tzWeekdayFormatters.set(timezone, fmt);
+    }
+    return fmt;
+  }
+
+  /**
+   * Get local time components in a specific timezone
+   */
+  private getLocalTime(date: Date, timezone: string): { hours: number; minutes: number; date: string } {
+    try {
+      const parts = this.getTimeFormatter(timezone).formatToParts(date);
       const get = (type: string) => parts.find((p) => p.type === type)?.value || '0';
       return {
         hours: parseInt(get('hour')),
@@ -802,8 +864,7 @@ export class AttendanceService {
    */
   private getLocalDayOfWeek(date: Date, timezone: string): number {
     try {
-      const options: Intl.DateTimeFormatOptions = { timeZone: timezone, weekday: 'short' };
-      const dayStr = new Intl.DateTimeFormat('en-US', options).format(date);
+      const dayStr = this.getWeekdayFormatter(timezone).format(date);
       const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
       return dayMap[dayStr] ?? date.getUTCDay();
     } catch {
@@ -818,6 +879,7 @@ export class AttendanceService {
     organizationId: string;
     date?: Date | string;
     status?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }) {
@@ -837,6 +899,18 @@ export class AttendanceService {
     // Status filter
     if (data.status) {
       where.status = data.status;
+    }
+
+    // Name / email search
+    if (data.search?.trim()) {
+      const q = data.search.trim();
+      where.user = {
+        OR: [
+          { firstName: { contains: q, mode: 'insensitive' } },
+          { lastName: { contains: q, mode: 'insensitive' } },
+          { email: { contains: q, mode: 'insensitive' } },
+        ],
+      };
     }
 
     const [entries, total] = await Promise.all([
@@ -929,6 +1003,53 @@ export class AttendanceService {
       );
     } catch (error) {
       this.logger.error('Failed to send geofence alert', error);
+    }
+  }
+
+  /**
+   * Notify managers/admins that a time entry now needs approval (push + bell).
+   * Fired when an entry transitions to approvalStatus = PENDING.
+   */
+  private async sendPendingApprovalAlert(data: {
+    entryId: string;
+    userId: string;
+    organizationId: string;
+    locationName: string;
+    flagReasons: string[];
+    totalMinutes: number;
+  }) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: data.userId },
+        select: { firstName: true, lastName: true },
+      });
+      if (!user) return;
+
+      const managers = await this.prisma.user.findMany({
+        where: {
+          organizationId: data.organizationId,
+          role: { in: ['ADMIN', 'MANAGER'] },
+          isActive: true,
+        },
+        select: { id: true },
+      });
+
+      this.notificationClient.emit('attendance_pending_approval', {
+        entryId: data.entryId,
+        userId: data.userId,
+        userName: `${user.firstName} ${user.lastName}`,
+        locationName: data.locationName,
+        flagReasons: data.flagReasons,
+        totalMinutes: data.totalMinutes,
+        managerIds: managers.map((m) => m.id),
+        organizationId: data.organizationId,
+      });
+
+      this.logger.log(
+        `Pending-approval alert sent: entry=${data.entryId}, user=${user.firstName} ${user.lastName}, flags=[${data.flagReasons.join(',')}]`,
+      );
+    } catch (error) {
+      this.logger.error('Failed to send pending-approval alert', error);
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getQueueToken } from '@nestjs/bullmq';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AttendanceService } from '../attendance.service';
 import { BreakService } from '../break.service';
@@ -9,6 +10,7 @@ import {
   TimeEntryStatus,
   ApprovalStatus,
   SERVICE_NAMES,
+  QUEUE_NAMES,
 } from '@hbcfield/shared';
 
 describe('AttendanceService', () => {
@@ -94,10 +96,25 @@ describe('AttendanceService', () => {
       count: jest.fn(),
       aggregate: jest.fn(),
     },
+    // Batched lookups used by autoClockOut's overtime/schedule resolution.
+    overtimeRequest: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    technicianSchedule: {
+      findFirst: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   };
 
   const mockNotificationClient = {
     emit: jest.fn(),
+  };
+
+  // OVERTIME queue (BullMQ) — AttendanceService.autoClockOut enqueues onto it.
+  const mockOvertimeQueue = {
+    add: jest.fn(),
+    getRepeatableJobs: jest.fn().mockResolvedValue([]),
+    removeRepeatableByKey: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -111,6 +128,7 @@ describe('AttendanceService', () => {
         AttendanceReportService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: mockNotificationClient },
+        { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: mockOvertimeQueue },
       ],
     }).compile();
 
@@ -156,9 +174,10 @@ describe('AttendanceService', () => {
       await expect(service.clockIn(clockInData)).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException for non-FULL_TIME technician', async () => {
-
-      await expect(service.clockIn(clockInData)).rejects.toThrow(BadRequestException);
+    it('should throw NotFoundException when the user does not exist', async () => {
+      // (WorkMode decoupling removed the old FULL_TIME-only gate; an unknown
+      // user now surfaces as NotFoundException.)
+      await expect(service.clockIn(clockInData)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if not assigned to location', async () => {
@@ -339,10 +358,10 @@ describe('AttendanceService', () => {
   });
 
   describe('autoClockOut', () => {
-    it('should auto clock out overdue entries (hourly check)', async () => {
+    it('should auto clock out entries past the max duration', async () => {
       const overdueEntry = {
         ...mockTimeEntry,
-        clockInAt: new Date(Date.now() - 13 * 60 * 60 * 1000), // 13 hours ago
+        clockInAt: new Date(Date.now() - 17 * 60 * 60 * 1000), // 17h ago — past the 16h cap
         user: mockTechnician,
         location: mockLocation,
       };
@@ -355,7 +374,6 @@ describe('AttendanceService', () => {
       const result = await service.autoClockOut({ type: 'hourly' }) as any;
 
       expect(result.success).toBe(true);
-      expect(result.data.type).toBe('hourly');
       expect(result.data.processedCount).toBe(1);
       expect(mockNotificationClient.emit).toHaveBeenCalledWith(
         'attendance_auto_clock_out',
@@ -363,24 +381,26 @@ describe('AttendanceService', () => {
       );
     });
 
-    it('should auto clock out all open entries (midnight check)', async () => {
-      const openEntry = {
+    it('should auto clock out every overdue open entry in one sweep', async () => {
+      // Two overdue entries → the parallelized write batch should process both.
+      const overdue = (id: string) => ({
         ...mockTimeEntry,
-        clockInAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
-        user: mockTechnician,
+        id,
+        userId: id,
+        clockInAt: new Date(Date.now() - 17 * 60 * 60 * 1000),
+        user: { ...mockTechnician, id },
         location: mockLocation,
-      };
-      mockPrismaService.timeEntry.findMany.mockResolvedValue([openEntry]);
-      mockPrismaService.timeEntry.update.mockResolvedValue({
-        ...openEntry,
-        status: TimeEntryStatus.AUTO_OUT,
       });
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([overdue('e1'), overdue('e2')]);
+      mockPrismaService.timeEntry.update.mockImplementation(({ where }: any) =>
+        Promise.resolve({ id: where.id, status: TimeEntryStatus.AUTO_OUT }),
+      );
 
       const result = await service.autoClockOut({ type: 'midnight' }) as any;
 
       expect(result.success).toBe(true);
-      expect(result.data.type).toBe('midnight');
-      expect(result.data.processedCount).toBe(1);
+      expect(result.data.processedCount).toBe(2);
+      expect(mockPrismaService.timeEntry.update).toHaveBeenCalledTimes(2);
     });
 
     it('should return 0 processed when no overdue entries', async () => {

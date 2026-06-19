@@ -140,8 +140,13 @@ export default function InvitationsPage() {
   // Revoke mutation
   const revokeMutation = useMutation({
     mutationFn: (id: string) => invitationsApi.revoke(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       notify.success(t("invitations.revokeDialog.revokedSuccessfully"))
+      // Remove the row from every cached invitations list immediately, then
+      // reconcile in the background — no refresh needed.
+      queryClient.setQueriesData<{ data?: Invitation[] } | undefined>({ queryKey: ["invitations"] }, (old) =>
+        old?.data ? { ...old, data: old.data.filter((inv) => inv.id !== id) } : old,
+      )
       queryClient.invalidateQueries({ queryKey: ["invitations"] })
       setRevokeDialogOpen(false)
       setSelectedInvitation(null)
@@ -167,8 +172,11 @@ export default function InvitationsPage() {
     }
   }
 
-  // Derived data
-  const invitations = invitationsData?.data || []
+  // Derived data — revoked invites are archived: only shown when explicitly
+  // filtering for "Revoked", so revoking removes the row from the default view.
+  const invitations = (invitationsData?.data || []).filter(
+    (inv: Invitation) => statusFilter === InvitationStatus.REVOKED || inv.status !== InvitationStatus.REVOKED,
+  )
   const meta = invitationsData?.meta
   const totalPages = meta?.totalPages || 1
   const total = meta?.total || 0

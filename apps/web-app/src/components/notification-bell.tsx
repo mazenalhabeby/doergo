@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Bell, UserPlus, ClipboardList, MessageSquare, CheckCircle,
-  AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send,
+  AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -28,6 +28,7 @@ type NotificationType =
   | "task_status_changed" | "comment_added" | "attachment_added"
   | "join_request" | "join_approved" | "join_rejected"
   | "clock_in" | "clock_out" | "auto_clock_out" | "geofence_alert"
+  | "pending_approval"
   | "break_started" | "break_ended"
   | "invitation_created"
 
@@ -60,6 +61,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   clock_out:          { icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
   auto_clock_out:     { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
   geofence_alert:     { icon: MapPin, color: "text-red-600", bg: "bg-red-50" },
+  pending_approval:   { icon: ClipboardCheck, color: "text-amber-600", bg: "bg-amber-50" },
   break_started:      { icon: Coffee, color: "text-amber-600", bg: "bg-amber-50" },
   break_ended:        { icon: Coffee, color: "text-green-600", bg: "bg-green-50" },
   invitation_created: { icon: Send, color: "text-indigo-600", bg: "bg-indigo-50" },
@@ -144,6 +146,14 @@ export function NotificationBell() {
       }),
       subscribe("attendance_geofence_alert", (d: any) => {
         add("geofence_alert", t("notifications.geofenceAlert"), d.userName || "", "/attendance")
+      }),
+      subscribe("attendance_pending_approval", (d: any) => {
+        add(
+          "pending_approval",
+          t("notifications.pendingApproval"),
+          [d.userName, d.flagSummary].filter(Boolean).join(" — "),
+          "/attendance?tab=approvals",
+        )
       }),
 
       // Break events

@@ -1225,10 +1225,13 @@ model Invitation {
   targetOrgRole   OrgRole? @relation(fields: [targetOrgRoleId], references: [id], onDelete: SetNull)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
-  position       String?
-  enabledModules Json?
-  specialty      String?
-  maxDailyJobs   Int?
+  position          String?
+  scheduleType      String? // NONE | FIXED | FLEXIBLE — applied to the user on accept
+  schedule          Json?   // Weekly rows when FIXED: [{dayOfWeek,startTime,endTime,isActive}]
+  monthlyHourBudget Int?    // When FLEXIBLE
+  enabledModules    Json?
+  specialty         String?
+  maxDailyJobs      Int?
 
   // Status tracking
   status    InvitationStatus @default(PENDING)

@@ -238,6 +238,27 @@ export class PushService {
     });
   }
 
+  async sendPendingApprovalPush(data: {
+    managerIds: string[];
+    userName: string;
+    flagSummary: string;
+    entryId: string;
+  }) {
+    const body = `${data.userName}'s time entry needs approval (${data.flagSummary})`;
+
+    const allTokens: string[] = [];
+    for (const managerId of data.managerIds) {
+      const tokens = await this.getUserTokens(managerId);
+      allTokens.push(...tokens);
+    }
+
+    return this.sendPushNotification(allTokens, 'Approval Needed', body, {
+      type: 'pending_approval',
+      userName: data.userName,
+      entryId: data.entryId,
+    });
+  }
+
   async sendOvertimeAlertPush(data: {
     dispatcherIds: string[];
     userName: string;

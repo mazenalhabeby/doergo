@@ -61,6 +61,9 @@ export interface CreateInvitationInput {
   email?: string;
 
   position?: string;
+  scheduleType?: string;
+  schedule?: { dayOfWeek: number; startTime: string; endTime: string; isActive: boolean }[];
+  monthlyHourBudget?: number;
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;

@@ -102,18 +102,52 @@ export function buildRecentActivity(opts: {
     .map((i) => i.event)
 }
 
+// Friendly one-line summary for an attendance entry's flag reasons.
+const FLAG_LABELS: Record<string, string> = {
+  OVERTIME: "Overtime",
+  MISSED_CLOCK_OUT: "Missed clock-out",
+  OUTSIDE_GEOFENCE_IN: "Out of geofence",
+  OUTSIDE_GEOFENCE_OUT: "Out of geofence",
+  LATE_ARRIVAL: "Late arrival",
+  EARLY_DEPARTURE: "Early departure",
+  UNSCHEDULED_DAY: "Unscheduled day",
+}
+
+const flagSummary = (reasons?: string[]) =>
+  reasons && reasons.length
+    ? reasons.map((r) => FLAG_LABELS[r] || r.replace(/_/g, " ").toLowerCase()).join(", ")
+    : "Needs review"
+
 /**
- * Things needing attention: blocked tasks + new unassigned tasks. `onView` opens
- * the task (the single primary action — there's no meaningful "reject" for these,
- * so no dead X button).
+ * Things needing attention, most time-sensitive first:
+ *   1. Attendance entries awaiting approval (payroll-blocking) — approve inline
+ *      (green ✓); the red ✗ routes to the Approvals tab where a reason is captured.
+ *   2. Blocked tasks + new unassigned tasks — `onView` opens the task.
  */
 export function buildPendingActions(opts: {
   tasks: Task[]
   onView: (taskId: string) => void
+  approvals?: TimeEntry[]
+  onApproveEntry?: (entryId: string) => void
+  onReviewApproval?: (entryId: string) => void
   limit?: number
 }): PendingAction[] {
-  const { tasks, onView, limit = 5 } = opts
+  const { tasks, onView, approvals = [], onApproveEntry, onReviewApproval, limit = 6 } = opts
   const actions: PendingAction[] = []
+
+  for (const entry of approvals.slice(0, 3)) {
+    const u = entry.user
+    const name = u ? shortName(u.firstName, u.lastName) : "Worker"
+    actions.push({
+      id: `approval-${entry.id}`,
+      initials: u ? getInitials(u.firstName, u.lastName) : "?",
+      color: getAvatarColor(entry.userId || "x"),
+      title: `${name} — Needs Approval`,
+      description: flagSummary(entry.flagReasons),
+      onApprove: onApproveEntry ? () => onApproveEntry(entry.id) : undefined,
+      onReject: onReviewApproval ? () => onReviewApproval(entry.id) : undefined,
+    })
+  }
 
   for (const task of tasks.filter((t) => t.status === "BLOCKED").slice(0, 3)) {
     const a = task.assignedTo

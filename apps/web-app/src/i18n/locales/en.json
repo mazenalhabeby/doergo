@@ -1091,6 +1091,7 @@
     "clockOut": "Employee clocked out",
     "autoClockOut": "Auto clock-out",
     "geofenceAlert": "Geofence alert",
+    "pendingApproval": "Time entry needs approval",
     "breakStarted": "Break started",
     "breakEnded": "Break ended"
   },

@@ -50,6 +50,9 @@ export class InvitationService {
     creatorRole: string;
     expiresInHours?: number;
     position?: string;
+    scheduleType?: string;
+    schedule?: { dayOfWeek: number; startTime: string; endTime: string; isActive: boolean }[];
+    monthlyHourBudget?: number;
     enabledModules?: string[];
     specialty?: string;
     maxDailyJobs?: number;
@@ -140,6 +143,14 @@ export class InvitationService {
 
         // Job title (e.g. "Plumber"). Blank → null, NOT a work-mode value.
         position: isTechnician ? (data.position?.trim() || null) : null,
+        // Schedule pre-set on the invite (applied to the user on accept).
+        scheduleType: isTechnician ? (data.scheduleType || null) : null,
+        schedule: isTechnician && data.scheduleType === 'FIXED' && data.schedule?.length
+          ? (data.schedule as any)
+          : undefined,
+        monthlyHourBudget: isTechnician && data.scheduleType === 'FLEXIBLE'
+          ? (data.monthlyHourBudget ?? null)
+          : null,
         specialty: isTechnician ? data.specialty || null : null,
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
       },
@@ -297,6 +308,8 @@ export class InvitationService {
           ...(invitation.targetRole === 'EMPLOYEE'
             ? {
                 position: invitation.position || null,
+                scheduleType: invitation.scheduleType || 'NONE',
+                monthlyHourBudget: invitation.monthlyHourBudget ?? null,
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
               }
@@ -316,6 +329,24 @@ export class InvitationService {
           canManageUsers: true,
         },
       });
+
+      // Pre-set weekly schedule (FIXED invites): create the rows for the new user.
+      if (invitation.scheduleType === 'FIXED' && Array.isArray(invitation.schedule)) {
+        const rows = (invitation.schedule as any[]).filter(
+          (r) => r && typeof r.dayOfWeek === 'number' && r.startTime && r.endTime,
+        );
+        if (rows.length > 0) {
+          await tx.technicianSchedule.createMany({
+            data: rows.map((r) => ({
+              technicianId: newUser.id,
+              dayOfWeek: r.dayOfWeek,
+              startTime: r.startTime,
+              endTime: r.endTime,
+              isActive: r.isActive ?? true,
+            })),
+          });
+        }
+      }
 
       await tx.invitation.update({
         where: { id: invitation.id },

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useCallback, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -106,6 +106,7 @@ export function ClientDashboard() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { isOpen: panelOpen } = useActivityPanel()
   const isAdminOrDispatcher = user?.role === "ADMIN" || user?.role === "MANAGER"
 
@@ -163,6 +164,15 @@ export function ClientDashboard() {
   const { data: activeBreaksData } = useQuery({
     queryKey: ["active-breaks"],
     queryFn: () => attendanceApi.getActiveBreaks().catch(() => ({ data: [] })),
+    staleTime: 30000,
+    enabled: isAdminOrDispatcher,
+  })
+
+  // Attendance entries awaiting approval — feeds the "Pending Actions" panel so
+  // admins see payroll-blocking approvals from anywhere, not just the Attendance tab.
+  const { data: pendingApprovalsData } = useQuery({
+    queryKey: ["pending-approvals"],
+    queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }).catch(() => ({ data: [] })),
     staleTime: 30000,
     enabled: isAdminOrDispatcher,
   })
@@ -512,9 +522,35 @@ export function ClientDashboard() {
 
   // ── Pending Actions ────────────────────────────────────────────────────────
 
+  const pendingApprovals: TimeEntry[] = useMemo(
+    () => (pendingApprovalsData as { data?: TimeEntry[] } | undefined)?.data || [],
+    [pendingApprovalsData],
+  )
+
+  // One-click approve straight from the panel; refresh the list so it drops off.
+  const handleApproveEntry = useCallback(
+    async (entryId: string) => {
+      try {
+        await attendanceApi.approveEntry(entryId)
+      } finally {
+        queryClient.invalidateQueries({ queryKey: ["pending-approvals"] })
+        queryClient.invalidateQueries({ queryKey: ["attendance-today"] })
+      }
+    },
+    [queryClient],
+  )
+
   const pendingActions: PendingAction[] = useMemo(
-    () => buildPendingActions({ tasks, onView: (id) => router.push(`/tasks/${id}`) }),
-    [tasks, router],
+    () =>
+      buildPendingActions({
+        tasks,
+        onView: (id) => router.push(`/tasks/${id}`),
+        approvals: pendingApprovals,
+        onApproveEntry: handleApproveEntry,
+        // Reject needs a reason → send them to the Approvals tab's reject dialog.
+        onReviewApproval: () => router.push("/attendance?tab=approvals"),
+      }),
+    [tasks, router, pendingApprovals, handleApproveEntry],
   )
 
   // ── Render ─────────────────────────────────────────────────────────────────

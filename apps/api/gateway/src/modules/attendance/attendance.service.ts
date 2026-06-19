@@ -38,6 +38,7 @@ export class AttendanceService extends BaseGatewayService {
     locationId: string;
     organizationId: string;
     date?: string;
+    search?: string;
     page?: number;
     limit?: number;
     requesterId?: string;
@@ -63,6 +64,7 @@ export class AttendanceService extends BaseGatewayService {
     organizationId: string;
     date?: string;
     status?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }) {

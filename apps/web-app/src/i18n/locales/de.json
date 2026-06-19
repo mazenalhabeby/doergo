@@ -1091,6 +1091,7 @@
     "clockOut": "Techniker ausgestempelt",
     "autoClockOut": "Automatisches Ausstempeln",
     "geofenceAlert": "Geofence-Alarm",
+    "pendingApproval": "Zeiteintrag muss genehmigt werden",
     "breakStarted": "Pause begonnen",
     "breakEnded": "Pause beendet"
   },

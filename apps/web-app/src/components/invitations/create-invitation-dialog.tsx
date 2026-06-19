@@ -10,6 +10,7 @@ import { invitationsApi, locationsApi, type CreateInvitationInput, type CompanyL
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ScheduleFields, createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
 import { cn } from "@/lib/utils"
 import {
   Dialog,
@@ -40,6 +41,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   const [mode, setMode] = useState<"email" | "code">("email")
   const [email, setEmail] = useState("")
   const [position, setPosition] = useState("")
+  const [scheduleType, setScheduleType] = useState("NONE")
+  const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
+  const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
   const [spaceId, setSpaceId] = useState("none")
 
   // Success state
@@ -78,8 +82,17 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     const input: CreateInvitationInput = { targetRole: "EMPLOYEE" }
     if (mode === "email" && email.trim()) input.email = email.trim()
     if (position.trim()) input.position = position.trim()
+    if (scheduleType !== "NONE") input.scheduleType = scheduleType
+    if (scheduleType === "FIXED") {
+      input.schedule = scheduleRows.map((r) => ({
+        dayOfWeek: r.dayOfWeek, startTime: r.startTime, endTime: r.endTime, isActive: r.isActive,
+      }))
+    }
+    if (scheduleType === "FLEXIBLE" && monthlyHourBudget !== "") {
+      input.monthlyHourBudget = Number(monthlyHourBudget)
+    }
     createMutation.mutate(input)
-  }, [mode, email, position, createMutation])
+  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, createMutation])
 
   const handleCopyCode = useCallback(async () => {
     if (!generatedCode) return
@@ -94,6 +107,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     setSuccess(false)
     setEmail("")
     setPosition("")
+    setScheduleType("NONE")
+    setScheduleRows(createDefaultSchedule())
+    setMonthlyHourBudget("")
     setCodeCopied(false)
   }, [])
 
@@ -103,6 +119,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       setMode("email")
       setEmail("")
       setPosition("")
+      setScheduleType("NONE")
+    setScheduleRows(createDefaultSchedule())
+    setMonthlyHourBudget("")
       setSpaceId("none")
       setGeneratedCode(null)
       setSuccess(false)
@@ -233,6 +252,16 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
               className="h-9"
             />
           </div>
+
+          {/* Schedule — same control as the Edit dialog (type + weekly hours / budget) */}
+          <ScheduleFields
+            scheduleType={scheduleType}
+            onScheduleTypeChange={setScheduleType}
+            scheduleRows={scheduleRows}
+            onScheduleRowsChange={setScheduleRows}
+            monthlyHourBudget={monthlyHourBudget}
+            onMonthlyHourBudgetChange={setMonthlyHourBudget}
+          />
 
           {/* Space (optional) */}
           {locations.length > 0 && (

@@ -11,7 +11,6 @@ import {
   Pencil,
   Clock,
   Timer,
-  CalendarDays,
   LayoutGrid,
   ShieldCheck,
 } from "lucide-react"
@@ -332,6 +331,52 @@ export default function MemberProfilePage({
         {/* ── Tabbed content ───────────────────────────────────────────── */}
         {(() => {
           const showAccessTab = isAdmin && member.role !== "ADMIN"
+          // Schedule box is dynamic: only shows for a FIXED member that actually
+          // has hours set. Flexible / none / empty → the box disappears entirely.
+          const showSchedule = member.scheduleType === "FIXED" && (scheduleLoading || schedule.length > 0)
+
+          const activityCard = (
+            <div className="bg-card rounded-xl border border-border/80 overflow-hidden">
+              <div className="px-5 py-4 border-b border-border/60">
+                <h2 className="text-sm font-semibold text-foreground">Activity</h2>
+              </div>
+              {tasksLoading ? (
+                <div className="p-5 space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-2 w-2 rounded-full" />
+                      <Skeleton className="h-4 w-64" />
+                      <Skeleton className="h-3 w-20 ml-auto" />
+                    </div>
+                  ))}
+                </div>
+              ) : tasks.length > 0 ? (
+                <div className="divide-y divide-border/40">
+                  {tasks.slice(0, 5).map((task: Task) => {
+                    const statusConfig = getStatusConfig(task.status)
+                    return (
+                      <div key={task.id} className="flex items-center gap-3 px-5 py-3">
+                        <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: statusConfig.hex }} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">{task.title}</span>
+                            <span className="text-muted-foreground"> - {statusConfig.label}</span>
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                          {formatRelativeDate(task.updatedAt)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="px-5 py-8 text-center">
+                  <p className="text-sm text-muted-foreground">No recent activity</p>
+                </div>
+              )}
+            </div>
+          )
 
           const overview = (
             <div className="space-y-6">
@@ -401,19 +446,19 @@ export default function MemberProfilePage({
             )}
           </div>
 
-          {/* ── Schedule ─────────────────────────────────────────────── */}
-          <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
-            <div className="px-5 py-4 border-b border-border/60">
-              <h2 className="text-sm font-semibold text-foreground">Schedule</h2>
-            </div>
-            {member.scheduleType === "FIXED" ? (
-              scheduleLoading ? (
+          {/* ── Right column: Schedule if the member has fixed hours, else Activity ── */}
+          {showSchedule ? (
+            <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+              <div className="px-5 py-4 border-b border-border/60">
+                <h2 className="text-sm font-semibold text-foreground">Schedule</h2>
+              </div>
+              {scheduleLoading ? (
                 <div className="p-5 space-y-2">
                   {Array.from({ length: 7 }).map((_, i) => (
                     <Skeleton key={i} className="h-5 w-full" />
                   ))}
                 </div>
-              ) : schedule.length > 0 ? (
+              ) : (
                 <div className="divide-y divide-border/40">
                   {DAY_NAMES.map((dayName, i) => {
                     const entry = schedule.find((s: ScheduleEntry) => s.dayOfWeek === i)
@@ -437,76 +482,13 @@ export default function MemberProfilePage({
                     )
                   })}
                 </div>
-              ) : (
-                <div className="px-5 py-8 text-center">
-                  <CalendarDays className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground">No schedule configured</p>
-                </div>
-              )
-            ) : member.scheduleType === "FLEXIBLE" ? (
-              // Flexible-hours members track a monthly budget, not a fixed weekly grid.
-              <div className="px-5 py-8 text-center">
-                <Timer className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm font-medium text-foreground">Flexible hours</p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {member.monthlyHourBudget
-                    ? `${member.monthlyHourBudget} hrs / month budget`
-                    : "No monthly budget set"}
-                </p>
+              )}
+            </div>
+          ) : activityCard}
               </div>
-            ) : (
-              <div className="px-5 py-8 text-center">
-                <CalendarDays className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">No schedule tracked</p>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* ── Activity / Task Events ─────────────────────────────────── */}
-        <div className="bg-card rounded-xl border border-border/80 overflow-hidden">
-          <div className="px-5 py-4 border-b border-border/60">
-            <h2 className="text-sm font-semibold text-foreground">Activity</h2>
-          </div>
-          {tasksLoading ? (
-            <div className="p-5 space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-2 w-2 rounded-full" />
-                  <Skeleton className="h-4 w-64" />
-                  <Skeleton className="h-3 w-20 ml-auto" />
-                </div>
-              ))}
-            </div>
-          ) : tasks.length > 0 ? (
-            <div className="divide-y divide-border/40">
-              {tasks.slice(0, 5).map((task: Task) => {
-                const statusConfig = getStatusConfig(task.status)
-                return (
-                  <div key={task.id} className="flex items-center gap-3 px-5 py-3">
-                    <span
-                      className="h-2 w-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: statusConfig.hex }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-foreground">
-                        <span className="font-medium">{task.title}</span>
-                        <span className="text-muted-foreground"> - {statusConfig.label}</span>
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
-                      {formatRelativeDate(task.updatedAt)}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="px-5 py-8 text-center">
-              <p className="text-sm text-muted-foreground">No recent activity</p>
-            </div>
-          )}
-              </div>
+              {/* Activity drops to a full-width row only when Schedule took the slot */}
+              {showSchedule && activityCard}
             </div>
           )
 

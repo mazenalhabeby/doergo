@@ -4,6 +4,18 @@ import { EmailService } from '../modules/email/email.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 
+// Human-friendly labels for attendance approval flags (keep in sync with the web
+// attendance helpers).
+const FLAG_LABELS: Record<string, string> = {
+  OVERTIME: 'overtime',
+  MISSED_CLOCK_OUT: 'missed clock-out',
+  OUTSIDE_GEOFENCE_IN: 'out of geofence',
+  OUTSIDE_GEOFENCE_OUT: 'out of geofence',
+  LATE_ARRIVAL: 'late arrival',
+  EARLY_DEPARTURE: 'early departure',
+  UNSCHEDULED_DAY: 'unscheduled day',
+};
+
 @Controller()
 export class AttendanceNotificationHandler {
   private readonly logger = new Logger('AttendanceNotificationHandler');
@@ -113,6 +125,48 @@ export class AttendanceNotificationHandler {
       action: data.action,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  @EventPattern('attendance_pending_approval')
+  async handlePendingApproval(@Payload() data: {
+    entryId: string;
+    userId: string;
+    userName: string;
+    locationName: string;
+    flagReasons: string[];
+    totalMinutes: number;
+    managerIds: string[];
+    organizationId: string;
+  }) {
+    const flagSummary = (data.flagReasons || [])
+      .map((r) => FLAG_LABELS[r] || r.replace(/_/g, ' ').toLowerCase())
+      .join(', ') || 'needs review';
+
+    this.logger.log(`Pending approval: user=${data.userName}, flags=[${flagSummary}]`);
+
+    try {
+      await this.pushService.sendPendingApprovalPush({
+        managerIds: data.managerIds || [],
+        userName: data.userName,
+        flagSummary,
+        entryId: data.entryId,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send pending-approval push: ${error}`);
+    }
+
+    // Bell: managers/admins only (not the worker whose entry it is).
+    const payload = {
+      entryId: data.entryId,
+      userId: data.userId,
+      userName: data.userName,
+      locationName: data.locationName,
+      flagReasons: data.flagReasons,
+      flagSummary,
+      timestamp: new Date().toISOString(),
+    };
+    this.websocketGateway.emitToRole('ADMIN', 'attendance_pending_approval', payload);
+    this.websocketGateway.emitToRole('MANAGER', 'attendance_pending_approval', payload);
   }
 
   @EventPattern('attendance_clock_in')

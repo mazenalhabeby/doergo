@@ -1,10 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsEnum,
   IsNumber,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
   Min,
   Max,
   MinLength,
@@ -13,6 +17,20 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { EmailField, StrongPasswordField, NameField } from '@hbcfield/shared';
+
+export class InvitationScheduleEntryDto {
+  @IsNumber()
+  dayOfWeek: number;
+
+  @IsString()
+  startTime: string;
+
+  @IsString()
+  endTime: string;
+
+  @IsBoolean()
+  isActive: boolean;
+}
 
 export class CreateInvitationDto {
   @ApiProperty({
@@ -52,6 +70,27 @@ export class CreateInvitationDto {
   @IsString()
   @IsOptional()
   position?: string;
+
+  @ApiPropertyOptional({
+    example: 'FIXED',
+    description: 'Schedule type to pre-set on the member (NONE | FIXED | FLEXIBLE)',
+  })
+  @IsString()
+  @IsOptional()
+  @IsIn(['NONE', 'FIXED', 'FLEXIBLE'])
+  scheduleType?: string;
+
+  @ApiPropertyOptional({ type: [InvitationScheduleEntryDto], description: 'Weekly hours when scheduleType=FIXED' })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => InvitationScheduleEntryDto)
+  schedule?: InvitationScheduleEntryDto[];
+
+  @ApiPropertyOptional({ example: 160, description: 'Monthly hour budget when scheduleType=FLEXIBLE' })
+  @IsNumber()
+  @IsOptional()
+  monthlyHourBudget?: number;
 
   @ApiPropertyOptional({
     example: 'Electrical',

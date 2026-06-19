@@ -129,6 +129,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
           : (statusFilter as TimeOffStatus)
       ),
     enabled: !!employeeId,
+    staleTime: 30_000, // avoid refetching on every tab re-open
   })
 
   const requestMutation = useMutation({

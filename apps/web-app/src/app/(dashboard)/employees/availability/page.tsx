@@ -113,6 +113,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["orgTimeOff", statusFilter],
     queryFn: () => employeesApi.getOrgTimeOff(statusFilter === "all" ? undefined : statusFilter),
+    staleTime: 30_000,
   })
 
   const approveMutation = useMutation({

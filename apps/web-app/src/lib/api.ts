@@ -1882,6 +1882,7 @@ export interface AttendanceQueryParams {
   startDate?: string;
   endDate?: string;
   status?: TimeEntryStatus;
+  search?: string;
   page?: number;
   limit?: number;
 }
@@ -1927,6 +1928,7 @@ export const attendanceApi = {
   getLocationEntries: async (locationId: string, params?: AttendanceQueryParams) => {
     const endpoint = buildUrlWithQuery(`/attendance/locations/${locationId}/entries`, {
       date: params?.date,
+      search: params?.search,
       page: params?.page,
       limit: params?.limit,
     });

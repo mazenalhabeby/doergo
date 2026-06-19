@@ -124,6 +124,7 @@ export default function EmployeeDetailPage() {
     queryKey: ["employee", employeeId],
     queryFn: () => employeesApi.getById(employeeId),
     enabled: !!employeeId,
+    staleTime: 30_000,
   })
 
   // Fetch tasks for employee
@@ -131,6 +132,7 @@ export default function EmployeeDetailPage() {
     queryKey: ["employeeTasks", employeeId],
     queryFn: () => employeesApi.getTasks(employeeId),
     enabled: !!employeeId && activeTab === "tasks",
+    staleTime: 30_000,
   })
 
   // Fetch attendance for employee
@@ -138,6 +140,7 @@ export default function EmployeeDetailPage() {
     queryKey: ["employeeAttendance", employeeId],
     queryFn: () => employeesApi.getAttendance(employeeId),
     enabled: !!employeeId && activeTab === "attendance",
+    staleTime: 30_000,
   })
 
   // Fetch performance metrics
@@ -145,6 +148,7 @@ export default function EmployeeDetailPage() {
     queryKey: ["employeePerformance", employeeId],
     queryFn: () => employeesApi.getPerformance(employeeId),
     enabled: !!employeeId && activeTab === "performance",
+    staleTime: 30_000,
   })
 
   // Fetch assignments
@@ -152,6 +156,7 @@ export default function EmployeeDetailPage() {
     queryKey: ["employeeAssignments", employeeId],
     queryFn: () => employeesApi.getAssignments(employeeId),
     enabled: !!employeeId && activeTab === "locations",
+    staleTime: 30_000,
   })
 
   // Update mutation

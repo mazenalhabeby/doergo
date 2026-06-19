@@ -99,6 +99,7 @@ export function ScheduleTab({ employeeId, canManage }: ScheduleTabProps) {
     queryKey: ["employeeSchedule", employeeId],
     queryFn: () => employeesApi.getSchedule(employeeId),
     enabled: !!employeeId,
+    staleTime: 30_000, // avoid refetching the schedule on every tab re-open
   })
 
   const saveMutation = useMutation({

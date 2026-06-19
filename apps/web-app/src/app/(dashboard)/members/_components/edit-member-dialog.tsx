@@ -6,6 +6,7 @@ import { Check, Copy, KeyRound, AlertTriangle, MapPin, X, Plus, ChevronsUpDown }
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
+import { ScheduleFields, createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
 import {
   organizationsApi,
   locationsApi,
@@ -18,7 +19,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -58,24 +58,6 @@ const POSITION_SUGGESTIONS = [
   "Office Manager", "Warehouse Worker", "Service Engineer", "Project Manager",
   "Designer", "Developer", "Customer Support", "Delivery Driver", "Inspector",
 ]
-
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
-interface EditableScheduleRow {
-  dayOfWeek: number
-  startTime: string
-  endTime: string
-  isActive: boolean
-}
-
-function createDefaultSchedule(): EditableScheduleRow[] {
-  return Array.from({ length: 7 }, (_, i) => ({
-    dayOfWeek: i,
-    startTime: "09:00",
-    endTime: "17:00",
-    isActive: i >= 1 && i <= 5,
-  }))
-}
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -180,58 +162,6 @@ const PositionCombobox = memo(function PositionCombobox({
         </Command>
       </PopoverContent>
     </Popover>
-  )
-})
-
-const CompactScheduleEditor = memo(function CompactScheduleEditor({
-  rows,
-  onChange,
-}: {
-  rows: EditableScheduleRow[]
-  onChange: (rows: EditableScheduleRow[]) => void
-}) {
-  const updateRow = (dayOfWeek: number, field: keyof EditableScheduleRow, value: string | boolean) => {
-    onChange(rows.map((row) => (row.dayOfWeek === dayOfWeek ? { ...row, [field]: value } : row)))
-  }
-
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs font-medium text-muted-foreground">Weekly hours</Label>
-      <div className="border rounded-lg divide-y divide-border/60 bg-muted/20">
-        {rows.map((row) => (
-          <div
-            key={row.dayOfWeek}
-            className={cn(
-              "grid grid-cols-[44px_1fr_1fr_36px] items-center gap-2 px-3 py-1.5 transition-opacity",
-              !row.isActive && "opacity-40",
-            )}
-          >
-            <span className="text-xs font-medium text-foreground">{DAY_NAMES[row.dayOfWeek]}</span>
-            <Input
-              type="time"
-              value={row.startTime}
-              onChange={(e) => updateRow(row.dayOfWeek, "startTime", e.target.value)}
-              className="h-7 text-xs px-2"
-              disabled={!row.isActive}
-            />
-            <Input
-              type="time"
-              value={row.endTime}
-              onChange={(e) => updateRow(row.dayOfWeek, "endTime", e.target.value)}
-              className="h-7 text-xs px-2"
-              disabled={!row.isActive}
-            />
-            <div className="flex justify-center">
-              <Switch
-                checked={row.isActive}
-                onCheckedChange={(checked) => updateRow(row.dayOfWeek, "isActive", !!checked)}
-                className="scale-75"
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   )
 })
 
@@ -456,50 +386,20 @@ export function EditMemberDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Title</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Position</Label>
             <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
           </div>
 
           <EditSection label="Work schedule" />
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Schedule</Label>
-            <Select
-              value={scheduleType}
-              onValueChange={(v) => {
-                setScheduleType(v)
-                if (v === "FIXED") setScheduleRows(createDefaultSchedule())
-              }}
-            >
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="NONE">No tracking</SelectItem>
-                <SelectItem value="FIXED">Fixed schedule</SelectItem>
-                <SelectItem value="FLEXIBLE">Flexible hours</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {scheduleType === "FIXED" && <CompactScheduleEditor rows={scheduleRows} onChange={setScheduleRows} />}
-
-          {scheduleType === "FLEXIBLE" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="editBudget" className="text-xs font-medium text-muted-foreground">Monthly hour budget</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="editBudget"
-                  type="number"
-                  min={0}
-                  max={744}
-                  value={monthlyHourBudget}
-                  onChange={(e) => setMonthlyHourBudget(e.target.value === "" ? "" : Number(e.target.value))}
-                  placeholder="160"
-                  className="h-9 w-28 focus-visible:ring-offset-0"
-                />
-                <span className="text-sm text-muted-foreground">hours/month</span>
-              </div>
-            </div>
-          )}
+          <ScheduleFields
+            scheduleType={scheduleType}
+            onScheduleTypeChange={setScheduleType}
+            scheduleRows={scheduleRows}
+            onScheduleRowsChange={setScheduleRows}
+            monthlyHourBudget={monthlyHourBudget}
+            onMonthlyHourBudgetChange={setMonthlyHourBudget}
+          />
 
           <EditSection label="Role & access" />
 

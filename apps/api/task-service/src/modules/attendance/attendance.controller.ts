@@ -41,6 +41,7 @@ export class AttendanceController {
       locationId: string;
       organizationId: string;
       date?: string;
+      search?: string;
       page?: number;
       limit?: number;
       requesterId?: string;
@@ -71,6 +72,7 @@ export class AttendanceController {
       organizationId: string;
       date?: string;
       status?: string;
+      search?: string;
       page?: number;
       limit?: number;
     },

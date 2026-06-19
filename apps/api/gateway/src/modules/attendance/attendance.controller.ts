@@ -125,6 +125,7 @@ export class AttendanceController {
   async getLocationEntries(
     @Param('id') locationId: string,
     @Query('date') date?: string,
+    @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Request() req?: any,
@@ -135,6 +136,7 @@ export class AttendanceController {
       locationId,
       organizationId: req.user.organizationId,
       date,
+      search,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       requesterId: req.user.id,
@@ -176,6 +178,7 @@ export class AttendanceController {
   async getAllEntries(
     @Query('date') date?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Request() req?: any,
@@ -186,6 +189,7 @@ export class AttendanceController {
       organizationId: req.user.organizationId,
       date,
       status,
+      search,
       page: parsedPage,
       limit: parsedLimit,
     });
