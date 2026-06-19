@@ -15,3 +15,6 @@ export * from './types';
 
 // Export utility functions (date, query string building)
 export * from './utils';
+
+// Client-safe constants (pure data — no server deps)
+export * from './constants/attendance';

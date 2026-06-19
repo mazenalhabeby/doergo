@@ -4,7 +4,9 @@ import { useState, useCallback } from "react"
 import dynamic from "next/dynamic"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2 } from "lucide-react"
-import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS } from "@hbcfield/shared/client"
+import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
+
+const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
 import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -50,7 +52,7 @@ export function SpaceForm({
   const [address, setAddress] = useState("")
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
-  const [radius, setRadius] = useState("200")
+  const [radius, setRadius] = useState(String(GEO_DEFAULT))
   const [timezone] = useState("Europe/Berlin")
   const [workflowId, setWorkflowId] = useState("")
   const [enabledModules, setEnabledModules] = useState<string[]>([...DEFAULT_ORG_MODULES])
@@ -81,7 +83,12 @@ export function SpaceForm({
       // attendance geofencing.
       lat: lat ?? undefined,
       lng: lng ?? undefined,
-      geofenceRadius: parseInt(radius) || 200,
+      // Geofence only matters for a physical site; clamp to the backend's
+      // allowed range so the value can never be rejected. Workspaces omit it
+      // (the backend defaults it).
+      geofenceRadius: isPhysical
+        ? Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
+        : undefined,
       timezone,
       enabledModules,
       workflowId: workflowId || defaultWorkflow?.id || undefined,
@@ -154,7 +161,7 @@ export function SpaceForm({
           <LocationPicker
             lat={lat}
             lng={lng}
-            radius={parseInt(radius) || 200}
+            radius={parseInt(radius) || GEO_DEFAULT}
             address={address}
             onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
             onAddressChange={setAddress}
@@ -165,16 +172,16 @@ export function SpaceForm({
               <Input
                 id="space-radius"
                 type="number"
-                min={5}
-                max={500}
+                min={GEO_MIN}
+                max={GEO_MAX}
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
                 className="w-24"
               />
               <input
                 type="range"
-                min={5}
-                max={500}
+                min={GEO_MIN}
+                max={GEO_MAX}
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
                 className="flex-1 accent-blue-600"
