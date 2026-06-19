@@ -373,6 +373,7 @@ export function EditMemberDialog({
   const saveScheduleMutation = useMutation({
     mutationFn: ({ memberId, schedule }: { memberId: string; schedule: ScheduleEntryInput[] }) =>
       employeesApi.setSchedule(memberId, schedule),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employeeSchedule"] }),
     onError: (error: Error) => notify.error(error.message || "Failed to save schedule"),
   })
 
@@ -388,6 +389,10 @@ export function EditMemberDialog({
           isActive: row.isActive,
         })),
       })
+    } else if (member.scheduleType === "FIXED") {
+      // Switching away from a fixed schedule — clear the now-stale weekly rows
+      // (the backend deletes-then-recreates, so an empty array wipes them).
+      saveScheduleMutation.mutate({ memberId: member.id, schedule: [] })
     }
     updateMutation.mutate({
       memberId: member.id,

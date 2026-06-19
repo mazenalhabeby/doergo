@@ -406,40 +406,58 @@ export default function MemberProfilePage({
             <div className="px-5 py-4 border-b border-border/60">
               <h2 className="text-sm font-semibold text-foreground">Schedule</h2>
             </div>
-            {scheduleLoading ? (
-              <div className="p-5 space-y-2">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <Skeleton key={i} className="h-5 w-full" />
-                ))}
-              </div>
-            ) : schedule.length > 0 ? (
-              <div className="divide-y divide-border/40">
-                {DAY_NAMES.map((dayName, i) => {
-                  const entry = schedule.find((s: ScheduleEntry) => s.dayOfWeek === i)
-                  const isActive = entry?.isActive
-                  return (
-                    <div
-                      key={i}
-                      className={cn(
-                        "flex items-center justify-between px-5 py-2.5",
-                        !isActive && "opacity-40"
-                      )}
-                    >
-                      <span className="text-sm font-medium text-foreground w-10">{dayName}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {isActive
-                          ? `${formatTime12h(entry!.startTime)} - ${formatTime12h(entry!.endTime)}`
-                          : "Off"
-                        }
-                      </span>
-                    </div>
-                  )
-                })}
+            {member.scheduleType === "FIXED" ? (
+              scheduleLoading ? (
+                <div className="p-5 space-y-2">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <Skeleton key={i} className="h-5 w-full" />
+                  ))}
+                </div>
+              ) : schedule.length > 0 ? (
+                <div className="divide-y divide-border/40">
+                  {DAY_NAMES.map((dayName, i) => {
+                    const entry = schedule.find((s: ScheduleEntry) => s.dayOfWeek === i)
+                    const isActive = entry?.isActive
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "flex items-center justify-between px-5 py-2.5",
+                          !isActive && "opacity-40"
+                        )}
+                      >
+                        <span className="text-sm font-medium text-foreground w-10">{dayName}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {isActive
+                            ? `${formatTime12h(entry!.startTime)} - ${formatTime12h(entry!.endTime)}`
+                            : "Off"
+                          }
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="px-5 py-8 text-center">
+                  <CalendarDays className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No schedule configured</p>
+                </div>
+              )
+            ) : member.scheduleType === "FLEXIBLE" ? (
+              // Flexible-hours members track a monthly budget, not a fixed weekly grid.
+              <div className="px-5 py-8 text-center">
+                <Timer className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                <p className="text-sm font-medium text-foreground">Flexible hours</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {member.monthlyHourBudget
+                    ? `${member.monthlyHourBudget} hrs / month budget`
+                    : "No monthly budget set"}
+                </p>
               </div>
             ) : (
               <div className="px-5 py-8 text-center">
                 <CalendarDays className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">No schedule configured</p>
+                <p className="text-sm text-muted-foreground">No schedule tracked</p>
               </div>
             )}
           </div>
