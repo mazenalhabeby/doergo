@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef, memo } from "react"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Type,
@@ -82,6 +83,7 @@ const FieldInput = memo(function FieldInput({
   value: string
   onChange: (value: string) => void
 }) {
+  const { t } = useTranslation()
   const Icon = getFieldIcon(definition.type)
 
   switch (definition.type) {
@@ -91,7 +93,7 @@ const FieldInput = memo(function FieldInput({
           <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             className="pl-9 h-9 text-sm"
-            placeholder={`Enter ${definition.name.toLowerCase()}...`}
+            placeholder={t("tasks.customFields.enterPlaceholder", { name: definition.name.toLowerCase() })}
             value={value}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -126,7 +128,7 @@ const FieldInput = memo(function FieldInput({
       return (
         <Select value={value || ""} onValueChange={onChange}>
           <SelectTrigger className="h-9 text-sm">
-            <SelectValue placeholder={`Select ${definition.name.toLowerCase()}...`} />
+            <SelectValue placeholder={t("tasks.customFields.selectPlaceholder", { name: definition.name.toLowerCase() })} />
           </SelectTrigger>
           <SelectContent>
             {(definition.options || []).map((opt) => (
@@ -193,6 +195,7 @@ const FieldInput = memo(function FieldInput({
 // ============================================================================
 
 export function CustomFieldsSection({ taskId }: { taskId: string }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [localValues, setLocalValues] = useState<Record<string, string>>({})
   const [initialized, setInitialized] = useState(false)
@@ -261,13 +264,13 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
   }
 
   return (
-    <CollapsibleSection id="custom-fields" icon={Settings2} title="Custom Fields">
+    <CollapsibleSection id="custom-fields" icon={Settings2} title={t("tasks.sections.customFields")}>
       <div>
         {saveMutation.isPending && (
           <div className="flex justify-end mb-2">
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              Saving...
+              {t("common.saving")}
             </span>
           </div>
         )}

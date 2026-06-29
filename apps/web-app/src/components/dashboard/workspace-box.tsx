@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect } from "react"
 import { Ghost, Circle, Briefcase, Clock, AlertTriangle, WifiOff, Lock, X, Settings, UserPlus, Maximize2, ChevronLeft, CalendarOff, ShieldAlert, ClipboardList, MessageCircle, Phone, Video, User, ArrowUpRight, ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { employeesApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -106,6 +107,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
   onKeyDown,
   className,
 }, ref) {
+  const { t } = useTranslation()
   const isEmpty = people.length === 0
   const [subPanel, setSubPanel] = useState<SubPanel>(null)
 
@@ -146,7 +148,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
       ref={ref}
       role="button"
       tabIndex={0}
-      aria-label={`${title}, ${visibleCount} workers`}
+      aria-label={t("workspace.ariaLabel", { title, count: visibleCount })}
       aria-expanded={isExpanded}
       onKeyDown={onKeyDown}
       className={cn(
@@ -200,22 +202,22 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
             <span className="text-foreground/20">·</span>
             {people.length > 0 && (
               <span className="text-xs text-foreground/50 font-medium">
-                <span className="text-foreground/80 font-bold">{people.length}</span> present
+                <span className="text-foreground/80 font-bold">{people.length}</span> {t("workspace.present")}
               </span>
             )}
             {onRoadPeople.length > 0 && (
               <span className="text-xs text-foreground/50 font-medium">
-                <span className="text-foreground/80 font-bold">{onRoadPeople.length}</span> in field
+                <span className="text-foreground/80 font-bold">{onRoadPeople.length}</span> {t("workspace.inField")}
               </span>
             )}
             {remotePeople.length > 0 && (
               <span className="text-xs text-foreground/50 font-medium">
-                <span className="text-foreground/80 font-bold">{remotePeople.length}</span> off-site
+                <span className="text-foreground/80 font-bold">{remotePeople.length}</span> {t("workspace.offSite")}
               </span>
             )}
             {offDutyPeople.length > 0 && (
               <span className="text-xs text-foreground/40 font-medium">
-                <span className="text-foreground/60 font-bold">{offDutyPeople.length}</span> off
+                <span className="text-foreground/60 font-bold">{offDutyPeople.length}</span> {t("workspace.off")}
               </span>
             )}
           </div>
@@ -243,10 +245,10 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
           {(() => {
             // Build the groups: on-site, in-field, off-site, off-duty
             const groups = [
-              { key: null as SubPanel, label: "Present", people, variant: "cells" as const },
-              { key: "inField" as SubPanel, label: "In Field", people: onRoadPeople, variant: "cells" as const },
-              { key: "offSite" as SubPanel, label: "Off-site", people: remotePeople, variant: "cells" as const },
-              { key: "offDuty" as SubPanel, label: "Off Duty", people: offDutyPeople, variant: "offduty" as const },
+              { key: null as SubPanel, label: t("workspace.groupPresent"), people, variant: "cells" as const },
+              { key: "inField" as SubPanel, label: t("workspace.groupInField"), people: onRoadPeople, variant: "cells" as const },
+              { key: "offSite" as SubPanel, label: t("workspace.groupOffSite"), people: remotePeople, variant: "cells" as const },
+              { key: "offDuty" as SubPanel, label: t("workspace.groupOffDuty"), people: offDutyPeople, variant: "offduty" as const },
             ].filter(g => g.people.length > 0 || g.key === null)
 
             const activeGroup = subPanel ? groups.find(g => g.key === subPanel) : groups.find(g => g.key === null)
@@ -273,7 +275,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
                         <OffDutyRow key={`${person.name}-${i}`} person={person} delay={i * 0.05} />
                       ))}
                       {activeGroup.people.length === 0 && (
-                        <div className="flex-1 flex items-center justify-center text-xs text-foreground/30">All accounted for</div>
+                        <div className="flex-1 flex items-center justify-center text-xs text-foreground/30">{t("workspace.allAccountedFor")}</div>
                       )}
                     </div>
                   ) : activeGroup && activeGroup.people.length > 0 ? (
@@ -287,16 +289,16 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
                       <Ghost className="h-10 w-10 text-foreground/10" />
                       {(onRoadPeople.length > 0 || remotePeople.length > 0) ? (
                         <>
-                          <span className="text-sm text-foreground/30">No one present</span>
+                          <span className="text-sm text-foreground/30">{t("workspace.noOnePresent")}</span>
                           <span className="text-xs text-foreground/20">
                             {[
-                              onRoadPeople.length > 0 && `${onRoadPeople.length} in field`,
-                              remotePeople.length > 0 && `${remotePeople.length} off-site`,
+                              onRoadPeople.length > 0 && t("workspace.inFieldCount", { count: onRoadPeople.length }),
+                              remotePeople.length > 0 && t("workspace.offSiteCount", { count: remotePeople.length }),
                             ].filter(Boolean).join(" · ")}
                           </span>
                         </>
                       ) : (
-                        <span className="text-sm text-foreground/30">No active members</span>
+                        <span className="text-sm text-foreground/30">{t("workspace.noActiveMembers")}</span>
                       )}
                     </div>
                   )}
@@ -336,7 +338,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
               className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-foreground/70 bg-foreground/[0.08] hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 hover:scale-[1.02]"
             >
               <Settings className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90" />
-              Manage Space
+              {t("workspace.manageSpace")}
             </button>
           )}
           {onAssign && (
@@ -345,7 +347,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
               className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-primary-foreground bg-primary/80 hover:bg-primary transition-all duration-200 hover:scale-[1.02] shadow-sm shadow-primary/20"
             >
               <UserPlus className="h-3.5 w-3.5" />
-              Add Member
+              {t("workspace.addMember")}
             </button>
           )}
           {onViewTasks && (
@@ -354,7 +356,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
               className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-foreground/70 bg-foreground/[0.08] hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 hover:scale-[1.02]"
             >
               <ClipboardList className="h-3.5 w-3.5" />
-              View Tasks
+              {t("workspace.viewTasks")}
             </button>
           )}
         </div>
@@ -396,7 +398,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
             {allEmpty ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 p-[1cqw]">
                 <Ghost className="h-8 w-8 text-foreground/80" />
-                <span className="text-xs text-foreground/80 font-medium">All quiet today</span>
+                <span className="text-xs text-foreground/80 font-medium">{t("workspace.allQuietToday")}</span>
               </div>
             ) : (
               <div
@@ -501,12 +503,13 @@ const SideStatusBox = React.memo(function SideStatusBox({ label, people, variant
 })
 
 const MiniWorkerCell = React.memo(function MiniWorkerCell({ person }: { person: PersonNodeProps }) {
+  const { t } = useTranslation()
   return (
     <div className="rounded-md bg-card dark:bg-accent/40 border border-border/40 dark:border-border/30 flex flex-col h-[60px] min-w-[90px] shadow-sm dark:shadow-none">
       <div className="flex items-center justify-between px-1.5 pt-1 shrink-0">
         <span className="text-[8px] font-semibold text-foreground/60 truncate">{person.name}</span>
         {person.status === "busy" && (
-          <div className="shrink-0" title="Busy">
+          <div className="shrink-0" title={t("workspace.busy")}>
             <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
               <circle cx="9" cy="9" r="8" fill="#ef4444" fillOpacity="0.15" stroke="#ef4444" strokeWidth="1" strokeOpacity="0.3" />
               <rect x="6" y="8" width="6" height="5" rx="1" fill="#ef4444" />
@@ -530,14 +533,15 @@ const MiniWorkerCell = React.memo(function MiniWorkerCell({ person }: { person: 
   )
 })
 
-const ABSENCE_INFO: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-  time_off: { label: "Time Off", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-500/10", icon: <CalendarOff className="h-3.5 w-3.5" /> },
-  sick: { label: "Sick Leave", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10", icon: <AlertTriangle className="h-3.5 w-3.5" /> },
-  day_off: { label: "Day Off", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-500/10", icon: <CalendarOff className="h-3.5 w-3.5" /> },
-  unexcused: { label: "Unexcused", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-500/10", icon: <ShieldAlert className="h-3.5 w-3.5" /> },
+const ABSENCE_INFO: Record<string, { labelKey: string; color: string; bgColor: string; icon: React.ReactNode }> = {
+  time_off: { labelKey: "workspace.absenceReason.time_off", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-500/10", icon: <CalendarOff className="h-3.5 w-3.5" /> },
+  sick: { labelKey: "workspace.absenceReason.sick", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10", icon: <AlertTriangle className="h-3.5 w-3.5" /> },
+  day_off: { labelKey: "workspace.absenceReason.day_off", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-500/10", icon: <CalendarOff className="h-3.5 w-3.5" /> },
+  unexcused: { labelKey: "workspace.absenceReason.unexcused", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-500/10", icon: <ShieldAlert className="h-3.5 w-3.5" /> },
 }
 
 const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0 }: { person: PersonNodeProps; delay?: number }) {
+  const { t } = useTranslation()
   const reason = person.absenceReason || "unexcused"
   const info = ABSENCE_INFO[reason] || ABSENCE_INFO.unexcused!
 
@@ -561,7 +565,7 @@ const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0 }: { perso
       </div>
       <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shrink-0", info.color, info.bgColor)}>
         {info.icon}
-        {info.label}
+        {t(info.labelKey)}
       </div>
     </div>
   )
@@ -576,6 +580,7 @@ const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
   delay?: number
   onPersonClick?: (userId: string) => void
 }) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = React.useState(false)
 
   return (
@@ -621,7 +626,7 @@ const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
           <WorkerDropdownContent person={person} onPersonClick={onPersonClick} onClose={() => setIsOpen(false)} />
         )}
         {isOpen && !person.userId && (
-          <div className="p-4 text-center text-sm text-muted-foreground">No profile data</div>
+          <div className="p-4 text-center text-sm text-muted-foreground">{t("workspace.noProfileData")}</div>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -638,6 +643,7 @@ function WorkerDropdownContent({
   onPersonClick?: (userId: string) => void
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const { user } = useAuth()
   const userId = person.userId!
@@ -698,9 +704,9 @@ function WorkerDropdownContent({
           </div>
           <div className="flex-1 min-w-0 pb-0.5">
             <p className="text-sm font-bold text-white truncate drop-shadow-sm">
-              {person.name}{isSelf ? " (You)" : ""}
+              {person.name}{isSelf ? ` ${t("workspace.you")}` : ""}
             </p>
-            <p className="text-[11px] text-white/70">{emp?.position || person.role || "Employee"}</p>
+            <p className="text-[11px] text-white/70">{emp?.position || person.role || t("workspace.employee")}</p>
           </div>
           {person.tag && (
             <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm shrink-0">
@@ -723,7 +729,7 @@ function WorkerDropdownContent({
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className={cn("text-sm font-bold tabular-nums leading-none", perfColor)}>{displayScore ?? "—"}</span>
-            <span className="text-[7px] text-muted-foreground uppercase">Score</span>
+            <span className="text-[7px] text-muted-foreground uppercase">{t("workspace.score")}</span>
           </div>
         </div>
 
@@ -731,15 +737,15 @@ function WorkerDropdownContent({
         <div className="flex-1 grid grid-cols-3 gap-1">
           <div className="text-center py-1.5 rounded-lg bg-muted/30">
             <p className="text-base font-bold text-foreground tabular-nums leading-tight">{tasksCompleted}</p>
-            <p className="text-[8px] text-muted-foreground mt-0.5">Done</p>
+            <p className="text-[8px] text-muted-foreground mt-0.5">{t("workspace.done")}</p>
           </div>
           <div className="text-center py-1.5 rounded-lg bg-muted/30">
             <p className="text-base font-bold text-foreground tabular-nums leading-tight">{tasksActive}</p>
-            <p className="text-[8px] text-muted-foreground mt-0.5">Active</p>
+            <p className="text-[8px] text-muted-foreground mt-0.5">{t("workspace.active")}</p>
           </div>
           <div className="text-center py-1.5 rounded-lg bg-muted/30">
             <p className="text-base font-bold text-foreground tabular-nums leading-tight">{Math.round(hoursWeek)}h</p>
-            <p className="text-[8px] text-muted-foreground mt-0.5">This Week</p>
+            <p className="text-[8px] text-muted-foreground mt-0.5">{t("workspace.thisWeek")}</p>
           </div>
         </div>
       </div>
@@ -747,7 +753,7 @@ function WorkerDropdownContent({
       {/* ── Current Task ── */}
       {person.currentTask && (
         <div className="px-4 pb-3">
-          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">Working On</p>
+          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">{t("workspace.workingOn")}</p>
           <button
             onClick={(e) => { e.stopPropagation(); onClose(); router.push(`/tasks`) }}
             className="w-full text-left group flex items-center gap-2.5 px-3 py-2 rounded-xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 hover:border-blue-500/25 transition-colors"
@@ -762,7 +768,7 @@ function WorkerDropdownContent({
       {/* ── Recent Activity ── */}
       {recentActivity.length > 0 && (
         <div className="px-4 pb-3">
-          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">Recent</p>
+          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">{t("workspace.recent")}</p>
           <div className="space-y-0.5">
             {recentActivity.map((item: any, i: number) => (
               <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/30 transition-colors">
@@ -772,7 +778,7 @@ function WorkerDropdownContent({
                   item.type === "task_started" ? "bg-blue-500" :
                   item.type === "clock_in" ? "bg-emerald-500" : "bg-muted-foreground/40",
                 )} />
-                <p className="text-[10px] text-foreground/70 truncate flex-1">{item.description || item.title || "Activity"}</p>
+                <p className="text-[10px] text-foreground/70 truncate flex-1">{item.description || item.title || t("workspace.activity")}</p>
                 <span className="text-[9px] text-muted-foreground/50 shrink-0 tabular-nums">
                   {item.time || item.createdAt?.split("T")[0] || ""}
                 </span>
@@ -795,7 +801,7 @@ function WorkerDropdownContent({
                   className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-muted/60 border border-border/50 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <Clock className="size-3.5" />
-                  Attendance
+                  {t("workspace.attendance")}
                 </button>
               )}
               {selfTimeOff && (
@@ -804,7 +810,7 @@ function WorkerDropdownContent({
                   className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-muted/60 border border-border/50 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <CalendarOff className="size-3.5" />
-                  Time off
+                  {t("workspace.timeOff")}
                 </button>
               )}
             </div>
@@ -817,23 +823,23 @@ function WorkerDropdownContent({
           {/* ── Communication ── */}
           <div className="px-3 py-2 flex items-center gap-1.5">
             <button
-              onClick={(e) => { e.stopPropagation(); notify.success("Messaging coming soon") }}
+              onClick={(e) => { e.stopPropagation(); notify.success(t("workspace.messagingComingSoon")) }}
               className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
             >
               <MessageCircle className="size-3.5" />
-              Message
+              {t("workspace.message")}
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); notify.success("Voice call coming soon") }}
+              onClick={(e) => { e.stopPropagation(); notify.success(t("workspace.voiceCallComingSoon")) }}
               className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-              title="Voice Call"
+              title={t("workspace.voiceCall")}
             >
               <Phone className="size-3.5" />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); notify.success("Video call coming soon") }}
+              onClick={(e) => { e.stopPropagation(); notify.success(t("workspace.videoCallComingSoon")) }}
               className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-              title="Video Call"
+              title={t("workspace.videoCall")}
             >
               <Video className="size-3.5" />
             </button>
@@ -848,7 +854,7 @@ function WorkerDropdownContent({
               className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
               <User className="size-3" />
-              Profile
+              {t("workspace.profile")}
             </button>
             <div className="w-px h-4 bg-border" />
             <button
@@ -856,7 +862,7 @@ function WorkerDropdownContent({
               className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
               <ClipboardList className="size-3" />
-              Tasks
+              {t("workspace.tasks")}
             </button>
           </div>
         </>

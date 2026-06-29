@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { Copy, Check, CheckCircle2, Mail, Link2 } from "lucide-react"
 import { notify } from "@/lib/toast"
 
@@ -34,6 +35,7 @@ interface CreateInvitationDialogProps {
 }
 
 export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationDialogProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
@@ -73,7 +75,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] })
     },
     onError: (error: Error) => {
-      notify.error(error.message || "Failed to create invitation")
+      notify.error(error.message || t("invitations.inviteDialog.failedToCreate"))
     },
   })
 
@@ -98,7 +100,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     if (!generatedCode) return
     await navigator.clipboard.writeText(generatedCode)
     setCodeCopied(true)
-    notify.success("Code copied")
+    notify.success(t("invitations.inviteDialog.codeCopied"))
     setTimeout(() => setCodeCopied(false), 3000)
   }, [generatedCode])
 
@@ -137,7 +139,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Invite Team Member</DialogTitle>
+            <DialogTitle>{t("invitations.inviteDialog.title")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
@@ -147,13 +149,13 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Invitation sent</p>
+                  <p className="font-medium text-foreground">{t("invitations.inviteDialog.invitationSent")}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    An email has been sent to <span className="font-medium text-foreground">{email}</span>
+                    {t("invitations.inviteDialog.emailSentToPrefix")} <span className="font-medium text-foreground">{email}</span>
                   </p>
                 </div>
                 <div className="bg-muted/60 rounded-lg p-3 space-y-1">
-                  <p className="text-xs text-muted-foreground">Invitation code (also in the email)</p>
+                  <p className="text-xs text-muted-foreground">{t("invitations.inviteDialog.codeAlsoInEmail")}</p>
                   <div className="flex items-center justify-center gap-2">
                     <p className="text-xl font-mono font-bold tracking-[0.15em] text-foreground">{generatedCode}</p>
                     <Button variant="ghost" size="icon" onClick={handleCopyCode} className="h-7 w-7">
@@ -168,8 +170,8 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   <Link2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Invitation code created</p>
-                  <p className="text-sm text-muted-foreground mt-1">Share this code with the new team member.</p>
+                  <p className="font-medium text-foreground">{t("invitations.inviteDialog.codeCreated")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("invitations.inviteDialog.shareCode")}</p>
                 </div>
                 <div className="bg-muted/60 rounded-xl p-5">
                   <p className="text-3xl font-mono font-bold tracking-[0.2em] text-foreground">{generatedCode}</p>
@@ -179,14 +181,14 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
 
             <div className="flex gap-2 pt-1">
               <Button variant="outline" onClick={handleSendAnother} className="flex-1 rounded-lg">
-                {mode === "email" ? "Send Another" : "Create Another"}
+                {mode === "email" ? t("invitations.inviteDialog.sendAnother") : t("invitations.inviteDialog.createAnother")}
               </Button>
               {mode === "code" && (
                 <Button variant="outline" onClick={handleCopyCode} className="rounded-lg">
-                  {codeCopied ? <><Check className="h-4 w-4 mr-1.5 text-green-600" />Copied</> : <><Copy className="h-4 w-4 mr-1.5" />Copy</>}
+                  {codeCopied ? <><Check className="h-4 w-4 mr-1.5 text-green-600" />{t("common.copied")}</> : <><Copy className="h-4 w-4 mr-1.5" />{t("common.copy")}</>}
                 </Button>
               )}
-              <Button onClick={handleClose} className="flex-1 rounded-lg">Done</Button>
+              <Button onClick={handleClose} className="flex-1 rounded-lg">{t("common.done")}</Button>
             </div>
           </div>
         </DialogContent>
@@ -200,14 +202,14 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Invite Team Member</DialogTitle>
-          <DialogDescription>Send an email invitation or generate a code to share manually.</DialogDescription>
+          <DialogTitle>{t("invitations.inviteDialog.title")}</DialogTitle>
+          <DialogDescription>{t("invitations.inviteDialog.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Method toggle */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Method</Label>
+            <Label className="text-xs font-medium text-muted-foreground">{t("invitations.inviteDialog.methodLabel")}</Label>
             <div className="grid grid-cols-2 gap-1.5 p-1 bg-muted/60 rounded-lg">
               <button
                 type="button"
@@ -217,7 +219,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   mode === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Mail className="h-4 w-4" />Email
+                <Mail className="h-4 w-4" />{t("invitations.inviteDialog.emailLabel")}
               </button>
               <button
                 type="button"
@@ -227,7 +229,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   mode === "code" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Link2 className="h-4 w-4" />Code
+                <Link2 className="h-4 w-4" />{t("invitations.inviteDialog.codeLabel")}
               </button>
             </div>
           </div>
@@ -235,18 +237,18 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
           {/* Email (email mode only) */}
           {mode === "email" && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Email</Label>
-              <Input type="email" placeholder="team@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-9" />
+              <Label className="text-xs font-medium text-muted-foreground">{t("invitations.inviteDialog.emailLabel")}</Label>
+              <Input type="email" placeholder={t("invitations.inviteDialog.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} className="h-9" />
             </div>
           )}
 
           {/* Position / title */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">
-              Position <span className="text-muted-foreground/50">(optional)</span>
+              {t("invitations.inviteDialog.positionLabel")} <span className="text-muted-foreground/50">{t("invitations.inviteDialog.optional")}</span>
             </Label>
             <Input
-              placeholder="e.g. Plumber, Field Technician"
+              placeholder={t("invitations.inviteDialog.positionPlaceholder")}
               value={position}
               onChange={(e) => setPosition(e.target.value)}
               className="h-9"
@@ -267,12 +269,12 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
           {locations.length > 0 && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">
-                Space <span className="text-muted-foreground/50">(optional)</span>
+                {t("invitations.inviteDialog.spaceLabel")} <span className="text-muted-foreground/50">{t("invitations.inviteDialog.optional")}</span>
               </Label>
               <Select value={spaceId} onValueChange={setSpaceId}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Assign to a space on join" /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder={t("invitations.inviteDialog.spacePlaceholder")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No space</SelectItem>
+                  <SelectItem value="none">{t("invitations.inviteDialog.noSpace")}</SelectItem>
                   {locations.map((loc: CompanyLocation) => (
                     <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                   ))}
@@ -283,15 +285,15 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} className="rounded-lg">Cancel</Button>
+          <Button variant="outline" onClick={handleClose} className="rounded-lg">{t("common.cancel")}</Button>
           <Button
             onClick={handleSubmit}
             disabled={createMutation.isPending || (mode === "email" && !email.trim())}
             className="rounded-lg"
           >
             {createMutation.isPending
-              ? mode === "email" ? "Sending..." : "Generating..."
-              : mode === "email" ? "Send Invitation" : "Generate Code"
+              ? mode === "email" ? t("invitations.inviteDialog.sending") : t("common.generating")
+              : mode === "email" ? t("invitations.inviteDialog.sendInvitation") : t("invitations.inviteDialog.generateCode")
             }
           </Button>
         </DialogFooter>

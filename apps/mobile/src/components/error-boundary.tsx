@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from '../i18n';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, RADIUS } from '../lib/constants';
 
 interface Props {
@@ -39,10 +40,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
       return (
         <View style={s.container}>
           <Ionicons name="warning-outline" size={48} color={COLORS.error} />
-          <Text style={s.title}>Something went wrong</Text>
-          <Text style={s.message}>{this.state.error?.message || 'An unexpected error occurred'}</Text>
+          <Text style={s.title}>{i18n.t('errors.somethingWentWrong')}</Text>
+          <Text style={s.message}>{this.state.error?.message || i18n.t('errors.unexpectedError')}</Text>
           <TouchableOpacity style={s.button} onPress={this.handleReset} activeOpacity={0.8}>
-            <Text style={s.buttonText}>Try Again</Text>
+            <Text style={s.buttonText}>{i18n.t('errors.tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       );

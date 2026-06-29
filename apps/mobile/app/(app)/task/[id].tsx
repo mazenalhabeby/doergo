@@ -1242,12 +1242,12 @@ export default function TaskDetailScreen() {
         {/* Per-step widgets — driven by the current status's capabilities */}
         {!isAdmin && (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos') || hasCapability(caps, 'form') || hasCapability(caps, 'signature')) && (
           <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>This step</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('taskDetail.thisStep.title')}</Text>
 
             {hasCapability(caps, 'checklist') && (
               <View style={{ marginBottom: hasCapability(caps, 'photos') ? 14 : 0 }}>
                 {(((task as any).checklistItems?.length ?? 0) === 0) ? (
-                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>No checklist items.</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('taskDetail.thisStep.noChecklistItems')}</Text>
                 ) : (
                   (task as any).checklistItems.map((it: any) => {
                     const done = it.completed ?? it.isCompleted ?? false;
@@ -1277,18 +1277,18 @@ export default function TaskDetailScreen() {
                     style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, borderRadius: 12, backgroundColor: colors.surfaceRaised }}
                   >
                     <Ionicons name="camera-outline" size={18} color={colors.textPrimary} />
-                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '600' }}>Camera</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '600' }}>{t('components.photoGrid.camera')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={async () => { const ps = await pickFromGallery(); if (ps?.length) handleUploadTaskAttachment(ps); }}
                     style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, borderRadius: 12, backgroundColor: colors.surfaceRaised }}
                   >
                     <Ionicons name="images-outline" size={18} color={colors.textPrimary} />
-                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '600' }}>Gallery</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '600' }}>{t('components.photoGrid.gallery')}</Text>
                   </TouchableOpacity>
                 </View>
                 {isUploadingTaskAttachment && (
-                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>Uploading…</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>{t('common.uploading')}</Text>
                 )}
               </View>
             )}
@@ -1299,7 +1299,7 @@ export default function TaskDetailScreen() {
                 <TextInput
                   value={stepNote}
                   onChangeText={setStepNote}
-                  placeholder="Visit notes…"
+                  placeholder={t('taskDetail.thisStep.visitNotesPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   multiline
                   style={{ minHeight: 70, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, color: colors.textPrimary, fontSize: 14, textAlignVertical: 'top' }}
@@ -1309,7 +1309,7 @@ export default function TaskDetailScreen() {
                   disabled={!stepNote.trim() || savingStepNote}
                   style={{ marginTop: 8, height: 42, borderRadius: 12, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', opacity: (!stepNote.trim() || savingStepNote) ? 0.5 : 1 }}
                 >
-                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{savingStepNote ? 'Saving…' : 'Save note'}</Text>
+                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{savingStepNote ? t('taskDetail.thisStep.savingNote') : t('taskDetail.thisStep.saveNote')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -1318,7 +1318,7 @@ export default function TaskDetailScreen() {
             {hasCapability(caps, 'signature') && (
               <View style={{ marginTop: (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos') || hasCapability(caps, 'form')) ? 14 : 0 }}>
                 <SignatureCapture
-                  title="Signature"
+                  title={t('taskDetail.thisStep.signature')}
                   onSave={handleStepSignature}
                   onClear={() => setStepSignature('')}
                   existingSignature={stepSignature}

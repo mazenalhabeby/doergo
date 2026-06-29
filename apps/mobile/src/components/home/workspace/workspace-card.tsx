@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
 import { COLORS } from '../../../lib/constants';
 import { PersonNode, type PersonNodeData } from './person-node';
@@ -62,6 +63,7 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
   onViewTasks,
 }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const isFixed = box.type === 'fixed';
   const present = box.people;
   const peopleGap = compact ? { gap: 10, rowGap: 12 } : { gap: 14, rowGap: 12 };
@@ -82,7 +84,10 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
           </Text>
           {isFixed && (
             <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-              {box.activeCount ?? present.length} of {box.totalAssigned ?? present.length} active
+              {t('components.workspaceCard.activeCount', {
+                active: box.activeCount ?? present.length,
+                total: box.totalAssigned ?? present.length,
+              })}
             </Text>
           )}
         </View>
@@ -104,13 +109,13 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
               ))}
             </View>
           )}
-          <SubGroup label="In field" people={box.onRoadPeople || []} onPersonPress={onPersonPress} color="#60a5fa" />
-          <SubGroup label="Off-site" people={box.remotePeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
-          <SubGroup label="Off duty" people={box.offDutyPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
+          <SubGroup label={t('components.workspaceCard.inField')} people={box.onRoadPeople || []} onPersonPress={onPersonPress} color="#60a5fa" />
+          <SubGroup label={t('components.workspaceCard.offSite')} people={box.remotePeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
+          <SubGroup label={t('components.workspaceCard.offDuty')} people={box.offDutyPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
         </View>
       ) : (
         <View style={styles.emptyBody}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>No one assigned yet</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('components.workspaceCard.noneAssigned')}</Text>
         </View>
       )}
 
@@ -119,12 +124,12 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
         <View style={[styles.actions, { borderTopColor: colors.border }]}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => onAssign?.(box.locationId)} activeOpacity={0.7}>
             <Ionicons name="person-add-outline" size={15} color={COLORS.primary} />
-            <Text style={[styles.actionText, { color: COLORS.primary }]}>Assign</Text>
+            <Text style={[styles.actionText, { color: COLORS.primary }]}>{t('components.workspaceCard.assign')}</Text>
           </TouchableOpacity>
           <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.actionBtn} onPress={() => onViewTasks?.(box.locationId)} activeOpacity={0.7}>
             <Ionicons name="list-outline" size={15} color={colors.textSecondary} />
-            <Text style={[styles.actionText, { color: colors.textSecondary }]}>Tasks</Text>
+            <Text style={[styles.actionText, { color: colors.textSecondary }]}>{t('components.workspaceCard.tasks')}</Text>
           </TouchableOpacity>
         </View>
       )}

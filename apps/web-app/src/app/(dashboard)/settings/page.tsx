@@ -131,23 +131,23 @@ type SettingsSection =
 interface NavItem {
   key: SettingsSection
   icon: typeof Building2
-  label: string
+  labelKey: string
 }
 
 const ORG_NAV_ITEMS: NavItem[] = [
-  { key: "general", icon: Building2, label: "General" },
-  { key: "members", icon: Users, label: "Members" },
-  { key: "workflows", icon: GitBranch, label: "Task Types" },
+  { key: "general", icon: Building2, labelKey: "settings.nav.general" },
+  { key: "members", icon: Users, labelKey: "settings.nav.members" },
+  { key: "workflows", icon: GitBranch, labelKey: "settings.nav.taskTypes" },
   // Org-level notification policy (who gets emailed on task/join events) —
   // these prefs are org-scoped + admin-gated, so they belong here, not under
   // Personal (where non-admins would 403 loading/saving them).
-  { key: "notifications", icon: Bell, label: "Notifications" },
-  { key: "audit-log", icon: Clock, label: "Audit Log" },
+  { key: "notifications", icon: Bell, labelKey: "settings.nav.notifications" },
+  { key: "audit-log", icon: Clock, labelKey: "settings.nav.auditLog" },
 ]
 
 const PERSONAL_NAV_ITEMS: NavItem[] = [
-  { key: "profile", icon: Users, label: "Profile" },
-  { key: "security", icon: Key, label: "Password & Security" },
+  { key: "profile", icon: Users, labelKey: "settings.nav.profile" },
+  { key: "security", icon: Key, labelKey: "settings.nav.security" },
 ]
 
 const NAV_ITEMS = [...ORG_NAV_ITEMS, ...PERSONAL_NAV_ITEMS]
@@ -378,7 +378,7 @@ function GeneralSection() {
                 options={industryOptions}
                 placeholder={t("settings.general.industry")}
                 creatable
-                createLabel={q => `Add “${q}”`}
+                createLabel={q => t("settings.general.addCustom", { query: q })}
               />
             </FormField>
 
@@ -716,6 +716,7 @@ function ChangeEmailDialog({
   currentEmail: string
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   const [newEmail, setNewEmail] = useState("")
   const [password, setPassword] = useState("")
   const [saving, setSaving] = useState(false)
@@ -727,12 +728,12 @@ function ChangeEmailDialog({
     setSaving(true)
     try {
       await usersApi.updateMyEmail({ newEmail: newEmail.trim(), currentPassword: password })
-      notify.success("Email updated")
+      notify.success(t("settings.changeEmail.updated"))
       onChanged()
       reset()
       onOpenChange(false)
     } catch (e: any) {
-      notify.error(e.message || "Couldn't change email")
+      notify.error(e.message || t("settings.changeEmail.failed"))
     } finally {
       setSaving(false)
     }
@@ -742,29 +743,29 @@ function ChangeEmailDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o) }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Change email</DialogTitle>
+          <DialogTitle>{t("settings.changeEmail.title")}</DialogTitle>
           <DialogDescription>
-            Your email is your login. Enter a new one and confirm with your current password.
+            {t("settings.changeEmail.description")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div>
-            <Label className="text-xs text-muted-foreground">Current email</Label>
+            <Label className="text-xs text-muted-foreground">{t("settings.changeEmail.currentEmail")}</Label>
             <Input value={currentEmail} disabled className="mt-1 bg-muted" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">New email</Label>
+            <Label className="text-xs text-muted-foreground">{t("settings.changeEmail.newEmail")}</Label>
             <Input
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("settings.changeEmail.newEmailPlaceholder")}
               className="mt-1"
               autoFocus
             />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Current password</Label>
+            <Label className="text-xs text-muted-foreground">{t("settings.changeEmail.currentPassword")}</Label>
             <Input
               type="password"
               value={password}
@@ -776,10 +777,10 @@ function ChangeEmailDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
           <Button onClick={submit} disabled={!newEmail.trim() || !password || saving}>
             {saving && <Loader2 className="size-4 mr-1.5 animate-spin" />}
-            Change email
+            {t("settings.changeEmail.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -788,6 +789,7 @@ function ChangeEmailDialog({
 }
 
 function ProfileSection() {
+  const { t } = useTranslation()
   const { user, refreshUser } = useAuth()
   const queryClient = useQueryClient()
   const [firstName, setFirstName] = useState(user?.firstName || "")
@@ -814,11 +816,11 @@ function ProfileSection() {
     try {
       // Self-service — works for any user (not the admin member endpoint).
       await usersApi.updateMe({ firstName: firstName.trim(), lastName: lastName.trim() })
-      notify.success("Profile updated")
+      notify.success(t("settings.profile.updated"))
       queryClient.invalidateQueries({ queryKey: ["user"] })
       refreshUser()
     } catch (e: any) {
-      notify.error(e.message || "Failed to update profile")
+      notify.error(e.message || t("settings.profile.failed"))
     } finally {
       setSaving(false)
     }
@@ -831,12 +833,12 @@ function ProfileSection() {
     // Validate file
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
-      notify.error("Image must be less than 5MB")
+      notify.error(t("settings.profile.imageTooLarge"))
       return
     }
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
     if (!allowedTypes.includes(file.type)) {
-      notify.error("Only JPEG, PNG, and WebP images are allowed")
+      notify.error(t("settings.profile.invalidImageType"))
       return
     }
 
@@ -847,9 +849,9 @@ function ProfileSection() {
 
       // Refresh user data
       await refreshUser()
-      notify.success("Avatar updated")
+      notify.success(t("settings.profile.avatarUpdated"))
     } catch (err: any) {
-      notify.error(err.message || "Failed to upload avatar")
+      notify.error(err.message || t("settings.profile.avatarUploadFailed"))
     } finally {
       setAvatarUploading(false)
       // Reset the input so the same file can be selected again
@@ -862,9 +864,9 @@ function ProfileSection() {
     try {
       await usersApi.removeAvatar()
       await refreshUser()
-      notify.success("Avatar removed")
+      notify.success(t("settings.profile.avatarRemoved"))
     } catch (err: any) {
-      notify.error(err.message || "Failed to remove avatar")
+      notify.error(err.message || t("settings.profile.avatarRemoveFailed"))
     } finally {
       setAvatarRemoving(false)
     }
@@ -875,8 +877,8 @@ function ProfileSection() {
       icon={Users}
       iconColor="text-foreground"
       iconBg="bg-foreground/5"
-      title="Profile"
-      description="Your personal information. This is visible to other members of your organization."
+      title={t("settings.profile.title")}
+      description={t("settings.profile.description")}
     >
       <div className="space-y-4">
         <div className="flex items-center gap-4 mb-6">
@@ -891,7 +893,7 @@ function ProfileSection() {
             {/* Upload overlay */}
             <label className="absolute inset-0 rounded-full cursor-pointer bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
               <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                {avatarUploading ? "..." : "Edit"}
+                {avatarUploading ? "..." : t("settings.profile.editAvatar")}
               </span>
               <input
                 type="file"
@@ -914,7 +916,7 @@ function ProfileSection() {
                   disabled={avatarRemoving}
                   className="text-xs text-red-500 hover:text-red-600 transition-colors disabled:opacity-50"
                 >
-                  {avatarRemoving ? "Removing..." : "Remove photo"}
+                  {avatarRemoving ? t("common.removing") : t("settings.profile.removePhoto")}
                 </button>
               )}
             </div>
@@ -922,30 +924,30 @@ function ProfileSection() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs text-muted-foreground">First Name</Label>
+            <Label className="text-xs text-muted-foreground">{t("settings.profile.firstName")}</Label>
             <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Last Name</Label>
+            <Label className="text-xs text-muted-foreground">{t("settings.profile.lastName")}</Label>
             <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1" />
           </div>
         </div>
         <div>
-          <Label className="text-xs text-muted-foreground">Email</Label>
+          <Label className="text-xs text-muted-foreground">{t("settings.profile.email")}</Label>
           <div className="flex gap-2 mt-1">
             <Input value={user?.email || ""} disabled className="bg-muted flex-1" />
             <Button type="button" variant="outline" size="sm" onClick={() => setEmailDialogOpen(true)}>
-              Change
+              {t("settings.profile.changeEmailButton")}
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Your email is also your login. Changing it requires your password.
+            {t("settings.profile.emailLoginNote")}
           </p>
         </div>
         <div className="flex justify-end pt-2">
           <Button onClick={handleSave} disabled={!canSave} size="sm">
             {saving ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Save className="size-4 mr-1.5" />}
-            Save Changes
+            {t("common.saveChanges")}
           </Button>
         </div>
       </div>
@@ -964,6 +966,7 @@ function ProfileSection() {
 }
 
 function SecuritySection() {
+  const { t } = useTranslation()
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -974,26 +977,26 @@ function SecuritySection() {
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      notify.error("Passwords do not match")
+      notify.error(t("validation.passwordsDoNotMatch"))
       return
     }
     if (!STRONG_PW.test(newPassword)) {
-      notify.error("Password must be 8+ characters with an uppercase letter, a lowercase letter, and a number")
+      notify.error(t("settings.security.passwordPolicyError"))
       return
     }
     if (newPassword === currentPassword) {
-      notify.error("New password must be different from your current password")
+      notify.error(t("settings.security.passwordSameError"))
       return
     }
     setSaving(true)
     try {
       await authApi.changePassword(currentPassword, newPassword)
-      notify.success("Password changed", "You may need to sign in again on other devices.")
+      notify.success(t("settings.security.passwordChanged"), t("settings.security.passwordChangedDetail"))
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
     } catch (e: any) {
-      notify.error(e.message || "Failed to change password")
+      notify.error(e.message || t("settings.security.changeFailed"))
     } finally {
       setSaving(false)
     }
@@ -1004,29 +1007,29 @@ function SecuritySection() {
       icon={Shield}
       iconColor="text-foreground"
       iconBg="bg-foreground/5"
-      title="Password & Security"
-      description="Manage your password and security settings."
+      title={t("settings.security.title")}
+      description={t("settings.security.description")}
     >
       <div className="space-y-4">
         <div>
-          <Label className="text-xs text-muted-foreground">Current Password</Label>
+          <Label className="text-xs text-muted-foreground">{t("settings.security.currentPassword")}</Label>
           <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="mt-1" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs text-muted-foreground">New Password</Label>
+            <Label className="text-xs text-muted-foreground">{t("settings.security.newPassword")}</Label>
             <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Confirm New Password</Label>
+            <Label className="text-xs text-muted-foreground">{t("settings.security.confirmPassword")}</Label>
             <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1" />
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground">At least 8 characters with an uppercase letter, a lowercase letter, and a number.</p>
+        <p className="text-[11px] text-muted-foreground">{t("settings.security.passwordHint")}</p>
         <div className="flex justify-end pt-2">
           <Button onClick={handleChangePassword} disabled={saving || !currentPassword || !newPassword || !confirmPassword} size="sm">
             {saving ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Key className="size-4 mr-1.5" />}
-            Change Password
+            {t("settings.security.changeButton")}
           </Button>
         </div>
       </div>
@@ -1086,7 +1089,7 @@ export default function SettingsPage() {
               {canManage && (
                 <>
                   <p className="px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Organization
+                    {t("settings.nav.organizationGroup")}
                   </p>
                   {ORG_NAV_ITEMS.map(item => {
                     const isActive = activeSection === item.key
@@ -1101,7 +1104,7 @@ export default function SettingsPage() {
                         }`}
                       >
                         <item.icon className="size-4" />
-                        {item.label}
+                        {t(item.labelKey)}
                       </button>
                     )
                   })}
@@ -1111,7 +1114,7 @@ export default function SettingsPage() {
               {/* Personal section */}
               <div className={canManage ? "pt-5 pb-1.5" : "pb-1.5"}>
                 <p className="px-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Personal
+                  {t("settings.nav.personalGroup")}
                 </p>
               </div>
               {PERSONAL_NAV_ITEMS.map(item => {
@@ -1127,7 +1130,7 @@ export default function SettingsPage() {
                     }`}
                   >
                     <item.icon className="size-4" />
-                    {item.label}
+                    {t(item.labelKey)}
                   </button>
                 )
               })}
@@ -1147,7 +1150,7 @@ export default function SettingsPage() {
                   }`}
                 >
                   <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey)}</span>
                 </button>
               )
             })}

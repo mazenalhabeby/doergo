@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Smartphone, Monitor, Layers, MessageCircle, Save } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
 import type { OrgMember } from "@/lib/api"
@@ -20,28 +21,28 @@ import { notify } from "@/lib/toast"
 
 // Feature tabs only — `create_task` and `manage` are NOT stored here; they
 // derive from the Create / Manage permissions below (single source of truth).
-const FEATURE_TABS: { key: MobileModule; label: string }[] = [
-  { key: "tasks", label: "Tasks" },
-  { key: "clock", label: "Clock" },
-  { key: "time_off", label: "Time Off" },
+const FEATURE_TABS: { key: MobileModule; labelKey: string }[] = [
+  { key: "tasks", labelKey: "accessBuilder.featureTabs.tasks" },
+  { key: "clock", labelKey: "accessBuilder.featureTabs.clock" },
+  { key: "time_off", labelKey: "accessBuilder.featureTabs.timeOff" },
 ]
 
-const PLATFORMS: { key: AccessPlatform; label: string; icon: typeof Monitor }[] = [
-  { key: "web", label: "Web only", icon: Monitor },
-  { key: "mobile", label: "Mobile only", icon: Smartphone },
-  { key: "both", label: "Both", icon: Layers },
+const PLATFORMS: { key: AccessPlatform; labelKey: string; icon: typeof Monitor }[] = [
+  { key: "web", labelKey: "accessBuilder.platforms.webOnly", icon: Monitor },
+  { key: "mobile", labelKey: "accessBuilder.platforms.mobileOnly", icon: Smartphone },
+  { key: "both", labelKey: "accessBuilder.platforms.both", icon: Layers },
 ]
 
-const SCOPES: { key: SpaceScope; label: string; desc: string }[] = [
-  { key: "own", label: "My spaces only", desc: "Sees only the spaces they're assigned to." },
-  { key: "tasks", label: "Tasks only", desc: "No space view — just their own task list." },
-  { key: "all", label: "All spaces", desc: "Read-only overview of every space." },
+const SCOPES: { key: SpaceScope; labelKey: string; descKey: string }[] = [
+  { key: "own", labelKey: "accessBuilder.scopes.own.label", descKey: "accessBuilder.scopes.own.desc" },
+  { key: "tasks", labelKey: "accessBuilder.scopes.tasks.label", descKey: "accessBuilder.scopes.tasks.desc" },
+  { key: "all", labelKey: "accessBuilder.scopes.all.label", descKey: "accessBuilder.scopes.all.desc" },
 ]
 
 const TASK_SCOPES = [
-  { key: "SELF", label: "Their own tasks" },
-  { key: "SPACE", label: "Tasks in their spaces" },
-  { key: "ORG", label: "Any task in the org" },
+  { key: "SELF", labelKey: "accessBuilder.taskScopes.self" },
+  { key: "SPACE", labelKey: "accessBuilder.taskScopes.space" },
+  { key: "ORG", labelKey: "accessBuilder.taskScopes.org" },
 ]
 
 /**
@@ -52,6 +53,7 @@ const TASK_SCOPES = [
  * permission guard can never disagree.
  */
 export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?: () => void }) {
+  const { t } = useTranslation()
   const initial = useMemo(() => ({
     modules: getModules(member as any).filter((m) =>
       FEATURE_TABS.some((t) => t.key === m),
@@ -104,10 +106,10 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
         canViewAllTasks,
         canManageUsers,
       })
-      notify.success("Access updated", `${member.firstName}'s apps will update on next sign-in.`)
+      notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.accessUpdatedDesc", { name: member.firstName }))
       onSaved?.()
     } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Couldn't update access")
+      notify.error(e instanceof Error ? e.message : t("accessBuilder.updateFailed"))
     } finally {
       setSaving(false)
     }
@@ -117,18 +119,18 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     <div className="rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Access</h3>
-          <p className="text-xs text-muted-foreground">What {member.firstName} can do &amp; see on web &amp; mobile.</p>
+          <h3 className="text-sm font-semibold text-foreground">{t("accessBuilder.title")}</h3>
+          <p className="text-xs text-muted-foreground">{t("accessBuilder.subtitle", { name: member.firstName })}</p>
         </div>
         <Button size="sm" className="gap-1.5" disabled={!dirty || saving} onClick={save}>
           <Save className="h-3.5 w-3.5" />
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("common.saving") : t("common.save")}
         </Button>
       </div>
 
       <div className="p-5 space-y-6">
         {/* Platform */}
-        <Field label="Platform access">
+        <Field label={t("accessBuilder.platformAccess")}>
           <div className="inline-flex rounded-lg bg-muted p-1">
             {PLATFORMS.map((p) => (
               <button
@@ -140,18 +142,18 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                 )}
               >
                 <p.icon className="h-3.5 w-3.5" />
-                {p.label}
+                {t(p.labelKey)}
               </button>
             ))}
           </div>
         </Field>
 
         {/* Permissions — the enforced authorization toggles */}
-        <Field label="Permissions">
+        <Field label={t("accessBuilder.permissions")}>
           <div className="space-y-2">
             <PermissionRow
-              title="Create tasks"
-              desc="Open new tasks."
+              title={t("accessBuilder.perms.create.title")}
+              desc={t("accessBuilder.perms.create.desc")}
               checked={canCreateTasks}
               onChange={setCanCreateTasks}
             >
@@ -163,7 +165,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                   <SelectContent>
                     {TASK_SCOPES.map((s) => (
                       <SelectItem key={s.key} value={s.key} className="text-xs">
-                        {s.label}
+                        {t(s.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -171,20 +173,20 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
               )}
             </PermissionRow>
             <PermissionRow
-              title="Assign tasks"
-              desc="Assign tasks to other people."
+              title={t("accessBuilder.perms.assign.title")}
+              desc={t("accessBuilder.perms.assign.desc")}
               checked={canAssignTasks}
               onChange={setCanAssignTasks}
             />
             <PermissionRow
-              title="View all tasks"
-              desc="See every task in the organization, not just their own."
+              title={t("accessBuilder.perms.viewAll.title")}
+              desc={t("accessBuilder.perms.viewAll.desc")}
               checked={canViewAllTasks}
               onChange={setCanViewAllTasks}
             />
             <PermissionRow
-              title="Manage members"
-              desc="Invite, edit and remove people. Opens the Manage hub."
+              title={t("accessBuilder.perms.manage.title")}
+              desc={t("accessBuilder.perms.manage.desc")}
               checked={canManageUsers}
               onChange={setCanManageUsers}
             />
@@ -192,7 +194,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
         </Field>
 
         {/* Feature tabs */}
-        <Field label="Feature tabs">
+        <Field label={t("accessBuilder.featureTabsLabel")}>
           <div className="flex flex-wrap gap-2">
             {FEATURE_TABS.map((m) => {
               const on = modules.includes(m.key)
@@ -205,7 +207,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                     on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {m.label} {on ? "✓" : ""}
+                  {t(m.labelKey)} {on ? "✓" : ""}
                 </button>
               )
             })}
@@ -213,7 +215,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
         </Field>
 
         {/* Space scope */}
-        <Field label="Space visibility">
+        <Field label={t("accessBuilder.spaceVisibility")}>
           <div className="space-y-2">
             {SCOPES.map((s) => (
               <button
@@ -229,8 +231,8 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                   spaceScope === s.key ? "border-primary bg-primary" : "border-muted-foreground/40",
                 )} />
                 <span>
-                  <span className="block text-sm font-medium text-foreground">{s.label}</span>
-                  <span className="block text-xs text-muted-foreground">{s.desc}</span>
+                  <span className="block text-sm font-medium text-foreground">{t(s.labelKey)}</span>
+                  <span className="block text-xs text-muted-foreground">{t(s.descKey)}</span>
                 </span>
               </button>
             ))}
@@ -238,13 +240,13 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
         </Field>
 
         {/* Collaboration */}
-        <Field label="Collaboration">
+        <Field label={t("accessBuilder.collaboration")}>
           <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-foreground">Can contact colleagues</p>
-                <p className="text-xs text-muted-foreground">Message &amp; call teammates in their visible spaces.</p>
+                <p className="text-sm font-medium text-foreground">{t("accessBuilder.contact.title")}</p>
+                <p className="text-xs text-muted-foreground">{t("accessBuilder.contact.desc")}</p>
               </div>
             </div>
             <Switch checked={canContact} onCheckedChange={setCanContact} />

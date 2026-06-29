@@ -2,8 +2,11 @@
 
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 export default function PrivacyPolicyPage() {
+  const { t } = useTranslation()
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted to-card">
       {/* Header */}
@@ -11,199 +14,185 @@ export default function PrivacyPolicyPage() {
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-blue-600 transition-colors">
             <ArrowLeft className="size-4" />
-            Back to HBCField
+            {t('privacy.backToHbcfield')}
           </Link>
-          <span className="text-sm text-muted-foreground">Last updated: 20 April 2026</span>
+          <span className="text-sm text-muted-foreground">{t('privacy.lastUpdated')}</span>
         </div>
       </header>
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold text-foreground mb-2">Privacy Policy</h1>
-        <p className="text-lg text-muted-foreground mb-12">HBCField — Field Service Management Platform</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{t('privacy.title')}</h1>
+        <p className="text-lg text-muted-foreground mb-12">{t('privacy.subtitle')}</p>
 
         <div className="prose prose-slate prose-lg max-w-none">
-          <p>
-            HBC Group GmbH (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) operates the HBCField mobile application and web platform.
-            This Privacy Policy explains how we collect, use, and protect your information when you use our services.
-          </p>
+          <p>{t('privacy.intro')}</p>
 
-          <h2>1. Information We Collect</h2>
+          <h2>{t('privacy.s1.title')}</h2>
 
-          <h3>Account Information</h3>
+          <h3>{t('privacy.s1.accountTitle')}</h3>
           <ul>
-            <li>Email address</li>
-            <li>First and last name</li>
-            <li>Organization name</li>
-            <li>Role and permissions within your organization</li>
+            <li>{t('privacy.s1.accountEmail')}</li>
+            <li>{t('privacy.s1.accountName')}</li>
+            <li>{t('privacy.s1.accountOrg')}</li>
+            <li>{t('privacy.s1.accountRole')}</li>
           </ul>
 
-          <h3>Location Data</h3>
+          <h3>{t('privacy.s1.locationTitle')}</h3>
           <ul>
-            <li><strong>Precise GPS location</strong> — collected only during active work activities:
+            <li><strong>{t('privacy.s1.gpsLabel')}</strong>{t('privacy.s1.gpsIntro')}
               <ul>
-                <li>When an employee is driving to a job site (EN_ROUTE status)</li>
-                <li>When clocking in or out (single GPS fix for attendance verification)</li>
-                <li>When marking arrival at a job site (geofence verification)</li>
+                <li>{t('privacy.s1.gps1')}</li>
+                <li>{t('privacy.s1.gps2')}</li>
+                <li>{t('privacy.s1.gps3')}</li>
               </ul>
             </li>
-            <li><strong>Cached location</strong> — used for presence indicators on the dispatcher&apos;s live map. This uses the device&apos;s last known position without activating the GPS radio.</li>
-            <li>Location data is <strong>never collected</strong> when the app is idle, when browsing tasks, or outside of active work shifts.</li>
+            <li><strong>{t('privacy.s1.cachedLabel')}</strong>{t('privacy.s1.cachedText')}</li>
+            <li>{t('privacy.s1.neverPre')}<strong>{t('privacy.s1.neverBold')}</strong>{t('privacy.s1.neverPost')}</li>
           </ul>
 
-          <h3>Work Activity Data</h3>
+          <h3>{t('privacy.s1.workTitle')}</h3>
           <ul>
-            <li>Task status updates and timestamps</li>
-            <li>Clock in/out times and break durations</li>
-            <li>Service reports including text descriptions, photos, and digital signatures</li>
-            <li>Comments on tasks</li>
+            <li>{t('privacy.s1.work1')}</li>
+            <li>{t('privacy.s1.work2')}</li>
+            <li>{t('privacy.s1.work3')}</li>
+            <li>{t('privacy.s1.work4')}</li>
           </ul>
 
-          <h3>Device Information</h3>
+          <h3>{t('privacy.s1.deviceTitle')}</h3>
           <ul>
-            <li>Device type and operating system (for push notifications)</li>
-            <li>Push notification tokens (Expo Push Token)</li>
-            <li>App version</li>
+            <li>{t('privacy.s1.device1')}</li>
+            <li>{t('privacy.s1.device2')}</li>
+            <li>{t('privacy.s1.device3')}</li>
           </ul>
 
-          <h2>2. How We Use Your Information</h2>
+          <h2>{t('privacy.s2.title')}</h2>
           <ul>
-            <li>To provide field service management functionality</li>
-            <li>To enable real-time location tracking for dispatchers during active work</li>
-            <li>To verify attendance via geofencing at company locations</li>
-            <li>To verify employee presence at job sites before starting work</li>
-            <li>To send push notifications for task assignments, status updates, and comments</li>
-            <li>To generate service reports and maintain work history</li>
-            <li>To display route tracking on completed tasks</li>
-            <li>To improve app performance and fix bugs</li>
+            <li>{t('privacy.s2.item1')}</li>
+            <li>{t('privacy.s2.item2')}</li>
+            <li>{t('privacy.s2.item3')}</li>
+            <li>{t('privacy.s2.item4')}</li>
+            <li>{t('privacy.s2.item5')}</li>
+            <li>{t('privacy.s2.item6')}</li>
+            <li>{t('privacy.s2.item7')}</li>
+            <li>{t('privacy.s2.item8')}</li>
           </ul>
 
-          <h2>3. Legal Basis for Processing (GDPR)</h2>
-          <p>Where the General Data Protection Regulation applies, we process your personal data on the following legal bases:</p>
+          <h2>{t('privacy.s3.title')}</h2>
+          <p>{t('privacy.s3.intro')}</p>
           <ul>
-            <li><strong>Performance of a contract (Art. 6(1)(b) GDPR)</strong> — to provide the HBCField service to your organization and to you as an authorized user, including task assignment, location-based dispatching, attendance verification, and service reporting.</li>
-            <li><strong>Legitimate interests (Art. 6(1)(f) GDPR)</strong> — to secure our platform, prevent fraud and abuse, maintain service reliability, and improve the product. Our legitimate interests are balanced against your rights and freedoms.</li>
-            <li><strong>Consent (Art. 6(1)(a) GDPR)</strong> — for optional features such as push notifications, which you can disable at any time in your device settings.</li>
-            <li><strong>Legal obligation (Art. 6(1)(c) GDPR)</strong> — where we are required to retain records for tax, labor, or other statutory obligations applicable to your organization.</li>
+            <li><strong>{t('privacy.s3.contractLabel')}</strong>{t('privacy.s3.contractText')}</li>
+            <li><strong>{t('privacy.s3.legitLabel')}</strong>{t('privacy.s3.legitText')}</li>
+            <li><strong>{t('privacy.s3.consentLabel')}</strong>{t('privacy.s3.consentText')}</li>
+            <li><strong>{t('privacy.s3.legalLabel')}</strong>{t('privacy.s3.legalText')}</li>
           </ul>
 
-          <h2>4. Data Sharing</h2>
+          <h2>{t('privacy.s4.title')}</h2>
           <ul>
-            <li>We do <strong>not</strong> sell your personal data to third parties.</li>
-            <li>Your data is shared only within your organization — admin and dispatcher users can see employee locations and work activity.</li>
-            <li>We use the following third-party services:
+            <li>{t('privacy.s4.noSellPre')}<strong>{t('privacy.s4.noSellBold')}</strong>{t('privacy.s4.noSellPost')}</li>
+            <li>{t('privacy.s4.internal')}</li>
+            <li>{t('privacy.s4.thirdPartyIntro')}
               <ul>
-                <li><strong>Expo</strong> — Push notification delivery</li>
-                <li><strong>Firebase Cloud Messaging (FCM)</strong> — Android push notification routing</li>
-                <li><strong>Apple Push Notification Service (APNs)</strong> — iOS push notification routing</li>
-                <li><strong>Hetzner Cloud</strong> — Server hosting (EU-based, Finland/Germany)</li>
-                <li><strong>Hetzner Object Storage</strong> — File storage for attachments (EU-based)</li>
-                <li><strong>OpenStreetMap / OSRM</strong> — Map tiles and route visualization</li>
-                <li><strong>Nominatim</strong> — Address search (geocoding)</li>
+                <li><strong>{t('privacy.s4.expoLabel')}</strong>{t('privacy.s4.expoText')}</li>
+                <li><strong>{t('privacy.s4.fcmLabel')}</strong>{t('privacy.s4.fcmText')}</li>
+                <li><strong>{t('privacy.s4.apnsLabel')}</strong>{t('privacy.s4.apnsText')}</li>
+                <li><strong>{t('privacy.s4.hetznerCloudLabel')}</strong>{t('privacy.s4.hetznerCloudText')}</li>
+                <li><strong>{t('privacy.s4.hetznerStorageLabel')}</strong>{t('privacy.s4.hetznerStorageText')}</li>
+                <li><strong>{t('privacy.s4.osmLabel')}</strong>{t('privacy.s4.osmText')}</li>
+                <li><strong>{t('privacy.s4.nominatimLabel')}</strong>{t('privacy.s4.nominatimText')}</li>
               </ul>
             </li>
           </ul>
 
-          <h2>5. Data Storage &amp; Security</h2>
+          <h2>{t('privacy.s5.title')}</h2>
           <ul>
-            <li>All data is stored on servers located in the <strong>European Union</strong> (Hetzner, Helsinki/Falkenstein)</li>
-            <li>Data is encrypted in transit using TLS/HTTPS</li>
-            <li>Passwords are hashed using bcrypt with cost factor 12</li>
-            <li>Authentication tokens are SHA-256 hashed before storage</li>
-            <li>Refresh tokens use rotation with grace periods for concurrent requests</li>
-            <li>Access is restricted by role-based permissions (RBAC)</li>
-            <li>Rate limiting protects against brute-force attacks (10 req/sec, 200 req/min)</li>
-            <li>Account lockout after 5 failed login attempts (15-minute cooldown)</li>
-            <li>File uploads are stored in S3-compatible object storage with presigned URLs</li>
+            <li>{t('privacy.s5.euPre')}<strong>{t('privacy.s5.euBold')}</strong>{t('privacy.s5.euPost')}</li>
+            <li>{t('privacy.s5.item2')}</li>
+            <li>{t('privacy.s5.item3')}</li>
+            <li>{t('privacy.s5.item4')}</li>
+            <li>{t('privacy.s5.item5')}</li>
+            <li>{t('privacy.s5.item6')}</li>
+            <li>{t('privacy.s5.item7')}</li>
+            <li>{t('privacy.s5.item8')}</li>
+            <li>{t('privacy.s5.item9')}</li>
           </ul>
 
-          <h2>6. Data Retention</h2>
+          <h2>{t('privacy.s6.title')}</h2>
           <ul>
-            <li>Account data is retained while your account is active</li>
-            <li>Location history (route tracking) is retained for 90 days</li>
-            <li>Service reports are retained according to your organization&apos;s record-keeping requirements</li>
-            <li>Refresh tokens are automatically cleaned up after expiration</li>
-            <li>You can request complete data deletion at any time</li>
+            <li>{t('privacy.s6.item1')}</li>
+            <li>{t('privacy.s6.item2')}</li>
+            <li>{t('privacy.s6.item3')}</li>
+            <li>{t('privacy.s6.item4')}</li>
+            <li>{t('privacy.s6.item5')}</li>
           </ul>
 
-          <h2>7. Your Rights (GDPR)</h2>
-          <p>If you are located in the European Union or European Economic Area, you have the following rights under the General Data Protection Regulation (GDPR):</p>
+          <h2>{t('privacy.s7.title')}</h2>
+          <p>{t('privacy.s7.intro')}</p>
           <ul>
-            <li><strong>Right of Access</strong> — Request a copy of your personal data</li>
-            <li><strong>Right to Rectification</strong> — Correct inaccurate or incomplete data</li>
-            <li><strong>Right to Erasure</strong> — Request deletion of your personal data (&quot;right to be forgotten&quot;)</li>
-            <li><strong>Right to Data Portability</strong> — Receive your data in a structured, machine-readable format</li>
-            <li><strong>Right to Object</strong> — Object to processing of your personal data</li>
-            <li><strong>Right to Restrict Processing</strong> — Request limitation of data processing</li>
-            <li><strong>Right to Withdraw Consent</strong> — Withdraw your consent at any time</li>
-            <li><strong>Right to Lodge a Complaint</strong> — You have the right to lodge a complaint with your local data protection authority if you believe your rights have been infringed.</li>
+            <li><strong>{t('privacy.s7.accessLabel')}</strong>{t('privacy.s7.accessText')}</li>
+            <li><strong>{t('privacy.s7.rectificationLabel')}</strong>{t('privacy.s7.rectificationText')}</li>
+            <li><strong>{t('privacy.s7.erasureLabel')}</strong>{t('privacy.s7.erasureText')}</li>
+            <li><strong>{t('privacy.s7.portabilityLabel')}</strong>{t('privacy.s7.portabilityText')}</li>
+            <li><strong>{t('privacy.s7.objectLabel')}</strong>{t('privacy.s7.objectText')}</li>
+            <li><strong>{t('privacy.s7.restrictLabel')}</strong>{t('privacy.s7.restrictText')}</li>
+            <li><strong>{t('privacy.s7.withdrawLabel')}</strong>{t('privacy.s7.withdrawText')}</li>
+            <li><strong>{t('privacy.s7.complaintLabel')}</strong>{t('privacy.s7.complaintText')}</li>
           </ul>
-          <p>To exercise any of these rights, contact us at <a href="mailto:privacy@hbcfield.com">privacy@hbcfield.com</a>.</p>
+          <p>{t('privacy.s7.contactPre')}<a href="mailto:privacy@hbcfield.com">privacy@hbcfield.com</a>{t('privacy.s7.contactPost')}</p>
 
-          <h2>8. Location Tracking Disclosure</h2>
-          <p>HBCField uses location data as a core part of its field service management functionality. Here is exactly when and how location is used:</p>
+          <h2>{t('privacy.s8.title')}</h2>
+          <p>{t('privacy.s8.intro')}</p>
 
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 not-prose my-6">
-            <h4 className="font-semibold text-blue-900 mb-3">When GPS is Active</h4>
+            <h4 className="font-semibold text-blue-900 mb-3">{t('privacy.s8.gpsActiveTitle')}</h4>
             <ul className="space-y-2 text-blue-800 text-base">
-              <li className="flex gap-2"><span className="font-semibold text-blue-600">Driving to job:</span> Continuous tracking every 15 seconds (balanced accuracy)</li>
-              <li className="flex gap-2"><span className="font-semibold text-blue-600">Clock in/out:</span> Single high-accuracy fix for attendance verification</li>
-              <li className="flex gap-2"><span className="font-semibold text-blue-600">Arriving at job:</span> Single high-accuracy fix for geofence verification (20m radius)</li>
+              <li className="flex gap-2"><span className="font-semibold text-blue-600">{t('privacy.s8.drivingLabel')}</span> {t('privacy.s8.drivingText')}</li>
+              <li className="flex gap-2"><span className="font-semibold text-blue-600">{t('privacy.s8.clockLabel')}</span> {t('privacy.s8.clockText')}</li>
+              <li className="flex gap-2"><span className="font-semibold text-blue-600">{t('privacy.s8.arrivingLabel')}</span> {t('privacy.s8.arrivingText')}</li>
             </ul>
-            <h4 className="font-semibold text-blue-900 mt-4 mb-3">When GPS is NOT Active</h4>
+            <h4 className="font-semibold text-blue-900 mt-4 mb-3">{t('privacy.s8.gpsInactiveTitle')}</h4>
             <ul className="space-y-2 text-blue-800 text-base">
-              <li>Browsing tasks, viewing profile, changing settings</li>
-              <li>App is in background or closed</li>
-              <li>Presence indicator uses cached OS location only (no GPS activation)</li>
+              <li>{t('privacy.s8.inactive1')}</li>
+              <li>{t('privacy.s8.inactive2')}</li>
+              <li>{t('privacy.s8.inactive3')}</li>
             </ul>
           </div>
 
-          <p>Additional safeguards:</p>
+          <p>{t('privacy.s8.safeguardsIntro')}</p>
           <ul>
-            <li>Only dispatchers and admins within your organization can see your location</li>
-            <li>Location data is never shared outside your organization</li>
-            <li>Route data from completed tasks is retained for 90 days</li>
-            <li>You can see your own location data in the app</li>
+            <li>{t('privacy.s8.safeguard1')}</li>
+            <li>{t('privacy.s8.safeguard2')}</li>
+            <li>{t('privacy.s8.safeguard3')}</li>
+            <li>{t('privacy.s8.safeguard4')}</li>
           </ul>
 
-          <h2>9. Push Notifications</h2>
-          <p>HBCField sends push notifications for:</p>
+          <h2>{t('privacy.s9.title')}</h2>
+          <p>{t('privacy.s9.intro')}</p>
           <ul>
-            <li>New task assignments</li>
-            <li>Task status changes</li>
-            <li>New comments on your tasks</li>
-            <li>Join request approvals or rejections</li>
-            <li>Attendance reminders</li>
+            <li>{t('privacy.s9.item1')}</li>
+            <li>{t('privacy.s9.item2')}</li>
+            <li>{t('privacy.s9.item3')}</li>
+            <li>{t('privacy.s9.item4')}</li>
+            <li>{t('privacy.s9.item5')}</li>
           </ul>
-          <p>You can disable push notifications in your device settings at any time.</p>
+          <p>{t('privacy.s9.disable')}</p>
 
-          <h2>10. Children&apos;s Privacy</h2>
-          <p>
-            HBCField is a workplace application designed for professional use. It is not intended for use by
-            individuals under 18 years of age. We do not knowingly collect personal information from children.
-          </p>
+          <h2>{t('privacy.s10.title')}</h2>
+          <p>{t('privacy.s10.body')}</p>
 
-          <h2>11. International Data Transfers</h2>
-          <p>
-            Your data is processed and stored within the European Union. Push notification delivery may involve
-            routing through Google (FCM) or Apple (APNs) infrastructure, which may process data outside the EU.
-            These transfers are covered by the EU-US Data Privacy Framework and Standard Contractual Clauses.
-          </p>
+          <h2>{t('privacy.s11.title')}</h2>
+          <p>{t('privacy.s11.body')}</p>
 
-          <h2>12. Changes to This Policy</h2>
-          <p>
-            We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements.
-            We will notify users of material changes via email or in-app notification. The &quot;Last updated&quot; date at the
-            top of this page indicates when this policy was last revised.
-          </p>
+          <h2>{t('privacy.s12.title')}</h2>
+          <p>{t('privacy.s12.body')}</p>
 
-          <h2>13. Contact Us</h2>
+          <h2>{t('privacy.s13.title')}</h2>
           <div className="bg-muted border border-border rounded-xl p-6 not-prose my-6">
-            <p className="font-semibold text-foreground mb-2">HBC Group GmbH</p>
+            <p className="font-semibold text-foreground mb-2">{t('privacy.s13.company')}</p>
             <ul className="space-y-1 text-muted-foreground text-base">
-              <li>Email: <a href="mailto:privacy@hbcfield.com" className="text-blue-600 hover:underline">privacy@hbcfield.com</a></li>
-              <li>Website: <a href="https://hbcfield.com" className="text-blue-600 hover:underline">https://hbcfield.com</a></li>
-              <li>Support: <a href="mailto:support@hbcfield.com" className="text-blue-600 hover:underline">support@hbcfield.com</a></li>
+              <li>{t('privacy.s13.emailLabel')}<a href="mailto:privacy@hbcfield.com" className="text-blue-600 hover:underline">privacy@hbcfield.com</a></li>
+              <li>{t('privacy.s13.websiteLabel')}<a href="https://hbcfield.com" className="text-blue-600 hover:underline">https://hbcfield.com</a></li>
+              <li>{t('privacy.s13.supportLabel')}<a href="mailto:support@hbcfield.com" className="text-blue-600 hover:underline">support@hbcfield.com</a></li>
             </ul>
           </div>
         </div>
@@ -212,7 +201,7 @@ export default function PrivacyPolicyPage() {
       {/* Footer */}
       <footer className="border-t border-border mt-12">
         <div className="max-w-3xl mx-auto px-6 py-8 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} HBC Group GmbH. All rights reserved.
+          &copy; {new Date().getFullYear()} {t('privacy.footerRights')}
         </div>
       </footer>
     </div>

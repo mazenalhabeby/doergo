@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import { Navigation, Flag, Clock } from "lucide-react"
@@ -97,6 +98,7 @@ async function snapToRoads(points: RoutePoint[]): Promise<[number, number][]> {
 }
 
 export default function RouteMapView({ points, isLive = false }: RouteMapViewProps) {
+  const { t } = useTranslation()
   const [roadPath, setRoadPath] = useState<[number, number][]>([])
   const [loading, setLoading] = useState(true)
 
@@ -138,7 +140,7 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
   if (points.length === 0) {
     return (
       <div className="h-64 bg-muted rounded-xl flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">No route data available</p>
+        <p className="text-sm text-muted-foreground">{t("tasks.route.noRouteData")}</p>
       </div>
     )
   }
@@ -177,7 +179,7 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
           <Marker position={[startPoint.lat, startPoint.lng]} icon={startIcon}>
             <Popup>
               <div className="text-center p-1">
-                <p className="font-semibold text-foreground">Start Point</p>
+                <p className="font-semibold text-foreground">{t("tasks.route.startPoint")}</p>
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
                   <Clock size={12} />
                   {new Date(startPoint.timestamp).toLocaleString("en-US", {
@@ -197,7 +199,7 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
             <Popup>
               <div className="text-center p-1">
                 <p className="font-semibold text-foreground">
-                  {isLive ? "Current Location" : "Destination"}
+                  {isLive ? t("tasks.route.currentLocation") : t("tasks.route.destination")}
                 </p>
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
                   <Clock size={12} />
@@ -218,19 +220,19 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <span className="size-3 rounded-full bg-green-500" />
-            <span>Start</span>
+            <span>{t("tasks.route.start")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className={`size-3 rounded-full ${isLive ? "bg-amber-500" : "bg-blue-500"}`} />
-            <span>{isLive ? "Current" : "End"}</span>
+            <span>{isLive ? t("tasks.route.current") : t("tasks.route.end")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-6 h-0.5 bg-blue-600 rounded" />
-            <span>Route</span>
+            <span>{t("tasks.route.route")}</span>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          {points.length} GPS points
+          {t("tasks.route.gpsPointsCount", { count: points.length })}
         </p>
       </div>
     </div>

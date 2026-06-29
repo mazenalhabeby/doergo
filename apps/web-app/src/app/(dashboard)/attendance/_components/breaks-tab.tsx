@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause, RefreshCw, CheckCircle2, Calendar } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { StatCard, formatTime } from "./attendance-helpers"
 
 interface BreaksTabProps {
@@ -42,31 +43,33 @@ export function BreaksTab({
   setBreakTypeFilter,
   endBreakManually,
 }: BreaksTabProps) {
+  const { t } = useTranslation()
+  const breakTypeKey = (type: string) => type.toLowerCase()
   return (
     <>
             {/* Break Statistics */}
             {!loadingBreakSummary && breakSummary && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <StatCard
-                  title="Total Breaks"
+                  title={t("attendance.breaks.totalBreaks")}
                   value={breakSummary.totalBreaks}
                   icon={Coffee}
                   color="blue"
                 />
                 <StatCard
-                  title="Total Break Time"
+                  title={t("attendance.breaks.totalBreakTime")}
                   value={formatDurationMinutes(breakSummary.totalBreakMinutes)}
                   icon={Clock}
                   color="amber"
                 />
                 <StatCard
-                  title="Average Break"
+                  title={t("attendance.breaks.averageBreak")}
                   value={`${breakSummary.averageBreakMinutes}m`}
                   icon={TrendingUp}
                   color="green"
                 />
                 <StatCard
-                  title="Active Now"
+                  title={t("attendance.breaks.activeNow")}
                   value={activeBreaks.length}
                   icon={Users}
                   color="slate"
@@ -77,65 +80,65 @@ export function BreaksTab({
             {/* Break Stats by Type */}
             {!loadingBreakSummary && breakSummary && breakSummary.totalBreaks > 0 && (
               <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-6 mb-6">
-                <h3 className="text-md font-semibold text-foreground mb-4">Breaks by Type</h3>
+                <h3 className="text-md font-semibold text-foreground mb-4">{t("attendance.breaks.breaksByType")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <UtensilsCrossed className="size-5 text-amber-600" />
-                      <p className="font-medium text-amber-900 dark:text-amber-300">Lunch Breaks</p>
+                      <p className="font-medium text-amber-900 dark:text-amber-300">{t("attendance.breaks.lunchBreaks")}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{breakSummary.breaksByType?.LUNCH?.count || 0}</p>
-                        <p className="text-xs text-amber-600">Count</p>
+                        <p className="text-xs text-amber-600">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDurationMinutes(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
-                        <p className="text-xs text-amber-600">Total</p>
+                        <p className="text-xs text-amber-600">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{breakSummary.breaksByType?.LUNCH?.averageMinutes || 0}m</p>
-                        <p className="text-xs text-amber-600">Avg</p>
+                        <p className="text-xs text-amber-600">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
                   </div>
                   <div className="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <Coffee className="size-5 text-blue-600" />
-                      <p className="font-medium text-blue-900 dark:text-blue-300">Short Breaks</p>
+                      <p className="font-medium text-blue-900 dark:text-blue-300">{t("attendance.breaks.shortBreaks")}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{breakSummary.breaksByType?.SHORT?.count || 0}</p>
-                        <p className="text-xs text-blue-600">Count</p>
+                        <p className="text-xs text-blue-600">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDurationMinutes(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
-                        <p className="text-xs text-blue-600">Total</p>
+                        <p className="text-xs text-blue-600">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{breakSummary.breaksByType?.SHORT?.averageMinutes || 0}m</p>
-                        <p className="text-xs text-blue-600">Avg</p>
+                        <p className="text-xs text-blue-600">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
                   </div>
                   <div className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <Pause className="size-5 text-muted-foreground" />
-                      <p className="font-medium text-foreground">Other Breaks</p>
+                      <p className="font-medium text-foreground">{t("attendance.breaks.otherBreaks")}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-lg font-bold text-foreground">{breakSummary.breaksByType?.OTHER?.count || 0}</p>
-                        <p className="text-xs text-muted-foreground">Count</p>
+                        <p className="text-xs text-muted-foreground">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-foreground">{formatDurationMinutes(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
-                        <p className="text-xs text-muted-foreground">Total</p>
+                        <p className="text-xs text-muted-foreground">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-foreground">{breakSummary.breaksByType?.OTHER?.averageMinutes || 0}m</p>
-                        <p className="text-xs text-muted-foreground">Avg</p>
+                        <p className="text-xs text-muted-foreground">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
                   </div>
@@ -152,9 +155,9 @@ export function BreaksTab({
                       <Coffee className="size-5" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-foreground">Active Breaks</h2>
+                      <h2 className="text-lg font-semibold text-foreground">{t("attendance.breaks.activeBreaks")}</h2>
                       <p className="text-sm text-muted-foreground">
-                        Workers currently on break
+                        {t("attendance.breaks.workersOnBreak")}
                       </p>
                     </div>
                   </div>
@@ -165,7 +168,7 @@ export function BreaksTab({
                     className="rounded-lg"
                   >
                     <RefreshCw className="size-4 mr-2" />
-                    Refresh
+                    {t("common.refresh")}
                   </Button>
                 </div>
               </div>
@@ -179,8 +182,8 @@ export function BreaksTab({
               ) : activeBreaks.length === 0 ? (
                 <div className="p-12 text-center">
                   <CheckCircle2 className="size-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground">No active breaks</h3>
-                  <p className="text-muted-foreground mt-1">All workers are currently working</p>
+                  <h3 className="text-lg font-medium text-foreground">{t("attendance.breaks.noActiveBreaks")}</h3>
+                  <p className="text-muted-foreground mt-1">{t("attendance.breaks.allWorking")}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
@@ -206,9 +209,9 @@ export function BreaksTab({
                             {breakItem.user?.firstName} {breakItem.user?.lastName}
                           </p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="capitalize">{breakItem.type.toLowerCase()} break</span>
+                            <span>{t(`attendance.breaks.typeBreak.${breakTypeKey(breakItem.type)}`)}</span>
                             <span>•</span>
-                            <span>Started {formatTime(breakItem.startedAt)}</span>
+                            <span>{t("attendance.breaks.startedAt", { time: formatTime(breakItem.startedAt) })}</span>
                           </div>
                         </div>
                       </div>
@@ -218,21 +221,21 @@ export function BreaksTab({
                           "bg-orange-50 dark:bg-orange-500/10 text-orange-700 border border-orange-200"
                         )}>
                           <Clock className="size-3.5" />
-                          On break
+                          {t("attendance.breaks.onBreak")}
                         </span>
                         {isAdmin && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              if (confirm("End this break manually?")) {
+                              if (confirm(t("attendance.breaks.endBreakConfirm"))) {
                                 endBreakManually.mutate({ breakId: breakItem.id })
                               }
                             }}
                             disabled={endBreakManually.isPending}
                             className="rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           >
-                            End Break
+                            {t("attendance.breaks.endBreak")}
                           </Button>
                         )}
                       </div>
@@ -247,9 +250,9 @@ export function BreaksTab({
               <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">Break History</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{t("attendance.breaks.breakHistory")}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      View past break records
+                      {t("attendance.breaks.viewPastRecords")}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -259,13 +262,13 @@ export function BreaksTab({
                       onValueChange={setBreakTypeFilter}
                     >
                       <SelectTrigger className="w-[130px] h-10 rounded-lg bg-card border-border/80 shadow-sm">
-                        <SelectValue placeholder="Type" />
+                        <SelectValue placeholder={t("attendance.breaks.typeFilter")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="LUNCH">Lunch</SelectItem>
-                        <SelectItem value="SHORT">Short</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
+                        <SelectItem value="all">{t("common.allTypes")}</SelectItem>
+                        <SelectItem value="LUNCH">{t("attendance.breaks.types.lunch")}</SelectItem>
+                        <SelectItem value="SHORT">{t("attendance.breaks.types.short")}</SelectItem>
+                        <SelectItem value="OTHER">{t("attendance.breaks.types.other")}</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -301,19 +304,19 @@ export function BreaksTab({
               ) : !breakHistoryData?.data?.length ? (
                 <div className="p-12 text-center">
                   <Coffee className="size-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground">No break records</h3>
-                  <p className="text-muted-foreground mt-1">No breaks found for the selected date</p>
+                  <h3 className="text-lg font-medium text-foreground">{t("attendance.breaks.noRecords")}</h3>
+                  <p className="text-muted-foreground mt-1">{t("attendance.breaks.noRecordsHint")}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/80">
-                      <TableHead className="font-semibold text-muted-foreground">Worker</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Type</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Started</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Ended</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Duration</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Notes</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">{t("attendance.worker")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">{t("attendance.type")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">{t("attendance.started")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">{t("attendance.ended")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -347,13 +350,13 @@ export function BreaksTab({
                             ) : (
                               <Pause className="size-3.5" />
                             )}
-                            {breakItem.type.charAt(0) + breakItem.type.slice(1).toLowerCase()}
+                            {t(`attendance.breaks.types.${breakTypeKey(breakItem.type)}`)}
                           </span>
                         </TableCell>
                         <TableCell className="text-foreground">{formatTime(breakItem.startedAt)}</TableCell>
                         <TableCell className="text-foreground">
                           {breakItem.endedAt ? formatTime(breakItem.endedAt) : (
-                            <span className="text-orange-600">On break</span>
+                            <span className="text-orange-600">{t("attendance.breaks.onBreak")}</span>
                           )}
                         </TableCell>
                         <TableCell className="font-medium text-foreground">

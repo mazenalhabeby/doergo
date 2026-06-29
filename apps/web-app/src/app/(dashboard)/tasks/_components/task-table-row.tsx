@@ -2,6 +2,7 @@
 
 import React from "react"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import {
   GripVertical,
   UserPlus,
@@ -49,6 +50,7 @@ function TaskTableRowInner({
   onDragStart,
   isDragging = false,
 }: TaskTableRowProps) {
+  const { t } = useTranslation()
   const { hasModule } = useAuth()
   const router = useRouter()
   const statusConfig = getStatusConfig(task.status)
@@ -126,7 +128,7 @@ function TaskTableRowInner({
         data-no-navigate
         className="flex items-center gap-2 min-w-0 w-[160px] flex-shrink-0 rounded-md px-1.5 py-1 -mx-1.5 hover:bg-muted/60 cursor-pointer transition-colors"
         onClick={(e) => { e.stopPropagation(); onAssign(task.id) }}
-        title="Click to manage assignees"
+        title={t("tasks.row.manageAssignees")}
       >
         {task.assignees && task.assignees.length > 0 ? (
           <div className="flex items-center">
@@ -157,7 +159,7 @@ function TaskTableRowInner({
         ) : (
           <span className="text-xs text-muted-foreground/40 flex items-center gap-1">
             <UserPlus className="size-3" />
-            Assign
+            {t("tasks.card.assign")}
           </span>
         )}
       </div>

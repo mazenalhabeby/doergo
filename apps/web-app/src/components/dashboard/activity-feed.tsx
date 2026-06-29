@@ -11,6 +11,7 @@ import {
   FileText,
   LucideIcon,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 
 export interface ActivityItem {
@@ -44,13 +45,14 @@ interface ActivityFeedProps {
 }
 
 export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFeedProps) {
+  const { t } = useTranslation()
   const displayActivities = activities.slice(0, maxItems)
 
   if (displayActivities.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-12", className)}>
         <Circle className="mb-3 size-8 text-muted-foreground" strokeWidth={1.5} />
-        <p className="text-sm text-muted-foreground">No recent activity</p>
+        <p className="text-sm text-muted-foreground">{t('dashboard.activityFeed.noRecentActivity')}</p>
       </div>
     )
   }

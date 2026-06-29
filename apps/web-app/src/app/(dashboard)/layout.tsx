@@ -16,6 +16,7 @@ import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
 import { TokenDebugPanel } from '@/components/token-debug';
 import { useRealtimeSync } from '@/hooks/use-realtime-sync';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Route-change progress bar — shows a slim animated bar at the top of the
@@ -69,6 +70,7 @@ function RealtimeSyncLayer() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
 
   useEffect(() => {
@@ -92,9 +94,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
           <Smartphone className="h-8 w-8" />
         </div>
-        <h1 className="text-xl font-semibold text-slate-800">Mobile-only account</h1>
+        <h1 className="text-xl font-semibold text-slate-800">{t('common.mobileOnlyAccount')}</h1>
         <p className="max-w-sm text-sm text-slate-500">
-          Your account is set up for the mobile app. Please use the HBCField app on your phone to continue.
+          {t('common.mobileOnlyAccountBody')}
         </p>
       </div>
     );

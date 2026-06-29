@@ -12,6 +12,13 @@ export interface ExportData {
   orgName: string
 }
 
+/**
+ * Minimal translator signature. export-utils is not a React component (it builds
+ * an HTML document for print/PDF), so it can't use the useTranslation hook — the
+ * caller (reports-tab) passes its `t` so labels follow the active language.
+ */
+type Translate = (key: string, options?: Record<string, unknown>) => string
+
 // ============================================================================
 // FILE NAMING (Industry standard: CompanyName_ReportType_DateRange.ext)
 // ============================================================================
@@ -28,15 +35,15 @@ function getFileName(orgName: string, period: AttendanceSummary["period"], locat
 // CSV EXPORT (Client-side, instant)
 // ============================================================================
 
-export function exportCSV({ report, filteredByUser, filteredByLocation, locationName, orgName }: ExportData) {
+export function exportCSV({ report, filteredByUser, filteredByLocation, locationName, orgName }: ExportData, t: Translate) {
   const headers = [
-    "Employee Name",
-    "Email",
-    "Total Hours",
-    "Shifts",
-    "Avg Shift (h)",
-    "Auto Clock-Outs",
-    "Locations",
+    t("attendance.export.employeeName"),
+    t("attendance.export.email"),
+    t("attendance.export.totalHours"),
+    t("attendance.export.shifts"),
+    t("attendance.export.avgShiftH"),
+    t("attendance.export.autoClockOuts"),
+    t("attendance.export.locations"),
   ]
 
   const rows = filteredByUser.map((u) => [
@@ -51,23 +58,23 @@ export function exportCSV({ report, filteredByUser, filteredByLocation, location
 
   // Add summary
   rows.push([])
-  rows.push(["--- REPORT INFO ---"])
-  rows.push(["Period", `${report.period.startDate} to ${report.period.endDate}`])
-  rows.push(["Work Days", report.period.workDays])
-  if (locationName) rows.push(["Location Filter", locationName])
-  rows.push(["Total Technicians", filteredByUser.length])
-  rows.push(["Total Hours", report.summary.totalHours])
-  rows.push(["Standard Hours", report.summary.standardHours])
-  rows.push(["Overtime Hours", report.summary.overtimeHours])
-  rows.push(["Total Shifts", report.summary.totalShifts])
-  rows.push(["Avg Shift", `${report.summary.averageShiftHours}h`])
-  rows.push(["Auto Clock-Outs", report.summary.autoClockOuts])
+  rows.push([t("attendance.export.reportInfo")])
+  rows.push([t("attendance.export.period"), `${report.period.startDate} to ${report.period.endDate}`])
+  rows.push([t("attendance.export.workDays"), report.period.workDays])
+  if (locationName) rows.push([t("attendance.export.locationFilter"), locationName])
+  rows.push([t("attendance.export.totalTechnicians"), filteredByUser.length])
+  rows.push([t("attendance.export.totalHours"), report.summary.totalHours])
+  rows.push([t("attendance.export.standardHours"), report.summary.standardHours])
+  rows.push([t("attendance.export.overtimeHours"), report.summary.overtimeHours])
+  rows.push([t("attendance.export.totalShifts"), report.summary.totalShifts])
+  rows.push([t("attendance.export.avgShift"), `${report.summary.averageShiftHours}h`])
+  rows.push([t("attendance.export.autoClockOuts"), report.summary.autoClockOuts])
 
   // Add location breakdown
   if (filteredByLocation.length > 0) {
     rows.push([])
-    rows.push(["--- BY LOCATION ---"])
-    rows.push(["Location", "Total Hours", "Shifts", "Employees"])
+    rows.push([t("attendance.export.byLocationHeader")])
+    rows.push([t("attendance.export.location"), t("attendance.export.totalHours"), t("attendance.export.shifts"), t("attendance.export.employees")])
     for (const loc of filteredByLocation) {
       rows.push([`"${loc.location.name}"`, loc.totalHours, loc.shifts, loc.uniqueTechnicians])
     }
@@ -81,16 +88,16 @@ export function exportCSV({ report, filteredByUser, filteredByLocation, location
 // PDF EXPORT (Print-optimized new window)
 // ============================================================================
 
-export function exportPDF({ report, filteredByUser, filteredByLocation, locationName, orgName }: ExportData) {
+export function exportPDF({ report, filteredByUser, filteredByLocation, locationName, orgName }: ExportData, t: Translate) {
   const win = window.open("", "_blank")
   if (!win) {
-    alert("Please allow popups to generate PDF reports")
+    alert(t("attendance.export.popupBlocked"))
     return
   }
 
   const period = `${report.period.startDate} — ${report.period.endDate}`
   const generated = new Date().toLocaleString()
-  const locationLabel = locationName || "All Locations"
+  const locationLabel = locationName || t("attendance.tracking.allLocations")
 
   const userRows = filteredByUser
     .map(
@@ -130,7 +137,7 @@ export function exportPDF({ report, filteredByUser, filteredByLocation, location
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Attendance Report — ${orgName}</title>
+  <title>${t("attendance.export.documentTitle", { org: orgName })}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #1e293b; font-size: 11px; line-height: 1.5; padding: 0; background: #e5e7eb; }
@@ -188,65 +195,65 @@ export function exportPDF({ report, filteredByUser, filteredByLocation, location
 </head>
 <body>
   <div class="print-bar no-print">
-    <span>Preview — ${orgName} Attendance Report · ${locationLabel}</span>
-    <button onclick="window.print()">Print / Save as PDF</button>
+    <span>${t("attendance.export.previewBar", { org: orgName, location: locationLabel })}</span>
+    <button onclick="window.print()">${t("attendance.export.printSavePdf")}</button>
   </div>
   <div class="print-spacer no-print"></div>
 
   <div class="page">
   <div class="header">
     <div class="header-left">
-      <h1>Attendance Report</h1>
-      <p>${period} · ${report.period.workDays} work days</p>
+      <h1>${t("attendance.export.reportTitle")}</h1>
+      <p>${period} · ${t("attendance.export.workDaysSuffix", { count: report.period.workDays })}</p>
       ${locationName ? `<span class="location-badge">${locationName}</span>` : ""}
     </div>
     <div class="header-right">
       <div class="org">${orgName}</div>
-      <div>Generated: ${generated}</div>
+      <div>${t("attendance.export.generated", { date: generated })}</div>
     </div>
   </div>
 
   <div class="summary">
     <div class="kpi">
-      <div class="label">Total Hours</div>
+      <div class="label">${t("attendance.export.totalHours")}</div>
       <div class="value">${filteredTotalHours.toFixed(1)}h</div>
-      <div class="sub">${filteredShifts} shifts</div>
+      <div class="sub">${t("attendance.export.shiftsCount", { count: filteredShifts })}</div>
     </div>
     <div class="kpi">
-      <div class="label">Technicians</div>
+      <div class="label">${t("attendance.export.technicians")}</div>
       <div class="value">${filteredByUser.length}</div>
-      <div class="sub">Active in period</div>
+      <div class="sub">${t("attendance.export.activeInPeriod")}</div>
     </div>
     <div class="kpi">
-      <div class="label">Avg Shift</div>
+      <div class="label">${t("attendance.export.avgShift")}</div>
       <div class="value">${filteredAvg}h</div>
-      <div class="sub">Per shift</div>
+      <div class="sub">${t("attendance.export.perShift")}</div>
     </div>
     <div class="kpi">
-      <div class="label">Auto Clock-Outs</div>
+      <div class="label">${t("attendance.export.autoClockOuts")}</div>
       <div class="value">${filteredAutoOuts}</div>
-      <div class="sub">Missed</div>
+      <div class="sub">${t("attendance.export.missed")}</div>
     </div>
   </div>
 
   <div class="section">
-    <h2>By Technician <span class="count">(${filteredByUser.length})</span></h2>
+    <h2>${t("attendance.export.byTechnician")} <span class="count">(${filteredByUser.length})</span></h2>
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th class="num">Hours</th>
-          <th class="num">Shifts</th>
-          <th class="num">Avg</th>
-          <th class="num">Auto-Out</th>
-          <th>Locations</th>
+          <th>${t("attendance.export.name")}</th>
+          <th>${t("attendance.export.email")}</th>
+          <th class="num">${t("attendance.export.hours")}</th>
+          <th class="num">${t("attendance.export.shifts")}</th>
+          <th class="num">${t("attendance.export.avg")}</th>
+          <th class="num">${t("attendance.export.autoOut")}</th>
+          <th>${t("attendance.export.locations")}</th>
         </tr>
       </thead>
       <tbody>
         ${userRows}
         <tr class="totals">
-          <td colspan="2">Total</td>
+          <td colspan="2">${t("attendance.export.total")}</td>
           <td class="num">${filteredTotalHours.toFixed(1)}h</td>
           <td class="num">${filteredShifts}</td>
           <td class="num">${filteredAvg}h</td>
@@ -259,15 +266,15 @@ export function exportPDF({ report, filteredByUser, filteredByLocation, location
 
   ${filteredByLocation.length > 0 ? `
   <div class="section">
-    <h2>By Location <span class="count">(${filteredByLocation.length})</span></h2>
+    <h2>${t("attendance.export.byLocation")} <span class="count">(${filteredByLocation.length})</span></h2>
     <table>
       <thead>
         <tr>
-          <th>Location</th>
-          <th class="num">Hours</th>
-          <th class="num">Shifts</th>
-          <th class="num">Technicians</th>
-          <th class="num">Avg/Shift</th>
+          <th>${t("attendance.export.location")}</th>
+          <th class="num">${t("attendance.export.hours")}</th>
+          <th class="num">${t("attendance.export.shifts")}</th>
+          <th class="num">${t("attendance.export.technicians")}</th>
+          <th class="num">${t("attendance.export.avgPerShiftCol")}</th>
         </tr>
       </thead>
       <tbody>${locationRows}</tbody>
@@ -278,16 +285,16 @@ export function exportPDF({ report, filteredByUser, filteredByLocation, location
   <div class="signatures">
     <div class="sig-block">
       <div class="sig-line"></div>
-      <div class="sig-label">Manager Signature / Date</div>
+      <div class="sig-label">${t("attendance.export.managerSignature")}</div>
     </div>
     <div class="sig-block">
       <div class="sig-line"></div>
-      <div class="sig-label">Approved By / Date</div>
+      <div class="sig-label">${t("attendance.export.approvedBy")}</div>
     </div>
   </div>
 
   <div class="footer">
-    <span>Generated by HBCField · ${locationLabel}</span>
+    <span>${t("attendance.export.generatedBy")} · ${locationLabel}</span>
     <span>${period}</span>
   </div>
   </div><!-- .page -->

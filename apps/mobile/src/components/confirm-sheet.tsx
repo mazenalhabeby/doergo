@@ -14,6 +14,7 @@ import {
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import {
   SPACING,
@@ -62,6 +63,7 @@ export function ConfirmSheet({
   isLoading = false,
 }: ConfirmSheetProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const config = VARIANT_CONFIG[variant];
   const iconName = icon || config.icon;
@@ -143,7 +145,7 @@ export function ConfirmSheet({
                 disabled={isLoading}
               >
                 <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
-                  {cancelLabel || 'Cancel'}
+                  {cancelLabel || t('common.cancel')}
                 </Text>
               </TouchableOpacity>
 
@@ -157,7 +159,7 @@ export function ConfirmSheet({
                 ) : (
                   <>
                     <Ionicons name={iconName as any} size={20} color="#fff" />
-                    <Text style={styles.confirmText}>{confirmLabel || 'Confirm'}</Text>
+                    <Text style={styles.confirmText}>{confirmLabel || t('common.confirm')}</Text>
                   </>
                 )}
               </TouchableOpacity>

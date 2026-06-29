@@ -2,6 +2,7 @@
 
 import { useState, useCallback, memo } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { Plus, ChevronDown, Check } from "lucide-react"
 
 import { type StatusWorkflow } from "@/lib/api"
@@ -28,8 +29,10 @@ const WorkflowSelector = memo(function WorkflowSelector({
   workflows,
   disabled,
   allowCreate = true,
-  label = "Workflow",
+  label,
 }: WorkflowSelectorProps) {
+  const { t } = useTranslation()
+  const resolvedLabel = label === undefined ? t('locations.workflowLabel') : label
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showBuilder, setShowBuilder] = useState(false)
 
@@ -63,7 +66,7 @@ const WorkflowSelector = memo(function WorkflowSelector({
 
   return (
     <div className="space-y-2">
-      {label && <Label className="text-sm">{label}</Label>}
+      {resolvedLabel && <Label className="text-sm">{resolvedLabel}</Label>}
       <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <PopoverTrigger asChild disabled={disabled}>
           <button
@@ -72,8 +75,8 @@ const WorkflowSelector = memo(function WorkflowSelector({
           >
             <span className={selectedWorkflow ? "text-foreground" : "text-muted-foreground"}>
               {selectedWorkflow
-                ? `${selectedWorkflow.name}${statusCount > 0 ? ` (${statusCount} statuses)` : ""}`
-                : "Select workflow..."}
+                ? `${selectedWorkflow.name}${statusCount > 0 ? t('locations.statusCountSuffix', { count: statusCount }) : ""}`
+                : t('locations.selectWorkflow')}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </button>
@@ -103,10 +106,10 @@ const WorkflowSelector = memo(function WorkflowSelector({
                   </div>
                   <span className="flex-1 text-left truncate">
                     {wf.name}
-                    {wf.isDefault ? " (Default)" : ""}
+                    {wf.isDefault ? t('locations.defaultSuffix') : ""}
                   </span>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {count} {count === 1 ? "status" : "statuses"}
+                    {t('locations.statusCount', { count })}
                   </span>
                 </button>
               )
@@ -121,7 +124,7 @@ const WorkflowSelector = memo(function WorkflowSelector({
                 className="flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <Plus className="h-4 w-4" />
-                Create new workflow
+                {t('locations.createNewWorkflow')}
               </button>
             </>
           )}

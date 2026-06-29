@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useTranslation } from "react-i18next"
 import { getPriorityConfig } from "@/lib/constants"
 import type { Task, Sprint } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -49,11 +50,11 @@ export interface BacklogToolbarProps {
 
 const FIBONACCI = [1, 2, 3, 5, 8, 13, 21] as const
 
-const SORT_OPTIONS: { value: BacklogSortField; label: string; icon: typeof ArrowUpDown }[] = [
-  { value: "priority", label: "Priority", icon: AlertTriangle },
-  { value: "createdAt", label: "Created", icon: Calendar },
-  { value: "storyPoints", label: "Points", icon: Hash },
-  { value: "title", label: "Title", icon: Type },
+const SORT_OPTIONS: { value: BacklogSortField; labelKey: string; icon: typeof ArrowUpDown }[] = [
+  { value: "priority", labelKey: "tasks.backlog.sort.priority", icon: AlertTriangle },
+  { value: "createdAt", labelKey: "tasks.backlog.sort.createdAt", icon: Calendar },
+  { value: "storyPoints", labelKey: "tasks.backlog.sort.storyPoints", icon: Hash },
+  { value: "title", labelKey: "tasks.backlog.sort.title", icon: Type },
 ]
 
 const PRIORITY_ORDER: Record<string, number> = {
@@ -110,6 +111,7 @@ function BacklogToolbarInner({
   onSortFieldChange,
   onSortDirChange,
 }: BacklogToolbarProps) {
+  const { t } = useTranslation()
   const ids = useMemo(() => Array.from(selectedIds), [selectedIds])
   const hasSelection = ids.length > 0
 
@@ -146,19 +148,19 @@ function BacklogToolbarInner({
       <div className="flex items-center gap-4 text-xs text-muted-foreground mr-auto">
         <span>
           <span className="font-semibold text-foreground tabular-nums">{stats.total}</span>{" "}
-          tasks
+          {t("tasks.backlog.tasksLabel")}
         </span>
 
         {stats.unestimated > 0 && (
           <span>
             <span className="font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{stats.unestimated}</span>{" "}
-            unestimated
+            {t("tasks.backlog.unestimated")}
           </span>
         )}
 
         <span>
           <span className="font-semibold text-foreground tabular-nums">{stats.totalPoints}</span>{" "}
-          pts
+          {t("tasks.backlog.pts")}
         </span>
 
         {/* Mini priority bar */}
@@ -188,7 +190,7 @@ function BacklogToolbarInner({
           <div className="w-px h-5 bg-border/60" />
 
           <div className="flex items-center gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground mr-1">Est:</span>
+            <span className="text-[11px] font-medium text-muted-foreground mr-1">{t("tasks.backlog.est")}</span>
             {FIBONACCI.map(n => (
               <button
                 key={n}
@@ -209,7 +211,7 @@ function BacklogToolbarInner({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
-                Priority
+                {t("tasks.backlog.sort.priority")}
                 <ChevronDown className="size-3 ml-1 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
@@ -236,7 +238,7 @@ function BacklogToolbarInner({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
                   <MoveRight className="size-3.5 mr-1" />
-                  Move to Sprint
+                  {t("tasks.backlog.moveToSprint")}
                   <ChevronDown className="size-3 ml-1 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
@@ -248,7 +250,7 @@ function BacklogToolbarInner({
                   >
                     <span className="truncate">{sprint.name}</span>
                     <span className="ml-auto text-[10px] text-muted-foreground">
-                      {sprint.status === "ACTIVE" ? "Active" : "Planning"}
+                      {sprint.status === "ACTIVE" ? t("common.active") : t("tasks.backlog.planning")}
                     </span>
                   </DropdownMenuItem>
                 ))}
@@ -271,7 +273,7 @@ function BacklogToolbarInner({
             )}
           >
             <ArrowUpDown className="size-3" />
-            {currentSortOption.label}
+            {t(currentSortOption.labelKey)}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[150px]">
@@ -284,7 +286,7 @@ function BacklogToolbarInner({
                 className={cn(sortField === opt.value && "bg-accent font-medium")}
               >
                 <Icon className="size-3.5 mr-2 text-muted-foreground" />
-                {opt.label}
+                {t(opt.labelKey)}
               </DropdownMenuItem>
             )
           })}
@@ -298,7 +300,7 @@ function BacklogToolbarInner({
           "text-muted-foreground hover:text-foreground hover:bg-accent/50",
           "transition-colors duration-150",
         )}
-        title={sortDir === "asc" ? "Ascending" : "Descending"}
+        title={sortDir === "asc" ? t("tasks.backlog.ascending") : t("tasks.backlog.descending")}
       >
         {sortDir === "asc" ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />}
       </button>

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import {
@@ -36,6 +37,7 @@ export function NavMain({
   }[]
 }) {
   const pathname = usePathname()
+  const { t } = useTranslation()
 
   // Check if a URL is active (exact match or starts with for nested routes)
   const isActive = (url: string) => {
@@ -52,7 +54,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+      <SidebarGroupLabel>{t("nav.navigation")}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const itemIsActive = isActive(item.url)
@@ -81,7 +83,7 @@ export function NavMain({
                     <CollapsibleTrigger asChild>
                       <SidebarMenuAction className="data-[state=open]:rotate-90">
                         <ChevronRight />
-                        <span className="sr-only">Toggle</span>
+                        <span className="sr-only">{t("nav.toggle")}</span>
                       </SidebarMenuAction>
                     </CollapsibleTrigger>
                     <CollapsibleContent>

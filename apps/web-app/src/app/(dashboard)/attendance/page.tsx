@@ -13,9 +13,11 @@ import { ApprovalsTab } from "./_components/approvals-tab"
 import { BreaksTab } from "./_components/breaks-tab"
 import { TrackingTab } from "./_components/tracking-tab"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { useTranslation } from "react-i18next"
 
 export default function AttendancePage() {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   // Tab state
@@ -113,12 +115,12 @@ export default function AttendancePage() {
   const triggerAutoClockOut = useMutation({
     mutationFn: (type: "hourly" | "midnight") => attendanceApi.triggerAutoClockOut(type),
     onSuccess: (data) => {
-      notify.success(data?.data?.message || "Auto clock-out triggered")
+      notify.success(data?.data?.message || t('attendance.toast.autoClockOutTriggered'))
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       queryClient.invalidateQueries({ queryKey: ["scheduler-info"] })
     },
     onError: (error) => {
-      notify.error(error instanceof Error ? error.message : "Failed to trigger auto clock-out")
+      notify.error(error instanceof Error ? error.message : t('attendance.toast.autoClockOutFailed'))
     },
   })
 
@@ -175,12 +177,12 @@ export default function AttendancePage() {
     mutationFn: ({ breakId, notes }: { breakId: string; notes?: string }) =>
       attendanceApi.endBreakManually(breakId, notes),
     onSuccess: () => {
-      notify.success("Break ended successfully")
+      notify.success(t('attendance.toast.breakEnded'))
       queryClient.invalidateQueries({ queryKey: ["attendance-breaks-active"] })
       queryClient.invalidateQueries({ queryKey: ["attendance-breaks-history"] })
     },
     onError: (error) => {
-      notify.error(error instanceof Error ? error.message : "Failed to end break")
+      notify.error(error instanceof Error ? error.message : t('attendance.toast.breakEndFailed'))
     },
   })
 
@@ -190,11 +192,11 @@ export default function AttendancePage() {
   const approveEntry = useMutation({
     mutationFn: (entryId: string) => attendanceApi.approveEntry(entryId),
     onSuccess: () => {
-      notify.success("Entry approved")
+      notify.success(t('attendance.toast.entryApproved'))
       queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
     },
     onError: (error) => {
-      notify.error(error instanceof Error ? error.message : "Failed to approve")
+      notify.error(error instanceof Error ? error.message : t('attendance.toast.approveFailed'))
     },
   })
 
@@ -204,12 +206,12 @@ export default function AttendancePage() {
     mutationFn: ({ entryId, reason }: { entryId: string; reason: string }) =>
       attendanceApi.rejectEntry(entryId, reason),
     onSuccess: () => {
-      notify.success("Entry rejected")
+      notify.success(t('attendance.toast.entryRejected'))
       setRejectReason("")
       queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
     },
     onError: (error) => {
-      notify.error(error instanceof Error ? error.message : "Failed to reject")
+      notify.error(error instanceof Error ? error.message : t('attendance.toast.rejectFailed'))
     },
   })
 
@@ -252,9 +254,9 @@ export default function AttendancePage() {
       <div className="min-h-full flex items-center justify-center bg-background">
         <div className="text-center">
           <XCircle className="size-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground">Access Denied</h2>
+          <h2 className="text-xl font-semibold text-foreground">{t('common.accessDenied')}</h2>
           <p className="text-muted-foreground mt-2">
-            You don't have permission to view this page.
+            {t('common.noPermissionView')}
           </p>
         </div>
       </div>
@@ -269,10 +271,10 @@ export default function AttendancePage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                Attendance Management
+                {t('attendance.management.title')}
               </h1>
               <p className="mt-1.5 text-muted-foreground">
-                Track attendance, view reports, and manage approvals
+                {t('attendance.management.subtitle')}
               </p>
             </div>
           </div>
@@ -286,21 +288,21 @@ export default function AttendancePage() {
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
               <Clock className="size-3.5 mr-1.5" />
-              Tracking
+              {t('attendance.tabs.tracking')}
             </TabsTrigger>
             <TabsTrigger
               value="reports"
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
             >
               <BarChart3 className="size-3.5 mr-1.5" />
-              Reports
+              {t('attendance.tabs.reports')}
             </TabsTrigger>
             <TabsTrigger
               value="approvals"
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <ClipboardCheck className="size-3.5 mr-1.5" />
-              Approvals
+              {t('attendance.tabs.approvals')}
               {pendingApprovalsData?.meta?.total ? (
                 <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-amber-400 text-white rounded-full px-1">
                   {pendingApprovalsData.meta.total}
@@ -312,7 +314,7 @@ export default function AttendancePage() {
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <Coffee className="size-3.5 mr-1.5" />
-              Breaks
+              {t('attendance.tabs.breaks')}
               {activeBreaks.length > 0 ? (
                 <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-orange-400 text-white rounded-full px-1">
                   {activeBreaks.length}

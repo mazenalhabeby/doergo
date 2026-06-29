@@ -53,14 +53,13 @@
     "more": "+{{count}} more",
     "version": "Version {{version}}",
     "appName": "HBCField",
-    "copyrightYear": "\u00A9 {{year}} HBCField. All rights reserved.",
+    "copyrightYear": "© {{year}} HBCField. All rights reserved.",
     "greeting": {
       "morning": "Good morning,",
       "afternoon": "Good afternoon,",
       "evening": "Good evening,"
     }
   },
-
   "auth": {
     "login": {
       "title": "Sign In",
@@ -120,7 +119,6 @@
       }
     }
   },
-
   "onboarding": {
     "choosePath": {
       "welcome": "Welcome, {{name}}!",
@@ -150,7 +148,16 @@
       "addressLabel": "Address (optional)",
       "addressPlaceholder": "123 Business Ave",
       "submitButton": "Create Organization",
-      "failedToCreate": "Failed to create organization"
+      "failedToCreate": "Failed to create organization",
+      "firstSpaceLabel": "Your first space",
+      "firstSpacePlaceholder": "e.g. Main Office",
+      "firstSpaceHint": "Rename it or add more spaces later.",
+      "typeLabel": "Type",
+      "typeWorkspace": "Workspace",
+      "typeWorkspaceDesc": "A team or project",
+      "typePhysical": "Physical location",
+      "typePhysicalDesc": "A site for attendance",
+      "locationLabel": "Location"
     },
     "joinOrg": {
       "title": "Join Organization",
@@ -194,7 +201,6 @@
       "rejectedToast": "Request Rejected"
     }
   },
-
   "tabs": {
     "home": "Home",
     "dashboard": "Dashboard",
@@ -206,7 +212,6 @@
     "team": "Team",
     "profile": "Profile"
   },
-
   "home": {
     "admin": {
       "welcomeBack": "Welcome back, {{name}}",
@@ -217,7 +222,10 @@
       "todaysTasks": "Today's Tasks",
       "noTasksScheduled": "No tasks scheduled",
       "recentTasks": "Recent Tasks",
-      "noTasksYet": "No tasks yet. Create one to get started!"
+      "noTasksYet": "No tasks yet. Create one to get started!",
+      "setUpWorkspace": "Set up your workspace",
+      "setUpWorkspaceSub": "Create spaces and assign your team to track everyone in real time.",
+      "activity": "Activity"
     },
     "fullTime": {
       "clockedIn": "Clocked In",
@@ -259,7 +267,6 @@
       "noJobsScheduled": "No jobs scheduled for this day"
     }
   },
-
   "tasks": {
     "searchPlaceholder": "Search tasks...",
     "tabs": {
@@ -298,7 +305,6 @@
     },
     "failedToLoad": "Failed to load tasks"
   },
-
   "taskDetail": {
     "title": "Task Details",
     "jobId": "JOB #{{id}}",
@@ -312,7 +318,6 @@
     "commentsCount": "COMMENTS ({{count}})",
     "taskNotFound": "Task not found",
     "goBack": "Go Back",
-
     "infoLabels": {
       "createdBy": "Created by",
       "assignedTo": "Assigned to",
@@ -320,7 +325,6 @@
     },
     "openInMaps": "Open in Maps",
     "startNavigation": "Start Navigation",
-
     "statusActions": {
       "acceptJob": "Accept Job",
       "startDriving": "Start Driving",
@@ -332,7 +336,6 @@
       "notYetAvailable": "Not Yet Available",
       "declineJob": "Decline"
     },
-
     "progressSteps": {
       "assigned": "Assigned",
       "accepted": "Accepted",
@@ -341,19 +344,16 @@
       "inProgress": "In Progress",
       "completed": "Completed"
     },
-
     "updateStatus": {
       "confirmTitle": "Update Status",
       "confirmMessage": "Change status to {{status}}?"
     },
-
     "blockTask": {
       "title": "Report Issue",
       "subtitle": "What's blocking this task? (optional)",
       "placeholder": "e.g., Waiting for parts, Customer unavailable...",
       "submitButton": "Report Issue"
     },
-
     "declineTask": {
       "title": "Decline Job",
       "message": "Are you sure you want to decline this job? It will be returned to the dispatcher for reassignment.",
@@ -361,13 +361,11 @@
       "successTitle": "Job Declined",
       "successMessage": "The job has been returned for reassignment."
     },
-
     "cancelTask": {
       "title": "Cancel Task",
       "message": "Are you sure you want to cancel this task?",
       "confirmButton": "Cancel Task"
     },
-
     "completeTask": {
       "title": "Complete Job",
       "workDuration": "Work Duration",
@@ -388,7 +386,6 @@
       "customerSignatureRequired": "Customer signature is required.",
       "customerNameRequired": "Please enter the customer name."
     },
-
     "editTask": {
       "title": "Edit Task",
       "titleLabel": "Title *",
@@ -400,37 +397,31 @@
       "locationPlaceholder": "Address",
       "saveButton": "Save Changes"
     },
-
     "adminActions": {
       "assign": "Assign",
       "reassign": "Reassign",
       "edit": "Edit",
       "cancel": "Cancel"
     },
-
     "attachmentActions": {
       "noAttachments": "No attachments yet",
       "tapToAdd": "Tap camera or gallery to add",
       "deleteTitle": "Delete Attachment",
       "deleteMessage": "Delete \"{{fileName}}\"?"
     },
-
     "commentInput": {
       "placeholder": "Add a comment...",
       "noComments": "No comments yet"
     },
-
     "tracking": {
       "locationTrackingActive": "Location Tracking Active",
       "startingTracking": "Starting Tracking..."
     },
-
     "futureTask": {
       "scheduledFor": "This task is scheduled for {{date}}.",
       "canAcceptOnDueDate": "You can accept it on the due date.",
       "canStartOnDueDate": "You can start it on the due date."
     },
-
     "assignedSuccess": "Assigned to {{firstName}} {{lastName}}",
     "titleRequired": "Title is required.",
     "failedToLoad": "Failed to load task",
@@ -442,9 +433,16 @@
     "failedToAssign": "Failed to assign",
     "failedToComplete": "Failed to complete task",
     "failedToAddComment": "Failed to add comment",
-    "failedToDelete": "Failed to delete"
+    "failedToDelete": "Failed to delete",
+    "thisStep": {
+      "title": "This step",
+      "noChecklistItems": "No checklist items.",
+      "visitNotesPlaceholder": "Visit notes…",
+      "saveNote": "Save note",
+      "savingNote": "Saving…",
+      "signature": "Signature"
+    }
   },
-
   "createTask": {
     "titleLabel": "Title *",
     "titlePlaceholder": "What needs to be done?",
@@ -460,9 +458,9 @@
     "submitButton": "Create Task",
     "titleRequired": "Please enter a task title.",
     "successMessage": "Task created successfully!",
-    "failedToCreate": "Failed to create task"
+    "failedToCreate": "Failed to create task",
+    "spaceLabel": "Space"
   },
-
   "attendance": {
     "clockedIn": "Clocked In",
     "clockedOut": "Clocked Out",
@@ -484,12 +482,10 @@
     "failedToClockOut": "Failed to clock out",
     "loadingAttendance": "Loading attendance...",
     "failedToLoadAttendance": "Failed to load attendance data",
-
     "notAvailable": {
       "title": "Not Available",
       "message": "Clock-in/clock-out is only available for full-time employees."
     },
-
     "breaks": {
       "takeABreak": "Take a Break",
       "lunch": "Lunch",
@@ -513,7 +509,6 @@
       "notesPlaceholder": "Enter notes (optional)...",
       "charCount": "{{count}}/500 characters"
     },
-
     "assignedLocations": "Assigned Locations",
     "away": "{{distance}} away",
     "withinRange": "(within range)",
@@ -522,9 +517,7 @@
     "outsideGeofenceDistance": "You are {{distance}}m away from your location",
     "autoClockOutTitle": "Auto Clock-Out",
     "autoClockOutDistance": "You were automatically clocked out because you are {{distance}}m away from your work location.",
-
     "todaysBreaks": "Today's Breaks",
-
     "history": {
       "title": "Recent History",
       "noRecords": "No attendance records yet",
@@ -536,7 +529,6 @@
       "statusDone": "Done"
     }
   },
-
   "overtime": {
     "title": "Overtime",
     "noActiveRequest": "No active overtime request",
@@ -575,7 +567,6 @@
     "approvedSuccess": "Overtime approved successfully",
     "failedToApprove": "Failed to approve overtime"
   },
-
   "timeOff": {
     "stats": {
       "daysUsed": "Days Used",
@@ -642,7 +633,6 @@
       "timeOff": "Time Off"
     }
   },
-
   "profile": {
     "profilePhoto": "Profile Photo",
     "chooseOption": "Choose an option",
@@ -652,7 +642,6 @@
     "uploadFailed": "Upload Failed",
     "couldNotUpload": "Could not upload photo. Please try again.",
     "couldNotRemove": "Could not remove photo.",
-
     "menu": {
       "general": "GENERAL",
       "support": "SUPPORT",
@@ -668,12 +657,10 @@
       "about": "About",
       "language": "Language"
     },
-
     "language": {
       "choosePreferred": "Choose your preferred language",
       "appliedImmediately": "Language changes are applied immediately across the app."
     },
-
     "theme": {
       "title": "Appearance",
       "chooseTheme": "Choose your preferred theme",
@@ -682,12 +669,10 @@
       "dark": "Dark",
       "appliedImmediately": "Theme changes are applied immediately across the app."
     },
-
     "signOutConfirmTitle": "Sign Out",
     "signOutConfirmMessage": "Are you sure you want to sign out?",
     "signOutButton": "Sign Out",
     "versionFooter": "HBCField v{{version}}",
-
     "account": {
       "title": "Account & Security",
       "accountInfo": "Account Information",
@@ -717,7 +702,6 @@
       "deleteConfirmButton": "Delete Account",
       "deleteFailed": "Failed to delete account"
     },
-
     "notifications": {
       "title": "Notifications",
       "pushNotifications": "Push Notifications",
@@ -733,14 +717,12 @@
       "timeOffDescription": "Request approvals and updates",
       "footerNote": "Notification preferences are stored locally. Push notification permissions are managed in your device settings."
     },
-
     "about": {
       "title": "About",
-      "tagline": "Dispatch \u00B7 Track \u00B7 Deliver",
+      "tagline": "Dispatch · Track · Deliver",
       "description": "HBCField is a field service management platform that helps teams dispatch tasks, track progress in real-time, and deliver exceptional service."
     }
   },
-
   "manage": {
     "timeOff": {
       "label": "Time Off",
@@ -762,7 +744,6 @@
       "label": "Schedules",
       "desc": "Work schedules"
     },
-
     "membersScreen": {
       "filterAll": "All",
       "filterAdmin": "Admin",
@@ -783,7 +764,6 @@
         "technician": "Employee"
       }
     },
-
     "invitationsScreen": {
       "createButton": "Create Invitation",
       "noInvitations": "No invitations yet",
@@ -804,11 +784,10 @@
         "jobTitleLabel": "Job Title (optional)",
         "jobTitlePlaceholder": "e.g. Electrician",
         "generateButton": "Generate Code",
-        "tapToCopy": "Tap to copy \u00B7 Expires in 3 days",
+        "tapToCopy": "Tap to copy · Expires in 3 days",
         "shareMessage": "Join with invitation code: {{code}}"
       }
     },
-
     "joinRequestsScreen": {
       "approveTitle": "Approve Request",
       "approveMessage": "Approve {{firstName}} {{lastName}} as Employee?",
@@ -821,12 +800,10 @@
       "allCaughtUp": "All caught up",
       "noPendingRequests": "No pending join requests"
     },
-
     "schedulesScreen": {
       "noTechnicians": "No employees found",
       "failedToLoad": "Failed to load schedules"
     },
-
     "timeOffRequestsScreen": {
       "filters": {
         "pending": "Pending",
@@ -842,9 +819,11 @@
       "failedToReject": "Failed to reject",
       "noRequests": "No {{filter}} requests",
       "noRequestsAll": "No requests"
+    },
+    "titles": {
+      "timeOffRequests": "Time Off Requests"
     }
   },
-
   "components": {
     "taskCard": {
       "unassigned": "Unassigned"
@@ -890,9 +869,52 @@
     },
     "screenStates": {
       "retry": "Retry"
+    },
+    "confirmSheet": {},
+    "customFieldsCard": {
+      "title": "Custom Fields",
+      "savedTitle": "Saved",
+      "savedMessage": "Custom fields updated",
+      "couldNotSave": "Could not save",
+      "enterField": "Enter {{field}}"
+    },
+    "workspaceCard": {
+      "activeCount": "{{active}} of {{total}} active",
+      "inField": "In field",
+      "offSite": "Off-site",
+      "offDuty": "Off duty",
+      "noneAssigned": "No one assigned yet",
+      "assign": "Assign",
+      "tasks": "Tasks"
+    },
+    "assignMemberSheet": {
+      "title": "Assign member",
+      "toLocation": "to {{location}}",
+      "searchPlaceholder": "Search members",
+      "noMembers": "No members found",
+      "allAssigned": "Everyone is already assigned here"
+    },
+    "memberDetailSheet": {
+      "working": "Working",
+      "onSite": "On Site",
+      "comingSoon": "{{feature}} coming soon",
+      "messaging": "Messaging",
+      "calls": "Calls",
+      "completed": "Completed",
+      "hrsWeek": "Hrs/Week",
+      "onTime": "On-Time",
+      "activeTasks": "ACTIVE TASKS",
+      "viewAll": "View all ›",
+      "noActiveTasks": "No active tasks",
+      "tasks": "Tasks"
+    },
+    "activitySheet": {
+      "liveActivity": "LIVE ACTIVITY",
+      "eventsCount": "{{count}} events",
+      "noRecentActivity": "No recent activity",
+      "pendingActions": "PENDING ACTIONS"
     }
   },
-
   "validation": {
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email",
@@ -908,7 +930,6 @@
     "organizationNameRequired": "Organization name is required",
     "organizationNameMinLength": "Name must be at least 2 characters"
   },
-
   "status": {
     "DRAFT": "Draft",
     "NEW": "New",
@@ -922,42 +943,80 @@
     "CANCELED": "Canceled",
     "CLOSED": "Closed"
   },
-
   "priority": {
     "LOW": "Low",
     "MEDIUM": "Medium",
     "HIGH": "High",
     "URGENT": "Urgent"
   },
-
   "roles": {
     "ADMIN": "Admin",
     "DISPATCHER": "Dispatcher",
     "TECHNICIAN": "Employee",
     "EMPLOYEE": "Employee"
   },
-
   "invitationStatus": {
     "PENDING": "Pending",
     "ACCEPTED": "Accepted",
     "EXPIRED": "Expired",
     "REVOKED": "Revoked"
   },
-
   "timeOffStatus": {
     "PENDING": "Pending",
     "APPROVED": "Approved",
     "REJECTED": "Rejected",
     "CANCELED": "Canceled"
   },
-
   "dayNames": {
-    "short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    "headers": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+    "short": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "headers": [
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa",
+      "Su"
+    ]
   },
-
   "monthNames": [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ]
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ],
+  "team": {
+    "title": "Team",
+    "subtitle": "Teammates in your spaces.",
+    "empty": "No teammates in your spaces yet.",
+    "messagingSoon": "Messaging coming soon",
+    "callsSoon": "Calls coming soon"
+  },
+  "navTitles": {
+    "taskDetails": "Task Details",
+    "notifications": "Notifications",
+    "account": "Account",
+    "about": "About"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedError": "An unexpected error occurred",
+    "tryAgain": "Try Again"
+  }
 }

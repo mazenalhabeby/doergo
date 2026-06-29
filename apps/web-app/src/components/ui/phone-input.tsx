@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Input } from "@/components/ui/input"
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
 import { getCountries, DIAL_CODES, flagEmoji } from "@/lib/countries"
@@ -39,6 +40,7 @@ function parseE164(value: string): { iso: string; national: string } {
  * Emits E.164 ("+<dial><number>"). Reuses the shared <Combobox>.
  */
 export function PhoneInput({ value, onChange, defaultCountry = "AT", placeholder }: PhoneInputProps) {
+  const { t } = useTranslation()
   const dialOptions: ComboboxOption[] = useMemo(
     () =>
       getCountries()
@@ -83,7 +85,7 @@ export function PhoneInput({ value, onChange, defaultCountry = "AT", placeholder
           options={dialOptions}
           triggerLabel={triggerLabel}
           placeholder="🌐 +"
-          searchPlaceholder="Country or code…"
+          searchPlaceholder={t("common.countryOrCode")}
           contentClassName="w-[300px]"
         />
       </div>
@@ -96,7 +98,7 @@ export function PhoneInput({ value, onChange, defaultCountry = "AT", placeholder
           setNational(v)
           emit(iso, v)
         }}
-        placeholder={placeholder ?? "Phone number"}
+        placeholder={placeholder ?? t("common.phoneNumber")}
         className="h-11 rounded-xl flex-1"
       />
     </div>

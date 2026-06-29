@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { notify } from "@/lib/toast"
+import { useTranslation } from "react-i18next"
 import { formatNominatimAddress, formatPhotonFeature } from "@/lib/geocode"
 
 import "leaflet/dist/leaflet.css"
@@ -63,6 +64,7 @@ export default function LocationPicker({
   onLocationChange,
   onAddressChange,
 }: LocationPickerProps) {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
   const [results, setResults] = useState<GeoResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -191,7 +193,7 @@ export default function LocationPicker({
   // the same flow as a map click). Requires HTTPS + user permission.
   const useMyLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      notify.error("Location isn't supported on this device")
+      notify.error(t("locations.picker.notSupported"))
       return
     }
     setLocating(true)
@@ -204,8 +206,8 @@ export default function LocationPicker({
         setLocating(false)
         notify.error(
           err.code === err.PERMISSION_DENIED
-            ? "Location permission denied — allow it in your browser to use this."
-            : "Couldn't get your location. Try again or pick on the map.",
+            ? t("locations.picker.permissionDenied")
+            : t("locations.picker.locationFailed"),
         )
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
@@ -239,7 +241,7 @@ export default function LocationPicker({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search for a city, street, or landmark..."
+            placeholder={t("locations.picker.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => results.length > 0 && setShowResults(true)}
@@ -273,7 +275,7 @@ export default function LocationPicker({
           type="button"
           onClick={useMyLocation}
           disabled={locating}
-          title="Use my current location"
+          title={t("locations.picker.useMyLocation")}
           className="absolute right-2 top-2 z-[1000] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card disabled:opacity-60"
         >
           {locating ? (
@@ -281,7 +283,7 @@ export default function LocationPicker({
           ) : (
             <LocateFixed className="h-3.5 w-3.5 text-blue-600" />
           )}
-          {locating ? "Locating…" : "My location"}
+          {locating ? t("locations.picker.locating") : t("locations.picker.myLocation")}
         </button>
         <MapContainer
           center={mapCenter}
@@ -316,9 +318,9 @@ export default function LocationPicker({
       {/* Address + Coordinates - manual entry */}
       <div className="space-y-3 rounded-lg border border-border bg-muted p-3">
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Address</Label>
+          <Label className="text-xs text-muted-foreground">{t("locations.picker.address")}</Label>
           <Input
-            placeholder="Type the full address manually"
+            placeholder={t("locations.picker.addressPlaceholder")}
             value={address}
             onChange={(e) => onAddressChange(e.target.value)}
             className="bg-card text-sm"
@@ -326,7 +328,7 @@ export default function LocationPicker({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Latitude</Label>
+            <Label className="text-xs text-muted-foreground">{t("locations.picker.latitude")}</Label>
             <Input
               type="number"
               step="any"
@@ -337,7 +339,7 @@ export default function LocationPicker({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Longitude</Label>
+            <Label className="text-xs text-muted-foreground">{t("locations.picker.longitude")}</Label>
             <Input
               type="number"
               step="any"
@@ -349,7 +351,7 @@ export default function LocationPicker({
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          Search above, click on the map, or enter the address and coordinates manually.
+          {t("locations.picker.hint")}
         </p>
       </div>
     </div>

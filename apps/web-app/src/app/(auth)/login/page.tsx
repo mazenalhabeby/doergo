@@ -7,6 +7,7 @@ import { AuthSkeleton, LoginForm, RegisterForm } from '@/components/auth';
 import { useAuth } from '@/contexts/auth-context';
 import { AnimatedLogo } from '@hbcfield/shared/components';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const HERO_BG = 'linear-gradient(135deg,#1D4ED8 0%,#2563EB 45%,#06B6D4 130%)';
 const GRID =
@@ -15,6 +16,7 @@ const GRID =
 function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -22,7 +24,7 @@ function AuthPageContent() {
   // "Account created" → switch to sign-in
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
-      notify.success('Account created successfully!', 'Please sign in with your new credentials.');
+      notify.success(t('auth.page.accountCreatedTitle'), t('auth.page.accountCreatedDescription'));
       setIsLogin(true);
       router.replace('/login', { scroll: false });
     }
@@ -60,30 +62,30 @@ function AuthPageContent() {
 
         <div className="relative">
           <h2 className="text-4xl xl:text-5xl font-extrabold leading-[1.05] tracking-tight">
-            Dispatch.<br />Track. Deliver.
+            {t('auth.hero.line1')}<br />{t('auth.hero.line2')}
           </h2>
           <p className="mt-4 max-w-sm text-[15px] text-white/75">
-            Run your whole field operation — tasks, technicians, routes and attendance — in one place.
+            {t('auth.hero.subtitle')}
           </p>
 
           <div className="mt-8 flex gap-3">
             <div className="w-[170px] rounded-xl border border-white/20 bg-white/[.14] p-3.5 backdrop-blur">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-300" />
-                <span className="text-[11px] text-white/80">In progress</span>
+                <span className="text-[11px] text-white/80">{t('auth.hero.inProgress')}</span>
               </div>
-              <div className="mt-1 text-[13px] font-semibold">HVAC repair · #5102</div>
-              <div className="mt-1 text-[10px] text-white/60">Mike W. · 2.3 km away</div>
+              <div className="mt-1 text-[13px] font-semibold">{t('auth.hero.sampleTask')}</div>
+              <div className="mt-1 text-[10px] text-white/60">{t('auth.hero.sampleTaskMeta')}</div>
             </div>
             <div className="w-[128px] rounded-xl border border-white/20 bg-white/[.14] p-3.5 backdrop-blur">
-              <div className="text-[10px] text-white/70">Today</div>
+              <div className="text-[10px] text-white/70">{t('common.today')}</div>
               <div className="mt-0.5 text-[24px] font-extrabold leading-none">18</div>
-              <div className="mt-1 text-[10px] text-white/60">tasks completed</div>
+              <div className="mt-1 text-[10px] text-white/60">{t('auth.hero.tasksCompleted')}</div>
             </div>
           </div>
         </div>
 
-        <div className="relative text-[11px] text-white/55">© HBCField — Field Service Management</div>
+        <div className="relative text-[11px] text-white/55">{t('auth.hero.footer')}</div>
       </aside>
 
       {/* ── Right: form ───────────────────────────────────────────────── */}
@@ -95,19 +97,19 @@ function AuthPageContent() {
           </div>
 
           <h1 className="text-[26px] font-bold tracking-tight text-slate-900">
-            {isLogin ? 'Welcome back' : 'Create your account'}
+            {isLogin ? t('auth.login.title') : t('auth.register.title')}
           </h1>
           <p className="mt-1 mb-6 text-sm text-slate-500">
-            {isLogin ? 'Sign in to your workspace.' : 'Start your organization on HBCField.'}
+            {isLogin ? t('auth.page.signInSubtitle') : t('auth.page.signUpSubtitle')}
           </p>
 
           {/* tabs */}
           <div className="mb-6 flex gap-1 rounded-[10px] bg-slate-100 p-1">
             <button type="button" onClick={() => setIsLogin(true)} className={tab(isLogin)}>
-              Sign in
+              {t('auth.page.signInTab')}
             </button>
             <button type="button" onClick={() => setIsLogin(false)} className={tab(!isLogin)}>
-              Create account
+              {t('auth.page.createAccountTab')}
             </button>
           </div>
 

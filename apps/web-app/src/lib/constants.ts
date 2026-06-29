@@ -10,6 +10,7 @@
 import { ArrowDown, ArrowUp, Minus, AlertTriangle, type LucideIcon } from "lucide-react"
 import { TaskPriority, TaskStatus } from "@hbcfield/shared/types"
 import { PRIORITY_COLORS, STATUS_COLORS } from "@hbcfield/shared/constants"
+import i18n from "@/i18n"
 
 // =============================================================================
 // TASK STATUS
@@ -169,8 +170,8 @@ export type PriorityConfig = {
 
 export const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
   LOW: {
-    label: "Low",
-    description: "No rush",
+    get label() { return i18n.t("tasks.priority.LOW") },
+    get description() { return i18n.t("tasks.priorityDescriptions.LOW") },
     className: "bg-slate-100 text-slate-500 hover:bg-slate-100",
     hex: PRIORITY_COLORS[TaskPriority.LOW].hex,
     icon: ArrowDown,
@@ -179,8 +180,8 @@ export const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
     dotColor: "bg-slate-400",
   },
   MEDIUM: {
-    label: "Medium",
-    description: "Standard",
+    get label() { return i18n.t("tasks.priority.MEDIUM") },
+    get description() { return i18n.t("tasks.priorityDescriptions.MEDIUM") },
     className: "bg-blue-100 text-blue-600 hover:bg-blue-100",
     hex: PRIORITY_COLORS[TaskPriority.MEDIUM].hex,
     icon: Minus,
@@ -189,8 +190,8 @@ export const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
     dotColor: "bg-blue-500",
   },
   HIGH: {
-    label: "High",
-    description: "Important",
+    get label() { return i18n.t("tasks.priority.HIGH") },
+    get description() { return i18n.t("tasks.priorityDescriptions.HIGH") },
     className: "bg-amber-100 text-amber-700 hover:bg-amber-100",
     hex: PRIORITY_COLORS[TaskPriority.HIGH].hex,
     icon: ArrowUp,
@@ -199,8 +200,8 @@ export const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
     dotColor: "bg-amber-600",
   },
   URGENT: {
-    label: "Urgent",
-    description: "Critical",
+    get label() { return i18n.t("tasks.priority.URGENT") },
+    get description() { return i18n.t("tasks.priorityDescriptions.URGENT") },
     className: "bg-red-100 text-red-600 hover:bg-red-100",
     hex: PRIORITY_COLORS[TaskPriority.URGENT].hex,
     icon: AlertTriangle,

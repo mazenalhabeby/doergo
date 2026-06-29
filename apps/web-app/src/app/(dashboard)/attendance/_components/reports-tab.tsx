@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import {
   Clock,
@@ -65,13 +66,13 @@ const now = new Date()
 
 const RANGE_PRESETS: RangePreset[] = [
   {
-    label: "This Week",
+    label: "attendance.reports.thisWeek",
     getRange: () => ({ type: "weekly" }),
     getPeriodLabel: () => `${format(startOfWeek(now), "MMM d")} — ${format(endOfWeek(now), "MMM d, yyyy")}`,
     getCompareLabel: () => "vs last week",
   },
   {
-    label: "Last Week",
+    label: "attendance.reports.lastWeek",
     getRange: () => ({ type: "weekly", weekStartDate: format(startOfWeek(subWeeks(now, 1)), "yyyy-MM-dd") }),
     getPeriodLabel: () => {
       const s = startOfWeek(subWeeks(now, 1))
@@ -80,13 +81,13 @@ const RANGE_PRESETS: RangePreset[] = [
     getCompareLabel: () => "vs week before",
   },
   {
-    label: "This Month",
+    label: "attendance.reports.thisMonth",
     getRange: () => ({ type: "monthly" }),
     getPeriodLabel: () => format(now, "MMMM yyyy"),
     getCompareLabel: () => "vs last month",
   },
   {
-    label: "Last Month",
+    label: "attendance.reports.lastMonth",
     getRange: () => {
       const d = subMonths(now, 1)
       return { type: "monthly", year: d.getFullYear(), month: d.getMonth() + 1 }
@@ -172,6 +173,7 @@ const BAR_COLORS = [
 ]
 
 function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser"]; avgShift: number }) {
+  const { t } = useTranslation()
   if (byUser.length === 0) return null
 
   const sorted = [...byUser].sort((a, b) => b.totalHours - a.totalHours)
@@ -204,7 +206,7 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
                     {item.user.firstName} {item.user.lastName.charAt(0)}.
                   </p>
                   <p className="text-[10px] text-muted-foreground leading-tight truncate">
-                    {item.shifts} shift{item.shifts !== 1 ? "s" : ""}
+                    {t("attendance.reports.shiftCount", { count: item.shifts })}
                   </p>
                 </div>
               </div>
@@ -231,10 +233,10 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
                   <div
                     className="absolute top-0 bottom-0 w-px bg-muted-foreground/40 hidden group-hover:block"
                     style={{ left: `${Math.min(((avgShift * item.shifts) / maxHours) * 100, 100)}%` }}
-                    title={`Expected: ${(avgShift * item.shifts).toFixed(1)}h`}
+                    title={t("attendance.reports.expected", { hours: (avgShift * item.shifts).toFixed(1) })}
                   >
                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground whitespace-nowrap bg-card px-1 rounded shadow-sm border border-border">
-                      avg
+                      {t("attendance.reports.avgLabel")}
                     </div>
                   </div>
                 )}
@@ -259,7 +261,7 @@ function HoursBarChart({ byUser, avgShift }: { byUser: AttendanceSummary["byUser
       {byUser.length > 8 && (
         <div className="text-center pt-2">
           <span className="text-[11px] text-muted-foreground bg-muted px-3 py-1 rounded-full">
-            + {byUser.length - 8} more workers
+            {t("attendance.reports.moreWorkers", { count: byUser.length - 8 })}
           </span>
         </div>
       )}
@@ -277,6 +279,7 @@ interface ReportsTabProps {
 }
 
 export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
+  const { t } = useTranslation()
   const [selectedPreset, setSelectedPreset] = useState(0) // index into RANGE_PRESETS
   const [locationFilter, setLocationFilter] = useState("all")
   const [tableView, setTableView] = useState<"summary" | "location">("summary")
@@ -376,7 +379,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                   className="h-10 px-4 rounded-xl border-border shadow-sm hover:shadow-md transition-all gap-2 font-medium"
                 >
                   <CalendarDays className="size-4 text-blue-500" />
-                  {preset.label}
+                  {t(preset.label)}
                   <ChevronDown className="size-3.5 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
@@ -392,7 +395,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                         : "text-muted-foreground hover:bg-accent"
                     )}
                   >
-                    {p.label}
+                    {t(p.label)}
                   </button>
                 ))}
               </PopoverContent>
@@ -402,10 +405,10 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
             <Select value={locationFilter} onValueChange={setLocationFilter}>
               <SelectTrigger className="w-[180px] h-10 rounded-xl border-border shadow-sm">
                 <MapPin className="size-3.5 mr-1.5 text-muted-foreground" />
-                <SelectValue placeholder="All Locations" />
+                <SelectValue placeholder={t("attendance.tracking.allLocations")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
+                <SelectItem value="all">{t("attendance.tracking.allLocations")}</SelectItem>
                 {locations.map((loc) => (
                   <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                 ))}
@@ -416,7 +419,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
             {report && (
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-border ml-1">
                 <span className="text-xs text-muted-foreground">
-                  {preset.getPeriodLabel()} · {report.period.workDays} days
+                  {preset.getPeriodLabel()} · {t("attendance.reports.workDaysCount", { count: report.period.workDays })}
                 </span>
                 {locationFilter !== "all" && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-semibold rounded-md">
@@ -437,23 +440,23 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 className="h-10 px-4 rounded-xl border-border shadow-sm hover:shadow-md transition-all font-medium gap-2"
               >
                 <Download className="size-4" />
-                Export
+                {t("attendance.reports.export")}
                 <ChevronDown className="size-3 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => report && exportCSVFile(getExportData())} className="gap-2.5 py-2.5">
+              <DropdownMenuItem onClick={() => report && exportCSVFile(getExportData(), t)} className="gap-2.5 py-2.5">
                 <FileText className="size-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium">CSV</p>
-                  <p className="text-[10px] text-muted-foreground">Spreadsheet data</p>
+                  <p className="text-[10px] text-muted-foreground">{t("attendance.reports.spreadsheetData")}</p>
                 </div>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => report && exportPDF(getExportData())} className="gap-2.5 py-2.5">
+              <DropdownMenuItem onClick={() => report && exportPDF(getExportData(), t)} className="gap-2.5 py-2.5">
                 <FileText className="size-4 text-red-500" />
                 <div>
-                  <p className="text-sm font-medium">PDF Report</p>
-                  <p className="text-[10px] text-muted-foreground">Print-ready document</p>
+                  <p className="text-sm font-medium">{t("attendance.reports.pdfReport")}</p>
+                  <p className="text-[10px] text-muted-foreground">{t("attendance.reports.printReady")}</p>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -477,19 +480,19 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
           <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
             <FileText className="size-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground">No attendance data</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t("attendance.reports.noDataTitle")}</h3>
           <p className="text-sm text-muted-foreground mt-1.5 max-w-sm mx-auto">
-            There are no attendance records for this period. Try selecting a different date range.
+            {t("attendance.reports.noDataDesc")}
           </p>
         </div>
       ) : (
         <>
           {/* ── KPI Strip ────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KpiCard label="Total Hours" value={report.summary.totalHours} unit="h" prevValue={prevReport?.summary.totalHours} icon={Clock} color="blue" />
-            <KpiCard label="Overtime" value={report.summary.overtimeHours} unit="h" prevValue={prevReport?.summary.overtimeHours} icon={Timer} color={report.summary.overtimeHours > 0 ? "amber" : "slate"} />
-            <KpiCard label="Auto Clock-Outs" value={report.summary.autoClockOuts} prevValue={prevReport?.summary.autoClockOuts} icon={AlertTriangle} color={report.summary.autoClockOuts > 0 ? "red" : "slate"} />
-            <KpiCard label="Avg Shift" value={report.summary.averageShiftHours} unit="h" prevValue={prevReport?.summary.averageShiftHours} icon={BarChart3} color="green" />
+            <KpiCard label={t("attendance.tracking.totalHours")} value={report.summary.totalHours} unit="h" prevValue={prevReport?.summary.totalHours} icon={Clock} color="blue" />
+            <KpiCard label={t("attendance.reports.overtime")} value={report.summary.overtimeHours} unit="h" prevValue={prevReport?.summary.overtimeHours} icon={Timer} color={report.summary.overtimeHours > 0 ? "amber" : "slate"} />
+            <KpiCard label={t("attendance.reports.autoClockOuts")} value={report.summary.autoClockOuts} prevValue={prevReport?.summary.autoClockOuts} icon={AlertTriangle} color={report.summary.autoClockOuts > 0 ? "red" : "slate"} />
+            <KpiCard label={t("attendance.reports.avgShift")} value={report.summary.averageShiftHours} unit="h" prevValue={prevReport?.summary.averageShiftHours} icon={BarChart3} color="green" />
           </div>
 
           {/* ── Chart + Sidebar ──────────────────────────────────── */}
@@ -498,9 +501,9 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
             <div className="lg:col-span-3 bg-card rounded-2xl border border-border/60 shadow-sm">
               <div className="px-6 pt-6 pb-2 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Hours by Worker</h3>
+                  <h3 className="text-sm font-bold text-foreground">{t("attendance.reports.hoursByWorker")}</h3>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {filteredByUser.length} worker{filteredByUser.length !== 1 ? "s" : ""} · {filteredTotalHours.toFixed(1)}h total · hover for avg line
+                    {t("attendance.reports.chartSubtitle", { count: filteredByUser.length, hours: filteredTotalHours.toFixed(1) })}
                   </p>
                 </div>
               </div>
@@ -510,7 +513,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                     <Users className="size-8 mb-2 text-muted-foreground" />
-                    <p className="text-sm">No data for selected filters</p>
+                    <p className="text-sm">{t("attendance.reports.noDataFilters")}</p>
                   </div>
                 )}
               </div>
@@ -518,15 +521,15 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
 
             {/* Quick Stats */}
             <div className="lg:col-span-2 bg-card rounded-2xl border border-border/60 shadow-sm p-6">
-              <h3 className="text-sm font-bold text-foreground mb-5">Overview</h3>
+              <h3 className="text-sm font-bold text-foreground mb-5">{t("attendance.reports.overview")}</h3>
               <div className="space-y-0">
                 {[
-                  { label: "Total Shifts", value: report.summary.totalShifts, color: "" },
-                  { label: "Standard Hours", value: `${report.summary.standardHours}h`, color: "" },
-                  { label: "Overtime Hours", value: `${report.summary.overtimeHours}h`, color: report.summary.overtimeHours > 0 ? "text-amber-600" : "" },
-                  { label: "Active Now", value: report.summary.activeShifts, color: "text-emerald-600" },
-                  { label: "Workers", value: filteredByUser.length, color: "" },
-                  { label: "Locations", value: filteredByLocation.length, color: "" },
+                  { label: t("attendance.reports.totalShifts"), value: report.summary.totalShifts, color: "" },
+                  { label: t("attendance.reports.standardHours"), value: `${report.summary.standardHours}h`, color: "" },
+                  { label: t("attendance.reports.overtimeHours"), value: `${report.summary.overtimeHours}h`, color: report.summary.overtimeHours > 0 ? "text-amber-600" : "" },
+                  { label: t("attendance.breaks.activeNow"), value: report.summary.activeShifts, color: "text-emerald-600" },
+                  { label: t("attendance.reports.workers"), value: filteredByUser.length, color: "" },
+                  { label: t("attendance.reports.locations"), value: filteredByLocation.length, color: "" },
                 ].map((stat, i) => (
                   <div key={stat.label} className={cn(
                     "flex items-center justify-between py-3.5",
@@ -558,7 +561,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                       )}
                     >
                       {view === "summary" ? <Users className="size-3.5" /> : <MapPin className="size-3.5" />}
-                      {view === "summary" ? "By Worker" : "By Location"}
+                      {view === "summary" ? t("attendance.reports.byWorker") : t("attendance.reports.byLocation")}
                     </button>
                   ))}
                 </div>
@@ -568,12 +571,12 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                     <Users className="size-3.5 text-blue-600" />
                   </div>
                   <span className="text-sm font-semibold text-foreground">
-                    Workers at {locations.find(l => l.id === locationFilter)?.name}
+                    {t("attendance.reports.workersAt", { name: locations.find(l => l.id === locationFilter)?.name })}
                   </span>
                 </div>
               )}
               <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                {activeView === "summary" ? filteredByUser.length : filteredByLocation.length} records
+                {t("attendance.reports.recordsCount", { count: activeView === "summary" ? filteredByUser.length : filteredByLocation.length })}
               </span>
             </div>
 
@@ -583,12 +586,12 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted">
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Worker</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Avg</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Issues</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Locations</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">{t("attendance.worker")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.hours")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.shifts")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.avg")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.issues")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">{t("attendance.reports.locations")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -636,7 +639,7 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                     {/* Totals row */}
                     <TableRow className="bg-muted border-t-2 border-border">
                       <TableCell className="py-3.5">
-                        <span className="text-sm font-bold text-foreground">Total ({filteredByUser.length})</span>
+                        <span className="text-sm font-bold text-foreground">{t("attendance.reports.totalCount", { count: filteredByUser.length })}</span>
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="text-sm font-bold text-foreground">{filteredTotalHours.toFixed(1)}h</span>
@@ -655,8 +658,8 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               ) : (
                 <div className="p-16 text-center">
                   <Users className="size-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No worker data</p>
-                  <p className="text-xs text-muted-foreground mt-1">No attendance records match your filters</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("attendance.reports.noWorkerData")}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t("attendance.reports.noWorkerDataDesc")}</p>
                 </div>
               )
             )}
@@ -667,11 +670,11 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted">
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">Location</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Hours</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Shifts</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Workers</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Avg / Shift</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider">{t("attendance.reports.location")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.hours")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.shifts")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.workers")}</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground text-[11px] uppercase tracking-wider text-right">{t("attendance.reports.avgPerShift")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -701,8 +704,8 @@ export function ReportsTab({ locations, canAccess }: ReportsTabProps) {
               ) : (
                 <div className="p-16 text-center">
                   <MapPin className="size-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No location data</p>
-                  <p className="text-xs text-muted-foreground mt-1">No attendance records for this period</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("attendance.reports.noLocationData")}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t("attendance.reports.noLocationDataDesc")}</p>
                 </div>
               )
             )}

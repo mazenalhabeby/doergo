@@ -141,7 +141,7 @@ export default function TaskDetailPage({
   const statusChangeMutation = useMutation({
     mutationFn: (newStatus: string) => tasksApi.updateStatus(id, newStatus),
     onSuccess: () => {
-      notify.success("Task status updated")
+      notify.success(t("tasks.detail.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
     },
@@ -229,7 +229,7 @@ export default function TaskDetailPage({
             ...added.map(uid => tasksApi.addAssignee(id, uid)),
           ]
           await Promise.allSettled(ops)
-          notify.success("Assignees updated")
+          notify.success(t("tasks.detail.assigneesUpdated"))
           queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
         }}
       />
@@ -283,28 +283,28 @@ export default function TaskDetailPage({
 
             {/* Subtasks — module: subtasks */}
             {hasModule("subtasks") && (
-              <CollapsibleSection id="subtasks" icon={GitBranch} title="Subtasks" count={task.subtasks?.length || task._count?.subtasks || 0}>
+              <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={task.subtasks?.length || task._count?.subtasks || 0}>
                 <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} />
               </CollapsibleSection>
             )}
 
             {/* Checklist — module: checklists */}
             {hasModule("checklists") && (checklistTotal > 0 || !isCanceled) && (
-              <CollapsibleSection id="checklist" icon={ListChecks} title="Checklist" count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : 0}>
+              <CollapsibleSection id="checklist" icon={ListChecks} title={t("tasks.sections.checklist")} count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : 0}>
                 <ChecklistSection taskId={id} items={task.checklistItems || []} />
               </CollapsibleSection>
             )}
 
             {/* Attachments — module: attachments */}
             {hasModule("attachments") && (
-              <CollapsibleSection id="attachments" icon={Paperclip} title="Attachments">
+              <CollapsibleSection id="attachments" icon={Paperclip} title={t("tasks.sections.attachments")}>
                 <AttachmentsSection taskId={id} />
               </CollapsibleSection>
             )}
 
             {/* Dependencies — module: dependencies */}
             {hasModule("dependencies") && (
-              <CollapsibleSection id="dependencies" icon={Link2} title="Dependencies" count={depCount || undefined}>
+              <CollapsibleSection id="dependencies" icon={Link2} title={t("tasks.sections.dependencies")} count={depCount || undefined}>
                 <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} />
               </CollapsibleSection>
             )}
@@ -313,7 +313,7 @@ export default function TaskDetailPage({
             <CustomFieldsSection taskId={id} />
 
             {/* Comments — always visible */}
-            <CollapsibleSection id="comments" icon={MessageCircle} title="Comments" count={comments.length || undefined}>
+            <CollapsibleSection id="comments" icon={MessageCircle} title={t("tasks.comments.title")} count={comments.length || undefined}>
               <CommentsSection
                 comments={comments}
                 newComment={newComment}
@@ -324,20 +324,20 @@ export default function TaskDetailPage({
             </CollapsibleSection>
 
             {/* Activity — always visible */}
-            <CollapsibleSection id="activity" icon={Clock} title="Activity">
+            <CollapsibleSection id="activity" icon={Clock} title={t("tasks.sections.activity")}>
               <ActivitySection taskId={id} />
             </CollapsibleSection>
 
             {/* Service Report — module: service_reports + must be completed */}
             {hasModule("service_reports") && (isCompleted || task.status === "CLOSED") && (
-              <CollapsibleSection id="service-report" icon={FileText} title="Service Report">
+              <CollapsibleSection id="service-report" icon={FileText} title={t("tasks.sections.serviceReport")}>
                 <ServiceReportSection taskId={id} taskStatus={task.status} />
               </CollapsibleSection>
             )}
 
             {/* Route Tracking — module: tracking + role-gated */}
             {hasModule("tracking") && (isAdmin || isDispatcher) && (
-              <CollapsibleSection id="route-tracking" icon={MapPin} title="Route Tracking">
+              <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>
                 <RouteTrackingSection routeData={routeData} isLoading={loadingRoute} hasAssignee={hasAssignee} />
               </CollapsibleSection>
             )}
@@ -355,7 +355,7 @@ export default function TaskDetailPage({
                 const assignee = task.assignees?.find((a: any) => a.id === assigneeId)
                 if (assignee) {
                   tasksApi.removeAssignee(id, assignee.userId).then(() => {
-                    notify.success("Assignee removed")
+                    notify.success(t("tasks.detail.assigneeRemoved"))
                     queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
                   }).catch((e: Error) => notify.error(e.message))
                 }
@@ -366,7 +366,7 @@ export default function TaskDetailPage({
                   tasksApi.removeAssignee(id, assignee.userId).then(() =>
                     tasksApi.addAssignee(id, assignee.userId, "LEAD")
                   ).then(() => {
-                    notify.success("Lead updated")
+                    notify.success(t("tasks.detail.leadUpdated"))
                     queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
                   }).catch((e: Error) => notify.error(e.message))
                 }

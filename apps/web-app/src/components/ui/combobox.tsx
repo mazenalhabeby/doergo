@@ -2,6 +2,7 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -51,18 +52,23 @@ export function Combobox({
   value,
   onChange,
   options,
-  placeholder = "Select…",
+  placeholder,
   searchPlaceholder,
   creatable = false,
-  createLabel = (q) => `Add “${q}”`,
+  createLabel,
   maxResults = 80,
   triggerLabel,
   className,
   contentClassName,
   disabled,
 }: ComboboxProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
+
+  // Translated defaults — still overridable via props.
+  const placeholderText = placeholder ?? t("common.selectPlaceholder")
+  const createLabelFn = createLabel ?? ((q: string) => t("common.addOption", { query: q }))
 
   const selected = options.find((o) => o.value === value)
   // Custom (creatable) values won't be in `options` — show the raw value then.
@@ -108,7 +114,7 @@ export function Combobox({
           )}
         >
           <span className={cn("truncate", !display && "text-muted-foreground")}>
-            {value && triggerLabel ? triggerLabel : display || placeholder}
+            {value && triggerLabel ? triggerLabel : display || placeholderText}
           </span>
           <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
         </Button>
@@ -119,7 +125,7 @@ export function Combobox({
       >
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder={searchPlaceholder ?? placeholder}
+            placeholder={searchPlaceholder ?? placeholderText}
             value={query}
             onValueChange={setQuery}
           />
@@ -134,7 +140,7 @@ export function Combobox({
               ))}
               {showCreate && (
                 <CommandItem value={`__create__${query}`} onSelect={() => pick(query.trim())}>
-                  {createLabel(query.trim())}
+                  {createLabelFn(query.trim())}
                 </CommandItem>
               )}
             </CommandGroup>

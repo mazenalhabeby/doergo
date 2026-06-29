@@ -22,6 +22,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
+import { useTranslation } from "react-i18next"
 
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
@@ -77,22 +78,26 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const ROLE_CONFIG: Record<string, { label: string; className: string; gradient: string }> = {
+const ROLE_CONFIG: Record<string, { className: string; gradient: string }> = {
   ADMIN: {
-    label: "Admin",
     className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
     gradient: "from-blue-500 to-blue-600",
   },
   MANAGER: {
-    label: "Manager",
     className: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-200/50 dark:border-purple-800/50",
     gradient: "from-purple-500 to-purple-600",
   },
   EMPLOYEE: {
-    label: "Employee",
     className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50",
     gradient: "from-emerald-500 to-emerald-600",
   },
+}
+
+// Role label translation keys (labels live in i18n, colors in ROLE_CONFIG).
+const ROLE_LABEL_KEY: Record<string, string> = {
+  ADMIN: "members.roles.admin",
+  MANAGER: "members.roles.manager",
+  EMPLOYEE: "members.roles.employee",
 }
 // ---------------------------------------------------------------------------
 // Bulk Action Bar for members
@@ -115,6 +120,7 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
   onBulkSpaceAssign,
   onBulkRemove,
 }: MemberBulkActionBarProps) {
+  const { t } = useTranslation()
   const count = selectedIds.size
   const ids = Array.from(selectedIds)
 
@@ -131,7 +137,7 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
       style={{ animationTimingFunction: "cubic-bezier(0.32, 0.72, 0, 1)" }}
     >
       <span className="text-sm font-semibold text-foreground whitespace-nowrap pr-1">
-        {count} selected
+        {t("members.bulk.selected", { count })}
       </span>
 
       <div className="w-px h-5 bg-border/60 mx-1" />
@@ -140,12 +146,12 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
-            Role
+            {t("members.bulk.role")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" side="top" className="w-[160px]">
-          <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "ADMIN")}>Admin</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "EMPLOYEE")}>Employee</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "ADMIN")}>{t("members.roles.admin")}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "EMPLOYEE")}>{t("members.roles.employee")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -154,7 +160,7 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
-              Space
+              {t("members.bulk.space")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
@@ -179,13 +185,13 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
         size="sm"
         className="h-7 px-2.5 text-xs font-medium rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10"
         onClick={() => {
-          if (window.confirm(`Remove ${count} member${count !== 1 ? "s" : ""} from the organization?`)) {
+          if (window.confirm(t("members.bulk.removeConfirm", { count }))) {
             onBulkRemove(ids)
           }
         }}
       >
         <Trash2 className="size-3.5 mr-1" />
-        Remove
+        {t("members.actions.remove")}
       </Button>
 
       {/* Clear */}
@@ -226,6 +232,7 @@ const TABLE_GRID =
 // \u2500\u2500 Row sub-pieces (reused by the desktop table row AND the mobile card) \u2500\u2500\u2500\u2500\u2500\u2500
 
 function RoleBadge({ member }: { member: OrgMember }) {
+  const { t } = useTranslation()
   if (member.orgRole) {
     return (
       <Badge
@@ -239,10 +246,11 @@ function RoleBadge({ member }: { member: OrgMember }) {
     )
   }
   const conf = ROLE_CONFIG[member.role] || ROLE_CONFIG.EMPLOYEE!
-  return <Badge variant="outline" className={cn("text-xs font-medium border", conf.className)}>{conf.label}</Badge>
+  return <Badge variant="outline" className={cn("text-xs font-medium border", conf.className)}>{t(ROLE_LABEL_KEY[member.role] || "members.roles.employee")}</Badge>
 }
 
 function ScheduleBadge({ member }: { member: OrgMember }) {
+  const { t } = useTranslation()
   const fixed = member.scheduleType === "FIXED"
   const flexible = member.scheduleType === "FLEXIBLE"
   if (!fixed && !flexible) return <span className="text-sm text-muted-foreground/40">{"\u2014"}</span>
@@ -257,13 +265,14 @@ function ScheduleBadge({ member }: { member: OrgMember }) {
       )}
     >
       {fixed ? <Clock className="h-3 w-3" /> : <Timer className="h-3 w-3" />}
-      {fixed ? "Fixed" : "Flexible"}
+      {fixed ? t("members.schedule.fixed") : t("members.schedule.flexible")}
     </Badge>
   )
 }
 
 function SpacesCell({ spaceNames }: { spaceNames: string[] }) {
-  if (spaceNames.length === 0) return <span className="text-sm text-muted-foreground/50 italic">No spaces</span>
+  const { t } = useTranslation()
+  if (spaceNames.length === 0) return <span className="text-sm text-muted-foreground/50 italic">{t("members.noSpaces")}</span>
   return (
     <Link
       href="/locations"
@@ -288,6 +297,7 @@ function RowActions({
   onRemove: (m: OrgMember) => void
   alwaysVisible?: boolean
 }) {
+  const { t } = useTranslation()
   if (!show) return <div className="w-8" />
   return (
     <DropdownMenu>
@@ -303,12 +313,12 @@ function RowActions({
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={() => onEdit(member)}>
           <Pencil className="h-4 w-4 mr-2" />
-          Edit
+          {t("common.edit")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => onRemove(member)}>
           <UserMinus className="h-4 w-4 mr-2" />
-          Remove
+          {t("members.actions.remove")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -328,6 +338,7 @@ const MemberRow = memo(function MemberRow({
   onRemove,
   onNavigate,
 }: MemberRowProps) {
+  const { t } = useTranslation()
   const canManage = isAdmin && !isSelf
   const hasSchedule = member.scheduleType === "FIXED" || member.scheduleType === "FLEXIBLE"
 
@@ -362,7 +373,7 @@ const MemberRow = memo(function MemberRow({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {nameButton}
-            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">you</span>}
+            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
           </div>
           <p className="text-sm text-muted-foreground truncate">{member.email}</p>
         </div>
@@ -384,7 +395,7 @@ const MemberRow = memo(function MemberRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {nameButton}
-            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">you</span>}
+            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
           </div>
           <p className="text-sm text-muted-foreground truncate">{member.email}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
@@ -405,6 +416,7 @@ const MemberRow = memo(function MemberRow({
 // ---------------------------------------------------------------------------
 
 export default function MembersPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const router = useRouter()
   const { user } = useAuth()
@@ -498,10 +510,10 @@ export default function MembersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setRemoveTarget(null)
-      notify.success("Member removed")
+      notify.success(t("members.toast.memberRemoved"))
     },
     onError: (error: Error) => {
-      notify.error(error.message || "Failed to remove member")
+      notify.error(error.message || t("members.toast.removeFailed"))
     },
   })
 
@@ -509,10 +521,10 @@ export default function MembersPage() {
     mutationFn: (id: string) => invitationsApi.revoke(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] })
-      notify.success("Invitation revoked")
+      notify.success(t("invitations.revokeDialog.revokedSuccessfully"))
     },
     onError: (error: Error) => {
-      notify.error(error.message || "Failed to revoke invitation")
+      notify.error(error.message || t("members.toast.revokeFailed"))
     },
   })
 
@@ -543,9 +555,9 @@ export default function MembersPage() {
       )
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setSelectedIds(new Set())
-      notify.bulk(memberIds.length, "role updated")
+      notify.bulk(memberIds.length, t("members.toast.roleUpdated"))
     } catch (error: any) {
-      notify.error(error.message || "Failed to update roles")
+      notify.error(error.message || t("members.toast.updateRolesFailed"))
     }
   }, [queryClient])
 
@@ -556,9 +568,9 @@ export default function MembersPage() {
       )
       queryClient.invalidateQueries({ queryKey: ["all-location-assignments"] })
       setSelectedIds(new Set())
-      notify.success(`Assigned ${memberIds.length} member${memberIds.length !== 1 ? "s" : ""} to space`)
+      notify.success(t("members.toast.assignedToSpace", { count: memberIds.length }))
     } catch (error: any) {
-      notify.error(error.message || "Failed to assign to space")
+      notify.error(error.message || t("members.toast.assignFailed"))
     }
   }, [queryClient])
 
@@ -567,9 +579,9 @@ export default function MembersPage() {
       await Promise.all(memberIds.map((id) => organizationsApi.removeMember(id)))
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setSelectedIds(new Set())
-      notify.success(`Removed ${memberIds.length} member${memberIds.length !== 1 ? "s" : ""}`)
+      notify.success(t("members.toast.removedCount", { count: memberIds.length }))
     } catch (error: any) {
-      notify.error(error.message || "Failed to remove members")
+      notify.error(error.message || t("members.toast.removeMembersFailed"))
     }
   }, [queryClient])
 
@@ -583,10 +595,10 @@ export default function MembersPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                Team {!isLoading && <span className="text-muted-foreground font-normal text-lg">({totalCount})</span>}
+                {t("members.team")} {!isLoading && <span className="text-muted-foreground font-normal text-lg">({totalCount})</span>}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage your team members — assign roles, permissions, and spaces.
+                {t("members.teamSubtitle")}
               </p>
             </div>
 
@@ -595,7 +607,7 @@ export default function MembersPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search..."
+                placeholder={t("members.searchPlaceholder")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -614,12 +626,12 @@ export default function MembersPage() {
               }}
             >
               <SelectTrigger className="w-[130px] h-9 bg-card border-border/80 rounded-lg text-sm">
-                <SelectValue placeholder="All" />
+                <SelectValue placeholder={t("common.all")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All roles</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                <SelectItem value="all">{t("common.allRoles")}</SelectItem>
+                <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
+                <SelectItem value="EMPLOYEE">{t("members.roles.employee")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -631,7 +643,7 @@ export default function MembersPage() {
                 className="h-9 px-4 rounded-lg font-medium"
               >
                 <UserPlus className="h-4 w-4 mr-1.5" />
-                Invite
+                {t("members.inviteShort")}
               </Button>
             )}
           </div>
@@ -679,11 +691,11 @@ export default function MembersPage() {
                   )}
                 </div>
                 <div /> {/* Avatar spacer */}
-                <div>Member</div>
-                <div>Title</div>
-                <div>Role</div>
-                <div>Schedule</div>
-                <div>Spaces</div>
+                <div>{t("members.table.member")}</div>
+                <div>{t("members.table.title")}</div>
+                <div>{t("members.table.role")}</div>
+                <div>{t("members.table.schedule")}</div>
+                <div>{t("members.table.spaces")}</div>
                 <div /> {/* Actions spacer */}
               </div>
               <div className="divide-y divide-border/60">
@@ -709,7 +721,7 @@ export default function MembersPage() {
               {meta && meta.totalPages > 1 && (
                 <div className="flex items-center justify-between px-5 py-3 border-t border-border/60 bg-muted/30">
                   <p className="text-sm text-muted-foreground">
-                    Page {meta.page} of {meta.totalPages}
+                    {t("common.page", { page: meta.page, totalPages: meta.totalPages })}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -719,7 +731,7 @@ export default function MembersPage() {
                       onClick={() => setPage((p) => p - 1)}
                       className="h-8 rounded-lg text-xs"
                     >
-                      Previous
+                      {t("common.previous")}
                     </Button>
                     <Button
                       variant="outline"
@@ -728,7 +740,7 @@ export default function MembersPage() {
                       onClick={() => setPage((p) => p + 1)}
                       className="h-8 rounded-lg text-xs"
                     >
-                      Next
+                      {t("common.next")}
                     </Button>
                   </div>
                 </div>
@@ -740,14 +752,14 @@ export default function MembersPage() {
               <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/80 flex items-center justify-center mb-5">
                 <Users className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-1.5">Build your team</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("members.empty.title")}</h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
-                Add team members and assign them to spaces. Each member can have different roles and permissions.
+                {t("members.empty.description")}
               </p>
               {isAdmin && (
                 <Button onClick={() => setInviteOpen(true)} className="rounded-lg">
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Invite Member
+                  {t("members.inviteMember")}
                 </Button>
               )}
             </div>
@@ -765,7 +777,7 @@ export default function MembersPage() {
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-foreground">
-                  Pending Invitations
+                  {t("members.pendingInvitations.title")}
                 </span>
                 <Badge variant="secondary" className="text-xs font-normal ml-1">
                   {pendingInvitations.length}
@@ -797,20 +809,20 @@ export default function MembersPage() {
                         </p>
                         {inv.createdBy && (
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            by {inv.createdBy.firstName} {inv.createdBy.lastName}
+                            {t("members.pendingInvitations.createdBy", { name: `${inv.createdBy.firstName} ${inv.createdBy.lastName}` })}
                           </p>
                         )}
                       </div>
                       <Badge variant="outline" className={cn("text-xs font-medium border", roleConf.className)}>
-                        {roleConf.label}
+                        {t(ROLE_LABEL_KEY[inv.targetRole] || "members.roles.employee")}
                       </Badge>
                       <span className={cn(
                         "text-xs whitespace-nowrap",
                         isExpired ? "text-red-500" : "text-muted-foreground"
                       )}>
                         {isExpired
-                          ? "Expired"
-                          : `Expires ${expiresDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                          ? t("members.pendingInvitations.expired")
+                          : t("members.pendingInvitations.expires", { date: expiresDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) })
                         }
                       </span>
                       <Button
@@ -819,7 +831,7 @@ export default function MembersPage() {
                         onClick={() => revokeInviteMutation.mutate(inv.id)}
                         disabled={revokeInviteMutation.isPending}
                         className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-600"
-                        title="Revoke"
+                        title={t("members.pendingInvitations.revoke")}
                       >
                         <X className="h-3.5 w-3.5" />
                       </Button>
@@ -849,20 +861,20 @@ export default function MembersPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove team member</AlertDialogTitle>
+            <AlertDialogTitle>{t("members.removeTeamMember.title")}</AlertDialogTitle>
             <AlertDialogDescription>
               {removeTarget &&
-                `Are you sure you want to remove ${removeTarget.firstName} ${removeTarget.lastName} from the organization? This action cannot be undone.`}
+                t("members.removeTeamMember.description", { name: `${removeTarget.firstName} ${removeTarget.lastName}` })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 rounded-lg"
               onClick={() => removeTarget && removeMutation.mutate(removeTarget.id)}
               disabled={removeMutation.isPending}
             >
-              {removeMutation.isPending ? "Removing..." : "Remove"}
+              {removeMutation.isPending ? t("common.removing") : t("members.actions.remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

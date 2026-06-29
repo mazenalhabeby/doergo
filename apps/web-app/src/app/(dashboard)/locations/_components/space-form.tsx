@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import dynamic from "next/dynamic"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2 } from "lucide-react"
 import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
@@ -31,7 +32,7 @@ const LocationPicker = dynamic(() => import("./location-picker"), {
 export function SpaceForm({
   onCreated,
   onCancel,
-  submitLabel = "Create Space",
+  submitLabel,
   autoFocus = false,
 }: {
   onCreated: () => void
@@ -39,6 +40,8 @@ export function SpaceForm({
   submitLabel?: string
   autoFocus?: boolean
 }) {
+  const { t } = useTranslation()
+  const resolvedSubmitLabel = submitLabel ?? t("locations.createSpace")
   // Workflows are fetched here (cached key shared with /locations, so no extra
   // request) — keeps both call sites a one-liner.
   const { data: workflows = [] } = useQuery({
@@ -64,10 +67,10 @@ export function SpaceForm({
   const mutation = useMutation({
     mutationFn: (data: CreateLocationInput) => locationsApi.create(data),
     onSuccess: () => {
-      notify.success("Space created")
+      notify.success(t("locations.toast.created"))
       onCreated()
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to create space"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.createFailed")),
   })
 
   const toggleModule = useCallback((key: string) => {
@@ -75,7 +78,7 @@ export function SpaceForm({
   }, [])
 
   const handleSubmit = () => {
-    if (!name.trim()) return notify.error("Name is required")
+    if (!name.trim()) return notify.error(t("locations.nameRequired"))
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
@@ -99,10 +102,10 @@ export function SpaceForm({
     <div className="space-y-5">
       {/* Name */}
       <div className="space-y-2">
-        <Label htmlFor="space-name">Name <span className="text-red-500">*</span></Label>
+        <Label htmlFor="space-name">{t("locations.name")} <span className="text-red-500">*</span></Label>
         <Input
           id="space-name"
-          placeholder="e.g. Main Office, Downtown Crew"
+          placeholder={t("locations.form.namePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus={autoFocus}
@@ -111,7 +114,7 @@ export function SpaceForm({
 
       {/* Type — workspace vs physical */}
       <div className="space-y-2">
-        <Label>Type</Label>
+        <Label>{t("locations.form.type")}</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             type="button"
@@ -124,9 +127,9 @@ export function SpaceForm({
             )}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Boxes className="h-4 w-4 text-blue-600" /> Workspace
+              <Boxes className="h-4 w-4 text-blue-600" /> {t("locations.form.workspace")}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">A team or project — no physical location.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("locations.form.workspaceHint")}</p>
           </button>
           <button
             type="button"
@@ -139,9 +142,9 @@ export function SpaceForm({
             )}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <MapPin className="h-4 w-4 text-blue-600" /> Physical location
+              <MapPin className="h-4 w-4 text-blue-600" /> {t("locations.form.physical")}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">A site with an address — for attendance clock-in.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("locations.form.physicalHint")}</p>
           </button>
         </div>
       </div>
@@ -150,10 +153,10 @@ export function SpaceForm({
       {isPhysical && (
         <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
           <div className="space-y-2">
-            <Label htmlFor="space-address">Address</Label>
+            <Label htmlFor="space-address">{t("locations.address")}</Label>
             <Input
               id="space-address"
-              placeholder="Street, city"
+              placeholder={t("locations.form.addressPlaceholder")}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
@@ -167,7 +170,7 @@ export function SpaceForm({
             onAddressChange={setAddress}
           />
           <div className="space-y-2">
-            <Label htmlFor="space-radius">Geofence radius</Label>
+            <Label htmlFor="space-radius">{t("locations.form.geofenceRadius")}</Label>
             <div className="flex items-center gap-3">
               <Input
                 id="space-radius"
@@ -188,7 +191,7 @@ export function SpaceForm({
               />
               <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
             </div>
-            <p className="text-xs text-muted-foreground">Workers can clock in within this distance of the pin.</p>
+            <p className="text-xs text-muted-foreground">{t("locations.form.geofenceHint")}</p>
           </div>
         </div>
       )}
@@ -208,22 +211,21 @@ export function SpaceForm({
           onClick={() => setShowAdvanced(!showAdvanced)}
           className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-muted/30 transition-colors rounded-xl"
         >
-          <span className="font-medium text-foreground">Advanced — Modules</span>
+          <span className="font-medium text-foreground">{t("locations.form.advancedModules")}</span>
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
-            {enabledModules.length} enabled
+            {t("locations.form.enabledCount", { count: enabledModules.length })}
             {showAdvanced ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </span>
         </button>
         {showAdvanced && (
           <div className="border-t border-border p-3 space-y-3 max-h-[340px] overflow-y-auto">
             <p className="text-xs text-muted-foreground">
-              Modules add optional features to this space&apos;s tasks (checklists, GPS tracking,
-              sprints…). Start from a preset, then fine-tune below.
+              {t("locations.form.modulesIntro")}
             </p>
 
             {/* Presets */}
             <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Presets</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("locations.presets")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {MODULE_PRESETS.map((p) => {
                   const active =
@@ -281,10 +283,10 @@ export function SpaceForm({
       {/* Footer */}
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (
-          <Button variant="outline" onClick={onCancel} disabled={mutation.isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={mutation.isPending}>{t("common.cancel")}</Button>
         )}
         <Button onClick={handleSubmit} disabled={mutation.isPending}>
-          {mutation.isPending ? "Creating..." : submitLabel}
+          {mutation.isPending ? t("common.creating") : resolvedSubmitLabel}
         </Button>
       </div>
     </div>

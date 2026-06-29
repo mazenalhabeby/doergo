@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth-context';
 import { AnimatedLogo } from '@hbcfield/shared/components';
 import { SpaceForm } from '@/app/(dashboard)/locations/_components/space-form';
@@ -10,6 +11,7 @@ import { SpaceForm } from '@/app/(dashboard)/locations/_components/space-form';
 export default function WelcomePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -28,14 +30,14 @@ export default function WelcomePage() {
       <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-8 shadow-modal">
         <div className="mb-7 flex flex-col items-center text-center">
           <AnimatedLogo size="default" className="mb-4" />
-          <h1 className="text-2xl font-semibold text-slate-900">Set up your first space</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">{t('welcome.title')}</h1>
           <p className="mt-1.5 text-sm text-slate-500">
-            A space is where your tasks live — a site, a team, or a project. You can add more anytime.
+            {t('welcome.subtitle')}
           </p>
         </div>
 
         {/* Same form as the New-Space dialog — name, type, workflow & modules. */}
-        <SpaceForm onCreated={handleCreated} submitLabel="Create space & continue" autoFocus />
+        <SpaceForm onCreated={handleCreated} submitLabel={t('welcome.createAndContinue')} autoFocus />
       </div>
     </div>
   );

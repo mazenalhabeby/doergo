@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
+import { useTranslation } from "react-i18next"
 import {
   LayoutDashboard,
   ClipboardList,
@@ -46,15 +47,15 @@ function Kbd({ children }: { children: React.ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// Group labels
+// Group label keys
 // ---------------------------------------------------------------------------
 
-const GROUP_LABELS: Record<string, string> = {
-  navigation: "Navigation",
-  tasks: "Tasks",
-  sprints: "Sprints",
-  spaces: "Spaces",
-  "quick-actions": "Quick Actions",
+const GROUP_LABEL_KEYS: Record<string, string> = {
+  navigation: "commandPalette.groups.navigation",
+  tasks: "commandPalette.groups.tasks",
+  sprints: "commandPalette.groups.sprints",
+  spaces: "commandPalette.groups.spaces",
+  "quick-actions": "commandPalette.groups.quickActions",
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +69,7 @@ export function CommandPalette() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const { toggle: toggleActivity } = useActivityPanel()
+  const { t } = useTranslation()
 
   // --- Build base navigation actions ---
   const baseActions = useMemo<CommandAction[]>(() => {
@@ -76,7 +78,7 @@ export function CommandPalette() {
     const nav: CommandAction[] = [
       {
         id: "nav-dashboard",
-        label: "Go to Dashboard",
+        label: t("commandPalette.goToDashboard"),
         icon: LayoutDashboard,
         group: "navigation",
         shortcut: "G then D",
@@ -84,7 +86,7 @@ export function CommandPalette() {
       },
       {
         id: "nav-tasks",
-        label: "Go to Tasks",
+        label: t("commandPalette.goToTasks"),
         icon: ClipboardList,
         group: "navigation",
         shortcut: "G then T",
@@ -95,7 +97,7 @@ export function CommandPalette() {
     if (user.canManageUsers) {
       nav.push({
         id: "nav-spaces",
-        label: "Go to Spaces",
+        label: t("commandPalette.goToSpaces"),
         icon: MapPin,
         group: "navigation",
         shortcut: "G then S",
@@ -106,14 +108,14 @@ export function CommandPalette() {
     if (user.canViewAllTasks) {
       nav.push({
         id: "nav-schedule",
-        label: "Go to Schedule",
+        label: t("commandPalette.goToSchedule"),
         icon: Calendar,
         group: "navigation",
         onSelect: () => router.push("/employees/availability"),
       })
       nav.push({
         id: "nav-attendance",
-        label: "Go to Attendance",
+        label: t("commandPalette.goToAttendance"),
         icon: Clock,
         group: "navigation",
         onSelect: () => router.push("/attendance"),
@@ -123,14 +125,14 @@ export function CommandPalette() {
     if (user.canManageUsers) {
       nav.push({
         id: "nav-members",
-        label: "Go to Members",
+        label: t("commandPalette.goToMembers"),
         icon: Users,
         group: "navigation",
         onSelect: () => router.push("/members"),
       })
       nav.push({
         id: "nav-settings",
-        label: "Go to Settings",
+        label: t("commandPalette.goToSettings"),
         icon: Settings,
         group: "navigation",
         onSelect: () => router.push("/settings"),
@@ -141,7 +143,7 @@ export function CommandPalette() {
     const quick: CommandAction[] = [
       {
         id: "toggle-theme",
-        label: theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
+        label: theme === "dark" ? t("commandPalette.switchToLight") : t("commandPalette.switchToDark"),
         icon: theme === "dark" ? Sun : Moon,
         group: "quick-actions",
         onSelect: () => setTheme(theme === "dark" ? "light" : "dark"),
@@ -152,7 +154,7 @@ export function CommandPalette() {
     if (pathname === "/dashboard") {
       quick.push({
         id: "toggle-activity",
-        label: "Toggle Activity Panel",
+        label: t("commandPalette.toggleActivityPanel"),
         icon: PanelRight,
         group: "quick-actions",
         onSelect: toggleActivity,
@@ -160,7 +162,7 @@ export function CommandPalette() {
     }
 
     return [...nav, ...quick]
-  }, [user, router, pathname, theme, setTheme, toggleActivity])
+  }, [user, router, pathname, theme, setTheme, toggleActivity, t])
 
   // Merge base actions with page-registered actions
   const allActions = useMemo(() => {
@@ -200,11 +202,14 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder={t("commandPalette.placeholder")} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{t("common.noResults")}</CommandEmpty>
         {Array.from(grouped.entries()).map(([groupKey, groupActions]) => (
-          <CommandGroup key={groupKey} heading={GROUP_LABELS[groupKey] || groupKey}>
+          <CommandGroup
+            key={groupKey}
+            heading={GROUP_LABEL_KEYS[groupKey] ? t(GROUP_LABEL_KEYS[groupKey]) : groupKey}
+          >
             {groupActions.map((action) => {
               const Icon = action.icon
               return (
@@ -243,11 +248,11 @@ export function CommandPalette() {
       <div className="flex items-center justify-between border-t border-border/50 px-3 py-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Kbd>&uarr;&darr;</Kbd>
-          <span>Navigate</span>
+          <span>{t("commandPalette.navigate")}</span>
           <Kbd>&crarr;</Kbd>
-          <span>Select</span>
+          <span>{t("commandPalette.select")}</span>
           <Kbd>Esc</Kbd>
-          <span>Close</span>
+          <span>{t("common.close")}</span>
         </div>
       </div>
     </CommandDialog>

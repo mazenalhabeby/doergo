@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { taskAttachmentsApi, uploadToS3, type Attachment } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
@@ -57,6 +58,7 @@ interface UploadingFile {
 }
 
 export function AttachmentsSection({ taskId }: { taskId: string }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -72,7 +74,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
     mutationFn: (attachmentId: string) =>
       taskAttachmentsApi.delete(taskId, attachmentId),
     onSuccess: () => {
-      toast.success("Attachment deleted")
+      toast.success(t("tasks.attachments.deleted"))
       queryClient.invalidateQueries({ queryKey: ["taskAttachments", taskId] })
       queryClient.invalidateQueries({ queryKey: ["taskTimeline", taskId] })
       setDeleteTarget(null)
@@ -84,11 +86,11 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
     async (file: File) => {
       // Validate
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} exceeds 20MB limit`)
+        toast.error(t("tasks.attachments.exceedsLimit", { name: file.name }))
         return
       }
       if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`${file.name}: unsupported file type`)
+        toast.error(t("tasks.attachments.unsupportedType", { name: file.name }))
         return
       }
 
@@ -105,7 +107,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
           file.name,
           file.type,
         )
-        if (!presigned) throw new Error("Failed to get upload URL")
+        if (!presigned) throw new Error(t("tasks.attachments.failedUploadUrl"))
 
         // 2. Upload to S3
         await uploadToS3(presigned.uploadUrl, file, (progress) => {
@@ -122,12 +124,12 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
           fileSize: file.size,
         })
 
-        toast.success(`${file.name} uploaded`)
+        toast.success(t("tasks.attachments.uploaded", { name: file.name }))
         queryClient.invalidateQueries({ queryKey: ["taskAttachments", taskId] })
         queryClient.invalidateQueries({ queryKey: ["taskTimeline", taskId] })
       } catch (err) {
         toast.error(
-          `Failed to upload ${file.name}: ${err instanceof Error ? err.message : "Unknown error"}`,
+          t("tasks.attachments.uploadFailed", { name: file.name, error: err instanceof Error ? err.message : t("common.error") }),
         )
       } finally {
         setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId))
@@ -170,7 +172,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Paperclip className="size-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Attachments</h3>
+            <h3 className="font-semibold text-foreground">{t("tasks.sections.attachments")}</h3>
             {attachments.length > 0 && (
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {attachments.length}
@@ -185,7 +187,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
             disabled={isUploading}
           >
             <Upload className="size-3.5 mr-1.5" />
-            Upload
+            {t("tasks.attachments.upload")}
           </Button>
           <input
             ref={fileInputRef}
@@ -218,11 +220,11 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
             className={`size-8 mx-auto mb-2 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`}
           />
           <p className="text-sm text-muted-foreground">
-            Drag & drop files here, or{" "}
-            <span className="text-blue-600 font-medium">browse</span>
+            {t("tasks.attachments.dragDropPrefix")}{" "}
+            <span className="text-blue-600 font-medium">{t("tasks.attachments.browse")}</span>
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Images and documents up to 20MB
+            {t("tasks.attachments.sizeHint")}
           </p>
         </div>
 
@@ -344,7 +346,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
         {/* Empty state */}
         {!isLoading && attachments.length === 0 && uploadingFiles.length === 0 && (
           <p className="text-center text-sm text-muted-foreground mt-4">
-            No attachments yet
+            {t("tasks.attachments.empty")}
           </p>
         )}
       </div>
@@ -356,14 +358,13 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Attachment</AlertDialogTitle>
+            <AlertDialogTitle>{t("tasks.attachments.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &ldquo;{deleteTarget?.fileName}&rdquo;?
-              This action cannot be undone.
+              {t("tasks.attachments.deleteDescription", { name: deleteTarget?.fileName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 deleteTarget && deleteMutation.mutate(deleteTarget.id)
@@ -373,7 +374,7 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
               {deleteMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
-                "Delete"
+                t("common.delete")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

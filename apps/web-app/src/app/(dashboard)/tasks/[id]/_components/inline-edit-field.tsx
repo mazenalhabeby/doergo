@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { Pencil, Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -26,11 +27,13 @@ export function InlineEditField({
   onSave,
   type = "text",
   disabled = false,
-  placeholder = "Empty",
+  placeholder,
   options,
   renderDisplay,
   className,
 }: InlineEditFieldProps) {
+  const { t } = useTranslation()
+  const resolvedPlaceholder = placeholder ?? t("tasks.inlineEdit.empty")
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(String(value ?? ""))
   const [saving, setSaving] = useState(false)
@@ -92,7 +95,7 @@ export function InlineEditField({
       const selected = options.find(o => o.value === String(value ?? ""))
       return (
         <span className={cn("text-sm text-foreground", className)}>
-          {renderDisplay ? renderDisplay(value) : selected?.label || <span className="text-muted-foreground">{placeholder}</span>}
+          {renderDisplay ? renderDisplay(value) : selected?.label || <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
         </span>
       )
     }
@@ -107,7 +110,7 @@ export function InlineEditField({
         disabled={saving}
       >
         <SelectTrigger className={cn("h-8 text-sm border-none shadow-none px-0 hover:bg-muted/50 transition-colors", className)}>
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={resolvedPlaceholder} />
         </SelectTrigger>
         <SelectContent>
           {options.map(opt => (
@@ -128,7 +131,7 @@ export function InlineEditField({
     if (disabled) {
       return (
         <span className={cn("text-sm text-foreground", className)}>
-          {renderDisplay ? renderDisplay(value) : (value ? new Date(String(value)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{placeholder}</span>)}
+          {renderDisplay ? renderDisplay(value) : (value ? new Date(String(value)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
         </span>
       )
     }
@@ -136,7 +139,7 @@ export function InlineEditField({
       <Popover>
         <PopoverTrigger asChild>
           <button className={cn("text-sm text-foreground hover:bg-muted/50 px-1.5 py-0.5 -mx-1.5 rounded transition-colors group flex items-center gap-1.5", className)}>
-            {value ? new Date(String(value)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{placeholder}</span>}
+            {value ? new Date(String(value)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
             <Pencil className="size-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors" />
           </button>
         </PopoverTrigger>
@@ -175,7 +178,7 @@ export function InlineEditField({
         )}
       >
         <span className={cn("min-w-0", type === "textarea" ? "whitespace-pre-wrap break-words flex-1" : "truncate")}>
-          {displayValue || <span className="text-muted-foreground">{placeholder}</span>}
+          {displayValue || <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
         </span>
         {!disabled && (
           <Pencil className="size-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors flex-shrink-0" />
@@ -200,12 +203,12 @@ export function InlineEditField({
         />
         <div className="flex items-center gap-1.5">
           <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={save} disabled={saving}>
-            <Check className="size-3 mr-1" /> Save
+            <Check className="size-3 mr-1" /> {t("common.save")}
           </Button>
           <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground" onClick={cancel}>
-            <X className="size-3 mr-1" /> Cancel
+            <X className="size-3 mr-1" /> {t("common.cancel")}
           </Button>
-          <span className="text-[10px] text-muted-foreground ml-auto">⌘+Enter to save</span>
+          <span className="text-[10px] text-muted-foreground ml-auto">{t("tasks.inlineEdit.cmdEnterToSave")}</span>
         </div>
       </div>
     )

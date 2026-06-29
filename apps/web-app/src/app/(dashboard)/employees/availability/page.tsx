@@ -579,11 +579,11 @@ function CalendarTab({
               }
 
               const groups = [...bySpace.entries()]
-              if (unassigned.length > 0) groups.push(["__unassigned__", { name: "Unassigned", techs: unassigned }])
+              if (unassigned.length > 0) groups.push(["__unassigned__", { name: t('employees.availability.unassigned'), techs: unassigned }])
 
               // If no space data, render flat list
               if (groups.length === 0) {
-                groups.push(["__all__", { name: "All Workers", techs: selectedDay.employees }])
+                groups.push(["__all__", { name: t('employees.availability.allWorkers'), techs: selectedDay.employees }])
               }
 
               return groups.map(([spaceId, { name: spaceName, techs }]) => (
@@ -801,10 +801,10 @@ export default function ScheduleAndTimeOffPage() {
                   </Select>
                   <Select value={selectedSpace} onValueChange={setSelectedSpace}>
                     <SelectTrigger className="w-[180px] h-10 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
-                      <SelectValue placeholder="All Spaces" />
+                      <SelectValue placeholder={t('common.allSpaces')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Spaces</SelectItem>
+                      <SelectItem value="all">{t('common.allSpaces')}</SelectItem>
                       {(locations as any[]).map((loc: any) => (
                         <SelectItem key={loc.id} value={loc.id}>
                           {loc.name}
@@ -833,7 +833,7 @@ export default function ScheduleAndTimeOffPage() {
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('technicians.availabilityPage.totalTechnicians')}</p>
               <div className="flex items-baseline gap-2 mt-1.5">
                 <p className="text-3xl font-bold text-foreground tabular-nums">{todaySummary.total}</p>
-                <p className="text-xs text-muted-foreground">scheduled</p>
+                <p className="text-xs text-muted-foreground">{t('employees.availability.scheduled')}</p>
               </div>
             </div>
             <div className="bg-card rounded-xl border border-border p-4">
@@ -855,7 +855,7 @@ export default function ScheduleAndTimeOffPage() {
               <div className="flex items-baseline gap-2 mt-1.5">
                 <p className={cn("text-3xl font-bold tabular-nums", todaySummary.onTimeOff > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground")}>{todaySummary.onTimeOff}</p>
                 {todaySummary.onTimeOff > 0 && (
-                  <p className="text-xs text-amber-600/70 dark:text-amber-400/70">off today</p>
+                  <p className="text-xs text-amber-600/70 dark:text-amber-400/70">{t('employees.availability.offToday')}</p>
                 )}
               </div>
             </div>

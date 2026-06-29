@@ -14,23 +14,25 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
+import { useTranslation } from 'react-i18next';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'My Tasks', href: '/tasks', icon: ClipboardList },
-  { name: 'Create Task', href: '/tasks/new', icon: Plus },
-  { name: 'Invoices', href: '/invoices', icon: FileText },
-  { name: 'Token Test', href: '/test', icon: FlaskConical },
+  { nameKey: 'nav.sidebar.dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { nameKey: 'nav.myTasks', href: '/tasks', icon: ClipboardList },
+  { nameKey: 'nav.sidebar.createTask', href: '/tasks/new', icon: Plus },
+  { nameKey: 'nav.sidebar.invoices', href: '/invoices', icon: FileText },
+  { nameKey: 'nav.tokenTest', href: '/test', icon: FlaskConical },
 ];
 
 const bottomNavigation = [
-  { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'Help', href: '/help', icon: HelpCircle },
+  { nameKey: 'nav.sidebar.settings', href: '/settings', icon: Settings },
+  { nameKey: 'nav.help', href: '/help', icon: HelpCircle },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-sidebar bg-card border-r border-border flex flex-col">
@@ -49,7 +51,7 @@ export function Sidebar() {
           {navigation.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
-              <li key={item.name}>
+              <li key={item.href}>
                 <Link
                   href={item.href}
                   className={cn(
@@ -58,7 +60,7 @@ export function Sidebar() {
                   )}
                 >
                   <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
+                  <span>{t(item.nameKey)}</span>
                 </Link>
               </li>
             );
@@ -71,7 +73,7 @@ export function Sidebar() {
             {bottomNavigation.map((item) => {
               const isActive = pathname === item.href;
               return (
-                <li key={item.name}>
+                <li key={item.href}>
                   <Link
                     href={item.href}
                     className={cn(
@@ -80,7 +82,7 @@ export function Sidebar() {
                     )}
                   >
                     <item.icon className="h-5 w-5" />
-                    <span>{item.name}</span>
+                    <span>{t(item.nameKey)}</span>
                   </Link>
                 </li>
               );
@@ -105,7 +107,7 @@ export function Sidebar() {
           <button
             onClick={logout}
             className="p-2 text-muted-foreground hover:text-muted-foreground hover:bg-accent rounded-lg transition-colors"
-            title="Logout"
+            title={t('nav.userMenu.signOut')}
           >
             <LogOut className="h-5 w-5" />
           </button>

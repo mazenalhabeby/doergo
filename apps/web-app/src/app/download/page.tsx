@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 // ─── Configuration ──────────────────────────────────────────────────────────────
 // Driven by env so new builds can be swapped without a code change / redeploy.
@@ -59,37 +60,38 @@ function ExternalLinkIcon({ className }: { className?: string }) {
 
 // ─── Platform Card Components ────────────────────────────────────────────────────
 function AndroidCard() {
+  const { t } = useTranslation();
   return (
     <div className="bg-card rounded-2xl shadow-lg p-8">
       <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
         <AndroidIcon className="w-9 h-9 text-green-600" />
       </div>
-      <h2 className="text-2xl font-semibold text-foreground mb-2">Android</h2>
+      <h2 className="text-2xl font-semibold text-foreground mb-2">{t('download.android.title')}</h2>
       <p className="text-muted-foreground mb-6 text-sm">
-        Download and install the APK directly on your device.
+        {t('download.android.description')}
       </p>
       <a
         href={ANDROID_APK_URL}
         className="inline-flex items-center gap-2 px-7 py-3.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg active:scale-[0.98]"
       >
         <DownloadIcon className="w-5 h-5" />
-        Download APK
+        {t('download.android.button')}
       </a>
-      <p className="text-xs text-muted-foreground mt-4">v{APP_VERSION} &middot; Android 6.0+</p>
+      <p className="text-xs text-muted-foreground mt-4">{t('download.android.meta', { version: APP_VERSION })}</p>
     </div>
   );
 }
 
 function IosCard() {
+  const { t } = useTranslation();
   return (
     <div className="bg-card rounded-2xl shadow-lg p-8">
       <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-5">
         <AppleIcon className="w-9 h-9 text-foreground" />
       </div>
-      <h2 className="text-2xl font-semibold text-foreground mb-2">iOS</h2>
+      <h2 className="text-2xl font-semibold text-foreground mb-2">{t('download.ios.title')}</h2>
       <p className="text-muted-foreground mb-6 text-sm">
-        Install via TestFlight &mdash; Apple&apos;s official beta testing platform.
-        No App Store needed.
+        {t('download.ios.description')}
       </p>
       <a
         href={TESTFLIGHT_URL}
@@ -98,32 +100,34 @@ function IosCard() {
         className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold shadow-md hover:shadow-lg active:scale-[0.98]"
       >
         <ExternalLinkIcon className="w-5 h-5" />
-        Open TestFlight
+        {t('download.ios.button')}
       </a>
-      <p className="text-xs text-muted-foreground mt-4">v{APP_VERSION} &middot; iOS 16.0+</p>
+      <p className="text-xs text-muted-foreground mt-4">{t('download.ios.meta', { version: APP_VERSION })}</p>
     </div>
   );
 }
 
 // ─── Instructions ────────────────────────────────────────────────────────────────
 function AndroidInstructions() {
+  const { t } = useTranslation();
   const steps = [
-    'Tap "Download APK" above',
-    'Open the downloaded file from your notifications',
-    'Allow "Install from unknown sources" if prompted',
-    'Tap "Install" and wait for it to finish',
-    'Open HBCField from your home screen',
+    t('download.androidStep1'),
+    t('download.androidStep2'),
+    t('download.androidStep3'),
+    t('download.androidStep4'),
+    t('download.androidStep5'),
   ];
   return <StepList steps={steps} />;
 }
 
 function IosInstructions() {
+  const { t } = useTranslation();
   const steps = [
-    'Tap "Open TestFlight" above',
-    'Install the TestFlight app if you don\'t have it',
-    'Tap "Accept" to join the beta program',
-    'Tap "Install" to download HBCField',
-    'Open HBCField from your home screen',
+    t('download.iosStep1'),
+    t('download.iosStep2'),
+    t('download.iosStep3'),
+    t('download.iosStep4'),
+    t('download.iosStep5'),
   ];
   return <StepList steps={steps} />;
 }
@@ -145,6 +149,7 @@ function StepList({ steps }: { steps: string[] }) {
 
 // ─── Main Page ───────────────────────────────────────────────────────────────────
 export default function DownloadPage() {
+  const { t } = useTranslation();
   const [platform, setPlatform] = useState<Platform>('desktop');
   const [activeTab, setActiveTab] = useState<'android' | 'ios'>('android');
 
@@ -167,7 +172,7 @@ export default function DownloadPage() {
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-2 tracking-tight">
             HBC FIELD
           </h1>
-          <p className="text-muted-foreground text-lg">Dispatch &middot; Track &middot; Deliver</p>
+          <p className="text-muted-foreground text-lg">{t('download.tagline')}</p>
         </div>
 
         {/* Platform switcher (desktop only) */}
@@ -184,7 +189,7 @@ export default function DownloadPage() {
                 }`}
               >
                 {tab === 'android' ? <AndroidIcon className="w-4 h-4" /> : <AppleIcon className="w-4 h-4" />}
-                {tab === 'android' ? 'Android' : 'iOS'}
+                {tab === 'android' ? t('download.androidTab') : t('download.iosTab')}
               </button>
             ))}
           </div>
@@ -196,7 +201,7 @@ export default function DownloadPage() {
 
         {/* Installation instructions */}
         <div className="bg-card rounded-2xl shadow-sm p-6 text-left mt-6">
-          <h3 className="font-semibold text-foreground mb-4">How to install</h3>
+          <h3 className="font-semibold text-foreground mb-4">{t('download.howToInstall')}</h3>
           {showAndroid && <AndroidInstructions />}
           {showIos && <IosInstructions />}
         </div>
@@ -204,7 +209,7 @@ export default function DownloadPage() {
         {/* Desktop: show both options side by side below */}
         {showTabs && (
           <p className="text-xs text-muted-foreground mt-6">
-            Open this page on your phone to auto-detect your platform.
+            {t('download.desktopHint')}
           </p>
         )}
 
@@ -213,7 +218,7 @@ export default function DownloadPage() {
           href="/"
           className="inline-block mt-6 text-sm text-muted-foreground hover:text-blue-600 transition-colors"
         >
-          &larr; Back to Partner Portal
+          {t('download.backToPortal')}
         </Link>
       </div>
     </main>

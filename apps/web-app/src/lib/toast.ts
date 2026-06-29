@@ -1,62 +1,69 @@
 import { toast } from "sonner"
+import i18n from "@/i18n"
 
 /**
  * Premium toast notifications with rich content.
  * Replaces basic toast.success/error with detailed, branded messages.
+ *
+ * Uses the default i18n instance directly (not the React hook) because these
+ * functions run at event time, so they reflect the current language.
  */
 export const notify = {
   /** Task moved to a new status */
   taskMoved: (taskTitle: string, newStatus: string) => {
-    toast(`Task updated`, {
+    toast(i18n.t("toast.taskUpdated"), {
       description: `"${taskTitle}" → ${newStatus}`,
     })
   },
 
   /** Task assigned to sprint */
   taskToSprint: (taskTitle: string, sprintName: string) => {
-    toast(`Added to sprint`, {
+    toast(i18n.t("toast.addedToSprint"), {
       description: `"${taskTitle}" → ${sprintName}`,
     })
   },
 
   /** Task assigned to epic */
   taskToEpic: (taskTitle: string, epicName: string) => {
-    toast(`Epic updated`, {
+    toast(i18n.t("toast.epicUpdated"), {
       description: `"${taskTitle}" → ${epicName}`,
     })
   },
 
   /** Task assigned to person */
   taskAssigned: (taskTitle: string, personName: string) => {
-    toast(`Task assigned`, {
+    toast(i18n.t("toast.taskAssigned"), {
       description: `"${taskTitle}" → ${personName}`,
     })
   },
 
   /** Task moved to space */
   taskToSpace: (taskTitle: string, spaceName: string) => {
-    toast(`Moved to space`, {
+    toast(i18n.t("toast.movedToSpace"), {
       description: `"${taskTitle}" → ${spaceName}`,
     })
   },
 
   /** Task created */
   taskCreated: (taskTitle: string) => {
-    toast(`Task created`, {
+    toast(i18n.t("toast.taskCreated"), {
       description: `"${taskTitle}"`,
     })
   },
 
   /** Bulk operation */
   bulk: (count: number, action: string) => {
-    toast(`${count} task${count !== 1 ? "s" : ""} updated`, {
-      description: action,
-    })
+    toast(
+      i18n.t(count !== 1 ? "toast.bulkUpdatedMany" : "toast.bulkUpdatedOne", { count }),
+      {
+        description: action,
+      },
+    )
   },
 
   /** Sprint action */
   sprint: (action: string, sprintName: string) => {
-    toast(`Sprint ${action}`, {
+    toast(i18n.t("toast.sprintAction", { action }), {
       description: sprintName,
     })
   },
@@ -68,15 +75,15 @@ export const notify = {
 
   /** Error */
   error: (message: string) => {
-    toast.error("Something went wrong", {
+    toast.error(i18n.t("toast.somethingWentWrong"), {
       description: message,
     })
   },
 
   /** Copied to clipboard */
   copied: (what?: string) => {
-    toast(`Copied${what ? ` ${what}` : ""}`, {
-      description: "Saved to clipboard",
+    toast(what ? i18n.t("toast.copiedWhat", { what }) : i18n.t("toast.copied"), {
+      description: i18n.t("toast.savedToClipboard"),
     })
   },
 }

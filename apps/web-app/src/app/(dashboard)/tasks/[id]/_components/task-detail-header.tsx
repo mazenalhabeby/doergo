@@ -84,7 +84,7 @@ export function TaskDetailHeader({
     <div className="mb-6">
       {/* Breadcrumb-style context line */}
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-        <span>Tasks</span>
+        <span>{t("tasks.page.heading")}</span>
         <ChevronRight className="size-3" />
         <span className="text-foreground font-medium">{requestId}</span>
         <span className="mx-1">·</span>
@@ -219,7 +219,7 @@ export function TaskDetailHeader({
         {/* Story Points */}
         {hasModule("story_points") && task.storyPoints != null && (
           <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums bg-muted text-muted-foreground">
-            {task.storyPoints} pts
+            {t("tasks.units.points", { count: task.storyPoints })}
           </span>
         )}
 
@@ -252,6 +252,7 @@ function formatTaskDuration(totalSeconds: number): string {
 }
 
 function TaskTimer({ acceptedAt, completedAt }: { acceptedAt?: string | null; completedAt?: string | null }) {
+  const { t } = useTranslation()
   const accepted = acceptedAt ? new Date(acceptedAt).getTime() : null
   const end = completedAt ? new Date(completedAt).getTime() : null
   const [now, setNow] = useState(() => Date.now())
@@ -269,7 +270,7 @@ function TaskTimer({ acceptedAt, completedAt }: { acceptedAt?: string | null; co
   return (
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tabular-nums bg-muted text-foreground"
-      title={running ? "Time since the task was accepted" : "Total time on task"}
+      title={running ? t("tasks.timer.sinceAccepted") : t("tasks.timer.totalOnTask")}
     >
       <Clock className="size-3" />
       {formatTaskDuration(elapsed)}

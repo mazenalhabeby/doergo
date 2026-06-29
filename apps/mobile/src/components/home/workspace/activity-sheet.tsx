@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
 import { COLORS } from '../../../lib/constants';
 import { BottomSheet } from './bottom-sheet';
@@ -46,22 +47,23 @@ interface Props {
 
 export function ActivitySheet({ visible, onClose, events, pending, onOpenTask, onResolvePending }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <BottomSheet visible={visible} onClose={onClose} heightRatio={0.72}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Live Activity */}
         <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>LIVE ACTIVITY</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('components.activitySheet.liveActivity')}</Text>
           {events.length > 0 && (
             <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
-              <Text style={[styles.badgeText, { color: COLORS.primary }]}>{events.length} events</Text>
+              <Text style={[styles.badgeText, { color: COLORS.primary }]}>{t('components.activitySheet.eventsCount', { count: events.length })}</Text>
             </View>
           )}
         </View>
 
         {events.length === 0 ? (
-          <Text style={[styles.empty, { color: colors.textMuted }]}>No recent activity</Text>
+          <Text style={[styles.empty, { color: colors.textMuted }]}>{t('components.activitySheet.noRecentActivity')}</Text>
         ) : (
           events.map((e) => (
             <View key={e.id} style={[styles.eventRow, { borderBottomColor: colors.border }]}>
@@ -82,7 +84,7 @@ export function ActivitySheet({ visible, onClose, events, pending, onOpenTask, o
         {pending.length > 0 && (
           <>
             <View style={[styles.sectionHeader, { borderBottomColor: colors.border, marginTop: 18 }]}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PENDING ACTIONS</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('components.activitySheet.pendingActions')}</Text>
               <View style={[styles.badge, { backgroundColor: 'rgba(245,158,11,0.15)' }]}>
                 <Text style={[styles.badgeText, { color: '#f59e0b' }]}>{pending.length}</Text>
               </View>

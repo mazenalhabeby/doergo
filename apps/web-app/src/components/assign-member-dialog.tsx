@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { Search, Check, Loader2 } from "lucide-react"
 
 import {
@@ -117,6 +118,7 @@ export function AssignMemberDialog({
   onRemove,
   isAssigning = false,
 }: AssignMemberDialogProps) {
+  const { t } = useTranslation()
   const isMultiMode = !!onSave || !!onRemove
   const [search, setSearch] = useState("")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -255,12 +257,12 @@ export function AssignMemberDialog({
         {/* Header */}
         <DialogHeader className="px-5 pt-5 pb-3">
           <DialogTitle className="text-base font-semibold text-foreground">
-            {isMultiMode ? "Manage Assignees" : "Assign to"}
+            {isMultiMode ? t("assignMembers.manageAssignees") : t("assignMembers.assignTo")}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {isMultiMode
-              ? `${selectedIds.size} selected${hasChanges ? " — unsaved changes" : ""}`
-              : "Select a member to assign this task to."}
+              ? `${t("assignMembers.selected", { count: selectedIds.size })}${hasChanges ? ` — ${t("assignMembers.unsavedChanges")}` : ""}`
+              : t("assignMembers.selectDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -269,7 +271,7 @@ export function AssignMemberDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search members..."
+              placeholder={t("assignMembers.searchPlaceholder")}
               className="pl-9 h-9 text-sm rounded-lg border-border bg-muted/40"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -294,7 +296,7 @@ export function AssignMemberDialog({
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground">No members found</p>
+              <p className="text-sm text-muted-foreground">{t("assignMembers.noMembersFound")}</p>
             </div>
           ) : (
             <>
@@ -303,7 +305,7 @@ export function AssignMemberDialog({
                 <>
                   <div className="px-4 pt-3 pb-1.5">
                     <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                      Space members
+                      {t("assignMembers.spaceMembers")}
                     </span>
                   </div>
                   {spaceMembers.map((member) => (
@@ -324,7 +326,7 @@ export function AssignMemberDialog({
                   {spaceMembers.length > 0 && (
                     <div className="px-4 pt-4 pb-1.5">
                       <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                        Other members
+                        {t("assignMembers.otherMembers")}
                       </span>
                     </div>
                   )}
@@ -347,7 +349,7 @@ export function AssignMemberDialog({
         {isMultiMode && (
           <div className="border-t border-border px-5 py-3 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {selectedIds.size} member{selectedIds.size !== 1 ? "s" : ""} selected
+              {t("assignMembers.membersSelected", { count: selectedIds.size })}
             </span>
             <button
               onClick={handleSave}
@@ -360,7 +362,7 @@ export function AssignMemberDialog({
               )}
             >
               {saving && <Loader2 className="size-3.5 animate-spin" />}
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
         )}

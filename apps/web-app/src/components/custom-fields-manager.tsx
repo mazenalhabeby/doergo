@@ -2,6 +2,7 @@
 
 import { useState, useCallback, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import {
   Plus,
   Trash2,
@@ -53,14 +54,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-const FIELD_TYPES: { value: CustomFieldType; label: string; icon: typeof Type }[] = [
-  { value: "TEXT", label: "Text", icon: Type },
-  { value: "NUMBER", label: "Number", icon: Hash },
-  { value: "DATE", label: "Date", icon: Calendar },
-  { value: "DROPDOWN", label: "Dropdown", icon: ChevronDown },
-  { value: "CHECKBOX", label: "Checkbox", icon: CheckSquare },
-  { value: "URL", label: "URL", icon: Link2 },
-  { value: "EMAIL", label: "Email", icon: Mail },
+const FIELD_TYPES: { value: CustomFieldType; labelKey: string; icon: typeof Type }[] = [
+  { value: "TEXT", labelKey: "customFields.fieldTypes.TEXT", icon: Type },
+  { value: "NUMBER", labelKey: "customFields.fieldTypes.NUMBER", icon: Hash },
+  { value: "DATE", labelKey: "customFields.fieldTypes.DATE", icon: Calendar },
+  { value: "DROPDOWN", labelKey: "customFields.fieldTypes.DROPDOWN", icon: ChevronDown },
+  { value: "CHECKBOX", labelKey: "customFields.fieldTypes.CHECKBOX", icon: CheckSquare },
+  { value: "URL", labelKey: "customFields.fieldTypes.URL", icon: Link2 },
+  { value: "EMAIL", labelKey: "customFields.fieldTypes.EMAIL", icon: Mail },
 ]
 
 function getFieldIcon(type: CustomFieldType) {
@@ -91,6 +92,7 @@ const FieldRow = memo(function FieldRow({
   onDelete: () => void
   onToggleActive: (active: boolean) => void
 }) {
+  const { t } = useTranslation()
   const Icon = getFieldIcon(field.type)
   const colorClass = getFieldColor(field.type)
 
@@ -107,13 +109,13 @@ const FieldRow = memo(function FieldRow({
           </span>
           {field.isRequired && (
             <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-              Required
+              {t("common.required")}
             </span>
           )}
         </div>
         {field.type === "DROPDOWN" && field.options && (
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            Options: {field.options.join(", ")}
+            {t("customFields.optionsList", { options: field.options.join(", ") })}
           </p>
         )}
       </div>
@@ -155,6 +157,7 @@ function FieldDialog({
   existingField: CustomFieldDefinition | null
   workflowId: string | null
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const isEditing = !!existingField
 
@@ -180,7 +183,7 @@ function FieldDialog({
         workflowId,
       }),
     onSuccess: () => {
-      notify.success("Field created")
+      notify.success(t("customFields.fieldCreated"))
       queryClient.invalidateQueries({ queryKey: ["customFieldDefinitions"] })
       onOpenChange(false)
     },
@@ -195,7 +198,7 @@ function FieldDialog({
         options: type === "DROPDOWN" ? options : undefined,
       } as Partial<CustomFieldDefinition>),
     onSuccess: () => {
-      notify.success("Field updated")
+      notify.success(t("customFields.fieldUpdated"))
       queryClient.invalidateQueries({ queryKey: ["customFieldDefinitions"] })
       onOpenChange(false)
     },
@@ -216,16 +219,16 @@ function FieldDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Field" : "New Field"}</DialogTitle>
+          <DialogTitle>{isEditing ? t("customFields.editField") : t("customFields.newField")}</DialogTitle>
           <DialogDescription>
-            {workflowId ? "Shown on tasks of this type." : "Shown on every task."}
+            {workflowId ? t("customFields.scopedDescription") : t("customFields.globalDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label>{t("customFields.nameLabel")}</Label>
             <Input
-              placeholder="e.g. Customer Phone"
+              placeholder={t("customFields.namePlaceholder")}
               value={name}
               onChange={(e) => {
                 setName(e.target.value)
@@ -235,9 +238,9 @@ function FieldDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Key</Label>
+            <Label>{t("customFields.keyLabel")}</Label>
             <Input
-              placeholder="customer_phone"
+              placeholder={t("customFields.keyPlaceholder")}
               value={key}
               onChange={(e) => setKey(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
               disabled={isEditing}
@@ -246,7 +249,7 @@ function FieldDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label>{t("customFields.typeLabel")}</Label>
             <Select value={type} onValueChange={(v) => setType(v as CustomFieldType)} disabled={isEditing}>
               <SelectTrigger className={isEditing ? "opacity-60" : ""}>
                 <SelectValue />
@@ -256,7 +259,7 @@ function FieldDialog({
                   <SelectItem key={ft.value} value={ft.value}>
                     <span className="flex items-center gap-2">
                       <ft.icon className="h-4 w-4 text-muted-foreground" />
-                      {ft.label}
+                      {t(ft.labelKey)}
                     </span>
                   </SelectItem>
                 ))}
@@ -266,10 +269,10 @@ function FieldDialog({
 
           {type === "DROPDOWN" && (
             <div className="space-y-2">
-              <Label>Options</Label>
+              <Label>{t("customFields.optionsLabel")}</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Add option..."
+                  placeholder={t("customFields.addOptionPlaceholder")}
                   value={newOption}
                   onChange={(e) => setNewOption(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addOption())}
@@ -299,15 +302,15 @@ function FieldDialog({
 
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-sm">Required</Label>
-              <p className="text-xs text-muted-foreground">Must be filled on tasks</p>
+              <Label className="text-sm">{t("common.required")}</Label>
+              <p className="text-xs text-muted-foreground">{t("customFields.requiredDescription")}</p>
             </div>
             <Switch checked={isRequired} onCheckedChange={setIsRequired} />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate()}
@@ -315,7 +318,7 @@ function FieldDialog({
             className="bg-blue-600 hover:bg-blue-700"
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? "Save" : "Create"}
+            {isEditing ? t("common.save") : t("common.create")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -329,6 +332,7 @@ function FieldDialog({
  * type's fields live next to its statuses & capabilities.
  */
 export function CustomFieldsManager({ workflowId }: { workflowId: string | null }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [showDialog, setShowDialog] = useState(false)
   const [editingField, setEditingField] = useState<CustomFieldDefinition | null>(null)
@@ -353,7 +357,7 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => customFieldsApi.deleteDefinition(id),
     onSuccess: () => {
-      notify.success("Field deleted")
+      notify.success(t("customFields.fieldDeleted"))
       queryClient.invalidateQueries({ queryKey: ["customFieldDefinitions"] })
       setDeleteTarget(null)
     },
@@ -364,7 +368,7 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <span className="text-xs font-medium text-muted-foreground">
-          {fields.length} field{fields.length !== 1 ? "s" : ""}
+          {t("customFields.fieldCount", { count: fields.length })}
         </span>
         <Button
           variant="ghost"
@@ -376,15 +380,15 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
           }}
         >
           <Plus className="h-3.5 w-3.5 mr-1" />
-          New Field
+          {t("customFields.newField")}
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="p-4 text-xs text-muted-foreground">Loading…</div>
+        <div className="p-4 text-xs text-muted-foreground">{t("common.loading")}</div>
       ) : fields.length === 0 ? (
         <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-          No fields yet. Add one to capture extra data on these tasks.
+          {t("customFields.emptyState")}
         </div>
       ) : (
         <div className="divide-y divide-border">
@@ -418,18 +422,18 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete &ldquo;{deleteTarget?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogTitle>{t("customFields.deleteTitle", { name: deleteTarget?.name })}</AlertDialogTitle>
             <AlertDialogDescription>
-              This also removes its values from existing tasks. This cannot be undone.
+              {t("customFields.deleteDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

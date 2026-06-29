@@ -22,12 +22,14 @@ import {
   Menu,
 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
 import { hasAccessModule } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { cn } from "@/lib/utils"
 import {
   tasksApi,
@@ -115,6 +117,7 @@ export function TopNavbar() {
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
+  const { t } = useTranslation()
 
   if (!user) return null
 
@@ -176,7 +179,7 @@ export function TopNavbar() {
               : navItemInactive,
           )}
         >
-          Dashboard
+          {t("nav.sidebar.dashboard")}
         </Link>
 
         {/* Tasks — direct link (sprints merged into tasks page) */}
@@ -190,7 +193,7 @@ export function TopNavbar() {
               : navItemInactive,
           )}
         >
-          Tasks
+          {t("nav.sidebar.tasks")}
         </Link>
 
         {/* Team dropdown (admins) */}
@@ -208,7 +211,7 @@ export function TopNavbar() {
                 : navItemInactive,
             )}
           >
-            Spaces
+            {t("nav.spaces")}
           </Link>
         )}
 
@@ -223,7 +226,7 @@ export function TopNavbar() {
                 : navItemInactive,
             )}
           >
-            Schedule
+            {t("nav.sidebar.schedule")}
           </Link>
         )}
 
@@ -239,24 +242,24 @@ export function TopNavbar() {
                 : navItemInactive,
             )}
           >
-            Attendance
+            {t("nav.sidebar.attendance")}
           </Link>
         )}
 
         {/* Employee module-driven items */}
         {showMyTimeOff && (
           <Link href="/my/time-off" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
-            Time Off
+            {t("nav.timeOff")}
           </Link>
         )}
         {showMyAttendance && (
           <Link href="/my/attendance" className={cn(navItemBase, isActive(pathname, "/my/attendance") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
-            Attendance
+            {t("nav.sidebar.attendance")}
           </Link>
         )}
         {showManage && (
           <Link href="/manage" className={cn(navItemBase, isActive(pathname, "/manage") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
-            Manage
+            {t("nav.manage")}
           </Link>
         )}
 
@@ -267,6 +270,7 @@ export function TopNavbar() {
       {/* Right side */}
       <div className="ml-auto flex items-center gap-1">
         <CommandPaletteButton />
+        <LanguageSwitcher />
         <NotificationBell />
         <UserDropdown
           user={user}
@@ -289,6 +293,7 @@ export function TopNavbar() {
 // ---------------------------------------------------------------------------
 function CommandPaletteButton() {
   const { setOpen } = useCommandPalette()
+  const { t } = useTranslation()
   const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
 
   return (
@@ -297,7 +302,7 @@ function CommandPaletteButton() {
       className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-xs"
     >
       <Search className="size-3.5" />
-      <span className="hidden sm:inline text-[11px]">Search</span>
+      <span className="hidden sm:inline text-[11px]">{t("common.search")}</span>
       <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
         {isMac ? "\u2318" : "Ctrl+"}K
       </kbd>
@@ -309,6 +314,7 @@ function CommandPaletteButton() {
 // Team Dropdown
 // ---------------------------------------------------------------------------
 function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => void }) {
+  const { t } = useTranslation()
   const items = ["/members", "/invitations", "/join-requests"]
   const active = isDropdownActive(pathname, items)
 
@@ -321,23 +327,23 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
           active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
         )}
       >
-        Team
+        {t("nav.team")}
         <ChevronDown className="h-3.5 w-3.5 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={10} className="min-w-[180px] rounded-lg p-1">
         <DropdownMenuItem asChild className="rounded-md cursor-pointer">
           <Link href="/members" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            Members
+            {t("nav.sidebar.members")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="rounded-md cursor-pointer">
           <Link href="/invitations" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            Invitations
+            {t("nav.sidebar.invitations")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="rounded-md cursor-pointer">
           <Link href="/join-requests" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            Join Requests
+            {t("nav.sidebar.joinRequests")}
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -373,6 +379,7 @@ function MobileMenu({
   showManage: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const { t } = useTranslation()
 
   const teamItems = ["/members", "/invitations", "/join-requests"]
   const teamActive = isDropdownActive(pathname, teamItems)
@@ -390,7 +397,7 @@ function MobileMenu({
             className={cn(mobileItemBase, isActive(pathname, "/dashboard") ? mobileItemActiveStyle : mobileItemInactive)}
           >
             <LayoutDashboard className="h-4 w-4" />
-            Dashboard
+            {t("nav.sidebar.dashboard")}
           </Link>
         </DropdownMenuItem>
 
@@ -400,7 +407,7 @@ function MobileMenu({
             onClick={() => setOpen(false)}
             className={cn(mobileItemBase, isActive(pathname, "/tasks") ? mobileItemActiveStyle : mobileItemInactive)}
           >
-            Tasks
+            {t("nav.sidebar.tasks")}
           </Link>
         </DropdownMenuItem>
 
@@ -408,7 +415,7 @@ function MobileMenu({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="px-3 py-1 text-xs font-medium text-muted-foreground">
-              Team
+              {t("nav.team")}
             </DropdownMenuLabel>
             <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
               <Link
@@ -416,7 +423,7 @@ function MobileMenu({
                 onClick={() => setOpen(false)}
                 className={cn(mobileItemBase, "pl-5", isActive(pathname, "/members") ? mobileItemActiveStyle : mobileItemInactive)}
               >
-                Members
+                {t("nav.sidebar.members")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
@@ -425,7 +432,7 @@ function MobileMenu({
                 onClick={() => setOpen(false)}
                 className={cn(mobileItemBase, "pl-5", isActive(pathname, "/invitations") ? mobileItemActiveStyle : mobileItemInactive)}
               >
-                Invitations
+                {t("nav.sidebar.invitations")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
@@ -434,7 +441,7 @@ function MobileMenu({
                 onClick={() => setOpen(false)}
                 className={cn(mobileItemBase, "pl-5", isActive(pathname, "/join-requests") ? mobileItemActiveStyle : mobileItemInactive)}
               >
-                Join Requests
+                {t("nav.sidebar.joinRequests")}
               </Link>
             </DropdownMenuItem>
           </>
@@ -448,7 +455,7 @@ function MobileMenu({
               className={cn(mobileItemBase, isActive(pathname, "/locations") ? mobileItemActiveStyle : mobileItemInactive)}
             >
               <MapPin className="h-4 w-4" />
-              Spaces
+              {t("nav.spaces")}
             </Link>
           </DropdownMenuItem>
         )}
@@ -466,7 +473,7 @@ function MobileMenu({
               )}
             >
               <Calendar className="h-4 w-4" />
-              Schedule
+              {t("nav.sidebar.schedule")}
             </Link>
           </DropdownMenuItem>
         )}
@@ -479,7 +486,7 @@ function MobileMenu({
               className={cn(mobileItemBase, isActive(pathname, "/attendance") ? mobileItemActiveStyle : mobileItemInactive)}
             >
               <Clock className="h-4 w-4" />
-              Attendance
+              {t("nav.sidebar.attendance")}
             </Link>
           </DropdownMenuItem>
         )}
@@ -490,7 +497,7 @@ function MobileMenu({
             <Link href="/my/time-off" onClick={() => setOpen(false)}
               className={cn(mobileItemBase, isActive(pathname, "/my/time-off") ? mobileItemActiveStyle : mobileItemInactive)}>
               <Calendar className="h-4 w-4" />
-              Time Off
+              {t("nav.timeOff")}
             </Link>
           </DropdownMenuItem>
         )}
@@ -499,7 +506,7 @@ function MobileMenu({
             <Link href="/my/attendance" onClick={() => setOpen(false)}
               className={cn(mobileItemBase, isActive(pathname, "/my/attendance") ? mobileItemActiveStyle : mobileItemInactive)}>
               <Clock className="h-4 w-4" />
-              Attendance
+              {t("nav.sidebar.attendance")}
             </Link>
           </DropdownMenuItem>
         )}
@@ -508,7 +515,7 @@ function MobileMenu({
             <Link href="/manage" onClick={() => setOpen(false)}
               className={cn(mobileItemBase, isActive(pathname, "/manage") ? mobileItemActiveStyle : mobileItemInactive)}>
               <Settings className="h-4 w-4" />
-              Manage
+              {t("nav.manage")}
             </Link>
           </DropdownMenuItem>
         )}
@@ -565,6 +572,7 @@ function MoreDropdown({
 // ---------------------------------------------------------------------------
 function ThemeToggleItem() {
   const { theme, setTheme } = useTheme()
+  const { t } = useTranslation()
   const isDark = theme === "dark"
   return (
     <DropdownMenuItem
@@ -572,7 +580,7 @@ function ThemeToggleItem() {
       className="rounded-md cursor-pointer"
     >
       {isDark ? <Sun className="h-4 w-4 mr-2 text-muted-foreground" /> : <Moon className="h-4 w-4 mr-2 text-muted-foreground" />}
-      {isDark ? "Light Mode" : "Dark Mode"}
+      {isDark ? t("nav.lightMode") : t("nav.darkMode")}
     </DropdownMenuItem>
   )
 }
@@ -595,6 +603,7 @@ function UserDropdown({
   canManageUsers: boolean
   onLogout: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="ml-2 flex items-center gap-2 rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -632,7 +641,7 @@ function UserDropdown({
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
             <Link href="/settings" className="flex items-center gap-2 px-2 py-1.5 text-sm">
               <Settings className="h-4 w-4 text-muted-foreground" />
-              Settings
+              {t("nav.userMenu.settings")}
             </Link>
           </DropdownMenuItem>
 
@@ -642,13 +651,13 @@ function UserDropdown({
               <DropdownMenuItem asChild className="rounded-md cursor-pointer">
                 <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  Invoices
+                  {t("nav.sidebar.invoices")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="rounded-md cursor-pointer">
                 <Link href="/payments" className="flex items-center gap-2 px-2 py-1.5 text-sm">
                   <History className="h-4 w-4 text-muted-foreground" />
-                  Payment History
+                  {t("nav.sidebar.paymentHistory")}
                 </Link>
               </DropdownMenuItem>
             </>
@@ -665,7 +674,7 @@ function UserDropdown({
           className="rounded-md cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+          {t("nav.userMenu.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

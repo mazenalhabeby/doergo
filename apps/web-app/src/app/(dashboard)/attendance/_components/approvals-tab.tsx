@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { RefreshCw, CheckCircle2, Check, X } from "lucide-react"
 import { type TimeEntry } from "@/lib/api"
@@ -30,6 +31,7 @@ interface ApprovalsTabProps {
 }
 
 export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, approving, rejecting }: ApprovalsTabProps) {
+  const { t } = useTranslation()
   const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
 
@@ -43,14 +45,14 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
       <div className="p-6 border-b border-border/60">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Pending Approvals</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t("attendance.approvals.title")}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Review and approve time entries that require manager approval
+              {t("attendance.approvals.subtitle")}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={onRefresh} className="rounded-lg">
             <RefreshCw className="size-4 mr-2" />
-            Refresh
+            {t("common.refresh")}
           </Button>
         </div>
       </div>
@@ -66,21 +68,21 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
             <CheckCircle2 className="size-6 text-emerald-500" />
           </div>
-          <h3 className="text-base font-medium text-foreground">All caught up!</h3>
-          <p className="text-sm text-muted-foreground mt-1">No pending approvals at this time</p>
+          <h3 className="text-base font-medium text-foreground">{t("attendance.approvals.allCaughtUp")}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{t("attendance.approvals.noneDesc")}</p>
         </div>
       ) : (
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-semibold text-muted-foreground">Worker</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">Location</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">Date</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">Clock In</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">Clock Out</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">Duration</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">Reason</TableHead>
-              <TableHead className="font-semibold text-muted-foreground text-right">Actions</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("attendance.worker")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("attendance.approvals.location")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("attendance.approvals.date")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockIn")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockOut")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("common.reason")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground text-right">{t("common.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -99,7 +101,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                     </p>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{entry.location?.name || "Unknown"}</TableCell>
+                <TableCell className="text-muted-foreground">{entry.location?.name || t("attendance.approvals.unknown")}</TableCell>
                 <TableCell className="text-muted-foreground">{format(toDate(entry.clockInAt), "MMM d, yyyy")}</TableCell>
                 <TableCell>{formatTime(entry.clockInAt)}</TableCell>
                 <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt) : "-"}</TableCell>
@@ -116,7 +118,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                       className="rounded-lg bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                     >
                       <Check className="size-4 mr-1" />
-                      Approve
+                      {t("attendance.approvals.approve")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -126,7 +128,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                       className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                     >
                       <X className="size-4 mr-1" />
-                      Reject
+                      {t("attendance.approvals.reject")}
                     </Button>
                   </div>
                 </TableCell>
@@ -140,7 +142,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
       <Dialog open={!!rejectTarget} onOpenChange={(open) => { if (!open) closeReject() }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject time entry</DialogTitle>
+            <DialogTitle>{t("attendance.approvals.rejectTitle")}</DialogTitle>
             <DialogDescription>
               {rejectTarget && (
                 <>
@@ -151,9 +153,9 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <Label>Reason <span className="text-muted-foreground/60">(optional)</span></Label>
+            <Label>{t("common.reason")} <span className="text-muted-foreground/60">({t("common.optional")})</span></Label>
             <Textarea
-              placeholder="Why is this entry being rejected?"
+              placeholder={t("attendance.approvals.rejectPlaceholder")}
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               rows={3}
@@ -161,7 +163,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeReject}>Cancel</Button>
+            <Button variant="outline" onClick={closeReject}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => {
@@ -170,7 +172,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
               }}
               disabled={rejecting}
             >
-              {rejecting ? "Rejecting…" : "Reject entry"}
+              {rejecting ? t("common.rejecting") : t("attendance.approvals.rejectEntry")}
             </Button>
           </DialogFooter>
         </DialogContent>

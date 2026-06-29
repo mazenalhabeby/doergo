@@ -53,14 +53,13 @@
     "more": "+{{count}} weitere",
     "version": "Version {{version}}",
     "appName": "HBCField",
-    "copyrightYear": "\u00A9 {{year}} HBCField. Alle Rechte vorbehalten.",
+    "copyrightYear": "© {{year}} HBCField. Alle Rechte vorbehalten.",
     "greeting": {
       "morning": "Guten Morgen,",
       "afternoon": "Guten Tag,",
       "evening": "Guten Abend,"
     }
   },
-
   "auth": {
     "login": {
       "title": "Anmelden",
@@ -120,7 +119,6 @@
       }
     }
   },
-
   "onboarding": {
     "choosePath": {
       "welcome": "Willkommen, {{name}}!",
@@ -150,7 +148,16 @@
       "addressLabel": "Adresse (optional)",
       "addressPlaceholder": "Musterstraße 123",
       "submitButton": "Organisation erstellen",
-      "failedToCreate": "Organisation konnte nicht erstellt werden"
+      "failedToCreate": "Organisation konnte nicht erstellt werden",
+      "firstSpaceLabel": "Ihr erster Bereich",
+      "firstSpacePlaceholder": "z. B. Hauptbüro",
+      "firstSpaceHint": "Sie können ihn später umbenennen oder weitere Bereiche hinzufügen.",
+      "typeLabel": "Typ",
+      "typeWorkspace": "Arbeitsbereich",
+      "typeWorkspaceDesc": "Ein Team oder Projekt",
+      "typePhysical": "Physischer Standort",
+      "typePhysicalDesc": "Ein Standort für die Anwesenheit",
+      "locationLabel": "Standort"
     },
     "joinOrg": {
       "title": "Organisation beitreten",
@@ -194,7 +201,6 @@
       "rejectedToast": "Anfrage abgelehnt"
     }
   },
-
   "tabs": {
     "home": "Start",
     "dashboard": "Dashboard",
@@ -206,7 +212,6 @@
     "team": "Team",
     "profile": "Profil"
   },
-
   "home": {
     "admin": {
       "welcomeBack": "Willkommen zurück, {{name}}",
@@ -217,7 +222,10 @@
       "todaysTasks": "Heutige Aufgaben",
       "noTasksScheduled": "Keine Aufgaben geplant",
       "recentTasks": "Letzte Aufgaben",
-      "noTasksYet": "Noch keine Aufgaben vorhanden. Erstellen Sie eine, um zu beginnen!"
+      "noTasksYet": "Noch keine Aufgaben vorhanden. Erstellen Sie eine, um zu beginnen!",
+      "setUpWorkspace": "Richten Sie Ihren Arbeitsbereich ein",
+      "setUpWorkspaceSub": "Erstellen Sie Bereiche und weisen Sie Ihr Team zu, um alle in Echtzeit zu verfolgen.",
+      "activity": "Aktivität"
     },
     "fullTime": {
       "clockedIn": "Eingestempelt",
@@ -259,7 +267,6 @@
       "noJobsScheduled": "Keine Einsätze für diesen Tag geplant"
     }
   },
-
   "tasks": {
     "searchPlaceholder": "Aufgaben suchen...",
     "tabs": {
@@ -298,7 +305,6 @@
     },
     "failedToLoad": "Aufgaben konnten nicht geladen werden"
   },
-
   "taskDetail": {
     "title": "Aufgabendetails",
     "jobId": "AUFTRAG #{{id}}",
@@ -312,7 +318,6 @@
     "commentsCount": "KOMMENTARE ({{count}})",
     "taskNotFound": "Aufgabe nicht gefunden",
     "goBack": "Zurück",
-
     "infoLabels": {
       "createdBy": "Erstellt von",
       "assignedTo": "Zugewiesen an",
@@ -320,7 +325,6 @@
     },
     "openInMaps": "In Karten öffnen",
     "startNavigation": "Navigation starten",
-
     "statusActions": {
       "acceptJob": "Auftrag annehmen",
       "startDriving": "Losfahren",
@@ -332,7 +336,6 @@
       "notYetAvailable": "Noch nicht verfügbar",
       "declineJob": "Ablehnen"
     },
-
     "progressSteps": {
       "assigned": "Zugewiesen",
       "accepted": "Angenommen",
@@ -341,19 +344,16 @@
       "inProgress": "In Bearbeitung",
       "completed": "Abgeschlossen"
     },
-
     "updateStatus": {
       "confirmTitle": "Status aktualisieren",
       "confirmMessage": "Status auf {{status}} ändern?"
     },
-
     "blockTask": {
       "title": "Problem melden",
       "subtitle": "Was blockiert diese Aufgabe? (optional)",
       "placeholder": "z.B. Warte auf Teile, Kunde nicht erreichbar...",
       "submitButton": "Problem melden"
     },
-
     "declineTask": {
       "title": "Auftrag ablehnen",
       "message": "Sind Sie sicher, dass Sie diesen Auftrag ablehnen möchten? Er wird zur Neuzuweisung an den Disponenten zurückgegeben.",
@@ -361,13 +361,11 @@
       "successTitle": "Auftrag abgelehnt",
       "successMessage": "Der Auftrag wurde zur Neuzuweisung zurückgegeben."
     },
-
     "cancelTask": {
       "title": "Aufgabe abbrechen",
       "message": "Sind Sie sicher, dass Sie diese Aufgabe abbrechen möchten?",
       "confirmButton": "Aufgabe abbrechen"
     },
-
     "completeTask": {
       "title": "Auftrag abschließen",
       "workDuration": "Arbeitsdauer",
@@ -388,7 +386,6 @@
       "customerSignatureRequired": "Die Unterschrift des Kunden ist erforderlich.",
       "customerNameRequired": "Bitte geben Sie den Kundennamen ein."
     },
-
     "editTask": {
       "title": "Aufgabe bearbeiten",
       "titleLabel": "Titel *",
@@ -400,37 +397,31 @@
       "locationPlaceholder": "Adresse",
       "saveButton": "Änderungen speichern"
     },
-
     "adminActions": {
       "assign": "Zuweisen",
       "reassign": "Neu zuweisen",
       "edit": "Bearbeiten",
       "cancel": "Abbrechen"
     },
-
     "attachmentActions": {
       "noAttachments": "Noch keine Anhänge",
       "tapToAdd": "Tippen Sie auf Kamera oder Galerie zum Hinzufügen",
       "deleteTitle": "Anhang löschen",
       "deleteMessage": "\"{{fileName}}\" löschen?"
     },
-
     "commentInput": {
       "placeholder": "Kommentar hinzufügen...",
       "noComments": "Noch keine Kommentare"
     },
-
     "tracking": {
       "locationTrackingActive": "Standortverfolgung aktiv",
       "startingTracking": "Verfolgung wird gestartet..."
     },
-
     "futureTask": {
       "scheduledFor": "Diese Aufgabe ist für {{date}} geplant.",
       "canAcceptOnDueDate": "Sie können sie am Fälligkeitstag annehmen.",
       "canStartOnDueDate": "Sie können sie am Fälligkeitstag beginnen."
     },
-
     "assignedSuccess": "Zugewiesen an {{firstName}} {{lastName}}",
     "titleRequired": "Titel ist erforderlich.",
     "failedToLoad": "Aufgabe konnte nicht geladen werden",
@@ -442,9 +433,16 @@
     "failedToAssign": "Zuweisung fehlgeschlagen",
     "failedToComplete": "Aufgabe konnte nicht abgeschlossen werden",
     "failedToAddComment": "Kommentar konnte nicht hinzugefügt werden",
-    "failedToDelete": "Löschen fehlgeschlagen"
+    "failedToDelete": "Löschen fehlgeschlagen",
+    "thisStep": {
+      "title": "Dieser Schritt",
+      "noChecklistItems": "Keine Checklistenpunkte.",
+      "visitNotesPlaceholder": "Besuchsnotizen…",
+      "saveNote": "Notiz speichern",
+      "savingNote": "Wird gespeichert…",
+      "signature": "Unterschrift"
+    }
   },
-
   "createTask": {
     "titleLabel": "Titel *",
     "titlePlaceholder": "Was muss erledigt werden?",
@@ -460,9 +458,9 @@
     "submitButton": "Aufgabe erstellen",
     "titleRequired": "Bitte geben Sie einen Aufgabentitel ein.",
     "successMessage": "Aufgabe erfolgreich erstellt!",
-    "failedToCreate": "Aufgabe konnte nicht erstellt werden"
+    "failedToCreate": "Aufgabe konnte nicht erstellt werden",
+    "spaceLabel": "Bereich"
   },
-
   "attendance": {
     "clockedIn": "Eingestempelt",
     "clockedOut": "Ausgestempelt",
@@ -484,12 +482,10 @@
     "failedToClockOut": "Ausstempeln fehlgeschlagen",
     "loadingAttendance": "Anwesenheit wird geladen...",
     "failedToLoadAttendance": "Anwesenheitsdaten konnten nicht geladen werden",
-
     "notAvailable": {
       "title": "Nicht verfügbar",
       "message": "Ein-/Ausstempeln ist nur für Vollzeittechniker verfügbar."
     },
-
     "breaks": {
       "takeABreak": "Pause machen",
       "lunch": "Mittagspause",
@@ -513,7 +509,6 @@
       "notesPlaceholder": "Notizen eingeben (optional)...",
       "charCount": "{{count}}/500 Zeichen"
     },
-
     "assignedLocations": "Zugewiesene Standorte",
     "away": "{{distance}} entfernt",
     "withinRange": "(in Reichweite)",
@@ -522,9 +517,7 @@
     "outsideGeofenceDistance": "Sie sind {{distance}}m von Ihrem Standort entfernt",
     "autoClockOutTitle": "Automatisches Ausstempeln",
     "autoClockOutDistance": "Sie wurden automatisch ausgestempelt, weil Sie {{distance}}m von Ihrem Arbeitsort entfernt sind.",
-
     "todaysBreaks": "Heutige Pausen",
-
     "history": {
       "title": "Letzte Einträge",
       "noRecords": "Noch keine Anwesenheitseinträge",
@@ -536,7 +529,6 @@
       "statusDone": "Fertig"
     }
   },
-
   "overtime": {
     "title": "Überstunden",
     "noActiveRequest": "Kein aktiver Überstundenantrag",
@@ -575,7 +567,6 @@
     "approvedSuccess": "Überstunden erfolgreich genehmigt",
     "failedToApprove": "Genehmigung der Überstunden fehlgeschlagen"
   },
-
   "timeOff": {
     "stats": {
       "daysUsed": "Tage genutzt",
@@ -642,7 +633,6 @@
       "timeOff": "Abwesenheit"
     }
   },
-
   "profile": {
     "profilePhoto": "Profilbild",
     "chooseOption": "Option wählen",
@@ -652,7 +642,6 @@
     "uploadFailed": "Hochladen fehlgeschlagen",
     "couldNotUpload": "Foto konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
     "couldNotRemove": "Foto konnte nicht entfernt werden.",
-
     "menu": {
       "general": "ALLGEMEIN",
       "support": "HILFE",
@@ -668,12 +657,10 @@
       "about": "Über",
       "language": "Sprache"
     },
-
     "language": {
       "choosePreferred": "Wählen Sie Ihre bevorzugte Sprache",
       "appliedImmediately": "Sprachänderungen werden sofort in der gesamten App übernommen."
     },
-
     "theme": {
       "title": "Darstellung",
       "chooseTheme": "Wählen Sie Ihr bevorzugtes Design",
@@ -682,12 +669,10 @@
       "dark": "Dunkel",
       "appliedImmediately": "Designänderungen werden sofort in der gesamten App übernommen."
     },
-
     "signOutConfirmTitle": "Abmelden",
     "signOutConfirmMessage": "Sind Sie sicher, dass Sie sich abmelden möchten?",
     "signOutButton": "Abmelden",
     "versionFooter": "HBCField v{{version}}",
-
     "account": {
       "title": "Konto & Sicherheit",
       "accountInfo": "Kontoinformationen",
@@ -717,7 +702,6 @@
       "deleteConfirmButton": "Konto löschen",
       "deleteFailed": "Konto konnte nicht gelöscht werden"
     },
-
     "notifications": {
       "title": "Benachrichtigungen",
       "pushNotifications": "Push-Benachrichtigungen",
@@ -733,14 +717,12 @@
       "timeOffDescription": "Genehmigungen und Aktualisierungen",
       "footerNote": "Benachrichtigungseinstellungen werden lokal gespeichert. Push-Benachrichtigungsberechtigungen werden in Ihren Geräteeinstellungen verwaltet."
     },
-
     "about": {
       "title": "Über",
-      "tagline": "Disponieren \u00B7 Verfolgen \u00B7 Liefern",
+      "tagline": "Disponieren · Verfolgen · Liefern",
       "description": "HBCField ist eine Plattform für Außendienstmanagement, die Teams dabei unterstützt, Aufgaben zu disponieren, Fortschritte in Echtzeit zu verfolgen und herausragenden Service zu liefern."
     }
   },
-
   "manage": {
     "timeOff": {
       "label": "Abwesenheit",
@@ -762,7 +744,6 @@
       "label": "Dienstpläne",
       "desc": "Arbeitspläne"
     },
-
     "membersScreen": {
       "filterAll": "Alle",
       "filterAdmin": "Admin",
@@ -783,7 +764,6 @@
         "technician": "Techniker"
       }
     },
-
     "invitationsScreen": {
       "createButton": "Einladung erstellen",
       "noInvitations": "Noch keine Einladungen",
@@ -804,11 +784,10 @@
         "jobTitleLabel": "Berufsbezeichnung (optional)",
         "jobTitlePlaceholder": "z.B. Elektriker",
         "generateButton": "Code generieren",
-        "tapToCopy": "Zum Kopieren tippen \u00B7 Läuft in 3 Tagen ab",
+        "tapToCopy": "Zum Kopieren tippen · Läuft in 3 Tagen ab",
         "shareMessage": "Mit Einladungscode beitreten: {{code}}"
       }
     },
-
     "joinRequestsScreen": {
       "approveTitle": "Anfrage genehmigen",
       "approveMessage": "{{firstName}} {{lastName}} als Techniker genehmigen?",
@@ -821,12 +800,10 @@
       "allCaughtUp": "Alles erledigt",
       "noPendingRequests": "Keine ausstehenden Beitrittsanfragen"
     },
-
     "schedulesScreen": {
       "noTechnicians": "Keine Techniker gefunden",
       "failedToLoad": "Dienstpläne konnten nicht geladen werden"
     },
-
     "timeOffRequestsScreen": {
       "filters": {
         "pending": "Ausstehend",
@@ -842,9 +819,11 @@
       "failedToReject": "Ablehnung fehlgeschlagen",
       "noRequests": "Keine {{filter}} Anträge",
       "noRequestsAll": "Keine Anträge"
+    },
+    "titles": {
+      "timeOffRequests": "Abwesenheitsanträge"
     }
   },
-
   "components": {
     "taskCard": {
       "unassigned": "Nicht zugewiesen"
@@ -890,9 +869,52 @@
     },
     "screenStates": {
       "retry": "Erneut versuchen"
+    },
+    "confirmSheet": {},
+    "customFieldsCard": {
+      "title": "Benutzerdefinierte Felder",
+      "savedTitle": "Gespeichert",
+      "savedMessage": "Benutzerdefinierte Felder aktualisiert",
+      "couldNotSave": "Speichern fehlgeschlagen",
+      "enterField": "{{field}} eingeben"
+    },
+    "workspaceCard": {
+      "activeCount": "{{active}} von {{total}} aktiv",
+      "inField": "Im Einsatz",
+      "offSite": "Außer Haus",
+      "offDuty": "Nicht im Dienst",
+      "noneAssigned": "Noch niemand zugewiesen",
+      "assign": "Zuweisen",
+      "tasks": "Aufgaben"
+    },
+    "assignMemberSheet": {
+      "title": "Mitglied zuweisen",
+      "toLocation": "zu {{location}}",
+      "searchPlaceholder": "Mitglieder suchen",
+      "noMembers": "Keine Mitglieder gefunden",
+      "allAssigned": "Alle sind hier bereits zugewiesen"
+    },
+    "memberDetailSheet": {
+      "working": "In Arbeit",
+      "onSite": "Vor Ort",
+      "comingSoon": "{{feature}} kommt bald",
+      "messaging": "Nachrichten",
+      "calls": "Anrufe",
+      "completed": "Abgeschlossen",
+      "hrsWeek": "Std./Woche",
+      "onTime": "Pünktlich",
+      "activeTasks": "AKTIVE AUFGABEN",
+      "viewAll": "Alle anzeigen ›",
+      "noActiveTasks": "Keine aktiven Aufgaben",
+      "tasks": "Aufgaben"
+    },
+    "activitySheet": {
+      "liveActivity": "LIVE-AKTIVITÄT",
+      "eventsCount": "{{count}} Ereignisse",
+      "noRecentActivity": "Keine aktuelle Aktivität",
+      "pendingActions": "AUSSTEHENDE AKTIONEN"
     }
   },
-
   "validation": {
     "emailRequired": "E-Mail ist erforderlich",
     "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
@@ -908,7 +930,6 @@
     "organizationNameRequired": "Organisationsname ist erforderlich",
     "organizationNameMinLength": "Name muss mindestens 2 Zeichen lang sein"
   },
-
   "status": {
     "DRAFT": "Entwurf",
     "NEW": "Neu",
@@ -922,42 +943,80 @@
     "CANCELED": "Abgebrochen",
     "CLOSED": "Geschlossen"
   },
-
   "priority": {
     "LOW": "Niedrig",
     "MEDIUM": "Mittel",
     "HIGH": "Hoch",
     "URGENT": "Dringend"
   },
-
   "roles": {
     "ADMIN": "Admin",
     "DISPATCHER": "Disponent",
     "TECHNICIAN": "Mitarbeiter",
     "EMPLOYEE": "Mitarbeiter"
   },
-
   "invitationStatus": {
     "PENDING": "Ausstehend",
     "ACCEPTED": "Angenommen",
     "EXPIRED": "Abgelaufen",
     "REVOKED": "Widerrufen"
   },
-
   "timeOffStatus": {
     "PENDING": "Ausstehend",
     "APPROVED": "Genehmigt",
     "REJECTED": "Abgelehnt",
     "CANCELED": "Abgebrochen"
   },
-
   "dayNames": {
-    "short": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
-    "headers": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+    "short": [
+      "Mo",
+      "Di",
+      "Mi",
+      "Do",
+      "Fr",
+      "Sa",
+      "So"
+    ],
+    "headers": [
+      "Mo",
+      "Di",
+      "Mi",
+      "Do",
+      "Fr",
+      "Sa",
+      "So"
+    ]
   },
-
   "monthNames": [
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember"
-  ]
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember"
+  ],
+  "team": {
+    "title": "Team",
+    "subtitle": "Teamkollegen in Ihren Bereichen.",
+    "empty": "Noch keine Teamkollegen in Ihren Bereichen.",
+    "messagingSoon": "Nachrichten folgen in Kürze",
+    "callsSoon": "Anrufe folgen in Kürze"
+  },
+  "navTitles": {
+    "taskDetails": "Aufgabendetails",
+    "notifications": "Benachrichtigungen",
+    "account": "Konto",
+    "about": "Über"
+  },
+  "errors": {
+    "somethingWentWrong": "Etwas ist schiefgelaufen",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+    "tryAgain": "Erneut versuchen"
+  }
 }

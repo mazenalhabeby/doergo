@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Check, Plus, Trash2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { notify } from "@/lib/toast"
 
 import { tasksApi, type ChecklistItem } from "@/lib/api"
@@ -86,6 +87,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
   taskId,
   items,
 }: ChecklistSectionProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [newItemText, setNewItemText] = useState("")
 
@@ -118,7 +120,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
     },
     onError: (_err, _vars, _ctx) => {
       invalidateTask()
-      notify.error("Failed to update checklist item")
+      notify.error(t("tasks.checklist.updateFailed"))
     },
     onSettled: invalidateTask,
   })
@@ -223,7 +225,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
             value={newItemText}
             onChange={(e) => setNewItemText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add an item..."
+            placeholder={t("tasks.checklist.addItemPlaceholder")}
             disabled={addMutation.isPending}
             className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/50 text-foreground"
           />

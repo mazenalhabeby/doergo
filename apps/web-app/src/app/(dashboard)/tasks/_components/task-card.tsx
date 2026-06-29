@@ -2,6 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
+import { useTranslation } from "react-i18next"
 import { Calendar, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
@@ -41,6 +42,7 @@ export const TaskCard = React.memo(function TaskCard({
   dragProps,
   className,
 }: TaskCardProps) {
+  const { t } = useTranslation()
   const { hasModule } = useAuth()
   const priorityConfig = getPriorityConfig(task.priority)
   const PriorityIcon = priorityConfig.icon
@@ -108,7 +110,7 @@ export const TaskCard = React.memo(function TaskCard({
         <div
           className="flex items-center cursor-pointer rounded-md px-1 py-0.5 -mx-1 hover:bg-muted/50 transition-colors"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAssignClick?.(task.id) }}
-          title="Manage assignees"
+          title={t("tasks.card.manageAssignees")}
         >
           {task.assignees && task.assignees.length > 0 ? (
             <StackedAvatars
@@ -134,7 +136,7 @@ export const TaskCard = React.memo(function TaskCard({
               <div className="size-5 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
                 <Plus className="size-2.5 text-muted-foreground/40" />
               </div>
-              <span className="text-[11px] text-muted-foreground/40">Assign</span>
+              <span className="text-[11px] text-muted-foreground/40">{t("tasks.card.assign")}</span>
             </div>
           )}
         </div>

@@ -463,9 +463,9 @@ export function AdminDashboard() {
           {boxes.length === 0 || !hasFixed ? (
             <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="business-outline" size={32} color={colors.textMuted} />
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Set up your workspace</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('home.admin.setUpWorkspace')}</Text>
               <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-                Create spaces and assign your team to track everyone in real time.
+                {t('home.admin.setUpWorkspaceSub')}
               </Text>
             </View>
           ) : (
@@ -498,7 +498,7 @@ export function AdminDashboard() {
           style={styles.fab}
         >
           <Ionicons name="flash" size={16} color="#fff" />
-          <Text style={styles.fabText}>Activity</Text>
+          <Text style={styles.fabText}>{t('home.admin.activity')}</Text>
           {pending.length > 0 && (
             <View style={styles.fabBadge}>
               <Text style={styles.fabBadgeText}>{pending.length}</Text>

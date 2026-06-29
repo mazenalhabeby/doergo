@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { format, addWeeks, addDays } from "date-fns"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -57,6 +58,7 @@ export function SprintFormDialog({
   nextSprintNumber: number
   lastSprintEndDate: string | null
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const isEdit = !!sprint
 
@@ -85,7 +87,7 @@ export function SprintFormDialog({
       setStartDate(new Date(sprint.startDate))
       setEndDate(new Date(sprint.endDate))
     } else if (v) {
-      setName(`Sprint ${nextSprintNumber}`)
+      setName(t("tasks.sprint.defaultName", { number: nextSprintNumber }))
       setGoal("")
       setShowGoal(false)
       if (lastSprintEndDate) {
@@ -104,7 +106,7 @@ export function SprintFormDialog({
     mutationFn: (data: { name: string; goal?: string; startDate: string; endDate: string }) =>
       sprintsApi.create(data),
     onSuccess: () => {
-      notify.sprint("created", "Sprint is ready for planning")
+      notify.sprint("created", t("tasks.sprint.createdDescription"))
       queryClient.invalidateQueries({ queryKey: ["sprints"] })
       handleOpenChange(false)
     },
@@ -115,7 +117,7 @@ export function SprintFormDialog({
     mutationFn: (data: { name: string; goal?: string; startDate: string; endDate: string }) =>
       sprintsApi.update(sprint!.id, data),
     onSuccess: () => {
-      notify.sprint("updated", "Sprint details saved")
+      notify.sprint("updated", t("tasks.sprint.updatedDescription"))
       queryClient.invalidateQueries({ queryKey: ["sprints"] })
       handleOpenChange(false)
     },
@@ -142,18 +144,18 @@ export function SprintFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Sprint" : "Create Sprint"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("tasks.sprint.editTitle") : t("tasks.sprint.createTitle")}</DialogTitle>
           <DialogDescription className="sr-only">
-            {isEdit ? "Update sprint details" : "Create a new sprint"}
+            {isEdit ? t("tasks.sprint.editDescription") : t("tasks.sprint.createDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="sprint-name" className="text-sm">Name</Label>
+            <Label htmlFor="sprint-name" className="text-sm">{t("tasks.fields.name")}</Label>
             <Input
               id="sprint-name"
-              placeholder={`Sprint ${nextSprintNumber}`}
+              placeholder={t("tasks.sprint.defaultName", { number: nextSprintNumber })}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isPending}
@@ -164,7 +166,7 @@ export function SprintFormDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label className="text-sm">Start Date</Label>
+              <Label className="text-sm">{t("tasks.sidebar.startDate")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -176,7 +178,7 @@ export function SprintFormDialog({
                     disabled={isPending}
                   >
                     <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : "Pick a date"}
+                    {startDate ? format(startDate, "MMM d, yyyy") : t("tasks.fields.pickDate")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -186,7 +188,7 @@ export function SprintFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm">End Date</Label>
+              <Label className="text-sm">{t("tasks.fields.endDate")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -198,7 +200,7 @@ export function SprintFormDialog({
                     disabled={isPending}
                   >
                     <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {endDate ? format(endDate, "MMM d, yyyy") : "Pick a date"}
+                    {endDate ? format(endDate, "MMM d, yyyy") : t("tasks.fields.pickDate")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -214,14 +216,14 @@ export function SprintFormDialog({
               onClick={() => setShowGoal(true)}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              + Add a goal
+              {t("tasks.sprint.addGoal")}
             </button>
           ) : (
             <div className="space-y-1.5">
-              <Label htmlFor="sprint-goal" className="text-sm">Goal</Label>
+              <Label htmlFor="sprint-goal" className="text-sm">{t("tasks.sprint.goal")}</Label>
               <Textarea
                 id="sprint-goal"
-                placeholder="What do we want to achieve?"
+                placeholder={t("tasks.sprint.goalPlaceholder")}
                 rows={2}
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
@@ -233,12 +235,12 @@ export function SprintFormDialog({
 
           <DialogFooter className="pt-1">
             <Button type="button" variant="outline" size="sm" onClick={() => handleOpenChange(false)} disabled={isPending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" size="sm" disabled={!isValid || isPending} className="bg-blue-600 hover:bg-blue-700">
               {isPending ? (
-                <><Loader2 className="mr-1.5 size-3.5 animate-spin" />Saving...</>
-              ) : isEdit ? "Save Changes" : "Create Sprint"}
+                <><Loader2 className="mr-1.5 size-3.5 animate-spin" />{t("common.saving")}</>
+              ) : isEdit ? t("common.saveChanges") : t("tasks.sprint.createTitle")}
             </Button>
           </DialogFooter>
         </form>
@@ -266,6 +268,7 @@ export function CompleteSprintDialog({
   onConfirm: (moveToNext: boolean) => void
   isPending: boolean
 }) {
+  const { t } = useTranslation()
   const [moveIncomplete, setMoveIncomplete] = useState(true)
 
   if (!sprint) return null
@@ -276,9 +279,9 @@ export function CompleteSprintDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Complete &quot;{sprint.name}&quot;?</AlertDialogTitle>
+          <AlertDialogTitle>{t("tasks.sprint.completeTitle", { name: sprint.name })}</AlertDialogTitle>
           <AlertDialogDescription className="sr-only">
-            Complete this sprint and optionally move incomplete tasks.
+            {t("tasks.sprint.completeDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -291,12 +294,12 @@ export function CompleteSprintDialog({
             />
             <div className="space-y-0.5">
               <label htmlFor="move-incomplete" className="text-sm font-medium text-foreground cursor-pointer">
-                Move {incompleteCount} remaining task{incompleteCount > 1 ? "s" : ""}
+                {t("tasks.sprint.moveRemaining", { count: incompleteCount })}
               </label>
               <p className="text-xs text-muted-foreground">
                 {nextSprint
-                  ? `Tasks will be moved to "${nextSprint.name}"`
-                  : "Tasks will be moved to backlog"}
+                  ? t("tasks.sprint.tasksMovedToSprint", { name: nextSprint.name })
+                  : t("tasks.sprint.tasksMovedToBacklog")}
               </p>
             </div>
           </div>
@@ -304,19 +307,19 @@ export function CompleteSprintDialog({
 
         {incompleteCount === 0 && (
           <p className="text-sm text-muted-foreground py-2">
-            All tasks in this sprint are complete. Nice work!
+            {t("tasks.sprint.allComplete")}
           </p>
         )}
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>{t("common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => onConfirm(moveIncomplete)}
             className="bg-blue-600 hover:bg-blue-700"
             disabled={isPending}
           >
             {isPending ? <Loader2 className="size-4 animate-spin mr-1" /> : <CheckCircle2 className="size-4 mr-1" />}
-            Complete Sprint
+            {t("tasks.sprint.completeButton")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -340,6 +343,7 @@ export function EpicFormDialog({
   onOpenChange: (open: boolean) => void
   epic?: Epic | null
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const isEdit = !!epic
 
@@ -370,7 +374,7 @@ export function EpicFormDialog({
     mutationFn: (data: { name: string; description?: string; color?: string; startDate?: string; targetDate?: string }) =>
       epicsApi.create(data),
     onSuccess: () => {
-      notify.success("Epic created")
+      notify.success(t("tasks.epic.created"))
       queryClient.invalidateQueries({ queryKey: ["epics"] })
       handleOpenChange(false)
     },
@@ -381,7 +385,7 @@ export function EpicFormDialog({
     mutationFn: (data: { name: string; description?: string; color?: string; startDate?: string; targetDate?: string }) =>
       epicsApi.update(epic!.id, data),
     onSuccess: () => {
-      notify.success("Epic updated")
+      notify.success(t("tasks.epic.updated"))
       queryClient.invalidateQueries({ queryKey: ["epics"] })
       handleOpenChange(false)
     },
@@ -409,18 +413,18 @@ export function EpicFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Epic" : "Create Epic"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("tasks.epic.editTitle") : t("tasks.epic.createTitle")}</DialogTitle>
           <DialogDescription className="sr-only">
-            {isEdit ? "Update epic details" : "Create a new epic"}
+            {isEdit ? t("tasks.epic.editDescription") : t("tasks.epic.createDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="epic-name" className="text-sm">Name</Label>
+            <Label htmlFor="epic-name" className="text-sm">{t("tasks.fields.name")}</Label>
             <Input
               id="epic-name"
-              placeholder="Epic name"
+              placeholder={t("tasks.epic.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isPending}
@@ -430,7 +434,7 @@ export function EpicFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm">Color</Label>
+            <Label className="text-sm">{t("tasks.fields.color")}</Label>
             <div className="flex items-center gap-1.5">
               {EPIC_COLORS.map((c) => (
                 <button
@@ -448,10 +452,10 @@ export function EpicFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="epic-description" className="text-sm">Description</Label>
+            <Label htmlFor="epic-description" className="text-sm">{t("tasks.description.label")}</Label>
             <Textarea
               id="epic-description"
-              placeholder="What is this epic about?"
+              placeholder={t("tasks.epic.descriptionPlaceholder")}
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -462,7 +466,7 @@ export function EpicFormDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label className="text-sm">Start Date</Label>
+              <Label className="text-sm">{t("tasks.sidebar.startDate")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -474,7 +478,7 @@ export function EpicFormDialog({
                     disabled={isPending}
                   >
                     <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : "Optional"}
+                    {startDate ? format(startDate, "MMM d, yyyy") : t("common.optional")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -484,7 +488,7 @@ export function EpicFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm">Target Date</Label>
+              <Label className="text-sm">{t("tasks.epic.targetDate")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -496,7 +500,7 @@ export function EpicFormDialog({
                     disabled={isPending}
                   >
                     <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {targetDate ? format(targetDate, "MMM d, yyyy") : "Optional"}
+                    {targetDate ? format(targetDate, "MMM d, yyyy") : t("common.optional")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -508,12 +512,12 @@ export function EpicFormDialog({
 
           <DialogFooter className="pt-1">
             <Button type="button" variant="outline" size="sm" onClick={() => handleOpenChange(false)} disabled={isPending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" size="sm" disabled={!isValid || isPending} className="bg-blue-600 hover:bg-blue-700">
               {isPending ? (
-                <><Loader2 className="mr-1.5 size-3.5 animate-spin" />Saving...</>
-              ) : isEdit ? "Save Changes" : "Create Epic"}
+                <><Loader2 className="mr-1.5 size-3.5 animate-spin" />{t("common.saving")}</>
+              ) : isEdit ? t("common.saveChanges") : t("tasks.epic.createTitle")}
             </Button>
           </DialogFooter>
         </form>
@@ -535,24 +539,25 @@ export function DeleteSprintDialog({
   onConfirm: () => void
   isPending: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Sprint?</AlertDialogTitle>
+          <AlertDialogTitle>{t("tasks.sprint.deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Tasks in this sprint will be moved to the backlog.
+            {t("tasks.sprint.deleteDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>{t("common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className="bg-red-600 hover:bg-red-700"
             disabled={isPending}
           >
             {isPending && <Loader2 className="size-4 animate-spin mr-1" />}
-            Delete
+            {t("common.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

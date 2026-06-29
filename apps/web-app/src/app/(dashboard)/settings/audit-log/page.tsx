@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import Link from "next/link"
+import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { organizationsApi } from "@/lib/api"
@@ -20,48 +21,53 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Combobox } from "@/components/ui/combobox"
 
-const EVENT_LABELS: Record<string, { label: string; color: string }> = {
-  USER_LOGIN: { label: "Login", color: "text-green-600" },
-  USER_LOGOUT: { label: "Logout", color: "text-slate-500" },
-  USER_LOGIN_FAILED: { label: "Login Failed", color: "text-red-600" },
-  USER_CREATED: { label: "User Created", color: "text-blue-600" },
-  USER_UPDATED: { label: "User Updated", color: "text-blue-600" },
-  USER_DELETED: { label: "User Deleted", color: "text-red-600" },
-  TASK_CREATED: { label: "Task Created", color: "text-blue-600" },
-  TASK_ASSIGNED: { label: "Task Assigned", color: "text-purple-600" },
-  TASK_STATUS_CHANGED: { label: "Status Changed", color: "text-amber-600" },
-  TASK_COMPLETED: { label: "Task Completed", color: "text-green-600" },
-  TASK_DELETED: { label: "Task Deleted", color: "text-red-600" },
-  TASK_TYPE_CREATED: { label: "Task Type Created", color: "text-blue-600" },
-  TASK_TYPE_DELETED: { label: "Task Type Deleted", color: "text-red-600" },
-  CUSTOM_FIELD_CREATED: { label: "Custom Field Created", color: "text-blue-600" },
-  CUSTOM_FIELD_DELETED: { label: "Custom Field Deleted", color: "text-red-600" },
-  MEMBER_ROLE_CHANGED: { label: "Member Role Changed", color: "text-amber-600" },
-  MEMBER_REMOVED: { label: "Member Removed", color: "text-red-600" },
-  ORG_SETTINGS_UPDATED: { label: "Org Settings Updated", color: "text-amber-600" },
-  ORG_JOIN_CODE_REGENERATED: { label: "Join Code Regenerated", color: "text-amber-600" },
-  INVITATION_CREATED: { label: "Invitation Created", color: "text-blue-600" },
-  INVITATION_REVOKED: { label: "Invitation Revoked", color: "text-red-600" },
-  INVITATION_ACCEPTED: { label: "Invitation Accepted", color: "text-green-600" },
-  JOIN_REQUEST_APPROVED: { label: "Join Approved", color: "text-green-600" },
-  JOIN_REQUEST_REJECTED: { label: "Join Rejected", color: "text-red-600" },
-  SPACE_CREATED: { label: "Space Created", color: "text-blue-600" },
-  SPACE_DELETED: { label: "Space Deleted", color: "text-red-600" },
-  RECURRING_CREATED: { label: "Recurring Created", color: "text-blue-600" },
-  RECURRING_DELETED: { label: "Recurring Deleted", color: "text-red-600" },
-  RECURRING_GENERATED: { label: "Recurring Generated", color: "text-purple-600" },
-  TECHNICIAN_CREATED: { label: "Technician Created", color: "text-blue-600" },
-  TECHNICIAN_DEACTIVATED: { label: "Technician Deactivated", color: "text-red-600" },
-  CLOCK_IN: { label: "Clock In", color: "text-green-600" },
-  CLOCK_OUT: { label: "Clock Out", color: "text-slate-600" },
-  GEOFENCE_VIOLATION: { label: "Geofence Violation", color: "text-red-600" },
+// Color per event type — labels are translated via t("auditLog.events.<TYPE>").
+const EVENT_COLORS: Record<string, string> = {
+  USER_LOGIN: "text-green-600",
+  USER_LOGOUT: "text-slate-500",
+  USER_LOGIN_FAILED: "text-red-600",
+  USER_CREATED: "text-blue-600",
+  USER_UPDATED: "text-blue-600",
+  USER_DELETED: "text-red-600",
+  TASK_CREATED: "text-blue-600",
+  TASK_ASSIGNED: "text-purple-600",
+  TASK_STATUS_CHANGED: "text-amber-600",
+  TASK_COMPLETED: "text-green-600",
+  TASK_DELETED: "text-red-600",
+  TASK_TYPE_CREATED: "text-blue-600",
+  TASK_TYPE_DELETED: "text-red-600",
+  CUSTOM_FIELD_CREATED: "text-blue-600",
+  CUSTOM_FIELD_DELETED: "text-red-600",
+  MEMBER_ROLE_CHANGED: "text-amber-600",
+  MEMBER_REMOVED: "text-red-600",
+  ORG_SETTINGS_UPDATED: "text-amber-600",
+  ORG_JOIN_CODE_REGENERATED: "text-amber-600",
+  INVITATION_CREATED: "text-blue-600",
+  INVITATION_REVOKED: "text-red-600",
+  INVITATION_ACCEPTED: "text-green-600",
+  JOIN_REQUEST_APPROVED: "text-green-600",
+  JOIN_REQUEST_REJECTED: "text-red-600",
+  SPACE_CREATED: "text-blue-600",
+  SPACE_DELETED: "text-red-600",
+  RECURRING_CREATED: "text-blue-600",
+  RECURRING_DELETED: "text-red-600",
+  RECURRING_GENERATED: "text-purple-600",
+  TECHNICIAN_CREATED: "text-blue-600",
+  TECHNICIAN_DEACTIVATED: "text-red-600",
+  CLOCK_IN: "text-green-600",
+  CLOCK_OUT: "text-slate-600",
+  GEOFENCE_VIOLATION: "text-red-600",
 }
 
-const EVENT_TYPES = Object.keys(EVENT_LABELS)
+const EVENT_TYPES = Object.keys(EVENT_COLORS)
 
 export default function AuditLogPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
+
+  // Translated label for an event type, falling back to the raw type.
+  const evtLabel = (type: string) => t(`auditLog.events.${type}`, { defaultValue: type })
 
   const [page, setPage] = useState(1)
   const [eventFilter, setEventFilter] = useState<string>("__all__")
@@ -77,11 +83,11 @@ export default function AuditLogPage() {
   const members = membersResp?.data ?? []
 
   const eventOptions = [
-    { value: "__all__", label: "All events" },
-    ...EVENT_TYPES.map((t) => ({ value: t, label: EVENT_LABELS[t]?.label || t, keywords: t })),
+    { value: "__all__", label: t("auditLog.allEvents") },
+    ...EVENT_TYPES.map((type) => ({ value: type, label: evtLabel(type), keywords: type })),
   ]
   const userOptions = [
-    { value: "__all__", label: "All users" },
+    { value: "__all__", label: t("auditLog.allUsers") },
     ...members.map((m) => ({
       value: m.id,
       label: `${m.firstName} ${m.lastName}`,
@@ -110,8 +116,8 @@ export default function AuditLogPage() {
       <div className="min-h-full bg-muted p-8">
         <div className="max-w-5xl mx-auto text-center py-12">
           <Shield className="size-12 mx-auto text-muted-foreground/30 mb-4" />
-          <p className="text-lg font-medium">Access Denied</p>
-          <p className="text-sm text-muted-foreground">Only admins can view audit logs.</p>
+          <p className="text-lg font-medium">{t("auditLog.accessDenied")}</p>
+          <p className="text-sm text-muted-foreground">{t("auditLog.accessDeniedDescription")}</p>
         </div>
       </div>
     )
@@ -123,8 +129,8 @@ export default function AuditLogPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Audit Log</h1>
-            <p className="text-sm text-muted-foreground mt-1">Track all security and administrative events</p>
+            <h1 className="text-2xl font-semibold text-foreground">{t("auditLog.title")}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t("auditLog.subtitle")}</p>
           </div>
         </div>
 
@@ -135,8 +141,8 @@ export default function AuditLogPage() {
             value={eventFilter}
             onChange={(v) => { setEventFilter(v); setPage(1) }}
             options={eventOptions}
-            placeholder="All events"
-            searchPlaceholder="Search events…"
+            placeholder={t("auditLog.allEvents")}
+            searchPlaceholder={t("auditLog.searchEvents")}
             className="h-8 rounded-lg text-sm w-[200px]"
             contentClassName="w-[240px]"
           />
@@ -144,8 +150,8 @@ export default function AuditLogPage() {
             value={userFilter}
             onChange={(v) => { setUserFilter(v); setPage(1) }}
             options={userOptions}
-            placeholder="All users"
-            searchPlaceholder="Search users…"
+            placeholder={t("auditLog.allUsers")}
+            searchPlaceholder={t("auditLog.searchUsers")}
             className="h-8 rounded-lg text-sm w-[180px]"
             contentClassName="w-[240px]"
           />
@@ -154,15 +160,15 @@ export default function AuditLogPage() {
             value={startDate}
             onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
             className="h-8 text-sm w-[150px]"
-            title="From date"
+            title={t("auditLog.fromDate")}
           />
-          <span className="text-xs text-muted-foreground">to</span>
+          <span className="text-xs text-muted-foreground">{t("common.to")}</span>
           <Input
             type="date"
             value={endDate}
             onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
             className="h-8 text-sm w-[150px]"
-            title="To date"
+            title={t("auditLog.toDate")}
           />
           {(startDate || endDate || eventFilter !== "__all__" || userFilter !== "__all__") && (
             <Button
@@ -171,11 +177,11 @@ export default function AuditLogPage() {
               className="h-8 text-xs"
               onClick={() => { setStartDate(""); setEndDate(""); setEventFilter("__all__"); setUserFilter("__all__"); setPage(1) }}
             >
-              Clear
+              {t("auditLog.clear")}
             </Button>
           )}
           {meta && (
-            <span className="text-xs text-muted-foreground ml-auto">{meta.total} total events</span>
+            <span className="text-xs text-muted-foreground ml-auto">{t("auditLog.totalEvents", { count: meta.total })}</span>
           )}
         </div>
 
@@ -183,10 +189,10 @@ export default function AuditLogPage() {
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           {/* Header */}
           <div className="grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/30">
-            <div>Event</div>
-            <div>User</div>
-            <div>Resource</div>
-            <div className="text-right">Time</div>
+            <div>{t("auditLog.event")}</div>
+            <div>{t("auditLog.user")}</div>
+            <div>{t("auditLog.resource")}</div>
+            <div className="text-right">{t("auditLog.time")}</div>
           </div>
 
           {/* Rows */}
@@ -197,11 +203,11 @@ export default function AuditLogPage() {
           ) : logs.length === 0 ? (
             <div className="text-center py-12">
               <Shield className="size-10 mx-auto text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground">No audit events found</p>
+              <p className="text-sm text-muted-foreground">{t("auditLog.noEvents")}</p>
             </div>
           ) : (
             logs.map((log: any) => {
-              const evt = EVENT_LABELS[log.eventType] || { label: log.eventType, color: "text-foreground" }
+              const evt = { label: evtLabel(log.eventType), color: EVENT_COLORS[log.eventType] || "text-foreground" }
               return (
                 <div key={log.id} className="grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors text-sm">
                   {/* Event */}
@@ -224,7 +230,7 @@ export default function AuditLogPage() {
                         {log.user.firstName} {log.user.lastName}
                       </Link>
                     ) : (
-                      <span className="text-xs text-muted-foreground">System</span>
+                      <span className="text-xs text-muted-foreground">{t("auditLog.system")}</span>
                     )}
                   </div>
 
@@ -249,7 +255,7 @@ export default function AuditLogPage() {
         {meta && meta.totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
             <span className="text-xs text-muted-foreground">
-              Page {meta.page} of {meta.totalPages}
+              {t("common.page", { page: meta.page, totalPages: meta.totalPages })}
             </span>
             <div className="flex items-center gap-1">
               <Button

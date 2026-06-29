@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth-context';
 
 interface HeaderProps {
@@ -9,11 +10,12 @@ interface HeaderProps {
 
 export function Header({ title }: HeaderProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <header className="h-header bg-card border-b border-border flex items-center justify-between px-6">
       {/* Title */}
-      <h1 className="text-xl font-semibold text-foreground">{title || 'Dashboard'}</h1>
+      <h1 className="text-xl font-semibold text-foreground">{title || t('nav.sidebar.dashboard')}</h1>
 
       {/* Right section */}
       <div className="flex items-center gap-4">
@@ -22,7 +24,7 @@ export function Header({ title }: HeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search tasks..."
+            placeholder={t('nav.searchTasks')}
             className="h-9 w-64 pl-10 pr-4 text-sm border border-border rounded-lg bg-muted placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
           />
         </div>
@@ -36,7 +38,7 @@ export function Header({ title }: HeaderProps) {
         {/* User Avatar */}
         <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm overflow-hidden">
           {user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+            <img src={user.avatarUrl} alt={t('nav.avatarAlt')} className="h-full w-full object-cover" />
           ) : (
             <>
               {user?.firstName?.[0]}

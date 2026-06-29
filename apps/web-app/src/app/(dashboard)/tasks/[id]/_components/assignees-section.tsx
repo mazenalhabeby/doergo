@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus, X, Search, Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -102,6 +103,7 @@ function AddAssigneeDialog({
   taskId,
   existingUserIds,
 }: AddAssigneeDialogProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
 
@@ -114,7 +116,7 @@ function AddAssigneeDialog({
   const addMutation = useMutation({
     mutationFn: (userId: string) => tasksApi.addAssignee(taskId, userId),
     onSuccess: () => {
-      notify.success("Assignee added")
+      notify.success(t("tasks.assignees.added"))
       queryClient.invalidateQueries({ queryKey: ["task", taskId], refetchType: "all" })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -135,14 +137,14 @@ function AddAssigneeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Add Team Member</DialogTitle>
+          <DialogTitle>{t("tasks.assignees.addTeamMember")}</DialogTitle>
         </DialogHeader>
 
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name or email..."
+            placeholder={t("tasks.assignees.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 rounded-lg"
@@ -159,7 +161,7 @@ function AddAssigneeDialog({
 
           {!isLoading && filtered.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              No team members found
+              {t("tasks.assignees.noTeamMembersFound")}
             </p>
           )}
 
@@ -202,6 +204,7 @@ export const AssigneesSection = React.memo(function AssigneesSection({
   taskId,
   assignees,
 }: AssigneesSectionProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -212,7 +215,7 @@ export const AssigneesSection = React.memo(function AssigneesSection({
   const removeMutation = useMutation({
     mutationFn: (userId: string) => tasksApi.removeAssignee(taskId, userId),
     onSuccess: () => {
-      notify.success("Assignee removed")
+      notify.success(t("tasks.assignees.removed"))
       queryClient.invalidateQueries({ queryKey: ["task", taskId], refetchType: "all" })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -242,7 +245,7 @@ export const AssigneesSection = React.memo(function AssigneesSection({
             onClick={() => setShowAddDialog(true)}
           >
             <Plus className="size-3.5 mr-1" />
-            Add
+            {t("common.add")}
           </Button>
         </div>
       )}
@@ -251,7 +254,7 @@ export const AssigneesSection = React.memo(function AssigneesSection({
       <div>
         {assignees.length === 0 ? (
           <p className="text-sm text-muted-foreground/60 text-center py-4">
-            No assignees yet
+            {t("tasks.assignees.noAssignees")}
           </p>
         ) : (
           assignees.map((assignee, index) => (

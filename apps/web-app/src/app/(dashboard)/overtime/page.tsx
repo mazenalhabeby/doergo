@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { notify } from "@/lib/toast"
 import { format, formatDistanceToNow } from "date-fns"
 import {
@@ -47,27 +48,28 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-const STATUS_BADGES: Record<string, { label: string; className: string; icon: any }> = {
-  PENDING_TECHNICIAN: { label: "Awaiting Employee", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
-  PENDING_APPROVAL: { label: "Needs Approval", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400", icon: AlertTriangle },
-  APPROVED: { label: "Active", className: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
-  REJECTED: { label: "Rejected", className: "bg-red-500/15 text-red-600 dark:text-red-400", icon: XCircle },
-  EXPIRED_NO_RESPONSE: { label: "Expired", className: "bg-muted text-muted-foreground", icon: Clock },
-  EXPIRED_NO_APPROVAL: { label: "Expired", className: "bg-muted text-muted-foreground", icon: Clock },
-  COMPLETED: { label: "Completed", className: "bg-muted text-foreground", icon: CheckCircle2 },
-  CANCELED: { label: "Declined", className: "bg-muted text-muted-foreground", icon: XCircle },
+const STATUS_BADGES: Record<string, { labelKey: string; className: string; icon: any }> = {
+  PENDING_TECHNICIAN: { labelKey: "overtime.badges.awaitingEmployee", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
+  PENDING_APPROVAL: { labelKey: "overtime.badges.needsApproval", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400", icon: AlertTriangle },
+  APPROVED: { labelKey: "overtime.badges.active", className: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
+  REJECTED: { labelKey: "overtime.badges.rejected", className: "bg-red-500/15 text-red-600 dark:text-red-400", icon: XCircle },
+  EXPIRED_NO_RESPONSE: { labelKey: "overtime.badges.expired", className: "bg-muted text-muted-foreground", icon: Clock },
+  EXPIRED_NO_APPROVAL: { labelKey: "overtime.badges.expired", className: "bg-muted text-muted-foreground", icon: Clock },
+  COMPLETED: { labelKey: "overtime.badges.completed", className: "bg-muted text-foreground", icon: CheckCircle2 },
+  CANCELED: { labelKey: "overtime.badges.declined", className: "bg-muted text-muted-foreground", icon: XCircle },
 }
 
 const DURATION_OPTIONS = [
-  { label: "30 min", value: 30 },
-  { label: "1 hour", value: 60 },
-  { label: "1.5 hours", value: 90 },
-  { label: "2 hours", value: 120 },
-  { label: "3 hours", value: 180 },
-  { label: "4 hours", value: 240 },
+  { labelKey: "overtime.durations.d30min", value: 30 },
+  { labelKey: "overtime.durations.d1hour", value: 60 },
+  { labelKey: "overtime.durations.d1_5hours", value: 90 },
+  { labelKey: "overtime.durations.d2hours", value: 120 },
+  { labelKey: "overtime.durations.d3hours", value: 180 },
+  { labelKey: "overtime.durations.d4hours", value: 240 },
 ]
 
 export default function OvertimePage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState("pending")
 
@@ -105,9 +107,9 @@ export default function OvertimePage() {
       queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
       queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
       setApproveTarget(null)
-      notify.success("Overtime approved")
+      notify.success(t("overtime.toastApproved"))
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to approve"),
+    onError: (err: Error) => notify.error(err.message || t("overtime.toastFailedApprove")),
   })
 
   const rejectMutation = useMutation({
@@ -117,9 +119,9 @@ export default function OvertimePage() {
       queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
       queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
       setRejectTarget(null)
-      notify.success("Overtime rejected")
+      notify.success(t("overtime.toastRejected"))
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to reject"),
+    onError: (err: Error) => notify.error(err.message || t("overtime.toastFailedReject")),
   })
 
   const pending = pendingData || []
@@ -133,9 +135,9 @@ export default function OvertimePage() {
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">Overtime Management</h1>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("overtime.title")}</h1>
               <p className="mt-1.5 text-muted-foreground">
-                Review and manage employee overtime requests
+                {t("overtime.subtitle")}
               </p>
             </div>
             <Button
@@ -154,14 +156,14 @@ export default function OvertimePage() {
           <TabsList className="mb-6">
             <TabsTrigger value="pending" className="gap-2">
               <AlertTriangle className="h-4 w-4" />
-              Pending
+              {t("overtime.tabsPending")}
               {pending.length > 0 && (
                 <Badge className="bg-blue-600 text-white text-xs ml-1">{pending.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <Clock className="h-4 w-4" />
-              History
+              {t("overtime.tabsHistory")}
             </TabsTrigger>
           </TabsList>
 
@@ -176,8 +178,8 @@ export default function OvertimePage() {
                 <div className="rounded-full bg-emerald-50 p-4 mb-4">
                   <CheckCircle2 className="h-8 w-8 text-emerald-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">No pending requests</h3>
-                <p className="text-sm text-muted-foreground mt-1">All overtime requests have been handled</p>
+                <h3 className="text-lg font-semibold text-foreground">{t("overtime.pendingEmpty")}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{t("overtime.pendingEmptyHint")}</p>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -198,21 +200,21 @@ export default function OvertimePage() {
             <div className="flex items-center justify-between mb-4">
               <Select value={historyStatus} onValueChange={(v) => { setHistoryStatus(v); setHistoryPage(1); }}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by status" />
+                  <SelectValue placeholder={t("common.filterByStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="COMPLETED">Completed</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
-                  <SelectItem value="CANCELED">Declined</SelectItem>
-                  <SelectItem value="EXPIRED_NO_RESPONSE">Expired (No Response)</SelectItem>
-                  <SelectItem value="EXPIRED_NO_APPROVAL">Expired (No Approval)</SelectItem>
+                  <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+                  <SelectItem value="APPROVED">{t("overtime.filterApproved")}</SelectItem>
+                  <SelectItem value="COMPLETED">{t("overtime.filterCompleted")}</SelectItem>
+                  <SelectItem value="REJECTED">{t("overtime.filterRejected")}</SelectItem>
+                  <SelectItem value="CANCELED">{t("overtime.filterDeclined")}</SelectItem>
+                  <SelectItem value="EXPIRED_NO_RESPONSE">{t("overtime.expiredNoResponse")}</SelectItem>
+                  <SelectItem value="EXPIRED_NO_APPROVAL">{t("overtime.expiredNoApproval")}</SelectItem>
                 </SelectContent>
               </Select>
               {historyMeta && (
                 <p className="text-sm text-muted-foreground">
-                  {historyMeta.total} request{historyMeta.total !== 1 ? "s" : ""}
+                  {t(historyMeta.total === 1 ? "overtime.requestCountOne" : "overtime.requestCountOther", { count: historyMeta.total })}
                 </p>
               )}
             </div>
@@ -224,7 +226,7 @@ export default function OvertimePage() {
             ) : history.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Clock className="h-8 w-8 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground">No overtime history</h3>
+                <h3 className="text-lg font-semibold text-foreground">{t("overtime.historyEmpty")}</h3>
               </div>
             ) : (
               <div className="grid gap-3">
@@ -238,11 +240,11 @@ export default function OvertimePage() {
             {historyMeta && historyMeta.totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-6">
                 <Button variant="outline" size="sm" disabled={historyPage <= 1} onClick={() => setHistoryPage(historyPage - 1)}>
-                  Previous
+                  {t("common.previous")}
                 </Button>
-                <span className="text-sm text-muted-foreground">Page {historyPage} of {historyMeta.totalPages}</span>
+                <span className="text-sm text-muted-foreground">{t("common.page", { page: historyPage, totalPages: historyMeta.totalPages })}</span>
                 <Button variant="outline" size="sm" disabled={historyPage >= historyMeta.totalPages} onClick={() => setHistoryPage(historyPage + 1)}>
-                  Next
+                  {t("common.next")}
                 </Button>
               </div>
             )}
@@ -253,20 +255,23 @@ export default function OvertimePage() {
         <Dialog open={!!approveTarget} onOpenChange={(open) => { if (!open) setApproveTarget(null) }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Approve Overtime</DialogTitle>
+              <DialogTitle>{t("overtime.approveTitle")}</DialogTitle>
               <DialogDescription>
-                Approve overtime for {approveTarget?.technician?.firstName} {approveTarget?.technician?.lastName} at {approveTarget?.location?.name}
+                {t("overtime.approveDescription", {
+                  name: `${approveTarget?.technician?.firstName ?? ""} ${approveTarget?.technician?.lastName ?? ""}`.trim(),
+                  location: approveTarget?.location?.name ?? "",
+                })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               {approveTarget?.technicianReason && (
                 <div className="rounded-lg bg-muted p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Employee's reason:</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("overtime.employeeReason")}</p>
                   <p className="text-sm text-foreground">{approveTarget.technicianReason}</p>
                 </div>
               )}
               <div className="space-y-2">
-                <Label>Overtime Duration</Label>
+                <Label>{t("overtime.durationLabel")}</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {DURATION_OPTIONS.map((opt) => (
                     <button
@@ -278,22 +283,22 @@ export default function OvertimePage() {
                           : "bg-card text-foreground border-border hover:border-border"
                       }`}
                     >
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Notes (optional)</Label>
+                <Label>{t("overtime.notesLabel")}</Label>
                 <Input
-                  placeholder="Any notes for the employee..."
+                  placeholder={t("overtime.notesPlaceholder")}
                   value={approveNotes}
                   onChange={(e) => setApproveNotes(e.target.value)}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setApproveTarget(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setApproveTarget(null)}>{t("common.cancel")}</Button>
               <Button
                 className="bg-emerald-600 hover:bg-emerald-700"
                 onClick={() => approveTarget && approveMutation.mutate({
@@ -302,7 +307,7 @@ export default function OvertimePage() {
                 })}
                 disabled={approveMutation.isPending}
               >
-                {approveMutation.isPending ? "Approving..." : "Approve"}
+                {approveMutation.isPending ? t("common.approving") : t("overtime.approve")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -312,23 +317,25 @@ export default function OvertimePage() {
         <Dialog open={!!rejectTarget} onOpenChange={(open) => { if (!open) setRejectTarget(null) }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Reject Overtime</DialogTitle>
+              <DialogTitle>{t("overtime.rejectTitle")}</DialogTitle>
               <DialogDescription>
-                Reject overtime for {rejectTarget?.technician?.firstName} {rejectTarget?.technician?.lastName}. They will be clocked out.
+                {t("overtime.rejectDescription", {
+                  name: `${rejectTarget?.technician?.firstName ?? ""} ${rejectTarget?.technician?.lastName ?? ""}`.trim(),
+                })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Reason for rejection *</Label>
+                <Label>{t("overtime.reasonLabel")}</Label>
                 <Input
-                  placeholder="Why is this overtime not approved?"
+                  placeholder={t("overtime.reasonPlaceholder")}
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setRejectTarget(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setRejectTarget(null)}>{t("common.cancel")}</Button>
               <Button
                 variant="destructive"
                 onClick={() => rejectTarget && rejectMutation.mutate({
@@ -337,7 +344,7 @@ export default function OvertimePage() {
                 })}
                 disabled={rejectMutation.isPending || !rejectReason.trim()}
               >
-                {rejectMutation.isPending ? "Rejecting..." : "Reject & Clock Out"}
+                {rejectMutation.isPending ? t("common.rejecting") : t("overtime.rejectAndClockOut")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -360,6 +367,7 @@ function OvertimeCard({
   onApprove: () => void
   onReject: () => void
 }) {
+  const { t } = useTranslation()
   const badge = STATUS_BADGES[request.status] || STATUS_BADGES.PENDING_APPROVAL
 
   return (
@@ -374,7 +382,7 @@ function OvertimeCard({
               <h3 className="font-semibold text-foreground">
                 {request.technician?.firstName} {request.technician?.lastName}
               </h3>
-              <Badge className={badge.className}>{badge.label}</Badge>
+              <Badge className={badge.className}>{t(badge!.labelKey)}</Badge>
             </div>
             <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground flex-wrap">
               <span className="inline-flex items-center gap-1">
@@ -397,11 +405,11 @@ function OvertimeCard({
         <div className="flex gap-2 shrink-0">
           <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={onReject}>
             <XCircle className="h-4 w-4 mr-1" />
-            Reject
+            {t("overtime.reject")}
           </Button>
           <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={onApprove}>
             <CheckCircle2 className="h-4 w-4 mr-1" />
-            Approve
+            {t("overtime.approve")}
           </Button>
         </div>
       </div>
@@ -414,8 +422,9 @@ function OvertimeCard({
 // ============================================================================
 
 function HistoryCard({ request }: { request: OvertimeRequest }) {
+  const { t } = useTranslation()
   const badge = STATUS_BADGES[request.status] || STATUS_BADGES.COMPLETED
-  const Icon = badge.icon
+  const Icon = badge!.icon
 
   return (
     <div className="rounded-xl border bg-card p-4">
@@ -429,18 +438,18 @@ function HistoryCard({ request }: { request: OvertimeRequest }) {
               <span className="font-medium text-foreground text-sm">
                 {request.technician?.firstName} {request.technician?.lastName}
               </span>
-              <Badge variant="outline" className={`text-xs ${badge.className}`}>{badge.label}</Badge>
+              <Badge variant="outline" className={`text-xs ${badge!.className}`}>{t(badge!.labelKey)}</Badge>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
               <span>{request.location?.name}</span>
               <span>{format(new Date(request.createdAt), "MMM d, h:mm a")}</span>
               {request.overtimeMinutes && (
-                <span className="font-medium text-muted-foreground">{request.overtimeMinutes} min overtime</span>
+                <span className="font-medium text-muted-foreground">{t("overtime.minOvertime", { count: request.overtimeMinutes })}</span>
               )}
               {request.approvalMethod && (
                 <span className="inline-flex items-center gap-1">
                   {request.approvalMethod === "SIGNATURE" ? <Pen className="h-3 w-3" /> : <User className="h-3 w-3" />}
-                  {request.approvalMethod === "SIGNATURE" ? "Signed" : "Remote"}
+                  {request.approvalMethod === "SIGNATURE" ? t("overtime.signed") : t("overtime.remote")}
                 </span>
               )}
             </div>
@@ -448,7 +457,7 @@ function HistoryCard({ request }: { request: OvertimeRequest }) {
         </div>
         {request.approvedBy && (
           <span className="text-xs text-muted-foreground">
-            by {request.approvedBy.firstName} {request.approvedBy.lastName}
+            {t("overtime.by", { name: `${request.approvedBy.firstName} ${request.approvedBy.lastName}` })}
           </span>
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { Check, Copy, KeyRound, AlertTriangle, MapPin, X, Plus, ChevronsUpDown } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -70,6 +71,7 @@ const PositionCombobox = memo(function PositionCombobox({
   onChange: (value: string) => void
   usedPositions: string[]
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [inputValue, setInputValue] = useState(value)
 
@@ -87,7 +89,7 @@ const PositionCombobox = memo(function PositionCombobox({
           className="w-full justify-between h-9 font-normal text-sm"
         >
           <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || "Select or type a title..."}
+            {value || t("members.memberEditor.positionPlaceholder")}
           </span>
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
         </Button>
@@ -96,7 +98,7 @@ const PositionCombobox = memo(function PositionCombobox({
         <Command shouldFilter={true}>
           <div className="p-2 pb-1">
             <CommandInput
-              placeholder="Search or type custom..."
+              placeholder={t("members.memberEditor.searchOrType")}
               value={inputValue}
               onValueChange={(v) => {
                 setInputValue(v)
@@ -115,11 +117,11 @@ const PositionCombobox = memo(function PositionCombobox({
                     setOpen(false)
                   }}
                 >
-                  Use &quot;{inputValue}&quot;
+                  {t("members.memberEditor.useQuery", { query: inputValue })}
                 </button>
               </CommandEmpty>
               {usedPositions.length > 0 && (
-                <CommandGroup heading="Used in your org">
+                <CommandGroup heading={t("members.memberEditor.usedInOrg")}>
                   {usedPositions.map((pos) => (
                     <CommandItem
                       key={`used-${pos}`}
@@ -139,7 +141,7 @@ const PositionCombobox = memo(function PositionCombobox({
               {unusedSuggestions.length > 0 && (
                 <>
                   {usedPositions.length > 0 && <CommandSeparator />}
-                  <CommandGroup heading="Suggestions">
+                  <CommandGroup heading={t("members.memberEditor.suggestions")}>
                     {unusedSuggestions.map((pos) => (
                       <CommandItem
                         key={`sug-${pos}`}
@@ -190,6 +192,7 @@ export function EditMemberDialog({
   onClose: () => void
   onSaved?: () => void
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   const [firstName, setFirstName] = useState("")
@@ -284,9 +287,9 @@ export function EditMemberDialog({
       onSaved?.()
       onClose()
       setTempPassword(null)
-      notify.success("Member updated")
+      notify.success(t("members.memberEditor.updated"))
     },
-    onError: (error: Error) => notify.error(error.message || "Failed to update member"),
+    onError: (error: Error) => notify.error(error.message || t("members.memberEditor.failedToUpdate")),
   })
 
   const resetPasswordMutation = useMutation({
@@ -297,14 +300,14 @@ export function EditMemberDialog({
         setCopied(false)
       }
     },
-    onError: (error: Error) => notify.error(error.message || "Failed to reset password"),
+    onError: (error: Error) => notify.error(error.message || t("members.memberEditor.failedToResetPassword")),
   })
 
   const saveScheduleMutation = useMutation({
     mutationFn: ({ memberId, schedule }: { memberId: string; schedule: ScheduleEntryInput[] }) =>
       employeesApi.setSchedule(memberId, schedule),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employeeSchedule"] }),
-    onError: (error: Error) => notify.error(error.message || "Failed to save schedule"),
+    onError: (error: Error) => notify.error(error.message || t("members.memberEditor.failedToSaveSchedule")),
   })
 
   const handleSave = () => {
@@ -372,25 +375,25 @@ export function EditMemberDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2 max-h-[65vh] overflow-y-auto overflow-x-hidden px-1">
-          <EditSection label="Profile" />
+          <EditSection label={t("members.memberEditor.sectionProfile")} />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="editFirstName" className="text-xs font-medium text-muted-foreground">First name</Label>
+              <Label htmlFor="editFirstName" className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.firstName")}</Label>
               <Input id="editFirstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="h-9 focus-visible:ring-offset-0" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="editLastName" className="text-xs font-medium text-muted-foreground">Last name</Label>
+              <Label htmlFor="editLastName" className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.lastName")}</Label>
               <Input id="editLastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-9 focus-visible:ring-offset-0" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Position</Label>
+            <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.position")}</Label>
             <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
           </div>
 
-          <EditSection label="Work schedule" />
+          <EditSection label={t("members.memberEditor.sectionWorkSchedule")} />
 
           <ScheduleFields
             scheduleType={scheduleType}
@@ -401,22 +404,22 @@ export function EditMemberDialog({
             onMonthlyHourBudgetChange={setMonthlyHourBudget}
           />
 
-          <EditSection label="Role & access" />
+          <EditSection label={t("members.memberEditor.sectionRoleAccess")} />
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Role</Label>
+            <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.role")}</Label>
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
+                <SelectItem value="EMPLOYEE">{t("members.roles.employee")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {member && (
             <>
-              <EditSection label="Spaces" />
+              <EditSection label={t("members.table.spaces")} />
               <div className="flex flex-wrap gap-1.5 items-center">
                 {(() => {
                   const memberAssignments = (allAssignments || []).filter(
@@ -442,8 +445,8 @@ export function EditMemberDialog({
                                   try {
                                     await locationsApi.removeAssignment(loc.id, assignment.id)
                                     invalidateAssignments()
-                                    notify.success(`Removed from ${loc.name}`)
-                                  } catch { notify.error("Failed to remove") }
+                                    notify.success(t("members.memberEditor.removedFrom", { name: loc.name }))
+                                  } catch { notify.error(t("members.memberEditor.failedToRemove")) }
                                 }}
                                 className="ml-0.5 p-0.5 rounded hover:bg-destructive/20 transition-colors"
                               >
@@ -453,14 +456,14 @@ export function EditMemberDialog({
                           )
                         })
                       ) : (
-                        <span className="text-sm text-muted-foreground/50 italic">No spaces</span>
+                        <span className="text-sm text-muted-foreground/50 italic">{t("members.noSpaces")}</span>
                       )}
                       {unassignedLocations.length > 0 && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="h-6 px-2 text-xs rounded-full gap-1">
                               <Plus className="h-3 w-3" />
-                              Add
+                              {t("members.memberEditor.add")}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" className="w-48">
@@ -471,8 +474,8 @@ export function EditMemberDialog({
                                   try {
                                     await locationsApi.assignMember(loc.id, { userId: member.id })
                                     invalidateAssignments()
-                                    notify.success(`Assigned to ${loc.name}`)
-                                  } catch { notify.error("Failed to assign") }
+                                    notify.success(t("members.memberEditor.assignedTo", { name: loc.name }))
+                                  } catch { notify.error(t("members.memberEditor.failedToAssign")) }
                                 }}
                               >
                                 <MapPin className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
@@ -489,11 +492,11 @@ export function EditMemberDialog({
             </>
           )}
 
-          <EditSection label="Security" />
+          <EditSection label={t("members.memberEditor.sectionSecurity")} />
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium text-muted-foreground">Password</Label>
+              <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.password")}</Label>
               {!tempPassword && (
                 <Button
                   variant="outline"
@@ -503,7 +506,7 @@ export function EditMemberDialog({
                   className="h-7 text-xs"
                 >
                   <KeyRound className="h-3 w-3 mr-1.5" />
-                  {resetPasswordMutation.isPending ? "Generating..." : "Reset password"}
+                  {resetPasswordMutation.isPending ? t("common.generating") : t("members.memberEditor.resetPassword")}
                 </Button>
               )}
             </div>
@@ -511,7 +514,7 @@ export function EditMemberDialog({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg">
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                  <p className="text-xs text-amber-700 dark:text-amber-300">Copy this password now. It will not be shown again.</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300">{t("members.memberEditor.copyPasswordWarning")}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Input readOnly value={tempPassword} className="font-mono text-sm h-9" />
@@ -526,10 +529,10 @@ export function EditMemberDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => { onClose(); setTempPassword(null) }} className="rounded-lg">
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={updateMutation.isPending || !firstName.trim() || !lastName.trim()} className="rounded-lg">
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
           </Button>
         </DialogFooter>
       </DialogContent>

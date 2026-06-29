@@ -365,12 +365,12 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const recurringMutation = useMutation({
     mutationFn: (input: Record<string, unknown>) => recurringTasksApi.create(input),
     onSuccess: () => {
-      notify.success("Recurring task created", "It will generate on schedule.")
+      notify.success(t("tasks.recurring.created"), t("tasks.recurring.createdDescription"))
       onOpenChange(false)
       queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
     },
     onError: (error: Error) => {
-      notify.error(error.message || "Could not create recurring task")
+      notify.error(error.message || t("tasks.recurring.createFailed"))
       setIsSubmittingLocal(false)
     },
   })
@@ -397,7 +397,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     }
 
     if (requiredCustomFieldsMissing) {
-      notify.error("Please fill in all required custom fields")
+      notify.error(t("tasks.create.fillRequiredCustomFields"))
       return
     }
 
@@ -527,7 +527,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   const locationIndicator = locationAddress || null
   const checklistIndicator =
-    checklistItems.length > 0 ? `${checklistItems.length} item${checklistItems.length > 1 ? "s" : ""}` : null
+    checklistItems.length > 0 ? t("tasks.create.itemsCount", { count: checklistItems.length }) : null
   const orgIndicator =
     phaseId !== "none" || sprintId !== "none"
       ? [
@@ -554,7 +554,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             {t("tasks.create.title")}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Create a new task for your organization
+            {t("tasks.create.dialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -562,10 +562,10 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
           {/* Space selector */}
           {hasSpaces && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Space</Label>
+              <Label className="text-xs font-medium text-muted-foreground">{t("tasks.groupBy.space")}</Label>
               <Select value={spaceId} onValueChange={setSpaceId} disabled={isSubmitting}>
                 <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-                  <SelectValue placeholder="Select a space" />
+                  <SelectValue placeholder={t("tasks.create.selectSpace")} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableSpaces.map((s: { id: string; name: string }) => (
@@ -584,13 +584,13 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
           {/* Type / workflow — "Auto" inherits the selected space's default */}
           {workflows.length > 0 && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Type</Label>
+              <Label className="text-xs font-medium text-muted-foreground">{t("tasks.create.type")}</Label>
               <Select value={workflowId} onValueChange={setWorkflowId} disabled={isSubmitting}>
                 <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-                  <SelectValue placeholder="Auto" />
+                  <SelectValue placeholder={t("tasks.create.auto")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="auto">Auto (from space)</SelectItem>
+                  <SelectItem value="auto">{t("tasks.create.autoFromSpace")}</SelectItem>
                   {workflows.map((w: { id: string; name: string }) => (
                     <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                   ))}
@@ -632,7 +632,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Repeat className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Repeat this task</span>
+                <span className="text-sm font-medium text-foreground">{t("tasks.recurring.repeatTask")}</span>
               </div>
               <Switch checked={isRecurring} onCheckedChange={setIsRecurring} disabled={isSubmitting} />
             </div>
@@ -641,19 +641,19 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
               <div className="space-y-3 pt-1">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Frequency</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.frequency")}</Label>
                     <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)} disabled={isSubmitting}>
                       <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {["DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"].map((f) => (
-                          <SelectItem key={f} value={f}>{f.charAt(0) + f.slice(1).toLowerCase()}</SelectItem>
+                          <SelectItem key={f} value={f}>{t(`tasks.recurring.frequencies.${f}`)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   {frequency === "CUSTOM" && (
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Every N days</Label>
+                      <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.everyNDays")}</Label>
                       <Input
                         type="number"
                         min={1}
@@ -666,12 +666,12 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                   )}
                   {["WEEKLY", "BIWEEKLY"].includes(frequency) && (
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Day of week</Label>
+                      <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.dayOfWeek")}</Label>
                       <Select value={String(dayOfWeek)} onValueChange={(v) => setDayOfWeek(parseInt(v))} disabled={isSubmitting}>
                         <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((d, i) => (
-                            <SelectItem key={i} value={String(i)}>{d}</SelectItem>
+                          {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].map((d, i) => (
+                            <SelectItem key={i} value={String(i)}>{t(`tasks.weekdaysFull.${d}`)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -679,7 +679,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                   )}
                   {["MONTHLY", "QUARTERLY", "YEARLY"].includes(frequency) && (
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Day of month</Label>
+                      <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.dayOfMonth")}</Label>
                       <Input
                         type="number"
                         min={1}
@@ -694,16 +694,16 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Start date</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.startDate")}</Label>
                     <Input type="date" value={recurStart} onChange={(e) => setRecurStart(e.target.value)} className="h-9 rounded-lg text-sm" disabled={isSubmitting} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">End date (optional)</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.endDateOptional")}</Label>
                     <Input type="date" value={recurEnd} onChange={(e) => setRecurEnd(e.target.value)} className="h-9 rounded-lg text-sm" disabled={isSubmitting} />
                   </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Generates a task in the chosen space &amp; type on this schedule. Due date &amp; attachments don&apos;t apply.
+                  {t("tasks.recurring.generatesHint")}
                 </p>
               </div>
             )}
@@ -712,10 +712,10 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
           {/* Collapsible Sections */}
           <div className="space-y-1.5 pt-1">
             {/* Schedule */}
-            <CollapsibleSection icon={Clock} label="Schedule" indicator={scheduleIndicator}>
+            <CollapsibleSection icon={Clock} label={t("tasks.view.schedule")} indicator={scheduleIndicator}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.startDate")}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -727,7 +727,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         disabled={isSubmitting}
                       >
                         <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-                        {startDate ? format(startDate, "MMM d, yyyy") : "Select date"}
+                        {startDate ? format(startDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -769,12 +769,12 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
               {hasModule('time_tracking') && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Estimated Hours</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.estimatedHours")}</Label>
                   <Input
                     type="number"
                     min="0"
                     step="0.5"
-                    placeholder="e.g. 4"
+                    placeholder={t("tasks.fields.estimatedHoursPlaceholder")}
                     value={estimatedHours}
                     onChange={(e) => setEstimatedHours(e.target.value)}
                     disabled={isSubmitting}
@@ -788,22 +788,22 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             {(isSelfScope || showAssigneePicker) && (
               <CollapsibleSection
                 icon={Users}
-                label="Assignment"
-                indicator={isSelfScope ? "Assigned to you" : null}
+                label={t("tasks.create.assignment")}
+                indicator={isSelfScope ? t("tasks.create.assignedToYou") : null}
               >
                 {isSelfScope ? (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
                     <User className="size-3.5 text-blue-600" />
                     <span className="text-xs text-blue-700 dark:text-blue-400 font-medium">
-                      This task will be assigned to you
+                      {t("tasks.create.assignedToYouFull")}
                     </span>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Assign to</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">{t("tasks.create.assignTo")}</Label>
                     <Select disabled={isSubmitting}>
                       <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-                        <SelectValue placeholder="Select a team member" />
+                        <SelectValue placeholder={t("tasks.create.selectTeamMember")} />
                       </SelectTrigger>
                       <SelectContent>
                         {members.map((member: OrgMember) => (
@@ -827,7 +827,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             )}
 
             {/* Location */}
-            <CollapsibleSection icon={MapPin} label="Location" indicator={locationIndicator}>
+            <CollapsibleSection icon={MapPin} label={t("tasks.sidebar.location")} indicator={locationIndicator}>
               <Suspense
                 fallback={
                   <div className="h-[200px] rounded-lg border border-border bg-muted flex items-center justify-center">
@@ -850,7 +850,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             </CollapsibleSection>
 
             {/* Checklist — only when module is enabled */}
-            {hasModule('checklists') && <CollapsibleSection icon={CheckSquare} label="Checklist" indicator={checklistIndicator}>
+            {hasModule('checklists') && <CollapsibleSection icon={CheckSquare} label={t("tasks.sections.checklist")} indicator={checklistIndicator}>
               {checklistItems.length > 0 && (
                 <div className="space-y-1">
                   {checklistItems.map((item, index) => (
@@ -874,7 +874,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
               <div className="flex items-center gap-2">
                 <Input
-                  placeholder="Add checklist item..."
+                  placeholder={t("tasks.create.addChecklistItem")}
                   value={newChecklistItem}
                   onChange={(e) => setNewChecklistItem(e.target.value)}
                   onKeyDown={(e) => {
@@ -901,17 +901,17 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
             {/* Organization (Phase, Sprint, Parent Task) */}
             {((hasPhases && hasModule('phases')) || (hasSprints && hasModule('sprints'))) && (
-              <CollapsibleSection icon={Layers} label="Organization" indicator={orgIndicator}>
+              <CollapsibleSection icon={Layers} label={t("tasks.create.organization")} indicator={orgIndicator}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {hasPhases && hasModule('phases') && (
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Phase</Label>
+                      <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.phase")}</Label>
                       <Select value={phaseId} onValueChange={setPhaseId} disabled={isSubmitting}>
                         <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-                          <SelectValue placeholder="No phase" />
+                          <SelectValue placeholder={t("tasks.sidebar.noPhase")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No phase</SelectItem>
+                          <SelectItem value="none">{t("tasks.sidebar.noPhase")}</SelectItem>
                           {(phases || []).map((phase: Phase) => (
                             <SelectItem key={phase.id} value={phase.id}>
                               <div className="flex items-center gap-2">
@@ -930,13 +930,13 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
                   {hasSprints && hasModule('sprints') && (
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Sprint</Label>
+                      <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.sprint")}</Label>
                       <Select value={sprintId} onValueChange={setSprintId} disabled={isSubmitting}>
                         <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-                          <SelectValue placeholder="No sprint" />
+                          <SelectValue placeholder={t("tasks.sidebar.noSprint")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No sprint</SelectItem>
+                          <SelectItem value="none">{t("tasks.sidebar.noSprint")}</SelectItem>
                           {(sprints || []).map((sprint: Sprint) => (
                             <SelectItem key={sprint.id} value={sprint.id}>
                               {sprint.name}
@@ -951,10 +951,10 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <GitBranch className="size-3" />
-                    Subtask of (optional)
+                    {t("tasks.create.subtaskOf")}
                   </Label>
                   <Input
-                    placeholder="Paste parent task ID..."
+                    placeholder={t("tasks.create.parentTaskPlaceholder")}
                     value={parentTaskId === "none" ? "" : parentTaskId}
                     onChange={(e) => setParentTaskId(e.target.value || "none")}
                     disabled={isSubmitting}
@@ -968,16 +968,16 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             {(hasModule('story_points') || hasModule('epics') || hasCustomFields) && (
             <CollapsibleSection
               icon={SlidersHorizontal}
-              label="More Options"
+              label={t("tasks.create.moreOptions")}
               indicator={[
-                hasModule('story_points') && storyPoints != null ? `${storyPoints} pts` : null,
-                hasModule('epics') && epicId !== "none" ? "Epic set" : null,
+                hasModule('story_points') && storyPoints != null ? t("tasks.units.points", { count: storyPoints }) : null,
+                hasModule('epics') && epicId !== "none" ? t("tasks.create.epicSet") : null,
               ].filter(Boolean).join(" · ") || null}
             >
               {/* Story Points */}
               {hasModule('story_points') && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Story Points</Label>
+                <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.storyPoints")}</Label>
                 <div className="flex items-center gap-1">
                   {STORY_POINT_OPTIONS.map((pts) => (
                     <button
@@ -1002,13 +1002,13 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
               {/* Epic */}
               {hasModule('epics') && (fetchedEpics ?? []).length > 0 && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Epic</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.epic")}</Label>
                   <Select value={epicId} onValueChange={setEpicId} disabled={isSubmitting}>
                     <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-                      <SelectValue placeholder="No epic" />
+                      <SelectValue placeholder={t("tasks.sidebar.noEpic")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No epic</SelectItem>
+                      <SelectItem value="none">{t("tasks.sidebar.noEpic")}</SelectItem>
                       {(fetchedEpics ?? []).map((epic: Epic) => (
                         <SelectItem key={epic.id} value={epic.id}>
                           <div className="flex items-center gap-2">
@@ -1033,6 +1033,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                   {renderCustomFieldInput(field, customFieldValues[field.id] ?? "", (v) =>
                     setCustomFieldValue(field.id, v),
                     isSubmitting,
+                    t,
                   )}
                 </div>
               ))}
@@ -1118,10 +1119,10 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
-                Creating...
+                {t("common.creating")}
               </>
             ) : (
-              isRecurring ? "Create Recurring Task" : "Create Task"
+              isRecurring ? t("tasks.recurring.createButton") : t("tasks.list.createTask")
             )}
           </Button>
         </form>
@@ -1138,6 +1139,7 @@ function renderCustomFieldInput(
   value: string,
   onChange: (value: string) => void,
   disabled: boolean,
+  t: (key: string, opts?: Record<string, unknown>) => string,
 ) {
   const inputClass = "h-9 rounded-lg border-border bg-card text-sm placeholder:text-muted-foreground"
 
@@ -1145,7 +1147,7 @@ function renderCustomFieldInput(
     case "TEXT":
       return (
         <Input
-          placeholder={`Enter ${field.name.toLowerCase()}...`}
+          placeholder={t("tasks.customFields.enterPlaceholder", { name: field.name })}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
@@ -1157,7 +1159,7 @@ function renderCustomFieldInput(
       return (
         <Input
           type="number"
-          placeholder={`Enter ${field.name.toLowerCase()}...`}
+          placeholder={t("tasks.customFields.enterPlaceholder", { name: field.name })}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
@@ -1178,7 +1180,7 @@ function renderCustomFieldInput(
               disabled={disabled}
             >
               <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-              {value ? format(new Date(value), "MMM d, yyyy") : `Select ${field.name.toLowerCase()}`}
+              {value ? format(new Date(value), "MMM d, yyyy") : t("tasks.customFields.selectPlaceholder", { name: field.name })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -1196,7 +1198,7 @@ function renderCustomFieldInput(
       return (
         <Select value={value} onValueChange={onChange} disabled={disabled}>
           <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-            <SelectValue placeholder={`Select ${field.name.toLowerCase()}`} />
+            <SelectValue placeholder={t("tasks.customFields.selectPlaceholder", { name: field.name })} />
           </SelectTrigger>
           <SelectContent>
             {(field.options ?? []).map((opt) => (
@@ -1253,7 +1255,7 @@ function renderCustomFieldInput(
     default:
       return (
         <Input
-          placeholder={`Enter ${field.name.toLowerCase()}...`}
+          placeholder={t("tasks.customFields.enterPlaceholder", { name: field.name })}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}

@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react"
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
 import { MapPin, Search, X, Loader2, Navigation } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Input } from "@/components/ui/input"
 import { formatNominatimAddress, type NominatimAddress } from "@/lib/geocode"
 
@@ -54,6 +55,7 @@ function MapRecenter({ lat, lng }: { lat: number; lng: number }) {
 }
 
 export function LocationPicker({ address, lat, lng, onLocationChange, disabled }: LocationPickerProps) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState(address)
   const [results, setResults] = useState<NominatimResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -159,7 +161,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Search for an address..."
+            placeholder={t("locationPicker.searchPlaceholder")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)

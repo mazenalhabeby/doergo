@@ -1,8 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import { FileQuestion } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 
 export default function DashboardNotFound() {
+  const { t } = useTranslation()
   return (
     <div className="min-h-[400px] flex items-center justify-center p-8">
       <div className="text-center max-w-md">
@@ -10,13 +14,13 @@ export default function DashboardNotFound() {
           <FileQuestion className="size-7 text-muted-foreground" />
         </div>
         <h2 className="text-lg font-semibold text-foreground mb-2">
-          Page not found
+          {t('errors.pageNotFound')}
         </h2>
         <p className="text-sm text-muted-foreground mb-4">
-          The page you are looking for does not exist or has been moved.
+          {t('errors.pageNotFoundBody')}
         </p>
         <Button asChild>
-          <Link href="/dashboard">Go to Dashboard</Link>
+          <Link href="/dashboard">{t('errors.goToDashboard')}</Link>
         </Button>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { use, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import {
   ArrowLeft,
   Mail,
@@ -38,25 +40,25 @@ import { Skeleton } from "@/components/ui/skeleton"
 // Constants
 // ---------------------------------------------------------------------------
 
-const ROLE_CONFIG: Record<string, { label: string; className: string; gradient: string }> = {
+const ROLE_CONFIG: Record<string, { labelKey: string; className: string; gradient: string }> = {
   ADMIN: {
-    label: "Admin",
+    labelKey: "members.roles.admin",
     className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
     gradient: "from-blue-500 to-blue-600",
   },
   DISPATCHER: {
-    label: "Manager",
+    labelKey: "members.roles.manager",
     className: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-200/50 dark:border-purple-800/50",
     gradient: "from-purple-500 to-purple-600",
   },
   TECHNICIAN: {
-    label: "Employee",
+    labelKey: "members.roles.employee",
     className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50",
     gradient: "from-emerald-500 to-emerald-600",
   },
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
 
 function formatTime12h(time: string): string {
   const [hours, minutes] = time.split(":")
@@ -66,15 +68,15 @@ function formatTime12h(time: string): string {
   return `${h12}:${minutes} ${ampm}`
 }
 
-function formatRelativeDate(dateStr: string): string {
+function formatRelativeDate(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-  if (diffDays === 0) return "Today"
-  if (diffDays === 1) return "Yesterday"
-  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays === 0) return t("common.today")
+  if (diffDays === 1) return t("members.detail.yesterday")
+  if (diffDays < 7) return t("members.detail.daysAgo", { count: diffDays })
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
@@ -88,6 +90,7 @@ export default function MemberProfilePage({
   params: Promise<{ id: string }>
 }) {
   const { id: memberId } = use(params)
+  const { t } = useTranslation()
   const router = useRouter()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
@@ -185,12 +188,12 @@ export default function MemberProfilePage({
             className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Back to Team
+            {t("members.detail.backToTeam")}
           </Button>
           <div className="text-center py-20">
-            <h3 className="text-lg font-semibold text-foreground mb-1.5">Member not found</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("members.detail.notFound")}</h3>
             <p className="text-sm text-muted-foreground">
-              This member may have been removed from the organization.
+              {t("members.detail.notFoundDescription")}
             </p>
           </div>
         </div>
@@ -199,12 +202,12 @@ export default function MemberProfilePage({
   }
 
   const roleConfig = member.orgRole
-    ? { label: member.orgRole.name, className: "", gradient: "from-gray-500 to-gray-600" }
+    ? { labelKey: "members.roles.employee", className: "", gradient: "from-gray-500 to-gray-600" }
     : ROLE_CONFIG[member.role] || ROLE_CONFIG.TECHNICIAN!
   const scheduleLabel = member.scheduleType === "FIXED"
-    ? "Fixed Schedule"
+    ? t("members.detail.fixedSchedule")
     : member.scheduleType === "FLEXIBLE"
-      ? "Flexible Hours"
+      ? t("members.detail.flexibleHours")
       : null
 
   return (
@@ -244,7 +247,7 @@ export default function MemberProfilePage({
                   {member.isActive && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Active
+                      {t("common.active")}
                     </span>
                   )}
                 </div>
@@ -267,7 +270,7 @@ export default function MemberProfilePage({
                     </Badge>
                   ) : (
                     <Badge variant="outline" className={cn("text-xs font-medium border", roleConfig.className)}>
-                      {roleConfig.label}
+                      {t(roleConfig.labelKey)}
                     </Badge>
                   )}
                   {scheduleLabel && (
@@ -316,7 +319,7 @@ export default function MemberProfilePage({
                 className="rounded-lg shadow-sm"
               >
                 <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit
+                {t("common.edit")}
               </Button>
             )}
 
@@ -338,7 +341,7 @@ export default function MemberProfilePage({
           const activityCard = (
             <div className="bg-card rounded-xl border border-border/80 overflow-hidden">
               <div className="px-5 py-4 border-b border-border/60">
-                <h2 className="text-sm font-semibold text-foreground">Activity</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t("members.detail.activity")}</h2>
               </div>
               {tasksLoading ? (
                 <div className="p-5 space-y-3">
@@ -364,7 +367,7 @@ export default function MemberProfilePage({
                           </p>
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
-                          {formatRelativeDate(task.updatedAt)}
+                          {formatRelativeDate(task.updatedAt, t)}
                         </span>
                       </div>
                     )
@@ -372,7 +375,7 @@ export default function MemberProfilePage({
                 </div>
               ) : (
                 <div className="px-5 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">No recent activity</p>
+                  <p className="text-sm text-muted-foreground">{t("members.detail.noRecentActivity")}</p>
                 </div>
               )}
             </div>
@@ -384,7 +387,7 @@ export default function MemberProfilePage({
           {/* ── Recent Tasks ─────────────────────────────────────────── */}
           <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-border/60">
-              <h2 className="text-sm font-semibold text-foreground">Recent Tasks</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("members.detail.recentTasks")}</h2>
             </div>
             {tasksLoading ? (
               <div className="p-5 space-y-3">
@@ -411,7 +414,7 @@ export default function MemberProfilePage({
                           <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
                           {task.dueDate && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Due {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              {t("members.detail.due", { date: new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })}
                             </p>
                           )}
                         </div>
@@ -435,13 +438,13 @@ export default function MemberProfilePage({
                     href={`/tasks?assignee=${memberId}`}
                     className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
                   >
-                    View all tasks →
+                    {t("members.detail.viewAllTasks")}
                   </Link>
                 </div>
               </>
             ) : (
               <div className="px-5 py-8 text-center">
-                <p className="text-sm text-muted-foreground">No tasks assigned</p>
+                <p className="text-sm text-muted-foreground">{t("members.detail.noTasksAssigned")}</p>
               </div>
             )}
           </div>
@@ -450,7 +453,7 @@ export default function MemberProfilePage({
           {showSchedule ? (
             <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
               <div className="px-5 py-4 border-b border-border/60">
-                <h2 className="text-sm font-semibold text-foreground">Schedule</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t("members.detail.schedule")}</h2>
               </div>
               {scheduleLoading ? (
                 <div className="p-5 space-y-2">
@@ -460,7 +463,7 @@ export default function MemberProfilePage({
                 </div>
               ) : (
                 <div className="divide-y divide-border/40">
-                  {DAY_NAMES.map((dayName, i) => {
+                  {DAY_KEYS.map((dayKey, i) => {
                     const entry = schedule.find((s: ScheduleEntry) => s.dayOfWeek === i)
                     const isActive = entry?.isActive
                     return (
@@ -471,11 +474,11 @@ export default function MemberProfilePage({
                           !isActive && "opacity-40"
                         )}
                       >
-                        <span className="text-sm font-medium text-foreground w-10">{dayName}</span>
+                        <span className="text-sm font-medium text-foreground w-10">{t(`common.weekdaysShort.${dayKey}`)}</span>
                         <span className="text-sm text-muted-foreground">
                           {isActive
                             ? `${formatTime12h(entry!.startTime)} - ${formatTime12h(entry!.endTime)}`
-                            : "Off"
+                            : t("members.detail.off")
                           }
                         </span>
                       </div>
@@ -502,14 +505,14 @@ export default function MemberProfilePage({
                   className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
                 >
                   <LayoutGrid className="size-3.5 mr-1.5" />
-                  Overview
+                  {t("members.detail.overview")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="access"
                   className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
                 >
                   <ShieldCheck className="size-3.5 mr-1.5" />
-                  Access
+                  {t("members.detail.access")}
                 </TabsTrigger>
               </TabsList>
 

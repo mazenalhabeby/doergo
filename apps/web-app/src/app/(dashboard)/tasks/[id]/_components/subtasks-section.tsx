@@ -2,6 +2,7 @@
 
 import { useState, memo } from "react"
 import Link from "next/link"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Plus,
@@ -122,6 +123,7 @@ export const SubtasksSection = memo(function SubtasksSection({
   subtasks: initialSubtasks,
   subtaskCount,
 }: SubtasksSectionProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [showInput, setShowInput] = useState(false)
   const [newTitle, setNewTitle] = useState("")
@@ -142,7 +144,7 @@ export const SubtasksSection = memo(function SubtasksSection({
     mutationFn: (title: string) =>
       tasksApi.createSubtask(taskId, { title, description: "" }),
     onSuccess: () => {
-      notify.success("Subtask created")
+      notify.success(t("tasks.subtasks.created"))
       setNewTitle("")
       setShowInput(false)
       queryClient.invalidateQueries({ queryKey: ["subtasks", taskId] })
@@ -186,7 +188,7 @@ export const SubtasksSection = memo(function SubtasksSection({
           onClick={() => setShowInput(true)}
         >
           <Plus className="size-3.5 mr-1" />
-          Add
+          {t("common.add")}
         </Button>
       </div>
 
@@ -203,7 +205,7 @@ export const SubtasksSection = memo(function SubtasksSection({
       {subtasks.length === 0 && !showInput && (
         <div className="px-5 py-6 text-center">
           <p className="text-sm text-muted-foreground">
-            No subtasks yet. Break this task into smaller steps.
+            {t("tasks.subtasks.empty")}
           </p>
         </div>
       )}
@@ -216,7 +218,7 @@ export const SubtasksSection = memo(function SubtasksSection({
           </div>
           <Input
             autoFocus
-            placeholder="Subtask title..."
+            placeholder={t("tasks.subtasks.titlePlaceholder")}
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -232,7 +234,7 @@ export const SubtasksSection = memo(function SubtasksSection({
             {createMutation.isPending ? (
               <Loader2 className="size-3 animate-spin" />
             ) : (
-              "Add"
+              t("common.add")
             )}
           </Button>
           <Button
@@ -244,7 +246,7 @@ export const SubtasksSection = memo(function SubtasksSection({
               setNewTitle("")
             }}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
         </div>
       )}

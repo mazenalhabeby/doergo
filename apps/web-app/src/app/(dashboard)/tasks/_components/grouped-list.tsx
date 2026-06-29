@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useRef, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronRight, User, Archive, Layers, Plus, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getPriorityConfig } from "@/lib/constants"
@@ -52,6 +53,7 @@ function getGroupField(groupBy: GroupByOption): string | null {
 
 function buildGroups(
   groupBy: GroupByOption, tasks: Task[], sprints: Sprint[], epics: Epic[], spaces: { id: string; name: string }[],
+  t: (key: string) => string,
 ): { groups: GroupDef[]; tasksByGroup: Map<string, Task[]> } {
   const tasksByGroup = new Map<string, Task[]>()
   const addTask = (key: string, task: Task) => { if (!tasksByGroup.has(key)) tasksByGroup.set(key, []); tasksByGroup.get(key)!.push(task) }
@@ -60,15 +62,15 @@ function buildGroups(
     case "sprint": {
       const groups: GroupDef[] = [...sprints]
         .sort((a, b) => { const o: Record<string, number> = { ACTIVE: 0, PLANNING: 1, COMPLETED: 2 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) })
-        .map(s => ({ key: s.id, label: s.name, sublabel: s.status === "ACTIVE" ? "Active" : s.status === "PLANNING" ? "Planning" : "Completed", dotColor: s.status === "ACTIVE" ? "#22C55E" : s.status === "PLANNING" ? "#3B82F6" : "#94A3B8" }))
-      groups.push({ key: "__none__", label: "Backlog", icon: <Archive className="size-3.5" />, dotColor: "#94A3B8" })
+        .map(s => ({ key: s.id, label: s.name, sublabel: s.status === "ACTIVE" ? t("common.active") : s.status === "PLANNING" ? t("tasks.groups.planning") : t("tasks.statusTabs.COMPLETED"), dotColor: s.status === "ACTIVE" ? "#22C55E" : s.status === "PLANNING" ? "#3B82F6" : "#94A3B8" }))
+      groups.push({ key: "__none__", label: t("tasks.groups.backlog"), icon: <Archive className="size-3.5" />, dotColor: "#94A3B8" })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) addTask(t.sprintId || "__none__", t)
       return { groups, tasksByGroup }
     }
     case "epic": {
       const groups: GroupDef[] = epics.map(e => ({ key: e.id, label: e.name, dotColor: e.color }))
-      groups.push({ key: "__none__", label: "No Epic", dotColor: "#94A3B8" })
+      groups.push({ key: "__none__", label: t("tasks.groups.noEpic"), dotColor: "#94A3B8" })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) addTask(t.epicId || "__none__", t)
       return { groups, tasksByGroup }
@@ -80,7 +82,7 @@ function buildGroups(
         else if (t.assignedTo) map.set(t.assignedTo.id, { id: t.assignedTo.id, first: t.assignedTo.firstName, last: t.assignedTo.lastName })
       }
       const groups: GroupDef[] = Array.from(map.values()).sort((a, b) => `${a.first} ${a.last}`.localeCompare(`${b.first} ${b.last}`)).map(a => ({ key: a.id, label: `${a.first} ${a.last}` }))
-      groups.push({ key: "__none__", label: "Unassigned", icon: <User className="size-3.5 text-muted-foreground/50" />, dotColor: "#94A3B8" })
+      groups.push({ key: "__none__", label: t("tasks.progress.unassigned"), icon: <User className="size-3.5 text-muted-foreground/50" />, dotColor: "#94A3B8" })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) {
         let id: string | null = null
@@ -98,7 +100,7 @@ function buildGroups(
     }
     case "space": {
       const groups: GroupDef[] = spaces.map(s => ({ key: s.id, label: s.name, icon: <Layers className="size-3.5 text-muted-foreground" /> }))
-      groups.push({ key: "__none__", label: "No Space", dotColor: "#94A3B8" })
+      groups.push({ key: "__none__", label: t("tasks.groups.noSpace"), dotColor: "#94A3B8" })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) addTask(t.spaceId || "__none__", t)
       return { groups, tasksByGroup }
@@ -115,19 +117,20 @@ export function GroupedList({
   canAssign, onAssign, onGroupChange, onReorder, onCreateSprint, onCreateEpic,
   contextActions, phases, recentAssignees,
 }: GroupedListProps) {
+  const { t } = useTranslation()
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
   const [overGroupKey, setOverGroupKey] = useState<string | null>(null)
   const [insertIndex, setInsertIndex] = useState<{ groupKey: string; index: number } | null>(null)
 
   const { groups, tasksByGroup } = useMemo(() => {
-    const result = buildGroups(groupBy, tasks, sprints, epics, spaces)
+    const result = buildGroups(groupBy, tasks, sprints, epics, spaces, t)
     // Sort tasks within each group by position for consistent reorder persistence
     for (const [, groupTasks] of result.tasksByGroup) {
       groupTasks.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     }
     return result
-  }, [groupBy, tasks, sprints, epics, spaces])
+  }, [groupBy, tasks, sprints, epics, spaces, t])
 
   const visibleGroups = useMemo(
     () => groupBy === "sprint" || groupBy === "epic"
@@ -240,14 +243,14 @@ export function GroupedList({
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <Inbox className="size-10 text-muted-foreground/30 mb-3" />
-        <p className="text-sm font-medium text-foreground">No tasks to group</p>
-        <p className="text-sm text-muted-foreground mt-1 max-w-xs">There are no tasks matching the current filters to organize into groups.</p>
+        <p className="text-sm font-medium text-foreground">{t("tasks.groups.noTasksToGroup")}</p>
+        <p className="text-sm text-muted-foreground mt-1 max-w-xs">{t("tasks.groups.noTasksToGroupHint")}</p>
       </div>
     )
   }
 
   const canCreate = (groupBy === "sprint" && onCreateSprint) || (groupBy === "epic" && onCreateEpic)
-  const createLabel = groupBy === "sprint" ? "New Sprint" : groupBy === "epic" ? "New Epic" : null
+  const createLabel = groupBy === "sprint" ? t("tasks.groups.newSprint") : groupBy === "epic" ? t("tasks.groups.newEpic") : null
   const handleCreate = groupBy === "sprint" ? onCreateSprint : groupBy === "epic" ? onCreateEpic : undefined
 
   return (
@@ -292,7 +295,7 @@ export function GroupedList({
                 {groupTasks.length}
               </span>
               {isGroupOver && draggingTaskId && (
-                <span className="ml-auto text-xs font-medium text-blue-600 dark:text-blue-400">Drop here</span>
+                <span className="ml-auto text-xs font-medium text-blue-600 dark:text-blue-400">{t("tasks.groups.dropHere")}</span>
               )}
             </button>
 
@@ -342,12 +345,12 @@ export function GroupedList({
                 {/* Empty group state */}
                 {groupTasks.length === 0 && draggingTaskId && (
                   <div className="px-4 py-6 text-center text-xs text-muted-foreground/50">
-                    Drop task here
+                    {t("tasks.groups.dropTaskHere")}
                   </div>
                 )}
                 {groupTasks.length === 0 && !draggingTaskId && (
                   <div className="px-4 py-5 text-center text-xs text-muted-foreground">
-                    No tasks in this group
+                    {t("tasks.groups.noTasksInGroup")}
                   </div>
                 )}
               </div>

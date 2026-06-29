@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
+
 import { cn } from "@/lib/utils"
 
 // Re-export chart colors from constants for backwards compatibility
@@ -18,13 +20,14 @@ interface TaskChartProps {
 }
 
 export function TaskChart({ data, className }: TaskChartProps) {
+  const { t } = useTranslation()
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   if (total === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-8", className)}>
         <div className="size-24 rounded-full border-4 border-dashed border-border" />
-        <p className="mt-4 text-sm text-muted-foreground">No data</p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("dashboard.taskChart.noData")}</p>
       </div>
     )
   }
@@ -82,7 +85,7 @@ export function TaskChart({ data, className }: TaskChartProps) {
         {/* Center text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-semibold text-foreground">{total}</span>
-          <span className="text-[11px] text-muted-foreground">Total</span>
+          <span className="text-[11px] text-muted-foreground">{t("dashboard.taskChart.total")}</span>
         </div>
       </div>
 

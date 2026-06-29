@@ -23,6 +23,7 @@ import { reportsApi, reportAttachmentsApi, type ServiceReport, type ReportAttach
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { cn, formatDuration } from "@/lib/utils"
 
 interface ServiceReportSectionProps {
@@ -43,6 +44,7 @@ function PhotoGallery({
   taskId?: string
   canDelete?: boolean
 }) {
+  const { t } = useTranslation()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showFullscreen, setShowFullscreen] = useState(false)
 
@@ -53,7 +55,7 @@ function PhotoGallery({
       <div className="flex items-center justify-center h-32 bg-muted rounded-lg border-2 border-dashed border-border">
         <div className="text-center">
           <Camera className="size-6 text-muted-foreground mx-auto mb-1" />
-          <p className="text-xs text-muted-foreground">No {type.toLowerCase()} photos</p>
+          <p className="text-xs text-muted-foreground">{type === "BEFORE" ? t("tasks.serviceReport.noBeforePhotos") : t("tasks.serviceReport.noAfterPhotos")}</p>
         </div>
       </div>
     )
@@ -130,7 +132,7 @@ function PhotoGallery({
             className="absolute top-4 right-4 p-2 bg-card/20 rounded-full text-white hover:bg-card/30"
             onClick={() => setShowFullscreen(false)}
           >
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("common.close")}</span>
             &times;
           </button>
         </div>
@@ -140,10 +142,11 @@ function PhotoGallery({
 }
 
 function PartsTable({ parts }: { parts: PartUsed[] }) {
+  const { t } = useTranslation()
   if (parts.length === 0) {
     return (
       <div className="text-center py-4 text-sm text-muted-foreground">
-        No parts used in this service.
+        {t("tasks.serviceReport.noParts")}
       </div>
     )
   }
@@ -155,11 +158,11 @@ function PartsTable({ parts }: { parts: PartUsed[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left py-2 px-3 font-medium text-foreground">Part</th>
-            <th className="text-left py-2 px-3 font-medium text-foreground">Part #</th>
-            <th className="text-center py-2 px-3 font-medium text-foreground">Qty</th>
-            <th className="text-right py-2 px-3 font-medium text-foreground">Unit Cost</th>
-            <th className="text-right py-2 px-3 font-medium text-foreground">Total</th>
+            <th className="text-left py-2 px-3 font-medium text-foreground">{t("tasks.serviceReport.partsTable.part")}</th>
+            <th className="text-left py-2 px-3 font-medium text-foreground">{t("tasks.serviceReport.partsTable.partNumber")}</th>
+            <th className="text-center py-2 px-3 font-medium text-foreground">{t("tasks.serviceReport.partsTable.qty")}</th>
+            <th className="text-right py-2 px-3 font-medium text-foreground">{t("tasks.serviceReport.partsTable.unitCost")}</th>
+            <th className="text-right py-2 px-3 font-medium text-foreground">{t("tasks.serviceReport.partsTable.total")}</th>
           </tr>
         </thead>
         <tbody>
@@ -188,7 +191,7 @@ function PartsTable({ parts }: { parts: PartUsed[] }) {
           <tfoot>
             <tr className="bg-muted">
               <td colSpan={4} className="py-2 px-3 text-right font-medium text-foreground">
-                Total Parts:
+                {t("tasks.serviceReport.totalParts")}
               </td>
               <td className="py-2 px-3 text-right font-semibold text-foreground">
                 ${totalCost.toFixed(2)}
@@ -202,12 +205,13 @@ function PartsTable({ parts }: { parts: PartUsed[] }) {
 }
 
 function SignatureDisplay({ label, signature, name }: { label: string; signature?: string | null; name?: string | null }) {
+  const { t } = useTranslation()
   if (!signature) {
     return (
       <div className="flex-1">
         <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
         <div className="h-24 bg-muted rounded-lg border-2 border-dashed border-border flex items-center justify-center">
-          <p className="text-xs text-muted-foreground">No signature</p>
+          <p className="text-xs text-muted-foreground">{t("tasks.serviceReport.noSignature")}</p>
         </div>
       </div>
     )
@@ -219,7 +223,7 @@ function SignatureDisplay({ label, signature, name }: { label: string; signature
       <div className="bg-muted rounded-lg p-2 border border-border">
         <img
           src={signature}
-          alt={`${label} signature`}
+          alt={t("tasks.serviceReport.signatureAlt", { label })}
           className="h-20 w-full object-contain"
         />
         {name && (
@@ -231,6 +235,7 @@ function SignatureDisplay({ label, signature, name }: { label: string; signature
 }
 
 function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: string }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [isDragOver, setIsDragOver] = useState(false)
   const [uploadType, setUploadType] = useState<"BEFORE" | "AFTER">("AFTER")
@@ -242,11 +247,11 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
 
   const uploadFile = async (file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      toast.error("Only JPG, PNG, and WebP images are accepted")
+      toast.error(t("tasks.serviceReport.upload.acceptedTypes"))
       return
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast.error("File size must be under 10MB")
+      toast.error(t("tasks.serviceReport.upload.sizeError"))
       return
     }
 
@@ -258,7 +263,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
         file.name,
         file.type
       )
-      if (!presigned) throw new Error("Failed to get upload URL")
+      if (!presigned) throw new Error(t("tasks.attachments.failedUploadUrl"))
 
       // Step 2: Upload to S3
       await fetch(presigned.uploadUrl, {
@@ -275,10 +280,10 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
         fileSize: file.size,
       })
 
-      toast.success("Photo uploaded successfully")
+      toast.success(t("tasks.serviceReport.upload.success"))
       queryClient.invalidateQueries({ queryKey: ["taskReport", taskId] })
     } catch (e: any) {
-      toast.error(e.message || "Upload failed")
+      toast.error(e.message || t("tasks.serviceReport.upload.failed"))
     } finally {
       setIsUploading(false)
     }
@@ -308,7 +313,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
     <div className="mt-4 space-y-3">
       {/* Type toggle */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Upload as:</span>
+        <span className="text-xs font-medium text-muted-foreground">{t("tasks.serviceReport.upload.uploadAs")}</span>
         <div className="flex rounded-lg border border-border overflow-hidden">
           <button
             type="button"
@@ -320,7 +325,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
                 : "bg-card text-muted-foreground hover:bg-accent"
             )}
           >
-            Before
+            {t("tasks.serviceReport.before")}
           </button>
           <button
             type="button"
@@ -332,7 +337,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
                 : "bg-card text-muted-foreground hover:bg-accent"
             )}
           >
-            After
+            {t("tasks.serviceReport.after")}
           </button>
         </div>
       </div>
@@ -369,16 +374,16 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
           {isUploading ? (
             <>
               <Loader2 className="size-5 text-blue-500 animate-spin mb-2" />
-              <p className="text-xs text-muted-foreground font-medium">Uploading...</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("tasks.serviceReport.upload.uploading")}</p>
             </>
           ) : (
             <>
               <Upload className="size-5 text-muted-foreground mb-2" />
               <p className="text-xs text-muted-foreground font-medium">
-                Drop an image or click to upload
+                {t("tasks.serviceReport.upload.dropHint")}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                JPG, PNG, WebP up to 10MB
+                {t("tasks.serviceReport.upload.sizeHint")}
               </p>
             </>
           )}
@@ -397,21 +402,22 @@ function AttachmentDeleteButton({
   attachmentId: string
   taskId: string
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const deleteMutation = useMutation({
     mutationFn: () => reportAttachmentsApi.delete(reportId, attachmentId),
     onSuccess: () => {
-      toast.success("Photo removed")
+      toast.success(t("tasks.serviceReport.photoRemoved"))
       queryClient.invalidateQueries({ queryKey: ["taskReport", taskId] })
     },
-    onError: (e: Error) => toast.error(e.message || "Failed to remove photo"),
+    onError: (e: Error) => toast.error(e.message || t("tasks.serviceReport.photoRemoveFailed")),
   })
 
   return (
     <button
       onClick={(e) => {
         e.stopPropagation()
-        if (confirm("Remove this photo?")) deleteMutation.mutate()
+        if (confirm(t("tasks.serviceReport.removePhotoConfirm"))) deleteMutation.mutate()
       }}
       disabled={deleteMutation.isPending}
       className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
@@ -426,6 +432,7 @@ function AttachmentDeleteButton({
 }
 
 export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectionProps) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
 
@@ -448,7 +455,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="size-5 text-muted-foreground animate-pulse" />
-          <h3 className="text-base font-semibold text-foreground">Service Report</h3>
+          <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.serviceReport")}</h3>
         </div>
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-muted rounded w-3/4"></div>
@@ -464,11 +471,11 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <CheckCircle2 className="size-5 text-green-500" />
-          <h3 className="text-base font-semibold text-foreground">Job Completed</h3>
+          <h3 className="text-base font-semibold text-foreground">{t("tasks.serviceReport.jobCompleted")}</h3>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <AlertCircle className="size-4" />
-          <p>No service report available for this task.</p>
+          <p>{t("tasks.serviceReport.noReport")}</p>
         </div>
       </div>
     )
@@ -483,21 +490,20 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="size-5 text-green-500" />
-          <h3 className="text-base font-semibold text-foreground">Service Report</h3>
+          <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.serviceReport")}</h3>
         </div>
         <span className="text-sm text-muted-foreground">
-          Completed{" "}
-          {new Date(report.completedAt).toLocaleDateString("en-US", {
+          {t("tasks.serviceReport.completedOn", { date: new Date(report.completedAt).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
-          })}
+          }) })}
         </span>
       </div>
 
       {/* Summary */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-foreground mb-2">Summary</h4>
+        <h4 className="text-sm font-medium text-foreground mb-2">{t("tasks.serviceReport.summary")}</h4>
         <div className="bg-green-50 border-l-4 border-green-500 rounded-r-lg p-4">
           <p className="text-sm text-green-900">{report.summary}</p>
         </div>
@@ -506,7 +512,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       {/* Work Performed */}
       {report.workPerformed && (
         <div className="mb-6">
-          <h4 className="text-sm font-medium text-foreground mb-2">Work Performed</h4>
+          <h4 className="text-sm font-medium text-foreground mb-2">{t("tasks.serviceReport.workPerformed")}</h4>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-foreground whitespace-pre-line">{report.workPerformed}</p>
           </div>
@@ -518,16 +524,16 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
         <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
           <Clock className="size-5 text-blue-500" />
           <div>
-            <p className="text-xs text-muted-foreground">Duration</p>
+            <p className="text-xs text-muted-foreground">{t("common.duration")}</p>
             <p className="text-sm font-semibold text-foreground">{formatDuration(report.workDuration)}</p>
           </div>
         </div>
         <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
           <User className="size-5 text-blue-500" />
           <div>
-            <p className="text-xs text-muted-foreground">Employee</p>
+            <p className="text-xs text-muted-foreground">{t("tasks.serviceReport.employee")}</p>
             <p className="text-sm font-semibold text-foreground">
-              {report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : "Unknown"}
+              {report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : t("tasks.serviceReport.unknown")}
             </p>
           </div>
         </div>
@@ -537,11 +543,11 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <Camera className="size-4 text-muted-foreground" />
-          <h4 className="text-sm font-medium text-foreground">Before & After Photos</h4>
+          <h4 className="text-sm font-medium text-foreground">{t("tasks.serviceReport.beforeAfterPhotos")}</h4>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Before</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">{t("tasks.serviceReport.before")}</p>
             <PhotoGallery
               attachments={attachments}
               type="BEFORE"
@@ -551,7 +557,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
             />
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">After</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">{t("tasks.serviceReport.after")}</p>
             <PhotoGallery
               attachments={attachments}
               type="AFTER"
@@ -573,7 +579,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <Wrench className="size-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">Parts Used</h4>
+            <h4 className="text-sm font-medium text-foreground">{t("tasks.serviceReport.partsUsed")}</h4>
           </div>
           <div className="border border-border rounded-lg overflow-hidden">
             <PartsTable parts={partsUsed} />
@@ -586,16 +592,16 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
         <div>
           <div className="flex items-center gap-2 mb-3">
             <PenTool className="size-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">Signatures</h4>
+            <h4 className="text-sm font-medium text-foreground">{t("tasks.serviceReport.signatures")}</h4>
           </div>
           <div className="flex gap-4">
             <SignatureDisplay
-              label="Employee"
+              label={t("tasks.serviceReport.employee")}
               signature={report.technicianSignature}
               name={report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : undefined}
             />
             <SignatureDisplay
-              label="Customer"
+              label={t("tasks.serviceReport.customer")}
               signature={report.customerSignature}
               name={report.customerName}
             />

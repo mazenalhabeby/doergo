@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react"
@@ -42,6 +43,7 @@ interface EditTaskDialogProps {
 }
 
 export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   const [title, setTitle] = useState(task.title)
@@ -95,13 +97,13 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
   const updateMutation = useMutation({
     mutationFn: (input: UpdateTaskInput) => tasksApi.update(task.id, input),
     onSuccess: () => {
-      notify.success("Task updated")
+      notify.success(t("tasks.edit.success"))
       onOpenChange(false)
       queryClient.invalidateQueries({ queryKey: ["task", task.id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["taskTimeline", task.id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
     },
-    onError: (e: Error) => notify.error(e.message || "Failed to update task"),
+    onError: (e: Error) => notify.error(e.message || t("tasks.edit.failed")),
   })
 
   const isFormValid = title.trim() !== "" && description.trim() !== ""
@@ -129,9 +131,9 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Edit Task</DialogTitle>
+          <DialogTitle>{t("tasks.edit.title")}</DialogTitle>
           <DialogDescription>
-            Update the task details below.
+            {t("tasks.edit.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -139,11 +141,11 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="edit-title" className="text-sm font-medium text-foreground">
-              Title<span className="text-red-500">*</span>
+              {t("tasks.columns.title")}<span className="text-red-500">*</span>
             </Label>
             <Input
               id="edit-title"
-              placeholder="Task title..."
+              placeholder={t("tasks.edit.titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={updateMutation.isPending}
@@ -154,11 +156,11 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="edit-description" className="text-sm font-medium text-foreground">
-              Description<span className="text-red-500">*</span>
+              {t("tasks.description.label")}<span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="edit-description"
-              placeholder="Describe the issue..."
+              placeholder={t("tasks.edit.descriptionPlaceholder")}
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -171,11 +173,11 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="edit-location" className="text-sm font-medium text-foreground">
-                Service Location
+                {t("tasks.create.serviceLocationLabel")}
               </Label>
               <Input
                 id="edit-location"
-                placeholder="Enter address..."
+                placeholder={t("tasks.fields.addressPlaceholder")}
                 value={locationAddress}
                 onChange={(e) => setLocationAddress(e.target.value)}
                 disabled={updateMutation.isPending}
@@ -185,7 +187,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">
-                Due Date
+                {t("tasks.sidebar.dueDate")}
               </Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -198,7 +200,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                     disabled={updateMutation.isPending}
                   >
                     <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                    {dueDate ? format(dueDate, "MMM d, yyyy") : "Select date"}
+                    {dueDate ? format(dueDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -217,7 +219,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">
-                Start Date
+                {t("tasks.sidebar.startDate")}
               </Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -230,7 +232,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                     disabled={updateMutation.isPending}
                   >
                     <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : "Select date"}
+                    {startDate ? format(startDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -246,14 +248,14 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
 
             <div className="space-y-2">
               <Label htmlFor="edit-estimated-hours" className="text-sm font-medium text-foreground">
-                Estimated Hours
+                {t("tasks.sidebar.estimatedHours")}
               </Label>
               <Input
                 id="edit-estimated-hours"
                 type="number"
                 min="0"
                 step="0.5"
-                placeholder="e.g. 4"
+                placeholder={t("tasks.fields.estimatedHoursPlaceholder")}
                 value={estimatedHours}
                 onChange={(e) => setEstimatedHours(e.target.value)}
                 disabled={updateMutation.isPending}
@@ -264,7 +266,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
 
           {/* Priority */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground">Priority</Label>
+            <Label className="text-sm font-medium text-foreground">{t("tasks.list.priority")}</Label>
             <PrioritySelector
               value={priority}
               onChange={setPriority}
@@ -275,13 +277,13 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
           {/* Phase & Sprint */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Phase</Label>
+              <Label className="text-sm font-medium text-foreground">{t("tasks.sidebar.phase")}</Label>
               <Select value={phaseId} onValueChange={setPhaseId} disabled={updateMutation.isPending}>
                 <SelectTrigger className="h-10 rounded-lg border-border bg-card">
-                  <SelectValue placeholder="No phase" />
+                  <SelectValue placeholder={t("tasks.sidebar.noPhase")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No phase</SelectItem>
+                  <SelectItem value="none">{t("tasks.sidebar.noPhase")}</SelectItem>
                   {(phases || []).map((phase: Phase) => (
                     <SelectItem key={phase.id} value={phase.id}>
                       <div className="flex items-center gap-2">
@@ -295,13 +297,13 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Sprint</Label>
+              <Label className="text-sm font-medium text-foreground">{t("tasks.sidebar.sprint")}</Label>
               <Select value={sprintId} onValueChange={setSprintId} disabled={updateMutation.isPending}>
                 <SelectTrigger className="h-10 rounded-lg border-border bg-card">
-                  <SelectValue placeholder="No sprint" />
+                  <SelectValue placeholder={t("tasks.sidebar.noSprint")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No sprint</SelectItem>
+                  <SelectItem value="none">{t("tasks.sidebar.noSprint")}</SelectItem>
                   {(sprints || []).map((sprint: Sprint) => (
                     <SelectItem key={sprint.id} value={sprint.id}>
                       {sprint.name}
@@ -319,7 +321,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
               onClick={() => onOpenChange(false)}
               disabled={updateMutation.isPending}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -329,10 +331,10 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
               {updateMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Saving...
+                  {t("common.saving")}
                 </>
               ) : (
-                "Save Changes"
+                t("common.saveChanges")
               )}
             </Button>
           </DialogFooter>

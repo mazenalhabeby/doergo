@@ -611,7 +611,7 @@ export default function AttendanceScreen() {
                   </View>
                   {breakStatus.currentBreak?.startedAt && (
                     <Text style={[styles.breakTimeText, { color: colors.textSecondary }]}>
-                      Started at {formatTime(breakStatus.currentBreak.startedAt)}
+                      {t('attendance.startedAt', { time: formatTime(breakStatus.currentBreak.startedAt) })}
                     </Text>
                   )}
                   <TouchableOpacity

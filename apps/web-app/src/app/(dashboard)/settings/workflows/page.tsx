@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, memo, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -63,14 +64,14 @@ const STATUS_COLORS = [
 ]
 
 // Execution widgets that can be active at a step.
-const ALL_CAPABILITIES: { key: string; label: string }[] = [
-  { key: "gps", label: "GPS" },
-  { key: "timer", label: "Timer" },
-  { key: "checklist", label: "Checklist" },
-  { key: "photos", label: "Photos" },
-  { key: "signature", label: "Signature" },
-  { key: "report", label: "Report" },
-  { key: "form", label: "Form" },
+const ALL_CAPABILITIES: { key: string; labelKey: string }[] = [
+  { key: "gps", labelKey: "workflows.page.capabilityLabels.gps" },
+  { key: "timer", labelKey: "workflows.page.capabilityLabels.timer" },
+  { key: "checklist", labelKey: "workflows.page.capabilityLabels.checklist" },
+  { key: "photos", labelKey: "workflows.page.capabilityLabels.photos" },
+  { key: "signature", labelKey: "workflows.page.capabilityLabels.signature" },
+  { key: "report", labelKey: "workflows.page.capabilityLabels.report" },
+  { key: "form", labelKey: "workflows.page.capabilityLabels.form" },
 ]
 
 // ============================================================================
@@ -113,6 +114,7 @@ const StatusRow = memo(function StatusRow({
   isLast: boolean
   reorderDisabled: boolean
 }) {
+  const { t } = useTranslation()
   const transitionNames = status.transitions
     .map((key) => allStatuses.find((s) => s.key === key)?.name)
     .filter(Boolean)
@@ -128,17 +130,17 @@ const StatusRow = memo(function StatusRow({
           </span>
           {status.isFinal && (
             <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              Final
+              {t("workflows.final")}
             </span>
           )}
           {status.isCanceled && (
             <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-              Canceled
+              {t("workflows.canceled")}
             </span>
           )}
           {status.wipLimit != null && status.wipLimit > 0 && (
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-              WIP: {status.wipLimit}
+              {t("workflows.page.wipBadge", { count: status.wipLimit })}
             </span>
           )}
         </div>
@@ -155,7 +157,7 @@ const StatusRow = memo(function StatusRow({
         <div className="flex flex-col">
           <button
             type="button"
-            aria-label="Move up"
+            aria-label={t("workflows.page.moveUp")}
             disabled={isFirst || reorderDisabled}
             className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-default"
             onClick={() => onMoveUp(status)}
@@ -164,7 +166,7 @@ const StatusRow = memo(function StatusRow({
           </button>
           <button
             type="button"
-            aria-label="Move down"
+            aria-label={t("workflows.page.moveDown")}
             disabled={isLast || reorderDisabled}
             className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-default"
             onClick={() => onMoveDown(status)}
@@ -212,6 +214,7 @@ const WorkflowCard = memo(function WorkflowCard({
   onEditStatus: (workflowId: string, status: WorkflowStatus) => void
   onDeleteStatus: (workflowId: string, status: WorkflowStatus) => void
 }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const queryClient = useQueryClient()
   const statuses = workflow.statuses || []
@@ -280,12 +283,12 @@ const WorkflowCard = memo(function WorkflowCard({
             {workflow.isDefault && (
               <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                 <Star className="h-3 w-3" />
-                Default
+                {t("workflows.page.default")}
               </span>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {statuses.length} {statuses.length === 1 ? "status" : "statuses"}
+            {t("workflows.page.statusCount", { count: statuses.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -299,7 +302,7 @@ const WorkflowCard = memo(function WorkflowCard({
                 onSetDefault(workflow.id)
               }}
             >
-              Set Default
+              {t("workflows.page.setDefault")}
             </Button>
           )}
           <Button
@@ -328,7 +331,7 @@ const WorkflowCard = memo(function WorkflowCard({
             {statuses.length === 0 ? (
               <div className="text-center py-6">
                 <Circle className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
-                <p className="text-sm text-muted-foreground">No statuses defined yet</p>
+                <p className="text-sm text-muted-foreground">{t("workflows.page.noStatuses")}</p>
               </div>
             ) : (
               sorted.map((status, index) => (
@@ -356,14 +359,14 @@ const WorkflowCard = memo(function WorkflowCard({
               onClick={() => onAddStatus(workflow.id)}
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Add Status
+              {t("workflows.builder.addStatus")}
             </Button>
           </div>
 
           {/* Custom fields for this Task Type */}
           <div className="px-4 pb-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-              Fields
+              {t("workflows.page.fields")}
             </p>
             <CustomFieldsManager workflowId={workflow.id} />
           </div>
@@ -384,6 +387,7 @@ function CreateWorkflowDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [name, setName] = useState("")
   // null = "Blank" (start with no statuses); otherwise a template id.
@@ -405,7 +409,7 @@ function CreateWorkflowDialog({
         statuses: selectedTemplate?.statuses,
       }),
     onSuccess: () => {
-      notify.success("Task type created")
+      notify.success(t("workflows.page.toast.taskTypeCreated"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
       reset()
       onOpenChange(false)
@@ -426,23 +430,23 @@ function CreateWorkflowDialog({
     >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create Task Type</DialogTitle>
+          <DialogTitle>{t("workflows.page.createTaskType")}</DialogTitle>
           <DialogDescription>
-            Start from a ready-made template, or build your own from scratch.
+            {t("workflows.page.createDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Start from</Label>
+            <Label>{t("workflows.page.startFrom")}</Label>
             <div className="grid gap-2 max-h-[280px] overflow-y-auto pr-1">
-              {WORKFLOW_TEMPLATES.map((t) => {
-                const active = templateId === t.id
+              {WORKFLOW_TEMPLATES.map((tpl) => {
+                const active = templateId === tpl.id
                 return (
                   <button
-                    key={t.id}
+                    key={tpl.id}
                     type="button"
                     onClick={() => {
-                      setTemplateId(t.id)
+                      setTemplateId(tpl.id)
                       if (!name.trim()) setName("")
                     }}
                     className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
@@ -460,21 +464,21 @@ function CreateWorkflowDialog({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">{t.name}</span>
+                        <span className="text-sm font-medium text-foreground">{tpl.name}</span>
                         <span className="text-xs text-muted-foreground/70">
-                          {t.statuses.length} steps
+                          {t("workflows.page.steps", { count: tpl.statuses.length })}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{t.description}</p>
+                      <p className="text-xs text-muted-foreground">{tpl.description}</p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                        {t.statuses.map((s, i) => (
+                        {tpl.statuses.map((s, i) => (
                           <span key={s.key} className="flex items-center gap-1">
                             <span
                               className="inline-block h-2 w-2 rounded-full"
                               style={{ backgroundColor: s.color }}
                             />
                             <span className="text-[10px] text-muted-foreground">{s.name}</span>
-                            {i < t.statuses.length - 1 && (
+                            {i < tpl.statuses.length - 1 && (
                               <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
                             )}
                           </span>
@@ -502,9 +506,9 @@ function CreateWorkflowDialog({
                   {templateId === null && <Check className="h-3 w-3 text-white" />}
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-foreground">Blank</span>
+                  <span className="text-sm font-medium text-foreground">{t("workflows.page.blank")}</span>
                   <p className="text-xs text-muted-foreground">
-                    Start empty and add every status yourself.
+                    {t("workflows.page.blankHint")}
                   </p>
                 </div>
               </button>
@@ -512,9 +516,9 @@ function CreateWorkflowDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Name {selectedTemplate && <span className="text-muted-foreground/70">(optional)</span>}</Label>
+            <Label>{t("workflows.name")} {selectedTemplate && <span className="text-muted-foreground/70">{t("workflows.page.optionalParen")}</span>}</Label>
             <Input
-              placeholder={selectedTemplate ? selectedTemplate.name : "e.g. Field Service, Bug Tracking..."}
+              placeholder={selectedTemplate ? selectedTemplate.name : t("workflows.page.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && canSubmit && mutation.mutate()}
@@ -529,7 +533,7 @@ function CreateWorkflowDialog({
               onOpenChange(false)
             }}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate()}
@@ -537,7 +541,7 @@ function CreateWorkflowDialog({
             className="bg-blue-600 hover:bg-blue-700"
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Create
+            {t("common.create")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -562,6 +566,7 @@ function StatusDialog({
   existingStatus: WorkflowStatus | null
   allStatuses: WorkflowStatus[]
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const isEditing = !!existingStatus
 
@@ -599,7 +604,7 @@ function StatusDialog({
         wipLimit: effectiveWipLimit ?? null,
       }),
     onSuccess: () => {
-      notify.success("Status added")
+      notify.success(t("workflows.page.toast.statusAdded"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
       onOpenChange(false)
     },
@@ -618,7 +623,7 @@ function StatusDialog({
         wipLimit: effectiveWipLimit ?? null,
       } as Partial<WorkflowStatus>),
     onSuccess: () => {
-      notify.success("Status updated")
+      notify.success(t("workflows.page.toast.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
       onOpenChange(false)
     },
@@ -640,20 +645,20 @@ function StatusDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Status" : "Add Status"}</DialogTitle>
+          <DialogTitle>{isEditing ? t("workflows.page.editStatus") : t("workflows.builder.addStatus")}</DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update the status properties."
-              : "Add a new status to this task type."}
+              ? t("workflows.page.editStatusDesc")
+              : t("workflows.page.addStatusDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-5 py-4">
           {/* Name & Key */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label>{t("workflows.name")}</Label>
               <Input
-                placeholder="e.g. In Review"
+                placeholder={t("workflows.page.statusNamePlaceholder")}
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value)
@@ -662,9 +667,9 @@ function StatusDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>Key</Label>
+              <Label>{t("workflows.page.key")}</Label>
               <Input
-                placeholder="IN_REVIEW"
+                placeholder={t("workflows.page.keyPlaceholder")}
                 value={key}
                 onChange={(e) => setKey(e.target.value.toUpperCase())}
                 disabled={isEditing}
@@ -675,7 +680,7 @@ function StatusDialog({
 
           {/* Color Picker */}
           <div className="space-y-2">
-            <Label>Color</Label>
+            <Label>{t("workflows.page.color")}</Label>
             <div className="flex items-center gap-2 flex-wrap">
               {STATUS_COLORS.map((c) => (
                 <button
@@ -696,18 +701,18 @@ function StatusDialog({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm">Final Status</Label>
+                <Label className="text-sm">{t("workflows.page.finalStatus")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Marks the task as complete
+                  {t("workflows.page.finalStatusHint")}
                 </p>
               </div>
               <Switch checked={isFinal} onCheckedChange={setIsFinal} />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm">Canceled Status</Label>
+                <Label className="text-sm">{t("workflows.page.canceledStatus")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Marks the task as canceled
+                  {t("workflows.page.canceledStatusHint")}
                 </p>
               </div>
               <Switch checked={isCanceled} onCheckedChange={setIsCanceled} />
@@ -718,15 +723,15 @@ function StatusDialog({
           {!isFinal && !isCanceled && (
             <div className="space-y-2">
               <div>
-                <Label className="text-sm">WIP Limit</Label>
+                <Label className="text-sm">{t("workflows.page.wipLimit")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Maximum tasks allowed in this status on the kanban board
+                  {t("workflows.page.wipLimitHint")}
                 </p>
               </div>
               <Input
                 type="number"
                 min={0}
-                placeholder="No limit"
+                placeholder={t("workflows.page.noLimit")}
                 value={wipLimit}
                 onChange={(e) => setWipLimit(e.target.value)}
                 className="w-32"
@@ -737,7 +742,7 @@ function StatusDialog({
           {/* Transitions */}
           {otherStatuses.length > 0 && (
             <div className="space-y-2">
-              <Label>Can transition to</Label>
+              <Label>{t("workflows.page.canTransitionTo")}</Label>
               <div className="flex flex-wrap gap-2">
                 {otherStatuses.map((s) => {
                   const selected = selectedTransitions.includes(s.key)
@@ -764,7 +769,7 @@ function StatusDialog({
 
           {/* Capabilities — execution widgets active at this step */}
           <div className="space-y-2">
-            <Label>Capabilities at this step</Label>
+            <Label>{t("workflows.page.capabilities")}</Label>
             <div className="flex flex-wrap gap-2">
               {ALL_CAPABILITIES.map((c) => {
                 const on = capabilities.includes(c.key)
@@ -781,7 +786,7 @@ function StatusDialog({
                         : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    {c.label}
+                    {t(c.labelKey)}
                     {on && <Check className="h-3 w-3" />}
                   </button>
                 )
@@ -791,7 +796,7 @@ function StatusDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate()}
@@ -799,7 +804,7 @@ function StatusDialog({
             className="bg-blue-600 hover:bg-blue-700"
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? "Save" : "Add"}
+            {isEditing ? t("common.save") : t("workflows.add")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -812,6 +817,7 @@ function StatusDialog({
 // ============================================================================
 
 export default function WorkflowsSettingsPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -844,7 +850,7 @@ export default function WorkflowsSettingsPage() {
   const setDefaultMutation = useMutation({
     mutationFn: (id: string) => workflowsApi.setDefault(id),
     onSuccess: () => {
-      notify.success("Default task type updated")
+      notify.success(t("workflows.page.toast.defaultUpdated"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -853,7 +859,7 @@ export default function WorkflowsSettingsPage() {
   const deleteWorkflowMutation = useMutation({
     mutationFn: (id: string) => workflowsApi.delete(id),
     onSuccess: () => {
-      notify.success("Task type deleted")
+      notify.success(t("workflows.page.toast.taskTypeDeleted"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
       setDeleteTarget(null)
     },
@@ -864,7 +870,7 @@ export default function WorkflowsSettingsPage() {
     mutationFn: ({ workflowId, statusId }: { workflowId: string; statusId: string }) =>
       workflowsApi.deleteStatus(workflowId, statusId),
     onSuccess: () => {
-      notify.success("Status deleted")
+      notify.success(t("workflows.page.toast.statusDeleted"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
       setDeleteTarget(null)
     },
@@ -889,9 +895,9 @@ export default function WorkflowsSettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Task Types</h1>
+            <h1 className="text-2xl font-semibold text-foreground">{t("workflows.page.title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Define each task type&apos;s status flow, capabilities &amp; fields. Spaces pick a type; tasks can override.
+              {t("workflows.page.subtitle")}
             </p>
           </div>
           <Button
@@ -899,16 +905,16 @@ export default function WorkflowsSettingsPage() {
             className="bg-blue-600 hover:bg-blue-700 rounded-xl"
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Task Type
+            {t("workflows.page.newTaskType")}
           </Button>
         </div>
 
         {/* Global fields — apply to every task, regardless of type */}
         <div className="bg-card rounded-2xl border border-border shadow-sm p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-sm font-semibold text-foreground">Global fields</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t("workflows.page.globalFields")}</h2>
             <span className="text-xs text-muted-foreground">
-              shown on every task, regardless of type
+              {t("workflows.page.globalFieldsHint")}
             </span>
           </div>
           <CustomFieldsManager workflowId={null} />
@@ -927,18 +933,17 @@ export default function WorkflowsSettingsPage() {
               <GitBranch className="h-7 w-7 text-indigo-500" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
-              No workflows yet
+              {t("workflows.page.empty.title")}
             </h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-              Create your first status workflow to define how tasks move through
-              different stages.
+              {t("workflows.page.empty.description")}
             </p>
             <Button
               onClick={() => setShowCreateDialog(true)}
               className="bg-blue-600 hover:bg-blue-700 rounded-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Create Your First Workflow
+              {t("workflows.page.empty.cta")}
             </Button>
           </div>
         ) : (
@@ -1012,20 +1017,19 @@ export default function WorkflowsSettingsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {deleteTarget?.type === "workflow" ? "Workflow" : "Status"}
+              {deleteTarget?.type === "workflow" ? t("workflows.page.deleteWorkflow") : t("workflows.page.deleteStatus")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;?
-              This action cannot be undone.
+              {t("workflows.page.deleteConfirm", { name: deleteTarget?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

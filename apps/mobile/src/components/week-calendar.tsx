@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { getWeekDays, isSameDay } from '../lib/utils';
 import {
@@ -49,6 +50,7 @@ export function WeekCalendar({
   onToday,
 }: WeekCalendarProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const weekDays = useMemo(() => getWeekDays(currentWeekStart), [currentWeekStart]);
 
   return (
@@ -63,7 +65,7 @@ export function WeekCalendar({
             <Ionicons name="chevron-back" size={18} color={colors.textMuted} />
           </TouchableOpacity>
           <TouchableOpacity onPress={onToday} style={[calStyles.todayBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[calStyles.todayBtnText, { color: colors.textSecondary }]}>Today</Text>
+            <Text style={[calStyles.todayBtnText, { color: colors.textSecondary }]}>{t('common.today')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onNextWeek} style={calStyles.navBtn}>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />

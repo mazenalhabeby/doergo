@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import {
   CreditCard,
   ArrowUpRight,
@@ -29,6 +30,7 @@ function formatCurrency(amount: number, currency = "USD") {
 }
 
 export default function PaymentsPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
 
   // Payments are derived from paid/refunded invoices
@@ -46,22 +48,22 @@ export default function PaymentsPage() {
       <div className="p-8 max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-foreground">Payments</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track payments received from invoices</p>
+          <h1 className="text-2xl font-semibold text-foreground">{t("payments.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("payments.subtitle")}</p>
         </div>
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Total Received</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{t("payments.totalReceived")}</p>
             <p className="text-2xl font-bold text-green-600 tabular-nums">{formatCurrency(totalReceived)}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Paid Invoices</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{t("payments.paidInvoices")}</p>
             <p className="text-2xl font-bold text-foreground tabular-nums">{paidInvoices.length}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Average Invoice</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{t("payments.averageInvoice")}</p>
             <p className="text-2xl font-bold text-foreground tabular-nums">
               {paidInvoices.length > 0 ? formatCurrency(totalReceived / paidInvoices.length) : "$0.00"}
             </p>
@@ -71,7 +73,7 @@ export default function PaymentsPage() {
         {/* Payment history */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border/40">
-            <h3 className="text-sm font-semibold text-foreground">Payment History</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("payments.paymentHistory")}</h3>
           </div>
 
           {isLoading ? (
@@ -81,8 +83,8 @@ export default function PaymentsPage() {
           ) : paidInvoices.length === 0 ? (
             <div className="text-center py-12">
               <CreditCard className="size-10 mx-auto text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground">No payments recorded yet</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Payments appear here when invoices are marked as paid</p>
+              <p className="text-sm text-muted-foreground">{t("payments.empty")}</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">{t("payments.emptyHint")}</p>
             </div>
           ) : (
             paidInvoices.map((inv: any) => (

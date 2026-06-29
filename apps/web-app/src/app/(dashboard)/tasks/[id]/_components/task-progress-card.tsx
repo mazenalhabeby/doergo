@@ -49,12 +49,12 @@ interface TaskProgressCardProps {
 // ─── Fallback steps ─────────────────────────────────────────────────────────
 
 const FALLBACK_STEPS = [
-  { key: "NEW", label: "Created" },
-  { key: "ASSIGNED", label: "Assigned" },
-  { key: "ACCEPTED", label: "Confirmed" },
-  { key: "EN_ROUTE", label: "En Route" },
-  { key: "IN_PROGRESS", label: "Working" },
-  { key: "COMPLETED", label: "Completed" },
+  { key: "NEW", label: "Created", tKey: "tasks.progress.steps.created" },
+  { key: "ASSIGNED", label: "Assigned", tKey: "tasks.progress.steps.assigned" },
+  { key: "ACCEPTED", label: "Confirmed", tKey: "tasks.progress.steps.confirmed" },
+  { key: "EN_ROUTE", label: "En Route", tKey: "tasks.progress.steps.enRoute" },
+  { key: "IN_PROGRESS", label: "Working", tKey: "tasks.progress.steps.working" },
+  { key: "COMPLETED", label: "Completed", tKey: "tasks.progress.steps.completed" },
 ]
 
 const FALLBACK_ORDER: Record<string, number> = {
@@ -128,7 +128,7 @@ export function TaskProgressCard({
       {/* Header row */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Progress</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("tasks.progress.progressLabel")}</span>
           {elapsedTime && (
             <>
               <span className="w-px h-3.5 bg-border" />
@@ -168,7 +168,7 @@ export function TaskProgressCard({
               </span>
               {(lead && members.length > 0) && (
                 <span className="text-[10px] text-muted-foreground/60 leading-none mt-0.5">
-                  Lead · {members.length} member{members.length !== 1 ? "s" : ""}
+                  {t("tasks.progress.lead")} · {members.length} {members.length === 1 ? t("tasks.progress.member") : t("tasks.progress.members")}
                 </span>
               )}
             </div>
@@ -177,14 +177,14 @@ export function TaskProgressCard({
               <button
                 onClick={() => primaryUser.phone && (window.location.href = `tel:${primaryUser.phone}`)}
                 className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
-                title="Call"
+                title={t("tasks.progress.call")}
               >
                 <Phone className="size-3" />
               </button>
               <button
                 onClick={() => primaryUser.email && (window.location.href = `mailto:${primaryUser.email}`)}
                 className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
-                title="Message"
+                title={t("tasks.progress.message")}
               >
                 <MessageSquare className="size-3" />
               </button>
@@ -193,7 +193,7 @@ export function TaskProgressCard({
         ) : (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
             <UserPlus className="size-3.5" />
-            <span>Unassigned</span>
+            <span>{t("tasks.progress.unassigned")}</span>
           </div>
         )}
       </div>
@@ -239,7 +239,7 @@ export function TaskProgressCard({
                       isDone || isActive ? "text-foreground" : "text-muted-foreground/40",
                     )}
                   >
-                    {step.label}
+                    {"tKey" in step && step.tKey ? t(step.tKey as string) : step.label}
                   </span>
                 </div>
 

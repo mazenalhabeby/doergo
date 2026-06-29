@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
 import { useToast } from '../../../contexts/toast-context';
 import { COLORS } from '../../../lib/constants';
@@ -30,15 +31,6 @@ interface Props {
   onProfile: () => void;
 }
 
-const TASK_STATUS: Record<string, { label: string; color: string }> = {
-  IN_PROGRESS: { label: 'Working', color: '#f59e0b' },
-  EN_ROUTE: { label: 'En Route', color: '#3b82f6' },
-  ARRIVED: { label: 'On Site', color: '#10b981' },
-  BLOCKED: { label: 'Blocked', color: '#ef4444' },
-  ASSIGNED: { label: 'Assigned', color: '#8b5cf6' },
-  ACCEPTED: { label: 'Accepted', color: '#10b981' },
-};
-
 export function MemberDetailSheet({
   visible,
   member,
@@ -49,7 +41,18 @@ export function MemberDetailSheet({
   onProfile,
 }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
+
+  const TASK_STATUS: Record<string, { label: string; color: string }> = {
+    IN_PROGRESS: { label: t('components.memberDetailSheet.working'), color: '#f59e0b' },
+    EN_ROUTE: { label: t('status.EN_ROUTE'), color: '#3b82f6' },
+    ARRIVED: { label: t('components.memberDetailSheet.onSite'), color: '#10b981' },
+    BLOCKED: { label: t('status.BLOCKED'), color: '#ef4444' },
+    ASSIGNED: { label: t('status.ASSIGNED'), color: '#8b5cf6' },
+    ACCEPTED: { label: t('status.ACCEPTED'), color: '#10b981' },
+  };
+
   const [detail, setDetail] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
@@ -75,7 +78,7 @@ export function MemberDetailSheet({
   const hoursWeek = stats?.attendance?.hoursThisWeek;
   const onTimeRate = stats?.performance?.onTimeRate;
 
-  const soon = (label: string) => toast.info(`${label} coming soon`);
+  const soon = (label: string) => toast.info(t('components.memberDetailSheet.comingSoon', { feature: label }));
 
   return (
     <BottomSheet visible={visible} onClose={onClose} dynamicHeight heightRatio={0.9}>
@@ -98,7 +101,7 @@ export function MemberDetailSheet({
               <View style={styles.metaRow}>
                 <Ionicons name="briefcase-outline" size={12} color={colors.textMuted} />
                 <Text style={[styles.meta, { color: colors.textMuted }]} numberOfLines={1}>
-                  {member.position || 'Employee'}
+                  {member.position || t('roles.EMPLOYEE')}
                 </Text>
               </View>
               {!!member.email && (
@@ -111,10 +114,10 @@ export function MemberDetailSheet({
               )}
             </View>
             <View style={styles.quickActions}>
-              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.primary }]} onPress={() => soon('Messaging')} activeOpacity={0.8}>
+              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.primary }]} onPress={() => soon(t('components.memberDetailSheet.messaging'))} activeOpacity={0.8}>
                 <Ionicons name="chatbubble-ellipses" size={16} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.surfaceRaised }]} onPress={() => soon('Calls')} activeOpacity={0.8}>
+              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.surfaceRaised }]} onPress={() => soon(t('components.memberDetailSheet.calls'))} activeOpacity={0.8}>
                 <Ionicons name="call" size={15} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -122,19 +125,19 @@ export function MemberDetailSheet({
 
           {/* Stats */}
           <View style={styles.statsRow}>
-            <StatCard colors={colors} icon="checkmark-circle" iconColor="#10b981" value={fmt(completed, loadingStats)} label="Completed" />
-            <StatCard colors={colors} icon="list" iconColor="#3b82f6" value={String(activeTasks.length)} label="Active" />
-            <StatCard colors={colors} icon="time" iconColor="#f59e0b" value={hoursWeek != null ? `${Math.round(hoursWeek)}h` : fmt(undefined, loadingStats)} label="Hrs/Week" />
-            <StatCard colors={colors} icon="trending-up" iconColor="#8b5cf6" value={onTimeRate != null ? `${Math.round(onTimeRate)}%` : fmt(undefined, loadingStats)} label="On-Time" />
+            <StatCard colors={colors} icon="checkmark-circle" iconColor="#10b981" value={fmt(completed, loadingStats)} label={t('components.memberDetailSheet.completed')} />
+            <StatCard colors={colors} icon="list" iconColor="#3b82f6" value={String(activeTasks.length)} label={t('common.active')} />
+            <StatCard colors={colors} icon="time" iconColor="#f59e0b" value={hoursWeek != null ? `${Math.round(hoursWeek)}h` : fmt(undefined, loadingStats)} label={t('components.memberDetailSheet.hrsWeek')} />
+            <StatCard colors={colors} icon="trending-up" iconColor="#8b5cf6" value={onTimeRate != null ? `${Math.round(onTimeRate)}%` : fmt(undefined, loadingStats)} label={t('components.memberDetailSheet.onTime')} />
           </View>
 
           {/* Active tasks */}
           <View style={styles.section}>
             <View style={styles.sectionHead}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ACTIVE TASKS</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('components.memberDetailSheet.activeTasks')}</Text>
               {activeTasks.length > 0 && (
                 <TouchableOpacity onPress={onViewTasks} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={[styles.viewAll, { color: COLORS.primary }]}>View all ›</Text>
+                  <Text style={[styles.viewAll, { color: COLORS.primary }]}>{t('components.memberDetailSheet.viewAll')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -142,7 +145,7 @@ export function MemberDetailSheet({
             {activeTasks.length === 0 ? (
               <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="clipboard-outline" size={22} color={colors.textMuted} />
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>No active tasks</Text>
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('components.memberDetailSheet.noActiveTasks')}</Text>
               </View>
             ) : (
               activeTasks.slice(0, 4).map((task) => {
@@ -181,12 +184,12 @@ export function MemberDetailSheet({
           <View style={[styles.bottomBar, { borderTopColor: colors.border }]}>
             <TouchableOpacity style={styles.bottomBtn} onPress={onProfile} activeOpacity={0.7}>
               <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
-              <Text style={[styles.bottomText, { color: colors.textSecondary }]}>Profile</Text>
+              <Text style={[styles.bottomText, { color: colors.textSecondary }]}>{t('tabs.profile')}</Text>
             </TouchableOpacity>
             <View style={[styles.bottomDivider, { backgroundColor: colors.border }]} />
             <TouchableOpacity style={styles.bottomBtn} onPress={onViewTasks} activeOpacity={0.7}>
               <Ionicons name="list-outline" size={16} color={COLORS.primary} />
-              <Text style={[styles.bottomText, { color: COLORS.primary }]}>Tasks</Text>
+              <Text style={[styles.bottomText, { color: COLORS.primary }]}>{t('components.memberDetailSheet.tasks')}</Text>
             </TouchableOpacity>
           </View>
         </View>

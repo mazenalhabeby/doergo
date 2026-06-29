@@ -9,22 +9,24 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation()
   const config = {
     CLOCKED_IN: {
-      label: "Active",
+      label: t("attendance.status.active"),
       icon: CheckCircle2,
       className: "bg-green-500/10 text-green-700 border-green-200",
     },
     CLOCKED_OUT: {
-      label: "Completed",
+      label: t("attendance.status.completed"),
       icon: Clock,
       className: "bg-muted text-foreground border-border",
     },
     AUTO_OUT: {
-      label: "Auto",
+      label: t("attendance.status.auto"),
       icon: AlertCircle,
       className: "bg-amber-500/10 text-amber-700 border-amber-200",
     },
@@ -84,6 +86,7 @@ export function TrackingTab({
   selectedDate, setSelectedDate, searchQuery, setSearchQuery,
   page, setPage, limit, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
 }: TrackingTabProps) {
+  const { t } = useTranslation()
   return (
     <>
 
@@ -91,25 +94,25 @@ export function TrackingTab({
         {entries.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard
-              title="Currently Active"
+              title={t("attendance.tracking.currentlyActive")}
               value={stats.active}
               icon={Users}
               color="green"
             />
             <StatCard
-              title="Completed Shifts"
+              title={t("attendance.tracking.completedShifts")}
               value={stats.completed}
               icon={CheckCircle2}
               color="blue"
             />
             <StatCard
-              title="Auto Clock-Out"
+              title={t("attendance.tracking.autoClockOut")}
               value={stats.autoOut}
               icon={AlertCircle}
               color="amber"
             />
             <StatCard
-              title="Total Hours"
+              title={t("attendance.tracking.totalHours")}
               value={`${stats.totalHours}h`}
               icon={Clock}
               color="slate"
@@ -127,10 +130,10 @@ export function TrackingTab({
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-amber-900">
-                    Geofence Alerts ({geofenceViolations.length})
+                    {t("attendance.tracking.geofenceAlerts", { count: geofenceViolations.length })}
                   </h2>
                   <p className="text-sm text-amber-700">
-                    Entries where clock-in or clock-out occurred outside the designated geofence
+                    {t("attendance.tracking.geofenceAlertsDesc")}
                   </p>
                 </div>
               </div>
@@ -151,7 +154,7 @@ export function TrackingTab({
                         {entry.user?.firstName} {entry.user?.lastName}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {entry.location?.name || "Unknown location"}
+                        {entry.location?.name || t("attendance.unknownLocation")}
                       </p>
                     </div>
                   </div>
@@ -165,13 +168,13 @@ export function TrackingTab({
                         {!entry.clockInWithinGeofence && (
                           <span className="inline-flex items-center gap-1 text-xs text-amber-600">
                             <MapPin className="size-3" />
-                            Clock-in outside
+                            {t("attendance.tracking.clockInOutside")}
                           </span>
                         )}
                         {entry.clockOutAt && entry.clockOutWithinGeofence === false && (
                           <span className="inline-flex items-center gap-1 text-xs text-amber-600">
                             <MapPin className="size-3" />
-                            Clock-out outside
+                            {t("attendance.tracking.clockOutOutside")}
                           </span>
                         )}
                       </div>
@@ -182,7 +185,7 @@ export function TrackingTab({
               ))}
               {geofenceViolations.length > 5 && (
                 <div className="p-3 text-center text-sm text-amber-600">
-                  + {geofenceViolations.length - 5} more alerts
+                  {t("attendance.tracking.moreAlerts", { count: geofenceViolations.length - 5 })}
                 </div>
               )}
             </div>
@@ -199,10 +202,14 @@ export function TrackingTab({
                 </div>
                 <div>
                   <h2 className="text-sm font-semibold text-foreground">
-                    Auto Clock-Out Scheduler
+                    {t("attendance.tracking.schedulerTitle")}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    {schedulerInfo.repeatableJobs?.length || 0} jobs · {schedulerInfo.queueStats?.active || 0} active · {schedulerInfo.queueStats?.failed || 0} failed
+                    {t("attendance.tracking.schedulerStats", {
+                      jobs: schedulerInfo.repeatableJobs?.length || 0,
+                      active: schedulerInfo.queueStats?.active || 0,
+                      failed: schedulerInfo.queueStats?.failed || 0,
+                    })}
                   </p>
                 </div>
               </div>
@@ -215,7 +222,7 @@ export function TrackingTab({
                   className="rounded-lg h-8 text-xs"
                 >
                   <Play className="size-3 mr-1" />
-                  Hourly
+                  {t("attendance.tracking.hourly")}
                 </Button>
                 <Button
                   variant="outline"
@@ -225,26 +232,26 @@ export function TrackingTab({
                   className="rounded-lg h-8 text-xs"
                 >
                   <Timer className="size-3 mr-1" />
-                  Midnight
+                  {t("attendance.tracking.midnight")}
                 </Button>
               </div>
             </summary>
             <div className="px-4 pb-4 pt-2 border-t border-border">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 bg-muted rounded-xl">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Scheduled</p>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t("attendance.tracking.scheduled")}</p>
                   <p className="text-lg font-bold text-foreground">{schedulerInfo.repeatableJobs?.length || 0}</p>
                 </div>
                 <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-                  <p className="text-[10px] font-medium text-blue-600 uppercase tracking-wide mb-1">Active</p>
+                  <p className="text-[10px] font-medium text-blue-600 uppercase tracking-wide mb-1">{t("attendance.tracking.active")}</p>
                   <p className="text-lg font-bold text-blue-700">{schedulerInfo.queueStats?.active || 0}</p>
                 </div>
                 <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl">
-                  <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide mb-1">Completed</p>
+                  <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide mb-1">{t("attendance.tracking.completed")}</p>
                   <p className="text-lg font-bold text-green-700">{schedulerInfo.queueStats?.completed || 0}</p>
                 </div>
                 <div className="p-3 bg-red-50 dark:bg-red-500/10 rounded-xl">
-                  <p className="text-[10px] font-medium text-red-600 uppercase tracking-wide mb-1">Failed</p>
+                  <p className="text-[10px] font-medium text-red-600 uppercase tracking-wide mb-1">{t("attendance.tracking.failed")}</p>
                   <p className="text-lg font-bold text-red-700">{schedulerInfo.queueStats?.failed || 0}</p>
                 </div>
               </div>
@@ -258,7 +265,7 @@ export function TrackingTab({
                       <Clock className="size-3" />
                       {job.next
                         ? format(new Date(job.next), "MMM d, h:mm a")
-                        : job.pattern || `Every ${Math.round((job.every || 0) / 60000)}min`}
+                        : job.pattern || t("attendance.tracking.everyMinutes", { minutes: Math.round((job.every || 0) / 60000) })}
                     </span>
                   ))}
                 </div>
@@ -273,7 +280,7 @@ export function TrackingTab({
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by name..."
+              placeholder={t("attendance.tracking.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm"
@@ -290,10 +297,10 @@ export function TrackingTab({
           >
             <SelectTrigger className="w-[200px] h-11 rounded-xl bg-card border-border/80 shadow-sm">
               <MapPin className="size-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="Select location" />
+              <SelectValue placeholder={t("attendance.tracking.selectLocation")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
+              <SelectItem value="all">{t("attendance.tracking.allLocations")}</SelectItem>
               {locations.map((location: CompanyLocation) => (
                 <SelectItem key={location.id} value={location.id}>
                   {location.name}
@@ -311,13 +318,13 @@ export function TrackingTab({
             }}
           >
             <SelectTrigger className="w-[150px] h-11 rounded-xl bg-card border-border/80 shadow-sm">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t("attendance.tracking.statusPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="CLOCKED_IN">Active</SelectItem>
-              <SelectItem value="CLOCKED_OUT">Completed</SelectItem>
-              <SelectItem value="AUTO_OUT">Auto Clock-Out</SelectItem>
+              <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+              <SelectItem value="CLOCKED_IN">{t("attendance.status.active")}</SelectItem>
+              <SelectItem value="CLOCKED_OUT">{t("attendance.status.completed")}</SelectItem>
+              <SelectItem value="AUTO_OUT">{t("attendance.tracking.autoClockOut")}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -365,10 +372,10 @@ export function TrackingTab({
             <div className="p-12 text-center">
               <AlertCircle className="size-12 text-red-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground">
-                Failed to load attendance
+                {t("attendance.tracking.failedToLoad")}
               </h3>
               <p className="text-muted-foreground mt-1">
-                {error instanceof Error ? error.message : "An error occurred"}
+                {error instanceof Error ? error.message : t("attendance.tracking.errorOccurred")}
               </p>
               <Button
                 variant="outline"
@@ -376,19 +383,19 @@ export function TrackingTab({
                 className="mt-4"
               >
                 <RefreshCw className="size-4 mr-2" />
-                Retry
+                {t("common.retry")}
               </Button>
             </div>
           ) : filteredEntries.length === 0 ? (
             <div className="p-12 text-center">
               <Clock className="size-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground">
-                No attendance records
+                {t("attendance.tracking.noRecords")}
               </h3>
               <p className="text-muted-foreground mt-1">
                 {selectedLocationId === "all"
-                  ? "Select a location to view attendance"
-                  : "No entries found for this date and location"}
+                  ? t("attendance.tracking.selectLocationHint")
+                  : t("attendance.tracking.noEntriesHint")}
               </p>
             </div>
           ) : (
@@ -396,13 +403,13 @@ export function TrackingTab({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/80">
-                    <TableHead className="font-semibold text-muted-foreground">Worker</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">Clock In</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">Clock Out</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">Duration</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">Approval</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">Notes</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.worker")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("common.status")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockIn")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockOut")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -422,7 +429,7 @@ export function TrackingTab({
                               {entry.user?.firstName} {entry.user?.lastName}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {entry.location?.name || "Unknown location"}
+                              {entry.location?.name || t("attendance.unknownLocation")}
                             </p>
                           </div>
                         </div>
@@ -464,22 +471,22 @@ export function TrackingTab({
                           {entry.approvalStatus === "AUTO" ? (
                             <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
                               <CheckCircle2 className="size-3.5" />
-                              Auto-Approved
+                              {t("attendance.tracking.autoApproved")}
                             </span>
                           ) : entry.approvalStatus === "APPROVED" ? (
                             <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
                               <CheckCircle2 className="size-3.5" />
-                              Approved
+                              {t("common.approved")}
                             </span>
                           ) : entry.approvalStatus === "REJECTED" ? (
                             <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
                               <XCircle className="size-3.5" />
-                              Rejected
+                              {t("common.rejected")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
                               <Clock className="size-3.5" />
-                              Pending
+                              {t("common.pending")}
                             </span>
                           )}
                           <FlagReasonBadges reasons={entry.flagReasons} />
@@ -506,8 +513,11 @@ export function TrackingTab({
               {meta && meta.totalPages > 1 && (
                 <div className="flex items-center justify-between px-6 py-3 border-t border-border">
                   <p className="text-sm text-muted-foreground">
-                    Showing {(page - 1) * limit + 1} to{" "}
-                    {Math.min(page * limit, meta.total)} of {meta.total} entries
+                    {t("attendance.tracking.showingEntries", {
+                      start: (page - 1) * limit + 1,
+                      end: Math.min(page * limit, meta.total),
+                      total: meta.total,
+                    })}
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
@@ -517,7 +527,7 @@ export function TrackingTab({
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
-                      Previous
+                      {t("common.previous")}
                     </Button>
                     <Button
                       variant="outline"
@@ -526,7 +536,7 @@ export function TrackingTab({
                       onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
                       disabled={page === meta.totalPages}
                     >
-                      Next
+                      {t("common.next")}
                     </Button>
                   </div>
                 </div>

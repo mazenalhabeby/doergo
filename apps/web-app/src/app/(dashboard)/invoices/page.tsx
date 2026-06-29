@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import {
   FileText,
   Plus,
@@ -51,6 +52,7 @@ function formatCurrency(amount: number, currency = "USD") {
 }
 
 export default function InvoicesPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const isAdmin = user?.role === "ADMIN"
@@ -69,7 +71,7 @@ export default function InvoicesPage() {
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => invoicesApi.updateStatus(id, status),
     onSuccess: () => {
-      notify.success("Invoice status updated")
+      notify.success(t("invoices.toast.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -78,7 +80,7 @@ export default function InvoicesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => invoicesApi.delete(id),
     onSuccess: () => {
-      notify.success("Invoice deleted")
+      notify.success(t("invoices.toast.deleted"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -106,12 +108,12 @@ export default function InvoicesPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Invoices</h1>
-            <p className="text-sm text-muted-foreground mt-1">Create, send, and track invoices</p>
+            <h1 className="text-2xl font-semibold text-foreground">{t("invoices.title")}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t("invoices.subtitle")}</p>
           </div>
           {isAdmin && (
             <Button size="sm" className="gap-1.5">
-              <Plus className="size-3.5" /> New Invoice
+              <Plus className="size-3.5" /> {t("invoices.newInvoice")}
             </Button>
           )}
         </div>
@@ -119,20 +121,20 @@ export default function InvoicesPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Total Revenue</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.totalRevenue")}</p>
             <p className="text-xl font-bold text-foreground tabular-nums">{formatCurrency(totalRevenue)}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Pending</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.pending")}</p>
             <p className="text-xl font-bold text-foreground tabular-nums">{formatCurrency(totalPending)}</p>
-            <p className="text-[11px] text-muted-foreground">{totalSent} invoices</p>
+            <p className="text-[11px] text-muted-foreground">{t("invoices.invoicesCount", { count: totalSent })}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Paid</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.paid")}</p>
             <p className="text-xl font-bold text-green-600 tabular-nums">{totalPaid}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Overdue</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.overdue")}</p>
             <p className="text-xl font-bold text-red-600 tabular-nums">{totalOverdue}</p>
           </div>
         </div>
@@ -144,21 +146,21 @@ export default function InvoicesPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search invoices..."
+              placeholder={t("invoices.searchPlaceholder")}
               className="h-8 text-sm pl-8"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="h-8 text-sm w-[140px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t("common.status")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">All statuses</SelectItem>
-              <SelectItem value="DRAFT">Draft</SelectItem>
-              <SelectItem value="SENT">Sent</SelectItem>
-              <SelectItem value="PAID">Paid</SelectItem>
-              <SelectItem value="OVERDUE">Overdue</SelectItem>
-              <SelectItem value="CANCELED">Canceled</SelectItem>
+              <SelectItem value="__all__">{t("common.allStatuses")}</SelectItem>
+              <SelectItem value="DRAFT">{t("invoices.statuses.draft")}</SelectItem>
+              <SelectItem value="SENT">{t("invoices.statuses.sent")}</SelectItem>
+              <SelectItem value="PAID">{t("invoices.statuses.paid")}</SelectItem>
+              <SelectItem value="OVERDUE">{t("invoices.statuses.overdue")}</SelectItem>
+              <SelectItem value="CANCELED">{t("invoices.statuses.canceled")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -166,12 +168,12 @@ export default function InvoicesPage() {
         {/* Table */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="grid grid-cols-[100px_1fr_120px_100px_100px_80px_40px] gap-3 px-4 py-2.5 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/30">
-            <div>Invoice #</div>
-            <div>Client</div>
-            <div className="text-right">Amount</div>
-            <div>Issue Date</div>
-            <div>Due Date</div>
-            <div>Status</div>
+            <div>{t("invoices.columns.invoiceNumber")}</div>
+            <div>{t("invoices.columns.client")}</div>
+            <div className="text-right">{t("invoices.columns.amount")}</div>
+            <div>{t("invoices.columns.issueDate")}</div>
+            <div>{t("invoices.columns.dueDate")}</div>
+            <div>{t("invoices.columns.status")}</div>
             <div />
           </div>
 
@@ -182,8 +184,8 @@ export default function InvoicesPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="size-10 mx-auto text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground">No invoices yet</p>
-              {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">Click "New Invoice" to create one</p>}
+              <p className="text-sm text-muted-foreground">{t("invoices.empty")}</p>
+              {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">{t("invoices.emptyHint")}</p>}
             </div>
           ) : (
             filtered.map((inv: any) => {
@@ -198,7 +200,7 @@ export default function InvoicesPage() {
                   <span className="text-sm font-semibold text-foreground text-right tabular-nums">{formatCurrency(inv.total, inv.currency)}</span>
                   <span className="text-xs text-muted-foreground">{new Date(inv.issueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                   <span className="text-xs text-muted-foreground">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</span>
-                  <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>{status.label}</span>
+                  <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>{t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}</span>
                   {isAdmin && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -207,26 +209,26 @@ export default function InvoicesPage() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem><Eye className="size-3.5 mr-2" /> View</DropdownMenuItem>
+                        <DropdownMenuItem><Eye className="size-3.5 mr-2" /> {t("invoices.actions.view")}</DropdownMenuItem>
                         {inv.status === "DRAFT" && (
                           <DropdownMenuItem onClick={() => statusMutation.mutate({ id: inv.id, status: "SENT" })}>
-                            <Send className="size-3.5 mr-2" /> Send
+                            <Send className="size-3.5 mr-2" /> {t("invoices.actions.send")}
                           </DropdownMenuItem>
                         )}
                         {inv.status === "SENT" && (
                           <DropdownMenuItem onClick={() => statusMutation.mutate({ id: inv.id, status: "PAID" })}>
-                            <CheckCircle className="size-3.5 mr-2" /> Mark Paid
+                            <CheckCircle className="size-3.5 mr-2" /> {t("invoices.actions.markPaid")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
                         {inv.status === "DRAFT" && (
                           <DropdownMenuItem className="text-red-600" onClick={() => deleteMutation.mutate(inv.id)}>
-                            <XCircle className="size-3.5 mr-2" /> Delete
+                            <XCircle className="size-3.5 mr-2" /> {t("common.delete")}
                           </DropdownMenuItem>
                         )}
                         {(inv.status === "SENT" || inv.status === "OVERDUE") && (
                           <DropdownMenuItem className="text-red-600" onClick={() => statusMutation.mutate({ id: inv.id, status: "CANCELED" })}>
-                            <XCircle className="size-3.5 mr-2" /> Cancel
+                            <XCircle className="size-3.5 mr-2" /> {t("common.cancel")}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>

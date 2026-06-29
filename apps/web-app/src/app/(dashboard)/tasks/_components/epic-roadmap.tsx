@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useMemo, useRef, useState, useCallback, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Task, Epic } from "@/lib/api"
@@ -63,6 +64,7 @@ interface EpicRow {
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoadmapProps) {
+  const { t } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [hoveredEpicId, setHoveredEpicId] = useState<string | null>(null)
 
@@ -166,7 +168,7 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
           <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/40 border-b border-border/30">
             <span className="size-2 rounded-full" style={{ backgroundColor: active.epic.color }} />
             <span className="text-xs text-muted-foreground">
-              Filtered to <span className="font-medium text-foreground">{active.epic.name}</span>
+              {t("tasks.epicRoadmap.filteredTo")} <span className="font-medium text-foreground">{active.epic.name}</span>
             </span>
             <button
               onClick={() => onEpicClick?.(null)}
@@ -182,7 +184,7 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
         {/* Left panel — epic labels */}
         <div className="shrink-0 border-r border-border/40 bg-muted/20" style={{ width: LEFT_PANEL_WIDTH }}>
           <div className="flex items-center px-3 border-b border-border/40" style={{ height: HEADER_HEIGHT }}>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Epics</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.epicRoadmap.epics")}</span>
           </div>
 
           {epicRows.map((row) => {
@@ -254,7 +256,7 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
               {/* Today marker in header */}
               <div className="absolute top-0 w-px bg-blue-500" style={{ left: todayOffset * DAY_WIDTH, height: HEADER_HEIGHT }}>
                 <span className="absolute -top-0 left-1/2 -translate-x-1/2 text-[8px] font-bold text-blue-500 uppercase">
-                  Today
+                  {t("common.today")}
                 </span>
               </div>
             </div>
@@ -333,7 +335,7 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
                     </div>
                   ) : (
                     <div className="absolute top-2.5 left-4 flex items-center" style={{ height: ROW_HEIGHT - 20 }}>
-                      <span className="text-[10px] text-muted-foreground/40 italic">No dates set</span>
+                      <span className="text-[10px] text-muted-foreground/40 italic">{t("tasks.epicRoadmap.noDates")}</span>
                     </div>
                   )}
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, memo } from "react"
 import dynamic from "next/dynamic"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
@@ -90,10 +91,6 @@ import {
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const
 
-const DAY_LABELS: Record<string, string> = {
-  MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun",
-}
-
 const TIMEZONES = [
   { value: "Europe/Berlin", label: "Europe/Berlin (CET)" },
   { value: "Europe/Vienna", label: "Europe/Vienna (CET)" },
@@ -126,6 +123,7 @@ function getModuleLabel(key: string): string {
 // ============================================================================
 
 export default function SpacesPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const router = useRouter()
   const { user } = useAuth()
@@ -152,18 +150,18 @@ export default function SpacesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations"] })
       setDeleteTarget(null)
-      notify.success("Space deactivated")
+      notify.success(t("locations.toast.deactivated"))
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to deactivate space"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.deactivateFailed")),
   })
 
   const reactivateMutation = useMutation({
     mutationFn: (id: string) => locationsApi.update(id, { isActive: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations"] })
-      notify.success("Space reactivated")
+      notify.success(t("locations.toast.reactivated"))
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to reactivate"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.reactivateFailed")),
   })
 
   return (
@@ -173,15 +171,15 @@ export default function SpacesPage() {
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">Spaces</h1>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("locations.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage your workspaces — each space has its own workflow, modules, and team.
+                {t("locations.subtitle")}
               </p>
             </div>
             {isAdmin && (
               <Button onClick={() => setCreateOpen(true)} className="h-10 gap-2 rounded-xl shadow-sm">
                 <Plus className="h-4 w-4" />
-                New Space
+                {t("locations.newSpace")}
               </Button>
             )}
           </div>
@@ -264,18 +262,18 @@ export default function SpacesPage() {
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Deactivate Space</AlertDialogTitle>
+              <AlertDialogTitle>{t("locations.deactivateSpace")}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to deactivate <strong>{deleteTarget?.name}</strong>? Employees will no longer be able to clock in at this location. You can reactivate it later.
+                {t("locations.deactivateConfirmBefore")}<strong>{deleteTarget?.name}</strong>{t("locations.deactivateConfirmAfter")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-red-600 hover:bg-red-700"
                 onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
               >
-                Deactivate
+                {t("locations.deactivate")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -290,20 +288,20 @@ export default function SpacesPage() {
 // ============================================================================
 
 function EmptyState({ onCreateClick, isAdmin }: { onCreateClick: () => void; isAdmin: boolean }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="rounded-2xl bg-muted/50 p-5 mb-5">
         <Building2 className="h-10 w-10 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground">Create your first space</h3>
+      <h3 className="text-lg font-semibold text-foreground">{t("locations.empty.title")}</h3>
       <p className="text-sm text-muted-foreground mt-2 max-w-md">
-        Spaces are where work happens — offices, warehouses, job sites.
-        Each space can have its own workflow, modules, and team.
+        {t("locations.empty.description")}
       </p>
       {isAdmin && (
         <Button onClick={onCreateClick} className="mt-6 gap-2">
           <Plus className="h-4 w-4" />
-          Create Space
+          {t("locations.createSpace")}
         </Button>
       )}
     </div>
@@ -333,6 +331,7 @@ const SpaceCard = memo(function SpaceCard({
   onReactivate: () => void
   onViewTasks: () => void
 }) {
+  const { t } = useTranslation()
   const { data: assignments } = useQuery({
     queryKey: ["location-assignments", space.id],
     queryFn: () => locationsApi.getAssignedMembers(space.id),
@@ -371,12 +370,12 @@ const SpaceCard = memo(function SpaceCard({
                   : "border-border text-muted-foreground"
               }`}
             >
-              {space.isActive ? "Active" : "Inactive"}
+              {space.isActive ? t("common.active") : t("common.inactive")}
             </Badge>
             {memberCount > 0 && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
-                {memberCount} member{memberCount !== 1 ? "s" : ""}
+                {t("locations.memberCount", { count: memberCount })}
               </span>
             )}
           </div>
@@ -405,7 +404,7 @@ const SpaceCard = memo(function SpaceCard({
           {/* Workflow info */}
           {workflow && (
             <p className="text-xs text-muted-foreground mt-2">
-              Workflow: {workflow.name}{statusCount > 0 ? ` (${statusCount} statuses)` : ""}
+              {t("locations.workflowPrefix")}{workflow.name}{statusCount > 0 ? t("locations.statusCountSuffix", { count: statusCount }) : ""}
             </p>
           )}
         </div>
@@ -421,7 +420,7 @@ const SpaceCard = memo(function SpaceCard({
                 onClick={onConfigure}
               >
                 <Settings2 className="h-3.5 w-3.5" />
-                Configure
+                {t("locations.configure")}
               </Button>
               <Button
                 variant="ghost"
@@ -429,7 +428,7 @@ const SpaceCard = memo(function SpaceCard({
                 className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground rounded-lg"
                 onClick={onViewTasks}
               >
-                View Tasks
+                {t("locations.viewTasks")}
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </>
@@ -445,12 +444,12 @@ const SpaceCard = memo(function SpaceCard({
                 {space.isActive ? (
                   <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
                     <ToggleLeft className="mr-2 h-4 w-4" />
-                    Deactivate
+                    {t("locations.deactivate")}
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onClick={onReactivate} className="text-emerald-600 focus:text-emerald-600">
                     <ToggleRight className="mr-2 h-4 w-4" />
-                    Reactivate
+                    {t("locations.reactivate")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -475,13 +474,14 @@ function CreateSpaceDialog({
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Space</DialogTitle>
+          <DialogTitle>{t("locations.createSpace")}</DialogTitle>
           <DialogDescription>
-            Set up a new workspace with its own workflow and modules.
+            {t("locations.createDescription")}
           </DialogDescription>
         </DialogHeader>
         <SpaceForm
@@ -510,6 +510,7 @@ function ConfigureSpaceDialog({
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState("general")
 
@@ -517,18 +518,18 @@ function ConfigureSpaceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Configure — {space.name}</DialogTitle>
+          <DialogTitle>{t("locations.configureTitle", { name: space.name })}</DialogTitle>
           <DialogDescription>
-            Manage this space&apos;s settings, modules, workflow, and team members.
+            {t("locations.configureDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="modules">Modules</TabsTrigger>
-            <TabsTrigger value="workflow">Workflow</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="general">{t("locations.tabs.general")}</TabsTrigger>
+            <TabsTrigger value="modules">{t("locations.tabs.modules")}</TabsTrigger>
+            <TabsTrigger value="workflow">{t("locations.tabs.workflow")}</TabsTrigger>
+            <TabsTrigger value="members">{t("locations.tabs.members")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-4">
@@ -555,6 +556,7 @@ function ConfigureSpaceDialog({
 // ---- General Tab ----
 
 function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: () => void }) {
+  const { t } = useTranslation()
   const [name, setName] = useState(space.name)
   const [address, setAddress] = useState(space.address || "")
   const [lat, setLat] = useState<number | null>(space.lat ?? null)
@@ -570,14 +572,14 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
   const mutation = useMutation({
     mutationFn: (data: UpdateLocationInput) => locationsApi.update(space.id, data),
     onSuccess: () => {
-      notify.success("Space updated")
+      notify.success(t("locations.toast.updated"))
       onSuccess()
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to update"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.updateFailed")),
   })
 
   const handleSave = () => {
-    if (!name.trim()) return notify.error("Name is required")
+    if (!name.trim()) return notify.error(t("locations.nameRequired"))
     mutation.mutate({
       name: name.trim(),
       address: address.trim() || undefined,
@@ -592,7 +594,7 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="cfg-name">Name</Label>
+        <Label htmlFor="cfg-name">{t("locations.name")}</Label>
         <Input id="cfg-name" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       {isPhysical ? (
@@ -607,20 +609,20 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
         />
       ) : (
         <div className="space-y-2">
-          <Label htmlFor="cfg-address">Address</Label>
+          <Label htmlFor="cfg-address">{t("locations.address")}</Label>
           <Input id="cfg-address" value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
       )}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="cfg-radius">Geofence Radius</Label>
+          <Label htmlFor="cfg-radius">{t("locations.geofenceRadius")}</Label>
           <div className="flex items-center gap-2">
             <Input id="cfg-radius" type="number" min={GEO_MIN} max={GEO_MAX} value={radius} onChange={(e) => setRadius(e.target.value)} className="w-24" />
             <span className="text-sm text-muted-foreground">{radius}m</span>
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cfg-timezone">Timezone</Label>
+          <Label htmlFor="cfg-timezone">{t("locations.timezone")}</Label>
           <Select value={timezone} onValueChange={setTimezone}>
             <SelectTrigger>
               <SelectValue />
@@ -635,8 +637,8 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
       </div>
       <div className="flex items-center justify-between rounded-lg border p-3">
         <div>
-          <p className="text-sm font-medium text-foreground">Active</p>
-          <p className="text-xs text-muted-foreground">Employees can clock in at this space</p>
+          <p className="text-sm font-medium text-foreground">{t("locations.activeLabel")}</p>
+          <p className="text-xs text-muted-foreground">{t("locations.activeHint")}</p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input
@@ -650,7 +652,7 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
       </div>
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={mutation.isPending} size="sm">
-          {mutation.isPending ? "Saving..." : "Save"}
+          {mutation.isPending ? t("common.saving") : t("common.save")}
         </Button>
       </div>
     </div>
@@ -660,17 +662,18 @@ function GeneralTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
 // ---- Modules Tab ----
 
 function ModulesTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: () => void }) {
+  const { t } = useTranslation()
   const [enabledModules, setEnabledModules] = useState<string[]>(space.enabledModules || [])
   const [hasChanges, setHasChanges] = useState(false)
 
   const mutation = useMutation({
     mutationFn: (modules: string[]) => locationsApi.update(space.id, { enabledModules: modules }),
     onSuccess: () => {
-      notify.success("Modules updated")
+      notify.success(t("locations.toast.modulesUpdated"))
       setHasChanges(false)
       onSuccess()
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to update modules"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.modulesUpdateFailed")),
   })
 
   const toggleModule = (key: string) => {
@@ -689,12 +692,12 @@ function ModulesTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Modules add optional features to this space&apos;s tasks. Pick a preset, then fine-tune.
+        {t("locations.modulesIntro")}
       </p>
 
       {/* Presets — one click to set a sensible bundle */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Presets</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("locations.presets")}</p>
         <div className="flex flex-wrap gap-1.5">
           {MODULE_PRESETS.map((p) => {
             const active =
@@ -759,7 +762,7 @@ function ModulesTab({ space, onSuccess }: { space: CompanyLocation; onSuccess: (
       {hasChanges && (
         <div className="flex justify-end pt-2">
           <Button onClick={() => mutation.mutate(enabledModules)} disabled={mutation.isPending} size="sm">
-            {mutation.isPending ? "Saving..." : "Save Changes"}
+            {mutation.isPending ? t("common.saving") : t("common.saveChanges")}
           </Button>
         </div>
       )}
@@ -778,6 +781,7 @@ function WorkflowTab({
   workflows: StatusWorkflow[]
   onSuccess: () => void
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const currentWorkflow = workflows.find((w) => w.id === space.workflowId) || workflows.find((w) => w.isDefault)
   const [selectedId, setSelectedId] = useState(currentWorkflow?.id || "")
@@ -788,10 +792,10 @@ function WorkflowTab({
   const mutation = useMutation({
     mutationFn: (wfId: string) => locationsApi.update(space.id, { workflowId: wfId }),
     onSuccess: () => {
-      notify.success("Workflow updated")
+      notify.success(t("locations.toast.workflowUpdated"))
       onSuccess()
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to update workflow"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.workflowUpdateFailed")),
   })
 
   const previewWorkflow = workflows.find((w) => w.id === selectedId)
@@ -808,14 +812,14 @@ function WorkflowTab({
         }}
         workflows={workflows}
         allowCreate={false}
-        label="Current Workflow"
+        label={t("locations.currentWorkflow")}
       />
 
       {/* Status preview */}
       {previewWorkflow?.statuses && previewWorkflow.statuses.length > 0 && !editMode && (
         <div className="rounded-lg border p-3 space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Statuses ({previewWorkflow.statuses.length})
+            {t("locations.statusesWithCount", { count: previewWorkflow.statuses.length })}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {previewWorkflow.statuses
@@ -831,10 +835,10 @@ function WorkflowTab({
                   />
                   {status.name}
                   {status.isFinal && !status.isCanceled && (
-                    <span className="text-[10px] text-emerald-600 ml-0.5">Final</span>
+                    <span className="text-[10px] text-emerald-600 ml-0.5">{t("workflows.final")}</span>
                   )}
                   {status.isCanceled && (
-                    <span className="text-[10px] text-red-500 ml-0.5">Canceled</span>
+                    <span className="text-[10px] text-red-500 ml-0.5">{t("workflows.canceled")}</span>
                   )}
                 </span>
               ))}
@@ -852,7 +856,7 @@ function WorkflowTab({
               className="text-xs"
               onClick={() => setEditMode(true)}
             >
-              Edit Workflow
+              {t("locations.editWorkflow")}
             </Button>
           )}
           <Button
@@ -862,7 +866,7 @@ function WorkflowTab({
             onClick={() => setShowCreateBuilder(true)}
           >
             <Plus className="mr-1 h-3 w-3" />
-            Create New
+            {t("locations.createNew")}
           </Button>
           {hasChanges && (
             <Button
@@ -871,7 +875,7 @@ function WorkflowTab({
               size="sm"
               className="ml-auto"
             >
-              {mutation.isPending ? "Saving..." : "Save"}
+              {mutation.isPending ? t("common.saving") : t("common.save")}
             </Button>
           )}
         </div>
@@ -911,6 +915,16 @@ function WorkflowTab({
 // ---- Members Tab ----
 
 function MembersTab({ space }: { space: CompanyLocation }) {
+  const { t } = useTranslation()
+  const dayLabels: Record<string, string> = {
+    MON: t("common.weekdaysShort.mon"),
+    TUE: t("common.weekdaysShort.tue"),
+    WED: t("common.weekdaysShort.wed"),
+    THU: t("common.weekdaysShort.thu"),
+    FRI: t("common.weekdaysShort.fri"),
+    SAT: t("common.weekdaysShort.sat"),
+    SUN: t("common.weekdaysShort.sun"),
+  }
   const queryClient = useQueryClient()
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
   const [isPrimary, setIsPrimary] = useState(false)
@@ -933,21 +947,21 @@ function MembersTab({ space }: { space: CompanyLocation }) {
     mutationFn: (data: AssignMemberInput) => locationsApi.assignMember(space.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["location-assignments", space.id] })
-      notify.success("Member added")
+      notify.success(t("locations.toast.memberAdded"))
       setSelectedEmployeeId("")
       setIsPrimary(false)
       setSelectedDays([...DAYS])
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to add member"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.memberAddFailed")),
   })
 
   const removeMutation = useMutation({
     mutationFn: (assignmentId: string) => locationsApi.removeAssignment(space.id, assignmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["location-assignments", space.id] })
-      notify.success("Member removed")
+      notify.success(t("locations.toast.memberRemoved"))
     },
-    onError: (err: Error) => notify.error(err.message || "Failed to remove member"),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.memberRemoveFailed")),
   })
 
   const toggleDay = (day: string) => {
@@ -957,7 +971,7 @@ function MembersTab({ space }: { space: CompanyLocation }) {
   }
 
   const handleAssign = () => {
-    if (!selectedEmployeeId) return notify.error("Select an employee")
+    if (!selectedEmployeeId) return notify.error(t("locations.selectEmployeeError"))
     assignMutation.mutate({
       userId: selectedEmployeeId,
       isPrimary,
@@ -970,13 +984,13 @@ function MembersTab({ space }: { space: CompanyLocation }) {
       {/* Current members */}
       <div className="space-y-2">
         <p className="text-sm font-medium text-foreground">
-          Members ({assignments?.length || 0})
+          {t("locations.membersWithCount", { count: assignments?.length || 0 })}
         </p>
         {isLoading ? (
           <Skeleton className="h-16 w-full" />
         ) : !assignments || assignments.length === 0 ? (
           <div className="text-center py-6 text-sm text-muted-foreground rounded-lg border border-dashed">
-            No members assigned yet
+            {t("locations.noMembers")}
           </div>
         ) : (
           <div className="space-y-2 max-h-[200px] overflow-y-auto">
@@ -989,14 +1003,14 @@ function MembersTab({ space }: { space: CompanyLocation }) {
                     </span>
                     {a.isPrimary && (
                       <Badge className="bg-emerald-100 text-emerald-700 text-xs dark:bg-emerald-950 dark:text-emerald-300">
-                        Primary
+                        {t("locations.primary")}
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {a.schedule && a.schedule.length > 0 && a.schedule.length < 7
-                      ? a.schedule.map((d) => DAY_LABELS[d] || d).join(", ")
-                      : "All days"}
+                      ? a.schedule.map((d) => dayLabels[d] || d).join(", ")
+                      : t("locations.allDays")}
                   </p>
                 </div>
                 <Button
@@ -1019,16 +1033,16 @@ function MembersTab({ space }: { space: CompanyLocation }) {
       <div className="space-y-3">
         <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
           <UserPlus className="h-4 w-4" />
-          Add Member
+          {t("locations.addMember")}
         </p>
         <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
           <SelectTrigger>
-            <SelectValue placeholder="Select an employee..." />
+            <SelectValue placeholder={t("locations.selectEmployee")} />
           </SelectTrigger>
           <SelectContent>
             {availableEmployees.length === 0 ? (
               <div className="p-2 text-sm text-muted-foreground text-center">
-                No available employees
+                {t("locations.noAvailableEmployees")}
               </div>
             ) : (
               availableEmployees.map((t) => (
@@ -1042,7 +1056,7 @@ function MembersTab({ space }: { space: CompanyLocation }) {
 
         {/* Schedule Days */}
         <div className="space-y-2">
-          <Label className="text-xs">Work Days</Label>
+          <Label className="text-xs">{t("locations.workDays")}</Label>
           <div className="flex gap-1">
             {DAYS.map((day) => (
               <button
@@ -1055,7 +1069,7 @@ function MembersTab({ space }: { space: CompanyLocation }) {
                     : "bg-muted text-muted-foreground border border-border"
                 }`}
               >
-                {DAY_LABELS[day]}
+                {dayLabels[day]}
               </button>
             ))}
           </div>
@@ -1069,7 +1083,7 @@ function MembersTab({ space }: { space: CompanyLocation }) {
             onChange={(e) => setIsPrimary(e.target.checked)}
             className="rounded border-border text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm text-muted-foreground">Set as primary location</span>
+          <span className="text-sm text-muted-foreground">{t("locations.setPrimary")}</span>
         </label>
 
         <Button
@@ -1078,7 +1092,7 @@ function MembersTab({ space }: { space: CompanyLocation }) {
           size="sm"
           className="w-full"
         >
-          {assignMutation.isPending ? "Adding..." : "Add Member"}
+          {assignMutation.isPending ? t("locations.adding") : t("locations.addMember")}
         </Button>
       </div>
     </div>

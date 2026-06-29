@@ -6,6 +6,7 @@ import {
   Film,
   Download,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 interface Attachment {
   id: string
@@ -37,11 +38,12 @@ interface RequestDetailsSectionProps {
 export function RequestDetailsSection({
   task,
 }: RequestDetailsSectionProps) {
+  const { t } = useTranslation()
   return (
     <div className="bg-card rounded-2xl shadow-sm">
       <div className="p-6 border-b border-border">
         <h3 className="text-base font-semibold text-foreground">
-          Request Details
+          {t("tasks.requestDetails.title")}
         </h3>
       </div>
 
@@ -49,11 +51,11 @@ export function RequestDetailsSection({
         {/* Description */}
         <div>
           <h4 className="text-sm font-medium text-foreground mb-3">
-            Description
+            {t("tasks.description.label")}
           </h4>
           <div className="border border-border rounded-xl p-4">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {task.description || "No description provided."}
+              {task.description || t("tasks.requestDetails.noDescription")}
             </p>
           </div>
         </div>
@@ -61,12 +63,12 @@ export function RequestDetailsSection({
         {/* Task Information */}
         <div>
           <h4 className="text-sm font-medium text-foreground mb-3">
-            Task Information
+            {t("tasks.requestDetails.taskInformation")}
           </h4>
           <div className="border border-border rounded-xl p-5">
             <div className="grid grid-cols-2 gap-x-12 gap-y-4">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Location</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("tasks.sidebar.location")}</p>
                 {task.locationAddress ? (
                   <p className="text-sm text-foreground">{task.locationAddress}</p>
                 ) : (
@@ -74,7 +76,7 @@ export function RequestDetailsSection({
                 )}
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Due Date</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("tasks.sidebar.dueDate")}</p>
                 <p className="text-sm text-foreground">
                   {task.dueDate
                     ? new Date(task.dueDate).toLocaleDateString("en-US", {
@@ -86,7 +88,7 @@ export function RequestDetailsSection({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Created By</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("tasks.sidebar.createdBy")}</p>
                 <p className="text-sm text-foreground">
                   {task.createdBy
                     ? `${task.createdBy.firstName} ${task.createdBy.lastName}`
@@ -94,13 +96,13 @@ export function RequestDetailsSection({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Priority</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("tasks.list.priority")}</p>
                 <p className="text-sm text-blue-600 font-medium">
                   {task.priority || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("tasks.sidebar.startDate")}</p>
                 <p className="text-sm text-foreground">
                   {task.startDate
                     ? new Date(task.startDate).toLocaleDateString("en-US", {
@@ -112,7 +114,7 @@ export function RequestDetailsSection({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Estimated Hours</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("tasks.sidebar.estimatedHours")}</p>
                 <p className="text-sm text-foreground">
                   {task.estimatedHours != null
                     ? `${task.estimatedHours}h`
@@ -127,7 +129,7 @@ export function RequestDetailsSection({
         {task.attachments && task.attachments.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-foreground mb-3">
-              Attachments
+              {t("tasks.sections.attachments")}
             </h4>
             <div className="grid grid-cols-2 gap-4">
               {task.attachments.map((attachment) => {
@@ -156,7 +158,7 @@ export function RequestDetailsSection({
                       rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
                     >
-                      <Download className="size-3.5" /> Download
+                      <Download className="size-3.5" /> {t("tasks.attachments.download")}
                     </a>
                   </div>
                 )

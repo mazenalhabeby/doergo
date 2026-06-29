@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { teamApi, type Colleague } from '../../../src/lib/api';
@@ -11,6 +12,7 @@ import { COLORS } from '../../../src/lib/constants';
 export default function TeamScreen() {
   const { colors } = useTheme();
   const toast = useToast();
+  const { t } = useTranslation();
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,15 +42,15 @@ export default function TeamScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
       >
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Team</Text>
-        <Text style={[styles.sub, { color: colors.textMuted }]}>Teammates in your spaces.</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('team.title')}</Text>
+        <Text style={[styles.sub, { color: colors.textMuted }]}>{t('team.subtitle')}</Text>
 
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 32 }} />
         ) : colleagues.length === 0 ? (
           <View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="people-outline" size={26} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No teammates in your spaces yet.</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('team.empty')}</Text>
           </View>
         ) : (
           colleagues.map((c) => (
@@ -57,13 +59,13 @@ export default function TeamScreen() {
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>{c.firstName} {c.lastName}</Text>
                 <Text style={[styles.meta, { color: colors.textMuted }]} numberOfLines={1}>
-                  {(c.position || 'Employee')}{c.spaceName ? ` · ${c.spaceName}` : ''}
+                  {(c.position || t('roles.EMPLOYEE'))}{c.spaceName ? ` · ${c.spaceName}` : ''}
                 </Text>
               </View>
-              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.primary }]} onPress={() => toast.info('Messaging coming soon')} activeOpacity={0.8}>
+              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.primary }]} onPress={() => toast.info(t('team.messagingSoon'))} activeOpacity={0.8}>
                 <Ionicons name="chatbubble-ellipses" size={16} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.surfaceRaised }]} onPress={() => toast.info('Calls coming soon')} activeOpacity={0.8}>
+              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.surfaceRaised }]} onPress={() => toast.info(t('team.callsSoon'))} activeOpacity={0.8}>
                 <Ionicons name="call" size={15} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>

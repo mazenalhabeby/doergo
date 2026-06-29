@@ -577,8 +577,8 @@ export function ClientDashboard() {
             {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
           </h1>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-foreground">My tasks</h2>
-            <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
+            <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
+            <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
           </div>
           <div className="rounded-2xl border border-border bg-card px-4 py-2">
             <RecentTasks tasks={myTasks.map(toRecentTask)} showViewAll={false} />
@@ -681,10 +681,10 @@ export function ClientDashboard() {
             <>
               <div className="space-y-4">
                 <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-                  Set up your<br />workspace
+                  {t("dashboard.client.setupTitleLine1")}<br />{t("dashboard.client.setupTitleLine2")}
                 </h1>
                 <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-                  Create spaces, add your team, and track everyone in real time — all from one view.
+                  {t("dashboard.client.setupDescription")}
                 </p>
               </div>
 
@@ -692,13 +692,13 @@ export function ClientDashboard() {
                 <Button asChild size="lg" className="gap-2 h-12 px-6 text-sm shadow-lg shadow-primary/25">
                   <Link href="/locations">
                     <Plus className="h-4 w-4" />
-                    Add Space
+                    {t("dashboard.client.addSpace")}
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="gap-2 h-12 px-6 text-sm">
                   <Link href="/members">
                     <Users className="h-4 w-4" />
-                    Invite Team
+                    {t("dashboard.client.inviteTeam")}
                   </Link>
                 </Button>
               </div>
@@ -706,10 +706,10 @@ export function ClientDashboard() {
           ) : (
             <div className="space-y-3">
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                No spaces assigned yet
+                {t("dashboard.client.noSpacesTitle")}
               </h1>
               <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">
-                You haven&apos;t been added to a space. Check the Tasks tab for your assigned work, or ask your manager to add you.
+                {t("dashboard.client.noSpacesDescription")}
               </p>
             </div>
           )}
@@ -744,15 +744,15 @@ export function ClientDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
               {/* Spaces — a single space opens automatically */}
               <section>
-                <h2 className="mb-3 text-sm font-semibold text-foreground">My Spaces</h2>
+                <h2 className="mb-3 text-sm font-semibold text-foreground">{t("dashboard.client.mySpaces")}</h2>
                 <WorkspaceGrid boxes={workspaceBoxes} autoExpandSingle />
               </section>
 
               {/* My Tasks — always present */}
               <section>
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-foreground">My Tasks</h2>
-                  <Link href="/tasks" className="text-xs text-primary hover:underline">View all →</Link>
+                  <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
+                  <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
                 </div>
                 <div className="rounded-2xl border border-border bg-card px-4 py-2">
                   <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
@@ -785,7 +785,7 @@ export function ClientDashboard() {
               <Button asChild size="sm" variant="outline" className="gap-1.5 text-xs">
                 <Link href="/locations">
                   <Plus className="h-3.5 w-3.5" />
-                  New Space
+                  {t("dashboard.client.newSpace")}
                 </Link>
               </Button>
             )}

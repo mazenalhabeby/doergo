@@ -1,6 +1,7 @@
 "use client"
 
 import { memo } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Popover,
   PopoverContent,
@@ -25,6 +26,7 @@ const ColorPicker = memo(function ColorPicker({
   onChange,
   disabled,
 }: ColorPickerProps) {
+  const { t } = useTranslation()
   return (
     <Popover>
       <PopoverTrigger asChild disabled={disabled}>
@@ -32,7 +34,7 @@ const ColorPicker = memo(function ColorPicker({
           type="button"
           className="w-5 h-5 rounded-full border border-border shrink-0 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:opacity-50"
           style={{ backgroundColor: value }}
-          aria-label="Pick color"
+          aria-label={t('common.pickColor')}
         />
       </PopoverTrigger>
       <PopoverContent className="w-[180px] p-2" align="start" sideOffset={6}>

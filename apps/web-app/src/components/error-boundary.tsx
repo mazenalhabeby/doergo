@@ -2,6 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
+import { useTranslation } from "react-i18next"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -69,6 +70,7 @@ export function ErrorFallback({
   error: Error | null
   reset: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="min-h-[400px] flex items-center justify-center p-8">
       <div className="text-center max-w-md">
@@ -76,18 +78,18 @@ export function ErrorFallback({
           <AlertTriangle className="size-7 text-red-600 dark:text-red-400" />
         </div>
         <h2 className="text-lg font-semibold text-foreground mb-2">
-          Something went wrong
+          {t("errors.somethingWentWrong")}
         </h2>
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {error?.message || "An unexpected error occurred. Please try again."}
+          {error?.message || t("errors.unexpected")}
         </p>
         <div className="flex items-center justify-center gap-3">
           <Button onClick={reset}>
             <RefreshCw className="size-4 mr-2" />
-            Try again
+            {t("common.tryAgain")}
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="/dashboard">Go to Dashboard</Link>
+            <Link href="/dashboard">{t("errors.goToDashboard")}</Link>
           </Button>
         </div>
       </div>

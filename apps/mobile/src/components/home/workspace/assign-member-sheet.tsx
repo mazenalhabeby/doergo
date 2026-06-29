@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
 import { COLORS } from '../../../lib/constants';
 import { locationsApi, type OrgMember } from '../../../lib/api';
@@ -36,6 +37,7 @@ export function AssignMemberSheet({
   onAssigned,
 }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
@@ -69,10 +71,10 @@ export function AssignMemberSheet({
     <BottomSheet visible={visible} onClose={onClose} heightRatio={0.78}>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Assign member</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('components.assignMemberSheet.title')}</Text>
           {!!locationName && (
             <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={1}>
-              to {locationName}
+              {t('components.assignMemberSheet.toLocation', { location: locationName })}
             </Text>
           )}
         </View>
@@ -85,7 +87,7 @@ export function AssignMemberSheet({
         <Ionicons name="search" size={16} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
-          placeholder="Search members"
+          placeholder={t('components.assignMemberSheet.searchPlaceholder')}
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
@@ -97,7 +99,9 @@ export function AssignMemberSheet({
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {available.length === 0 ? (
           <Text style={[styles.empty, { color: colors.textMuted }]}>
-            {members.length === 0 ? 'No members found' : 'Everyone is already assigned here'}
+            {members.length === 0
+              ? t('components.assignMemberSheet.noMembers')
+              : t('components.assignMemberSheet.allAssigned')}
           </Text>
         ) : (
           available.map((m) => {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect, memo } from "react"
+import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { notify } from "@/lib/toast"
 import { Plus, X, Loader2 } from "lucide-react"
@@ -41,12 +42,14 @@ interface WorkflowBuilderProps {
 
 interface Template {
   label: string
+  labelKey: string
   statuses: Omit<StatusEntry, "id" | "position">[]
 }
 
 const TEMPLATES: Template[] = [
   {
     label: "Simple",
+    labelKey: "workflows.templateLabels.simple",
     statuses: [
       { name: "Open", color: "#3b82f6", isFinal: false, isCanceled: false },
       { name: "In Progress", color: "#f59e0b", isFinal: false, isCanceled: false },
@@ -55,6 +58,7 @@ const TEMPLATES: Template[] = [
   },
   {
     label: "Field Service",
+    labelKey: "workflows.templateLabels.fieldService",
     statuses: [
       { name: "New", color: "#3b82f6", isFinal: false, isCanceled: false },
       { name: "Assigned", color: "#8b5cf6", isFinal: false, isCanceled: false },
@@ -66,6 +70,7 @@ const TEMPLATES: Template[] = [
   },
   {
     label: "Logistics",
+    labelKey: "workflows.templateLabels.logistics",
     statuses: [
       { name: "Pending", color: "#64748b", isFinal: false, isCanceled: false },
       { name: "Picked Up", color: "#8b5cf6", isFinal: false, isCanceled: false },
@@ -76,6 +81,7 @@ const TEMPLATES: Template[] = [
   },
   {
     label: "Software",
+    labelKey: "workflows.templateLabels.software",
     statuses: [
       { name: "Backlog", color: "#64748b", isFinal: false, isCanceled: false },
       { name: "To Do", color: "#3b82f6", isFinal: false, isCanceled: false },
@@ -87,6 +93,7 @@ const TEMPLATES: Template[] = [
   },
   {
     label: "Support",
+    labelKey: "workflows.templateLabels.support",
     statuses: [
       { name: "Open", color: "#3b82f6", isFinal: false, isCanceled: false },
       { name: "Triaging", color: "#8b5cf6", isFinal: false, isCanceled: false },
@@ -119,6 +126,7 @@ const StatusRow = memo(function StatusRow({
   onRemove: (index: number) => void
   autoFocus?: boolean
 }) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -131,7 +139,7 @@ const StatusRow = memo(function StatusRow({
     if (isFirst) {
       return (
         <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400 shrink-0">
-          Start
+          {t("workflows.start")}
         </Badge>
       )
     }
@@ -143,7 +151,7 @@ const StatusRow = memo(function StatusRow({
           className="shrink-0"
         >
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-950">
-            Final
+            {t("workflows.final")}
           </Badge>
         </button>
       )
@@ -156,7 +164,7 @@ const StatusRow = memo(function StatusRow({
           className="shrink-0"
         >
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950">
-            Canceled
+            {t("workflows.canceled")}
           </Badge>
         </button>
       )
@@ -169,7 +177,7 @@ const StatusRow = memo(function StatusRow({
           onClick={() => onChange(index, { isFinal: true, isCanceled: false })}
           className="text-[10px] text-muted-foreground hover:text-emerald-600 transition-colors"
         >
-          final
+          {t("workflows.builder.markFinal")}
         </button>
         <span className="text-[10px] text-muted-foreground">/</span>
         <button
@@ -177,7 +185,7 @@ const StatusRow = memo(function StatusRow({
           onClick={() => onChange(index, { isCanceled: true, isFinal: true })}
           className="text-[10px] text-muted-foreground hover:text-red-600 transition-colors"
         >
-          cancel
+          {t("workflows.builder.markCancel")}
         </button>
       </div>
     )
@@ -193,7 +201,7 @@ const StatusRow = memo(function StatusRow({
         ref={inputRef}
         value={status.name}
         onChange={(e) => onChange(index, { name: e.target.value })}
-        placeholder="Status name"
+        placeholder={t("workflows.builder.statusNamePlaceholder")}
         className="h-8 text-sm flex-1"
       />
       {getTypeBadge()}
@@ -202,7 +210,7 @@ const StatusRow = memo(function StatusRow({
         onClick={() => onRemove(index)}
         disabled={total <= 1}
         className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-        aria-label="Remove status"
+        aria-label={t("workflows.builder.removeStatus")}
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -230,6 +238,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
   onSaved,
   onCancel,
 }: WorkflowBuilderProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [name, setName] = useState(initialName || "")
   const [statuses, setStatuses] = useState<StatusEntry[]>(() => {
@@ -289,13 +298,13 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
   const handleSave = async () => {
     const trimmedName = name.trim()
     if (!trimmedName) {
-      notify.error("Workflow name is required")
+      notify.error(t("workflows.builder.toast.nameRequired"))
       return
     }
 
     const validStatuses = statuses.filter((s) => s.name.trim())
     if (validStatuses.length === 0) {
-      notify.error("At least one status is required")
+      notify.error(t("workflows.builder.toast.statusRequired"))
       return
     }
 
@@ -304,7 +313,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
       if (mode === "create") {
         // Create the workflow
         const workflow = await workflowsApi.create({ name: trimmedName })
-        if (!workflow) throw new Error("Failed to create workflow")
+        if (!workflow) throw new Error(t("workflows.builder.toast.createFailedGeneric"))
 
         // Add statuses sequentially
         for (let i = 0; i < validStatuses.length; i++) {
@@ -320,7 +329,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         }
 
         queryClient.invalidateQueries({ queryKey: ["workflows"] })
-        notify.success("Workflow created")
+        notify.success(t("workflows.builder.toast.created"))
         onCreated?.(workflow.id)
       } else if (mode === "edit" && workflowId) {
         // Update workflow name if changed
@@ -380,12 +389,12 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         }
 
         queryClient.invalidateQueries({ queryKey: ["workflows"] })
-        notify.success("Workflow updated")
+        notify.success(t("workflows.builder.toast.updated"))
         onSaved?.()
       }
     } catch (err) {
       notify.error(
-        err instanceof Error ? err.message : "Failed to save workflow"
+        err instanceof Error ? err.message : t("workflows.builder.toast.saveFailed")
       )
     } finally {
       setIsSaving(false)
@@ -397,18 +406,18 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-foreground">
-          {mode === "create" ? "New Workflow" : "Edit Workflow"}
+          {mode === "create" ? t("workflows.builder.newWorkflow") : t("workflows.builder.editWorkflow")}
         </p>
       </div>
 
       {/* Name */}
       <div className="space-y-1.5">
-        <Label htmlFor="wf-name" className="text-xs">Name</Label>
+        <Label htmlFor="wf-name" className="text-xs">{t("workflows.name")}</Label>
         <Input
           id="wf-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Field Service"
+          placeholder={t("workflows.builder.namePlaceholder")}
           className="h-8 text-sm"
           autoFocus={mode === "create"}
         />
@@ -416,7 +425,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
 
       {/* Statuses */}
       <div className="space-y-1.5">
-        <Label className="text-xs">Statuses</Label>
+        <Label className="text-xs">{t("workflows.builder.statuses")}</Label>
         <div className="rounded-lg border border-border bg-background p-2.5 space-y-1">
           {statuses.map((status, index) => (
             <StatusRow
@@ -436,14 +445,14 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Status
+            {t("workflows.builder.addStatus")}
           </button>
         </div>
       </div>
 
       {/* Templates */}
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Templates</Label>
+        <Label className="text-xs text-muted-foreground">{t("workflows.builder.templates")}</Label>
         <div className="flex flex-wrap gap-1.5">
           {TEMPLATES.map((tpl) => (
             <button
@@ -452,7 +461,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
               onClick={() => handleApplyTemplate(tpl)}
               className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              {tpl.label}
+              {t(tpl.labelKey)}
             </button>
           ))}
         </div>
@@ -461,18 +470,18 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={isSaving}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
           {isSaving ? (
             <>
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              {mode === "create" ? "Creating..." : "Saving..."}
+              {mode === "create" ? t("common.creating") : t("common.saving")}
             </>
           ) : mode === "create" ? (
-            "Create Workflow"
+            t("workflows.builder.createWorkflow")
           ) : (
-            "Save Changes"
+            t("common.saveChanges")
           )}
         </Button>
       </div>

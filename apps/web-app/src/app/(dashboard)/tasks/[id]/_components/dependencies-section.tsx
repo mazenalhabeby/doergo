@@ -2,6 +2,7 @@
 
 import { useState, memo, useMemo } from "react"
 import Link from "next/link"
+import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Plus,
@@ -55,11 +56,11 @@ const DEP_TYPE_LABELS: Record<string, string> = {
   START_TO_FINISH: "SF",
 }
 
-const DEP_TYPE_FULL: Record<string, string> = {
-  FINISH_TO_START: "Finish to Start",
-  START_TO_START: "Start to Start",
-  FINISH_TO_FINISH: "Finish to Finish",
-  START_TO_FINISH: "Start to Finish",
+const DEP_TYPE_KEYS: Record<string, string> = {
+  FINISH_TO_START: "tasks.dependencies.types.FINISH_TO_START",
+  START_TO_START: "tasks.dependencies.types.START_TO_START",
+  FINISH_TO_FINISH: "tasks.dependencies.types.FINISH_TO_FINISH",
+  START_TO_FINISH: "tasks.dependencies.types.START_TO_FINISH",
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +127,7 @@ function AddDependencyDialog({
   taskId: string
   existingDepIds: Set<string>
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
   const [depType, setDepType] = useState("FINISH_TO_START")
@@ -152,7 +154,7 @@ function AddDependencyDialog({
     mutationFn: (predecessorId: string) =>
       tasksApi.addDependency(taskId, predecessorId, depType),
     onSuccess: () => {
-      notify.success("Dependency added")
+      notify.success(t("tasks.dependencies.added"))
       queryClient.invalidateQueries({ queryKey: ["task", taskId] })
       onOpenChange(false)
       setSearch("")
@@ -164,23 +166,23 @@ function AddDependencyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Add Dependency</DialogTitle>
+          <DialogTitle>{t("tasks.dependencies.add")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Dependency type */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
-              Dependency Type
+              {t("tasks.dependencies.type")}
             </label>
             <Select value={depType} onValueChange={setDepType}>
               <SelectTrigger className="h-9 rounded-lg">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(DEP_TYPE_FULL).map(([val, label]) => (
+                {Object.entries(DEP_TYPE_KEYS).map(([val, labelKey]) => (
                   <SelectItem key={val} value={val}>
-                    {label} ({DEP_TYPE_LABELS[val]})
+                    {t(labelKey)} ({DEP_TYPE_LABELS[val]})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -191,7 +193,7 @@ function AddDependencyDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search tasks..."
+              placeholder={t("tasks.dependencies.searchTasks")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 rounded-lg"
@@ -203,7 +205,7 @@ function AddDependencyDialog({
           <div className="max-h-[240px] overflow-y-auto rounded-lg border border-border/50">
             {filteredResults.length === 0 && (
               <div className="p-6 text-center text-sm text-muted-foreground">
-                {searching ? "Searching..." : "No matching tasks found"}
+                {searching ? t("common.searching") : t("tasks.dependencies.noMatchingTasks")}
               </div>
             )}
             {filteredResults.map((task: Task) => {
@@ -248,13 +250,14 @@ export const DependenciesSection = memo(function DependenciesSection({
   predecessors = [],
   successors = [],
 }: DependenciesSectionProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [showAddDialog, setShowAddDialog] = useState(false)
 
   const removeMutation = useMutation({
     mutationFn: (depId: string) => tasksApi.removeDependency(taskId, depId),
     onSuccess: () => {
-      notify.success("Dependency removed")
+      notify.success(t("tasks.dependencies.removed"))
       queryClient.invalidateQueries({ queryKey: ["task", taskId] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -292,7 +295,7 @@ export const DependenciesSection = memo(function DependenciesSection({
           onClick={() => setShowAddDialog(true)}
         >
           <Plus className="size-3.5 mr-1" />
-          Add
+          {t("common.add")}
         </Button>
       </div>
 
@@ -302,7 +305,7 @@ export const DependenciesSection = memo(function DependenciesSection({
           <div className="flex items-center gap-1.5 mb-1.5">
             <ArrowLeft className="size-3 text-red-500" />
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Blocked by
+              {t("tasks.dependencies.blockedBy")}
             </span>
           </div>
           {predecessors.map((dep) => (
@@ -324,7 +327,7 @@ export const DependenciesSection = memo(function DependenciesSection({
           <div className="flex items-center gap-1.5 mb-1.5">
             <ArrowRight className="size-3 text-amber-500" />
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Blocking
+              {t("tasks.dependencies.blocking")}
             </span>
           </div>
           {successors.map((dep) => (
@@ -344,7 +347,7 @@ export const DependenciesSection = memo(function DependenciesSection({
       {!hasDeps && (
         <div className="py-6 text-center">
           <p className="text-sm text-muted-foreground">
-            No dependencies. Link tasks to define execution order.
+            {t("tasks.dependencies.empty")}
           </p>
         </div>
       )}

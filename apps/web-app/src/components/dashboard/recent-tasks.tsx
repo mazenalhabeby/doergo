@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { ChevronRight, MapPin, Calendar, User, Inbox } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { getStatusConfig, getPriorityConfig } from "@/lib/constants"
 
@@ -26,15 +27,16 @@ interface RecentTasksProps {
 }
 
 export function RecentTasks({ tasks, className, showViewAll = true }: RecentTasksProps) {
+  const { t } = useTranslation()
   if (tasks.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-16", className)}>
         <div className="mb-4 rounded-full bg-muted p-4">
           <Inbox className="size-6 text-muted-foreground" strokeWidth={1.5} />
         </div>
-        <p className="text-sm font-medium text-muted-foreground">No tasks yet</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('dashboard.recentTasksWidget.noTasks')}</p>
         <p className="mt-1 text-[13px] text-muted-foreground">
-          Tasks will appear here once created
+          {t('dashboard.recentTasksWidget.willAppear')}
         </p>
       </div>
     )
@@ -108,7 +110,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
           href="/tasks"
           className="block pt-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
-          View all tasks
+          {t('dashboard.recentTasksWidget.viewAllTasks')}
         </Link>
       )}
     </div>

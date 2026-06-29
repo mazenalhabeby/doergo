@@ -22,6 +22,7 @@
     "close": "Close",
     "copy": "Copy",
     "copied": "Copied",
+    "language": "Language",
     "yes": "Yes",
     "no": "No",
     "all": "All",
@@ -91,9 +92,26 @@
     "allRoles": "All Roles",
     "allTypes": "All Types",
     "allModes": "All Modes",
-    "allSpecialties": "All Specialties"
+    "allSpecialties": "All Specialties",
+    "selectPlaceholder": "Select…",
+    "addOption": "Add \"{{query}}\"",
+    "countryOrCode": "Country or code…",
+    "phoneNumber": "Phone number",
+    "sidebar": "Sidebar",
+    "sidebarDescription": "Displays the mobile sidebar.",
+    "toggleSidebar": "Toggle Sidebar",
+    "accessDenied": "Access Denied",
+    "noPermissionView": "You don't have permission to view this page.",
+    "allSpaces": "All Spaces",
+    "pickColor": "Pick color",
+    "more": "More",
+    "goHome": "Go Home",
+    "commandPalette": "Command palette",
+    "add": "Add",
+    "searching": "Searching...",
+    "mobileOnlyAccount": "Mobile-only account",
+    "mobileOnlyAccountBody": "Your account is set up for the mobile app. Please use the HBCField app on your phone to continue."
   },
-
   "auth": {
     "login": {
       "title": "Welcome back",
@@ -205,14 +223,31 @@
       "uppercase": "Upper",
       "lowercase": "Lower",
       "number": "Number"
+    },
+    "page": {
+      "accountCreatedTitle": "Account created successfully!",
+      "accountCreatedDescription": "Please sign in with your new credentials.",
+      "signInSubtitle": "Sign in to your workspace.",
+      "signUpSubtitle": "Start your organization on HBCField.",
+      "signInTab": "Sign in",
+      "createAccountTab": "Create account"
+    },
+    "hero": {
+      "line1": "Dispatch.",
+      "line2": "Track. Deliver.",
+      "subtitle": "Run your whole field operation — tasks, technicians, routes and attendance — in one place.",
+      "inProgress": "In progress",
+      "sampleTask": "HVAC repair · #5102",
+      "sampleTaskMeta": "Mike W. · 2.3 km away",
+      "tasksCompleted": "tasks completed",
+      "footer": "© HBCField — Field Service Management"
     }
   },
-
   "nav": {
     "sidebar": {
       "adminPortal": "Admin Portal",
       "dispatcherPortal": "Dispatcher Portal",
-      "tagline": "Dispatch \u00B7 Track \u00B7 Deliver",
+      "tagline": "Dispatch · Track · Deliver",
       "switchOrganization": "Switch organization",
       "allOrganizations": "All Organizations",
       "mainGroup": "Main",
@@ -253,9 +288,23 @@
       "managePreferences": "Manage preferences",
       "signOut": "Sign out",
       "endYourSession": "End your session"
-    }
+    },
+    "spaces": "Spaces",
+    "timeOff": "Time Off",
+    "manage": "Manage",
+    "team": "Team",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "navigation": "Navigation",
+    "toggle": "Toggle",
+    "hideActivityPanel": "Hide activity panel",
+    "showActivityPanel": "Show activity panel",
+    "searchTasks": "Search tasks...",
+    "avatarAlt": "Avatar",
+    "myTasks": "My Tasks",
+    "tokenTest": "Token Test",
+    "help": "Help"
   },
-
   "dashboard": {
     "admin": {
       "welcomeBack": "Welcome back, {{name}}",
@@ -313,10 +362,52 @@
       "pendingRequests": "{{count}} pending request{{plural}}",
       "more": "+{{count}} more",
       "recentActivity": "Recent Activity",
-      "unassigned": "{{count}} unassigned"
+      "unassigned": "{{count}} unassigned",
+      "employees": "Employees",
+      "manageEmployees": "Manage your employees",
+      "noEmployeesFound": "No employees found"
+    },
+    "client": {
+      "myTasks": "My Tasks",
+      "mySpaces": "My Spaces",
+      "viewAll": "View all →",
+      "setupTitleLine1": "Set up your",
+      "setupTitleLine2": "workspace",
+      "setupDescription": "Create spaces, add your team, and track everyone in real time — all from one view.",
+      "addSpace": "Add Space",
+      "inviteTeam": "Invite Team",
+      "newSpace": "New Space",
+      "noSpacesTitle": "No spaces assigned yet",
+      "noSpacesDescription": "You haven't been added to a space. Check the Tasks tab for your assigned work, or ask your manager to add you."
+    },
+    "employeePanel": {
+      "title": "Employee Details",
+      "employee": "Employee",
+      "completed": "Completed",
+      "active": "Active",
+      "hrsWeek": "Hrs/Week",
+      "onTime": "On-Time",
+      "activeTasks": "Active Tasks",
+      "noActiveTasks": "No active tasks",
+      "statusWorking": "Working",
+      "statusEnRoute": "En Route",
+      "statusOnSite": "On Site",
+      "statusBlocked": "Blocked",
+      "statusAssigned": "Assigned"
+    },
+    "taskChart": {
+      "noData": "No data",
+      "total": "Total"
+    },
+    "activityFeed": {
+      "noRecentActivity": "No recent activity"
+    },
+    "recentTasksWidget": {
+      "noTasks": "No tasks yet",
+      "willAppear": "Tasks will appear here once created",
+      "viewAllTasks": "View all tasks"
     }
   },
-
   "tasks": {
     "list": {
       "title": "Service Requests",
@@ -362,7 +453,26 @@
       "submitting": "Creating...",
       "successMessage": "Task created successfully!",
       "errorMessage": "Failed to create task. Please try again.",
-      "fillRequiredFields": "Please fill in all required fields"
+      "fillRequiredFields": "Please fill in all required fields",
+      "dialogDescription": "Create a new task for your organization",
+      "selectSpace": "Select a space",
+      "type": "Type",
+      "auto": "Auto",
+      "autoFromSpace": "Auto (from space)",
+      "assignment": "Assignment",
+      "assignedToYou": "Assigned to you",
+      "assignedToYouFull": "This task will be assigned to you",
+      "assignTo": "Assign to",
+      "selectTeamMember": "Select a team member",
+      "addChecklistItem": "Add checklist item...",
+      "organization": "Organization",
+      "subtaskOf": "Subtask of (optional)",
+      "parentTaskPlaceholder": "Paste parent task ID...",
+      "moreOptions": "More Options",
+      "epicSet": "Epic set",
+      "itemsCount_one": "{{count}} item",
+      "itemsCount_other": "{{count}} items",
+      "fillRequiredCustomFields": "Please fill in all required custom fields"
     },
     "detail": {
       "title": "Task Details",
@@ -379,7 +489,11 @@
       "failedToLoad": "Failed to load task",
       "notFound": "Not found",
       "commentAdded": "Comment added",
-      "technicianAssigned": "Employee assigned"
+      "technicianAssigned": "Employee assigned",
+      "statusUpdated": "Task status updated",
+      "assigneesUpdated": "Assignees updated",
+      "assigneeRemoved": "Assignee removed",
+      "leadUpdated": "Lead updated"
     },
     "progress": {
       "serviceCompletedSuccessfully": "Service Completed Successfully",
@@ -399,7 +513,8 @@
         "confirmed": "Confirmed",
         "enRoute": "On The Way",
         "working": "Working",
-        "completed": "Completed"
+        "completed": "Completed",
+        "created": "Created"
       },
       "status": {
         "pending": "Pending",
@@ -425,7 +540,12 @@
         "awaitingResponse": "Awaiting response",
         "atYourLocation": "At your location",
         "jobCompleted": "Job completed"
-      }
+      },
+      "progressLabel": "Progress",
+      "lead": "Lead",
+      "member": "member",
+      "members": "members",
+      "unassigned": "Unassigned"
     },
     "comments": {
       "title": "Comments",
@@ -438,16 +558,442 @@
       "viewDetails": "View Details",
       "assign": "Assign",
       "awaitingAcceptance": "Awaiting acceptance",
-      "confirmed": "Confirmed"
+      "confirmed": "Confirmed",
+      "manageAssignees": "Manage assignees"
     },
     "priority": {
       "LOW": "Low",
       "MEDIUM": "Medium",
       "HIGH": "High",
       "URGENT": "Urgent"
+    },
+    "page": {
+      "heading": "Tasks",
+      "subtitle": "Manage tasks across spaces — create, assign, and track progress.",
+      "searchPlaceholder": "Search...",
+      "recurring": "Recurring",
+      "newTask": "New Task",
+      "group": "Group",
+      "adjustFilters": "Try adjusting your filters to see more results.",
+      "showingCount": "Showing {{count}} of {{total}} tasks"
+    },
+    "view": {
+      "board": "Board",
+      "table": "List",
+      "schedule": "Schedule"
+    },
+    "groupBy": {
+      "none": "None",
+      "sprint": "Sprint",
+      "epic": "Epic",
+      "assignee": "Assignee",
+      "priority": "Priority",
+      "space": "Space"
+    },
+    "fallbackColumns": {
+      "open": "Open",
+      "assigned": "Assigned",
+      "active": "Active",
+      "blocked": "Blocked",
+      "done": "Done"
+    },
+    "columns": {
+      "title": "Title",
+      "priority": "Priority",
+      "assignee": "Assignee",
+      "dueDate": "Due Date"
+    },
+    "schedule": {
+      "roadmap": "Roadmap",
+      "timeline": "Timeline",
+      "calendar": "Calendar"
+    },
+    "notify": {
+      "sprintStarted": "Sprint is now active",
+      "sprintCompleted": "Sprint has been completed",
+      "sprintRemoved": "Sprint has been removed",
+      "noTaskSelected": "No task selected",
+      "memberAssigned": "Member assigned",
+      "taskFieldUpdated": "Task {{field}} updated",
+      "priorityUpdated": "Priority updated",
+      "movedToSprint": "Moved to sprint",
+      "movedToBacklog": "Moved to backlog",
+      "phaseSet": "Phase set",
+      "phaseRemoved": "Phase removed",
+      "epicSet": "Epic set",
+      "epicRemoved": "Epic removed",
+      "pointsSet": "Set to {{points}} points",
+      "pointsCleared": "Points cleared",
+      "movedToSpace": "Moved to space",
+      "spaceRemoved": "Space removed",
+      "taskDeleted": "Task deleted",
+      "updatesFailed": "{{failed}} of {{total}} updates failed",
+      "deletesFailed": "{{failed}} of {{total}} deletes failed",
+      "actionUpdated": "updated",
+      "actionMoved": "moved",
+      "actionDeleted": "deleted",
+      "actionEstimated": "estimated",
+      "assigneeUpdatesFailed": "{{failed}} assignee update(s) failed"
+    },
+    "sections": {
+      "subtasks": "Subtasks",
+      "checklist": "Checklist",
+      "attachments": "Attachments",
+      "dependencies": "Dependencies",
+      "activity": "Activity",
+      "serviceReport": "Service Report",
+      "routeTracking": "Route Tracking",
+      "customFields": "Custom Fields"
+    },
+    "customFields": {
+      "enterPlaceholder": "Enter {{name}}...",
+      "selectPlaceholder": "Select {{name}}..."
+    },
+    "sidebar": {
+      "details": "Details",
+      "assignees": "Assignees",
+      "add": "Add",
+      "lead": "Lead",
+      "makeLead": "Make lead",
+      "remove": "Remove",
+      "assignSomeone": "Assign someone",
+      "dueDate": "Due Date",
+      "setDueDate": "Set due date",
+      "startDate": "Start Date",
+      "setStartDate": "Set start date",
+      "location": "Location",
+      "addLocation": "Add location",
+      "estimatedHours": "Estimated Hours",
+      "createdBy": "Created By",
+      "created": "Created",
+      "agile": "Agile",
+      "sprint": "Sprint",
+      "noSprint": "No sprint",
+      "phase": "Phase",
+      "noPhase": "No phase",
+      "epic": "Epic",
+      "noEpic": "No epic",
+      "storyPoints": "Story Points",
+      "none": "None"
+    },
+    "row": {
+      "manageAssignees": "Click to manage assignees"
+    },
+    "priorityDescriptions": {
+      "LOW": "No rush",
+      "MEDIUM": "Standard",
+      "HIGH": "Important",
+      "URGENT": "Critical"
+    },
+    "description": {
+      "label": "Description",
+      "addPlaceholder": "Add a description..."
+    },
+    "inlineEdit": {
+      "empty": "Empty",
+      "cmdEnterToSave": "⌘+Enter to save"
+    },
+    "requestDetails": {
+      "title": "Request Details",
+      "noDescription": "No description provided.",
+      "taskInformation": "Task Information"
+    },
+    "units": {
+      "points": "{{count}} pts"
+    },
+    "timer": {
+      "sinceAccepted": "Time since the task was accepted",
+      "totalOnTask": "Total time on task"
+    },
+    "route": {
+      "noRouteData": "No route data available",
+      "startPoint": "Start Point",
+      "currentLocation": "Current Location",
+      "destination": "Destination",
+      "start": "Start",
+      "current": "Current",
+      "end": "End",
+      "route": "Route",
+      "gpsPointsCount": "{{count}} GPS points",
+      "waitingForTechnician": "Waiting for technician",
+      "waitingDescription": "Route tracking will begin when the technician starts driving to your location",
+      "live": "Live",
+      "avgSpeed": "Avg Speed:",
+      "gpsPoints": "GPS Points:",
+      "arrived": "Arrived",
+      "inTransit": "In transit",
+      "liveTrackingActive": "Live tracking active",
+      "lastUpdate": "Last update: {{time}}",
+      "hideMap": "Hide Route Map",
+      "viewMap": "View Route on Map"
+    },
+    "attachments": {
+      "deleted": "Attachment deleted",
+      "exceedsLimit": "{{name}} exceeds 20MB limit",
+      "unsupportedType": "{{name}}: unsupported file type",
+      "failedUploadUrl": "Failed to get upload URL",
+      "uploaded": "{{name}} uploaded",
+      "uploadFailed": "Failed to upload {{name}}: {{error}}",
+      "upload": "Upload",
+      "dragDropPrefix": "Drag & drop files here, or",
+      "browse": "browse",
+      "sizeHint": "Images and documents up to 20MB",
+      "download": "Download",
+      "empty": "No attachments yet",
+      "deleteTitle": "Delete Attachment",
+      "deleteDescription": "Are you sure you want to delete “{{name}}”? This action cannot be undone."
+    },
+    "groups": {
+      "planning": "Planning",
+      "backlog": "Backlog",
+      "noEpic": "No Epic",
+      "noSpace": "No Space",
+      "noTasksToGroup": "No tasks to group",
+      "noTasksToGroupHint": "There are no tasks matching the current filters to organize into groups.",
+      "newSprint": "New Sprint",
+      "newEpic": "New Epic",
+      "dropHere": "Drop here",
+      "dropTaskHere": "Drop task here",
+      "noTasksInGroup": "No tasks in this group"
+    },
+    "serviceReport": {
+      "noBeforePhotos": "No before photos",
+      "noAfterPhotos": "No after photos",
+      "noParts": "No parts used in this service.",
+      "partsTable": {
+        "part": "Part",
+        "partNumber": "Part #",
+        "qty": "Qty",
+        "unitCost": "Unit Cost",
+        "total": "Total"
+      },
+      "totalParts": "Total Parts:",
+      "noSignature": "No signature",
+      "signatureAlt": "{{label}} signature",
+      "upload": {
+        "acceptedTypes": "Only JPG, PNG, and WebP images are accepted",
+        "sizeError": "File size must be under 10MB",
+        "success": "Photo uploaded successfully",
+        "failed": "Upload failed",
+        "uploadAs": "Upload as:",
+        "uploading": "Uploading...",
+        "dropHint": "Drop an image or click to upload",
+        "sizeHint": "JPG, PNG, WebP up to 10MB"
+      },
+      "before": "Before",
+      "after": "After",
+      "photoRemoved": "Photo removed",
+      "photoRemoveFailed": "Failed to remove photo",
+      "removePhotoConfirm": "Remove this photo?",
+      "jobCompleted": "Job Completed",
+      "noReport": "No service report available for this task.",
+      "completedOn": "Completed {{date}}",
+      "summary": "Summary",
+      "workPerformed": "Work Performed",
+      "employee": "Employee",
+      "unknown": "Unknown",
+      "beforeAfterPhotos": "Before & After Photos",
+      "partsUsed": "Parts Used",
+      "signatures": "Signatures",
+      "customer": "Customer"
+    },
+    "fields": {
+      "name": "Name",
+      "color": "Color",
+      "pickDate": "Pick a date",
+      "endDate": "End Date",
+      "addressPlaceholder": "Enter address...",
+      "addressShort": "Address...",
+      "estimatedHoursPlaceholder": "e.g. 4"
+    },
+    "sprint": {
+      "createdDescription": "Sprint is ready for planning",
+      "updatedDescription": "Sprint details saved",
+      "defaultName": "Sprint {{number}}",
+      "editTitle": "Edit Sprint",
+      "createTitle": "Create Sprint",
+      "editDescription": "Update sprint details",
+      "createDescription": "Create a new sprint",
+      "addGoal": "+ Add a goal",
+      "goal": "Goal",
+      "goalPlaceholder": "What do we want to achieve?",
+      "completeTitle": "Complete “{{name}}”?",
+      "completeDescription": "Complete this sprint and optionally move incomplete tasks.",
+      "moveRemaining_one": "Move {{count}} remaining task",
+      "moveRemaining_other": "Move {{count}} remaining tasks",
+      "tasksMovedToSprint": "Tasks will be moved to “{{name}}”",
+      "tasksMovedToBacklog": "Tasks will be moved to backlog",
+      "allComplete": "All tasks in this sprint are complete. Nice work!",
+      "completeButton": "Complete Sprint",
+      "deleteTitle": "Delete Sprint?",
+      "deleteDescription": "Tasks in this sprint will be moved to the backlog."
+    },
+    "epic": {
+      "created": "Epic created",
+      "updated": "Epic updated",
+      "editTitle": "Edit Epic",
+      "createTitle": "Create Epic",
+      "editDescription": "Update epic details",
+      "createDescription": "Create a new epic",
+      "namePlaceholder": "Epic name",
+      "descriptionPlaceholder": "What is this epic about?",
+      "targetDate": "Target Date"
+    },
+    "edit": {
+      "success": "Task updated",
+      "failed": "Failed to update task",
+      "title": "Edit Task",
+      "description": "Update the task details below.",
+      "titlePlaceholder": "Task title...",
+      "descriptionPlaceholder": "Describe the issue..."
+    },
+    "timeline": {
+      "startLabel": "Start: {{date}}",
+      "dueLabel": "Due: {{date}}",
+      "estLabel": "Est: {{hours}}h",
+      "tasksLabel": "tasks",
+      "scale": {
+        "day": "Day",
+        "week": "Week",
+        "month": "Month"
+      }
+    },
+    "epicRoadmap": {
+      "filteredTo": "Filtered to",
+      "epics": "Epics",
+      "noDates": "No dates set"
+    },
+    "recurring": {
+      "everyNDaysValue": "Every {{count}} days",
+      "frequencies": {
+        "DAILY": "Daily",
+        "WEEKLY": "Weekly",
+        "BIWEEKLY": "Bi-weekly",
+        "MONTHLY": "Monthly",
+        "QUARTERLY": "Quarterly",
+        "YEARLY": "Yearly",
+        "CUSTOM": "Custom"
+      },
+      "repeatTask": "Repeat this task",
+      "frequency": "Frequency",
+      "everyNDays": "Every N days",
+      "dayOfWeek": "Day of week",
+      "dayOfMonth": "Day of month",
+      "endDateOptional": "End date (optional)",
+      "generatesHint": "Generates a task in the chosen space & type on this schedule. Due date & attachments don't apply.",
+      "created": "Recurring task created",
+      "createdDescription": "It will generate on schedule.",
+      "createFailed": "Could not create recurring task",
+      "createButton": "Create Recurring Task",
+      "noSpace": "No space",
+      "defaultType": "Default type",
+      "nextRun": "Next: {{date}}",
+      "checklistItemsCount": "{{count}} checklist items",
+      "generate": "Generate",
+      "templateCreated": "Template created",
+      "templateUpdated": "Template updated",
+      "editTemplate": "Edit Template",
+      "createTemplate": "Create Recurring Template",
+      "editTemplateDescription": "Update the recurring task template.",
+      "createTemplateDescription": "Set up a template that automatically generates tasks.",
+      "titlePlaceholder": "e.g. Weekly HVAC Inspection",
+      "descriptionPlaceholder": "Task description...",
+      "taskType": "Task Type",
+      "default": "Default",
+      "taskGenerated": "Task generated successfully",
+      "templateDeleted": "Template deleted",
+      "pageTitle": "Recurring Tasks",
+      "pageSubtitle": "Automate task creation on a schedule",
+      "newTemplate": "New Template",
+      "emptyInSpace": "No recurring templates in this space",
+      "emptyTitle": "No recurring templates yet",
+      "emptyHint": "Create templates to automatically generate tasks on a daily, weekly, monthly, or custom schedule.",
+      "createFirst": "Create Your First Template",
+      "deleteTitle": "Delete Template",
+      "deleteDescription": "Are you sure you want to delete “{{name}}”? Previously generated tasks will not be affected."
+    },
+    "weekdaysFull": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "activity": {
+      "title": "Activity",
+      "noActivity": "No activity yet",
+      "assignedTo": "Assigned to {{name}}",
+      "updatedFields": "Updated {{fields}}",
+      "events": {
+        "CREATED": "Task created",
+        "UPDATED": "Task updated",
+        "ASSIGNED": "Employee assigned",
+        "UNASSIGNED": "Employee unassigned",
+        "STATUS_CHANGED": "Status changed",
+        "EN_ROUTE": "Employee on the way",
+        "ARRIVED": "Employee arrived",
+        "IN_PROGRESS": "Work in progress",
+        "BLOCKED": "Task blocked",
+        "COMPLETED": "Task completed",
+        "CANCELED": "Task canceled",
+        "CLOSED": "Task closed",
+        "ATTACHMENT_ADDED": "Attachment added",
+        "ATTACHMENT_REMOVED": "Attachment removed"
+      }
+    },
+    "assignees": {
+      "addTeamMember": "Add Team Member",
+      "searchPlaceholder": "Search by name or email...",
+      "noTeamMembersFound": "No team members found",
+      "noAssignees": "No assignees yet",
+      "added": "Assignee added",
+      "removed": "Assignee removed"
+    },
+    "checklist": {
+      "addItemPlaceholder": "Add an item...",
+      "updateFailed": "Failed to update checklist item"
+    },
+    "dependencies": {
+      "add": "Add Dependency",
+      "type": "Dependency Type",
+      "searchTasks": "Search tasks...",
+      "noMatchingTasks": "No matching tasks found",
+      "blockedBy": "Blocked by",
+      "blocking": "Blocking",
+      "empty": "No dependencies. Link tasks to define execution order.",
+      "added": "Dependency added",
+      "removed": "Dependency removed",
+      "types": {
+        "FINISH_TO_START": "Finish to Start",
+        "START_TO_START": "Start to Start",
+        "FINISH_TO_FINISH": "Finish to Finish",
+        "START_TO_FINISH": "Start to Finish"
+      }
+    },
+    "subtasks": {
+      "created": "Subtask created",
+      "empty": "No subtasks yet. Break this task into smaller steps.",
+      "titlePlaceholder": "Subtask title..."
+    },
+    "backlog": {
+      "est": "Est:",
+      "tasksLabel": "tasks",
+      "unestimated": "unestimated",
+      "pts": "pts",
+      "moveToSprint": "Move to Sprint",
+      "planning": "Planning",
+      "ascending": "Ascending",
+      "descending": "Descending",
+      "sort": {
+        "priority": "Priority",
+        "createdAt": "Created",
+        "storyPoints": "Points",
+        "title": "Title"
+      }
     }
   },
-
   "technicians": {
     "list": {
       "title": "Employees",
@@ -470,7 +1016,8 @@
       "specialty": "Specialty",
       "rating": "Rating",
       "activeTasks": "Active Tasks",
-      "status": "Status"
+      "status": "Status",
+      "position": "Position"
     },
     "types": {
       "fullTime": "Full-Time",
@@ -531,7 +1078,9 @@
       "successMessage": "Employee created successfully",
       "failedToCreate": "Failed to create employee",
       "accessDenied": "Access Denied",
-      "noPermission": "You don't have permission to create employees."
+      "noPermission": "You don't have permission to create employees.",
+      "positionLabel": "Position",
+      "positionHint": "The employee's job title or role."
     },
     "createSuccess": {
       "title": "Employee Created Successfully",
@@ -759,7 +1308,6 @@
       }
     }
   },
-
   "members": {
     "title": "Organization Members",
     "subtitle": "Manage your team members, roles, and permissions",
@@ -799,12 +1347,17 @@
       "role": "Role",
       "platform": "Platform",
       "status": "Status",
-      "joined": "Joined"
+      "joined": "Joined",
+      "title": "Title",
+      "schedule": "Schedule",
+      "spaces": "Spaces"
     },
     "roles": {
       "admin": "Admin",
       "dispatcher": "Dispatcher",
-      "technician": "Employee"
+      "technician": "Employee",
+      "manager": "Manager",
+      "employee": "Employee"
     },
     "platforms": {
       "web": "Web",
@@ -843,9 +1396,95 @@
     "actions": {
       "editMember": "Edit Member",
       "remove": "Remove"
+    },
+    "team": "Team",
+    "teamSubtitle": "Manage your team members — assign roles, permissions, and spaces.",
+    "inviteShort": "Invite",
+    "you": "you",
+    "noSpaces": "No spaces",
+    "schedule": {
+      "fixed": "Fixed",
+      "flexible": "Flexible"
+    },
+    "bulk": {
+      "selected": "{{count}} selected",
+      "role": "Role",
+      "space": "Space",
+      "removeConfirm": "Remove {{count}} member(s) from the organization?"
+    },
+    "empty": {
+      "title": "Build your team",
+      "description": "Add team members and assign them to spaces. Each member can have different roles and permissions."
+    },
+    "pendingInvitations": {
+      "title": "Pending Invitations",
+      "createdBy": "by {{name}}",
+      "expired": "Expired",
+      "expires": "Expires {{date}}",
+      "revoke": "Revoke"
+    },
+    "removeTeamMember": {
+      "title": "Remove team member",
+      "description": "Are you sure you want to remove {{name}} from the organization? This action cannot be undone."
+    },
+    "toast": {
+      "memberRemoved": "Member removed",
+      "removeFailed": "Failed to remove member",
+      "revokeFailed": "Failed to revoke invitation",
+      "roleUpdated": "role updated",
+      "updateRolesFailed": "Failed to update roles",
+      "assignedToSpace": "Assigned {{count}} member(s) to space",
+      "assignFailed": "Failed to assign to space",
+      "removedCount": "Removed {{count}} member(s)",
+      "removeMembersFailed": "Failed to remove members"
+    },
+    "memberEditor": {
+      "positionPlaceholder": "Select or type a title...",
+      "searchOrType": "Search or type custom...",
+      "useQuery": "Use \"{{query}}\"",
+      "usedInOrg": "Used in your org",
+      "suggestions": "Suggestions",
+      "sectionProfile": "Profile",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "position": "Position",
+      "sectionWorkSchedule": "Work schedule",
+      "sectionRoleAccess": "Role & access",
+      "role": "Role",
+      "add": "Add",
+      "sectionSecurity": "Security",
+      "password": "Password",
+      "copyPasswordWarning": "Copy this password now. It will not be shown again.",
+      "resetPassword": "Reset password",
+      "updated": "Member updated",
+      "failedToUpdate": "Failed to update member",
+      "failedToResetPassword": "Failed to reset password",
+      "failedToSaveSchedule": "Failed to save schedule",
+      "removedFrom": "Removed from {{name}}",
+      "failedToRemove": "Failed to remove",
+      "assignedTo": "Assigned to {{name}}",
+      "failedToAssign": "Failed to assign"
+    },
+    "detail": {
+      "backToTeam": "Back to Team",
+      "notFound": "Member not found",
+      "notFoundDescription": "This member may have been removed from the organization.",
+      "fixedSchedule": "Fixed Schedule",
+      "flexibleHours": "Flexible Hours",
+      "activity": "Activity",
+      "noRecentActivity": "No recent activity",
+      "recentTasks": "Recent Tasks",
+      "due": "Due {{date}}",
+      "viewAllTasks": "View all tasks →",
+      "noTasksAssigned": "No tasks assigned",
+      "schedule": "Schedule",
+      "off": "Off",
+      "overview": "Overview",
+      "access": "Access",
+      "yesterday": "Yesterday",
+      "daysAgo": "{{count}} days ago"
     }
   },
-
   "invitations": {
     "title": "Invitations",
     "subtitle": "Create and manage invitation codes for new team members",
@@ -901,9 +1540,34 @@
       "accepted": "Accepted",
       "expired": "Expired",
       "revoked": "Revoked"
+    },
+    "inviteDialog": {
+      "title": "Invite Team Member",
+      "description": "Send an email invitation or generate a code to share manually.",
+      "failedToCreate": "Failed to create invitation",
+      "codeCopied": "Code copied",
+      "invitationSent": "Invitation sent",
+      "emailSentToPrefix": "An email has been sent to",
+      "codeAlsoInEmail": "Invitation code (also in the email)",
+      "codeCreated": "Invitation code created",
+      "shareCode": "Share this code with the new team member.",
+      "sendAnother": "Send Another",
+      "createAnother": "Create Another",
+      "methodLabel": "Method",
+      "emailLabel": "Email",
+      "codeLabel": "Code",
+      "emailPlaceholder": "team@example.com",
+      "positionLabel": "Position",
+      "positionPlaceholder": "e.g. Plumber, Field Technician",
+      "optional": "(optional)",
+      "spaceLabel": "Space",
+      "spacePlaceholder": "Assign to a space on join",
+      "noSpace": "No space",
+      "sending": "Sending...",
+      "sendInvitation": "Send Invitation",
+      "generateCode": "Generate Code"
     }
   },
-
   "joinRequests": {
     "title": "Join Requests",
     "subtitle": "Review and manage requests from people wanting to join your organization",
@@ -951,7 +1615,6 @@
       "rejectedSuccessfully": "Join request rejected"
     }
   },
-
   "settings": {
     "title": "Organization Settings",
     "subtitle": "Manage your organization settings, membership, and preferences",
@@ -985,7 +1648,23 @@
         "security": "Security",
         "itServices": "IT Services",
         "other": "Other"
-      }
+      },
+      "orgNamePlaceholder": "e.g. Acme Corporation",
+      "streetAddress": "Street address",
+      "streetAddressPlaceholder": "e.g. Arbeiterheimstraße 32",
+      "addressLine2": "Address line 2 (optional)",
+      "addressLine2Placeholder": "Suite, floor, unit…",
+      "city": "City",
+      "cityPlaceholder": "e.g. Vienna",
+      "state": "State / Province / Region",
+      "statePlaceholder": "e.g. Upper Austria",
+      "postalCode": "Postal / ZIP code",
+      "postalCodePlaceholder": "e.g. 4663",
+      "country": "Country",
+      "selectCountry": "Select country",
+      "emailPlaceholder": "e.g. office@company.com",
+      "websitePlaceholder": "https://www.company.com",
+      "addCustom": "Add “{{query}}”"
     },
     "members": {
       "defaultPermissions": "Default Permissions",
@@ -1032,9 +1711,63 @@
       "showSpecialty": "Show Specialty",
       "updated": "Profile badge settings updated",
       "failed": "Failed to update profile badge settings"
+    },
+    "nav": {
+      "organizationGroup": "Organization",
+      "personalGroup": "Personal",
+      "general": "General",
+      "members": "Members",
+      "taskTypes": "Task Types",
+      "notifications": "Notifications",
+      "auditLog": "Audit Log",
+      "profile": "Profile",
+      "security": "Password & Security"
+    },
+    "changeEmail": {
+      "title": "Change email",
+      "description": "Your email is your login. Enter a new one and confirm with your current password.",
+      "currentEmail": "Current email",
+      "newEmail": "New email",
+      "newEmailPlaceholder": "you@example.com",
+      "currentPassword": "Current password",
+      "submit": "Change email",
+      "updated": "Email updated",
+      "failed": "Couldn't change email"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Your personal information. This is visible to other members of your organization.",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "changeEmailButton": "Change",
+      "emailLoginNote": "Your email is also your login. Changing it requires your password.",
+      "editAvatar": "Edit",
+      "removePhoto": "Remove photo",
+      "updated": "Profile updated",
+      "failed": "Failed to update profile",
+      "imageTooLarge": "Image must be less than 5MB",
+      "invalidImageType": "Only JPEG, PNG, and WebP images are allowed",
+      "avatarUpdated": "Avatar updated",
+      "avatarUploadFailed": "Failed to upload avatar",
+      "avatarRemoved": "Avatar removed",
+      "avatarRemoveFailed": "Failed to remove avatar"
+    },
+    "security": {
+      "title": "Password & Security",
+      "description": "Manage your password and security settings.",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "passwordHint": "At least 8 characters with an uppercase letter, a lowercase letter, and a number.",
+      "changeButton": "Change Password",
+      "passwordPolicyError": "Password must be 8+ characters with an uppercase letter, a lowercase letter, and a number",
+      "passwordSameError": "New password must be different from your current password",
+      "passwordChanged": "Password changed",
+      "passwordChangedDetail": "You may need to sign in again on other devices.",
+      "changeFailed": "Failed to change password"
     }
   },
-
   "profile": {
     "title": "Profile",
     "subtitle": "View your account information and manage your password",
@@ -1070,7 +1803,6 @@
       "description": "Choose your preferred language"
     }
   },
-
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all read",
@@ -1095,11 +1827,11 @@
     "breakStarted": "Break started",
     "breakEnded": "Break ended"
   },
-
   "landing": {
     "nav": {
       "signIn": "Sign In",
-      "getStarted": "Get Started"
+      "getStarted": "Get Started",
+      "getApp": "Get the app"
     },
     "hero": {
       "badge": "Field Service Management",
@@ -1169,14 +1901,12 @@
       "terms": "Terms"
     }
   },
-
   "unauthorized": {
     "title": "Access Denied",
     "description": "You don't have permission to access this portal.",
     "technicianHint": "Employees should use the mobile app.",
     "signOutButton": "Sign out and try another account"
   },
-
   "liveMap": {
     "title": "Live Map",
     "subtitle": "Track employee locations in real-time",
@@ -1185,7 +1915,6 @@
     "connectionConnecting": "Connecting...",
     "failedToLoad": "Failed to load map"
   },
-
   "validation": {
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
@@ -1215,5 +1944,1110 @@
     "acceptTermsRequired": "You must accept the terms",
     "pleaseSelectDateRange": "Please select a date range",
     "fillRequiredFields": "Please fill in all required fields"
+  },
+  "attendance": {
+    "worker": "Worker",
+    "notes": "Notes",
+    "unknownLocation": "Unknown location",
+    "clockIn": "Clock In",
+    "clockOut": "Clock Out",
+    "approval": "Approval",
+    "type": "Type",
+    "started": "Started",
+    "ended": "Ended",
+    "status": {
+      "active": "Active",
+      "completed": "Completed",
+      "auto": "Auto"
+    },
+    "breaks": {
+      "totalBreaks": "Total Breaks",
+      "totalBreakTime": "Total Break Time",
+      "averageBreak": "Average Break",
+      "activeNow": "Active Now",
+      "breaksByType": "Breaks by Type",
+      "lunchBreaks": "Lunch Breaks",
+      "shortBreaks": "Short Breaks",
+      "otherBreaks": "Other Breaks",
+      "count": "Count",
+      "total": "Total",
+      "avg": "Avg",
+      "activeBreaks": "Active Breaks",
+      "workersOnBreak": "Workers currently on break",
+      "noActiveBreaks": "No active breaks",
+      "allWorking": "All workers are currently working",
+      "onBreak": "On break",
+      "endBreak": "End Break",
+      "endBreakConfirm": "End this break manually?",
+      "startedAt": "Started {{time}}",
+      "breakHistory": "Break History",
+      "viewPastRecords": "View past break records",
+      "typeFilter": "Type",
+      "noRecords": "No break records",
+      "noRecordsHint": "No breaks found for the selected date",
+      "types": {
+        "lunch": "Lunch",
+        "short": "Short",
+        "other": "Other"
+      },
+      "typeBreak": {
+        "lunch": "Lunch break",
+        "short": "Short break",
+        "other": "Other break"
+      }
+    },
+    "tracking": {
+      "currentlyActive": "Currently Active",
+      "completedShifts": "Completed Shifts",
+      "autoClockOut": "Auto Clock-Out",
+      "totalHours": "Total Hours",
+      "geofenceAlerts": "Geofence Alerts ({{count}})",
+      "geofenceAlertsDesc": "Entries where clock-in or clock-out occurred outside the designated geofence",
+      "clockInOutside": "Clock-in outside",
+      "clockOutOutside": "Clock-out outside",
+      "moreAlerts": "+ {{count}} more alerts",
+      "schedulerTitle": "Auto Clock-Out Scheduler",
+      "schedulerStats": "{{jobs}} jobs · {{active}} active · {{failed}} failed",
+      "hourly": "Hourly",
+      "midnight": "Midnight",
+      "scheduled": "Scheduled",
+      "active": "Active",
+      "completed": "Completed",
+      "failed": "Failed",
+      "everyMinutes": "Every {{minutes}}min",
+      "searchPlaceholder": "Search by name...",
+      "selectLocation": "Select location",
+      "allLocations": "All Locations",
+      "statusPlaceholder": "Status",
+      "failedToLoad": "Failed to load attendance",
+      "errorOccurred": "An error occurred",
+      "noRecords": "No attendance records",
+      "selectLocationHint": "Select a location to view attendance",
+      "noEntriesHint": "No entries found for this date and location",
+      "autoApproved": "Auto-Approved",
+      "showingEntries": "Showing {{start}} to {{end}} of {{total}} entries"
+    },
+    "reports": {
+      "thisWeek": "This Week",
+      "lastWeek": "Last Week",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
+      "workDaysCount_one": "{{count}} day",
+      "workDaysCount_other": "{{count}} days",
+      "export": "Export",
+      "spreadsheetData": "Spreadsheet data",
+      "pdfReport": "PDF Report",
+      "printReady": "Print-ready document",
+      "noDataTitle": "No attendance data",
+      "noDataDesc": "There are no attendance records for this period. Try selecting a different date range.",
+      "overtime": "Overtime",
+      "autoClockOuts": "Auto Clock-Outs",
+      "avgShift": "Avg Shift",
+      "hoursByWorker": "Hours by Worker",
+      "chartSubtitle_one": "{{count}} worker · {{hours}}h total · hover for avg line",
+      "chartSubtitle_other": "{{count}} workers · {{hours}}h total · hover for avg line",
+      "noDataFilters": "No data for selected filters",
+      "expected": "Expected: {{hours}}h",
+      "avgLabel": "avg",
+      "moreWorkers_one": "+ {{count}} more worker",
+      "moreWorkers_other": "+ {{count}} more workers",
+      "overview": "Overview",
+      "totalShifts": "Total Shifts",
+      "standardHours": "Standard Hours",
+      "overtimeHours": "Overtime Hours",
+      "workers": "Workers",
+      "locations": "Locations",
+      "byWorker": "By Worker",
+      "byLocation": "By Location",
+      "workersAt": "Workers at {{name}}",
+      "recordsCount_one": "{{count}} record",
+      "recordsCount_other": "{{count}} records",
+      "hours": "Hours",
+      "shifts": "Shifts",
+      "avg": "Avg",
+      "issues": "Issues",
+      "location": "Location",
+      "avgPerShift": "Avg / Shift",
+      "totalCount": "Total ({{count}})",
+      "noWorkerData": "No worker data",
+      "noWorkerDataDesc": "No attendance records match your filters",
+      "noLocationData": "No location data",
+      "noLocationDataDesc": "No attendance records for this period",
+      "shiftCount_one": "{{count}} shift",
+      "shiftCount_other": "{{count}} shifts"
+    },
+    "export": {
+      "employeeName": "Employee Name",
+      "email": "Email",
+      "totalHours": "Total Hours",
+      "shifts": "Shifts",
+      "avgShiftH": "Avg Shift (h)",
+      "autoClockOuts": "Auto Clock-Outs",
+      "locations": "Locations",
+      "reportInfo": "--- REPORT INFO ---",
+      "period": "Period",
+      "workDays": "Work Days",
+      "locationFilter": "Location Filter",
+      "totalTechnicians": "Total Technicians",
+      "standardHours": "Standard Hours",
+      "overtimeHours": "Overtime Hours",
+      "totalShifts": "Total Shifts",
+      "avgShift": "Avg Shift",
+      "byLocationHeader": "--- BY LOCATION ---",
+      "location": "Location",
+      "employees": "Employees",
+      "popupBlocked": "Please allow popups to generate PDF reports",
+      "documentTitle": "Attendance Report — {{org}}",
+      "reportTitle": "Attendance Report",
+      "workDaysSuffix_one": "{{count}} work day",
+      "workDaysSuffix_other": "{{count}} work days",
+      "generated": "Generated: {{date}}",
+      "technicians": "Technicians",
+      "activeInPeriod": "Active in period",
+      "perShift": "Per shift",
+      "missed": "Missed",
+      "shiftsCount_one": "{{count}} shift",
+      "shiftsCount_other": "{{count}} shifts",
+      "byTechnician": "By Technician",
+      "name": "Name",
+      "hours": "Hours",
+      "avg": "Avg",
+      "autoOut": "Auto-Out",
+      "total": "Total",
+      "byLocation": "By Location",
+      "avgPerShiftCol": "Avg/Shift",
+      "managerSignature": "Manager Signature / Date",
+      "approvedBy": "Approved By / Date",
+      "generatedBy": "Generated by HBCField",
+      "printSavePdf": "Print / Save as PDF",
+      "previewBar": "Preview — {{org}} Attendance Report · {{location}}"
+    },
+    "approvals": {
+      "title": "Pending Approvals",
+      "subtitle": "Review and approve time entries that require manager approval",
+      "allCaughtUp": "All caught up!",
+      "noneDesc": "No pending approvals at this time",
+      "date": "Date",
+      "unknown": "Unknown",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectTitle": "Reject time entry",
+      "rejectPlaceholder": "Why is this entry being rejected?",
+      "rejectEntry": "Reject entry",
+      "location": "Location"
+    },
+    "my": {
+      "noAccess": "You don't have access to Attendance.",
+      "title": "Attendance",
+      "subtitle": "Your clock-in history and hours. Clock in/out happens on the mobile app.",
+      "currentStatus": "Current status",
+      "clockedIn": "Clocked in",
+      "clockedOut": "Clocked out",
+      "since": "Since {{time}} · {{duration}}",
+      "hoursLast": "Hours (last {{count}})",
+      "recentEntries": "Recent entries",
+      "noRecords": "No attendance records yet.",
+      "active": "active"
+    },
+    "management": {
+      "title": "Attendance Management",
+      "subtitle": "Track attendance, view reports, and manage approvals"
+    },
+    "tabs": {
+      "tracking": "Tracking",
+      "reports": "Reports",
+      "approvals": "Approvals",
+      "breaks": "Breaks"
+    },
+    "toast": {
+      "autoClockOutTriggered": "Auto clock-out triggered",
+      "autoClockOutFailed": "Failed to trigger auto clock-out",
+      "breakEnded": "Break ended successfully",
+      "breakEndFailed": "Failed to end break",
+      "entryApproved": "Entry approved",
+      "approveFailed": "Failed to approve",
+      "entryRejected": "Entry rejected",
+      "rejectFailed": "Failed to reject"
+    }
+  },
+  "auditLog": {
+    "title": "Audit Log",
+    "subtitle": "Track all security and administrative events",
+    "accessDenied": "Access Denied",
+    "accessDeniedDescription": "Only admins can view audit logs.",
+    "allEvents": "All events",
+    "searchEvents": "Search events…",
+    "allUsers": "All users",
+    "searchUsers": "Search users…",
+    "fromDate": "From date",
+    "toDate": "To date",
+    "clear": "Clear",
+    "totalEvents": "{{count}} total events",
+    "event": "Event",
+    "user": "User",
+    "resource": "Resource",
+    "time": "Time",
+    "noEvents": "No audit events found",
+    "system": "System",
+    "events": {
+      "USER_LOGIN": "Login",
+      "USER_LOGOUT": "Logout",
+      "USER_LOGIN_FAILED": "Login Failed",
+      "USER_CREATED": "User Created",
+      "USER_UPDATED": "User Updated",
+      "USER_DELETED": "User Deleted",
+      "TASK_CREATED": "Task Created",
+      "TASK_ASSIGNED": "Task Assigned",
+      "TASK_STATUS_CHANGED": "Status Changed",
+      "TASK_COMPLETED": "Task Completed",
+      "TASK_DELETED": "Task Deleted",
+      "TASK_TYPE_CREATED": "Task Type Created",
+      "TASK_TYPE_DELETED": "Task Type Deleted",
+      "CUSTOM_FIELD_CREATED": "Custom Field Created",
+      "CUSTOM_FIELD_DELETED": "Custom Field Deleted",
+      "MEMBER_ROLE_CHANGED": "Member Role Changed",
+      "MEMBER_REMOVED": "Member Removed",
+      "ORG_SETTINGS_UPDATED": "Org Settings Updated",
+      "ORG_JOIN_CODE_REGENERATED": "Join Code Regenerated",
+      "INVITATION_CREATED": "Invitation Created",
+      "INVITATION_REVOKED": "Invitation Revoked",
+      "INVITATION_ACCEPTED": "Invitation Accepted",
+      "JOIN_REQUEST_APPROVED": "Join Approved",
+      "JOIN_REQUEST_REJECTED": "Join Rejected",
+      "SPACE_CREATED": "Space Created",
+      "SPACE_DELETED": "Space Deleted",
+      "RECURRING_CREATED": "Recurring Created",
+      "RECURRING_DELETED": "Recurring Deleted",
+      "RECURRING_GENERATED": "Recurring Generated",
+      "TECHNICIAN_CREATED": "Technician Created",
+      "TECHNICIAN_DEACTIVATED": "Technician Deactivated",
+      "CLOCK_IN": "Clock In",
+      "CLOCK_OUT": "Clock Out",
+      "GEOFENCE_VIOLATION": "Geofence Violation"
+    }
+  },
+  "locations": {
+    "picker": {
+      "notSupported": "Location isn't supported on this device",
+      "permissionDenied": "Location permission denied — allow it in your browser to use this.",
+      "locationFailed": "Couldn't get your location. Try again or pick on the map.",
+      "searchPlaceholder": "Search for a city, street, or landmark...",
+      "useMyLocation": "Use my current location",
+      "locating": "Locating…",
+      "myLocation": "My location",
+      "address": "Address",
+      "addressPlaceholder": "Type the full address manually",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "hint": "Search above, click on the map, or enter the address and coordinates manually."
+    },
+    "title": "Spaces",
+    "subtitle": "Manage your workspaces — each space has its own workflow, modules, and team.",
+    "newSpace": "New Space",
+    "createSpace": "Create Space",
+    "createDescription": "Set up a new workspace with its own workflow and modules.",
+    "deactivateSpace": "Deactivate Space",
+    "deactivateConfirmBefore": "Are you sure you want to deactivate ",
+    "deactivateConfirmAfter": "? Employees will no longer be able to clock in at this location. You can reactivate it later.",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "configure": "Configure",
+    "viewTasks": "View Tasks",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members",
+    "workflowPrefix": "Workflow: ",
+    "statusCountSuffix_one": " ({{count}} status)",
+    "statusCountSuffix_other": " ({{count}} statuses)",
+    "configureTitle": "Configure — {{name}}",
+    "configureDescription": "Manage this space's settings, modules, workflow, and team members.",
+    "name": "Name",
+    "address": "Address",
+    "geofenceRadius": "Geofence Radius",
+    "timezone": "Timezone",
+    "activeLabel": "Active",
+    "activeHint": "Employees can clock in at this space",
+    "nameRequired": "Name is required",
+    "modulesIntro": "Modules add optional features to this space's tasks. Pick a preset, then fine-tune.",
+    "presets": "Presets",
+    "currentWorkflow": "Current Workflow",
+    "statusesWithCount": "Statuses ({{count}})",
+    "editWorkflow": "Edit Workflow",
+    "createNew": "Create New",
+    "membersWithCount": "Members ({{count}})",
+    "noMembers": "No members assigned yet",
+    "primary": "Primary",
+    "allDays": "All days",
+    "addMember": "Add Member",
+    "selectEmployee": "Select an employee...",
+    "noAvailableEmployees": "No available employees",
+    "workDays": "Work Days",
+    "setPrimary": "Set as primary location",
+    "adding": "Adding...",
+    "selectEmployeeError": "Select an employee",
+    "tabs": {
+      "general": "General",
+      "modules": "Modules",
+      "workflow": "Workflow",
+      "members": "Members"
+    },
+    "empty": {
+      "title": "Create your first space",
+      "description": "Spaces are where work happens — offices, warehouses, job sites. Each space can have its own workflow, modules, and team."
+    },
+    "form": {
+      "namePlaceholder": "e.g. Main Office, Downtown Crew",
+      "type": "Type",
+      "workspace": "Workspace",
+      "workspaceHint": "A team or project — no physical location.",
+      "physical": "Physical location",
+      "physicalHint": "A site with an address — for attendance clock-in.",
+      "addressPlaceholder": "Street, city",
+      "geofenceRadius": "Geofence radius",
+      "geofenceHint": "Workers can clock in within this distance of the pin.",
+      "advancedModules": "Advanced — Modules",
+      "enabledCount": "{{count}} enabled",
+      "modulesIntro": "Modules add optional features to this space's tasks (checklists, GPS tracking, sprints…). Start from a preset, then fine-tune below."
+    },
+    "toast": {
+      "deactivated": "Space deactivated",
+      "deactivateFailed": "Failed to deactivate space",
+      "reactivated": "Space reactivated",
+      "reactivateFailed": "Failed to reactivate",
+      "updated": "Space updated",
+      "updateFailed": "Failed to update",
+      "modulesUpdated": "Modules updated",
+      "modulesUpdateFailed": "Failed to update modules",
+      "workflowUpdated": "Workflow updated",
+      "workflowUpdateFailed": "Failed to update workflow",
+      "memberAdded": "Member added",
+      "memberAddFailed": "Failed to add member",
+      "memberRemoved": "Member removed",
+      "memberRemoveFailed": "Failed to remove member",
+      "created": "Space created",
+      "createFailed": "Failed to create space"
+    },
+    "workflowLabel": "Workflow",
+    "selectWorkflow": "Select workflow...",
+    "defaultSuffix": " (Default)",
+    "statusCount_one": "{{count}} status",
+    "statusCount_other": "{{count}} statuses",
+    "createNewWorkflow": "Create new workflow"
+  },
+  "commandPalette": {
+    "placeholder": "Type a command or search...",
+    "navigate": "Navigate",
+    "select": "Select",
+    "goToDashboard": "Go to Dashboard",
+    "goToTasks": "Go to Tasks",
+    "goToSpaces": "Go to Spaces",
+    "goToSchedule": "Go to Schedule",
+    "goToAttendance": "Go to Attendance",
+    "goToMembers": "Go to Members",
+    "goToSettings": "Go to Settings",
+    "switchToLight": "Switch to Light Mode",
+    "switchToDark": "Switch to Dark Mode",
+    "toggleActivityPanel": "Toggle Activity Panel",
+    "groups": {
+      "navigation": "Navigation",
+      "tasks": "Tasks",
+      "sprints": "Sprints",
+      "spaces": "Spaces",
+      "quickActions": "Quick Actions"
+    }
+  },
+  "toast": {
+    "taskUpdated": "Task updated",
+    "addedToSprint": "Added to sprint",
+    "epicUpdated": "Epic updated",
+    "taskAssigned": "Task assigned",
+    "movedToSpace": "Moved to space",
+    "taskCreated": "Task created",
+    "bulkUpdatedOne": "{{count}} task updated",
+    "bulkUpdatedMany": "{{count}} tasks updated",
+    "sprintAction": "Sprint {{action}}",
+    "somethingWentWrong": "Something went wrong",
+    "copied": "Copied",
+    "copiedWhat": "Copied {{what}}",
+    "savedToClipboard": "Saved to clipboard"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "unexpected": "An unexpected error occurred. Please try again.",
+    "goToDashboard": "Go to Dashboard",
+    "pageNotFound": "Page not found",
+    "pageNotFoundBody": "The page you are looking for does not exist or has been moved.",
+    "unexpectedNotified": "An unexpected error occurred. Our team has been notified."
+  },
+  "assignMembers": {
+    "manageAssignees": "Manage Assignees",
+    "assignTo": "Assign to",
+    "selected": "{{count}} selected",
+    "unsavedChanges": "unsaved changes",
+    "selectDescription": "Select a member to assign this task to.",
+    "searchPlaceholder": "Search members...",
+    "noMembersFound": "No members found",
+    "spaceMembers": "Space members",
+    "otherMembers": "Other members",
+    "membersSelected": "{{count}} members selected"
+  },
+  "locationPicker": {
+    "searchPlaceholder": "Search for an address..."
+  },
+  "accessBuilder": {
+    "title": "Access",
+    "subtitle": "What {{name}} can do & see on web & mobile.",
+    "accessUpdated": "Access updated",
+    "accessUpdatedDesc": "{{name}}'s apps will update on next sign-in.",
+    "updateFailed": "Couldn't update access",
+    "platformAccess": "Platform access",
+    "permissions": "Permissions",
+    "featureTabsLabel": "Feature tabs",
+    "spaceVisibility": "Space visibility",
+    "collaboration": "Collaboration",
+    "featureTabs": {
+      "tasks": "Tasks",
+      "clock": "Clock",
+      "timeOff": "Time Off"
+    },
+    "platforms": {
+      "webOnly": "Web only",
+      "mobileOnly": "Mobile only",
+      "both": "Both"
+    },
+    "scopes": {
+      "own": {
+        "label": "My spaces only",
+        "desc": "Sees only the spaces they're assigned to."
+      },
+      "tasks": {
+        "label": "Tasks only",
+        "desc": "No space view — just their own task list."
+      },
+      "all": {
+        "label": "All spaces",
+        "desc": "Read-only overview of every space."
+      }
+    },
+    "taskScopes": {
+      "self": "Their own tasks",
+      "space": "Tasks in their spaces",
+      "org": "Any task in the org"
+    },
+    "perms": {
+      "create": {
+        "title": "Create tasks",
+        "desc": "Open new tasks."
+      },
+      "assign": {
+        "title": "Assign tasks",
+        "desc": "Assign tasks to other people."
+      },
+      "viewAll": {
+        "title": "View all tasks",
+        "desc": "See every task in the organization, not just their own."
+      },
+      "manage": {
+        "title": "Manage members",
+        "desc": "Invite, edit and remove people. Opens the Manage hub."
+      }
+    },
+    "contact": {
+      "title": "Can contact colleagues",
+      "desc": "Message & call teammates in their visible spaces."
+    }
+  },
+  "customFields": {
+    "fieldTypes": {
+      "TEXT": "Text",
+      "NUMBER": "Number",
+      "DATE": "Date",
+      "DROPDOWN": "Dropdown",
+      "CHECKBOX": "Checkbox",
+      "URL": "URL",
+      "EMAIL": "Email"
+    },
+    "optionsList": "Options: {{options}}",
+    "fieldCreated": "Field created",
+    "fieldUpdated": "Field updated",
+    "fieldDeleted": "Field deleted",
+    "editField": "Edit Field",
+    "newField": "New Field",
+    "scopedDescription": "Shown on tasks of this type.",
+    "globalDescription": "Shown on every task.",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Customer Phone",
+    "keyLabel": "Key",
+    "keyPlaceholder": "customer_phone",
+    "typeLabel": "Type",
+    "optionsLabel": "Options",
+    "addOptionPlaceholder": "Add option...",
+    "requiredDescription": "Must be filled on tasks",
+    "fieldCount": "{{count}} fields",
+    "emptyState": "No fields yet. Add one to capture extra data on these tasks.",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteDescription": "This also removes its values from existing tasks. This cannot be undone."
+  },
+  "scheduleFields": {
+    "weeklyHours": "Weekly hours",
+    "schedule": "Schedule",
+    "noTracking": "No tracking",
+    "fixedSchedule": "Fixed schedule",
+    "flexibleHours": "Flexible hours",
+    "monthlyHourBudget": "Monthly hour budget",
+    "hoursPerMonth": "hours/month"
+  },
+  "workspace": {
+    "ariaLabel": "{{title}}, {{count}} workers",
+    "present": "present",
+    "inField": "in field",
+    "offSite": "off-site",
+    "off": "off",
+    "groupPresent": "Present",
+    "groupInField": "In Field",
+    "groupOffSite": "Off-site",
+    "groupOffDuty": "Off Duty",
+    "allAccountedFor": "All accounted for",
+    "noOnePresent": "No one present",
+    "noActiveMembers": "No active members",
+    "inFieldCount": "{{count}} in field",
+    "offSiteCount": "{{count}} off-site",
+    "manageSpace": "Manage Space",
+    "addMember": "Add Member",
+    "viewTasks": "View Tasks",
+    "allQuietToday": "All quiet today",
+    "busy": "Busy",
+    "noProfileData": "No profile data",
+    "you": "(You)",
+    "employee": "Employee",
+    "score": "Score",
+    "done": "Done",
+    "active": "Active",
+    "thisWeek": "This Week",
+    "workingOn": "Working On",
+    "recent": "Recent",
+    "activity": "Activity",
+    "attendance": "Attendance",
+    "timeOff": "Time off",
+    "message": "Message",
+    "voiceCall": "Voice Call",
+    "videoCall": "Video Call",
+    "messagingComingSoon": "Messaging coming soon",
+    "voiceCallComingSoon": "Voice call coming soon",
+    "videoCallComingSoon": "Video call coming soon",
+    "profile": "Profile",
+    "tasks": "Tasks",
+    "absenceReason": {
+      "time_off": "Time Off",
+      "sick": "Sick Leave",
+      "day_off": "Day Off",
+      "unexcused": "Unexcused"
+    }
+  },
+  "timeOff": {
+    "my": {
+      "requestedTitle": "Time-off requested",
+      "requestedDesc": "Your manager will review it.",
+      "submitError": "Couldn't submit request",
+      "canceledToast": "Request canceled",
+      "cancelError": "Couldn't cancel",
+      "noAccess": "You don't have access to Time Off.",
+      "title": "Time Off",
+      "subtitle": "Request time off and track your requests.",
+      "newRequest": "New request",
+      "from": "From",
+      "to": "To",
+      "reasonPlaceholder": "Reason (optional)",
+      "requestButton": "Request time off",
+      "myRequests": "My requests",
+      "noRequests": "No time-off requests yet.",
+      "rejectedReason": "Rejected: {{reason}}"
+    }
+  },
+  "workflows": {
+    "name": "Name",
+    "final": "Final",
+    "canceled": "Canceled",
+    "start": "Start",
+    "add": "Add",
+    "builder": {
+      "newWorkflow": "New Workflow",
+      "editWorkflow": "Edit Workflow",
+      "namePlaceholder": "e.g. Field Service",
+      "statuses": "Statuses",
+      "statusNamePlaceholder": "Status name",
+      "removeStatus": "Remove status",
+      "addStatus": "Add Status",
+      "templates": "Templates",
+      "createWorkflow": "Create Workflow",
+      "markFinal": "final",
+      "markCancel": "cancel",
+      "toast": {
+        "nameRequired": "Workflow name is required",
+        "statusRequired": "At least one status is required",
+        "created": "Workflow created",
+        "updated": "Workflow updated",
+        "saveFailed": "Failed to save workflow",
+        "createFailedGeneric": "Failed to create workflow"
+      }
+    },
+    "templateLabels": {
+      "simple": "Simple",
+      "fieldService": "Field Service",
+      "logistics": "Logistics",
+      "software": "Software",
+      "support": "Support"
+    },
+    "page": {
+      "title": "Task Types",
+      "subtitle": "Define each task type's status flow, capabilities & fields. Spaces pick a type; tasks can override.",
+      "newTaskType": "New Task Type",
+      "createTaskType": "Create Task Type",
+      "createDescription": "Start from a ready-made template, or build your own from scratch.",
+      "startFrom": "Start from",
+      "steps": "{{count}} steps",
+      "blank": "Blank",
+      "blankHint": "Start empty and add every status yourself.",
+      "optionalParen": "(optional)",
+      "namePlaceholder": "e.g. Field Service, Bug Tracking...",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "wipBadge": "WIP: {{count}}",
+      "default": "Default",
+      "setDefault": "Set Default",
+      "statusCount_one": "{{count}} status",
+      "statusCount_other": "{{count}} statuses",
+      "noStatuses": "No statuses defined yet",
+      "fields": "Fields",
+      "globalFields": "Global fields",
+      "globalFieldsHint": "shown on every task, regardless of type",
+      "editStatus": "Edit Status",
+      "editStatusDesc": "Update the status properties.",
+      "addStatusDesc": "Add a new status to this task type.",
+      "statusNamePlaceholder": "e.g. In Review",
+      "key": "Key",
+      "keyPlaceholder": "IN_REVIEW",
+      "color": "Color",
+      "finalStatus": "Final Status",
+      "finalStatusHint": "Marks the task as complete",
+      "canceledStatus": "Canceled Status",
+      "canceledStatusHint": "Marks the task as canceled",
+      "wipLimit": "WIP Limit",
+      "wipLimitHint": "Maximum tasks allowed in this status on the kanban board",
+      "noLimit": "No limit",
+      "canTransitionTo": "Can transition to",
+      "capabilities": "Capabilities at this step",
+      "capabilityLabels": {
+        "gps": "GPS",
+        "timer": "Timer",
+        "checklist": "Checklist",
+        "photos": "Photos",
+        "signature": "Signature",
+        "report": "Report",
+        "form": "Form"
+      },
+      "empty": {
+        "title": "No workflows yet",
+        "description": "Create your first status workflow to define how tasks move through different stages.",
+        "cta": "Create Your First Workflow"
+      },
+      "deleteWorkflow": "Delete Workflow",
+      "deleteStatus": "Delete Status",
+      "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+      "toast": {
+        "taskTypeCreated": "Task type created",
+        "defaultUpdated": "Default task type updated",
+        "taskTypeDeleted": "Task type deleted",
+        "statusDeleted": "Status deleted",
+        "statusAdded": "Status added",
+        "statusUpdated": "Status updated"
+      }
+    }
+  },
+  "assets": {
+    "title": "Assets",
+    "subtitle": "Manage equipment, tools, and inventory",
+    "addAsset": "Add Asset",
+    "searchPlaceholder": "Search by name or serial...",
+    "allCategories": "All categories",
+    "category": "Category",
+    "noAssets": "No assets found",
+    "noAssetsHint": "Click \"Add Asset\" to create one",
+    "table": {
+      "asset": "Asset",
+      "serial": "Serial #",
+      "location": "Location"
+    },
+    "status": {
+      "maintenance": "Maintenance",
+      "retired": "Retired",
+      "outOfService": "Out of Service"
+    },
+    "toast": {
+      "deleted": "Asset deleted"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "subtitle": "Create, send, and track invoices",
+    "newInvoice": "New Invoice",
+    "totalRevenue": "Total Revenue",
+    "pending": "Pending",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "invoicesCount": "{{count}} invoices",
+    "searchPlaceholder": "Search invoices...",
+    "columns": {
+      "invoiceNumber": "Invoice #",
+      "client": "Client",
+      "amount": "Amount",
+      "issueDate": "Issue Date",
+      "dueDate": "Due Date",
+      "status": "Status"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "canceled": "Canceled",
+      "refunded": "Refunded"
+    },
+    "empty": "No invoices yet",
+    "emptyHint": "Click \"New Invoice\" to create one",
+    "actions": {
+      "view": "View",
+      "send": "Send",
+      "markPaid": "Mark Paid"
+    },
+    "toast": {
+      "statusUpdated": "Invoice status updated",
+      "deleted": "Invoice deleted"
+    }
+  },
+  "overtime": {
+    "title": "Overtime Management",
+    "subtitle": "Review and manage employee overtime requests",
+    "tabsPending": "Pending",
+    "tabsHistory": "History",
+    "badges": {
+      "awaitingEmployee": "Awaiting Employee",
+      "needsApproval": "Needs Approval",
+      "active": "Active",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "completed": "Completed",
+      "declined": "Declined"
+    },
+    "durations": {
+      "d30min": "30 min",
+      "d1hour": "1 hour",
+      "d1_5hours": "1.5 hours",
+      "d2hours": "2 hours",
+      "d3hours": "3 hours",
+      "d4hours": "4 hours"
+    },
+    "pendingEmpty": "No pending requests",
+    "pendingEmptyHint": "All overtime requests have been handled",
+    "filterApproved": "Approved",
+    "filterCompleted": "Completed",
+    "filterRejected": "Rejected",
+    "filterDeclined": "Declined",
+    "expiredNoResponse": "Expired (No Response)",
+    "expiredNoApproval": "Expired (No Approval)",
+    "requestCountOne": "{{count}} request",
+    "requestCountOther": "{{count}} requests",
+    "historyEmpty": "No overtime history",
+    "approveTitle": "Approve Overtime",
+    "approveDescription": "Approve overtime for {{name}} at {{location}}",
+    "employeeReason": "Employee's reason:",
+    "durationLabel": "Overtime Duration",
+    "notesLabel": "Notes (optional)",
+    "notesPlaceholder": "Any notes for the employee...",
+    "approve": "Approve",
+    "rejectTitle": "Reject Overtime",
+    "rejectDescription": "Reject overtime for {{name}}. They will be clocked out.",
+    "reasonLabel": "Reason for rejection *",
+    "reasonPlaceholder": "Why is this overtime not approved?",
+    "rejectAndClockOut": "Reject & Clock Out",
+    "reject": "Reject",
+    "toastApproved": "Overtime approved",
+    "toastFailedApprove": "Failed to approve",
+    "toastRejected": "Overtime rejected",
+    "toastFailedReject": "Failed to reject",
+    "minOvertime": "{{count}} min overtime",
+    "signed": "Signed",
+    "remote": "Remote",
+    "by": "by {{name}}"
+  },
+  "payments": {
+    "title": "Payments",
+    "subtitle": "Track payments received from invoices",
+    "totalReceived": "Total Received",
+    "paidInvoices": "Paid Invoices",
+    "averageInvoice": "Average Invoice",
+    "paymentHistory": "Payment History",
+    "empty": "No payments recorded yet",
+    "emptyHint": "Payments appear here when invoices are marked as paid"
+  },
+  "employees": {
+    "new": {
+      "firstNamePlaceholder": "John",
+      "lastNamePlaceholder": "Doe",
+      "emailPlaceholder": "john.doe@example.com",
+      "positionPlaceholder": "e.g., technician, driver, sales"
+    },
+    "availability": {
+      "scheduled": "scheduled",
+      "offToday": "off today",
+      "unassigned": "Unassigned",
+      "allWorkers": "All Workers"
+    }
+  },
+  "team": {
+    "title": "Team",
+    "subtitle": "Teammates in your spaces.",
+    "empty": "No teammates in your spaces yet.",
+    "callsComingSoon": "Calls coming soon"
+  },
+  "privacy": {
+    "backToHbcfield": "Back to HBCField",
+    "lastUpdated": "Last updated: 20 April 2026",
+    "title": "Privacy Policy",
+    "subtitle": "HBCField — Field Service Management Platform",
+    "intro": "HBC Group GmbH (\"we\", \"our\", \"us\") operates the HBCField mobile application and web platform. This Privacy Policy explains how we collect, use, and protect your information when you use our services.",
+    "s1": {
+      "title": "1. Information We Collect",
+      "accountTitle": "Account Information",
+      "accountEmail": "Email address",
+      "accountName": "First and last name",
+      "accountOrg": "Organization name",
+      "accountRole": "Role and permissions within your organization",
+      "locationTitle": "Location Data",
+      "gpsLabel": "Precise GPS location",
+      "gpsIntro": " — collected only during active work activities:",
+      "gps1": "When an employee is driving to a job site (EN_ROUTE status)",
+      "gps2": "When clocking in or out (single GPS fix for attendance verification)",
+      "gps3": "When marking arrival at a job site (geofence verification)",
+      "cachedLabel": "Cached location",
+      "cachedText": " — used for presence indicators on the dispatcher's live map. This uses the device's last known position without activating the GPS radio.",
+      "neverPre": "Location data is ",
+      "neverBold": "never collected",
+      "neverPost": " when the app is idle, when browsing tasks, or outside of active work shifts.",
+      "workTitle": "Work Activity Data",
+      "work1": "Task status updates and timestamps",
+      "work2": "Clock in/out times and break durations",
+      "work3": "Service reports including text descriptions, photos, and digital signatures",
+      "work4": "Comments on tasks",
+      "deviceTitle": "Device Information",
+      "device1": "Device type and operating system (for push notifications)",
+      "device2": "Push notification tokens (Expo Push Token)",
+      "device3": "App version"
+    },
+    "s2": {
+      "title": "2. How We Use Your Information",
+      "item1": "To provide field service management functionality",
+      "item2": "To enable real-time location tracking for dispatchers during active work",
+      "item3": "To verify attendance via geofencing at company locations",
+      "item4": "To verify employee presence at job sites before starting work",
+      "item5": "To send push notifications for task assignments, status updates, and comments",
+      "item6": "To generate service reports and maintain work history",
+      "item7": "To display route tracking on completed tasks",
+      "item8": "To improve app performance and fix bugs"
+    },
+    "s3": {
+      "title": "3. Legal Basis for Processing (GDPR)",
+      "intro": "Where the General Data Protection Regulation applies, we process your personal data on the following legal bases:",
+      "contractLabel": "Performance of a contract (Art. 6(1)(b) GDPR)",
+      "contractText": " — to provide the HBCField service to your organization and to you as an authorized user, including task assignment, location-based dispatching, attendance verification, and service reporting.",
+      "legitLabel": "Legitimate interests (Art. 6(1)(f) GDPR)",
+      "legitText": " — to secure our platform, prevent fraud and abuse, maintain service reliability, and improve the product. Our legitimate interests are balanced against your rights and freedoms.",
+      "consentLabel": "Consent (Art. 6(1)(a) GDPR)",
+      "consentText": " — for optional features such as push notifications, which you can disable at any time in your device settings.",
+      "legalLabel": "Legal obligation (Art. 6(1)(c) GDPR)",
+      "legalText": " — where we are required to retain records for tax, labor, or other statutory obligations applicable to your organization."
+    },
+    "s4": {
+      "title": "4. Data Sharing",
+      "noSellPre": "We do ",
+      "noSellBold": "not",
+      "noSellPost": " sell your personal data to third parties.",
+      "internal": "Your data is shared only within your organization — admin and dispatcher users can see employee locations and work activity.",
+      "thirdPartyIntro": "We use the following third-party services:",
+      "expoLabel": "Expo",
+      "expoText": " — Push notification delivery",
+      "fcmLabel": "Firebase Cloud Messaging (FCM)",
+      "fcmText": " — Android push notification routing",
+      "apnsLabel": "Apple Push Notification Service (APNs)",
+      "apnsText": " — iOS push notification routing",
+      "hetznerCloudLabel": "Hetzner Cloud",
+      "hetznerCloudText": " — Server hosting (EU-based, Finland/Germany)",
+      "hetznerStorageLabel": "Hetzner Object Storage",
+      "hetznerStorageText": " — File storage for attachments (EU-based)",
+      "osmLabel": "OpenStreetMap / OSRM",
+      "osmText": " — Map tiles and route visualization",
+      "nominatimLabel": "Nominatim",
+      "nominatimText": " — Address search (geocoding)"
+    },
+    "s5": {
+      "title": "5. Data Storage & Security",
+      "euPre": "All data is stored on servers located in the ",
+      "euBold": "European Union",
+      "euPost": " (Hetzner, Helsinki/Falkenstein)",
+      "item2": "Data is encrypted in transit using TLS/HTTPS",
+      "item3": "Passwords are hashed using bcrypt with cost factor 12",
+      "item4": "Authentication tokens are SHA-256 hashed before storage",
+      "item5": "Refresh tokens use rotation with grace periods for concurrent requests",
+      "item6": "Access is restricted by role-based permissions (RBAC)",
+      "item7": "Rate limiting protects against brute-force attacks (10 req/sec, 200 req/min)",
+      "item8": "Account lockout after 5 failed login attempts (15-minute cooldown)",
+      "item9": "File uploads are stored in S3-compatible object storage with presigned URLs"
+    },
+    "s6": {
+      "title": "6. Data Retention",
+      "item1": "Account data is retained while your account is active",
+      "item2": "Location history (route tracking) is retained for 90 days",
+      "item3": "Service reports are retained according to your organization's record-keeping requirements",
+      "item4": "Refresh tokens are automatically cleaned up after expiration",
+      "item5": "You can request complete data deletion at any time"
+    },
+    "s7": {
+      "title": "7. Your Rights (GDPR)",
+      "intro": "If you are located in the European Union or European Economic Area, you have the following rights under the General Data Protection Regulation (GDPR):",
+      "accessLabel": "Right of Access",
+      "accessText": " — Request a copy of your personal data",
+      "rectificationLabel": "Right to Rectification",
+      "rectificationText": " — Correct inaccurate or incomplete data",
+      "erasureLabel": "Right to Erasure",
+      "erasureText": " — Request deletion of your personal data (\"right to be forgotten\")",
+      "portabilityLabel": "Right to Data Portability",
+      "portabilityText": " — Receive your data in a structured, machine-readable format",
+      "objectLabel": "Right to Object",
+      "objectText": " — Object to processing of your personal data",
+      "restrictLabel": "Right to Restrict Processing",
+      "restrictText": " — Request limitation of data processing",
+      "withdrawLabel": "Right to Withdraw Consent",
+      "withdrawText": " — Withdraw your consent at any time",
+      "complaintLabel": "Right to Lodge a Complaint",
+      "complaintText": " — You have the right to lodge a complaint with your local data protection authority if you believe your rights have been infringed.",
+      "contactPre": "To exercise any of these rights, contact us at ",
+      "contactPost": "."
+    },
+    "s8": {
+      "title": "8. Location Tracking Disclosure",
+      "intro": "HBCField uses location data as a core part of its field service management functionality. Here is exactly when and how location is used:",
+      "gpsActiveTitle": "When GPS is Active",
+      "drivingLabel": "Driving to job:",
+      "drivingText": "Continuous tracking every 15 seconds (balanced accuracy)",
+      "clockLabel": "Clock in/out:",
+      "clockText": "Single high-accuracy fix for attendance verification",
+      "arrivingLabel": "Arriving at job:",
+      "arrivingText": "Single high-accuracy fix for geofence verification (20m radius)",
+      "gpsInactiveTitle": "When GPS is NOT Active",
+      "inactive1": "Browsing tasks, viewing profile, changing settings",
+      "inactive2": "App is in background or closed",
+      "inactive3": "Presence indicator uses cached OS location only (no GPS activation)",
+      "safeguardsIntro": "Additional safeguards:",
+      "safeguard1": "Only dispatchers and admins within your organization can see your location",
+      "safeguard2": "Location data is never shared outside your organization",
+      "safeguard3": "Route data from completed tasks is retained for 90 days",
+      "safeguard4": "You can see your own location data in the app"
+    },
+    "s9": {
+      "title": "9. Push Notifications",
+      "intro": "HBCField sends push notifications for:",
+      "item1": "New task assignments",
+      "item2": "Task status changes",
+      "item3": "New comments on your tasks",
+      "item4": "Join request approvals or rejections",
+      "item5": "Attendance reminders",
+      "disable": "You can disable push notifications in your device settings at any time."
+    },
+    "s10": {
+      "title": "10. Children's Privacy",
+      "body": "HBCField is a workplace application designed for professional use. It is not intended for use by individuals under 18 years of age. We do not knowingly collect personal information from children."
+    },
+    "s11": {
+      "title": "11. International Data Transfers",
+      "body": "Your data is processed and stored within the European Union. Push notification delivery may involve routing through Google (FCM) or Apple (APNs) infrastructure, which may process data outside the EU. These transfers are covered by the EU-US Data Privacy Framework and Standard Contractual Clauses."
+    },
+    "s12": {
+      "title": "12. Changes to This Policy",
+      "body": "We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. We will notify users of material changes via email or in-app notification. The \"Last updated\" date at the top of this page indicates when this policy was last revised."
+    },
+    "s13": {
+      "title": "13. Contact Us",
+      "company": "HBC Group GmbH",
+      "emailLabel": "Email: ",
+      "websiteLabel": "Website: ",
+      "supportLabel": "Support: "
+    },
+    "footerRights": "HBC Group GmbH. All rights reserved."
+  },
+  "download": {
+    "tagline": "Dispatch · Track · Deliver",
+    "androidTab": "Android",
+    "iosTab": "iOS",
+    "android": {
+      "title": "Android",
+      "description": "Download and install the APK directly on your device.",
+      "button": "Download APK",
+      "meta": "v{{version}} · Android 6.0+"
+    },
+    "ios": {
+      "title": "iOS",
+      "description": "Install via TestFlight — Apple's official beta testing platform. No App Store needed.",
+      "button": "Open TestFlight",
+      "meta": "v{{version}} · iOS 16.0+"
+    },
+    "howToInstall": "How to install",
+    "androidStep1": "Tap \"Download APK\" above",
+    "androidStep2": "Open the downloaded file from your notifications",
+    "androidStep3": "Allow \"Install from unknown sources\" if prompted",
+    "androidStep4": "Tap \"Install\" and wait for it to finish",
+    "androidStep5": "Open HBCField from your home screen",
+    "iosStep1": "Tap \"Open TestFlight\" above",
+    "iosStep2": "Install the TestFlight app if you don't have it",
+    "iosStep3": "Tap \"Accept\" to join the beta program",
+    "iosStep4": "Tap \"Install\" to download HBCField",
+    "iosStep5": "Open HBCField from your home screen",
+    "desktopHint": "Open this page on your phone to auto-detect your platform.",
+    "backToPortal": "← Back to Partner Portal"
+  },
+  "manage": {
+    "title": "Manage",
+    "subtitle": "Management tools available to you.",
+    "noAccess": "You don't have access to Manage.",
+    "noPermissions": "You have the Manage module, but no management permissions are enabled yet. Ask an admin to grant them.",
+    "items": {
+      "members": {
+        "label": "Members",
+        "desc": "View and manage your team"
+      },
+      "invitations": {
+        "label": "Invitations",
+        "desc": "Invite people to the organization"
+      },
+      "joinRequests": {
+        "label": "Join Requests",
+        "desc": "Approve or reject join requests"
+      },
+      "schedule": {
+        "label": "Schedule",
+        "desc": "Team availability and schedules"
+      },
+      "spaces": {
+        "label": "Spaces",
+        "desc": "Manage workspaces and rosters"
+      },
+      "taskTypes": {
+        "label": "Task Types",
+        "desc": "Workflows + per-step widgets"
+      }
+    }
+  },
+  "welcome": {
+    "title": "Set up your first space",
+    "subtitle": "A space is where your tasks live — a site, a team, or a project. You can add more anytime.",
+    "createAndContinue": "Create space & continue"
   }
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, memo } from "react"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -66,28 +67,24 @@ import {
 // Constants
 // ============================================================================
 
-const FREQUENCIES: { value: RecurringFrequency; label: string }[] = [
-  { value: "DAILY", label: "Daily" },
-  { value: "WEEKLY", label: "Weekly" },
-  { value: "BIWEEKLY", label: "Bi-weekly" },
-  { value: "MONTHLY", label: "Monthly" },
-  { value: "QUARTERLY", label: "Quarterly" },
-  { value: "YEARLY", label: "Yearly" },
-  { value: "CUSTOM", label: "Custom" },
+const FREQUENCY_VALUES: RecurringFrequency[] = [
+  "DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM",
 ]
 
 const PRIORITIES = [
-  { value: "LOW", label: "Low", color: "text-slate-500 bg-slate-100 dark:bg-slate-800" },
-  { value: "MEDIUM", label: "Medium", color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30" },
-  { value: "HIGH", label: "High", color: "text-orange-600 bg-orange-100 dark:bg-orange-900/30" },
-  { value: "URGENT", label: "Urgent", color: "text-red-600 bg-red-100 dark:bg-red-900/30" },
+  { value: "LOW", color: "text-slate-500 bg-slate-100 dark:bg-slate-800" },
+  { value: "MEDIUM", color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30" },
+  { value: "HIGH", color: "text-orange-600 bg-orange-100 dark:bg-orange-900/30" },
+  { value: "URGENT", color: "text-red-600 bg-red-100 dark:bg-red-900/30" },
 ]
 
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+const DAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
-function getFrequencyLabel(freq: RecurringFrequency, customDays?: number | null): string {
-  if (freq === "CUSTOM" && customDays) return `Every ${customDays} days`
-  return FREQUENCIES.find((f) => f.value === freq)?.label || freq
+type TFn = (key: string, opts?: Record<string, unknown>) => string
+
+function getFrequencyLabel(freq: RecurringFrequency, customDays: number | null | undefined, t: TFn): string {
+  if (freq === "CUSTOM" && customDays) return t("tasks.recurring.everyNDaysValue", { count: customDays })
+  return t(`tasks.recurring.frequencies.${freq}`)
 }
 
 function getPriorityColor(priority: string): string {
@@ -120,6 +117,7 @@ const TemplateCard = memo(function TemplateCard({
   onGenerate: () => void
   onToggle: (active: boolean) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-shadow hover:shadow-md">
       <div className="px-6 py-4">
@@ -133,7 +131,7 @@ const TemplateCard = memo(function TemplateCard({
                 {template.title}
               </h3>
               <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${getPriorityColor(template.priority)}`}>
-                {template.priority}
+                {t(`tasks.priority.${template.priority}`)}
               </span>
             </div>
             {template.description && (
@@ -144,20 +142,20 @@ const TemplateCard = memo(function TemplateCard({
             <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <Repeat className="h-3 w-3" />
-                {getFrequencyLabel(template.frequency, template.customDays)}
+                {getFrequencyLabel(template.frequency, template.customDays, t)}
               </span>
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                {template.space?.name ?? "No space"}
+                {template.space?.name ?? t("tasks.recurring.noSpace")}
               </span>
               <span className="inline-flex items-center gap-1">
                 <GitBranch className="h-3 w-3" />
-                {template.workflow?.name ?? "Default type"}
+                {template.workflow?.name ?? t("tasks.recurring.defaultType")}
               </span>
               {template.nextRunAt && (
                 <span className="inline-flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  Next: {formatDate(template.nextRunAt)}
+                  {t("tasks.recurring.nextRun", { date: formatDate(template.nextRunAt) })}
                 </span>
               )}
               {template.estimatedHours && (
@@ -168,7 +166,7 @@ const TemplateCard = memo(function TemplateCard({
               )}
               {template.checklist && template.checklist.length > 0 && (
                 <span className="text-muted-foreground">
-                  {template.checklist.length} checklist items
+                  {t("tasks.recurring.checklistItemsCount", { count: template.checklist.length })}
                 </span>
               )}
             </div>
@@ -187,7 +185,7 @@ const TemplateCard = memo(function TemplateCard({
               disabled={!template.isActive}
             >
               <Play className="h-3 w-3" />
-              Generate
+              {t("tasks.recurring.generate")}
             </Button>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onEdit}>
               <Pencil className="h-3.5 w-3.5" />
@@ -223,6 +221,7 @@ function TemplateDialog({
   /** Pre-selected space when creating new (e.g. the active space filter). */
   defaultSpaceId?: string | null
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const isEditing = !!existingTemplate
 
@@ -284,7 +283,7 @@ function TemplateDialog({
   const createMutation = useMutation({
     mutationFn: () => recurringTasksApi.create(buildPayload()),
     onSuccess: () => {
-      notify.success("Template created")
+      notify.success(t("tasks.recurring.templateCreated"))
       queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
       onOpenChange(false)
     },
@@ -294,7 +293,7 @@ function TemplateDialog({
   const updateMutation = useMutation({
     mutationFn: () => recurringTasksApi.update(existingTemplate!.id, buildPayload()),
     onSuccess: () => {
-      notify.success("Template updated")
+      notify.success(t("tasks.recurring.templateUpdated"))
       queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
       onOpenChange(false)
     },
@@ -316,20 +315,20 @@ function TemplateDialog({
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Template" : "Create Recurring Template"}
+            {isEditing ? t("tasks.recurring.editTemplate") : t("tasks.recurring.createTemplate")}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update the recurring task template."
-              : "Set up a template that automatically generates tasks."}
+              ? t("tasks.recurring.editTemplateDescription")
+              : t("tasks.recurring.createTemplateDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-5 py-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label>Title</Label>
+            <Label>{t("tasks.columns.title")}</Label>
             <Input
-              placeholder="e.g. Weekly HVAC Inspection"
+              placeholder={t("tasks.recurring.titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -337,9 +336,9 @@ function TemplateDialog({
 
           {/* Description */}
           <div className="space-y-2">
-            <Label>Description</Label>
+            <Label>{t("tasks.description.label")}</Label>
             <Textarea
-              placeholder="Task description..."
+              placeholder={t("tasks.recurring.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -349,13 +348,13 @@ function TemplateDialog({
           {/* Space & Task Type — where generated tasks land + their type */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Space</Label>
+              <Label>{t("tasks.groupBy.space")}</Label>
               <Select value={spaceId} onValueChange={setSpaceId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a space" />
+                  <SelectValue placeholder={t("tasks.create.selectSpace")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No space</SelectItem>
+                  <SelectItem value="none">{t("tasks.recurring.noSpace")}</SelectItem>
                   {spaces.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
@@ -365,13 +364,13 @@ function TemplateDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Task Type</Label>
+              <Label>{t("tasks.recurring.taskType")}</Label>
               <Select value={workflowId} onValueChange={setWorkflowId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Default" />
+                  <SelectValue placeholder={t("tasks.recurring.default")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Default</SelectItem>
+                  <SelectItem value="none">{t("tasks.recurring.default")}</SelectItem>
                   {taskTypes.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name}
@@ -385,7 +384,7 @@ function TemplateDialog({
           {/* Priority & Frequency */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Priority</Label>
+              <Label>{t("tasks.list.priority")}</Label>
               <Select value={priority} onValueChange={setPriority}>
                 <SelectTrigger>
                   <SelectValue />
@@ -393,22 +392,22 @@ function TemplateDialog({
                 <SelectContent>
                   {PRIORITIES.map((p) => (
                     <SelectItem key={p.value} value={p.value}>
-                      {p.label}
+                      {t(`tasks.priority.${p.value}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Frequency</Label>
+              <Label>{t("tasks.recurring.frequency")}</Label>
               <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FREQUENCIES.map((f) => (
-                    <SelectItem key={f.value} value={f.value}>
-                      {f.label}
+                  {FREQUENCY_VALUES.map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {t(`tasks.recurring.frequencies.${f}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -419,7 +418,7 @@ function TemplateDialog({
           {/* Frequency-specific options */}
           {frequency === "CUSTOM" && (
             <div className="space-y-2">
-              <Label>Every N days</Label>
+              <Label>{t("tasks.recurring.everyNDays")}</Label>
               <Input
                 type="number"
                 min={1}
@@ -431,7 +430,7 @@ function TemplateDialog({
 
           {["WEEKLY", "BIWEEKLY"].includes(frequency) && (
             <div className="space-y-2">
-              <Label>Day of Week</Label>
+              <Label>{t("tasks.recurring.dayOfWeek")}</Label>
               <Select
                 value={dayOfWeek.toString()}
                 onValueChange={(v) => setDayOfWeek(parseInt(v))}
@@ -440,9 +439,9 @@ function TemplateDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DAY_NAMES.map((name, i) => (
+                  {DAY_KEYS.map((name, i) => (
                     <SelectItem key={i} value={i.toString()}>
-                      {name}
+                      {t(`tasks.weekdaysFull.${name}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -452,7 +451,7 @@ function TemplateDialog({
 
           {["MONTHLY", "QUARTERLY", "YEARLY"].includes(frequency) && (
             <div className="space-y-2">
-              <Label>Day of Month</Label>
+              <Label>{t("tasks.recurring.dayOfMonth")}</Label>
               <Input
                 type="number"
                 min={1}
@@ -466,7 +465,7 @@ function TemplateDialog({
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Start Date</Label>
+              <Label>{t("tasks.sidebar.startDate")}</Label>
               <Input
                 type="date"
                 value={startDate}
@@ -474,7 +473,7 @@ function TemplateDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>End Date (optional)</Label>
+              <Label>{t("tasks.recurring.endDateOptional")}</Label>
               <Input
                 type="date"
                 value={endDate}
@@ -486,20 +485,20 @@ function TemplateDialog({
           {/* Estimated Hours & Location */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Estimated Hours</Label>
+              <Label>{t("tasks.sidebar.estimatedHours")}</Label>
               <Input
                 type="number"
                 min={0}
                 step={0.5}
-                placeholder="e.g. 2"
+                placeholder={t("tasks.fields.estimatedHoursPlaceholder")}
                 value={estimatedHours}
                 onChange={(e) => setEstimatedHours(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Location</Label>
+              <Label>{t("tasks.sidebar.location")}</Label>
               <Input
-                placeholder="Address..."
+                placeholder={t("tasks.fields.addressShort")}
                 value={locationAddress}
                 onChange={(e) => setLocationAddress(e.target.value)}
               />
@@ -508,10 +507,10 @@ function TemplateDialog({
 
           {/* Checklist */}
           <div className="space-y-2">
-            <Label>Checklist</Label>
+            <Label>{t("tasks.sections.checklist")}</Label>
             <div className="flex gap-2">
               <Input
-                placeholder="Add checklist item..."
+                placeholder={t("tasks.create.addChecklistItem")}
                 value={newChecklistItem}
                 onChange={(e) => setNewChecklistItem(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addChecklistItem())}
@@ -551,7 +550,7 @@ function TemplateDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate()}
@@ -559,7 +558,7 @@ function TemplateDialog({
             className="bg-blue-600 hover:bg-blue-700"
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? "Save" : "Create"}
+            {isEditing ? t("common.save") : t("common.create")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -579,6 +578,7 @@ export function RecurringPanel({
   /** When set, only show templates that generate into this space. */
   spaceId?: string | null
 }) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -614,7 +614,7 @@ export function RecurringPanel({
   const generateMutation = useMutation({
     mutationFn: (id: string) => recurringTasksApi.generate(id),
     onSuccess: () => {
-      notify.success("Task generated successfully")
+      notify.success(t("tasks.recurring.taskGenerated"))
       queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
@@ -624,7 +624,7 @@ export function RecurringPanel({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => recurringTasksApi.delete(id),
     onSuccess: () => {
-      notify.success("Template deleted")
+      notify.success(t("tasks.recurring.templateDeleted"))
       queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
       setDeleteTarget(null)
     },
@@ -643,14 +643,14 @@ export function RecurringPanel({
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1.5 transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
-                Tasks
+                {t("tasks.page.heading")}
               </button>
             )}
             <h1 className="text-2xl font-semibold text-foreground">
-              Recurring Tasks
+              {t("tasks.recurring.pageTitle")}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Automate task creation on a schedule
+              {t("tasks.recurring.pageSubtitle")}
             </p>
           </div>
           <Button
@@ -661,7 +661,7 @@ export function RecurringPanel({
             className="bg-blue-600 hover:bg-blue-700 rounded-xl"
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Template
+            {t("tasks.recurring.newTemplate")}
           </Button>
         </div>
 
@@ -678,11 +678,10 @@ export function RecurringPanel({
               <Repeat className="h-7 w-7 text-violet-500" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
-              {spaceId ? "No recurring templates in this space" : "No recurring templates yet"}
+              {spaceId ? t("tasks.recurring.emptyInSpace") : t("tasks.recurring.emptyTitle")}
             </h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-              Create templates to automatically generate tasks on a daily,
-              weekly, monthly, or custom schedule.
+              {t("tasks.recurring.emptyHint")}
             </p>
             <Button
               onClick={() => {
@@ -692,7 +691,7 @@ export function RecurringPanel({
               className="bg-blue-600 hover:bg-blue-700 rounded-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Create Your First Template
+              {t("tasks.recurring.createFirst")}
             </Button>
           </div>
         ) : (
@@ -735,19 +734,18 @@ export function RecurringPanel({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+            <AlertDialogTitle>{t("tasks.recurring.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deleteTarget?.title}&quot;?
-              Previously generated tasks will not be affected.
+              {t("tasks.recurring.deleteDescription", { name: deleteTarget?.title })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

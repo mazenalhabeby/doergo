@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Search,
@@ -131,6 +132,7 @@ const SPRINT_STATUS_LABEL: Record<string, string> = {
 
 export default function TasksPage() {
   const { user, hasModule } = useAuth()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -353,7 +355,7 @@ export default function TasksPage() {
   const startSprintMutation = useMutation({
     mutationFn: (id: string) => sprintsApi.start(id),
     onSuccess: () => {
-      notify.sprint("started", "Sprint is now active")
+      notify.sprint("started", t("tasks.notify.sprintStarted"))
       queryClient.invalidateQueries({ queryKey: ["sprints"] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -362,7 +364,7 @@ export default function TasksPage() {
   const completeSprintMutation = useMutation({
     mutationFn: (id: string) => sprintsApi.complete(id),
     onSuccess: () => {
-      notify.sprint("completed", "Sprint has been completed")
+      notify.sprint("completed", t("tasks.notify.sprintCompleted"))
       setCompletingSprint(null)
       setScope("all")
       queryClient.invalidateQueries({ queryKey: ["sprints"] })
@@ -374,7 +376,7 @@ export default function TasksPage() {
   const deleteSprintMutation = useMutation({
     mutationFn: (id: string) => sprintsApi.delete(id),
     onSuccess: () => {
-      notify.sprint("deleted", "Sprint has been removed")
+      notify.sprint("deleted", t("tasks.notify.sprintRemoved"))
       setDeletingSprintId(null)
       setScope("all")
       queryClient.invalidateQueries({ queryKey: ["sprints"] })
@@ -433,7 +435,7 @@ export default function TasksPage() {
   // Assign mutation
   const assignMutation = useMutation({
     mutationFn: (workerId: string) => {
-      if (!selectedTaskId) throw new Error("No task selected")
+      if (!selectedTaskId) throw new Error(t("tasks.notify.noTaskSelected"))
       return tasksApi.assign(selectedTaskId, workerId)
     },
     onMutate: async (workerId) => {
@@ -452,7 +454,7 @@ export default function TasksPage() {
       notify.error(e.message)
     },
     onSuccess: () => {
-      notify.success("Member assigned")
+      notify.success(t("tasks.notify.memberAssigned"))
     },
     onSettled: () => {
       // Always refetch to sync with server
@@ -523,7 +525,7 @@ export default function TasksPage() {
     optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, ...updates }))
     const field = Object.keys(updates)[0] || "field"
     tasksApi.update(taskId, updates).then(() => {
-      notify.success(`Task ${field.replace("Id", "")} updated`)
+      notify.success(t("tasks.notify.taskFieldUpdated", { field: field.replace("Id", "") }))
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["sprints"] })
     }).catch((e: Error) => {
@@ -541,7 +543,7 @@ export default function TasksPage() {
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, priority }))
       tasksApi.update(taskId, { priority }).then(() => {
-        notify.success("Priority updated")
+        notify.success(t("tasks.notify.priorityUpdated"))
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
@@ -552,7 +554,7 @@ export default function TasksPage() {
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, sprintId }))
       tasksApi.update(taskId, { sprintId }).then(() => {
-        notify.success(sprintId ? "Moved to sprint" : "Moved to backlog")
+        notify.success(sprintId ? t("tasks.notify.movedToSprint") : t("tasks.notify.movedToBacklog"))
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
         queryClient.invalidateQueries({ queryKey: ["sprints"] })
       }).catch((e: Error) => {
@@ -564,7 +566,7 @@ export default function TasksPage() {
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, phaseId }))
       tasksApi.update(taskId, { phaseId }).then(() => {
-        notify.success(phaseId ? "Phase set" : "Phase removed")
+        notify.success(phaseId ? t("tasks.notify.phaseSet") : t("tasks.notify.phaseRemoved"))
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
@@ -575,7 +577,7 @@ export default function TasksPage() {
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, epicId }))
       tasksApi.update(taskId, { epicId }).then(() => {
-        notify.success(epicId ? "Epic set" : "Epic removed")
+        notify.success(epicId ? t("tasks.notify.epicSet") : t("tasks.notify.epicRemoved"))
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
@@ -586,7 +588,7 @@ export default function TasksPage() {
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, storyPoints: points }))
       tasksApi.update(taskId, { storyPoints: points }).then(() => {
-        notify.success(points ? `Set to ${points} points` : "Points cleared")
+        notify.success(points ? t("tasks.notify.pointsSet", { points }) : t("tasks.notify.pointsCleared"))
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
@@ -597,7 +599,7 @@ export default function TasksPage() {
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, spaceId }))
       tasksApi.update(taskId, { spaceId }).then(() => {
-        notify.success(spaceId ? "Moved to space" : "Space removed")
+        notify.success(spaceId ? t("tasks.notify.movedToSpace") : t("tasks.notify.spaceRemoved"))
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
@@ -619,7 +621,7 @@ export default function TasksPage() {
         },
       )
       tasksApi.delete(taskId).then(() => {
-        notify.success("Task deleted")
+        notify.success(t("tasks.notify.taskDeleted"))
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
         queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
       }).catch((e: Error) => {
@@ -658,8 +660,8 @@ export default function TasksPage() {
     Promise.allSettled(taskIds.map(id => tasksApi.updateStatus(id, status)))
       .then((results) => {
         const failed = results.filter(r => r.status === "rejected").length
-        if (failed > 0) notify.error(`${failed} of ${taskIds.length} updates failed`)
-        else notify.bulk(taskIds.length, "updated")
+        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
+        else notify.bulk(taskIds.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
         queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
@@ -670,8 +672,8 @@ export default function TasksPage() {
     Promise.allSettled(taskIds.map(id => tasksApi.update(id, { priority })))
       .then((results) => {
         const failed = results.filter(r => r.status === "rejected").length
-        if (failed > 0) notify.error(`${failed} of ${taskIds.length} updates failed`)
-        else notify.bulk(taskIds.length, "updated")
+        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
+        else notify.bulk(taskIds.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       })
@@ -681,8 +683,8 @@ export default function TasksPage() {
     Promise.allSettled(taskIds.map(id => tasksApi.update(id, { sprintId })))
       .then((results) => {
         const failed = results.filter(r => r.status === "rejected").length
-        if (failed > 0) notify.error(`${failed} of ${taskIds.length} updates failed`)
-        else notify.bulk(taskIds.length, "moved")
+        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
+        else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
         handleClearSelection()
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
         queryClient.invalidateQueries({ queryKey: ["sprints"] })
@@ -693,8 +695,8 @@ export default function TasksPage() {
     Promise.allSettled(taskIds.map(id => tasksApi.delete(id)))
       .then((results) => {
         const failed = results.filter(r => r.status === "rejected").length
-        if (failed > 0) notify.error(`${failed} of ${taskIds.length} deletes failed`)
-        else notify.bulk(taskIds.length, "deleted")
+        if (failed > 0) notify.error(t("tasks.notify.deletesFailed", { failed, total: taskIds.length }))
+        else notify.bulk(taskIds.length, t("tasks.notify.actionDeleted"))
         handleClearSelection()
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
         queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
@@ -705,8 +707,8 @@ export default function TasksPage() {
     Promise.allSettled(taskIds.map(id => tasksApi.update(id, { storyPoints: points })))
       .then((results) => {
         const failed = results.filter(r => r.status === "rejected").length
-        if (failed > 0) notify.error(`${failed} of ${taskIds.length} updates failed`)
-        else notify.bulk(taskIds.length, "estimated")
+        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
+        else notify.bulk(taskIds.length, t("tasks.notify.actionEstimated"))
         handleClearSelection()
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       })
@@ -716,8 +718,8 @@ export default function TasksPage() {
     Promise.allSettled(taskIds.map(id => tasksApi.update(id, { spaceId })))
       .then((results) => {
         const failed = results.filter(r => r.status === "rejected").length
-        if (failed > 0) notify.error(`${failed} of ${taskIds.length} updates failed`)
-        else notify.bulk(taskIds.length, "moved")
+        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
+        else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
         handleClearSelection()
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       })
@@ -1003,10 +1005,10 @@ export default function TasksPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                Tasks {!isLoading && total > 0 && <span className="text-muted-foreground font-normal text-lg">({total})</span>}
+                {t("tasks.page.heading")} {!isLoading && total > 0 && <span className="text-muted-foreground font-normal text-lg">({total})</span>}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage tasks across spaces — create, assign, and track progress.
+                {t("tasks.page.subtitle")}
               </p>
             </div>
 
@@ -1020,7 +1022,7 @@ export default function TasksPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={searchInputRef}
-              placeholder="Search..."
+              placeholder={t("tasks.page.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
@@ -1033,11 +1035,11 @@ export default function TasksPage() {
 
           {/* View mode toggle buttons */}
           <div className="flex items-center rounded-lg border border-border/60 overflow-hidden">
-            {VIEW_OPTIONS.map(({ mode, icon: Icon, label }) => (
+            {VIEW_OPTIONS.map(({ mode, icon: Icon }) => (
               <button
                 key={mode}
                 onClick={() => handleViewModeChange(mode)}
-                title={label}
+                title={t(`tasks.view.${mode}`)}
                 className={cn(
                   "h-8 w-8 flex items-center justify-center transition-colors duration-150",
                   viewMode === mode
@@ -1062,7 +1064,7 @@ export default function TasksPage() {
               )}
             >
               <Repeat className="size-4 mr-1.5" />
-              Recurring
+              {t("tasks.page.recurring")}
             </Button>
           )}
 
@@ -1074,7 +1076,7 @@ export default function TasksPage() {
               className="h-8 px-3.5 rounded-lg font-medium text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-150"
             >
               <Plus className="size-4 mr-1.5" />
-              New Task
+              {t("tasks.page.newTask")}
             </Button>
           )}
             </div>
@@ -1094,7 +1096,7 @@ export default function TasksPage() {
                     : "text-muted-foreground hover:text-foreground font-medium"
                 )}
               >
-                All
+                {t("common.all")}
                 {!selectedSpaceId && (
                   <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-foreground" />
                 )}
@@ -1182,8 +1184,8 @@ export default function TasksPage() {
         {/* Group-by tabs (only on list view) */}
         {viewMode === "table" && availableGroupByOptions.length > 1 && (
           <div className="mb-3 flex items-center gap-1 text-xs text-muted-foreground">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50 mr-1">Group</span>
-            {availableGroupByOptions.map(({ value, label }) => (
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50 mr-1">{t("tasks.page.group")}</span>
+            {availableGroupByOptions.map(({ value }) => (
               <button
                 key={value}
                 onClick={() => handleGroupByChange(value)}
@@ -1194,7 +1196,7 @@ export default function TasksPage() {
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50 font-medium"
                 )}
               >
-                {label}
+                {t(`tasks.groupBy.${value}`)}
               </button>
             ))}
           </div>
@@ -1238,7 +1240,7 @@ export default function TasksPage() {
               <div className="size-14 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
                 <ClipboardList className="size-7 text-red-500" />
               </div>
-              <p className="text-base font-semibold text-foreground">Failed to load tasks</p>
+              <p className="text-base font-semibold text-foreground">{t("tasks.list.failedToLoad")}</p>
               <p className="text-sm text-muted-foreground">{(error as Error)?.message}</p>
               <Button
                 variant="outline"
@@ -1247,7 +1249,7 @@ export default function TasksPage() {
                 className="mt-2 rounded-lg"
               >
                 <RefreshCw className="mr-1.5 size-3.5" />
-                Try Again
+                {t("common.tryAgain")}
               </Button>
             </div>
           </div>
@@ -1280,11 +1282,11 @@ export default function TasksPage() {
 
         {isLoading && viewMode === "board" && (
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 animate-in fade-in duration-300">
-            {["Open", "Assigned", "Active", "Blocked", "Done"].map((label, i) => (
+            {["open", "assigned", "active", "blocked", "done"].map((key, i) => (
               <div key={i} className="flex-shrink-0 w-[280px]">
                 <div className="flex items-center gap-2 mb-3 px-1">
                   <div className="size-2 rounded-full bg-muted" />
-                  <span className="text-sm font-semibold text-muted-foreground/30">{label}</span>
+                  <span className="text-sm font-semibold text-muted-foreground/30">{t(`tasks.fallbackColumns.${key}`)}</span>
                 </div>
                 <div className="space-y-2 p-2 rounded-xl bg-muted/50 border border-border/30">
                   {Array.from({ length: 2 + (i % 2) }).map((_, j) => (
@@ -1337,11 +1339,11 @@ export default function TasksPage() {
               <div className="size-14 rounded-2xl bg-muted flex items-center justify-center">
                 <ClipboardList className="size-7 text-muted-foreground/50" />
               </div>
-              <p className="text-sm font-semibold text-foreground">No tasks found</p>
+              <p className="text-sm font-semibold text-foreground">{t("tasks.list.noTasksFound")}</p>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                 {activeTab !== "all" || searchQuery || scope !== "all" || selectedSpaceId
-                  ? "Try adjusting your filters to see more results."
-                  : "Create your first task to get started."}
+                  ? t("tasks.page.adjustFilters")
+                  : t("tasks.list.createFirstTask")}
               </p>
               {canCreateTasks && activeTab === "all" && !searchQuery && scope === "all" && !selectedSpaceId && (
                 <Button
@@ -1363,11 +1365,11 @@ export default function TasksPage() {
             {/* Header */}
             <div className="grid grid-cols-[24px_1fr_100px_160px_110px_110px_40px] items-center px-3 py-2 border-b border-border/40">
               <div />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Title</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Priority</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Assignee</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Due Date</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Status</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.title")}</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.priority")}</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.assignee")}</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.dueDate")}</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("common.status")}</span>
               <div />
             </div>
 
@@ -1439,7 +1441,7 @@ export default function TasksPage() {
               return (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Roadmap</span>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.roadmap")}</span>
                     <div className="flex-1 h-px bg-border/50" />
                   </div>
                   <EpicRoadmap
@@ -1457,7 +1459,7 @@ export default function TasksPage() {
             {/* Timeline section */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Timeline</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.timeline")}</span>
                 <div className="flex-1 h-px bg-border/50" />
               </div>
               <TimelineView tasks={filteredTasks} phases={effectivePhases} />
@@ -1466,7 +1468,7 @@ export default function TasksPage() {
             {/* Calendar section */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Calendar</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.calendar")}</span>
                 <div className="flex-1 h-px bg-border/50" />
               </div>
               <CalendarView tasks={filteredTasks} />
@@ -1478,7 +1480,7 @@ export default function TasksPage() {
         {!isLoading && !isError && total > 0 && (
           <div className="flex items-center justify-between mt-5">
             <p className="text-xs text-muted-foreground">
-              Showing {filteredTasks.length} of {total} tasks
+              {t("tasks.page.showingCount", { count: filteredTasks.length, total })}
             </p>
 
             {totalPages > 1 && (
@@ -1627,9 +1629,9 @@ export default function TasksPage() {
           const failed = results.filter(r => r.status === "rejected").length
           if (failed > 0) {
             restoreTasksCache(queryClient, snapshot)
-            notify.error(`${failed} assignee update(s) failed`)
+            notify.error(t("tasks.notify.assigneeUpdatesFailed", { failed }))
           } else {
-            notify.success(`Assignees updated`)
+            notify.success(t("tasks.detail.assigneesUpdated"))
           }
           queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
         }}

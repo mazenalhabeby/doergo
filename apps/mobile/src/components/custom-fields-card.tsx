@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useToast } from '../contexts/toast-context';
 import { COLORS } from '../lib/constants';
@@ -25,6 +26,7 @@ import {
  */
 export function CustomFieldsCard({ taskId }: { taskId: string }) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
 
   const [defs, setDefs] = useState<MobileCustomFieldDefinition[]>([]);
@@ -71,9 +73,9 @@ export function CustomFieldsCard({ taskId }: { taskId: string }) {
         .map(([definitionId, value]) => ({ definitionId, value }));
       await customFieldsApi.setTaskValues(taskId, payload);
       setInitial(values);
-      toast.success('Saved', 'Custom fields updated');
+      toast.success(t('components.customFieldsCard.savedTitle'), t('components.customFieldsCard.savedMessage'));
     } catch (err) {
-      toast.error('Error', err instanceof Error ? err.message : 'Could not save');
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('components.customFieldsCard.couldNotSave'));
     } finally {
       setSaving(false);
     }
@@ -85,7 +87,7 @@ export function CustomFieldsCard({ taskId }: { taskId: string }) {
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="options-outline" size={18} color={colors.textSecondary} />
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Custom Fields</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('components.customFieldsCard.title')}</Text>
         {dirty && (
           <TouchableOpacity
             style={[styles.saveBtn, { backgroundColor: COLORS.primary }]}
@@ -94,7 +96,7 @@ export function CustomFieldsCard({ taskId }: { taskId: string }) {
           >
             {saving
               ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={styles.saveText}>Save</Text>}
+              : <Text style={styles.saveText}>{t('common.save')}</Text>}
           </TouchableOpacity>
         )}
       </View>
@@ -125,6 +127,7 @@ function FieldInput({
   onChange: (v: string) => void;
   colors: ReturnType<typeof useTheme>['colors'];
 }) {
+  const { t } = useTranslation();
   const inputStyle = [
     styles.input,
     { backgroundColor: colors.surfaceRaised, borderColor: colors.border, color: colors.textPrimary },
@@ -164,7 +167,7 @@ function FieldInput({
           style={inputStyle}
           value={value}
           onChangeText={onChange}
-          placeholder={def.type === 'DATE' ? 'YYYY-MM-DD' : `Enter ${def.name.toLowerCase()}`}
+          placeholder={def.type === 'DATE' ? 'YYYY-MM-DD' : t('components.customFieldsCard.enterField', { field: def.name.toLowerCase() })}
           placeholderTextColor={colors.textMuted}
           keyboardType={def.type === 'NUMBER' ? 'numeric' : def.type === 'EMAIL' ? 'email-address' : 'default'}
           autoCapitalize={def.type === 'EMAIL' || def.type === 'URL' ? 'none' : 'sentences'}

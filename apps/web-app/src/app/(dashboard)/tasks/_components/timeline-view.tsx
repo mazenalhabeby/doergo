@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useEffect, useState, useCallback } from "react"
 import ReactDOM from "react-dom"
+import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
@@ -95,6 +96,7 @@ const TaskTooltip = React.memo(function TaskTooltip({
   task: Task
   style: React.CSSProperties
 }) {
+  const { t } = useTranslation()
   const statusConfig = getStatusConfig(task.status)
   return (
     <div
@@ -110,21 +112,21 @@ const TaskTooltip = React.memo(function TaskTooltip({
           {statusConfig.label}
         </span>
         {task.priority && (
-          <span className="text-[10px] text-muted-foreground font-medium uppercase">{task.priority}</span>
+          <span className="text-[10px] text-muted-foreground font-medium uppercase">{t(`tasks.priority.${task.priority}`)}</span>
         )}
       </div>
       {task.startDate && (
         <p className="text-[11px] text-muted-foreground">
-          Start: {new Date(task.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          {t("tasks.timeline.startLabel", { date: new Date(task.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })}
         </p>
       )}
       {task.dueDate && (
         <p className="text-[11px] text-muted-foreground">
-          Due: {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          {t("tasks.timeline.dueLabel", { date: new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })}
         </p>
       )}
       {task.estimatedHours != null && (
-        <p className="text-[11px] text-muted-foreground">Est: {task.estimatedHours}h</p>
+        <p className="text-[11px] text-muted-foreground">{t("tasks.timeline.estLabel", { hours: task.estimatedHours })}</p>
       )}
       {task.assignedTo && (
         <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -190,6 +192,7 @@ const TaskRow = React.memo(function TaskRow({
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function TimelineView({ tasks, phases }: TimelineViewProps) {
+  const { t } = useTranslation()
   const [scale, setScale] = useState<TimeScale>("week")
   const timelineRef = useRef<HTMLDivElement>(null)
   const leftPanelRef = useRef<HTMLDivElement>(null)
@@ -220,16 +223,16 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
     // Ungrouped tasks
     const ungrouped = grouped.get(null)
     if (ungrouped && ungrouped.length > 0) {
-      result.push({ label: "No Phase", tasks: ungrouped })
+      result.push({ label: t("tasks.sidebar.noPhase"), tasks: ungrouped })
     }
 
     // If no phases exist at all, put everything in one flat list
     if (result.length === 0) {
-      result.push({ label: "All Tasks", tasks })
+      result.push({ label: t("tasks.statusTabs.all"), tasks })
     }
 
     return result
-  }, [tasks, phases])
+  }, [tasks, phases, t])
 
   // ─── Date range ───
   const { rangeStart, rangeEnd, columns, colWidth } = useMemo(() => {
@@ -405,7 +408,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
       <div className="flex items-center justify-between px-4 py-2 border-b border-border/40 bg-muted/20">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="font-semibold text-foreground tabular-nums">{tasks.length}</span>
-          <span>tasks</span>
+          <span>{t("tasks.timeline.tasksLabel")}</span>
         </div>
         <div className="flex items-center bg-muted/80 rounded-lg p-0.5">
           {(["day", "week", "month"] as TimeScale[]).map((s) => (
@@ -419,7 +422,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {s}
+              {t(`tasks.timeline.scale.${s}`)}
             </button>
           ))}
         </div>
@@ -438,7 +441,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
             className="flex items-end px-3 pb-2 border-b border-border/40 bg-muted/20"
             style={{ height: HEADER_HEIGHT }}
           >
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Tasks</span>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{t("tasks.page.heading")}</span>
           </div>
 
           {/* Task rows */}
@@ -541,7 +544,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
             >
               {/* "Today" label */}
               <div className="absolute -top-[3px] -translate-x-1/2 whitespace-nowrap">
-                <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider bg-card px-1 rounded">Today</span>
+                <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider bg-card px-1 rounded">{t("common.today")}</span>
               </div>
               <div className="absolute top-3 bottom-0 w-px bg-red-400/70" style={{ left: 0 }} />
               <div className="absolute top-3 -left-[4px] size-[8px] rounded-full bg-red-500 ring-2 ring-card" />

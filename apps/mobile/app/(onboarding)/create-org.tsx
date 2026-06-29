@@ -101,19 +101,19 @@ export default function CreateOrgScreen() {
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="grid-outline" size={18} color={colors.textMuted} />
                 </View>
-                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder="e.g. Main Office" placeholderTextColor={colors.textMuted}
+                <TextInput style={[styles.input, { color: colors.textPrimary }]} placeholder={t('onboarding.createOrg.firstSpacePlaceholder')} placeholderTextColor={colors.textMuted}
                   value={firstSpaceName} onChangeText={setFirstSpaceName} autoCapitalize="words" />
               </View>
-              <Text style={[styles.errorText, { color: colors.textMuted }]}>Rename it or add more spaces later.</Text>
+              <Text style={[styles.errorText, { color: colors.textMuted }]}>{t('onboarding.createOrg.firstSpaceHint')}</Text>
             </View>
 
             {/* Space type */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Type</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.createOrg.typeLabel')}</Text>
               <View style={styles.typeRow}>
                 {([
-                  { key: 'workspace' as const, icon: 'grid-outline' as const, label: 'Workspace', desc: 'A team or project' },
-                  { key: 'physical' as const, icon: 'location-outline' as const, label: 'Physical location', desc: 'A site for attendance' },
+                  { key: 'workspace' as const, icon: 'grid-outline' as const, label: t('onboarding.createOrg.typeWorkspace'), desc: t('onboarding.createOrg.typeWorkspaceDesc') },
+                  { key: 'physical' as const, icon: 'location-outline' as const, label: t('onboarding.createOrg.typePhysical'), desc: t('onboarding.createOrg.typePhysicalDesc') },
                 ]).map((opt) => {
                   const on = spaceType === opt.key;
                   return (
@@ -135,7 +135,7 @@ export default function CreateOrgScreen() {
             {/* Physical location → address + map */}
             {spaceType === 'physical' && (
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.textPrimary }]}>Location</Text>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.createOrg.locationLabel')}</Text>
                 <LocationSearchPicker
                   address={spaceAddress}
                   lat={spaceLat}

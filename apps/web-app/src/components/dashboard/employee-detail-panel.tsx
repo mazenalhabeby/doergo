@@ -2,6 +2,7 @@
 
 import React from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import {
   CheckCircle2,
@@ -35,15 +36,16 @@ export interface EmployeeDetailPanelProps {
   onClose: () => void
 }
 
-const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string }> = {
-  IN_PROGRESS: { label: "Working", dot: "bg-amber-500", bg: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
-  EN_ROUTE: { label: "En Route", dot: "bg-blue-500", bg: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
-  ARRIVED: { label: "On Site", dot: "bg-green-500", bg: "bg-green-500/10 text-green-700 dark:text-green-400" },
-  BLOCKED: { label: "Blocked", dot: "bg-red-500", bg: "bg-red-500/10 text-red-600 dark:text-red-400" },
-  ASSIGNED: { label: "Assigned", dot: "bg-purple-500", bg: "bg-purple-500/10 text-purple-700 dark:text-purple-400" },
+const STATUS_CONFIG: Record<string, { labelKey: string; dot: string; bg: string }> = {
+  IN_PROGRESS: { labelKey: "dashboard.employeePanel.statusWorking", dot: "bg-amber-500", bg: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
+  EN_ROUTE: { labelKey: "dashboard.employeePanel.statusEnRoute", dot: "bg-blue-500", bg: "bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+  ARRIVED: { labelKey: "dashboard.employeePanel.statusOnSite", dot: "bg-green-500", bg: "bg-green-500/10 text-green-700 dark:text-green-400" },
+  BLOCKED: { labelKey: "dashboard.employeePanel.statusBlocked", dot: "bg-red-500", bg: "bg-red-500/10 text-red-600 dark:text-red-400" },
+  ASSIGNED: { labelKey: "dashboard.employeePanel.statusAssigned", dot: "bg-purple-500", bg: "bg-purple-500/10 text-purple-700 dark:text-purple-400" },
 }
 
 export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetailPanelProps) {
+  const { t } = useTranslation()
   const router = useRouter()
 
   const { data: detail, isLoading } = useQuery({
@@ -70,7 +72,7 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
       <DrawerContent className="max-h-[80vh] focus:outline-none">
-        <DrawerTitle className="sr-only">Employee Details</DrawerTitle>
+        <DrawerTitle className="sr-only">{t("dashboard.employeePanel.title")}</DrawerTitle>
 
         {/* Drag handle */}
         <div className="flex justify-center pt-2 pb-1">
@@ -107,7 +109,7 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                   <div className="flex items-center gap-1.5 mt-1">
                     <Briefcase className="size-3 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      {employee.position || employee.specialty || "Employee"}
+                      {employee.position || employee.specialty || t("dashboard.employeePanel.employee")}
                     </span>
                   </div>
                   {employee.email && (
@@ -121,19 +123,19 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                 {/* Quick Actions */}
                 <div className="flex gap-1 shrink-0">
                   <button
-                    onClick={() => notify.success("Messaging coming soon")}
+                    onClick={() => notify.success(t("workspace.messagingComingSoon"))}
                     className="size-9 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors"
                   >
                     <MessageCircle className="size-4" />
                   </button>
                   <button
-                    onClick={() => notify.success("Voice call coming soon")}
+                    onClick={() => notify.success(t("workspace.voiceCallComingSoon"))}
                     className="size-9 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors text-foreground"
                   >
                     <Phone className="size-4" />
                   </button>
                   <button
-                    onClick={() => notify.success("Video call coming soon")}
+                    onClick={() => notify.success(t("workspace.videoCallComingSoon"))}
                     className="size-9 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors text-foreground"
                   >
                     <Video className="size-4" />
@@ -147,22 +149,22 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
               <div className="grid grid-cols-4 gap-3">
                 <StatCard
                   value={String(completedCount)}
-                  label="Completed"
+                  label={t("dashboard.employeePanel.completed")}
                   icon={<CheckCircle2 className="size-4 text-green-500" />}
                 />
                 <StatCard
                   value={String(activeTasks.length)}
-                  label="Active"
+                  label={t("dashboard.employeePanel.active")}
                   icon={<ClipboardList className="size-4 text-blue-500" />}
                 />
                 <StatCard
                   value={hoursWeek != null ? `${Math.round(hoursWeek)}h` : "—"}
-                  label="Hrs/Week"
+                  label={t("dashboard.employeePanel.hrsWeek")}
                   icon={<Clock className="size-4 text-amber-500" />}
                 />
                 <StatCard
                   value={onTimeRate != null ? `${Math.round(onTimeRate)}%` : "—"}
-                  label="On-Time"
+                  label={t("dashboard.employeePanel.onTime")}
                   icon={<TrendingUp className="size-4 text-purple-500" />}
                 />
               </div>
@@ -173,13 +175,13 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
               <div className="px-6 pb-5">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Active Tasks
+                    {t("dashboard.employeePanel.activeTasks")}
                   </h4>
                   <button
                     onClick={() => { onClose(); router.push(`/tasks?assignee=${employeeId}`) }}
                     className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
                   >
-                    View all <ArrowUpRight className="size-2.5" />
+                    {t("dashboard.admin.viewAll")} <ArrowUpRight className="size-2.5" />
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -205,7 +207,7 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                           </div>
                           <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1", cfg.bg)}>
                             <span className={cn("size-1.5 rounded-full", cfg.dot)} />
-                            {cfg.label}
+                            {t(cfg!.labelKey)}
                           </span>
                         </div>
                       </button>
@@ -220,7 +222,7 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
               <div className="px-6 pb-5">
                 <div className="rounded-xl bg-muted/30 border border-border/30 py-6 text-center">
                   <ClipboardList className="size-6 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No active tasks</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.employeePanel.noActiveTasks")}</p>
                 </div>
               </div>
             )}

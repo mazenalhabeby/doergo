@@ -22,6 +22,7 @@
     "close": "Schließen",
     "copy": "Kopieren",
     "copied": "Kopiert",
+    "language": "Sprache",
     "yes": "Ja",
     "no": "Nein",
     "all": "Alle",
@@ -91,9 +92,26 @@
     "allRoles": "Alle Rollen",
     "allTypes": "Alle Typen",
     "allModes": "Alle Modi",
-    "allSpecialties": "Alle Fachgebiete"
+    "allSpecialties": "Alle Fachgebiete",
+    "selectPlaceholder": "Auswählen…",
+    "addOption": "„{{query}}“ hinzufügen",
+    "countryOrCode": "Land oder Vorwahl…",
+    "phoneNumber": "Telefonnummer",
+    "sidebar": "Seitenleiste",
+    "sidebarDescription": "Zeigt die mobile Seitenleiste an.",
+    "toggleSidebar": "Seitenleiste umschalten",
+    "accessDenied": "Zugriff verweigert",
+    "noPermissionView": "Sie haben keine Berechtigung, diese Seite anzuzeigen.",
+    "allSpaces": "Alle Bereiche",
+    "pickColor": "Farbe auswählen",
+    "more": "Mehr",
+    "goHome": "Zur Startseite",
+    "commandPalette": "Befehlspalette",
+    "add": "Hinzufügen",
+    "searching": "Suche läuft...",
+    "mobileOnlyAccount": "Nur-Mobil-Konto",
+    "mobileOnlyAccountBody": "Ihr Konto ist für die mobile App eingerichtet. Bitte verwenden Sie die HBCField-App auf Ihrem Telefon, um fortzufahren."
   },
-
   "auth": {
     "login": {
       "title": "Willkommen zurück",
@@ -205,9 +223,26 @@
       "uppercase": "Großbuchstabe",
       "lowercase": "Kleinbuchstabe",
       "number": "Zahl"
+    },
+    "page": {
+      "accountCreatedTitle": "Konto erfolgreich erstellt!",
+      "accountCreatedDescription": "Bitte melden Sie sich mit Ihren neuen Zugangsdaten an.",
+      "signInSubtitle": "Melden Sie sich bei Ihrem Arbeitsbereich an.",
+      "signUpSubtitle": "Starten Sie Ihre Organisation auf HBCField.",
+      "signInTab": "Anmelden",
+      "createAccountTab": "Konto erstellen"
+    },
+    "hero": {
+      "line1": "Disponieren.",
+      "line2": "Verfolgen. Liefern.",
+      "subtitle": "Verwalten Sie Ihren gesamten Außendienst – Aufgaben, Mitarbeiter, Routen und Anwesenheit – an einem Ort.",
+      "inProgress": "In Bearbeitung",
+      "sampleTask": "HLK-Reparatur · #5102",
+      "sampleTaskMeta": "Mike W. · 2,3 km entfernt",
+      "tasksCompleted": "Aufgaben erledigt",
+      "footer": "© HBCField — Außendienstverwaltung"
     }
   },
-
   "nav": {
     "sidebar": {
       "adminPortal": "Admin-Portal",
@@ -253,9 +288,23 @@
       "managePreferences": "Einstellungen verwalten",
       "signOut": "Abmelden",
       "endYourSession": "Sitzung beenden"
-    }
+    },
+    "spaces": "Bereiche",
+    "timeOff": "Abwesenheit",
+    "manage": "Verwalten",
+    "team": "Team",
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus",
+    "navigation": "Navigation",
+    "toggle": "Umschalten",
+    "hideActivityPanel": "Aktivitätsleiste ausblenden",
+    "showActivityPanel": "Aktivitätsleiste anzeigen",
+    "searchTasks": "Aufgaben suchen...",
+    "avatarAlt": "Avatar",
+    "myTasks": "Meine Aufgaben",
+    "tokenTest": "Token-Test",
+    "help": "Hilfe"
   },
-
   "dashboard": {
     "admin": {
       "welcomeBack": "Willkommen zurück, {{name}}",
@@ -313,10 +362,52 @@
       "pendingRequests": "{{count}} ausstehende{{plural}} Anfrage{{plural}}",
       "more": "+{{count}} weitere",
       "recentActivity": "Letzte Aktivitäten",
-      "unassigned": "{{count}} nicht zugewiesen"
+      "unassigned": "{{count}} nicht zugewiesen",
+      "employees": "Mitarbeiter",
+      "manageEmployees": "Mitarbeiter verwalten",
+      "noEmployeesFound": "Keine Mitarbeiter gefunden"
+    },
+    "client": {
+      "myTasks": "Meine Aufgaben",
+      "mySpaces": "Meine Bereiche",
+      "viewAll": "Alle anzeigen →",
+      "setupTitleLine1": "Richten Sie Ihren",
+      "setupTitleLine2": "Arbeitsbereich ein",
+      "setupDescription": "Erstellen Sie Bereiche, fügen Sie Ihr Team hinzu und verfolgen Sie alle in Echtzeit — alles in einer Ansicht.",
+      "addSpace": "Bereich hinzufügen",
+      "inviteTeam": "Team einladen",
+      "newSpace": "Neuer Bereich",
+      "noSpacesTitle": "Noch keine Bereiche zugewiesen",
+      "noSpacesDescription": "Sie wurden noch keinem Bereich hinzugefügt. Sehen Sie im Aufgaben-Tab nach Ihren zugewiesenen Aufgaben oder bitten Sie Ihren Manager, Sie hinzuzufügen."
+    },
+    "employeePanel": {
+      "title": "Mitarbeiterdetails",
+      "employee": "Mitarbeiter",
+      "completed": "Abgeschlossen",
+      "active": "Aktiv",
+      "hrsWeek": "Std./Woche",
+      "onTime": "Pünktlich",
+      "activeTasks": "Aktive Aufgaben",
+      "noActiveTasks": "Keine aktiven Aufgaben",
+      "statusWorking": "In Arbeit",
+      "statusEnRoute": "Unterwegs",
+      "statusOnSite": "Vor Ort",
+      "statusBlocked": "Blockiert",
+      "statusAssigned": "Zugewiesen"
+    },
+    "taskChart": {
+      "noData": "Keine Daten",
+      "total": "Gesamt"
+    },
+    "activityFeed": {
+      "noRecentActivity": "Keine aktuellen Aktivitäten"
+    },
+    "recentTasksWidget": {
+      "noTasks": "Noch keine Aufgaben",
+      "willAppear": "Aufgaben erscheinen hier, sobald sie erstellt werden",
+      "viewAllTasks": "Alle Aufgaben anzeigen"
     }
   },
-
   "tasks": {
     "list": {
       "title": "Serviceaufträge",
@@ -362,7 +453,26 @@
       "submitting": "Wird erstellt...",
       "successMessage": "Aufgabe erfolgreich erstellt!",
       "errorMessage": "Aufgabe konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
-      "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus"
+      "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus",
+      "dialogDescription": "Eine neue Aufgabe für Ihre Organisation erstellen",
+      "selectSpace": "Bereich auswählen",
+      "type": "Typ",
+      "auto": "Automatisch",
+      "autoFromSpace": "Automatisch (vom Bereich)",
+      "assignment": "Zuweisung",
+      "assignedToYou": "Ihnen zugewiesen",
+      "assignedToYouFull": "Diese Aufgabe wird Ihnen zugewiesen",
+      "assignTo": "Zuweisen an",
+      "selectTeamMember": "Teammitglied auswählen",
+      "addChecklistItem": "Checklistenpunkt hinzufügen...",
+      "organization": "Organisation",
+      "subtaskOf": "Unteraufgabe von (optional)",
+      "parentTaskPlaceholder": "Übergeordnete Aufgaben-ID einfügen...",
+      "moreOptions": "Weitere Optionen",
+      "epicSet": "Epic festgelegt",
+      "itemsCount_one": "{{count}} Eintrag",
+      "itemsCount_other": "{{count}} Einträge",
+      "fillRequiredCustomFields": "Bitte füllen Sie alle erforderlichen benutzerdefinierten Felder aus"
     },
     "detail": {
       "title": "Aufgabendetails",
@@ -379,7 +489,11 @@
       "failedToLoad": "Aufgabe konnte nicht geladen werden",
       "notFound": "Nicht gefunden",
       "commentAdded": "Kommentar hinzugefügt",
-      "technicianAssigned": "Techniker zugewiesen"
+      "technicianAssigned": "Techniker zugewiesen",
+      "statusUpdated": "Aufgabenstatus aktualisiert",
+      "assigneesUpdated": "Zuständige aktualisiert",
+      "assigneeRemoved": "Zuständige(r) entfernt",
+      "leadUpdated": "Leitung aktualisiert"
     },
     "progress": {
       "serviceCompletedSuccessfully": "Service erfolgreich abgeschlossen",
@@ -399,7 +513,8 @@
         "confirmed": "Bestätigt",
         "enRoute": "Unterwegs",
         "working": "In Arbeit",
-        "completed": "Abgeschlossen"
+        "completed": "Abgeschlossen",
+        "created": "Erstellt"
       },
       "status": {
         "pending": "Ausstehend",
@@ -425,7 +540,12 @@
         "awaitingResponse": "Wartet auf Antwort",
         "atYourLocation": "An Ihrem Standort",
         "jobCompleted": "Auftrag abgeschlossen"
-      }
+      },
+      "progressLabel": "Fortschritt",
+      "lead": "Leitung",
+      "member": "Mitglied",
+      "members": "Mitglieder",
+      "unassigned": "Nicht zugewiesen"
     },
     "comments": {
       "title": "Kommentare",
@@ -438,16 +558,442 @@
       "viewDetails": "Details anzeigen",
       "assign": "Zuweisen",
       "awaitingAcceptance": "Wartet auf Annahme",
-      "confirmed": "Bestätigt"
+      "confirmed": "Bestätigt",
+      "manageAssignees": "Zuständige verwalten"
     },
     "priority": {
       "LOW": "Niedrig",
       "MEDIUM": "Mittel",
       "HIGH": "Hoch",
       "URGENT": "Dringend"
+    },
+    "page": {
+      "heading": "Aufgaben",
+      "subtitle": "Verwalten Sie Aufgaben über Bereiche hinweg – erstellen, zuweisen und Fortschritt verfolgen.",
+      "searchPlaceholder": "Suchen...",
+      "recurring": "Wiederkehrend",
+      "newTask": "Neue Aufgabe",
+      "group": "Gruppieren",
+      "adjustFilters": "Passen Sie Ihre Filter an, um mehr Ergebnisse zu sehen.",
+      "showingCount": "{{count}} von {{total}} Aufgaben werden angezeigt"
+    },
+    "view": {
+      "board": "Board",
+      "table": "Liste",
+      "schedule": "Zeitplan"
+    },
+    "groupBy": {
+      "none": "Keine",
+      "sprint": "Sprint",
+      "epic": "Epic",
+      "assignee": "Zuständige(r)",
+      "priority": "Priorität",
+      "space": "Bereich"
+    },
+    "fallbackColumns": {
+      "open": "Offen",
+      "assigned": "Zugewiesen",
+      "active": "Aktiv",
+      "blocked": "Blockiert",
+      "done": "Erledigt"
+    },
+    "columns": {
+      "title": "Titel",
+      "priority": "Priorität",
+      "assignee": "Zuständige(r)",
+      "dueDate": "Fälligkeitsdatum"
+    },
+    "schedule": {
+      "roadmap": "Roadmap",
+      "timeline": "Zeitleiste",
+      "calendar": "Kalender"
+    },
+    "notify": {
+      "sprintStarted": "Sprint ist jetzt aktiv",
+      "sprintCompleted": "Sprint wurde abgeschlossen",
+      "sprintRemoved": "Sprint wurde entfernt",
+      "noTaskSelected": "Keine Aufgabe ausgewählt",
+      "memberAssigned": "Mitglied zugewiesen",
+      "taskFieldUpdated": "Aufgabe {{field}} aktualisiert",
+      "priorityUpdated": "Priorität aktualisiert",
+      "movedToSprint": "In Sprint verschoben",
+      "movedToBacklog": "Ins Backlog verschoben",
+      "phaseSet": "Phase festgelegt",
+      "phaseRemoved": "Phase entfernt",
+      "epicSet": "Epic festgelegt",
+      "epicRemoved": "Epic entfernt",
+      "pointsSet": "Auf {{points}} Punkte gesetzt",
+      "pointsCleared": "Punkte gelöscht",
+      "movedToSpace": "In Bereich verschoben",
+      "spaceRemoved": "Bereich entfernt",
+      "taskDeleted": "Aufgabe gelöscht",
+      "updatesFailed": "{{failed}} von {{total}} Aktualisierungen fehlgeschlagen",
+      "deletesFailed": "{{failed}} von {{total}} Löschvorgängen fehlgeschlagen",
+      "actionUpdated": "aktualisiert",
+      "actionMoved": "verschoben",
+      "actionDeleted": "gelöscht",
+      "actionEstimated": "geschätzt",
+      "assigneeUpdatesFailed": "{{failed}} Zuständigkeits-Aktualisierung(en) fehlgeschlagen"
+    },
+    "sections": {
+      "subtasks": "Teilaufgaben",
+      "checklist": "Checkliste",
+      "attachments": "Anhänge",
+      "dependencies": "Abhängigkeiten",
+      "activity": "Aktivität",
+      "serviceReport": "Servicebericht",
+      "routeTracking": "Routenverfolgung",
+      "customFields": "Benutzerdefinierte Felder"
+    },
+    "customFields": {
+      "enterPlaceholder": "{{name}} eingeben...",
+      "selectPlaceholder": "{{name}} auswählen..."
+    },
+    "sidebar": {
+      "details": "Details",
+      "assignees": "Zuständige",
+      "add": "Hinzufügen",
+      "lead": "Leitung",
+      "makeLead": "Als Leitung festlegen",
+      "remove": "Entfernen",
+      "assignSomeone": "Jemanden zuweisen",
+      "dueDate": "Fälligkeitsdatum",
+      "setDueDate": "Fälligkeitsdatum festlegen",
+      "startDate": "Startdatum",
+      "setStartDate": "Startdatum festlegen",
+      "location": "Standort",
+      "addLocation": "Standort hinzufügen",
+      "estimatedHours": "Geschätzte Stunden",
+      "createdBy": "Erstellt von",
+      "created": "Erstellt",
+      "agile": "Agile",
+      "sprint": "Sprint",
+      "noSprint": "Kein Sprint",
+      "phase": "Phase",
+      "noPhase": "Keine Phase",
+      "epic": "Epic",
+      "noEpic": "Kein Epic",
+      "storyPoints": "Story Points",
+      "none": "Keine"
+    },
+    "row": {
+      "manageAssignees": "Zum Verwalten der Zuständigen klicken"
+    },
+    "priorityDescriptions": {
+      "LOW": "Keine Eile",
+      "MEDIUM": "Standard",
+      "HIGH": "Wichtig",
+      "URGENT": "Kritisch"
+    },
+    "description": {
+      "label": "Beschreibung",
+      "addPlaceholder": "Beschreibung hinzufügen..."
+    },
+    "inlineEdit": {
+      "empty": "Leer",
+      "cmdEnterToSave": "⌘+Enter zum Speichern"
+    },
+    "requestDetails": {
+      "title": "Anfragedetails",
+      "noDescription": "Keine Beschreibung angegeben.",
+      "taskInformation": "Aufgabeninformationen"
+    },
+    "units": {
+      "points": "{{count}} Pkt."
+    },
+    "timer": {
+      "sinceAccepted": "Zeit seit Annahme der Aufgabe",
+      "totalOnTask": "Gesamtzeit für die Aufgabe"
+    },
+    "route": {
+      "noRouteData": "Keine Routendaten verfügbar",
+      "startPoint": "Startpunkt",
+      "currentLocation": "Aktueller Standort",
+      "destination": "Ziel",
+      "start": "Start",
+      "current": "Aktuell",
+      "end": "Ende",
+      "route": "Route",
+      "gpsPointsCount": "{{count}} GPS-Punkte",
+      "waitingForTechnician": "Warten auf Mitarbeiter",
+      "waitingDescription": "Die Routenverfolgung beginnt, sobald der Mitarbeiter zu Ihrem Standort losfährt",
+      "live": "Live",
+      "avgSpeed": "Ø Geschwindigkeit:",
+      "gpsPoints": "GPS-Punkte:",
+      "arrived": "Angekommen",
+      "inTransit": "Unterwegs",
+      "liveTrackingActive": "Live-Verfolgung aktiv",
+      "lastUpdate": "Letzte Aktualisierung: {{time}}",
+      "hideMap": "Routenkarte ausblenden",
+      "viewMap": "Route auf Karte anzeigen"
+    },
+    "attachments": {
+      "deleted": "Anhang gelöscht",
+      "exceedsLimit": "{{name}} überschreitet das Limit von 20 MB",
+      "unsupportedType": "{{name}}: nicht unterstützter Dateityp",
+      "failedUploadUrl": "Upload-URL konnte nicht abgerufen werden",
+      "uploaded": "{{name}} hochgeladen",
+      "uploadFailed": "{{name}} konnte nicht hochgeladen werden: {{error}}",
+      "upload": "Hochladen",
+      "dragDropPrefix": "Dateien hierher ziehen und ablegen oder",
+      "browse": "durchsuchen",
+      "sizeHint": "Bilder und Dokumente bis 20 MB",
+      "download": "Herunterladen",
+      "empty": "Noch keine Anhänge",
+      "deleteTitle": "Anhang löschen",
+      "deleteDescription": "Möchten Sie „{{name}}“ wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "groups": {
+      "planning": "Planung",
+      "backlog": "Backlog",
+      "noEpic": "Kein Epic",
+      "noSpace": "Kein Bereich",
+      "noTasksToGroup": "Keine Aufgaben zum Gruppieren",
+      "noTasksToGroupHint": "Es gibt keine Aufgaben, die den aktuellen Filtern entsprechen, um sie in Gruppen zu organisieren.",
+      "newSprint": "Neuer Sprint",
+      "newEpic": "Neues Epic",
+      "dropHere": "Hier ablegen",
+      "dropTaskHere": "Aufgabe hier ablegen",
+      "noTasksInGroup": "Keine Aufgaben in dieser Gruppe"
+    },
+    "serviceReport": {
+      "noBeforePhotos": "Keine Vorher-Fotos",
+      "noAfterPhotos": "Keine Nachher-Fotos",
+      "noParts": "Bei dieser Leistung wurden keine Teile verwendet.",
+      "partsTable": {
+        "part": "Teil",
+        "partNumber": "Teil-Nr.",
+        "qty": "Anz.",
+        "unitCost": "Stückpreis",
+        "total": "Gesamt"
+      },
+      "totalParts": "Teile gesamt:",
+      "noSignature": "Keine Unterschrift",
+      "signatureAlt": "Unterschrift {{label}}",
+      "upload": {
+        "acceptedTypes": "Es werden nur JPG-, PNG- und WebP-Bilder akzeptiert",
+        "sizeError": "Die Dateigröße muss unter 10 MB liegen",
+        "success": "Foto erfolgreich hochgeladen",
+        "failed": "Upload fehlgeschlagen",
+        "uploadAs": "Hochladen als:",
+        "uploading": "Wird hochgeladen...",
+        "dropHint": "Bild ablegen oder zum Hochladen klicken",
+        "sizeHint": "JPG, PNG, WebP bis 10 MB"
+      },
+      "before": "Vorher",
+      "after": "Nachher",
+      "photoRemoved": "Foto entfernt",
+      "photoRemoveFailed": "Foto konnte nicht entfernt werden",
+      "removePhotoConfirm": "Dieses Foto entfernen?",
+      "jobCompleted": "Auftrag abgeschlossen",
+      "noReport": "Für diese Aufgabe ist kein Servicebericht verfügbar.",
+      "completedOn": "Abgeschlossen am {{date}}",
+      "summary": "Zusammenfassung",
+      "workPerformed": "Durchgeführte Arbeiten",
+      "employee": "Mitarbeiter",
+      "unknown": "Unbekannt",
+      "beforeAfterPhotos": "Vorher- & Nachher-Fotos",
+      "partsUsed": "Verwendete Teile",
+      "signatures": "Unterschriften",
+      "customer": "Kunde"
+    },
+    "fields": {
+      "name": "Name",
+      "color": "Farbe",
+      "pickDate": "Datum wählen",
+      "endDate": "Enddatum",
+      "addressPlaceholder": "Adresse eingeben...",
+      "addressShort": "Adresse...",
+      "estimatedHoursPlaceholder": "z. B. 4"
+    },
+    "sprint": {
+      "createdDescription": "Sprint ist bereit für die Planung",
+      "updatedDescription": "Sprint-Details gespeichert",
+      "defaultName": "Sprint {{number}}",
+      "editTitle": "Sprint bearbeiten",
+      "createTitle": "Sprint erstellen",
+      "editDescription": "Sprint-Details aktualisieren",
+      "createDescription": "Einen neuen Sprint erstellen",
+      "addGoal": "+ Ziel hinzufügen",
+      "goal": "Ziel",
+      "goalPlaceholder": "Was möchten wir erreichen?",
+      "completeTitle": "„{{name}}“ abschließen?",
+      "completeDescription": "Diesen Sprint abschließen und optional unerledigte Aufgaben verschieben.",
+      "moveRemaining_one": "{{count}} verbleibende Aufgabe verschieben",
+      "moveRemaining_other": "{{count}} verbleibende Aufgaben verschieben",
+      "tasksMovedToSprint": "Aufgaben werden nach „{{name}}“ verschoben",
+      "tasksMovedToBacklog": "Aufgaben werden ins Backlog verschoben",
+      "allComplete": "Alle Aufgaben in diesem Sprint sind abgeschlossen. Gute Arbeit!",
+      "completeButton": "Sprint abschließen",
+      "deleteTitle": "Sprint löschen?",
+      "deleteDescription": "Aufgaben in diesem Sprint werden ins Backlog verschoben."
+    },
+    "epic": {
+      "created": "Epic erstellt",
+      "updated": "Epic aktualisiert",
+      "editTitle": "Epic bearbeiten",
+      "createTitle": "Epic erstellen",
+      "editDescription": "Epic-Details aktualisieren",
+      "createDescription": "Ein neues Epic erstellen",
+      "namePlaceholder": "Epic-Name",
+      "descriptionPlaceholder": "Worum geht es in diesem Epic?",
+      "targetDate": "Zieldatum"
+    },
+    "edit": {
+      "success": "Aufgabe aktualisiert",
+      "failed": "Aufgabe konnte nicht aktualisiert werden",
+      "title": "Aufgabe bearbeiten",
+      "description": "Aktualisieren Sie unten die Aufgabendetails.",
+      "titlePlaceholder": "Aufgabentitel...",
+      "descriptionPlaceholder": "Beschreiben Sie das Problem..."
+    },
+    "timeline": {
+      "startLabel": "Start: {{date}}",
+      "dueLabel": "Fällig: {{date}}",
+      "estLabel": "Gesch.: {{hours}} Std.",
+      "tasksLabel": "Aufgaben",
+      "scale": {
+        "day": "Tag",
+        "week": "Woche",
+        "month": "Monat"
+      }
+    },
+    "epicRoadmap": {
+      "filteredTo": "Gefiltert nach",
+      "epics": "Epics",
+      "noDates": "Keine Daten festgelegt"
+    },
+    "recurring": {
+      "everyNDaysValue": "Alle {{count}} Tage",
+      "frequencies": {
+        "DAILY": "Täglich",
+        "WEEKLY": "Wöchentlich",
+        "BIWEEKLY": "Zweiwöchentlich",
+        "MONTHLY": "Monatlich",
+        "QUARTERLY": "Vierteljährlich",
+        "YEARLY": "Jährlich",
+        "CUSTOM": "Benutzerdefiniert"
+      },
+      "repeatTask": "Diese Aufgabe wiederholen",
+      "frequency": "Häufigkeit",
+      "everyNDays": "Alle N Tage",
+      "dayOfWeek": "Wochentag",
+      "dayOfMonth": "Tag des Monats",
+      "endDateOptional": "Enddatum (optional)",
+      "generatesHint": "Erzeugt nach diesem Zeitplan eine Aufgabe im gewählten Bereich & Typ. Fälligkeitsdatum & Anhänge gelten nicht.",
+      "created": "Wiederkehrende Aufgabe erstellt",
+      "createdDescription": "Sie wird nach Zeitplan erzeugt.",
+      "createFailed": "Wiederkehrende Aufgabe konnte nicht erstellt werden",
+      "createButton": "Wiederkehrende Aufgabe erstellen",
+      "noSpace": "Kein Bereich",
+      "defaultType": "Standardtyp",
+      "nextRun": "Nächste: {{date}}",
+      "checklistItemsCount": "{{count}} Checklistenpunkte",
+      "generate": "Erzeugen",
+      "templateCreated": "Vorlage erstellt",
+      "templateUpdated": "Vorlage aktualisiert",
+      "editTemplate": "Vorlage bearbeiten",
+      "createTemplate": "Wiederkehrende Vorlage erstellen",
+      "editTemplateDescription": "Aktualisieren Sie die Vorlage für wiederkehrende Aufgaben.",
+      "createTemplateDescription": "Richten Sie eine Vorlage ein, die automatisch Aufgaben erzeugt.",
+      "titlePlaceholder": "z. B. Wöchentliche HLK-Inspektion",
+      "descriptionPlaceholder": "Aufgabenbeschreibung...",
+      "taskType": "Aufgabentyp",
+      "default": "Standard",
+      "taskGenerated": "Aufgabe erfolgreich erzeugt",
+      "templateDeleted": "Vorlage gelöscht",
+      "pageTitle": "Wiederkehrende Aufgaben",
+      "pageSubtitle": "Aufgabenerstellung nach Zeitplan automatisieren",
+      "newTemplate": "Neue Vorlage",
+      "emptyInSpace": "Keine wiederkehrenden Vorlagen in diesem Bereich",
+      "emptyTitle": "Noch keine wiederkehrenden Vorlagen",
+      "emptyHint": "Erstellen Sie Vorlagen, um Aufgaben automatisch täglich, wöchentlich, monatlich oder nach einem benutzerdefinierten Zeitplan zu erzeugen.",
+      "createFirst": "Erstellen Sie Ihre erste Vorlage",
+      "deleteTitle": "Vorlage löschen",
+      "deleteDescription": "Möchten Sie „{{name}}“ wirklich löschen? Bereits erzeugte Aufgaben sind nicht betroffen."
+    },
+    "weekdaysFull": {
+      "sunday": "Sonntag",
+      "monday": "Montag",
+      "tuesday": "Dienstag",
+      "wednesday": "Mittwoch",
+      "thursday": "Donnerstag",
+      "friday": "Freitag",
+      "saturday": "Samstag"
+    },
+    "activity": {
+      "title": "Aktivität",
+      "noActivity": "Noch keine Aktivität",
+      "assignedTo": "Zugewiesen an {{name}}",
+      "updatedFields": "{{fields}} aktualisiert",
+      "events": {
+        "CREATED": "Aufgabe erstellt",
+        "UPDATED": "Aufgabe aktualisiert",
+        "ASSIGNED": "Mitarbeiter zugewiesen",
+        "UNASSIGNED": "Mitarbeiterzuweisung aufgehoben",
+        "STATUS_CHANGED": "Status geändert",
+        "EN_ROUTE": "Mitarbeiter unterwegs",
+        "ARRIVED": "Mitarbeiter angekommen",
+        "IN_PROGRESS": "Arbeit in Bearbeitung",
+        "BLOCKED": "Aufgabe blockiert",
+        "COMPLETED": "Aufgabe abgeschlossen",
+        "CANCELED": "Aufgabe storniert",
+        "CLOSED": "Aufgabe geschlossen",
+        "ATTACHMENT_ADDED": "Anhang hinzugefügt",
+        "ATTACHMENT_REMOVED": "Anhang entfernt"
+      }
+    },
+    "assignees": {
+      "addTeamMember": "Teammitglied hinzufügen",
+      "searchPlaceholder": "Nach Name oder E-Mail suchen...",
+      "noTeamMembersFound": "Keine Teammitglieder gefunden",
+      "noAssignees": "Noch keine Zuständigen",
+      "added": "Zuständiger hinzugefügt",
+      "removed": "Zuständiger entfernt"
+    },
+    "checklist": {
+      "addItemPlaceholder": "Eintrag hinzufügen...",
+      "updateFailed": "Checklisteneintrag konnte nicht aktualisiert werden"
+    },
+    "dependencies": {
+      "add": "Abhängigkeit hinzufügen",
+      "type": "Abhängigkeitstyp",
+      "searchTasks": "Aufgaben suchen...",
+      "noMatchingTasks": "Keine passenden Aufgaben gefunden",
+      "blockedBy": "Blockiert von",
+      "blocking": "Blockiert",
+      "empty": "Keine Abhängigkeiten. Verknüpfen Sie Aufgaben, um die Ausführungsreihenfolge festzulegen.",
+      "added": "Abhängigkeit hinzugefügt",
+      "removed": "Abhängigkeit entfernt",
+      "types": {
+        "FINISH_TO_START": "Ende zu Start",
+        "START_TO_START": "Start zu Start",
+        "FINISH_TO_FINISH": "Ende zu Ende",
+        "START_TO_FINISH": "Start zu Ende"
+      }
+    },
+    "subtasks": {
+      "created": "Unteraufgabe erstellt",
+      "empty": "Noch keine Unteraufgaben. Teilen Sie diese Aufgabe in kleinere Schritte auf.",
+      "titlePlaceholder": "Titel der Unteraufgabe..."
+    },
+    "backlog": {
+      "est": "Schätzung:",
+      "tasksLabel": "Aufgaben",
+      "unestimated": "nicht geschätzt",
+      "pts": "Pkt.",
+      "moveToSprint": "In Sprint verschieben",
+      "planning": "Planung",
+      "ascending": "Aufsteigend",
+      "descending": "Absteigend",
+      "sort": {
+        "priority": "Priorität",
+        "createdAt": "Erstellt",
+        "storyPoints": "Punkte",
+        "title": "Titel"
+      }
     }
   },
-
   "technicians": {
     "list": {
       "title": "Mitarbeiter",
@@ -470,7 +1016,8 @@
       "specialty": "Fachgebiet",
       "rating": "Bewertung",
       "activeTasks": "Aktive Aufgaben",
-      "status": "Status"
+      "status": "Status",
+      "position": "Position"
     },
     "types": {
       "fullTime": "Festangestellt",
@@ -531,7 +1078,9 @@
       "successMessage": "Mitarbeiter erfolgreich erstellt",
       "failedToCreate": "Mitarbeiter konnte nicht erstellt werden",
       "accessDenied": "Zugriff verweigert",
-      "noPermission": "Sie haben keine Berechtigung, Mitarbeiter zu erstellen."
+      "noPermission": "Sie haben keine Berechtigung, Mitarbeiter zu erstellen.",
+      "positionLabel": "Position",
+      "positionHint": "Die Berufsbezeichnung oder Rolle des Mitarbeiters."
     },
     "createSuccess": {
       "title": "Mitarbeiter erfolgreich erstellt",
@@ -759,7 +1308,6 @@
       }
     }
   },
-
   "members": {
     "title": "Organisationsmitglieder",
     "subtitle": "Verwalten Sie Ihre Teammitglieder, Rollen und Berechtigungen",
@@ -799,12 +1347,17 @@
       "role": "Rolle",
       "platform": "Plattform",
       "status": "Status",
-      "joined": "Beigetreten"
+      "joined": "Beigetreten",
+      "title": "Titel",
+      "schedule": "Arbeitszeit",
+      "spaces": "Bereiche"
     },
     "roles": {
       "admin": "Administrator",
       "dispatcher": "Dispatcher",
-      "technician": "Techniker"
+      "technician": "Techniker",
+      "manager": "Manager",
+      "employee": "Mitarbeiter"
     },
     "platforms": {
       "web": "Web",
@@ -843,9 +1396,95 @@
     "actions": {
       "editMember": "Mitglied bearbeiten",
       "remove": "Entfernen"
+    },
+    "team": "Team",
+    "teamSubtitle": "Verwalten Sie Ihre Teammitglieder – weisen Sie Rollen, Berechtigungen und Bereiche zu.",
+    "inviteShort": "Einladen",
+    "you": "Sie",
+    "noSpaces": "Keine Bereiche",
+    "schedule": {
+      "fixed": "Fest",
+      "flexible": "Flexibel"
+    },
+    "bulk": {
+      "selected": "{{count}} ausgewählt",
+      "role": "Rolle",
+      "space": "Bereich",
+      "removeConfirm": "{{count}} Mitglied(er) aus der Organisation entfernen?"
+    },
+    "empty": {
+      "title": "Bauen Sie Ihr Team auf",
+      "description": "Fügen Sie Teammitglieder hinzu und weisen Sie ihnen Bereiche zu. Jedes Mitglied kann unterschiedliche Rollen und Berechtigungen haben."
+    },
+    "pendingInvitations": {
+      "title": "Ausstehende Einladungen",
+      "createdBy": "von {{name}}",
+      "expired": "Abgelaufen",
+      "expires": "Läuft ab {{date}}",
+      "revoke": "Widerrufen"
+    },
+    "removeTeamMember": {
+      "title": "Teammitglied entfernen",
+      "description": "Sind Sie sicher, dass Sie {{name}} aus der Organisation entfernen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "toast": {
+      "memberRemoved": "Mitglied entfernt",
+      "removeFailed": "Mitglied konnte nicht entfernt werden",
+      "revokeFailed": "Einladung konnte nicht widerrufen werden",
+      "roleUpdated": "Rolle aktualisiert",
+      "updateRolesFailed": "Rollen konnten nicht aktualisiert werden",
+      "assignedToSpace": "{{count}} Mitglied(er) dem Bereich zugewiesen",
+      "assignFailed": "Zuweisung zum Bereich fehlgeschlagen",
+      "removedCount": "{{count}} Mitglied(er) entfernt",
+      "removeMembersFailed": "Mitglieder konnten nicht entfernt werden"
+    },
+    "memberEditor": {
+      "positionPlaceholder": "Titel auswählen oder eingeben...",
+      "searchOrType": "Suchen oder eigenen eingeben...",
+      "useQuery": "„{{query}}“ verwenden",
+      "usedInOrg": "In Ihrer Organisation verwendet",
+      "suggestions": "Vorschläge",
+      "sectionProfile": "Profil",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "position": "Position",
+      "sectionWorkSchedule": "Arbeitsplan",
+      "sectionRoleAccess": "Rolle & Zugriff",
+      "role": "Rolle",
+      "add": "Hinzufügen",
+      "sectionSecurity": "Sicherheit",
+      "password": "Passwort",
+      "copyPasswordWarning": "Kopieren Sie dieses Passwort jetzt. Es wird nicht erneut angezeigt.",
+      "resetPassword": "Passwort zurücksetzen",
+      "updated": "Mitglied aktualisiert",
+      "failedToUpdate": "Mitglied konnte nicht aktualisiert werden",
+      "failedToResetPassword": "Passwort konnte nicht zurückgesetzt werden",
+      "failedToSaveSchedule": "Arbeitsplan konnte nicht gespeichert werden",
+      "removedFrom": "Aus {{name}} entfernt",
+      "failedToRemove": "Entfernen fehlgeschlagen",
+      "assignedTo": "{{name}} zugewiesen",
+      "failedToAssign": "Zuweisung fehlgeschlagen"
+    },
+    "detail": {
+      "backToTeam": "Zurück zum Team",
+      "notFound": "Mitglied nicht gefunden",
+      "notFoundDescription": "Dieses Mitglied wurde möglicherweise aus der Organisation entfernt.",
+      "fixedSchedule": "Fester Arbeitsplan",
+      "flexibleHours": "Flexible Stunden",
+      "activity": "Aktivität",
+      "noRecentActivity": "Keine aktuellen Aktivitäten",
+      "recentTasks": "Letzte Aufgaben",
+      "due": "Fällig {{date}}",
+      "viewAllTasks": "Alle Aufgaben anzeigen →",
+      "noTasksAssigned": "Keine Aufgaben zugewiesen",
+      "schedule": "Arbeitsplan",
+      "off": "Frei",
+      "overview": "Übersicht",
+      "access": "Zugriff",
+      "yesterday": "Gestern",
+      "daysAgo": "vor {{count}} Tagen"
     }
   },
-
   "invitations": {
     "title": "Einladungen",
     "subtitle": "Erstellen und verwalten Sie Einladungscodes für neue Teammitglieder",
@@ -901,9 +1540,34 @@
       "accepted": "Angenommen",
       "expired": "Abgelaufen",
       "revoked": "Widerrufen"
+    },
+    "inviteDialog": {
+      "title": "Teammitglied einladen",
+      "description": "Senden Sie eine E-Mail-Einladung oder generieren Sie einen Code zum manuellen Teilen.",
+      "failedToCreate": "Einladung konnte nicht erstellt werden",
+      "codeCopied": "Code kopiert",
+      "invitationSent": "Einladung gesendet",
+      "emailSentToPrefix": "Eine E-Mail wurde gesendet an",
+      "codeAlsoInEmail": "Einladungscode (auch in der E-Mail)",
+      "codeCreated": "Einladungscode erstellt",
+      "shareCode": "Teilen Sie diesen Code mit dem neuen Teammitglied.",
+      "sendAnother": "Weitere senden",
+      "createAnother": "Weitere erstellen",
+      "methodLabel": "Methode",
+      "emailLabel": "E-Mail",
+      "codeLabel": "Code",
+      "emailPlaceholder": "team@example.com",
+      "positionLabel": "Position",
+      "positionPlaceholder": "z. B. Klempner, Außendiensttechniker",
+      "optional": "(optional)",
+      "spaceLabel": "Bereich",
+      "spacePlaceholder": "Beim Beitritt einem Bereich zuweisen",
+      "noSpace": "Kein Bereich",
+      "sending": "Wird gesendet...",
+      "sendInvitation": "Einladung senden",
+      "generateCode": "Code generieren"
     }
   },
-
   "joinRequests": {
     "title": "Beitrittsanfragen",
     "subtitle": "Prüfen und verwalten Sie Anfragen von Personen, die Ihrer Organisation beitreten möchten",
@@ -951,7 +1615,6 @@
       "rejectedSuccessfully": "Beitrittsanfrage abgelehnt"
     }
   },
-
   "settings": {
     "title": "Organisationseinstellungen",
     "subtitle": "Verwalten Sie die Einstellungen, Mitgliedschaft und Praeferenzen Ihrer Organisation",
@@ -985,7 +1648,23 @@
         "security": "Sicherheit",
         "itServices": "IT-Dienstleistungen",
         "other": "Sonstiges"
-      }
+      },
+      "orgNamePlaceholder": "z. B. Acme GmbH",
+      "streetAddress": "Straße",
+      "streetAddressPlaceholder": "z. B. Arbeiterheimstraße 32",
+      "addressLine2": "Adresszusatz (optional)",
+      "addressLine2Placeholder": "Etage, Stockwerk, Einheit…",
+      "city": "Stadt",
+      "cityPlaceholder": "z. B. Wien",
+      "state": "Bundesland / Region",
+      "statePlaceholder": "z. B. Oberösterreich",
+      "postalCode": "Postleitzahl",
+      "postalCodePlaceholder": "z. B. 4663",
+      "country": "Land",
+      "selectCountry": "Land auswählen",
+      "emailPlaceholder": "z. B. office@firma.com",
+      "websitePlaceholder": "https://www.firma.com",
+      "addCustom": "„{{query}}“ hinzufügen"
     },
     "members": {
       "defaultPermissions": "Standardberechtigungen",
@@ -1032,9 +1711,63 @@
       "showSpecialty": "Fachgebiet anzeigen",
       "updated": "Profilabzeichen-Einstellungen aktualisiert",
       "failed": "Profilabzeichen-Einstellungen konnten nicht aktualisiert werden"
+    },
+    "nav": {
+      "organizationGroup": "Organisation",
+      "personalGroup": "Persönlich",
+      "general": "Allgemein",
+      "members": "Mitglieder",
+      "taskTypes": "Aufgabentypen",
+      "notifications": "Benachrichtigungen",
+      "auditLog": "Audit-Protokoll",
+      "profile": "Profil",
+      "security": "Passwort & Sicherheit"
+    },
+    "changeEmail": {
+      "title": "E-Mail ändern",
+      "description": "Ihre E-Mail-Adresse ist Ihr Login. Geben Sie eine neue Adresse ein und bestätigen Sie mit Ihrem aktuellen Passwort.",
+      "currentEmail": "Aktuelle E-Mail",
+      "newEmail": "Neue E-Mail",
+      "newEmailPlaceholder": "sie@beispiel.com",
+      "currentPassword": "Aktuelles Passwort",
+      "submit": "E-Mail ändern",
+      "updated": "E-Mail aktualisiert",
+      "failed": "E-Mail konnte nicht geändert werden"
+    },
+    "profile": {
+      "title": "Profil",
+      "description": "Ihre persönlichen Informationen. Diese sind für andere Mitglieder Ihrer Organisation sichtbar.",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail",
+      "changeEmailButton": "Ändern",
+      "emailLoginNote": "Ihre E-Mail-Adresse ist auch Ihr Login. Eine Änderung erfordert Ihr Passwort.",
+      "editAvatar": "Bearbeiten",
+      "removePhoto": "Foto entfernen",
+      "updated": "Profil aktualisiert",
+      "failed": "Profil konnte nicht aktualisiert werden",
+      "imageTooLarge": "Das Bild muss kleiner als 5 MB sein",
+      "invalidImageType": "Nur JPEG-, PNG- und WebP-Bilder sind erlaubt",
+      "avatarUpdated": "Avatar aktualisiert",
+      "avatarUploadFailed": "Avatar konnte nicht hochgeladen werden",
+      "avatarRemoved": "Avatar entfernt",
+      "avatarRemoveFailed": "Avatar konnte nicht entfernt werden"
+    },
+    "security": {
+      "title": "Passwort & Sicherheit",
+      "description": "Verwalten Sie Ihr Passwort und Ihre Sicherheitseinstellungen.",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "confirmPassword": "Neues Passwort bestätigen",
+      "passwordHint": "Mindestens 8 Zeichen mit einem Großbuchstaben, einem Kleinbuchstaben und einer Zahl.",
+      "changeButton": "Passwort ändern",
+      "passwordPolicyError": "Das Passwort muss mindestens 8 Zeichen lang sein und einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten",
+      "passwordSameError": "Das neue Passwort muss sich vom aktuellen Passwort unterscheiden",
+      "passwordChanged": "Passwort geändert",
+      "passwordChangedDetail": "Möglicherweise müssen Sie sich auf anderen Geräten erneut anmelden.",
+      "changeFailed": "Passwort konnte nicht geändert werden"
     }
   },
-
   "profile": {
     "title": "Profil",
     "subtitle": "Sehen Sie Ihre Kontoinformationen ein und verwalten Sie Ihr Passwort",
@@ -1070,7 +1803,6 @@
       "description": "Wählen Sie Ihre bevorzugte Sprache"
     }
   },
-
   "notifications": {
     "title": "Benachrichtigungen",
     "markAllRead": "Alle gelesen",
@@ -1095,11 +1827,11 @@
     "breakStarted": "Pause begonnen",
     "breakEnded": "Pause beendet"
   },
-
   "landing": {
     "nav": {
       "signIn": "Anmelden",
-      "getStarted": "Jetzt starten"
+      "getStarted": "Jetzt starten",
+      "getApp": "App herunterladen"
     },
     "hero": {
       "badge": "Außendienst-Management",
@@ -1169,14 +1901,12 @@
       "terms": "Nutzungsbedingungen"
     }
   },
-
   "unauthorized": {
     "title": "Zugriff verweigert",
     "description": "Sie haben keine Berechtigung, auf dieses Portal zuzugreifen.",
     "technicianHint": "Techniker sollten die mobile App verwenden.",
     "signOutButton": "Abmelden und ein anderes Konto verwenden"
   },
-
   "liveMap": {
     "title": "Live-Karte",
     "subtitle": "Verfolgen Sie Technikerstandorte in Echtzeit",
@@ -1185,7 +1915,6 @@
     "connectionConnecting": "Verbindung wird hergestellt...",
     "failedToLoad": "Karte konnte nicht geladen werden"
   },
-
   "validation": {
     "emailRequired": "E-Mail ist erforderlich",
     "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
@@ -1215,5 +1944,1110 @@
     "acceptTermsRequired": "Sie müssen die Nutzungsbedingungen akzeptieren",
     "pleaseSelectDateRange": "Bitte wählen Sie einen Zeitraum aus",
     "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus"
+  },
+  "attendance": {
+    "worker": "Mitarbeiter",
+    "notes": "Notizen",
+    "unknownLocation": "Unbekannter Standort",
+    "clockIn": "Einstempeln",
+    "clockOut": "Ausstempeln",
+    "approval": "Genehmigung",
+    "type": "Typ",
+    "started": "Begonnen",
+    "ended": "Beendet",
+    "status": {
+      "active": "Aktiv",
+      "completed": "Abgeschlossen",
+      "auto": "Automatisch"
+    },
+    "breaks": {
+      "totalBreaks": "Pausen gesamt",
+      "totalBreakTime": "Pausenzeit gesamt",
+      "averageBreak": "Durchschnittliche Pause",
+      "activeNow": "Jetzt aktiv",
+      "breaksByType": "Pausen nach Typ",
+      "lunchBreaks": "Mittagspausen",
+      "shortBreaks": "Kurze Pausen",
+      "otherBreaks": "Sonstige Pausen",
+      "count": "Anzahl",
+      "total": "Gesamt",
+      "avg": "Durchschn.",
+      "activeBreaks": "Aktive Pausen",
+      "workersOnBreak": "Mitarbeiter derzeit in Pause",
+      "noActiveBreaks": "Keine aktiven Pausen",
+      "allWorking": "Alle Mitarbeiter arbeiten derzeit",
+      "onBreak": "In Pause",
+      "endBreak": "Pause beenden",
+      "endBreakConfirm": "Diese Pause manuell beenden?",
+      "startedAt": "Begonnen {{time}}",
+      "breakHistory": "Pausenverlauf",
+      "viewPastRecords": "Vergangene Pausen anzeigen",
+      "typeFilter": "Typ",
+      "noRecords": "Keine Pausendatensätze",
+      "noRecordsHint": "Keine Pausen für das gewählte Datum gefunden",
+      "types": {
+        "lunch": "Mittag",
+        "short": "Kurz",
+        "other": "Sonstige"
+      },
+      "typeBreak": {
+        "lunch": "Mittagspause",
+        "short": "Kurze Pause",
+        "other": "Sonstige Pause"
+      }
+    },
+    "tracking": {
+      "currentlyActive": "Derzeit aktiv",
+      "completedShifts": "Abgeschlossene Schichten",
+      "autoClockOut": "Automatisches Ausstempeln",
+      "totalHours": "Gesamtstunden",
+      "geofenceAlerts": "Geofence-Warnungen ({{count}})",
+      "geofenceAlertsDesc": "Einträge, bei denen das Ein- oder Ausstempeln außerhalb des festgelegten Geofence erfolgte",
+      "clockInOutside": "Einstempeln außerhalb",
+      "clockOutOutside": "Ausstempeln außerhalb",
+      "moreAlerts": "+ {{count}} weitere Warnungen",
+      "schedulerTitle": "Planer für automatisches Ausstempeln",
+      "schedulerStats": "{{jobs}} Jobs · {{active}} aktiv · {{failed}} fehlgeschlagen",
+      "hourly": "Stündlich",
+      "midnight": "Mitternacht",
+      "scheduled": "Geplant",
+      "active": "Aktiv",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "everyMinutes": "Alle {{minutes}} Min.",
+      "searchPlaceholder": "Nach Namen suchen...",
+      "selectLocation": "Standort wählen",
+      "allLocations": "Alle Standorte",
+      "statusPlaceholder": "Status",
+      "failedToLoad": "Anwesenheit konnte nicht geladen werden",
+      "errorOccurred": "Ein Fehler ist aufgetreten",
+      "noRecords": "Keine Anwesenheitsdatensätze",
+      "selectLocationHint": "Wählen Sie einen Standort, um die Anwesenheit anzuzeigen",
+      "noEntriesHint": "Keine Einträge für dieses Datum und diesen Standort gefunden",
+      "autoApproved": "Automatisch genehmigt",
+      "showingEntries": "{{start}} bis {{end}} von {{total}} Einträgen"
+    },
+    "reports": {
+      "thisWeek": "Diese Woche",
+      "lastWeek": "Letzte Woche",
+      "thisMonth": "Dieser Monat",
+      "lastMonth": "Letzter Monat",
+      "workDaysCount_one": "{{count}} Tag",
+      "workDaysCount_other": "{{count}} Tage",
+      "export": "Exportieren",
+      "spreadsheetData": "Tabellendaten",
+      "pdfReport": "PDF-Bericht",
+      "printReady": "Druckfertiges Dokument",
+      "noDataTitle": "Keine Anwesenheitsdaten",
+      "noDataDesc": "Für diesen Zeitraum liegen keine Anwesenheitsdaten vor. Bitte wählen Sie einen anderen Zeitraum.",
+      "overtime": "Überstunden",
+      "autoClockOuts": "Automatische Ausstempelungen",
+      "avgShift": "Ø Schicht",
+      "hoursByWorker": "Stunden pro Mitarbeiter",
+      "chartSubtitle_one": "{{count}} Mitarbeiter · {{hours}} Std. gesamt · für Ø-Linie zeigen",
+      "chartSubtitle_other": "{{count}} Mitarbeiter · {{hours}} Std. gesamt · für Ø-Linie zeigen",
+      "noDataFilters": "Keine Daten für die gewählten Filter",
+      "expected": "Erwartet: {{hours}} Std.",
+      "avgLabel": "Ø",
+      "moreWorkers_one": "+ {{count}} weiterer Mitarbeiter",
+      "moreWorkers_other": "+ {{count}} weitere Mitarbeiter",
+      "overview": "Übersicht",
+      "totalShifts": "Schichten gesamt",
+      "standardHours": "Regelstunden",
+      "overtimeHours": "Überstunden",
+      "workers": "Mitarbeiter",
+      "locations": "Standorte",
+      "byWorker": "Nach Mitarbeiter",
+      "byLocation": "Nach Standort",
+      "workersAt": "Mitarbeiter bei {{name}}",
+      "recordsCount_one": "{{count}} Eintrag",
+      "recordsCount_other": "{{count}} Einträge",
+      "hours": "Stunden",
+      "shifts": "Schichten",
+      "avg": "Ø",
+      "issues": "Probleme",
+      "location": "Standort",
+      "avgPerShift": "Ø / Schicht",
+      "totalCount": "Gesamt ({{count}})",
+      "noWorkerData": "Keine Mitarbeiterdaten",
+      "noWorkerDataDesc": "Keine Anwesenheitsdaten entsprechen Ihren Filtern",
+      "noLocationData": "Keine Standortdaten",
+      "noLocationDataDesc": "Keine Anwesenheitsdaten für diesen Zeitraum",
+      "shiftCount_one": "{{count}} Schicht",
+      "shiftCount_other": "{{count}} Schichten"
+    },
+    "export": {
+      "employeeName": "Mitarbeitername",
+      "email": "E-Mail",
+      "totalHours": "Gesamtstunden",
+      "shifts": "Schichten",
+      "avgShiftH": "Ø Schicht (Std.)",
+      "autoClockOuts": "Automatische Ausstempelungen",
+      "locations": "Standorte",
+      "reportInfo": "--- BERICHTSINFO ---",
+      "period": "Zeitraum",
+      "workDays": "Arbeitstage",
+      "locationFilter": "Standortfilter",
+      "totalTechnicians": "Techniker gesamt",
+      "standardHours": "Regelstunden",
+      "overtimeHours": "Überstunden",
+      "totalShifts": "Schichten gesamt",
+      "avgShift": "Ø Schicht",
+      "byLocationHeader": "--- NACH STANDORT ---",
+      "location": "Standort",
+      "employees": "Mitarbeiter",
+      "popupBlocked": "Bitte erlauben Sie Pop-ups, um PDF-Berichte zu erstellen",
+      "documentTitle": "Anwesenheitsbericht — {{org}}",
+      "reportTitle": "Anwesenheitsbericht",
+      "workDaysSuffix_one": "{{count}} Arbeitstag",
+      "workDaysSuffix_other": "{{count}} Arbeitstage",
+      "generated": "Erstellt: {{date}}",
+      "technicians": "Techniker",
+      "activeInPeriod": "Im Zeitraum aktiv",
+      "perShift": "Pro Schicht",
+      "missed": "Verpasst",
+      "shiftsCount_one": "{{count}} Schicht",
+      "shiftsCount_other": "{{count}} Schichten",
+      "byTechnician": "Nach Techniker",
+      "name": "Name",
+      "hours": "Stunden",
+      "avg": "Ø",
+      "autoOut": "Auto-Aus",
+      "total": "Gesamt",
+      "byLocation": "Nach Standort",
+      "avgPerShiftCol": "Ø/Schicht",
+      "managerSignature": "Unterschrift Manager / Datum",
+      "approvedBy": "Genehmigt von / Datum",
+      "generatedBy": "Erstellt mit HBCField",
+      "printSavePdf": "Drucken / Als PDF speichern",
+      "previewBar": "Vorschau — {{org}} Anwesenheitsbericht · {{location}}"
+    },
+    "approvals": {
+      "title": "Ausstehende Genehmigungen",
+      "subtitle": "Zeiteinträge prüfen und genehmigen, die eine Freigabe durch den Manager erfordern",
+      "allCaughtUp": "Alles erledigt!",
+      "noneDesc": "Derzeit keine ausstehenden Genehmigungen",
+      "date": "Datum",
+      "unknown": "Unbekannt",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen",
+      "rejectTitle": "Zeiteintrag ablehnen",
+      "rejectPlaceholder": "Warum wird dieser Eintrag abgelehnt?",
+      "rejectEntry": "Eintrag ablehnen",
+      "location": "Standort"
+    },
+    "my": {
+      "noAccess": "Sie haben keinen Zugriff auf die Anwesenheit.",
+      "title": "Anwesenheit",
+      "subtitle": "Ihr Einstempelverlauf und Ihre Stunden. Das Ein- und Ausstempeln erfolgt in der mobilen App.",
+      "currentStatus": "Aktueller Status",
+      "clockedIn": "Eingestempelt",
+      "clockedOut": "Ausgestempelt",
+      "since": "Seit {{time}} · {{duration}}",
+      "hoursLast": "Stunden (letzte {{count}})",
+      "recentEntries": "Letzte Einträge",
+      "noRecords": "Noch keine Anwesenheitseinträge.",
+      "active": "aktiv"
+    },
+    "management": {
+      "title": "Anwesenheitsverwaltung",
+      "subtitle": "Anwesenheit verfolgen, Berichte anzeigen und Genehmigungen verwalten"
+    },
+    "tabs": {
+      "tracking": "Verfolgung",
+      "reports": "Berichte",
+      "approvals": "Genehmigungen",
+      "breaks": "Pausen"
+    },
+    "toast": {
+      "autoClockOutTriggered": "Automatisches Ausstempeln ausgelöst",
+      "autoClockOutFailed": "Automatisches Ausstempeln konnte nicht ausgelöst werden",
+      "breakEnded": "Pause erfolgreich beendet",
+      "breakEndFailed": "Pause konnte nicht beendet werden",
+      "entryApproved": "Eintrag genehmigt",
+      "approveFailed": "Genehmigung fehlgeschlagen",
+      "entryRejected": "Eintrag abgelehnt",
+      "rejectFailed": "Ablehnung fehlgeschlagen"
+    }
+  },
+  "auditLog": {
+    "title": "Audit-Protokoll",
+    "subtitle": "Alle Sicherheits- und Verwaltungsereignisse verfolgen",
+    "accessDenied": "Zugriff verweigert",
+    "accessDeniedDescription": "Nur Administratoren können Audit-Protokolle anzeigen.",
+    "allEvents": "Alle Ereignisse",
+    "searchEvents": "Ereignisse suchen…",
+    "allUsers": "Alle Benutzer",
+    "searchUsers": "Benutzer suchen…",
+    "fromDate": "Von Datum",
+    "toDate": "Bis Datum",
+    "clear": "Zurücksetzen",
+    "totalEvents": "{{count}} Ereignisse gesamt",
+    "event": "Ereignis",
+    "user": "Benutzer",
+    "resource": "Ressource",
+    "time": "Zeit",
+    "noEvents": "Keine Audit-Ereignisse gefunden",
+    "system": "System",
+    "events": {
+      "USER_LOGIN": "Anmeldung",
+      "USER_LOGOUT": "Abmeldung",
+      "USER_LOGIN_FAILED": "Anmeldung fehlgeschlagen",
+      "USER_CREATED": "Benutzer erstellt",
+      "USER_UPDATED": "Benutzer aktualisiert",
+      "USER_DELETED": "Benutzer gelöscht",
+      "TASK_CREATED": "Aufgabe erstellt",
+      "TASK_ASSIGNED": "Aufgabe zugewiesen",
+      "TASK_STATUS_CHANGED": "Status geändert",
+      "TASK_COMPLETED": "Aufgabe abgeschlossen",
+      "TASK_DELETED": "Aufgabe gelöscht",
+      "TASK_TYPE_CREATED": "Aufgabentyp erstellt",
+      "TASK_TYPE_DELETED": "Aufgabentyp gelöscht",
+      "CUSTOM_FIELD_CREATED": "Benutzerdefiniertes Feld erstellt",
+      "CUSTOM_FIELD_DELETED": "Benutzerdefiniertes Feld gelöscht",
+      "MEMBER_ROLE_CHANGED": "Mitgliedsrolle geändert",
+      "MEMBER_REMOVED": "Mitglied entfernt",
+      "ORG_SETTINGS_UPDATED": "Organisationseinstellungen aktualisiert",
+      "ORG_JOIN_CODE_REGENERATED": "Beitrittscode neu generiert",
+      "INVITATION_CREATED": "Einladung erstellt",
+      "INVITATION_REVOKED": "Einladung widerrufen",
+      "INVITATION_ACCEPTED": "Einladung angenommen",
+      "JOIN_REQUEST_APPROVED": "Beitritt genehmigt",
+      "JOIN_REQUEST_REJECTED": "Beitritt abgelehnt",
+      "SPACE_CREATED": "Bereich erstellt",
+      "SPACE_DELETED": "Bereich gelöscht",
+      "RECURRING_CREATED": "Serie erstellt",
+      "RECURRING_DELETED": "Serie gelöscht",
+      "RECURRING_GENERATED": "Serie generiert",
+      "TECHNICIAN_CREATED": "Mitarbeiter erstellt",
+      "TECHNICIAN_DEACTIVATED": "Mitarbeiter deaktiviert",
+      "CLOCK_IN": "Einstempeln",
+      "CLOCK_OUT": "Ausstempeln",
+      "GEOFENCE_VIOLATION": "Geofence-Verstoß"
+    }
+  },
+  "locations": {
+    "picker": {
+      "notSupported": "Standort wird auf diesem Gerät nicht unterstützt",
+      "permissionDenied": "Standortberechtigung verweigert – erlauben Sie sie in Ihrem Browser, um dies zu nutzen.",
+      "locationFailed": "Ihr Standort konnte nicht ermittelt werden. Versuchen Sie es erneut oder wählen Sie auf der Karte.",
+      "searchPlaceholder": "Nach Stadt, Straße oder Sehenswürdigkeit suchen...",
+      "useMyLocation": "Meinen aktuellen Standort verwenden",
+      "locating": "Wird ermittelt…",
+      "myLocation": "Mein Standort",
+      "address": "Adresse",
+      "addressPlaceholder": "Vollständige Adresse manuell eingeben",
+      "latitude": "Breitengrad",
+      "longitude": "Längengrad",
+      "hint": "Suchen Sie oben, klicken Sie auf die Karte oder geben Sie Adresse und Koordinaten manuell ein."
+    },
+    "title": "Bereiche",
+    "subtitle": "Verwalten Sie Ihre Arbeitsbereiche — jeder Bereich hat seinen eigenen Workflow, eigene Module und ein eigenes Team.",
+    "newSpace": "Neuer Bereich",
+    "createSpace": "Bereich erstellen",
+    "createDescription": "Richten Sie einen neuen Arbeitsbereich mit eigenem Workflow und eigenen Modulen ein.",
+    "deactivateSpace": "Bereich deaktivieren",
+    "deactivateConfirmBefore": "Möchten Sie ",
+    "deactivateConfirmAfter": " wirklich deaktivieren? Mitarbeiter können an diesem Standort nicht mehr einstempeln. Sie können ihn später wieder aktivieren.",
+    "deactivate": "Deaktivieren",
+    "reactivate": "Reaktivieren",
+    "configure": "Konfigurieren",
+    "viewTasks": "Aufgaben anzeigen",
+    "memberCount_one": "{{count}} Mitglied",
+    "memberCount_other": "{{count}} Mitglieder",
+    "workflowPrefix": "Workflow: ",
+    "statusCountSuffix_one": " ({{count}} Status)",
+    "statusCountSuffix_other": " ({{count}} Status)",
+    "configureTitle": "Konfigurieren — {{name}}",
+    "configureDescription": "Verwalten Sie die Einstellungen, Module, den Workflow und die Teammitglieder dieses Bereichs.",
+    "name": "Name",
+    "address": "Adresse",
+    "geofenceRadius": "Geofence-Radius",
+    "timezone": "Zeitzone",
+    "activeLabel": "Aktiv",
+    "activeHint": "Mitarbeiter können in diesem Bereich einstempeln",
+    "nameRequired": "Name ist erforderlich",
+    "modulesIntro": "Module fügen den Aufgaben dieses Bereichs optionale Funktionen hinzu. Wählen Sie eine Voreinstellung und passen Sie sie an.",
+    "presets": "Voreinstellungen",
+    "currentWorkflow": "Aktueller Workflow",
+    "statusesWithCount": "Status ({{count}})",
+    "editWorkflow": "Workflow bearbeiten",
+    "createNew": "Neu erstellen",
+    "membersWithCount": "Mitglieder ({{count}})",
+    "noMembers": "Noch keine Mitglieder zugewiesen",
+    "primary": "Primär",
+    "allDays": "Alle Tage",
+    "addMember": "Mitglied hinzufügen",
+    "selectEmployee": "Mitarbeiter auswählen...",
+    "noAvailableEmployees": "Keine verfügbaren Mitarbeiter",
+    "workDays": "Arbeitstage",
+    "setPrimary": "Als primären Standort festlegen",
+    "adding": "Wird hinzugefügt...",
+    "selectEmployeeError": "Wählen Sie einen Mitarbeiter aus",
+    "tabs": {
+      "general": "Allgemein",
+      "modules": "Module",
+      "workflow": "Workflow",
+      "members": "Mitglieder"
+    },
+    "empty": {
+      "title": "Erstellen Sie Ihren ersten Bereich",
+      "description": "Bereiche sind dort, wo gearbeitet wird — Büros, Lager, Einsatzorte. Jeder Bereich kann seinen eigenen Workflow, eigene Module und ein eigenes Team haben."
+    },
+    "form": {
+      "namePlaceholder": "z. B. Hauptbüro, Außendienst-Team",
+      "type": "Typ",
+      "workspace": "Arbeitsbereich",
+      "workspaceHint": "Ein Team oder Projekt — kein physischer Standort.",
+      "physical": "Physischer Standort",
+      "physicalHint": "Ein Standort mit Adresse — für die Anwesenheitserfassung.",
+      "addressPlaceholder": "Straße, Stadt",
+      "geofenceRadius": "Geofence-Radius",
+      "geofenceHint": "Mitarbeiter können innerhalb dieser Entfernung vom Pin einstempeln.",
+      "advancedModules": "Erweitert — Module",
+      "enabledCount": "{{count}} aktiviert",
+      "modulesIntro": "Module fügen den Aufgaben dieses Bereichs optionale Funktionen hinzu (Checklisten, GPS-Tracking, Sprints…). Beginnen Sie mit einer Voreinstellung und passen Sie sie unten an."
+    },
+    "toast": {
+      "deactivated": "Bereich deaktiviert",
+      "deactivateFailed": "Bereich konnte nicht deaktiviert werden",
+      "reactivated": "Bereich reaktiviert",
+      "reactivateFailed": "Reaktivierung fehlgeschlagen",
+      "updated": "Bereich aktualisiert",
+      "updateFailed": "Aktualisierung fehlgeschlagen",
+      "modulesUpdated": "Module aktualisiert",
+      "modulesUpdateFailed": "Module konnten nicht aktualisiert werden",
+      "workflowUpdated": "Workflow aktualisiert",
+      "workflowUpdateFailed": "Workflow konnte nicht aktualisiert werden",
+      "memberAdded": "Mitglied hinzugefügt",
+      "memberAddFailed": "Mitglied konnte nicht hinzugefügt werden",
+      "memberRemoved": "Mitglied entfernt",
+      "memberRemoveFailed": "Mitglied konnte nicht entfernt werden",
+      "created": "Bereich erstellt",
+      "createFailed": "Bereich konnte nicht erstellt werden"
+    },
+    "workflowLabel": "Workflow",
+    "selectWorkflow": "Workflow auswählen...",
+    "defaultSuffix": " (Standard)",
+    "statusCount_one": "{{count}} Status",
+    "statusCount_other": "{{count}} Status",
+    "createNewWorkflow": "Neuen Workflow erstellen"
+  },
+  "commandPalette": {
+    "placeholder": "Befehl eingeben oder suchen...",
+    "navigate": "Navigieren",
+    "select": "Auswählen",
+    "goToDashboard": "Zum Dashboard",
+    "goToTasks": "Zu den Aufgaben",
+    "goToSpaces": "Zu den Bereichen",
+    "goToSchedule": "Zum Zeitplan",
+    "goToAttendance": "Zur Anwesenheit",
+    "goToMembers": "Zu den Mitgliedern",
+    "goToSettings": "Zu den Einstellungen",
+    "switchToLight": "Zu hellem Modus wechseln",
+    "switchToDark": "Zu dunklem Modus wechseln",
+    "toggleActivityPanel": "Aktivitätsleiste umschalten",
+    "groups": {
+      "navigation": "Navigation",
+      "tasks": "Aufgaben",
+      "sprints": "Sprints",
+      "spaces": "Bereiche",
+      "quickActions": "Schnellaktionen"
+    }
+  },
+  "toast": {
+    "taskUpdated": "Aufgabe aktualisiert",
+    "addedToSprint": "Zum Sprint hinzugefügt",
+    "epicUpdated": "Epic aktualisiert",
+    "taskAssigned": "Aufgabe zugewiesen",
+    "movedToSpace": "In Bereich verschoben",
+    "taskCreated": "Aufgabe erstellt",
+    "bulkUpdatedOne": "{{count}} Aufgabe aktualisiert",
+    "bulkUpdatedMany": "{{count}} Aufgaben aktualisiert",
+    "sprintAction": "Sprint {{action}}",
+    "somethingWentWrong": "Etwas ist schiefgelaufen",
+    "copied": "Kopiert",
+    "copiedWhat": "{{what}} kopiert",
+    "savedToClipboard": "In Zwischenablage gespeichert"
+  },
+  "errors": {
+    "somethingWentWrong": "Etwas ist schiefgelaufen",
+    "unexpected": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "goToDashboard": "Zum Dashboard",
+    "pageNotFound": "Seite nicht gefunden",
+    "pageNotFoundBody": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+    "unexpectedNotified": "Ein unerwarteter Fehler ist aufgetreten. Unser Team wurde benachrichtigt."
+  },
+  "assignMembers": {
+    "manageAssignees": "Zuweisungen verwalten",
+    "assignTo": "Zuweisen an",
+    "selected": "{{count}} ausgewählt",
+    "unsavedChanges": "nicht gespeicherte Änderungen",
+    "selectDescription": "Wählen Sie ein Mitglied aus, dem diese Aufgabe zugewiesen werden soll.",
+    "searchPlaceholder": "Mitglieder suchen...",
+    "noMembersFound": "Keine Mitglieder gefunden",
+    "spaceMembers": "Bereichsmitglieder",
+    "otherMembers": "Andere Mitglieder",
+    "membersSelected": "{{count}} Mitglieder ausgewählt"
+  },
+  "locationPicker": {
+    "searchPlaceholder": "Nach einer Adresse suchen..."
+  },
+  "accessBuilder": {
+    "title": "Zugriff",
+    "subtitle": "Was {{name}} im Web & in der App tun & sehen kann.",
+    "accessUpdated": "Zugriff aktualisiert",
+    "accessUpdatedDesc": "Die Apps von {{name}} werden bei der nächsten Anmeldung aktualisiert.",
+    "updateFailed": "Zugriff konnte nicht aktualisiert werden",
+    "platformAccess": "Plattformzugriff",
+    "permissions": "Berechtigungen",
+    "featureTabsLabel": "Funktions-Tabs",
+    "spaceVisibility": "Bereichssichtbarkeit",
+    "collaboration": "Zusammenarbeit",
+    "featureTabs": {
+      "tasks": "Aufgaben",
+      "clock": "Zeiterfassung",
+      "timeOff": "Abwesenheit"
+    },
+    "platforms": {
+      "webOnly": "Nur Web",
+      "mobileOnly": "Nur Mobil",
+      "both": "Beide"
+    },
+    "scopes": {
+      "own": {
+        "label": "Nur meine Bereiche",
+        "desc": "Sieht nur die Bereiche, denen sie zugewiesen sind."
+      },
+      "tasks": {
+        "label": "Nur Aufgaben",
+        "desc": "Keine Bereichsansicht — nur die eigene Aufgabenliste."
+      },
+      "all": {
+        "label": "Alle Bereiche",
+        "desc": "Schreibgeschützte Übersicht über jeden Bereich."
+      }
+    },
+    "taskScopes": {
+      "self": "Eigene Aufgaben",
+      "space": "Aufgaben in ihren Bereichen",
+      "org": "Jede Aufgabe in der Organisation"
+    },
+    "perms": {
+      "create": {
+        "title": "Aufgaben erstellen",
+        "desc": "Neue Aufgaben anlegen."
+      },
+      "assign": {
+        "title": "Aufgaben zuweisen",
+        "desc": "Aufgaben an andere Personen zuweisen."
+      },
+      "viewAll": {
+        "title": "Alle Aufgaben einsehen",
+        "desc": "Jede Aufgabe der Organisation sehen, nicht nur die eigenen."
+      },
+      "manage": {
+        "title": "Mitglieder verwalten",
+        "desc": "Personen einladen, bearbeiten und entfernen. Öffnet den Verwaltungsbereich."
+      }
+    },
+    "contact": {
+      "title": "Kann Kollegen kontaktieren",
+      "desc": "Teammitglieder in ihren sichtbaren Bereichen anschreiben & anrufen."
+    }
+  },
+  "customFields": {
+    "fieldTypes": {
+      "TEXT": "Text",
+      "NUMBER": "Zahl",
+      "DATE": "Datum",
+      "DROPDOWN": "Auswahlliste",
+      "CHECKBOX": "Kontrollkästchen",
+      "URL": "URL",
+      "EMAIL": "E-Mail"
+    },
+    "optionsList": "Optionen: {{options}}",
+    "fieldCreated": "Feld erstellt",
+    "fieldUpdated": "Feld aktualisiert",
+    "fieldDeleted": "Feld gelöscht",
+    "editField": "Feld bearbeiten",
+    "newField": "Neues Feld",
+    "scopedDescription": "Wird bei Aufgaben dieses Typs angezeigt.",
+    "globalDescription": "Wird bei jeder Aufgabe angezeigt.",
+    "nameLabel": "Name",
+    "namePlaceholder": "z. B. Kundentelefon",
+    "keyLabel": "Schlüssel",
+    "keyPlaceholder": "kundentelefon",
+    "typeLabel": "Typ",
+    "optionsLabel": "Optionen",
+    "addOptionPlaceholder": "Option hinzufügen...",
+    "requiredDescription": "Muss bei Aufgaben ausgefüllt werden",
+    "fieldCount": "{{count}} Felder",
+    "emptyState": "Noch keine Felder. Fügen Sie eines hinzu, um zusätzliche Daten zu diesen Aufgaben zu erfassen.",
+    "deleteTitle": "„{{name}}“ löschen?",
+    "deleteDescription": "Damit werden auch die zugehörigen Werte aus bestehenden Aufgaben entfernt. Dies kann nicht rückgängig gemacht werden."
+  },
+  "scheduleFields": {
+    "weeklyHours": "Wochenstunden",
+    "schedule": "Zeitplan",
+    "noTracking": "Keine Erfassung",
+    "fixedSchedule": "Fester Zeitplan",
+    "flexibleHours": "Flexible Stunden",
+    "monthlyHourBudget": "Monatliches Stundenbudget",
+    "hoursPerMonth": "Stunden/Monat"
+  },
+  "workspace": {
+    "ariaLabel": "{{title}}, {{count}} Mitarbeiter",
+    "present": "anwesend",
+    "inField": "im Einsatz",
+    "offSite": "extern",
+    "off": "abwesend",
+    "groupPresent": "Anwesend",
+    "groupInField": "Im Einsatz",
+    "groupOffSite": "Extern",
+    "groupOffDuty": "Außer Dienst",
+    "allAccountedFor": "Alle erfasst",
+    "noOnePresent": "Niemand anwesend",
+    "noActiveMembers": "Keine aktiven Mitglieder",
+    "inFieldCount": "{{count}} im Einsatz",
+    "offSiteCount": "{{count}} extern",
+    "manageSpace": "Bereich verwalten",
+    "addMember": "Mitglied hinzufügen",
+    "viewTasks": "Aufgaben anzeigen",
+    "allQuietToday": "Heute ist alles ruhig",
+    "busy": "Beschäftigt",
+    "noProfileData": "Keine Profildaten",
+    "you": "(Sie)",
+    "employee": "Mitarbeiter",
+    "score": "Punktzahl",
+    "done": "Erledigt",
+    "active": "Aktiv",
+    "thisWeek": "Diese Woche",
+    "workingOn": "Arbeitet an",
+    "recent": "Kürzlich",
+    "activity": "Aktivität",
+    "attendance": "Anwesenheit",
+    "timeOff": "Abwesenheit",
+    "message": "Nachricht",
+    "voiceCall": "Sprachanruf",
+    "videoCall": "Videoanruf",
+    "messagingComingSoon": "Nachrichten kommen bald",
+    "voiceCallComingSoon": "Sprachanruf kommt bald",
+    "videoCallComingSoon": "Videoanruf kommt bald",
+    "profile": "Profil",
+    "tasks": "Aufgaben",
+    "absenceReason": {
+      "time_off": "Abwesenheit",
+      "sick": "Krankschreibung",
+      "day_off": "Freier Tag",
+      "unexcused": "Unentschuldigt"
+    }
+  },
+  "timeOff": {
+    "my": {
+      "requestedTitle": "Urlaub beantragt",
+      "requestedDesc": "Ihr Manager wird ihn prüfen.",
+      "submitError": "Antrag konnte nicht gesendet werden",
+      "canceledToast": "Antrag storniert",
+      "cancelError": "Stornierung fehlgeschlagen",
+      "noAccess": "Sie haben keinen Zugriff auf Urlaub.",
+      "title": "Urlaub",
+      "subtitle": "Beantragen Sie Urlaub und verfolgen Sie Ihre Anträge.",
+      "newRequest": "Neuer Antrag",
+      "from": "Von",
+      "to": "Bis",
+      "reasonPlaceholder": "Grund (optional)",
+      "requestButton": "Urlaub beantragen",
+      "myRequests": "Meine Anträge",
+      "noRequests": "Noch keine Urlaubsanträge.",
+      "rejectedReason": "Abgelehnt: {{reason}}"
+    }
+  },
+  "workflows": {
+    "name": "Name",
+    "final": "Endgültig",
+    "canceled": "Storniert",
+    "start": "Start",
+    "add": "Hinzufügen",
+    "builder": {
+      "newWorkflow": "Neuer Workflow",
+      "editWorkflow": "Workflow bearbeiten",
+      "namePlaceholder": "z. B. Außendienst",
+      "statuses": "Status",
+      "statusNamePlaceholder": "Statusname",
+      "removeStatus": "Status entfernen",
+      "addStatus": "Status hinzufügen",
+      "templates": "Vorlagen",
+      "createWorkflow": "Workflow erstellen",
+      "markFinal": "endgültig",
+      "markCancel": "stornieren",
+      "toast": {
+        "nameRequired": "Workflow-Name ist erforderlich",
+        "statusRequired": "Mindestens ein Status ist erforderlich",
+        "created": "Workflow erstellt",
+        "updated": "Workflow aktualisiert",
+        "saveFailed": "Workflow konnte nicht gespeichert werden",
+        "createFailedGeneric": "Workflow konnte nicht erstellt werden"
+      }
+    },
+    "templateLabels": {
+      "simple": "Einfach",
+      "fieldService": "Außendienst",
+      "logistics": "Logistik",
+      "software": "Software",
+      "support": "Support"
+    },
+    "page": {
+      "title": "Aufgabentypen",
+      "subtitle": "Definieren Sie für jeden Aufgabentyp den Statusablauf, die Fähigkeiten und Felder. Bereiche wählen einen Typ; Aufgaben können ihn überschreiben.",
+      "newTaskType": "Neuer Aufgabentyp",
+      "createTaskType": "Aufgabentyp erstellen",
+      "createDescription": "Beginnen Sie mit einer vorgefertigten Vorlage oder erstellen Sie Ihre eigene von Grund auf.",
+      "startFrom": "Beginnen mit",
+      "steps": "{{count}} Schritte",
+      "blank": "Leer",
+      "blankHint": "Leer beginnen und jeden Status selbst hinzufügen.",
+      "optionalParen": "(optional)",
+      "namePlaceholder": "z. B. Außendienst, Fehlerverfolgung...",
+      "moveUp": "Nach oben verschieben",
+      "moveDown": "Nach unten verschieben",
+      "wipBadge": "WIP: {{count}}",
+      "default": "Standard",
+      "setDefault": "Als Standard festlegen",
+      "statusCount_one": "{{count}} Status",
+      "statusCount_other": "{{count}} Status",
+      "noStatuses": "Noch keine Status definiert",
+      "fields": "Felder",
+      "globalFields": "Globale Felder",
+      "globalFieldsHint": "auf jeder Aufgabe angezeigt, unabhängig vom Typ",
+      "editStatus": "Status bearbeiten",
+      "editStatusDesc": "Aktualisieren Sie die Status-Eigenschaften.",
+      "addStatusDesc": "Fügen Sie diesem Aufgabentyp einen neuen Status hinzu.",
+      "statusNamePlaceholder": "z. B. In Prüfung",
+      "key": "Schlüssel",
+      "keyPlaceholder": "IN_REVIEW",
+      "color": "Farbe",
+      "finalStatus": "Endstatus",
+      "finalStatusHint": "Markiert die Aufgabe als abgeschlossen",
+      "canceledStatus": "Storniert-Status",
+      "canceledStatusHint": "Markiert die Aufgabe als storniert",
+      "wipLimit": "WIP-Limit",
+      "wipLimitHint": "Maximale Anzahl an Aufgaben, die in diesem Status auf dem Kanban-Board zulässig sind",
+      "noLimit": "Kein Limit",
+      "canTransitionTo": "Kann wechseln zu",
+      "capabilities": "Fähigkeiten in diesem Schritt",
+      "capabilityLabels": {
+        "gps": "GPS",
+        "timer": "Timer",
+        "checklist": "Checkliste",
+        "photos": "Fotos",
+        "signature": "Unterschrift",
+        "report": "Bericht",
+        "form": "Formular"
+      },
+      "empty": {
+        "title": "Noch keine Workflows",
+        "description": "Erstellen Sie Ihren ersten Status-Workflow, um zu definieren, wie Aufgaben verschiedene Phasen durchlaufen.",
+        "cta": "Ersten Workflow erstellen"
+      },
+      "deleteWorkflow": "Workflow löschen",
+      "deleteStatus": "Status löschen",
+      "deleteConfirm": "Möchten Sie \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "toast": {
+        "taskTypeCreated": "Aufgabentyp erstellt",
+        "defaultUpdated": "Standard-Aufgabentyp aktualisiert",
+        "taskTypeDeleted": "Aufgabentyp gelöscht",
+        "statusDeleted": "Status gelöscht",
+        "statusAdded": "Status hinzugefügt",
+        "statusUpdated": "Status aktualisiert"
+      }
+    }
+  },
+  "assets": {
+    "title": "Anlagen",
+    "subtitle": "Verwalten Sie Ausrüstung, Werkzeuge und Bestand",
+    "addAsset": "Anlage hinzufügen",
+    "searchPlaceholder": "Nach Name oder Seriennummer suchen...",
+    "allCategories": "Alle Kategorien",
+    "category": "Kategorie",
+    "noAssets": "Keine Anlagen gefunden",
+    "noAssetsHint": "Klicken Sie auf \"Anlage hinzufügen\", um eine zu erstellen",
+    "table": {
+      "asset": "Anlage",
+      "serial": "Seriennr.",
+      "location": "Standort"
+    },
+    "status": {
+      "maintenance": "Wartung",
+      "retired": "Ausgemustert",
+      "outOfService": "Außer Betrieb"
+    },
+    "toast": {
+      "deleted": "Anlage gelöscht"
+    }
+  },
+  "invoices": {
+    "title": "Rechnungen",
+    "subtitle": "Rechnungen erstellen, versenden und verfolgen",
+    "newInvoice": "Neue Rechnung",
+    "totalRevenue": "Gesamtumsatz",
+    "pending": "Ausstehend",
+    "paid": "Bezahlt",
+    "overdue": "Überfällig",
+    "invoicesCount": "{{count}} Rechnungen",
+    "searchPlaceholder": "Rechnungen suchen...",
+    "columns": {
+      "invoiceNumber": "Rechnung Nr.",
+      "client": "Kunde",
+      "amount": "Betrag",
+      "issueDate": "Rechnungsdatum",
+      "dueDate": "Fälligkeitsdatum",
+      "status": "Status"
+    },
+    "statuses": {
+      "draft": "Entwurf",
+      "sent": "Versendet",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig",
+      "canceled": "Storniert",
+      "refunded": "Erstattet"
+    },
+    "empty": "Noch keine Rechnungen",
+    "emptyHint": "Klicken Sie auf „Neue Rechnung“, um eine zu erstellen",
+    "actions": {
+      "view": "Ansehen",
+      "send": "Senden",
+      "markPaid": "Als bezahlt markieren"
+    },
+    "toast": {
+      "statusUpdated": "Rechnungsstatus aktualisiert",
+      "deleted": "Rechnung gelöscht"
+    }
+  },
+  "overtime": {
+    "title": "Überstundenverwaltung",
+    "subtitle": "Überstundenanträge von Mitarbeitern prüfen und verwalten",
+    "tabsPending": "Ausstehend",
+    "tabsHistory": "Verlauf",
+    "badges": {
+      "awaitingEmployee": "Wartet auf Mitarbeiter",
+      "needsApproval": "Genehmigung erforderlich",
+      "active": "Aktiv",
+      "rejected": "Abgelehnt",
+      "expired": "Abgelaufen",
+      "completed": "Abgeschlossen",
+      "declined": "Abgelehnt"
+    },
+    "durations": {
+      "d30min": "30 Min.",
+      "d1hour": "1 Stunde",
+      "d1_5hours": "1,5 Stunden",
+      "d2hours": "2 Stunden",
+      "d3hours": "3 Stunden",
+      "d4hours": "4 Stunden"
+    },
+    "pendingEmpty": "Keine ausstehenden Anträge",
+    "pendingEmptyHint": "Alle Überstundenanträge wurden bearbeitet",
+    "filterApproved": "Genehmigt",
+    "filterCompleted": "Abgeschlossen",
+    "filterRejected": "Abgelehnt",
+    "filterDeclined": "Abgelehnt",
+    "expiredNoResponse": "Abgelaufen (keine Reaktion)",
+    "expiredNoApproval": "Abgelaufen (keine Genehmigung)",
+    "requestCountOne": "{{count}} Antrag",
+    "requestCountOther": "{{count}} Anträge",
+    "historyEmpty": "Kein Überstundenverlauf",
+    "approveTitle": "Überstunden genehmigen",
+    "approveDescription": "Überstunden für {{name}} bei {{location}} genehmigen",
+    "employeeReason": "Begründung des Mitarbeiters:",
+    "durationLabel": "Überstundendauer",
+    "notesLabel": "Notizen (optional)",
+    "notesPlaceholder": "Notizen für den Mitarbeiter...",
+    "approve": "Genehmigen",
+    "rejectTitle": "Überstunden ablehnen",
+    "rejectDescription": "Überstunden für {{name}} ablehnen. Die Person wird ausgestempelt.",
+    "reasonLabel": "Grund für die Ablehnung *",
+    "reasonPlaceholder": "Warum werden diese Überstunden nicht genehmigt?",
+    "rejectAndClockOut": "Ablehnen & ausstempeln",
+    "reject": "Ablehnen",
+    "toastApproved": "Überstunden genehmigt",
+    "toastFailedApprove": "Genehmigung fehlgeschlagen",
+    "toastRejected": "Überstunden abgelehnt",
+    "toastFailedReject": "Ablehnung fehlgeschlagen",
+    "minOvertime": "{{count}} Min. Überstunden",
+    "signed": "Unterschrieben",
+    "remote": "Remote",
+    "by": "von {{name}}"
+  },
+  "payments": {
+    "title": "Zahlungen",
+    "subtitle": "Eingegangene Zahlungen aus Rechnungen verfolgen",
+    "totalReceived": "Gesamt erhalten",
+    "paidInvoices": "Bezahlte Rechnungen",
+    "averageInvoice": "Durchschnittliche Rechnung",
+    "paymentHistory": "Zahlungsverlauf",
+    "empty": "Noch keine Zahlungen erfasst",
+    "emptyHint": "Zahlungen erscheinen hier, sobald Rechnungen als bezahlt markiert werden"
+  },
+  "employees": {
+    "new": {
+      "firstNamePlaceholder": "Max",
+      "lastNamePlaceholder": "Mustermann",
+      "emailPlaceholder": "max.mustermann@example.com",
+      "positionPlaceholder": "z. B. Techniker, Fahrer, Vertrieb"
+    },
+    "availability": {
+      "scheduled": "geplant",
+      "offToday": "heute abwesend",
+      "unassigned": "Nicht zugewiesen",
+      "allWorkers": "Alle Mitarbeiter"
+    }
+  },
+  "team": {
+    "title": "Team",
+    "subtitle": "Teamkollegen in Ihren Bereichen.",
+    "empty": "Noch keine Teamkollegen in Ihren Bereichen.",
+    "callsComingSoon": "Anrufe bald verfügbar"
+  },
+  "privacy": {
+    "backToHbcfield": "Zurück zu HBCField",
+    "lastUpdated": "Zuletzt aktualisiert: 20. April 2026",
+    "title": "Datenschutzerklärung",
+    "subtitle": "HBCField — Plattform für das Außendienstmanagement",
+    "intro": "Die HBC Group GmbH („wir“, „uns“, „unser“) betreibt die mobile Anwendung und die Webplattform HBCField. Diese Datenschutzerklärung erläutert, wie wir Ihre Informationen erheben, verwenden und schützen, wenn Sie unsere Dienste nutzen.",
+    "s1": {
+      "title": "1. Informationen, die wir erheben",
+      "accountTitle": "Kontoinformationen",
+      "accountEmail": "E-Mail-Adresse",
+      "accountName": "Vor- und Nachname",
+      "accountOrg": "Name der Organisation",
+      "accountRole": "Rolle und Berechtigungen innerhalb Ihrer Organisation",
+      "locationTitle": "Standortdaten",
+      "gpsLabel": "Genauer GPS-Standort",
+      "gpsIntro": " — erfasst ausschließlich während aktiver Arbeitstätigkeiten:",
+      "gps1": "Wenn ein Mitarbeiter zu einem Einsatzort fährt (Status EN_ROUTE)",
+      "gps2": "Beim Ein- oder Ausstempeln (einmalige GPS-Erfassung zur Anwesenheitsprüfung)",
+      "gps3": "Bei der Bestätigung der Ankunft an einem Einsatzort (Geofence-Prüfung)",
+      "cachedLabel": "Zwischengespeicherter Standort",
+      "cachedText": " — wird für Anwesenheitsanzeigen auf der Live-Karte des Disponenten verwendet. Dabei wird die zuletzt bekannte Position des Geräts genutzt, ohne das GPS-Modul zu aktivieren.",
+      "neverPre": "Standortdaten werden ",
+      "neverBold": "niemals erhoben",
+      "neverPost": ", wenn die App inaktiv ist, beim Durchsehen von Aufgaben oder außerhalb aktiver Arbeitsschichten.",
+      "workTitle": "Daten zu Arbeitstätigkeiten",
+      "work1": "Statusaktualisierungen von Aufgaben und Zeitstempel",
+      "work2": "Ein-/Ausstempelzeiten und Pausendauern",
+      "work3": "Serviceberichte einschließlich Textbeschreibungen, Fotos und digitaler Unterschriften",
+      "work4": "Kommentare zu Aufgaben",
+      "deviceTitle": "Geräteinformationen",
+      "device1": "Gerätetyp und Betriebssystem (für Push-Benachrichtigungen)",
+      "device2": "Token für Push-Benachrichtigungen (Expo Push Token)",
+      "device3": "App-Version"
+    },
+    "s2": {
+      "title": "2. Wie wir Ihre Informationen verwenden",
+      "item1": "Zur Bereitstellung der Funktionen für das Außendienstmanagement",
+      "item2": "Zur Ermöglichung der Echtzeit-Standortverfolgung für Disponenten während aktiver Arbeit",
+      "item3": "Zur Überprüfung der Anwesenheit per Geofencing an Unternehmensstandorten",
+      "item4": "Zur Überprüfung der Anwesenheit von Mitarbeitern an Einsatzorten vor Arbeitsbeginn",
+      "item5": "Zum Versand von Push-Benachrichtigungen über Aufgabenzuweisungen, Statusaktualisierungen und Kommentare",
+      "item6": "Zur Erstellung von Serviceberichten und zur Führung der Arbeitshistorie",
+      "item7": "Zur Anzeige der Routenverfolgung bei abgeschlossenen Aufgaben",
+      "item8": "Zur Verbesserung der App-Leistung und zur Fehlerbehebung"
+    },
+    "s3": {
+      "title": "3. Rechtsgrundlage für die Verarbeitung (DSGVO)",
+      "intro": "Sofern die Datenschutz-Grundverordnung Anwendung findet, verarbeiten wir Ihre personenbezogenen Daten auf den folgenden Rechtsgrundlagen:",
+      "contractLabel": "Erfüllung eines Vertrags (Art. 6 Abs. 1 lit. b DSGVO)",
+      "contractText": " — zur Bereitstellung des HBCField-Dienstes für Ihre Organisation und für Sie als autorisierten Nutzer, einschließlich Aufgabenzuweisung, standortbasierter Disposition, Anwesenheitsprüfung und Serviceberichterstattung.",
+      "legitLabel": "Berechtigte Interessen (Art. 6 Abs. 1 lit. f DSGVO)",
+      "legitText": " — zur Absicherung unserer Plattform, zur Verhinderung von Betrug und Missbrauch, zur Aufrechterhaltung der Dienstzuverlässigkeit und zur Verbesserung des Produkts. Unsere berechtigten Interessen werden gegen Ihre Rechte und Freiheiten abgewogen.",
+      "consentLabel": "Einwilligung (Art. 6 Abs. 1 lit. a DSGVO)",
+      "consentText": " — für optionale Funktionen wie Push-Benachrichtigungen, die Sie jederzeit in Ihren Geräteeinstellungen deaktivieren können.",
+      "legalLabel": "Rechtliche Verpflichtung (Art. 6 Abs. 1 lit. c DSGVO)",
+      "legalText": " — sofern wir gesetzlich verpflichtet sind, Aufzeichnungen zu steuerlichen, arbeitsrechtlichen oder sonstigen gesetzlichen Zwecken aufzubewahren, die für Ihre Organisation gelten."
+    },
+    "s4": {
+      "title": "4. Weitergabe von Daten",
+      "noSellPre": "Wir verkaufen Ihre personenbezogenen Daten ",
+      "noSellBold": "nicht",
+      "noSellPost": " an Dritte.",
+      "internal": "Ihre Daten werden ausschließlich innerhalb Ihrer Organisation weitergegeben — Administratoren und Disponenten können Standorte und Arbeitstätigkeiten von Mitarbeitern einsehen.",
+      "thirdPartyIntro": "Wir nutzen die folgenden Drittanbieterdienste:",
+      "expoLabel": "Expo",
+      "expoText": " — Zustellung von Push-Benachrichtigungen",
+      "fcmLabel": "Firebase Cloud Messaging (FCM)",
+      "fcmText": " — Weiterleitung von Android-Push-Benachrichtigungen",
+      "apnsLabel": "Apple Push Notification Service (APNs)",
+      "apnsText": " — Weiterleitung von iOS-Push-Benachrichtigungen",
+      "hetznerCloudLabel": "Hetzner Cloud",
+      "hetznerCloudText": " — Server-Hosting (in der EU, Finnland/Deutschland)",
+      "hetznerStorageLabel": "Hetzner Object Storage",
+      "hetznerStorageText": " — Dateispeicher für Anhänge (in der EU)",
+      "osmLabel": "OpenStreetMap / OSRM",
+      "osmText": " — Kartenkacheln und Routendarstellung",
+      "nominatimLabel": "Nominatim",
+      "nominatimText": " — Adresssuche (Geocodierung)"
+    },
+    "s5": {
+      "title": "5. Datenspeicherung & Sicherheit",
+      "euPre": "Alle Daten werden auf Servern in der ",
+      "euBold": "Europäischen Union",
+      "euPost": " gespeichert (Hetzner, Helsinki/Falkenstein)",
+      "item2": "Daten werden bei der Übertragung mittels TLS/HTTPS verschlüsselt",
+      "item3": "Passwörter werden mit bcrypt (Kostenfaktor 12) gehasht",
+      "item4": "Authentifizierungstoken werden vor der Speicherung mit SHA-256 gehasht",
+      "item5": "Refresh-Token verwenden eine Rotation mit Kulanzzeiträumen für gleichzeitige Anfragen",
+      "item6": "Der Zugriff ist durch rollenbasierte Berechtigungen (RBAC) eingeschränkt",
+      "item7": "Eine Ratenbegrenzung schützt vor Brute-Force-Angriffen (10 Anfragen/Sek., 200 Anfragen/Min.)",
+      "item8": "Kontosperrung nach 5 fehlgeschlagenen Anmeldeversuchen (15 Minuten Wartezeit)",
+      "item9": "Hochgeladene Dateien werden in einem S3-kompatiblen Objektspeicher mit vorsignierten URLs abgelegt"
+    },
+    "s6": {
+      "title": "6. Aufbewahrung von Daten",
+      "item1": "Kontodaten werden aufbewahrt, solange Ihr Konto aktiv ist",
+      "item2": "Der Standortverlauf (Routenverfolgung) wird 90 Tage lang aufbewahrt",
+      "item3": "Serviceberichte werden gemäß den Aufbewahrungsanforderungen Ihrer Organisation aufbewahrt",
+      "item4": "Refresh-Token werden nach Ablauf automatisch bereinigt",
+      "item5": "Sie können jederzeit die vollständige Löschung Ihrer Daten verlangen"
+    },
+    "s7": {
+      "title": "7. Ihre Rechte (DSGVO)",
+      "intro": "Wenn Sie sich in der Europäischen Union oder im Europäischen Wirtschaftsraum befinden, stehen Ihnen nach der Datenschutz-Grundverordnung (DSGVO) die folgenden Rechte zu:",
+      "accessLabel": "Auskunftsrecht",
+      "accessText": " — Anforderung einer Kopie Ihrer personenbezogenen Daten",
+      "rectificationLabel": "Recht auf Berichtigung",
+      "rectificationText": " — Berichtigung unrichtiger oder unvollständiger Daten",
+      "erasureLabel": "Recht auf Löschung",
+      "erasureText": " — Anforderung der Löschung Ihrer personenbezogenen Daten („Recht auf Vergessenwerden“)",
+      "portabilityLabel": "Recht auf Datenübertragbarkeit",
+      "portabilityText": " — Erhalt Ihrer Daten in einem strukturierten, maschinenlesbaren Format",
+      "objectLabel": "Widerspruchsrecht",
+      "objectText": " — Widerspruch gegen die Verarbeitung Ihrer personenbezogenen Daten",
+      "restrictLabel": "Recht auf Einschränkung der Verarbeitung",
+      "restrictText": " — Anforderung der Einschränkung der Datenverarbeitung",
+      "withdrawLabel": "Recht auf Widerruf der Einwilligung",
+      "withdrawText": " — jederzeitiger Widerruf Ihrer Einwilligung",
+      "complaintLabel": "Recht auf Beschwerde",
+      "complaintText": " — Sie haben das Recht, bei Ihrer örtlichen Datenschutzbehörde Beschwerde einzulegen, wenn Sie der Ansicht sind, dass Ihre Rechte verletzt wurden.",
+      "contactPre": "Um eines dieser Rechte auszuüben, kontaktieren Sie uns unter ",
+      "contactPost": "."
+    },
+    "s8": {
+      "title": "8. Hinweise zur Standortverfolgung",
+      "intro": "HBCField nutzt Standortdaten als wesentlichen Bestandteil seiner Funktionen für das Außendienstmanagement. Im Folgenden wird genau dargelegt, wann und wie der Standort verwendet wird:",
+      "gpsActiveTitle": "Wann GPS aktiv ist",
+      "drivingLabel": "Fahrt zum Einsatz:",
+      "drivingText": "Kontinuierliche Verfolgung alle 15 Sekunden (ausgewogene Genauigkeit)",
+      "clockLabel": "Ein-/Ausstempeln:",
+      "clockText": "Einmalige hochgenaue Erfassung zur Anwesenheitsprüfung",
+      "arrivingLabel": "Ankunft am Einsatzort:",
+      "arrivingText": "Einmalige hochgenaue Erfassung zur Geofence-Prüfung (Radius 20 m)",
+      "gpsInactiveTitle": "Wann GPS NICHT aktiv ist",
+      "inactive1": "Beim Durchsehen von Aufgaben, Anzeigen des Profils oder Ändern von Einstellungen",
+      "inactive2": "Wenn die App im Hintergrund läuft oder geschlossen ist",
+      "inactive3": "Die Anwesenheitsanzeige verwendet ausschließlich den zwischengespeicherten Standort des Betriebssystems (keine GPS-Aktivierung)",
+      "safeguardsIntro": "Zusätzliche Schutzmaßnahmen:",
+      "safeguard1": "Nur Disponenten und Administratoren innerhalb Ihrer Organisation können Ihren Standort einsehen",
+      "safeguard2": "Standortdaten werden niemals außerhalb Ihrer Organisation weitergegeben",
+      "safeguard3": "Routendaten abgeschlossener Aufgaben werden 90 Tage lang aufbewahrt",
+      "safeguard4": "Sie können Ihre eigenen Standortdaten in der App einsehen"
+    },
+    "s9": {
+      "title": "9. Push-Benachrichtigungen",
+      "intro": "HBCField sendet Push-Benachrichtigungen für:",
+      "item1": "Neue Aufgabenzuweisungen",
+      "item2": "Statusänderungen von Aufgaben",
+      "item3": "Neue Kommentare zu Ihren Aufgaben",
+      "item4": "Genehmigungen oder Ablehnungen von Beitrittsanfragen",
+      "item5": "Anwesenheitserinnerungen",
+      "disable": "Sie können Push-Benachrichtigungen jederzeit in Ihren Geräteeinstellungen deaktivieren."
+    },
+    "s10": {
+      "title": "10. Datenschutz für Kinder",
+      "body": "HBCField ist eine Arbeitsanwendung, die für die berufliche Nutzung konzipiert ist. Sie ist nicht für die Nutzung durch Personen unter 18 Jahren bestimmt. Wir erheben wissentlich keine personenbezogenen Daten von Kindern."
+    },
+    "s11": {
+      "title": "11. Internationale Datenübermittlungen",
+      "body": "Ihre Daten werden innerhalb der Europäischen Union verarbeitet und gespeichert. Die Zustellung von Push-Benachrichtigungen kann eine Weiterleitung über die Infrastruktur von Google (FCM) oder Apple (APNs) umfassen, wodurch Daten außerhalb der EU verarbeitet werden können. Diese Übermittlungen sind durch das EU-US Data Privacy Framework und Standardvertragsklauseln abgedeckt."
+    },
+    "s12": {
+      "title": "12. Änderungen dieser Erklärung",
+      "body": "Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren, um Änderungen unserer Praktiken oder gesetzlicher Anforderungen Rechnung zu tragen. Bei wesentlichen Änderungen informieren wir die Nutzer per E-Mail oder über eine In-App-Benachrichtigung. Das Datum „Zuletzt aktualisiert“ am oberen Rand dieser Seite gibt an, wann diese Erklärung zuletzt überarbeitet wurde."
+    },
+    "s13": {
+      "title": "13. Kontaktieren Sie uns",
+      "company": "HBC Group GmbH",
+      "emailLabel": "E-Mail: ",
+      "websiteLabel": "Website: ",
+      "supportLabel": "Support: "
+    },
+    "footerRights": "HBC Group GmbH. Alle Rechte vorbehalten."
+  },
+  "download": {
+    "tagline": "Disponieren · Verfolgen · Liefern",
+    "androidTab": "Android",
+    "iosTab": "iOS",
+    "android": {
+      "title": "Android",
+      "description": "Laden Sie die APK herunter und installieren Sie sie direkt auf Ihrem Gerät.",
+      "button": "APK herunterladen",
+      "meta": "v{{version}} · Android 6.0+"
+    },
+    "ios": {
+      "title": "iOS",
+      "description": "Installation über TestFlight — die offizielle Beta-Testplattform von Apple. Kein App Store erforderlich.",
+      "button": "TestFlight öffnen",
+      "meta": "v{{version}} · iOS 16.0+"
+    },
+    "howToInstall": "So installieren Sie die App",
+    "androidStep1": "Tippen Sie oben auf „APK herunterladen“",
+    "androidStep2": "Öffnen Sie die heruntergeladene Datei über Ihre Benachrichtigungen",
+    "androidStep3": "Erlauben Sie bei Aufforderung die „Installation aus unbekannten Quellen“",
+    "androidStep4": "Tippen Sie auf „Installieren“ und warten Sie, bis der Vorgang abgeschlossen ist",
+    "androidStep5": "Öffnen Sie HBCField über Ihren Startbildschirm",
+    "iosStep1": "Tippen Sie oben auf „TestFlight öffnen“",
+    "iosStep2": "Installieren Sie die TestFlight-App, falls Sie sie noch nicht haben",
+    "iosStep3": "Tippen Sie auf „Akzeptieren“, um dem Beta-Programm beizutreten",
+    "iosStep4": "Tippen Sie auf „Installieren“, um HBCField herunterzuladen",
+    "iosStep5": "Öffnen Sie HBCField über Ihren Startbildschirm",
+    "desktopHint": "Öffnen Sie diese Seite auf Ihrem Telefon, um Ihre Plattform automatisch zu erkennen.",
+    "backToPortal": "← Zurück zum Partnerportal"
+  },
+  "manage": {
+    "title": "Verwalten",
+    "subtitle": "Verwaltungswerkzeuge, die Ihnen zur Verfügung stehen.",
+    "noAccess": "Sie haben keinen Zugriff auf die Verwaltung.",
+    "noPermissions": "Sie haben das Verwaltungsmodul, aber es sind noch keine Verwaltungsberechtigungen aktiviert. Bitten Sie einen Administrator, diese zu erteilen.",
+    "items": {
+      "members": {
+        "label": "Mitglieder",
+        "desc": "Ihr Team anzeigen und verwalten"
+      },
+      "invitations": {
+        "label": "Einladungen",
+        "desc": "Personen in die Organisation einladen"
+      },
+      "joinRequests": {
+        "label": "Beitrittsanfragen",
+        "desc": "Beitrittsanfragen genehmigen oder ablehnen"
+      },
+      "schedule": {
+        "label": "Zeitplan",
+        "desc": "Teamverfügbarkeit und Zeitpläne"
+      },
+      "spaces": {
+        "label": "Bereiche",
+        "desc": "Arbeitsbereiche und Teamlisten verwalten"
+      },
+      "taskTypes": {
+        "label": "Aufgabentypen",
+        "desc": "Workflows + Widgets pro Schritt"
+      }
+    }
+  },
+  "welcome": {
+    "title": "Richten Sie Ihren ersten Bereich ein",
+    "subtitle": "In einem Bereich befinden sich Ihre Aufgaben – ein Standort, ein Team oder ein Projekt. Sie können jederzeit weitere hinzufügen.",
+    "createAndContinue": "Bereich erstellen & fortfahren"
   }
 }

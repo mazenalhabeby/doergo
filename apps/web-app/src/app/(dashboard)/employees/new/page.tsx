@@ -197,7 +197,7 @@ export default function NewTechnicianPage() {
                     id="firstName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="John"
+                    placeholder={t('employees.new.firstNamePlaceholder')}
                     required
                   />
                 </div>
@@ -209,7 +209,7 @@ export default function NewTechnicianPage() {
                     id="lastName"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Doe"
+                    placeholder={t('employees.new.lastNamePlaceholder')}
                     required
                   />
                 </div>
@@ -224,7 +224,7 @@ export default function NewTechnicianPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john.doe@example.com"
+                  placeholder={t('employees.new.emailPlaceholder')}
                   required
                 />
                 <p className="text-xs text-muted-foreground">
@@ -275,7 +275,7 @@ export default function NewTechnicianPage() {
                     id="position"
                     value={position}
                     onChange={(e) => setPosition(e.target.value)}
-                    placeholder="e.g., technician, driver, sales"
+                    placeholder={t('employees.new.positionPlaceholder')}
                   />
                   <p className="text-xs text-muted-foreground">
                     {t('technicians.create.positionHint')}

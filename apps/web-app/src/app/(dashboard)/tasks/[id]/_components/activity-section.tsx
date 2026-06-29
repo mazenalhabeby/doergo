@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import {
   Clock,
   UserPlus,
@@ -24,22 +25,22 @@ interface ActivitySectionProps {
 
 const EVENT_CONFIG: Record<
   string,
-  { icon: React.ElementType; color: string; label: string }
+  { icon: React.ElementType; color: string; labelKey: string }
 > = {
-  CREATED: { icon: Clock, color: "text-blue-500", label: "Task created" },
-  UPDATED: { icon: FileEdit, color: "text-muted-foreground", label: "Task updated" },
-  ASSIGNED: { icon: UserPlus, color: "text-purple-500", label: "Employee assigned" },
-  UNASSIGNED: { icon: UserMinus, color: "text-orange-500", label: "Employee unassigned" },
-  STATUS_CHANGED: { icon: PlayCircle, color: "text-amber-500", label: "Status changed" },
-  EN_ROUTE: { icon: MapPin, color: "text-cyan-500", label: "Employee on the way" },
-  ARRIVED: { icon: MapPin, color: "text-teal-500", label: "Employee arrived" },
-  IN_PROGRESS: { icon: PlayCircle, color: "text-amber-500", label: "Work in progress" },
-  BLOCKED: { icon: AlertTriangle, color: "text-red-500", label: "Task blocked" },
-  COMPLETED: { icon: CheckCircle2, color: "text-green-500", label: "Task completed" },
-  CANCELED: { icon: XCircle, color: "text-red-500", label: "Task canceled" },
-  CLOSED: { icon: CheckCircle2, color: "text-muted-foreground", label: "Task closed" },
-  ATTACHMENT_ADDED: { icon: Paperclip, color: "text-indigo-500", label: "Attachment added" },
-  ATTACHMENT_REMOVED: { icon: Paperclip, color: "text-red-500", label: "Attachment removed" },
+  CREATED: { icon: Clock, color: "text-blue-500", labelKey: "tasks.activity.events.CREATED" },
+  UPDATED: { icon: FileEdit, color: "text-muted-foreground", labelKey: "tasks.activity.events.UPDATED" },
+  ASSIGNED: { icon: UserPlus, color: "text-purple-500", labelKey: "tasks.activity.events.ASSIGNED" },
+  UNASSIGNED: { icon: UserMinus, color: "text-orange-500", labelKey: "tasks.activity.events.UNASSIGNED" },
+  STATUS_CHANGED: { icon: PlayCircle, color: "text-amber-500", labelKey: "tasks.activity.events.STATUS_CHANGED" },
+  EN_ROUTE: { icon: MapPin, color: "text-cyan-500", labelKey: "tasks.activity.events.EN_ROUTE" },
+  ARRIVED: { icon: MapPin, color: "text-teal-500", labelKey: "tasks.activity.events.ARRIVED" },
+  IN_PROGRESS: { icon: PlayCircle, color: "text-amber-500", labelKey: "tasks.activity.events.IN_PROGRESS" },
+  BLOCKED: { icon: AlertTriangle, color: "text-red-500", labelKey: "tasks.activity.events.BLOCKED" },
+  COMPLETED: { icon: CheckCircle2, color: "text-green-500", labelKey: "tasks.activity.events.COMPLETED" },
+  CANCELED: { icon: XCircle, color: "text-red-500", labelKey: "tasks.activity.events.CANCELED" },
+  CLOSED: { icon: CheckCircle2, color: "text-muted-foreground", labelKey: "tasks.activity.events.CLOSED" },
+  ATTACHMENT_ADDED: { icon: Paperclip, color: "text-indigo-500", labelKey: "tasks.activity.events.ATTACHMENT_ADDED" },
+  ATTACHMENT_REMOVED: { icon: Paperclip, color: "text-red-500", labelKey: "tasks.activity.events.ATTACHMENT_REMOVED" },
 }
 
 const EXCLUDED_EVENTS = ["COMMENT_ADDED"]
@@ -48,7 +49,7 @@ function getEventConfig(eventType: string) {
   return EVENT_CONFIG[eventType] || EVENT_CONFIG.UPDATED
 }
 
-function getEventDescription(event: TaskEvent): string {
+function getEventDescription(event: TaskEvent, t: (key: string, options?: Record<string, unknown>) => string): string {
   const metadata = event.metadata as Record<string, unknown> | null
 
   if (event.eventType === "STATUS_CHANGED" && metadata) {
@@ -66,7 +67,7 @@ function getEventDescription(event: TaskEvent): string {
 
   if (event.eventType === "ASSIGNED" && metadata) {
     const workerName = metadata.workerName as string | undefined
-    if (workerName) return `Assigned to ${workerName}`
+    if (workerName) return t("tasks.activity.assignedTo", { name: workerName })
   }
 
   if (event.eventType === "UPDATED" && metadata) {
@@ -74,15 +75,16 @@ function getEventDescription(event: TaskEvent): string {
     if (changes) {
       const fields = Object.keys(changes).filter(k => k !== "userId" && k !== "userRole" && k !== "organizationId")
       if (fields.length > 0) {
-        return `Updated ${fields.join(", ")}`
+        return t("tasks.activity.updatedFields", { fields: fields.join(", ") })
       }
     }
   }
 
-  return getEventConfig(event.eventType).label
+  return t(getEventConfig(event.eventType).labelKey)
 }
 
 export function ActivitySection({ taskId }: ActivitySectionProps) {
+  const { t } = useTranslation()
   const { data: events, isLoading, isError } = useQuery({
     queryKey: ["taskTimeline", taskId],
     queryFn: () => tasksApi.getTimeline(taskId),
@@ -99,7 +101,7 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
       <div className="p-6 border-b border-border shrink-0 flex items-center justify-between">
         <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
           <Clock className="size-4 text-muted-foreground" />
-          Activity
+          {t('tasks.activity.title')}
         </h3>
         {activityCount > 0 && (
           <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full">
@@ -124,7 +126,7 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
         ) : isError || filteredEvents.length === 0 ? (
           <div className="text-center py-4">
             <Clock className="size-6 text-muted-foreground mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">No activity yet</p>
+            <p className="text-xs text-muted-foreground">{t('tasks.activity.noActivity')}</p>
           </div>
         ) : (
           <div className="relative">
@@ -142,7 +144,7 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
                       <p className="text-xs text-foreground leading-tight">
-                        {getEventDescription(event)}
+                        {getEventDescription(event, t)}
                       </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
                         {event.user.firstName} {event.user.lastName} · {formatTimeAgo(event.createdAt)}

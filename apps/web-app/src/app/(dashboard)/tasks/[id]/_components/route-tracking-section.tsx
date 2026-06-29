@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import dynamic from "next/dynamic"
 import {
   Route,
@@ -19,17 +20,23 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn, formatDurationMs } from "@/lib/utils"
 
-// Dynamic import for map to avoid SSR issues
-const RouteMapView = dynamic(() => import("./route-map-view"), {
-  ssr: false,
-  loading: () => (
+// Map loading placeholder (own component so it can use translations)
+function MapLoading() {
+  const { t } = useTranslation()
+  return (
     <div className="h-64 bg-muted rounded-xl flex items-center justify-center">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Map className="size-5 animate-pulse" />
-        <span className="text-sm">Loading map...</span>
+        <span className="text-sm">{t("common.loadingMap")}</span>
       </div>
     </div>
-  ),
+  )
+}
+
+// Dynamic import for map to avoid SSR issues
+const RouteMapView = dynamic(() => import("./route-map-view"), {
+  ssr: false,
+  loading: () => <MapLoading />,
 })
 
 interface RoutePoint {
@@ -98,6 +105,7 @@ export function RouteTrackingSection({
   isLoading,
   hasAssignee,
 }: RouteTrackingSectionProps) {
+  const { t } = useTranslation()
   const [showMap, setShowMap] = useState(true)
   const isLive = routeData?.status === "EN_ROUTE"
   const liveElapsed = useLiveElapsedTime(routeData?.startTime || null, isLive)
@@ -126,7 +134,7 @@ export function RouteTrackingSection({
         <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Route className="size-5 text-muted-foreground" />
-            <h3 className="text-base font-semibold text-foreground">Route Tracking</h3>
+            <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.routeTracking")}</h3>
           </div>
         </div>
         <div className="p-6">
@@ -135,9 +143,9 @@ export function RouteTrackingSection({
               <Car className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Waiting for technician</p>
+              <p className="text-sm font-medium text-foreground">{t("tasks.route.waitingForTechnician")}</p>
               <p className="text-xs text-muted-foreground">
-                Route tracking will begin when the technician starts driving to your location
+                {t("tasks.route.waitingDescription")}
               </p>
             </div>
           </div>
@@ -169,16 +177,16 @@ export function RouteTrackingSection({
       {/* Header */}
       <div className="px-6 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <h3 className="text-base font-semibold text-foreground">Route Tracking</h3>
+          <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.routeTracking")}</h3>
           {isLive && (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
               <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-              Live
+              {t("tasks.route.live")}
             </span>
           )}
           {stage === "arrived" && !isLive && (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-              Completed
+              {t("tasks.statusTabs.COMPLETED")}
             </span>
           )}
         </div>
@@ -190,14 +198,14 @@ export function RouteTrackingSection({
         <div className="flex gap-6 mb-6">
           <div className="flex items-center gap-2">
             <Gauge className="size-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Avg Speed:</span>
+            <span className="text-sm text-muted-foreground">{t("tasks.route.avgSpeed")}</span>
             <span className="text-sm font-semibold text-foreground">
               {calculateAverageSpeed(routeData.distance, displayDuration)}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="size-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">GPS Points:</span>
+            <span className="text-sm text-muted-foreground">{t("tasks.route.gpsPoints")}</span>
             <span className="text-sm font-semibold text-foreground">
               {routeData.points.length}
             </span>
@@ -212,7 +220,7 @@ export function RouteTrackingSection({
               <div className="size-10 rounded-full flex items-center justify-center bg-muted">
                 <Navigation className="size-4 text-muted-foreground" />
               </div>
-              <p className="text-[10px] font-medium text-muted-foreground mt-1.5">Start</p>
+              <p className="text-[10px] font-medium text-muted-foreground mt-1.5">{t("tasks.route.start")}</p>
               <p className="text-[10px] text-muted-foreground">
                 {routeData.startTime
                   ? new Date(routeData.startTime).toLocaleString("en-US", {
@@ -281,7 +289,7 @@ export function RouteTrackingSection({
                 <Flag className={cn("size-4", isLive ? "text-muted-foreground" : "text-muted-foreground")} />
               </div>
               <p className="text-[10px] font-medium text-muted-foreground mt-1.5">
-                {isLive ? "Destination" : "Arrived"}
+                {isLive ? t("tasks.route.destination") : t("tasks.route.arrived")}
               </p>
               <p className="text-[10px] text-muted-foreground">
                 {routeData.endTime
@@ -289,7 +297,7 @@ export function RouteTrackingSection({
                       hour: "numeric",
                       minute: "2-digit",
                     })
-                  : isLive ? "In transit" : "—"}
+                  : isLive ? t("tasks.route.inTransit") : "—"}
               </p>
             </div>
           </div>
@@ -298,14 +306,14 @@ export function RouteTrackingSection({
         {/* Live tracking info */}
         {isLive && routeData.points.length > 0 && (
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Live tracking active</span>
+            <span>{t("tasks.route.liveTrackingActive")}</span>
             <span>
-              Last update: {new Date(routeData.points[routeData.points.length - 1].timestamp).toLocaleString("en-US", {
+              {t("tasks.route.lastUpdate", { time: new Date(routeData.points[routeData.points.length - 1].timestamp).toLocaleString("en-US", {
                 hour: "numeric",
                 minute: "2-digit",
                 second: "2-digit",
                 hour12: true,
-              })}
+              }) })}
             </span>
           </div>
         )}
@@ -320,7 +328,7 @@ export function RouteTrackingSection({
               onClick={() => setShowMap(!showMap)}
             >
               <Map className="size-4 mr-2" />
-              {showMap ? "Hide Route Map" : "View Route on Map"}
+              {showMap ? t("tasks.route.hideMap") : t("tasks.route.viewMap")}
               {showMap ? (
                 <ChevronUp className="size-4 ml-2" />
               ) : (

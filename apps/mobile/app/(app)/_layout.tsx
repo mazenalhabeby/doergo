@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { Stack, useRouter, Href } from 'expo-router';
 import { AppState, AppStateStatus, Platform, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import type { NotificationResponse } from 'expo-notifications';
 import {
@@ -74,6 +75,7 @@ function usePresencePing() {
 export default function AppLayout() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const hasRegistered = useRef(false);
 
   // Keep technician presence alive for online status
@@ -160,7 +162,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="task/[id]"
           options={{
-            title: 'Task Details',
+            title: t('navTitles.taskDetails'),
             presentation: 'transparentModal',
             headerShown: false,
             animation: 'slide_from_bottom',
@@ -169,7 +171,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="profile/notifications"
           options={{
-            title: 'Notifications',
+            title: t('navTitles.notifications'),
             presentation: 'transparentModal',
             headerShown: false,
             animation: 'slide_from_bottom',
@@ -178,7 +180,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="profile/account"
           options={{
-            title: 'Account',
+            title: t('navTitles.account'),
             presentation: 'transparentModal',
             headerShown: false,
             animation: 'slide_from_bottom',
@@ -187,7 +189,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="profile/about"
           options={{
-            title: 'About',
+            title: t('navTitles.about'),
             presentation: 'transparentModal',
             headerShown: false,
             animation: 'slide_from_bottom',

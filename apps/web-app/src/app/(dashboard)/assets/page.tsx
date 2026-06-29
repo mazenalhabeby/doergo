@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Package,
@@ -37,14 +38,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  ACTIVE: { bg: "bg-green-100 dark:bg-green-500/20", text: "text-green-700 dark:text-green-400", label: "Active" },
-  MAINTENANCE: { bg: "bg-amber-100 dark:bg-amber-500/20", text: "text-amber-700 dark:text-amber-400", label: "Maintenance" },
-  RETIRED: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400", label: "Retired" },
-  OUT_OF_SERVICE: { bg: "bg-red-100 dark:bg-red-500/20", text: "text-red-700 dark:text-red-400", label: "Out of Service" },
+const STATUS_STYLES: Record<string, { bg: string; text: string; labelKey: string }> = {
+  ACTIVE: { bg: "bg-green-100 dark:bg-green-500/20", text: "text-green-700 dark:text-green-400", labelKey: "common.active" },
+  MAINTENANCE: { bg: "bg-amber-100 dark:bg-amber-500/20", text: "text-amber-700 dark:text-amber-400", labelKey: "assets.status.maintenance" },
+  RETIRED: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400", labelKey: "assets.status.retired" },
+  OUT_OF_SERVICE: { bg: "bg-red-100 dark:bg-red-500/20", text: "text-red-700 dark:text-red-400", labelKey: "assets.status.outOfService" },
 }
 
 export default function AssetsPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const isAdmin = user?.role === "ADMIN"
@@ -70,7 +72,7 @@ export default function AssetsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => assetsApi.deleteAsset(id),
     onSuccess: () => {
-      notify.success("Asset deleted")
+      notify.success(t("assets.toast.deleted"))
       queryClient.invalidateQueries({ queryKey: ["assets"] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -91,12 +93,12 @@ export default function AssetsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Assets</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage equipment, tools, and inventory</p>
+            <h1 className="text-2xl font-semibold text-foreground">{t("assets.title")}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t("assets.subtitle")}</p>
           </div>
           {isAdmin && (
             <Button size="sm" className="gap-1.5">
-              <Plus className="size-3.5" /> Add Asset
+              <Plus className="size-3.5" /> {t("assets.addAsset")}
             </Button>
           )}
         </div>
@@ -108,29 +110,29 @@ export default function AssetsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or serial..."
+              placeholder={t("assets.searchPlaceholder")}
               className="h-8 text-sm pl-8"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="h-8 text-sm w-[140px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t("common.status")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">All statuses</SelectItem>
-              <SelectItem value="ACTIVE">Active</SelectItem>
-              <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-              <SelectItem value="RETIRED">Retired</SelectItem>
-              <SelectItem value="OUT_OF_SERVICE">Out of Service</SelectItem>
+              <SelectItem value="__all__">{t("common.allStatuses")}</SelectItem>
+              <SelectItem value="ACTIVE">{t("common.active")}</SelectItem>
+              <SelectItem value="MAINTENANCE">{t("assets.status.maintenance")}</SelectItem>
+              <SelectItem value="RETIRED">{t("assets.status.retired")}</SelectItem>
+              <SelectItem value="OUT_OF_SERVICE">{t("assets.status.outOfService")}</SelectItem>
             </SelectContent>
           </Select>
           {categories && categories.length > 0 && (
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="h-8 text-sm w-[160px]">
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder={t("assets.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All categories</SelectItem>
+                <SelectItem value="__all__">{t("assets.allCategories")}</SelectItem>
                 {categories.map((cat: any) => (
                   <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                 ))}
@@ -143,11 +145,11 @@ export default function AssetsPage() {
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           {/* Header */}
           <div className="grid grid-cols-[1fr_120px_120px_100px_80px_40px] gap-3 px-4 py-2.5 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/30">
-            <div>Asset</div>
-            <div>Serial #</div>
-            <div>Category</div>
-            <div>Location</div>
-            <div>Status</div>
+            <div>{t("assets.table.asset")}</div>
+            <div>{t("assets.table.serial")}</div>
+            <div>{t("assets.category")}</div>
+            <div>{t("assets.table.location")}</div>
+            <div>{t("common.status")}</div>
             <div />
           </div>
 
@@ -158,8 +160,8 @@ export default function AssetsPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-12">
               <Package className="size-10 mx-auto text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground">No assets found</p>
-              {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">Click "Add Asset" to create one</p>}
+              <p className="text-sm text-muted-foreground">{t("assets.noAssets")}</p>
+              {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">{t("assets.noAssetsHint")}</p>}
             </div>
           ) : (
             filtered.map((asset: any) => {
@@ -183,7 +185,7 @@ export default function AssetsPage() {
 
                   {/* Status */}
                   <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>
-                    {status.label}
+                    {t(status.labelKey)}
                   </span>
 
                   {/* Actions */}
@@ -196,13 +198,13 @@ export default function AssetsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-36">
                         <DropdownMenuItem>
-                          <Pencil className="size-3.5 mr-2" /> Edit
+                          <Pencil className="size-3.5 mr-2" /> {t("common.edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600 focus:text-red-600"
                           onClick={() => deleteMutation.mutate(asset.id)}
                         >
-                          <Trash2 className="size-3.5 mr-2" /> Delete
+                          <Trash2 className="size-3.5 mr-2" /> {t("common.delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
