@@ -308,7 +308,7 @@ export default function CreateTaskScreen() {
               style={[styles.addPhotoBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={async () => {
                 const result = await pickFromGallery();
-                if (result) setPhotos(prev => [...prev, result]);
+                if (result.length) setPhotos(prev => [...prev, ...result]);
               }}
             >
               <Ionicons name="image-outline" size={24} color={colors.textMuted} />

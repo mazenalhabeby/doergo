@@ -54,8 +54,8 @@ export default function OvertimeSignatureScreen() {
   useEffect(() => {
     const fetchLeaders = async () => {
       try {
-        const data = await membersApi.getMembers({ role: 'all', limit: 50 });
-        const adminsDispatchers = (data?.data || []).filter(
+        const data = await membersApi.list();
+        const adminsDispatchers = (data || []).filter(
           (m: OrgMember) => m.role === 'ADMIN' || m.role === 'DISPATCHER'
         );
         setLeaders(adminsDispatchers);
@@ -190,7 +190,7 @@ export default function OvertimeSignatureScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.leaderSignature')}</Text>
           <SignatureCapture
             title={selectedLeader ? `${selectedLeader.firstName} ${selectedLeader.lastName}` : t('overtime.leaderSignature')}
-            onSave={(base64) => setSignature(base64)}
+            onSave={(base64: string) => setSignature(base64)}
             onClear={() => setSignature(null)}
             existingSignature={signature || undefined}
           />

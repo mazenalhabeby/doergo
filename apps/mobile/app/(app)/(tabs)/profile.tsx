@@ -23,7 +23,7 @@ import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { useImagePicker } from '../../../src/hooks/useImagePicker';
-import { avatarApi, uploadToPresignedUrl } from '../../../src/lib/api';
+import { avatarApi } from '../../../src/lib/api';
 import {
   COLORS,
   SPACING,
@@ -35,8 +35,6 @@ import {
 import { ConfirmSheet } from '../../../src/components';
 import {
   getRoleLabel,
-  getPositionLabel,
-  getTechnicianTypeLabel,
   Role,
 } from '@hbcfield/shared/client';
 
@@ -97,16 +95,10 @@ export default function ProfileScreen() {
   const uploadAvatar = useCallback(async (uri: string, fileName: string, mimeType: string) => {
     setAvatarLoading(true);
     try {
-      // 1. Get presigned URL
-      const { uploadUrl, fileUrl } = await avatarApi.getPresignedUrl(fileName, mimeType);
+      // Upload the avatar (multipart) — returns the new avatar URL
+      await avatarApi.upload(uri, fileName, mimeType);
 
-      // 2. Upload to S3
-      await uploadToPresignedUrl(uploadUrl, uri, mimeType);
-
-      // 3. Confirm upload (save to DB)
-      await avatarApi.confirm(fileUrl);
-
-      // 4. Refresh user data
+      // Refresh user data
       await refreshUser();
     } catch (err: any) {
       toast.error(t('profile.uploadFailed'), err?.message || t('profile.couldNotUpload'));
@@ -247,7 +239,7 @@ export default function ProfileScreen() {
               {showRole && (
                 <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
                   <Ionicons name="briefcase-outline" size={13} color={COLORS.primary} />
-                  <Text style={styles.badgeText}>{getRoleLabel(user?.role ?? '', user?.position)}</Text>
+                  <Text style={styles.badgeText}>{getRoleLabel(user?.role ?? '')}</Text>
                 </View>
               )}
               {isTechnician && showSpecialty && !!user?.specialty && (
@@ -260,7 +252,7 @@ export default function ProfileScreen() {
                 <View style={[styles.badge, styles.badgeSecondary, { backgroundColor: colors.emeraldLight }]}>
                   <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
                   <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
-                    {getPositionLabel(user.position)}
+                    {user.position}
                   </Text>
                 </View>
               )}

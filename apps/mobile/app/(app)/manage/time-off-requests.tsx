@@ -124,7 +124,7 @@ export default function TimeOffRequestsScreen() {
             )}
           </View>
           <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[s.statusText, { color: statusStyle.color }]}>{t(`timeOffStatus.${item.status}`)}</Text>
+            <Text style={[s.statusText, { color: statusStyle.text }]}>{t(`timeOffStatus.${item.status}`)}</Text>
           </View>
         </View>
         {isPending && (

@@ -3,7 +3,7 @@
  * Usage: <Skeleton.Line />, <Skeleton.Circle />, <Skeleton.Card />
  */
 import { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+import { View, StyleSheet, Animated, ViewStyle, StyleProp } from 'react-native';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, RADIUS } from '../lib/constants';
 
@@ -24,7 +24,7 @@ function useShimmer() {
 }
 
 interface SkeletonBaseProps {
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 function ShimmerBox({ style }: SkeletonBaseProps) {

@@ -277,7 +277,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     overflow: 'hidden',
     zIndex: 12,
-    elevation: 10,
     ...SHADOWS.md,
   },
   resultItem: {

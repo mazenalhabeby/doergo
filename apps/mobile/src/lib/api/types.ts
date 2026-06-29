@@ -64,6 +64,7 @@ export interface User {
   canManageUsers: boolean;
   // Technician-specific fields
   position?: string | null;
+  technicianType?: string | null;
   // Either a legacy string[] (org-level default) or a per-user AccessProfile
   // object ({ modules, platforms, spaceScope, canContact }). Read via the
   // shared getModules/hasModule/getAccessPlatforms helpers — never indexed directly.

@@ -34,6 +34,13 @@ export const timeOffApi = {
       method: 'DELETE',
     });
   },
+
+  approve: async (timeOffId: string, data: { approved: boolean; rejectionReason?: string }): Promise<TimeOffRequest> => {
+    return fetchWithAuth<TimeOffRequest>(`/employees/time-off/${timeOffId}/approve`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // Availability API

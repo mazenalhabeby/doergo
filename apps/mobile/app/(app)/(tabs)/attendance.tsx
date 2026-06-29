@@ -1078,17 +1078,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     marginTop: 2,
   },
-  geofenceWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-    padding: SPACING.md,
-    backgroundColor: '#FEF3C7',
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
   geofenceWarningTextContainer: {
     flex: 1,
   },
