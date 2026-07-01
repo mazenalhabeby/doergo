@@ -1,7 +1,24 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
+import { execSync } from 'node:child_process';
+
+// Resolve the git commit this build was made from.
+// On EAS, `EAS_BUILD_GIT_COMMIT_HASH` is injected automatically.
+// Locally (dev client / Metro), fall back to the working-tree HEAD.
+function resolveGitCommit(): string {
+  const easCommit = process.env.EAS_BUILD_GIT_COMMIT_HASH;
+  if (easCommit) return easCommit.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+  const gitCommit = resolveGitCommit();
+  const buildProfile = process.env.EAS_BUILD_PROFILE ?? 'local';
+  const builtAt = new Date().toISOString();
 
   return {
     ...config,
@@ -82,6 +99,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       eas: {
         projectId: 'e0202344-e599-46e0-b546-2f07ac5b6131',
       },
+      gitCommit,
+      buildProfile,
+      builtAt,
     },
   };
 };
