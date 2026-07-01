@@ -1,0 +1,85 @@
+# .easignore — controls what gets uploaded to EAS Build.
+# NOTE: when this file exists, EAS uses it INSTEAD OF .gitignore, so the
+# standard ignores below are duplicated from .gitignore on purpose. Keep them
+# in sync. Everything under the "EAS-only excludes" section is extra content
+# not needed to build the mobile app (design assets, docs, worktrees).
+#
+# Do NOT ignore any workspace package.json / pnpm-lock.yaml / pnpm-workspace.yaml
+# or the packages/ dir — pnpm's frozen install on the builder needs them.
+
+# ── standard .gitignore (must stay mirrored) ──────────────────────────
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+.expo/
+out/
+documentation/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Prisma
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
+
+# Mobile
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+ios/
+android/
+
+# Misc
+*.tsbuildinfo
+.turbo/
+
+# Confidential / Internal
+AI_FEATURES_ANALYSIS.md
+dashboard-*.html
+
+# ── EAS-only excludes (not needed to build the mobile app) ────────────
+# Agent worktrees / harness scratch — biggest offender (~1.4 GB on disk)
+.claude/
+
+# Design assets, store screenshots, mockups (~80 MB, media only)
+doergo design/
+store-listing/
+.mockups/
+
+# Docs & audits (not compiled into the app)
+docs/
+*.pdf
+*.md
+!apps/mobile/**/*.md
+
+# Git metadata
+.git/
