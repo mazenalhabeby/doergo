@@ -38,7 +38,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.hbcfield.app',
-      buildNumber: '4',
+      // Seed for EAS remote versioning (appVersionSource: "remote").
+      // Only used to initialize the remote counter on the first remote build;
+      // EAS manages/increments the real build number after that.
+      buildNumber: '5',
       config: {
         googleMapsApiKey,
       },
@@ -62,7 +65,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
       package: 'com.hbcfield.app',
-      versionCode: 3,
+      // Seed for EAS remote versioning (see iOS buildNumber note above).
+      versionCode: 4,
       config: {
         googleMaps: {
           apiKey: googleMapsApiKey,
