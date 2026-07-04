@@ -2,7 +2,7 @@ FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
-# -- Dependencies --
+# -- Full deps (for building) --
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY packages/shared/package.json ./packages/shared/
@@ -10,7 +10,7 @@ COPY apps/api/auth-service/package.json ./apps/api/auth-service/
 COPY apps/api/tracking-service/package.json ./apps/api/tracking-service/
 RUN pnpm install --frozen-lockfile --prod=false
 
-# -- Build --
+# -- Build + scoped prod bundle via pnpm deploy --
 FROM deps AS build
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/auth-service/prisma/ ./apps/api/auth-service/prisma/
@@ -19,21 +19,15 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @hbcfield/shared build
 RUN cd apps/api/auth-service && npx prisma generate
 RUN pnpm --filter @hbcfield/tracking-service build
+RUN pnpm --filter @hbcfield/tracking-service deploy --prod /prod
+# overlay the generated Prisma client + engine + its scope (musl, same platform)
+RUN rm -rf /prod/node_modules/.prisma /prod/node_modules/@prisma/client && \
+    cp -R node_modules/.prisma /prod/node_modules/.prisma && cp -R node_modules/@prisma/client /prod/node_modules/@prisma/client
 
 # -- Production --
 FROM base AS production
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/apps/api/tracking-service/node_modules ./apps/api/tracking-service/node_modules
-COPY --from=deps /app/apps/api/auth-service/node_modules ./apps/api/auth-service/node_modules
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=build /app/apps/api/tracking-service/dist ./apps/api/tracking-service/dist
-COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/api/tracking-service/package.json ./apps/api/tracking-service/
-COPY apps/api/auth-service/package.json ./apps/api/auth-service/
-COPY pnpm-workspace.yaml package.json ./
-RUN cd apps/api/auth-service && npx prisma generate
-
-CMD ["node", "apps/api/tracking-service/dist/main.js"]
+WORKDIR /app
+COPY --from=build /prod ./
+COPY --from=build /app/apps/api/auth-service/prisma ./prisma
+CMD ["node", "dist/main.js"]

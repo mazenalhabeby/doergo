@@ -2,14 +2,12 @@ FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
-# -- Dependencies --
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/auth-service/package.json ./apps/api/auth-service/
 RUN pnpm install --frozen-lockfile --prod=false
 
-# -- Build --
 FROM deps AS build
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/auth-service/ ./apps/api/auth-service/
@@ -17,23 +15,19 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @hbcfield/shared build
 RUN cd apps/api/auth-service && npx prisma generate
 RUN pnpm --filter @hbcfield/auth-service build
+RUN pnpm --filter @hbcfield/auth-service deploy --prod /prod
+# overlay generated client + full prisma toolchain (CLI+engines) for runtime `prisma migrate deploy`
+RUN rm -rf /prod/node_modules/.prisma /prod/node_modules/@prisma /prod/node_modules/prisma && \
+    cp -R node_modules/.prisma /prod/node_modules/.prisma && \
+    cp -R node_modules/@prisma /prod/node_modules/@prisma && \
+    cp -R node_modules/prisma /prod/node_modules/prisma && \
+    cp -R node_modules/.bin/prisma /prod/node_modules/.bin/prisma
 
-# -- Production --
 FROM base AS production
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/apps/api/auth-service/node_modules ./apps/api/auth-service/node_modules
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=build /app/apps/api/auth-service/dist ./apps/api/auth-service/dist
+WORKDIR /app
+COPY --from=build /prod ./apps/api/auth-service
 COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
-COPY apps/api/auth-service/tsconfig.json ./apps/api/auth-service/
-COPY tsconfig.base.json ./
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/api/auth-service/package.json ./apps/api/auth-service/
-COPY pnpm-workspace.yaml package.json ./
-RUN cd apps/api/auth-service && npx prisma generate
 COPY infra/docker/scripts/auth-entrypoint.sh /app/auth-entrypoint.sh
 RUN chmod +x /app/auth-entrypoint.sh
-
 ENTRYPOINT ["/app/auth-entrypoint.sh"]
