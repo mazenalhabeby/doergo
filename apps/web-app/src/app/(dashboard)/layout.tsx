@@ -74,10 +74,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return;
+    if (!isAuthenticated) {
       router.push('/login');
+      return;
     }
-  }, [isLoading, isAuthenticated, router]);
+    // A signed-in user with no organization yet (orphan) must finish onboarding
+    // before entering the app — create an org, join by code, or accept an invite.
+    if (user?.onboardingCompleted === false) {
+      router.replace('/onboarding');
+    }
+  }, [isLoading, isAuthenticated, user?.onboardingCompleted, router]);
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -85,6 +92,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Orphan user (no organization yet) — the effect above redirects them to
+  // /onboarding. Don't render the dashboard in the meantime, so we don't flash
+  // its chrome or fire org-scoped data fetches for a user who has no org.
+  if (user?.onboardingCompleted === false) {
+    return <DashboardSkeleton />;
   }
 
   // Platform hard-block: a mobile-only Access Profile may not use the web portal.

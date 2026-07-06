@@ -355,6 +355,7 @@ export const authApi = {
         firstName: string;
         lastName: string;
         organizationId?: string;
+        onboardingCompleted?: boolean;
         avatarUrl?: string | null;
         // Permission fields
         canCreateTasks: boolean;
@@ -383,7 +384,9 @@ export const authApi = {
     password: string;
     firstName: string;
     lastName: string;
-    companyName: string;
+    // Optional: when omitted the backend creates an "orphan" user (no org) that
+    // must complete onboarding (create org / join by code / accept invitation).
+    companyName?: string;
     firstSpaceName?: string;
   }) => {
     // Note: Role is NOT sent - backend always sets it to ADMIN for security
@@ -2737,6 +2740,83 @@ export const invitationsApi = {
     }
 
     return response.data;
+  },
+};
+
+// ============================================================================
+// ONBOARDING API — post-registration flow for orphan users (no org yet).
+// Mirrors the mobile onboarding flow: create org / join by code / accept invite.
+// All endpoints require auth but SKIP the onboarding guard (SkipOnboardingCheck).
+// ============================================================================
+
+/** Unwrap the gateway `{ success, data }` envelope, tolerating raw responses. */
+function unwrap<T>(body: unknown): T {
+  const b = body as { data?: T } | T;
+  return ((b as { data?: T })?.data ?? b) as T;
+}
+
+/**
+ * Runtime shape of `/onboarding/status`. The API flattens the pending request
+ * (organizationName, status, rejectionReason) rather than returning the full
+ * JoinRequest relation, so this differs from the shared OnboardingStatus type.
+ */
+export interface OnboardingStatusResult {
+  needsOnboarding: boolean;
+  hasPendingJoinRequest: boolean;
+  pendingRequest: {
+    id: string;
+    organizationName: string;
+    message?: string | null;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+    rejectionReason?: string | null;
+  } | null;
+}
+
+export const onboardingApi = {
+  getStatus: async (): Promise<OnboardingStatusResult> => {
+    const response = await api.get<unknown>('/onboarding/status');
+    if (response.error) throw new Error(response.error);
+    return unwrap<OnboardingStatusResult>(response.data);
+  },
+
+  createOrganization: async (data: {
+    name: string;
+    address?: string;
+    industry?: string;
+    firstSpaceName?: string;
+  }): Promise<{ organization: { id: string; name: string }; joinCode?: string }> => {
+    const response = await api.post<unknown>('/onboarding/create-org', data);
+    if (response.error) throw new Error(response.error);
+    return unwrap(response.data);
+  },
+
+  validateOrgCode: async (code: string): Promise<OrgCodeValidation> => {
+    const response = await api.get<unknown>(
+      `/onboarding/validate-org-code/${encodeURIComponent(code)}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return unwrap<OrgCodeValidation>(response.data);
+  },
+
+  submitJoinRequest: async (data: {
+    orgCode: string;
+    message?: string;
+  }): Promise<{ autoApproved?: boolean; joinRequest?: { id: string } }> => {
+    const response = await api.post<unknown>('/onboarding/join-by-code', data);
+    if (response.error) throw new Error(response.error);
+    return unwrap(response.data);
+  },
+
+  acceptInvitation: async (code: string): Promise<unknown> => {
+    const response = await api.post<unknown>('/onboarding/accept-invitation', { code });
+    if (response.error) throw new Error(response.error);
+    return unwrap(response.data);
+  },
+
+  cancelJoinRequest: async (id: string): Promise<unknown> => {
+    const response = await api.delete<unknown>(`/onboarding/join-requests/${encodeURIComponent(id)}`);
+    if (response.error) throw new Error(response.error);
+    return unwrap(response.data);
   },
 };
 

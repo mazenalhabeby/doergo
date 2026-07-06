@@ -3045,6 +3045,74 @@
       }
     }
   },
+  "onboarding": {
+    "choosePath": {
+      "welcome": "Welcome, {{name}}",
+      "subtitle": "How would you like to get started?",
+      "signOut": "Sign out",
+      "createOrg": {
+        "tag": "Owner",
+        "title": "Create an organization",
+        "description": "Start fresh and invite your team."
+      },
+      "joinOrg": {
+        "tag": "Member",
+        "title": "Join with a code",
+        "description": "Use your organization's join code."
+      },
+      "useInvitation": {
+        "tag": "Invited",
+        "title": "Use an invitation",
+        "description": "You received an invitation code."
+      }
+    },
+    "createOrg": {
+      "title": "Create your organization",
+      "subtitle": "This is your company workspace. You can rename it later.",
+      "nameLabel": "Organization name",
+      "namePlaceholder": "e.g. Acme Field Services",
+      "submitButton": "Create & continue",
+      "nameTooShort": "Please enter at least 2 characters.",
+      "failed": "Couldn't create the organization. Please try again."
+    },
+    "joinOrg": {
+      "title": "Join an organization",
+      "subtitle": "Enter the 8-character join code from your admin.",
+      "codeLabel": "Join code",
+      "codePlaceholder": "ABCD1234",
+      "verify": "Verify",
+      "messageLabel": "Message (optional)",
+      "messagePlaceholder": "Add a note for the admin reviewing your request…",
+      "submitButton": "Request to join",
+      "codeMustBe8Chars": "The join code must be 8 characters.",
+      "invalidCode": "That code isn't valid.",
+      "failedToSubmit": "Couldn't submit your request. Please try again."
+    },
+    "useInvitation": {
+      "title": "Use an invitation",
+      "subtitle": "Enter the invitation code you received.",
+      "codeLabel": "Invitation code",
+      "codePlaceholder": "INVITE01",
+      "verify": "Verify",
+      "joiningAs": "Joining as {{role}}",
+      "submitButton": "Accept & join",
+      "codeMustBe6Chars": "The invitation code must be at least 6 characters.",
+      "invalidOrExpired": "That invitation is invalid or has expired.",
+      "failedToAccept": "Couldn't accept the invitation. Please try again."
+    },
+    "pendingApproval": {
+      "waitingTitle": "Waiting for approval",
+      "waitingSubtitle": "Your request was sent. An admin will review it shortly.",
+      "rejectedTitle": "Request declined",
+      "rejectedSubtitle": "Your join request wasn't approved. You can try another way to get started.",
+      "yourMessage": "Your message",
+      "checking": "Checking every 30 seconds…",
+      "cancelRequest": "Cancel request",
+      "tryDifferentPath": "Try a different path",
+      "logOut": "Log out",
+      "failedToCancel": "Couldn't cancel the request. Please try again."
+    }
+  },
   "welcome": {
     "title": "Set up your first space",
     "subtitle": "A space is where your tasks live — a site, a team, or a project. You can add more anytime.",
