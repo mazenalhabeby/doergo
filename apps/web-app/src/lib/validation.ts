@@ -82,11 +82,16 @@ export const loginSchema = z.object({
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 
-/** Registration form validation */
+/**
+ * Registration form validation.
+ *
+ * Account creation is decoupled from organization membership: a new user signs
+ * up with only their personal details, then completes onboarding (create org /
+ * join by code / accept invitation). Company name is no longer collected here.
+ */
 export const registerSchema = z.object({
   firstName: firstNameSchema,
   lastName: lastNameSchema,
-  companyName: companyNameSchema,
   email: emailSchema,
   password: strongPasswordSchema,
   confirmPassword: z.string().min(1, 'Please confirm your password'),

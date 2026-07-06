@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { notify } from '@/lib/toast';
-import { Eye, EyeOff, Mail, Lock, User, Building2, Check } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Check } from 'lucide-react';
 import { Button, Input, Label, Checkbox, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { authApi } from '@/lib/api';
@@ -33,7 +33,6 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: '',
     lastName: '',
-    companyName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -68,18 +67,19 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
     }
 
     try {
+      // Register as an "orphan" user (no company) — account creation is decoupled
+      // from organization membership. Onboarding decides create-org / join / invite.
       await authApi.register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        companyName: formData.companyName,
       });
 
       await login(formData.email, formData.password);
       notify.success(t('auth.register.successTitle'), t('auth.register.successDescription'));
-      // New org owners set up their first space before entering the app.
-      router.push('/welcome');
+      // Every new user starts in onboarding; the wizard routes them onward.
+      router.push('/onboarding');
     } catch (err) {
       notify.error(err instanceof Error ? err.message : t('auth.register.errorDescription'));
     } finally {
@@ -131,20 +131,6 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
           inputClass={inputClass}
           transitionDelay={getTransitionDelay(0.05)}
         />
-
-        {/* Company */}
-        <CompanyField
-          value={formData.companyName}
-          onChange={(v) => updateField('companyName', v)}
-          error={validationErrors.companyName}
-          isLoading={isLoading}
-          isActive={isActive}
-          focusedField={focusedField}
-          onFocusChange={setFocusedField}
-          inputClass={inputClass}
-          transitionDelay={getTransitionDelay(0.1)}
-        />
-
 
         {/* Email */}
         <EmailField
@@ -329,64 +315,6 @@ function NameFields({
           onFocus={() => onFocusChange('lastName')}
           onBlur={() => onFocusChange(null)}
           className={inputClass('lastName', !!errors.lastName)}
-          disabled={isLoading}
-        />
-      </div>
-    </div>
-  );
-}
-
-interface CompanyFieldProps {
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  isLoading: boolean;
-  isActive: boolean;
-  focusedField: string | null;
-  onFocusChange: (field: string | null) => void;
-  inputClass: InputClassFn;
-  transitionDelay: string;
-}
-
-function CompanyField({
-  value,
-  onChange,
-  error,
-  isLoading,
-  isActive,
-  focusedField,
-  onFocusChange,
-  inputClass,
-  transitionDelay,
-}: CompanyFieldProps) {
-  const { t } = useTranslation();
-  return (
-    <div
-      className={cn(
-        'space-y-1 transition-all duration-500',
-        isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-      )}
-      style={{ transitionDelay }}
-    >
-      <Label htmlFor="reg-company" className="text-xs font-medium text-slate-700">
-        {t('auth.register.companyNameLabel')}
-      </Label>
-      <div className="relative">
-        <Building2
-          className={cn(
-            'absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors',
-            focusedField === 'company' ? 'text-blue-600' : 'text-slate-400'
-          )}
-        />
-        <Input
-          id="reg-company"
-          type="text"
-          placeholder={t('auth.register.companyNamePlaceholder')}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => onFocusChange('company')}
-          onBlur={() => onFocusChange(null)}
-          className={cn('pl-8', inputClass('company', !!error))}
           disabled={isLoading}
         />
       </div>

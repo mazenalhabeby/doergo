@@ -97,6 +97,13 @@ export class OnboardingController {
       );
     }
 
+    // An OPEN join policy auto-approves and completes onboarding immediately —
+    // drop the cached (pre-onboarding) user so the next /auth/me reflects the
+    // new org + onboardingCompleted right away (mirrors create-org / accept-invite).
+    if (result?.data?.autoApproved) {
+      await this.authCache.invalidateUser(user.id);
+    }
+
     return result;
   }
 

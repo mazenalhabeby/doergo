@@ -3045,6 +3045,74 @@
       }
     }
   },
+  "onboarding": {
+    "choosePath": {
+      "welcome": "Willkommen, {{name}}",
+      "subtitle": "Wie möchten Sie beginnen?",
+      "signOut": "Abmelden",
+      "createOrg": {
+        "tag": "Inhaber",
+        "title": "Organisation erstellen",
+        "description": "Neu starten und Ihr Team einladen."
+      },
+      "joinOrg": {
+        "tag": "Mitglied",
+        "title": "Mit Code beitreten",
+        "description": "Verwenden Sie den Beitrittscode Ihrer Organisation."
+      },
+      "useInvitation": {
+        "tag": "Eingeladen",
+        "title": "Einladung verwenden",
+        "description": "Sie haben einen Einladungscode erhalten."
+      }
+    },
+    "createOrg": {
+      "title": "Organisation erstellen",
+      "subtitle": "Dies ist der Arbeitsbereich Ihres Unternehmens. Sie können ihn später umbenennen.",
+      "nameLabel": "Name der Organisation",
+      "namePlaceholder": "z. B. Acme Field Services",
+      "submitButton": "Erstellen & fortfahren",
+      "nameTooShort": "Bitte geben Sie mindestens 2 Zeichen ein.",
+      "failed": "Die Organisation konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+    },
+    "joinOrg": {
+      "title": "Organisation beitreten",
+      "subtitle": "Geben Sie den 8-stelligen Beitrittscode Ihres Administrators ein.",
+      "codeLabel": "Beitrittscode",
+      "codePlaceholder": "ABCD1234",
+      "verify": "Prüfen",
+      "messageLabel": "Nachricht (optional)",
+      "messagePlaceholder": "Fügen Sie eine Notiz für den prüfenden Administrator hinzu…",
+      "submitButton": "Beitritt anfragen",
+      "codeMustBe8Chars": "Der Beitrittscode muss 8 Zeichen lang sein.",
+      "invalidCode": "Dieser Code ist ungültig.",
+      "failedToSubmit": "Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+    },
+    "useInvitation": {
+      "title": "Einladung verwenden",
+      "subtitle": "Geben Sie den erhaltenen Einladungscode ein.",
+      "codeLabel": "Einladungscode",
+      "codePlaceholder": "INVITE01",
+      "verify": "Prüfen",
+      "joiningAs": "Beitritt als {{role}}",
+      "submitButton": "Annehmen & beitreten",
+      "codeMustBe6Chars": "Der Einladungscode muss mindestens 6 Zeichen lang sein.",
+      "invalidOrExpired": "Diese Einladung ist ungültig oder abgelaufen.",
+      "failedToAccept": "Die Einladung konnte nicht angenommen werden. Bitte versuchen Sie es erneut."
+    },
+    "pendingApproval": {
+      "waitingTitle": "Warten auf Genehmigung",
+      "waitingSubtitle": "Ihre Anfrage wurde gesendet. Ein Administrator wird sie in Kürze prüfen.",
+      "rejectedTitle": "Anfrage abgelehnt",
+      "rejectedSubtitle": "Ihre Beitrittsanfrage wurde nicht genehmigt. Sie können einen anderen Weg wählen.",
+      "yourMessage": "Ihre Nachricht",
+      "checking": "Überprüfung alle 30 Sekunden…",
+      "cancelRequest": "Anfrage abbrechen",
+      "tryDifferentPath": "Anderen Weg versuchen",
+      "logOut": "Abmelden",
+      "failedToCancel": "Die Anfrage konnte nicht abgebrochen werden. Bitte versuchen Sie es erneut."
+    }
+  },
   "welcome": {
     "title": "Richten Sie Ihren ersten Bereich ein",
     "subtitle": "In einem Bereich befinden sich Ihre Aufgaben – ein Standort, ein Team oder ein Projekt. Sie können jederzeit weitere hinzufügen.",

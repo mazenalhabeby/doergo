@@ -23,6 +23,8 @@ export interface User {
   lastName: string;
   organizationId?: string;
   organizationName?: string;
+  /** False for a freshly-registered "orphan" user who must complete onboarding. */
+  onboardingCompleted?: boolean;
   // Permission fields
   canCreateTasks: boolean;
   taskCreationScope: string;

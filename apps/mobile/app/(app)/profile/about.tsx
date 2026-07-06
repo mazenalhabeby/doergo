@@ -18,6 +18,13 @@ export default function AboutScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const extra = Constants.expoConfig?.extra ?? {};
+  const gitCommit = (extra.gitCommit as string) || 'unknown';
+  const buildProfile = (extra.buildProfile as string) || 'local';
+  const builtAt = extra.builtAt as string | undefined;
+  const builtAtLabel = builtAt
+    ? new Date(builtAt).toLocaleString()
+    : '—';
 
   return (
     <ScrollView
@@ -44,6 +51,24 @@ export default function AboutScreen() {
           <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
             {t('profile.about.description')}
           </Text>
+        </View>
+      </View>
+
+      {/* Build info */}
+      <View style={styles.section}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={styles.buildRow}>
+            <Text style={[styles.buildLabel, { color: colors.textMuted }]}>Commit</Text>
+            <Text style={[styles.buildValue, { color: colors.textSecondary }]}>{gitCommit}</Text>
+          </View>
+          <View style={styles.buildRow}>
+            <Text style={[styles.buildLabel, { color: colors.textMuted }]}>Profile</Text>
+            <Text style={[styles.buildValue, { color: colors.textSecondary }]}>{buildProfile}</Text>
+          </View>
+          <View style={styles.buildRow}>
+            <Text style={[styles.buildLabel, { color: colors.textMuted }]}>Built</Text>
+            <Text style={[styles.buildValue, { color: colors.textSecondary }]}>{builtAtLabel}</Text>
+          </View>
         </View>
       </View>
 
@@ -104,6 +129,20 @@ const styles = StyleSheet.create({
   aboutText: {
     fontSize: FONT_SIZE.base,
     lineHeight: 22,
+  },
+  buildRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.xs,
+  },
+  buildLabel: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  buildValue: {
+    fontSize: FONT_SIZE.sm,
+    fontFamily: 'monospace',
   },
   copyright: {
     fontSize: FONT_SIZE.sm,
