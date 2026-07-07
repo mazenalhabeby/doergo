@@ -20,6 +20,20 @@ import {
 import { cn } from "@/lib/utils"
 
 // ============================================================================
+// Socket payload helpers
+// ============================================================================
+// Task socket events arrive in two shapes: some (task.created, task.assigned)
+// are emitted as the RAW task object, others (statusChanged, declined, comment,
+// attachment) are wrapped as { task, ... } or carry a flat taskId. Read the id
+// and title tolerantly so the deep-link never becomes "/tasks/undefined".
+const evTaskId = (d: any): string | undefined => d?.task?.id ?? d?.taskId ?? d?.id
+const evTaskTitle = (d: any): string => d?.task?.title ?? d?.title ?? ""
+const taskLink = (d: any): string | undefined => {
+  const id = evTaskId(d)
+  return id ? `/tasks/${id}` : undefined
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -99,28 +113,28 @@ export function NotificationBell() {
     const unsubs = [
       // Task events
       subscribe("task.created", (d: any) => {
-        add("task_created", t("notifications.taskCreated"), d.task?.title || "", `/tasks/${d.task?.id}`)
+        add("task_created", t("notifications.taskCreated"), evTaskTitle(d), taskLink(d))
       }),
       subscribe("task.assigned", (d: any) => {
-        add("task_assigned", t("notifications.taskAssigned"), d.task?.title || "", `/tasks/${d.task?.id}`)
+        add("task_assigned", t("notifications.taskAssigned"), evTaskTitle(d), taskLink(d))
       }),
       subscribe("task.statusChanged", (d: any) => {
         if (d.newStatus === "COMPLETED") {
-          add("task_completed", t("notifications.taskCompleted"), d.task?.title || "", `/tasks/${d.task?.id}`)
+          add("task_completed", t("notifications.taskCompleted"), evTaskTitle(d), taskLink(d))
         } else if (d.newStatus === "BLOCKED") {
-          add("task_status_changed", t("notifications.taskBlocked"), d.task?.title || "", `/tasks/${d.task?.id}`)
+          add("task_status_changed", t("notifications.taskBlocked"), evTaskTitle(d), taskLink(d))
         } else {
-          add("task_status_changed", t("notifications.taskStatusChanged", { status: d.newStatus }), d.task?.title || "", `/tasks/${d.task?.id}`)
+          add("task_status_changed", t("notifications.taskStatusChanged", { status: d.newStatus }), evTaskTitle(d), taskLink(d))
         }
       }),
       subscribe("task.declined", (d: any) => {
-        add("task_declined", t("notifications.taskDeclined"), d.task?.title || "", `/tasks/${d.task?.id}`)
+        add("task_declined", t("notifications.taskDeclined"), evTaskTitle(d), taskLink(d))
       }),
       subscribe("task.commentAdded", (d: any) => {
-        add("comment_added", t("notifications.commentAdded"), d.task?.title || d.comment?.content?.slice(0, 50) || "", `/tasks/${d.taskId || d.task?.id}`)
+        add("comment_added", t("notifications.commentAdded"), evTaskTitle(d) || d.comment?.content?.slice(0, 50) || "", taskLink(d))
       }),
       subscribe("task.attachmentAdded", (d: any) => {
-        add("attachment_added", t("notifications.attachmentAdded"), d.attachment?.fileName || "", `/tasks/${d.taskId || d.task?.id}`)
+        add("attachment_added", t("notifications.attachmentAdded"), d.attachment?.fileName || "", taskLink(d))
       }),
 
       // Join request events

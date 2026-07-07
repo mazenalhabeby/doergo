@@ -96,8 +96,9 @@ export function useRealtimeSync() {
 
   // Also handle task-specific detail invalidation
   const handleTaskEvent = useCallback((event: string, data: any) => {
-    // Get the task ID from the event payload
-    const taskId = data?.task?.id || data?.taskId
+    // Get the task ID from the event payload. Some events (task.created,
+    // task.assigned) arrive as the raw task object, so fall back to data.id.
+    const taskId = data?.task?.id || data?.taskId || data?.id
     if (taskId) {
       // Invalidate the specific task detail query
       pendingInvalidations.current.add(JSON.stringify(["task", taskId]))
@@ -105,7 +106,7 @@ export function useRealtimeSync() {
     }
 
     // Also invalidate the employee detail if an assignee is involved
-    const assigneeId = data?.task?.assignedToId || data?.workerId || data?.userId
+    const assigneeId = data?.task?.assignedToId || data?.assignedToId || data?.workerId || data?.userId
     if (assigneeId) {
       pendingInvalidations.current.add(JSON.stringify(["employee", assigneeId]))
       pendingInvalidations.current.add(JSON.stringify(["employeeTasks", assigneeId]))
