@@ -1,4 +1,5 @@
 import React from "react"
+import type { LucideIcon } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 
@@ -55,7 +56,7 @@ export function StatCard({
 }: {
   title: string
   value: string | number
-  icon: React.ElementType
+  icon: LucideIcon
   color: "blue" | "green" | "amber" | "slate"
 }) {
   const colorClasses = {

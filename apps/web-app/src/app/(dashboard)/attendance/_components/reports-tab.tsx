@@ -16,6 +16,7 @@ import {
   CalendarDays,
   ChevronDown,
   Timer,
+  type LucideIcon,
 } from "lucide-react"
 import { format, subWeeks, startOfWeek, endOfWeek, subMonths } from "date-fns"
 
@@ -113,7 +114,7 @@ function KpiCard({
   value: number
   unit?: string
   prevValue?: number
-  icon: React.ElementType
+  icon: LucideIcon
   color: "blue" | "green" | "amber" | "red" | "slate"
 }) {
   const colorMap = {

@@ -15,6 +15,7 @@ import {
   X,
   Crown,
   ExternalLink,
+  type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -39,7 +40,7 @@ function SidebarRow({
   label,
   children,
 }: {
-  icon: React.ElementType
+  icon: LucideIcon
   label: string
   children: React.ReactNode
 }) {

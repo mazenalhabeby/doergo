@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   MapPin,
   FileEdit,
+  type LucideIcon,
 } from "lucide-react"
 
 import { tasksApi, type TaskEvent } from "@/lib/api"
@@ -25,7 +26,7 @@ interface ActivitySectionProps {
 
 const EVENT_CONFIG: Record<
   string,
-  { icon: React.ElementType; color: string; labelKey: string }
+  { icon: LucideIcon; color: string; labelKey: string }
 > = {
   CREATED: { icon: Clock, color: "text-blue-500", labelKey: "tasks.activity.events.CREATED" },
   UPDATED: { icon: FileEdit, color: "text-muted-foreground", labelKey: "tasks.activity.events.UPDATED" },
