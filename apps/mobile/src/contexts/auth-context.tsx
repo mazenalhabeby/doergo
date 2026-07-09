@@ -12,6 +12,8 @@ import {
   type User,
   type LoginResponse,
 } from '../lib/api';
+import { stopRouteTracking } from '../services/background-route-tracking';
+import { stopBackgroundHeartbeat } from '../services/background-heartbeat';
 
 const USER_KEY = 'hbcfield_user';
 
@@ -119,6 +121,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearStorage = async () => {
+    // Stop any background location work FIRST so the OS foreground-service
+    // notification and GPS subscription are torn down immediately — otherwise
+    // a distance-based tracker can linger until the device next moves.
+    await Promise.all([
+      stopRouteTracking().catch(() => undefined),
+      stopBackgroundHeartbeat().catch(() => undefined),
+    ]);
     await Promise.all([
       clearTokens(),
       SecureStore.deleteItemAsync(USER_KEY),

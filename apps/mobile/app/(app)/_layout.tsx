@@ -3,7 +3,7 @@ import { Stack, useRouter, Href } from 'expo-router';
 import { AppState, AppStateStatus, Platform, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
-import type { NotificationResponse } from 'expo-notifications';
+import { getLastNotificationResponseAsync, type NotificationResponse } from 'expo-notifications';
 import {
   usePushNotifications,
   getTaskIdFromNotification,
@@ -117,6 +117,24 @@ export default function AppLayout() {
       registerForPushNotifications();
     }
   }, [registerForPushNotifications]);
+
+  // Cold start: if the app was launched by tapping a push while killed, the
+  // in-session response listener never fires — read the launching response once
+  // and route to the same destination so the deep link isn't lost.
+  const coldStartHandled = useRef(false);
+  useEffect(() => {
+    if (coldStartHandled.current) return;
+    coldStartHandled.current = true;
+    let active = true;
+    getLastNotificationResponseAsync()
+      .then((response) => {
+        if (active && response) handleNotificationResponse(response);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [handleNotificationResponse]);
 
   // Re-register when app comes to foreground (in case token changed)
   useEffect(() => {

@@ -27,6 +27,7 @@ import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { ToastProvider } from '../src/contexts/toast-context';
 import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
+import { LocationConsentModal } from '../src/components/LocationConsentModal';
 
 // Keep the native splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -72,6 +73,8 @@ function RootLayoutNav() {
     if (isLoading || showAnimatedSplash) return;
 
     const firstSegment = segments[0] as string | undefined;
+    // Dev-only splash recording route — never redirect away from it.
+    if (firstSegment === 'splash-preview') return;
     const inAuthGroup = firstSegment === '(auth)';
     const inAppGroup = firstSegment === '(app)';
     const inOnboardingGroup = firstSegment === '(onboarding)';
@@ -110,7 +113,11 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="splash-preview" />
       </Stack>
+      {/* Prominent background-location disclosure — overlays the app when a
+          background service needs consent (Google Play requirement). */}
+      <LocationConsentModal />
     </ToastProvider>
   );
 }

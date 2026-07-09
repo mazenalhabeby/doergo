@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { attendanceApi } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
+import { requestBackgroundLocationConsent } from './location-consent';
 
 const TASK_NAME = 'ATTENDANCE_HEARTBEAT';
 
@@ -50,6 +51,15 @@ export async function startBackgroundHeartbeat(): Promise<boolean> {
     if (isRunning) {
       console.log('[Heartbeat] Already running');
       return true;
+    }
+
+    // Google Play: show the prominent in-app disclosure BEFORE requesting the OS
+    // background-location permission. Attendance heartbeat needs background
+    // location, so decline means we don't start.
+    const consented = await requestBackgroundLocationConsent();
+    if (!consented) {
+      console.log('[Heartbeat] Background location disclosure declined');
+      return false;
     }
 
     // Request background location permission

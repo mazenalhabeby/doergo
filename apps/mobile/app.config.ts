@@ -49,7 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSLocationWhenInUseUsageDescription:
           'HBCField needs your location to verify you are at your assigned work site when clocking in.',
         NSLocationAlwaysAndWhenInUseUsageDescription:
-          'HBCField uses your location in the background while you are clocked in to verify you remain at your assigned work site. Location tracking stops automatically when you clock out.',
+          'HBCField uses your location in the background to record your route to an assigned job site while you are on the way, and to verify you remain at your work site while clocked in. Background location stops automatically when you arrive or clock out.',
         NSCameraUsageDescription:
           'HBCField needs camera access to take photos for task documentation',
         NSPhotoLibraryUsageDescription:
@@ -77,8 +77,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'android.permission.ACCESS_FINE_LOCATION',
         'android.permission.ACCESS_BACKGROUND_LOCATION',
         'android.permission.CAMERA',
-        'android.permission.READ_EXTERNAL_STORAGE',
-        'android.permission.WRITE_EXTERNAL_STORAGE',
       ],
     },
     plugins: [

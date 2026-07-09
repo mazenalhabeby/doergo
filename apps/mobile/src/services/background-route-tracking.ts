@@ -3,6 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import * as SecureStore from 'expo-secure-store';
 import { trackingApi, ApiError } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
+import { requestBackgroundLocationConsent } from './location-consent';
 
 /**
  * Background route tracking.
@@ -133,7 +134,12 @@ export async function startRouteTracking(taskId: string): Promise<boolean> {
     // have — foreground-only still beats the old behaviour.
     const fg = await Location.requestForegroundPermissionsAsync();
     if (fg.status !== 'granted') return false;
-    await Location.requestBackgroundPermissionsAsync().catch(() => undefined);
+    // Google Play: show the prominent in-app disclosure BEFORE requesting the OS
+    // background-location permission. Only request it if the user accepts;
+    // foreground-only tracking still works if they decline.
+    if (await requestBackgroundLocationConsent()) {
+      await Location.requestBackgroundPermissionsAsync().catch(() => undefined);
+    }
 
     await Location.startLocationUpdatesAsync(ROUTE_TASK, {
       accuracy: Location.Accuracy.High, // ~10m — needed to trace roads/turns
