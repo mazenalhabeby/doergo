@@ -1,4 +1,298 @@
 {
+  "home": {
+    "nav": {
+      "platform": "Plattform",
+      "process": "Ablauf",
+      "app": "App",
+      "signIn": "Anmelden",
+      "pricing": "Preise"
+    },
+    "hero": {
+      "line1": "Das Feld,",
+      "under": "unter",
+      "words": [
+        "Kontrolle",
+        "Kommando",
+        "Beobachtung",
+        "Prüfung"
+      ],
+      "requestDemo": "Demo anfragen",
+      "scroll": "Scrollen",
+      "hint": "Berühren Sie die Linien, um das Feld zu beleben",
+      "meta": "HBCField — Plattform für den Außendienst",
+      "metaDesc": "Disposition, GPS-Tracking, Serviceberichte und Zeiterfassung in einem System."
+    },
+    "whatItIs": {
+      "label": "(01) — Was es ist",
+      "lines": [
+        "Ein System verbindet",
+        "das Büro und das Feld.",
+        "Zuweisen, der Route folgen,",
+        "mit signiertem Bericht abschließen."
+      ]
+    },
+    "video": {
+      "label": "Ansehen · 45 Sek.",
+      "title": "HBCField in Aktion sehen.",
+      "desc": "Ein kurzer Blick darauf, wie ein Einsatz vom Büro ins Feld und zurück gelangt — disponiert, verfolgt und in einem System abgeschlossen.",
+      "play": "Intro abspielen"
+    },
+    "facts": [
+      {
+        "unit": " m",
+        "label": "GPS-Abtastintervall",
+        "desc": "Distanzbasierte Punkte, keine Linie von Start bis Ziel."
+      },
+      {
+        "unit": " Tage",
+        "label": "Routenverlauf gespeichert",
+        "desc": "Servicenachweis und Umleitungen, dokumentiert."
+      },
+      {
+        "unit": "",
+        "label": "Rollen, eine Plattform",
+        "desc": "Admin und Mitarbeiter, mit dynamischem Zugriff pro Person — eine einzige Datenquelle."
+      }
+    ],
+    "product": {
+      "label": "(02) — Das Produkt",
+      "reducedHeading": "Gebaut, um den gesamten Einsatz zu steuern.",
+      "shots": [
+        {
+          "kicker": "Disposition",
+          "title": "Von der Disposition bis zum Abschluss, auf einem Board.",
+          "body": "Weisen Sie den richtigen Techniker zu und verfolgen Sie jeden Einsatz in Echtzeit durch den Ablauf — keine Statusanrufe, keine Tabellen."
+        },
+        {
+          "kicker": "Live-Karte",
+          "title": "Jeder Standort und Techniker, auf der Karte.",
+          "body": "Geozaun-gesicherte Standorte und Live-GPS sorgen dafür, dass die Disposition stets weiß, wo das Feld ist — und wo jeder Einsatz steht."
+        },
+        {
+          "kicker": "Leitstand",
+          "title": "Ihr gesamter Betrieb, in Echtzeit.",
+          "body": "Ein Live-Aktivitätsfeed, ausstehende Freigaben und jeder Bereich auf einen Blick — die Büroansicht des Feldes."
+        },
+        {
+          "kicker": "Planung",
+          "title": "Planen Sie über jeden Bereich hinweg.",
+          "body": "Eine Zeitleiste über alle Ihre Standorte, wiederkehrende Einsätze und Verfügbarkeiten — Kapazität, die Sie wirklich sehen können."
+        }
+      ]
+    },
+    "process": {
+      "label": "(03) — Ablauf",
+      "heading": "Von einer Aufgabe im Büro zu einem signierten Bericht im Feld.",
+      "steps": [
+        {
+          "key": "Erstellen",
+          "desc": "Der Admin erstellt eine Aufgabe mit Standort, Fälligkeit, Fotos und Priorität."
+        },
+        {
+          "key": "Zuweisen",
+          "desc": "Die Disposition prüft die Verfügbarkeit und weist zu — der Techniker erhält sofort eine Push-Benachrichtigung."
+        },
+        {
+          "key": "Route",
+          "desc": "Der Techniker tippt auf Unterwegs; das Hintergrund-GPS zeichnet den exakten Weg auf und markiert Angekommen."
+        },
+        {
+          "key": "Ausführen",
+          "desc": "Fotos, Teile und Notizen vor Ort, dann ein signierter Servicebericht — auch offline."
+        },
+        {
+          "key": "Abschließen",
+          "desc": "Der Bericht wird mit der vollständigen Route und dem Prüfprotokoll ans Büro synchronisiert."
+        }
+      ]
+    },
+    "field": {
+      "label": "(04) — Im Feld",
+      "lines": [
+        "Funktioniert, wenn das Telefon",
+        "gesperrt ist. Schonend für",
+        "den Akku."
+      ],
+      "features": [
+        {
+          "title": "GPS bei gesperrtem Bildschirm",
+          "desc": "Ein nativer Hintergrunddienst zeichnet die Route weiter auf, auch bei ausgeschaltetem Bildschirm."
+        },
+        {
+          "title": "Distanzbasierte Abtastung",
+          "desc": "Ein Punkt alle 25 Meter — Standzeiten an einem Standort kosten keinen zusätzlichen Akku."
+        },
+        {
+          "title": "Offline-sichere Erfassung",
+          "desc": "Fotos, Notizen und Berichte werden auf dem Gerät zwischengespeichert und synchronisiert, sobald wieder Empfang besteht."
+        },
+        {
+          "title": "Doppelte Unterschriften",
+          "desc": "Techniker und Kunde unterschreiben auf dem Gerät, um den Einsatz vor Ort abzuschließen."
+        }
+      ],
+      "getApp": "App holen — iOS & Android"
+    },
+    "app": {
+      "label": "Die Techniker-App",
+      "reducedHeading": "Gebaut für die Hosentasche des Technikers.",
+      "shots": [
+        {
+          "kicker": "In der Hand",
+          "title": "Ihr Tag, sobald sie sie öffnen.",
+          "body": "Einstempeln, die heutigen Einsätze und was dringend ist — der Techniker sieht die gesamte Schicht auf einen Blick."
+        },
+        {
+          "kicker": "Aufgaben",
+          "title": "Jeder Einsatz, von Annahme bis Abschluss.",
+          "body": "Annehmen, starten, blockieren oder abschließen — der komplette Statusablauf in der Hosentasche, in Echtzeit ans Büro synchronisiert."
+        },
+        {
+          "kicker": "Zeiterfassung",
+          "title": "Vor Ort einstempeln — verifiziert.",
+          "body": "Geozaun-gesichertes Einstempeln mit dem zugewiesenen Standort und einer vollständigen Historie, damit Stunden belegbar sind, nicht geschätzt."
+        },
+        {
+          "kicker": "Team",
+          "title": "Das ganze Team, nur einen Fingertipp entfernt.",
+          "body": "Schreiben oder rufen Sie jedes Teammitglied über alle Bereiche hinweg an, direkt aus dem Feld."
+        }
+      ]
+    },
+    "cta": {
+      "label": "(07) — Loslegen",
+      "lines": [
+        "Bringen Sie Ihr Feld",
+        "zu Protokoll."
+      ],
+      "emailPlaceholder": "Geschäftliche E-Mail",
+      "requestDemo": "Demo anfragen"
+    },
+    "footer": {
+      "tagline": "Jeden Einsatz disponieren, verfolgen und belegen — das Büro und das Feld, auf einer Plattform.",
+      "explore": "Entdecken",
+      "company": "Unternehmen",
+      "legal": "Rechtliches",
+      "linkPlatform": "Plattform",
+      "linkProcess": "Ablauf",
+      "linkApp": "Die App",
+      "linkGetStarted": "Loslegen",
+      "linkSignIn": "Anmelden",
+      "linkGetApp": "App holen",
+      "linkPrivacy": "Datenschutz",
+      "copyrightSuffix": "· Außendienstverwaltung",
+      "backToTop": "Nach oben",
+      "linkPricing": "Preise"
+    },
+    "why": {
+      "label": "(05) — Was uns besonders macht",
+      "heading": "Drei Tools in einem — günstiger und ein Login.",
+      "lead": "Die meisten Außendienstbetriebe zahlen separat für ein Außendienst-Tool, eine Stempeluhr und einen GPS-Tracker — drei Rechnungen, drei Logins und Stunden fürs Abgleichen. HBCField ist alle drei in einem System.",
+      "compare": {
+        "otherwise": "Was Sie sonst kaufen würden",
+        "typicalCost": "Typische Kosten",
+        "included": "enthalten",
+        "rows": [
+          {
+            "name": "Außendienstverwaltung",
+            "vendors": "Jobber, Housecall Pro",
+            "cost": "45–65 € / Nutzer"
+          },
+          {
+            "name": "Zeit & Anwesenheit",
+            "vendors": "Deputy, When I Work",
+            "cost": "5–8 € / Nutzer"
+          },
+          {
+            "name": "GPS / Routenverfolgung",
+            "vendors": "Hubstaff",
+            "cost": "8 € / Nutzer"
+          }
+        ],
+        "sumLabel": "Drei separate Abonnements",
+        "sumCost": "60–90 € / Nutzer",
+        "sumUs": "eine Plattform · ab 19 € / Nutzer"
+      },
+      "diffLabel": "Und Dinge, für die andere extra kassieren — oder die es gar nicht gibt",
+      "diffs": [
+        {
+          "title": "GPS mit exakter Hintergrund-Route",
+          "body": "Die tatsächlich gefahrene Strecke eines Technikers, erfasst selbst bei gesperrtem Handy. Premium selbst in der FSM-Welt — die meisten verstecken es hinter ihrem Top-Tarif."
+        },
+        {
+          "title": "Eine echte Überstunden-Engine",
+          "body": "Regelbasierte Überstunden-Erkennung, geozaunbasiertes Auto-Ausstempeln und ein Genehmigungsablauf — weit mehr als eine aufgesetzte Stempeluhr."
+        },
+        {
+          "title": "Multi-Org & teamübergreifende Delegation",
+          "body": "Franchises, Subunternehmer und Agenturen können viele Kundenorganisationen über ein Konto verwalten — Enterprise-Niveau, selten in KMU-Tools."
+        },
+        {
+          "title": "An Ihren Workflow anpassbar",
+          "body": "Benutzerdefinierte Felder, Auftragstypen, wiederkehrende Aufträge und Workflows sorgen dafür, dass sich das System an Ihre Arbeitsweise anpasst — eine Plattform, keine starre App."
+        }
+      ]
+    },
+    "pricing": {
+      "label": "(06) — Preise",
+      "heading": "Preise, die drei Tools ersetzen.",
+      "lead": "Zahlen Sie für die Büro-Plätze, ergänzen Sie das Feld für weniger. 14 Tage testen, keine Kreditkarte.",
+      "outcomes": [
+        {
+          "title": "Schluss mit dem Status-Anruf-Chaos",
+          "body": "Ein Live-Board und eine Karte ersetzen die „Wo bist du?“-Anrufe und die Tabelle am Feierabend."
+        },
+        {
+          "title": "Jede Stunde belegen",
+          "body": "Geozaunbasiertes Einstempeln und ein Prüfprotokoll machen Lohn-Streitigkeiten überflüssig."
+        },
+        {
+          "title": "Jeden Einsatz dokumentieren",
+          "body": "Fotos, Teile und unterschriebene Berichte bedeuten: Sie können immer genau zeigen, was getan wurde."
+        }
+      ],
+      "popular": "Beliebt",
+      "perUser": "/ Nutzer / Mon.",
+      "cta": "Kostenlos starten",
+      "note": "Feld-/Mobil-Plätze ab ~15 € · Jahresabrechnung = 2 Monate gratis · 14 Tage testen, keine Karte.",
+      "plans": [
+        {
+          "name": "Starter",
+          "price": "19 €",
+          "popular": false,
+          "desc": "Aufgaben, Anwesenheit, GPS, Dienstpläne & Mobil.",
+          "features": [
+            "Live-Dispositionsboard",
+            "Geozaun-Einstempeln",
+            "GPS mit exakter Route"
+          ]
+        },
+        {
+          "name": "Professional",
+          "price": "39 €",
+          "popular": true,
+          "desc": "Alles aus Starter, plus das komplette Feld-Toolkit.",
+          "features": [
+            "Serviceberichte & Anlagen",
+            "Überstunden-Engine",
+            "Wiederkehrend & benutzerdef. Felder",
+            "Rechnungsstellung"
+          ]
+        },
+        {
+          "name": "Business",
+          "price": "69 €",
+          "popular": false,
+          "desc": "Für Franchises, Agenturen & Multi-Standort-Betriebe.",
+          "features": [
+            "Multi-Org-Delegation",
+            "Prüfprotokoll & Workflows",
+            "Priorisierter Support"
+          ]
+        }
+      ]
+    }
+  },
   "common": {
     "save": "Speichern",
     "saveChanges": "Änderungen speichern",
@@ -2981,7 +3275,9 @@
       "websiteLabel": "Website: ",
       "supportLabel": "Support: "
     },
-    "footerRights": "HBC Group GmbH. Alle Rechte vorbehalten."
+    "footerRights": "HBC Group GmbH. Alle Rechte vorbehalten.",
+    "print": "Drucken / als PDF speichern",
+    "contents": "Inhalt"
   },
   "download": {
     "tagline": "Disponieren · Verfolgen · Liefern",

@@ -1,661 +1,625 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
+import { useTranslation } from 'react-i18next';
+import { AnimatePresence } from 'framer-motion';
+import { ArrowRight, ArrowDown, ArrowUpRight, ArrowUp, Check, Zap } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
-import {
-  motion,
-  useScroll,
-  useTransform,
-  useMotionValue,
-  useSpring,
-  useInView,
-} from 'framer-motion';
-import {
-  Radio,
-  Zap,
-  ClipboardCheck,
-  Users,
-  ArrowRight,
-  ShieldCheck,
-  Monitor,
-  Smartphone,
-  Globe,
-  MapPin,
-  Bell,
-  BarChart3,
-  FileCheck,
-} from 'lucide-react';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { useAuth } from '@/contexts/auth-context';
+import { HeroCanvas } from './_home/HeroCanvas';
+import { IntroVideo } from './_home/IntroVideo';
+import { LaptopShowcase } from './_home/LaptopShowcase';
+import { PhoneShowcase } from './_home/PhoneShowcase';
+import { usePrefersReducedMotion } from './_home/use-reduced-motion';
+import { useLenis } from './_home/use-lenis';
+import { scrollToHash } from './_home/lenis-bus';
+import { useReveal } from './_home/use-reveal';
+import { LoadingScreen } from './_home/LoadingScreen';
+import { asArray } from './_home/i18n-array';
 
 /* ═══════════════════════════════════════════════════════════
-   COMPONENTS
+   Monochrome studio palette
+   bg #0e1116 · text #d8d8d8 · emphasis #f2f2f0 · hairline white/8
+   display: Familjen Grotesk (400) · labels: Martian Mono
    ═══════════════════════════════════════════════════════════ */
 
-/** Magnetic spring wrapper — element subtly follows cursor */
-function Magnetic({ children, strength = 0.2 }: { children: ReactNode; strength?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 180, damping: 18 });
-  const sy = useSpring(y, { stiffness: 180, damping: 18 });
+const DISPLAY = 'font-[family:var(--font-familjen)]';
+const MONO = 'font-[family:var(--font-martian)]';
 
+/** Fade + rise reveal (progressive enhancement, always ends visible). */
+function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const ref = useReveal<HTMLDivElement>();
   return (
-    <motion.div
-      ref={ref}
-      style={{ x: sx, y: sy }}
-      onMouseMove={(e) => {
-        const r = ref.current!.getBoundingClientRect();
-        x.set((e.clientX - r.left - r.width / 2) * strength);
-        y.set((e.clientY - r.top - r.height / 2) * strength);
-      }}
-      onMouseLeave={() => { x.set(0); y.set(0); }}
-      className="inline-block"
-    >
+    <div ref={ref} className={`reveal ${className}`} style={{ transitionDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-/** 3D tilt card — follows cursor with spring physics */
-function TiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const xRaw = useMotionValue(0);
-  const yRaw = useMotionValue(0);
-  const rotateX = useSpring(useTransform(yRaw, [-0.5, 0.5], [14, -14]), { stiffness: 260, damping: 25 });
-  const rotateY = useSpring(useTransform(xRaw, [-0.5, 0.5], [-14, 14]), { stiffness: 260, damping: 25 });
-
+/** Masked line-rise reveal — each line slides up from behind a clip (the
+ *  studio-grade headline effect). Lines are explicit strings. */
+function LineReveal({ lines, className = '', delayStep = 0.08, nowrap = false }: { lines: string[]; className?: string; delayStep?: number; nowrap?: boolean }) {
+  const ref = useReveal<HTMLSpanElement>();
   return (
-    <motion.div
-      ref={ref}
-      style={{ rotateX, rotateY, transformPerspective: 800, transformStyle: 'preserve-3d' }}
-      onMouseMove={(e) => {
-        const r = ref.current!.getBoundingClientRect();
-        xRaw.set((e.clientX - r.left) / r.width - 0.5);
-        yRaw.set((e.clientY - r.top) / r.height - 0.5);
-      }}
-      onMouseLeave={() => { xRaw.set(0); yRaw.set(0); }}
-      className={`will-change-transform ${className}`}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-/** Masked text reveal — text slides up from behind a clip */
-function RevealLine({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
-  return (
-    <span className="inline-block overflow-hidden pb-2">
-      <motion.span
-        className="inline-block"
-        initial={{ y: '120%', rotateX: 40 }}
-        animate={{ y: '0%', rotateX: 0 }}
-        transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay }}
-      >
-        {children}
-      </motion.span>
+    <span ref={ref} className={`lr ${className}`}>
+      {lines.map((l, i) => (
+        <span key={i} className="lr-row">
+          <span className={`lr-in ${nowrap ? 'whitespace-nowrap' : ''}`} style={{ transitionDelay: `${i * delayStep}s` }}>
+            {l}
+          </span>
+        </span>
+      ))}
     </span>
   );
 }
 
-/** Section wrapper — fades + slides in when scrolled into view */
-function Reveal({
-  children,
-  className = '',
-  delay = 0,
-  y = 80,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-  y?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
+/** Mono count-up with a wall-clock fallback (never stuck at 0). */
+function Count({ to }: { to: number }) {
+  const reduced = usePrefersReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (reduced) { setN(to); return; }
+    let raf = 0;
+    let started = false;
+    const run = () => {
+      if (started) return;
+      started = true;
+      let start = 0;
+      const dur = 1200;
+      const tick = (t: number) => {
+        if (!start) start = t;
+        const p = Math.min(1, (t - start) / dur);
+        setN(Math.round((1 - Math.pow(1 - p, 3)) * to));
+        if (p < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) { run(); io.disconnect(); } }, { threshold: 0.5 });
+    io.observe(el);
+    const fb = setTimeout(() => setN(to), 1600);
+    return () => { cancelAnimationFrame(raf); clearTimeout(fb); io.disconnect(); };
+  }, [reduced, to]);
+  return <span ref={ref} className="tabular-nums">{n}</span>;
+}
 
+function Label({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <span className={`${MONO} text-[11px] uppercase tracking-[0.28em] text-white/40 ${className}`}>{children}</span>;
+}
+
+/** Cycles through `words`, revealing each new word letter-by-letter from behind
+ *  a clip — the trionn headline treatment. Reduced-motion shows the first word. */
+function CyclingWord({ words, className = '' }: { words: string[]; className?: string }) {
+  const reduced = usePrefersReducedMotion();
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (reduced) return;
+    const id = setInterval(() => setI((v) => (v + 1) % words.length), 2600);
+    return () => clearInterval(id);
+  }, [reduced, words.length]);
+  const word = words[i];
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y, rotateX: 4 }}
-      animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
-      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay }}
-      className={className}
-      style={{ transformPerspective: 1200 }}
-    >
-      {children}
-    </motion.div>
+    <span className={`inline-flex ${className}`} aria-label={word}>
+      {word.split('').map((ch, idx) => (
+        <span key={`${i}-${idx}`} className="cw-row" aria-hidden>
+          <span className="cw-in" style={{ animationDelay: `${idx * 0.035}s` }}>{ch}</span>
+        </span>
+      ))}
+    </span>
   );
 }
-
-/** Animated counter — spring-driven number */
-function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true });
-  const mv = useMotionValue(0);
-  const spring = useSpring(mv, { stiffness: 40, damping: 25 });
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (inView) mv.set(to);
-  }, [inView, mv, to]);
-
-  useEffect(() => {
-    return spring.on('change', (v) => setDisplay(Math.round(v)));
-  }, [spring]);
-
-  return <span ref={ref}>{display}{suffix}</span>;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MAIN PAGE
-   ═══════════════════════════════════════════════════════════ */
 
 export default function Home() {
   const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const reduced = usePrefersReducedMotion();
+  useLenis(!reduced);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) router.push('/dashboard');
   }, [isLoading, isAuthenticated, router]);
 
-  /* hero scroll parallax — use window scroll (no ref needed) */
-  const { scrollY } = useScroll();
-  const heroOp = useTransform(scrollY, [0, 600], [1, 0]);
-  const heroSc = useTransform(scrollY, [0, 600], [1, 0.88]);
-  const heroY = useTransform(scrollY, [0, 600], [0, -120]);
-
-  /* mouse spotlight (ref, no re-renders) */
-  const spotRef = useRef<HTMLDivElement>(null);
-  const onMouse = useCallback((e: React.MouseEvent) => {
-    if (spotRef.current)
-      spotRef.current.style.background = `radial-gradient(1000px at ${e.clientX}px ${e.clientY}px, rgba(16,185,129,0.06), transparent 40%)`;
+  const [showIntro, setShowIntro] = useState(true);
+  const introDecided = useRef(false);
+  useEffect(() => {
+    // guard against React StrictMode running this effect twice in dev — without
+    // it, the 1st run sets the flag and the 2nd run sees it and hides the loader.
+    if (introDecided.current) return;
+    introDecided.current = true;
+    if (sessionStorage.getItem('hbc_intro_seen')) { setShowIntro(false); return; }
+    sessionStorage.setItem('hbc_intro_seen', '1');
   }, []);
 
-  /* nav scroll */
+  // Navbar gets a frosted background once you scroll off the hero, so the links
+  // stay legible over content instead of floating on nothing.
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', fn, { passive: true });
-    return () => window.removeEventListener('scroll', fn);
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#050505]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-      </div>
-    );
-  }
+  // On-page nav links → smooth-scroll via Lenis (native anchor jumps aren't smooth).
+  const navTo = (hash: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    scrollToHash(hash);
+  };
+  const backToTop = (e: React.MouseEvent) => {
+    e.preventDefault();
+    scrollToHash('#top', 0);
+  };
+  // Demo request → open a prefilled email to the office inbox (no backend needed).
+  const handleDemoRequest = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const email = String(new FormData(e.currentTarget).get('email') || '').trim();
+    const subject = encodeURIComponent('Demo request — HBCField');
+    const body = encodeURIComponent(`Hi HBCField team,\n\nI'd like to see a demo of HBCField.\n\nWork email: ${email}\n`);
+    window.location.href = `mailto:office@hbcfield.com?subject=${subject}&body=${body}`;
+  };
 
-  /* ─── MARQUEE WORDS ─── */
-  const marqueeText = 'DISPATCH \u00B7 TRACK \u00B7 DELIVER \u00B7 MANAGE \u00B7 REPORT \u00B7 SCHEDULE \u00B7 ';
+
+  const steps = asArray<{ key: string; desc: string }>(t('home.process.steps', { returnObjects: true }));
 
   return (
     <>
       <style>{`
-        /* ── grain ── */
-        .grain::after{content:'';position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
-          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-          background-repeat:repeat;background-size:256px}
-
-        /* ── aurora ── */
-        @keyframes au1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(5%,-12%) scale(1.12)}66%{transform:translate(-4%,8%) scale(.95)}}
-        @keyframes au2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-9%,6%) scale(1.08)}66%{transform:translate(5%,-9%) scale(1.12)}}
-        @keyframes au3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7%,10%) scale(1.1)}}
-        .au1{animation:au1 18s ease-in-out infinite}
-        .au2{animation:au2 24s ease-in-out infinite}
-        .au3{animation:au3 30s ease-in-out infinite}
-
-        /* ── float ── */
-        @keyframes fl1{0%,100%{transform:translate3d(0,0,0) rotate(12deg)}50%{transform:translate3d(25px,-35px,50px) rotate(22deg)}}
-        @keyframes fl2{0%,100%{transform:translate3d(0,0,0) rotate(-6deg)}50%{transform:translate3d(-35px,25px,30px) rotate(-16deg)}}
-        @keyframes fl3{0%,100%{transform:translate3d(0,0,0) rotate(3deg)}50%{transform:translate3d(18px,20px,25px) rotate(10deg)}}
-        .fl1{animation:fl1 12s ease-in-out infinite}
-        .fl2{animation:fl2 16s ease-in-out infinite}
-        .fl3{animation:fl3 20s ease-in-out infinite}
-
-        /* ── marquee ── */
-        @keyframes mrq{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-        .mrq{animation:mrq 45s linear infinite}
-        .mrq:hover{animation-play-state:paused}
-
-        /* ── helpers ── */
-        .fd{font-family:var(--font-outfit,'Outfit'),'Inter',system-ui,sans-serif}
-        .gl{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-        .gl:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
-        .tg{background:linear-gradient(135deg,#10b981 0%,#3b82f6 50%,#8b5cf6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .reveal { opacity: 0; transform: translateY(20px); transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1); }
+        .reveal.is-visible { opacity: 1; transform: none; }
+        .lr-row { display: block; overflow: hidden; }
+        .lr-in { display: block; transform: translateY(110%); transition: transform .95s cubic-bezier(.22,1,.36,1); }
+        .lr.is-visible .lr-in { transform: translateY(0); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* cycling word — each letter rises from behind a clip (trionn-style) */
+        .cw-row { display: inline-block; overflow: hidden; vertical-align: bottom; }
+        .cw-in { display: inline-block; transform: translateY(110%); animation: cw-rise .6s cubic-bezier(.22,1,.36,1) forwards; }
+        @keyframes cw-rise { to { transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) {
+          .reveal { opacity: 1; transform: none; transition: none; }
+          .lr-in { transform: none; transition: none; }
+          .cw-in { transform: none; animation: none; }
+        }
       `}</style>
+      <noscript><style>{`.reveal{opacity:1!important;transform:none!important}.lr-in{transform:none!important}`}</style></noscript>
 
-      <div className="grain bg-[#050505] text-white min-h-screen overflow-x-hidden selection:bg-emerald-500/30">
+      <AnimatePresence>
+        {showIntro && <LoadingScreen reduced={reduced} onDone={() => setShowIntro(false)} />}
+      </AnimatePresence>
 
-        {/* ═════════ NAV ═════════ */}
-        <motion.nav
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-          className={`fixed top-0 inset-x-0 z-50 px-6 transition-all duration-500 ${
-            scrolled ? 'py-3 bg-[#050505]/70 backdrop-blur-2xl border-b border-white/[.04]' : 'py-5'
-          }`}
-        >
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <AnimatedLogo size="small" variant="light" />
-            <div className="flex items-center gap-5">
-              <Link href="/download" className="text-sm text-zinc-500 hover:text-white transition-colors hidden sm:block">
-                {t('landing.nav.getApp', 'Get the app')}
-              </Link>
-              <Link href="/login" className="text-sm text-zinc-500 hover:text-white transition-colors hidden sm:block">
-                {t('landing.nav.signIn')}
-              </Link>
-              <Magnetic>
-                <Link href="/login" className="text-sm px-5 py-2.5 rounded-full bg-card/[.08] hover:bg-card/[.14] text-white font-medium transition-all duration-300 border border-white/[.08] hover:border-white/[.16]">
-                  {t('landing.nav.getStarted')}
-                </Link>
-              </Magnetic>
-            </div>
-          </div>
-        </motion.nav>
-
-        {/* ═════════ HERO ═════════ */}
-        <section
-          onMouseMove={onMouse}
-          className="relative min-h-[110vh] flex items-center justify-center px-6 pt-28 pb-32 overflow-hidden"
-        >
-          {/* spotlight */}
-          <div ref={spotRef} className="absolute inset-0 pointer-events-none z-[1]" />
-
-          {/* aurora blobs */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-[30%] -left-[15%] w-[900px] h-[900px] rounded-full bg-emerald-500/[.09] blur-[180px] au1" />
-            <div className="absolute -bottom-[20%] -right-[15%] w-[800px] h-[800px] rounded-full bg-blue-600/[.07] blur-[160px] au2" />
-            <div className="absolute top-[10%] right-[20%] w-[650px] h-[650px] rounded-full bg-violet-500/[.04] blur-[150px] au3" />
-          </div>
-
-          {/* dot grid */}
-          <div className="absolute inset-0 opacity-[.02]" style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }} />
-
-          {/* floating 3D geometry */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ perspective: '1200px' }}>
-            <div className="absolute top-[12%] right-[8%] w-48 h-48 rounded-[2rem] border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[.06] to-transparent fl1" />
-            <div className="absolute bottom-[22%] left-[6%] w-32 h-32 rounded-full border border-blue-500/10 bg-blue-500/[.04] fl2" />
-            <div className="absolute top-[45%] left-[18%] w-20 h-20 rounded-xl border border-violet-400/8 fl3" />
-            <div className="absolute bottom-[35%] right-[15%] w-14 h-14 rounded-lg border border-emerald-400/6 fl1" style={{ animationDelay: '-6s' }} />
-            <div className="absolute top-[22%] left-[35%] w-10 h-10 rounded-full border border-blue-300/6 fl2" style={{ animationDelay: '-4s' }} />
-          </div>
-
-          {/* bottom fade */}
-          <div className="absolute bottom-0 inset-x-0 h-56 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none z-[2]" />
-
-          {/* content — scroll parallax */}
-          <motion.div
-            className="relative z-10 text-center max-w-5xl mx-auto"
-            style={{ opacity: heroOp, scale: heroSc, y: heroY }}
-          >
-            {/* pill badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 24, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-              className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-emerald-500/15 bg-emerald-500/[.05] mb-12"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              <span className="text-[11px] text-emerald-300/70 font-medium tracking-[.18em] uppercase">
-                {t('landing.hero.badge')}
-              </span>
-            </motion.div>
-
-            {/* headline — masked reveal */}
-            <h1 className="fd font-extrabold text-[clamp(3rem,9vw,8.5rem)] leading-[.88] tracking-[-.045em] mb-10">
-              <RevealLine delay={0.4}>{t('landing.hero.headline1')}</RevealLine>
-              <br />
-              <span className="tg">
-                <RevealLine delay={0.6}>{t('landing.hero.headline2')}</RevealLine>
-              </span>
-            </h1>
-
-            {/* sub */}
-            <motion.p
-              initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.85 }}
-              className="text-[clamp(1rem,2vw,1.25rem)] text-zinc-400 max-w-2xl mx-auto mb-16 leading-relaxed"
-            >
-              {t('landing.hero.subtitle')}
-            </motion.p>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 1.05 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Magnetic strength={0.25}>
-                <Link
-                  href="/login"
-                  className="group relative inline-flex items-center justify-center gap-3 px-10 py-[18px] rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-lg transition-all duration-400 hover:shadow-[0_0_60px_rgba(16,185,129,0.35)]"
-                >
-                  {t('landing.hero.ctaPrimary')}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />
-                </Link>
-              </Magnetic>
-              <Magnetic strength={0.25}>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center justify-center px-10 py-[18px] rounded-2xl border border-zinc-700/60 hover:border-zinc-500 text-zinc-300 hover:text-white font-semibold text-lg transition-all duration-400"
-                >
-                  {t('landing.hero.ctaSecondary')}
-                </Link>
-              </Magnetic>
-            </motion.div>
-          </motion.div>
-        </section>
-
-        {/* ═════════ MARQUEE ═════════ */}
-        <div className="relative border-y border-white/[.04] py-6 overflow-hidden">
-          <div className="mrq flex whitespace-nowrap">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <span key={i} className="fd font-extrabold text-[clamp(2rem,5vw,4.5rem)] text-white/[.03] mx-2 select-none tracking-[.04em]">
-                {marqueeText}
-              </span>
-            ))}
-          </div>
+      {isLoading ? (
+        <div className="flex min-h-screen items-center justify-center bg-[#0e1116]">
+          <div className="h-6 w-6 animate-spin rounded-full border border-white/20 border-t-white/70" />
         </div>
+      ) : (
+        <div className={`min-h-screen bg-[#0e1116] text-[#d8d8d8] antialiased selection:bg-white/20 ${DISPLAY}`}>
+          {/* corner registration marks (fixed frame) */}
+          <FramePlus />
 
-        {/* ═════════ FEATURES — bento grid ═════════ */}
-        <section className="relative py-36 sm:py-44 px-6">
-          <div className="max-w-6xl mx-auto">
-            <Reveal className="text-center mb-24">
-              <span className="text-[11px] text-emerald-400/50 font-medium tracking-[.2em] uppercase mb-5 block">
-                {t('landing.features.sectionLabel')}
-              </span>
-              <h2 className="fd font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight leading-tight">
-                {t('landing.features.sectionTitle1')}
-                <br />
-                <span className="tg">{t('landing.features.sectionTitle2')}</span>
-              </h2>
-            </Reveal>
+          {/* ══════ NAV ══════ */}
+          <nav className={`fixed inset-x-0 top-0 z-40 px-6 transition-all duration-300 sm:px-10 ${scrolled ? 'border-b border-white/[0.08] bg-[#050608]/70 py-3 backdrop-blur-xl' : 'border-b border-transparent py-5'}`}>
+            <div className="mx-auto flex max-w-[1600px] items-center justify-between">
+              <AnimatedLogo size="small" variant="light" />
+              <div className="flex items-center gap-7">
+                <a href="#work" onClick={navTo('#work')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.platform')}</a>
+                <a href="#how" onClick={navTo('#how')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.process')}</a>
+                <a href="#field" onClick={navTo('#field')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white sm:block`}>{t('home.nav.app')}</a>
+                <a href="#pricing" onClick={navTo('#pricing')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.pricing')}</a>
+                <span className="[&_button]:!text-white/60 [&_button:hover]:!text-white [&_button]:hover:!bg-white/10">
+                  <LanguageSwitcher />
+                </span>
+                <Link href="/login" className={`${MONO} inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-white/80 transition-colors hover:border-white/50 hover:text-white`}>
+                  {t('home.nav.signIn')}
+                </Link>
+              </div>
+            </div>
+          </nav>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-              {/* large card 1 */}
-              <Reveal className="md:col-span-7" delay={0.1}>
-                <TiltCard>
-                  <div className="gl rounded-3xl p-8 sm:p-10 h-full group relative overflow-hidden min-h-[260px] transition-all duration-500">
-                    <div className="absolute top-0 right-0 w-60 h-60 rounded-full bg-emerald-500/[.06] blur-[100px] group-hover:bg-emerald-500/[.1] transition-all duration-700" />
-                    <div className="relative" style={{ transform: 'translateZ(30px)' }}>
-                      <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                        <Radio className="w-7 h-7 text-emerald-400" />
-                      </div>
-                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.realTimeTracking')}</h3>
-                      <p className="text-zinc-500 leading-relaxed max-w-md text-[15px]">
-                        {t('landing.features.realTimeTrackingDesc')}
-                      </p>
-                    </div>
-                  </div>
-                </TiltCard>
+          {/* ══════ HERO ══════ */}
+          <section id="top" className="relative flex min-h-screen flex-col justify-center overflow-hidden px-6 sm:px-10">
+            {/* the logo, rebuilt as an interactive 3D faceted gemstone / crystal mark, is the centrepiece */}
+            <div className="absolute inset-0"><HeroCanvas interactive={!reduced} /></div>
+
+            {/* headline top-left with a cycling last word (trionn treatment) */}
+            <div className="pointer-events-none absolute left-6 top-28 sm:left-10 sm:top-32">
+              <Reveal>
+                <h1 className={`${DISPLAY} text-[clamp(2.4rem,6.5vw,5.5rem)] font-normal leading-[0.96] tracking-[-0.02em] text-[#efefec]`}>
+                  {t('home.hero.line1')}<br />
+                  {t('home.hero.under')}{' '}
+                  <CyclingWord words={asArray<string>(t('home.hero.words', { returnObjects: true }))} className="align-baseline" />.
+                </h1>
               </Reveal>
-
-              {/* small card 2 */}
-              <Reveal className="md:col-span-5" delay={0.2}>
-                <TiltCard>
-                  <div className="gl rounded-3xl p-8 sm:p-10 h-full group relative overflow-hidden min-h-[260px] transition-all duration-500">
-                    <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-blue-500/[.06] blur-[80px] group-hover:bg-blue-500/[.1] transition-all duration-700" />
-                    <div className="relative" style={{ transform: 'translateZ(30px)' }}>
-                      <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                        <Zap className="w-7 h-7 text-blue-400" />
-                      </div>
-                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.smartDispatch')}</h3>
-                      <p className="text-zinc-500 leading-relaxed text-[15px]">
-                        {t('landing.features.smartDispatchDesc')}
-                      </p>
-                    </div>
-                  </div>
-                </TiltCard>
-              </Reveal>
-
-              {/* small card 3 */}
-              <Reveal className="md:col-span-5" delay={0.3}>
-                <TiltCard>
-                  <div className="gl rounded-3xl p-8 sm:p-10 h-full group relative overflow-hidden min-h-[260px] transition-all duration-500">
-                    <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-violet-500/[.06] blur-[80px] group-hover:bg-violet-500/[.1] transition-all duration-700" />
-                    <div className="relative" style={{ transform: 'translateZ(30px)' }}>
-                      <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                        <ClipboardCheck className="w-7 h-7 text-violet-400" />
-                      </div>
-                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.serviceReports')}</h3>
-                      <p className="text-zinc-500 leading-relaxed text-[15px]">
-                        {t('landing.features.serviceReportsDesc')}
-                      </p>
-                    </div>
-                  </div>
-                </TiltCard>
-              </Reveal>
-
-              {/* large card 4 */}
-              <Reveal className="md:col-span-7" delay={0.4}>
-                <TiltCard>
-                  <div className="gl rounded-3xl p-8 sm:p-10 h-full group relative overflow-hidden min-h-[260px] transition-all duration-500">
-                    <div className="absolute bottom-0 left-0 w-60 h-60 rounded-full bg-amber-500/[.05] blur-[100px] group-hover:bg-amber-500/[.09] transition-all duration-700" />
-                    <div className="relative" style={{ transform: 'translateZ(30px)' }}>
-                      <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                        <Users className="w-7 h-7 text-amber-400" />
-                      </div>
-                      <h3 className="fd font-bold text-2xl mb-3">{t('landing.features.teamManagement')}</h3>
-                      <p className="text-zinc-500 leading-relaxed max-w-md text-[15px]">
-                        {t('landing.features.teamManagementDesc')}
-                      </p>
-                    </div>
-                  </div>
-                </TiltCard>
+              <Reveal delay={0.15} className="pointer-events-auto mt-8">
+                <Link href="/login" className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+                  {t('home.hero.requestDemo')}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </Link>
               </Reveal>
             </div>
-          </div>
-        </section>
 
-        {/* ═════════ WORKFLOW ═════════ */}
-        <section className="relative py-36 sm:py-44 px-6">
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-blue-500/[.025] rounded-full blur-[200px] pointer-events-none" />
+            {/* scroll cue */}
+            <div className="pointer-events-none absolute bottom-8 left-6 flex items-center gap-3 sm:left-10">
+              <ArrowDown className="h-4 w-4 animate-bounce text-white/40" />
+              <Label>{t('home.hero.scroll')}</Label>
+            </div>
 
-          <div className="max-w-5xl mx-auto relative">
-            <Reveal className="text-center mb-24">
-              <span className="text-[11px] text-blue-400/50 font-medium tracking-[.2em] uppercase mb-5 block">
-                {t('landing.workflow.sectionLabel')}
-              </span>
-              <h2 className="fd font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight">
-                {t('landing.workflow.sectionTitle')}
-              </h2>
-            </Reveal>
+            {/* interaction hint — electric + product ("the field" = electric field) */}
+            <div className="pointer-events-none absolute bottom-8 left-1/2 hidden -translate-x-1/2 items-center gap-2 md:flex">
+              <Zap className="h-3.5 w-3.5 text-[#5B9BD5]" />
+              <Label className="text-white/40">{t('home.hero.hint')}</Label>
+            </div>
 
-            <div className="grid md:grid-cols-4 gap-12 md:gap-6 relative">
-              {/* connecting gradient line */}
-              <Reveal className="hidden md:block absolute top-12 left-[calc(12.5%+32px)] right-[calc(12.5%+32px)] h-px">
-                <motion.div
-                  className="w-full h-full"
-                  initial={{ scaleX: 0 }}
-                  whileInView={{ scaleX: 1 }}
-                  viewport={{ once: true, margin: '-100px' }}
-                  transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
-                  style={{
-                    transformOrigin: 'left',
-                    background: 'linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6, #f59e0b)',
-                    opacity: 0.2,
-                  }}
+            {/* meta block */}
+            <div className="pointer-events-none absolute bottom-8 right-6 max-w-[16rem] text-right sm:right-10">
+              <div className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-white/50`}>{t('home.hero.meta')}</div>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/40">{t('home.hero.metaDesc')}</p>
+            </div>
+          </section>
+
+          {/* ══════ POSITIONING ══════ */}
+          <section className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.whatItIs.label')}</Label>
+              <h2 className={`${DISPLAY} text-[clamp(1.7rem,4vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.01em] text-[#e8e8e5]`}>
+                <LineReveal
+                  nowrap
+                  lines={asArray<string>(t('home.whatItIs.lines', { returnObjects: true }))}
                 />
-              </Reveal>
+              </h2>
+            </div>
+          </section>
 
-              {([
-                { n: '01', titleKey: 'landing.workflow.step1Title', descKey: 'landing.workflow.step1Desc', bg: 'bg-emerald-500', glow: '#10b981' },
-                { n: '02', titleKey: 'landing.workflow.step2Title', descKey: 'landing.workflow.step2Desc', bg: 'bg-blue-500', glow: '#3b82f6' },
-                { n: '03', titleKey: 'landing.workflow.step3Title', descKey: 'landing.workflow.step3Desc', bg: 'bg-violet-500', glow: '#8b5cf6' },
-                { n: '04', titleKey: 'landing.workflow.step4Title', descKey: 'landing.workflow.step4Desc', bg: 'bg-amber-500', glow: '#f59e0b' },
-              ] as const).map((s, i) => (
-                <Reveal key={s.n} delay={0.15 + i * 0.12} className="text-center">
-                  <motion.div
-                    className={`w-24 h-24 rounded-[1.25rem] ${s.bg} flex items-center justify-center mx-auto mb-8 fd text-base font-bold relative z-10`}
-                    whileHover={{ scale: 1.1, rotate: 4 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                    style={{ boxShadow: `0 0 60px ${s.glow}30` }}
-                  >
-                    {s.n}
-                  </motion.div>
-                  <h3 className="fd font-semibold text-xl mb-2">{t(s.titleKey)}</h3>
-                  <p className="text-sm text-zinc-500 leading-relaxed max-w-[200px] mx-auto">{t(s.descKey)}</p>
+          {/* ══════ INTRO VIDEO ══════ */}
+          <section className="border-t border-white/[0.08] px-6 py-24 sm:px-10 sm:py-32">
+            <div className="mx-auto max-w-[1600px]">
+              <Reveal>
+                <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+                  <div>
+                    <Label className="mb-6 block">{t('home.video.label')}</Label>
+                    <h2 className={`${DISPLAY} max-w-[16ch] text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal leading-[1.03] tracking-[-0.01em] text-[#e8e8e5]`}>
+                      {t('home.video.title')}
+                    </h2>
+                  </div>
+                  <p className="max-w-[36ch] text-[13px] leading-relaxed text-white/45">
+                    {t('home.video.desc')}
+                  </p>
+                </div>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <div className="mx-auto max-w-[1120px]">
+                  <IntroVideo />
+                </div>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* ══════ KEY FACTS ══════ */}
+          <section className="border-t border-white/[0.08] px-6 py-24 sm:px-10">
+            <div className="mx-auto grid max-w-[1600px] gap-16 sm:grid-cols-3">
+              {(() => {
+                const facts = asArray<{ unit: string; label: string; desc: string }>(t('home.facts', { returnObjects: true }));
+                return [
+                  { v: <><Count to={25} />{facts[0]?.unit}</>, l: facts[0]?.label, d: facts[0]?.desc },
+                  { v: <><Count to={90} />{facts[1]?.unit}</>, l: facts[1]?.label, d: facts[1]?.desc },
+                  { v: <><Count to={2} />{facts[2]?.unit}</>, l: facts[2]?.label, d: facts[2]?.desc },
+                ];
+              })().map((f, i) => (
+                <Reveal key={i} delay={i * 0.08}>
+                  <div className={`${DISPLAY} text-[clamp(3rem,7vw,5.5rem)] font-normal leading-none text-[#efefec]`}>{f.v}</div>
+                  <div className={`${MONO} mt-5 text-[11px] uppercase tracking-[0.22em] text-white/60`}>{f.l}</div>
+                  <p className="mt-3 max-w-[26ch] text-[13px] leading-relaxed text-white/40">{f.d}</p>
                 </Reveal>
               ))}
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ═════════ PLATFORMS / ROLES ═════════ */}
-        <section className="relative py-36 sm:py-44 px-6">
-          <div className="max-w-5xl mx-auto">
-            <Reveal className="text-center mb-24">
-              <span className="text-[11px] text-violet-400/50 font-medium tracking-[.2em] uppercase mb-5 block">
-                {t('landing.platform.sectionLabel')}
-              </span>
-              <h2 className="fd font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight leading-tight">
-                {t('landing.platform.sectionTitle1')}
-                <br />
-                <span className="tg">{t('landing.platform.sectionTitle2')}</span>
-              </h2>
-            </Reveal>
+          {/* ══════ PRODUCT SHOWCASE — scroll-driven 3D laptop ══════ */}
+          <LaptopShowcase />
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {([
-                {
-                  icon: ShieldCheck,
-                  roleKey: 'landing.platform.adminRole',
-                  tagKey: 'landing.platform.adminTag',
-                  descKey: 'landing.platform.adminDesc',
-                  accent: 'emerald' as const,
-                },
-                {
-                  icon: Monitor,
-                  roleKey: 'landing.platform.dispatcherRole',
-                  tagKey: 'landing.platform.dispatcherTag',
-                  descKey: 'landing.platform.dispatcherDesc',
-                  accent: 'blue' as const,
-                },
-                {
-                  icon: Smartphone,
-                  roleKey: 'landing.platform.technicianRole',
-                  tagKey: 'landing.platform.technicianTag',
-                  descKey: 'landing.platform.technicianDesc',
-                  accent: 'violet' as const,
-                },
-              ] as const).map((r, i) => {
-                const Icon = r.icon;
-                const map = {
-                  emerald: { icon: 'text-emerald-400', border: 'border-emerald-500/10 hover:border-emerald-500/30', pill: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/15', orb: 'bg-emerald-500' },
-                  blue:    { icon: 'text-blue-400',    border: 'border-blue-500/10 hover:border-blue-500/30',    pill: 'bg-blue-500/10 text-blue-400 border-blue-500/15',    orb: 'bg-blue-500' },
-                  violet:  { icon: 'text-violet-400',  border: 'border-violet-500/10 hover:border-violet-500/30',  pill: 'bg-violet-500/10 text-violet-400 border-violet-500/15',  orb: 'bg-violet-500' },
-                };
-                const c = map[r.accent];
-
-                return (
-                  <Reveal key={r.roleKey} delay={0.1 + i * 0.12}>
-                    <TiltCard>
-                      <div className={`gl rounded-3xl p-8 sm:p-10 h-full border ${c.border} transition-all duration-500 group relative overflow-hidden`}>
-                        {/* accent orb */}
-                        <div className={`absolute -bottom-10 -right-10 w-40 h-40 ${c.orb}/[.04] rounded-full blur-[60px] group-hover:opacity-150 transition-all duration-700`} />
-
-                        <div className="relative">
-                          <Icon className={`w-12 h-12 ${c.icon} mb-7 group-hover:scale-110 transition-transform duration-500`} style={{ transform: 'translateZ(25px)' }} />
-                          <div className="flex items-center gap-3 mb-5" style={{ transform: 'translateZ(18px)' }}>
-                            <h3 className="fd font-bold text-[1.7rem] leading-none">{t(r.roleKey)}</h3>
-                            <span className={`text-[10px] px-2.5 py-1 rounded-full border ${c.pill} font-medium tracking-wider`}>
-                              {t(r.tagKey)}
-                            </span>
-                          </div>
-                          <p className="text-[15px] text-zinc-500 leading-relaxed" style={{ transform: 'translateZ(10px)' }}>
-                            {t(r.descKey)}
-                          </p>
-                        </div>
-                      </div>
-                    </TiltCard>
-                  </Reveal>
-                );
-              })}
+          {/* ══════ HOW IT WORKS — process steps (flows with the page, no scroll-trap) ══════ */}
+          <section id="how" className="border-t border-white/[0.08] py-24 sm:py-32">
+            <div className="mx-auto max-w-[1600px] px-6 sm:px-10">
+              <div className="mb-14">
+                <Label className="mb-6 block">{t('home.process.label')}</Label>
+                <h2 className={`${DISPLAY} max-w-[18ch] text-[clamp(1.7rem,4vw,3rem)] font-normal leading-[1.05] tracking-[-0.01em] text-[#e8e8e5]`}>
+                  {t('home.process.heading')}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
+                {steps.map((s, i) => (
+                  <div key={s.key} className="flex min-h-[14rem] flex-col justify-between border border-white/[0.1] bg-white/[0.015] p-7">
+                    <div className={`${MONO} text-[11px] uppercase tracking-[0.22em] text-white/40`}>{String(i + 1).padStart(2, '0')} / {s.key}</div>
+                    <p className={`${DISPLAY} mt-8 text-[clamp(1.15rem,1.5vw,1.4rem)] font-normal leading-[1.15] text-[#e4e4e1]`}>{s.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ═════════ STATS ═════════ */}
-        <section className="relative py-28 px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {([
-                { icon: BarChart3, value: 10, suffix: '+', labelKey: 'landing.stats.taskStatuses', descKey: 'landing.stats.taskStatusesDesc', accent: 'text-emerald-400' },
-                { icon: MapPin, value: 3, suffix: '', labelKey: 'landing.stats.userRoles', descKey: 'landing.stats.userRolesDesc', accent: 'text-blue-400' },
-                { icon: FileCheck, value: 100, suffix: '%', labelKey: 'landing.stats.paperless', descKey: 'landing.stats.paperlessDesc', accent: 'text-violet-400' },
-                { icon: Bell, value: 24, suffix: '/7', labelKey: 'landing.stats.realTime', descKey: 'landing.stats.realTimeDesc', accent: 'text-amber-400' },
-              ] as const).map((s, i) => {
-                const Icon = s.icon;
-                return (
-                  <Reveal key={s.labelKey} delay={i * 0.1}>
-                    <div className="text-center py-8">
-                      <Icon className={`w-6 h-6 ${s.accent} mx-auto mb-4 opacity-60`} />
-                      <div className="fd font-extrabold text-5xl sm:text-6xl tracking-tight mb-2">
-                        <Counter to={s.value} suffix={s.suffix} />
-                      </div>
-                      <div className="text-sm text-zinc-300 font-medium mb-1">{t(s.labelKey)}</div>
-                      <div className="text-xs text-zinc-600">{t(s.descKey)}</div>
+          {/* ══════ FIELD / MOBILE ══════ */}
+          <section className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.field.label')}</Label>
+              <h2 className={`${DISPLAY} text-[clamp(2rem,6vw,4.5rem)] font-normal leading-[0.98] tracking-[-0.02em] text-[#efefec]`}>
+                <LineReveal nowrap lines={asArray<string>(t('home.field.lines', { returnObjects: true }))} />
+              </h2>
+              <div className="mt-16 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+                {asArray<{ title: string; desc: string }>(t('home.field.features', { returnObjects: true })).map((x, i) => (
+                  <Reveal key={x.title} delay={i * 0.06}>
+                    <div className="border-t border-white/[0.12] pt-5">
+                      <h3 className="text-[15px] font-medium text-[#e6e6e3]">{x.title}</h3>
+                      <p className="mt-2 text-[13px] leading-relaxed text-white/45">{x.desc}</p>
                     </div>
                   </Reveal>
-                );
-              })}
+                ))}
+              </div>
+              <Reveal delay={0.1} className="mt-14">
+                <Link href="/download" className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+                  {t('home.field.getApp')}
+                  <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+              </Reveal>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ═════════ FINAL CTA ═════════ */}
-        <section className="relative py-36 sm:py-44 px-6 overflow-hidden">
-          {/* radial glow */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-[600px] h-[600px] bg-emerald-500/[.04] rounded-full blur-[180px]" />
-          </div>
+          {/* ══════ PHONE SHOWCASE — scroll-driven mobile app ══════ */}
+          <PhoneShowcase />
 
-          <Reveal className="relative max-w-3xl mx-auto text-center">
-            <h2 className="fd font-bold text-[clamp(2rem,6vw,4rem)] tracking-tight leading-[1.05] mb-8">
-              {t('landing.cta.title1')}
-              <br />
-              {t('landing.cta.title2')}
-            </h2>
-            <p className="text-zinc-500 mb-14 text-lg max-w-xl mx-auto">
-              {t('landing.cta.subtitle')}
-            </p>
-            <Magnetic strength={0.2}>
-              <Link
-                href="/login"
-                className="group inline-flex items-center gap-3 px-12 py-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xl transition-all duration-400 hover:shadow-[0_0_80px_rgba(16,185,129,0.3)]"
-              >
-                {t('landing.cta.button')}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
-              </Link>
-            </Magnetic>
-          </Reveal>
-        </section>
+          {/* ══════ WHY / THREE-IN-ONE + DIFFERENTIATORS ══════ */}
+          <section className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.why.label')}</Label>
+              <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
+                {t('home.why.heading')}
+              </h2>
+              <p className="mt-6 max-w-[54ch] text-[15px] leading-relaxed text-white/50">{t('home.why.lead')}</p>
 
-        {/* ═════════ FOOTER ═════════ */}
-        <footer className="border-t border-white/[.04] py-12 px-6">
-          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-            <AnimatedLogo size="small" variant="light" />
-            <span className="text-xs text-zinc-700">&copy; {t('common.allRightsReserved', { year: new Date().getFullYear() })}</span>
-            <div className="flex gap-6 text-xs text-zinc-700">
-              <span className="hover:text-zinc-400 cursor-pointer transition-colors">{t('landing.footer.privacy')}</span>
-              <span className="hover:text-zinc-400 cursor-pointer transition-colors">{t('landing.footer.terms')}</span>
+              {/* comparison */}
+              <Reveal delay={0.1}>
+                <div className="mt-14 overflow-hidden rounded-[20px] border border-white/[0.1] bg-gradient-to-b from-white/[0.04] to-transparent shadow-[0_28px_70px_-45px_rgba(0,0,0,0.5)]">
+                  <div className="hidden grid-cols-[1.7fr_1fr_1.1fr] items-center gap-4 border-b border-white/[0.08] px-8 py-5 sm:grid">
+                    <span className={`${MONO} text-[10px] uppercase tracking-[0.2em] text-white/35`}>{t('home.why.compare.otherwise')}</span>
+                    <span className={`${MONO} text-[10px] uppercase tracking-[0.2em] text-white/35`}>{t('home.why.compare.typicalCost')}</span>
+                    <span className={`${DISPLAY} text-[15px] font-medium text-white`}>HBCField</span>
+                  </div>
+                  {asArray<{ name: string; vendors: string; cost: string }>(t('home.why.compare.rows', { returnObjects: true })).map((r) => (
+                    <div key={r.name} className="grid grid-cols-1 gap-1.5 border-b border-white/[0.05] px-8 py-5 transition-colors hover:bg-white/[0.015] sm:grid-cols-[1.7fr_1fr_1.1fr] sm:items-center sm:gap-4">
+                      <span className="text-[15px] text-white/85">
+                        {r.name} <span className="text-white/35">{r.vendors}</span>
+                      </span>
+                      <span className={`${MONO} text-[13px] text-white/45`}>{r.cost}</span>
+                      <span className="inline-flex items-center gap-2.5">
+                        <span className="flex size-5 items-center justify-center rounded-full bg-[#10b981]/15">
+                          <Check className="h-3 w-3 text-[#10b981]" strokeWidth={3} />
+                        </span>
+                        <span className="text-[13px] text-white/70">{t('home.why.compare.included')}</span>
+                      </span>
+                    </div>
+                  ))}
+                  <div className="grid grid-cols-1 gap-1.5 border-t border-white/[0.1] bg-gradient-to-r from-[#5B9BD5]/[0.08] via-transparent to-transparent px-8 py-6 sm:grid-cols-[1.7fr_1fr_1.1fr] sm:items-center sm:gap-4">
+                    <span className={`${DISPLAY} text-[17px] font-medium text-white`}>{t('home.why.compare.sumLabel')}</span>
+                    <span className={`${MONO} text-[13px] text-white/40 line-through`}>{t('home.why.compare.sumCost')}</span>
+                    <span className={`${DISPLAY} text-[16px] font-medium text-[#7db4e6]`}>{t('home.why.compare.sumUs')}</span>
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* differentiators */}
+              <Label className="mb-8 mt-24 block">{t('home.why.diffLabel')}</Label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {asArray<{ title: string; body: string }>(t('home.why.diffs', { returnObjects: true })).map((d, i) => (
+                  <Reveal key={d.title} delay={i * 0.06} className="h-full">
+                    <div className="group h-full rounded-[18px] border border-white/[0.09] bg-gradient-to-b from-white/[0.04] to-transparent p-8 transition-all duration-300 hover:border-white/20 hover:from-white/[0.06]">
+                      <span className={`${MONO} text-[11px] tracking-[0.1em] text-[#5B9BD5]`}>{String(i + 1).padStart(2, '0')}</span>
+                      <h3 className={`${DISPLAY} mt-5 text-[19px] font-medium tracking-[-0.01em] text-[#eeeeeb]`}>{d.title}</h3>
+                      <p className="mt-3 text-[14px] leading-relaxed text-white/50">{d.body}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
             </div>
-          </div>
-        </footer>
-      </div>
+          </section>
+
+          {/* ══════ PRICING ══════ */}
+          <section id="pricing" className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.pricing.label')}</Label>
+              <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
+                {t('home.pricing.heading')}
+              </h2>
+              <p className="mt-6 max-w-[50ch] text-[15px] leading-relaxed text-white/50">{t('home.pricing.lead')}</p>
+
+              {/* outcomes strip */}
+              <div className="mt-14 grid gap-x-12 gap-y-8 sm:grid-cols-3">
+                {asArray<{ title: string; body: string }>(t('home.pricing.outcomes', { returnObjects: true })).map((o, i) => (
+                  <Reveal key={o.title} delay={i * 0.06}>
+                    <div className="border-t border-white/[0.12] pt-5">
+                      <h3 className="text-[15px] font-medium text-[#e6e6e3]">{o.title}</h3>
+                      <p className="mt-2 text-[13px] leading-relaxed text-white/45">{o.body}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+
+              {/* tiers */}
+              <div className="mt-16 grid gap-5 lg:grid-cols-3">
+                {asArray<{ name: string; price: string; popular: boolean; desc: string; features: string[] }>(t('home.pricing.plans', { returnObjects: true })).map((p, i) => (
+                  <Reveal key={p.name} delay={i * 0.08} className="h-full">
+                    <div
+                      className={`h-full rounded-[20px] p-px ${p.popular
+                        ? 'bg-gradient-to-b from-[#5B9BD5]/50 via-[#5B9BD5]/12 to-transparent shadow-[0_18px_50px_-28px_rgba(91,155,213,0.30)]'
+                        : 'bg-gradient-to-b from-white/[0.14] to-white/[0.02]'}`}
+                    >
+                      <div className={`flex h-full flex-col rounded-[19px] p-8 ${p.popular ? 'bg-gradient-to-b from-[#5B9BD5]/[0.1] to-[#0e1116]' : 'bg-[#0f1218]'}`}>
+                        <div className="flex items-center justify-between">
+                          <span className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-white/55`}>{p.name}</span>
+                          {p.popular && (
+                            <span className={`${MONO} rounded-full bg-[#5B9BD5] px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-[#04121f]`}>{t('home.pricing.popular')}</span>
+                          )}
+                        </div>
+                        <div className="mt-6 flex items-baseline gap-1.5">
+                          <span className={`${DISPLAY} text-[2.9rem] font-normal leading-none text-[#f3f3f0]`}>{p.price}</span>
+                          <span className={`${MONO} text-[11px] text-white/40`}>{t('home.pricing.perUser')}</span>
+                        </div>
+                        <p className="mt-4 text-[13px] leading-relaxed text-white/50">{p.desc}</p>
+                        <div className="my-6 h-px w-full bg-white/[0.08]" />
+                        <ul className="mb-8 flex-1 space-y-3">
+                          {p.features.map((f) => (
+                            <li key={f} className="flex items-start gap-3 text-[13.5px] text-white/70">
+                              <span className="mt-px flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#5B9BD5]/15">
+                                <Check className="h-2.5 w-2.5 text-[#5B9BD5]" strokeWidth={3} />
+                              </span>
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                        <a
+                          href="#contact"
+                          onClick={navTo('#contact')}
+                          className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${p.popular ? 'bg-[#efefec] text-[#0e1116] hover:bg-white' : 'border border-white/20 text-white/80 hover:border-white/50 hover:text-white'}`}
+                        >
+                          {t('home.pricing.cta')}
+                        </a>
+                      </div>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+              <p className={`${MONO} mt-8 text-[11px] uppercase tracking-[0.14em] text-white/30`}>{t('home.pricing.note')}</p>
+            </div>
+          </section>
+
+          {/* ══════ CTA ══════ */}
+          <section id="contact" className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-44">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.cta.label')}</Label>
+              <h2 className={`${DISPLAY} text-[clamp(2.4rem,8vw,6.5rem)] font-normal leading-[0.95] tracking-[-0.02em] text-[#efefec]`}>
+                <LineReveal nowrap lines={asArray<string>(t('home.cta.lines', { returnObjects: true }))} />
+              </h2>
+              <Reveal delay={0.2} className="mt-14 max-w-xl">
+                <form className="flex flex-col gap-4 sm:flex-row sm:items-center" onSubmit={handleDemoRequest}>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder={t('home.cta.emailPlaceholder')}
+                    aria-label={t('home.cta.emailPlaceholder')}
+                    className={`${MONO} w-full border-b border-white/25 bg-transparent pb-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white`}
+                  />
+                  <button type="submit" className={`${MONO} group inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#efefec] px-6 py-3 text-[11px] uppercase tracking-[0.2em] text-[#040508] transition-colors hover:bg-white`}>
+                    {t('home.cta.requestDemo')}
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                </form>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* ══════ FOOTER ══════ */}
+          <footer className="relative overflow-hidden border-t border-white/[0.08] px-6 pt-20 sm:px-10">
+            <div className="mx-auto max-w-[1600px]">
+              {/* brand + links */}
+              <div className="flex flex-col gap-14 lg:flex-row lg:justify-between lg:gap-12">
+                {/* brand + contact */}
+                <div className="max-w-sm">
+                  <AnimatedLogo size="small" variant="light" />
+                  <p className="mt-6 text-[15px] leading-relaxed text-white/45">
+                    {t('home.footer.tagline')}
+                  </p>
+                  <a
+                    href="mailto:office@hbcfield.com"
+                    className={`${MONO} group mt-7 inline-flex items-center gap-2 border-b border-white/25 pb-1 text-[12px] tracking-[0.12em] text-white/70 transition-colors hover:border-white hover:text-white`}
+                  >
+                    office@hbcfield.com
+                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </a>
+                </div>
+
+                {/* link columns */}
+                <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:gap-20">
+                  <FooterCol title={t('home.footer.explore')} links={[
+                    { label: t('home.footer.linkPlatform'), href: '#work', onClick: navTo('#work') },
+                    { label: t('home.footer.linkProcess'), href: '#how', onClick: navTo('#how') },
+                    { label: t('home.footer.linkApp'), href: '#field', onClick: navTo('#field') },
+                    { label: t('home.footer.linkPricing'), href: '#pricing', onClick: navTo('#pricing') },
+                    { label: t('home.footer.linkGetStarted'), href: '#contact', onClick: navTo('#contact') },
+                  ]} />
+                  <FooterCol title={t('home.footer.company')} links={[
+                    { label: t('home.footer.linkSignIn'), href: '/login' },
+                    { label: t('home.footer.linkGetApp'), href: '/download' },
+                  ]} />
+                  <FooterCol title={t('home.footer.legal')} links={[
+                    { label: t('home.footer.linkPrivacy'), href: '/privacy' },
+                  ]} />
+                </div>
+              </div>
+
+              {/* oversized brand accent */}
+              <div aria-hidden className="pointer-events-none mt-14 select-none">
+                <span className={`${DISPLAY} block whitespace-nowrap text-[clamp(4rem,17vw,15rem)] font-normal leading-[0.78] tracking-[-0.04em] text-white/[0.045]`}>
+                  HBCField
+                </span>
+              </div>
+
+              {/* bottom bar */}
+              <div className="flex flex-col items-center justify-between gap-4 border-t border-white/[0.06] py-8 sm:flex-row">
+                <div className={`${MONO} text-[11px] uppercase tracking-[0.15em] text-white/30`}>
+                  © {new Date().getFullYear()} HBCField {t('home.footer.copyrightSuffix')}
+                </div>
+                <button
+                  type="button"
+                  onClick={backToTop}
+                  className={`${MONO} group inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-white/40 transition-colors hover:text-white`}
+                >
+                  {t('home.footer.backToTop')}
+                  <ArrowUp className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5" />
+                </button>
+              </div>
+            </div>
+          </footer>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** A titled column of footer links — on-page anchors (#) smooth-scroll, routes
+ *  use Next's client nav. */
+function FooterCol({ title, links }: { title: string; links: { label: string; href: string; onClick?: (e: React.MouseEvent) => void }[] }) {
+  const linkCls = 'text-[14px] text-white/55 transition-colors hover:text-white';
+  return (
+    <div>
+      <div className={`${MONO} mb-5 text-[10px] uppercase tracking-[0.28em] text-white/30`}>{title}</div>
+      <ul className="space-y-3">
+        {links.map((l) => (
+          <li key={l.label}>
+            {l.href.startsWith('#') ? (
+              <a href={l.href} onClick={l.onClick} className={linkCls}>{l.label}</a>
+            ) : (
+              <Link href={l.href} className={linkCls}>{l.label}</Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Four "+" registration marks pinned to the viewport corners. */
+function FramePlus() {
+  const cls = `${MONO} pointer-events-none fixed z-30 select-none text-[13px] text-white/25`;
+  return (
+    <>
+      <span className={`${cls} left-3 top-3`}>+</span>
+      <span className={`${cls} right-3 top-3`}>+</span>
+      <span className={`${cls} bottom-3 left-3`}>+</span>
+      <span className={`${cls} bottom-3 right-3`}>+</span>
     </>
   );
 }

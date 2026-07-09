@@ -1,4 +1,298 @@
 {
+  "home": {
+    "nav": {
+      "platform": "Platform",
+      "process": "Process",
+      "app": "App",
+      "signIn": "Sign in",
+      "pricing": "Pricing"
+    },
+    "hero": {
+      "line1": "The field,",
+      "under": "under",
+      "words": [
+        "control",
+        "command",
+        "watch",
+        "review"
+      ],
+      "requestDemo": "Request a demo",
+      "scroll": "Scroll",
+      "hint": "Touch the lines to spark the field",
+      "meta": "HBCField — Field service platform",
+      "metaDesc": "Dispatch, GPS tracking, service reports and attendance in one system."
+    },
+    "whatItIs": {
+      "label": "(01) — What it is",
+      "lines": [
+        "One system connects",
+        "the office and the field.",
+        "Assign, follow the route,",
+        "close with a signed report."
+      ]
+    },
+    "video": {
+      "label": "Watch · 45 sec",
+      "title": "See HBCField in action.",
+      "desc": "A quick look at how a job moves from the office to the field and back — dispatched, tracked and closed on one system.",
+      "play": "Play the intro"
+    },
+    "facts": [
+      {
+        "unit": " m",
+        "label": "GPS sampling interval",
+        "desc": "Distance-based points, not a start-to-end line."
+      },
+      {
+        "unit": "-day",
+        "label": "Route history retained",
+        "desc": "Proof of service and re-routing, on record."
+      },
+      {
+        "unit": "",
+        "label": "Roles, one platform",
+        "desc": "Admin and employee, with dynamic per-person access — one source of truth."
+      }
+    ],
+    "product": {
+      "label": "(02) — The product",
+      "reducedHeading": "Built to run the whole job.",
+      "shots": [
+        {
+          "kicker": "Dispatch",
+          "title": "From dispatch to done, on one board.",
+          "body": "Assign the right technician and watch every job move through the flow in real time — no status calls, no spreadsheets."
+        },
+        {
+          "kicker": "Live map",
+          "title": "Every site and technician, on the map.",
+          "body": "Geofenced sites and live GPS mean dispatch always knows where the field is — and where each job sits."
+        },
+        {
+          "kicker": "Control room",
+          "title": "Your whole operation, in real time.",
+          "body": "A live activity feed, pending approvals and every space at a glance — the office view of the field."
+        },
+        {
+          "kicker": "Planning",
+          "title": "Plan across every space.",
+          "body": "A timeline across all your sites, recurring jobs and availability — capacity you can actually see."
+        }
+      ]
+    },
+    "process": {
+      "label": "(03) — Process",
+      "heading": "From a task in the office to a signed report in the field.",
+      "steps": [
+        {
+          "key": "Create",
+          "desc": "Admin raises a task with location, due date, photos and priority."
+        },
+        {
+          "key": "Assign",
+          "desc": "Dispatcher checks availability and assigns — the technician gets an instant push."
+        },
+        {
+          "key": "Route",
+          "desc": "Technician taps En Route; background GPS records the exact path and marks Arrived."
+        },
+        {
+          "key": "Execute",
+          "desc": "Photos, parts and notes on site, then a signed service report — even offline."
+        },
+        {
+          "key": "Close",
+          "desc": "The report syncs to the office with the full route and audit trail attached."
+        }
+      ]
+    },
+    "field": {
+      "label": "(04) — In the field",
+      "lines": [
+        "Works when the phone",
+        "is locked. Easy on",
+        "the battery."
+      ],
+      "features": [
+        {
+          "title": "Locked-screen GPS",
+          "desc": "A native background service keeps recording the route with the screen off."
+        },
+        {
+          "title": "Distance-based sampling",
+          "desc": "A point every 25 metres — idle time at a site costs no extra battery."
+        },
+        {
+          "title": "Offline-safe capture",
+          "desc": "Photos, notes and reports queue on device and sync when signal returns."
+        },
+        {
+          "title": "Dual signatures",
+          "desc": "Technician and customer sign on-device to close the job on site."
+        }
+      ],
+      "getApp": "Get the app — iOS & Android"
+    },
+    "app": {
+      "label": "The technician app",
+      "reducedHeading": "Built for the technician's pocket.",
+      "shots": [
+        {
+          "kicker": "In hand",
+          "title": "Their day, the moment they open it.",
+          "body": "Clock-in, today's jobs and what's urgent — the technician sees the whole shift at a glance."
+        },
+        {
+          "kicker": "Tasks",
+          "title": "Every job, from accept to done.",
+          "body": "Accept, start, block or complete — the full status flow in their pocket, synced to the office in real time."
+        },
+        {
+          "kicker": "Attendance",
+          "title": "Clock in on site — verified.",
+          "body": "Geofenced clock-in with the assigned location and a full history, so hours are provable, not guessed."
+        },
+        {
+          "kicker": "Team",
+          "title": "The whole crew, one tap away.",
+          "body": "Message or call any teammate across every space, straight from the field."
+        }
+      ]
+    },
+    "cta": {
+      "label": "(07) — Get started",
+      "lines": [
+        "Put your field",
+        "on the record."
+      ],
+      "emailPlaceholder": "Work email",
+      "requestDemo": "Request a demo"
+    },
+    "footer": {
+      "tagline": "Dispatch, track and prove every job — the office and the field, on one platform.",
+      "explore": "Explore",
+      "company": "Company",
+      "legal": "Legal",
+      "linkPlatform": "Platform",
+      "linkProcess": "Process",
+      "linkApp": "The app",
+      "linkGetStarted": "Get started",
+      "linkSignIn": "Sign in",
+      "linkGetApp": "Get the app",
+      "linkPrivacy": "Privacy",
+      "copyrightSuffix": "· Field Service Management",
+      "backToTop": "Back to top",
+      "linkPricing": "Pricing"
+    },
+    "why": {
+      "label": "(05) — What makes us special",
+      "heading": "Three tools in one — cheaper, and one login.",
+      "lead": "Most field businesses pay for a field-service tool, a time-clock and a GPS tracker separately — three bills, three logins, and hours spent reconciling them. HBCField is all three, in one system.",
+      "compare": {
+        "otherwise": "What you'd otherwise buy",
+        "typicalCost": "Typical cost",
+        "included": "included",
+        "rows": [
+          {
+            "name": "Field service management",
+            "vendors": "Jobber, Housecall Pro",
+            "cost": "€45–65 / user"
+          },
+          {
+            "name": "Time & attendance",
+            "vendors": "Deputy, When I Work",
+            "cost": "€5–8 / user"
+          },
+          {
+            "name": "GPS / route tracking",
+            "vendors": "Hubstaff",
+            "cost": "€8 / user"
+          }
+        ],
+        "sumLabel": "Three separate subscriptions",
+        "sumCost": "€60–90 / user",
+        "sumUs": "one platform · from €19 / user"
+      },
+      "diffLabel": "And things the others charge extra for — or don't have at all",
+      "diffs": [
+        {
+          "title": "Exact background-route GPS",
+          "body": "The real road path a technician drove, captured even when the phone is locked. Premium even in the FSM world — most gate it behind their top tier."
+        },
+        {
+          "title": "A real overtime engine",
+          "body": "Policy-based overtime detection, geofenced auto-clock-out and an approval flow — far beyond a bolt-on time clock."
+        },
+        {
+          "title": "Multi-org & cross-team delegation",
+          "body": "Franchises, subcontractors and agencies can manage many client organizations from one account — enterprise-grade, rare in SMB tools."
+        },
+        {
+          "title": "Configurable to your workflow",
+          "body": "Custom fields, task types, recurring jobs and workflows mean the system bends to how you already work — a platform, not a rigid app."
+        }
+      ]
+    },
+    "pricing": {
+      "label": "(06) — Pricing",
+      "heading": "Priced to replace three tools.",
+      "lead": "Pay for the office seats, add the field for less. 14-day trial, no credit card.",
+      "outcomes": [
+        {
+          "title": "End the status-call chaos",
+          "body": "A live board and map replace the “where are you?” calls and the end-of-day spreadsheet."
+        },
+        {
+          "title": "Prove every hour",
+          "body": "Geofenced clock-in and an audit trail turn payroll disputes into a non-issue."
+        },
+        {
+          "title": "Document every visit",
+          "body": "Photos, parts and signed reports mean you can always show exactly what was done."
+        }
+      ],
+      "popular": "Popular",
+      "perUser": "/ user / mo",
+      "cta": "Start free",
+      "note": "Field / mobile-only seats from ~€15 · Annual billing = 2 months free · 14-day trial, no card.",
+      "plans": [
+        {
+          "name": "Starter",
+          "price": "€19",
+          "popular": false,
+          "desc": "Tasks, attendance, GPS, schedules & mobile.",
+          "features": [
+            "Live dispatch board",
+            "Geofenced clock-in",
+            "Exact-route GPS"
+          ]
+        },
+        {
+          "name": "Professional",
+          "price": "€39",
+          "popular": true,
+          "desc": "Everything in Starter, plus the full field toolkit.",
+          "features": [
+            "Service reports & assets",
+            "Overtime engine",
+            "Recurring & custom fields",
+            "Invoicing"
+          ]
+        },
+        {
+          "name": "Business",
+          "price": "€69",
+          "popular": false,
+          "desc": "For franchises, agencies & multi-site operators.",
+          "features": [
+            "Multi-org delegation",
+            "Audit log & workflows",
+            "Priority support"
+          ]
+        }
+      ]
+    }
+  },
   "common": {
     "save": "Save",
     "saveChanges": "Save Changes",
@@ -2981,7 +3275,9 @@
       "websiteLabel": "Website: ",
       "supportLabel": "Support: "
     },
-    "footerRights": "HBC Group GmbH. All rights reserved."
+    "footerRights": "HBC Group GmbH. All rights reserved.",
+    "print": "Print / Save as PDF",
+    "contents": "Contents"
   },
   "download": {
     "tagline": "Dispatch · Track · Deliver",

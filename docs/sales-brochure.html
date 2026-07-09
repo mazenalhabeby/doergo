@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HBCField — Field Service, Under Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#ffffff; --paper:#f5f7f9;
+    --frame:#0e1116; --frame2:#171a1f;
+    --text:#14171d; --muted:rgba(20,23,29,0.66); --faint:rgba(20,23,29,0.44);
+    --line:rgba(20,23,29,0.12); --line2:rgba(20,23,29,0.20);
+    --green:#059669; --blue:#2563eb; --blue2:#2563eb;
+    --display:"Familjen Grotesk",system-ui,-apple-system,sans-serif;
+    --mono:"Martian Mono","SF Mono",ui-monospace,monospace;
+  }
+  @page { size:A4; margin:0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--ink); }
+  body{ font-family:var(--display); color:var(--text); -webkit-print-color-adjust:exact; print-color-adjust:exact; -webkit-font-smoothing:antialiased; }
+  .page{ position:relative; width:210mm; height:297mm; overflow:hidden; background:var(--ink); page-break-after:always; padding:18mm 16mm; display:flex; flex-direction:column; }
+  .page:last-child{ page-break-after:auto; }
+
+  /* type — a notch larger */
+  .kicker{ font-family:var(--mono); font-size:9.5px; letter-spacing:.26em; text-transform:uppercase; color:var(--faint); }
+  .kicker.accent{ color:var(--blue2); }
+  h1{ font-family:var(--display); font-weight:400; letter-spacing:-.02em; line-height:1.02; color:#0f1218; }
+  h2{ font-family:var(--display); font-weight:400; letter-spacing:-.015em; line-height:1.06; font-size:33px; color:#0f1218; }
+  h3{ font-family:var(--display); font-weight:600; font-size:15.5px; color:#12151b; letter-spacing:-.01em; }
+  p{ font-size:12.5px; line-height:1.6; color:var(--muted); }
+  .lead{ font-size:15px; line-height:1.55; color:rgba(20,23,29,0.78); }
+  strong{ color:#0f1218; font-weight:600; }
+  .grad{ color:#1f6fe0; }  /* solid — background-clip:text renders invisible in Chrome print-to-PDF */
+
+  /* logo */
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .mark{ width:28px; height:28px; }
+  .brand .name{ font-family:var(--display); font-weight:700; font-size:15px; letter-spacing:.02em; color:#0f1218; }
+  .brand .name b{ color:var(--blue2); font-weight:700; }
+
+  .row{ display:flex; } .between{ justify-content:space-between; } .center{ align-items:center; }
+  .grow{ flex:1; } .mt-auto{ margin-top:auto; }
+  .divider{ height:1px; background:var(--line); width:100%; }
+
+  /* frames — kept dark so the dark app screenshots sit naturally on the white page */
+  .browser{ border:1px solid rgba(0,0,0,0.10); border-radius:10px; overflow:hidden; background:var(--frame); box-shadow:0 24px 60px -24px rgba(20,30,60,.26); }
+  .browser .bar{ height:28px; display:flex; align-items:center; gap:6px; padding:0 12px; background:var(--frame2); border-bottom:1px solid rgba(255,255,255,0.06); }
+  .browser .dot{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.20); }
+  .browser .url{ margin-left:10px; font-family:var(--mono); font-size:8px; color:rgba(255,255,255,0.45); letter-spacing:.04em; }
+  .browser img{ display:block; width:100%; }
+
+  .phone{ position:relative; border:2.5px solid rgba(0,0,0,0.16); border-radius:20px; overflow:hidden; background:#000; box-shadow:0 20px 46px -20px rgba(20,30,60,.28); }
+  .phone .island{ position:absolute; top:7px; left:50%; transform:translateX(-50%); width:34%; height:11px; border-radius:99px; background:#000; z-index:2; }
+  .phone img{ display:block; width:100%; }
+
+  /* chips / cards */
+  .chip{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:99px; padding:5px 11px; font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .card{ border:1px solid var(--line); border-radius:12px; background:var(--paper); padding:15px 16px; }
+  .num{ font-family:var(--mono); font-size:10px; color:var(--blue2); letter-spacing:.1em; }
+
+  .swatch{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+
+  /* comparison table */
+  table{ width:100%; border-collapse:collapse; font-size:11.5px; margin-top:10px; }
+  th,td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  thead th{ font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:500; border-bottom:1px solid var(--line2); }
+  td .yes{ color:var(--green); font-weight:700; }
+  .cost{ font-family:var(--mono); color:var(--muted); white-space:nowrap; }
+  .row-sum td{ border-bottom:none; padding-top:12px; }
+  .row-sum .cost{ color:var(--faint); text-decoration:line-through; }
+  .us-cell{ color:var(--blue2); font-weight:700; font-family:var(--display); }
+
+  /* price cards */
+  .plans{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .plan{ border:1px solid var(--line); border-radius:12px; padding:15px; background:var(--paper); }
+  .plan.pop{ border-color:rgba(37,99,235,.45); background:linear-gradient(180deg,rgba(37,99,235,.07),#ffffff); }
+  .plan .pname{ font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .plan .price{ font-family:var(--display); font-size:27px; color:#0f1218; margin:6px 0 2px; letter-spacing:-.02em; }
+  .plan .price span{ font-size:11px; color:var(--faint); }
+  .plan ul{ list-style:none; margin-top:8px; } .plan li{ font-size:10px; color:var(--muted); padding:3px 0 3px 12px; position:relative; }
+  .plan li::before{ content:"+"; position:absolute; left:0; color:var(--blue2); }
+  .tag{ float:right; font-family:var(--mono); font-size:7.5px; letter-spacing:.10em; background:var(--blue2); color:#fff; padding:2px 7px; border-radius:99px; }
+
+  .foot{ font-family:var(--mono); font-size:8.5px; letter-spacing:.1em; color:var(--faint); text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<!-- ═════════════ 1 · COVER ═════════════ -->
+<section class="page" style="padding:16mm 16mm 14mm;">
+  <div class="row between center">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2=".5" y2="1"><stop offset="0" stop-color="#059669"/><stop offset="1" stop-color="#10b981"/></linearGradient>
+          <linearGradient id="g2" x1="0" y1="0" x2=".5" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#60a5fa"/></linearGradient>
+        </defs>
+        <g transform="translate(24,24)">
+          <polygon points="18,-1 -10,-20 -16,0 -2,-1" fill="url(#g1)"/>
+          <polygon points="18,1 -10,20 -16,0 -2,1" fill="url(#g2)"/>
+        </g>
+      </svg>
+      <span class="name">HBC<b>FIELD</b></span>
+    </div>
+    <span class="kicker">Field Service Management · 2026</span>
+  </div>
+
+  <div style="margin-top:34mm;">
+    <span class="kicker accent">The operations platform for field teams</span>
+    <h1 style="font-size:62px; margin-top:14px;">Your field,<br><span class="grad">under command.</span></h1>
+    <p class="lead" style="max-width:118mm; margin-top:20px;">
+      One platform to dispatch every job, track every technician in real time, prove every
+      hour worked, and document every visit — replacing the three separate tools most field
+      businesses juggle today.
+    </p>
+    <div class="row" style="gap:8px; margin-top:22px;">
+      <span class="chip"><span class="swatch" style="background:var(--green)"></span>Dispatch &amp; scheduling</span>
+      <span class="chip"><span class="swatch" style="background:var(--blue2)"></span>Live GPS &amp; routes</span>
+      <span class="chip"><span class="swatch" style="background:var(--blue)"></span>Attendance &amp; overtime</span>
+    </div>
+  </div>
+
+  <div class="mt-auto">
+    <div class="browser">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="url">app.hbcfield.com/dashboard</span></div>
+      <img src="../apps/web-app/public/shots/dashboard.png" alt="HBCField dashboard">
+    </div>
+    <p class="foot" style="margin-top:10px;">The command center — your whole operation, live.</p>
+  </div>
+</section>
+
+<!-- ═════════════ 2 · WHAT IT IS ═════════════ -->
+<section class="page">
+  <span class="kicker accent">(01) — What it is</span>
+  <h2 style="margin-top:12px; max-width:150mm;">Running a field team shouldn't take three apps and a spreadsheet.</h2>
+  <p class="lead" style="max-width:150mm; margin-top:14px;">
+    Most field businesses run dispatch in one tool, time-tracking in another, and GPS in a
+    third — then reconcile them by hand. <strong>HBCField is one system that does all three</strong>,
+    split cleanly across a web portal for the office and a mobile app for the field.
+  </p>
+
+  <div class="row" style="gap:12px; margin-top:26px;">
+    <div class="card grow">
+      <span class="num">01 / OFFICE</span>
+      <h3 style="margin:8px 0 6px;">The web portal — dispatch &amp; oversight</h3>
+      <p>Admins and dispatchers create jobs, assign the right technician, watch the live map,
+         approve hours and reports, and plan across every site — all in real time.</p>
+    </div>
+    <div class="card grow">
+      <span class="num">02 / FIELD</span>
+      <h3 style="margin:8px 0 6px;">The mobile app — execution</h3>
+      <p>Technicians see their day the moment they open it: accept and complete jobs, clock in
+         on site, capture photos and signatures, and follow the route — online or on the move.</p>
+    </div>
+  </div>
+
+  <div class="divider" style="margin:26px 0;"></div>
+
+  <span class="kicker">The core flow — one thread from request to record</span>
+  <div class="row between" style="margin-top:16px; gap:10px;">
+    <div class="card grow" style="text-align:center;"><span class="num">CREATE</span><p style="margin-top:8px; color:var(--text);">Admin raises a job with location, due date &amp; photos.</p></div>
+    <div class="row center" style="color:var(--blue2); font-size:18px; padding:0 2px;">→</div>
+    <div class="card grow" style="text-align:center;"><span class="num">ASSIGN</span><p style="margin-top:8px; color:var(--text);">Dispatcher checks availability &amp; assigns — instant push.</p></div>
+    <div class="row center" style="color:var(--blue2); font-size:18px; padding:0 2px;">→</div>
+    <div class="card grow" style="text-align:center;"><span class="num">EXECUTE</span><p style="margin-top:8px; color:var(--text);">Technician works the job; GPS records the exact route.</p></div>
+    <div class="row center" style="color:var(--blue2); font-size:18px; padding:0 2px;">→</div>
+    <div class="card grow" style="text-align:center;"><span class="num">RECORD</span><p style="margin-top:8px; color:var(--text);">Signed service report, hours &amp; history — automatically.</p></div>
+  </div>
+
+  <div class="mt-auto browser">
+    <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">app.hbcfield.com/tasks</span></div>
+    <img src="../apps/web-app/public/shots/board.png" alt="Dispatch board">
+  </div>
+  <p class="foot" style="margin-top:10px;">From dispatch to done, on one board — every job, live.</p>
+</section>
+
+<!-- ═════════════ 3 · THE COMMAND CENTER ═════════════ -->
+<section class="page">
+  <span class="kicker accent">(02) — The command center</span>
+  <h2 style="margin-top:12px;">The office view of the field.</h2>
+  <p class="lead" style="max-width:150mm; margin-top:12px;">
+    No more status calls or spreadsheets. Everything the office needs to run the day lives in
+    one live web workspace.
+  </p>
+
+  <div class="row" style="gap:14px; margin-top:22px;">
+    <div class="grow">
+      <div class="browser">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">/map</span></div>
+        <img src="../apps/web-app/public/shots/map.png" alt="Live map">
+      </div>
+      <h3 style="margin:12px 0 5px;">Live map &amp; exact routes</h3>
+      <p>Geofenced sites and live GPS mean dispatch always knows where every technician is —
+         and the exact road path each one drove, not a straight line.</p>
+    </div>
+    <div class="grow">
+      <div class="browser">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">/timeline</span></div>
+        <img src="../apps/web-app/public/shots/timeline.png" alt="Planning timeline">
+      </div>
+      <h3 style="margin:12px 0 5px;">Plan across every space</h3>
+      <p>A timeline across all your sites, recurring jobs and technician availability — the
+         capacity of your whole operation, in one view.</p>
+    </div>
+  </div>
+
+  <div class="row" style="gap:14px; margin-top:20px;">
+    <div class="card grow"><h3>Real-time everything</h3><p style="margin-top:5px;">Boards, maps and activity feeds update the instant something changes in the field — no refresh, no polling.</p></div>
+    <div class="card grow"><h3>Approvals in one place</h3><p style="margin-top:5px;">Pending hours, time-off and reports surface as actions — approve or reject without hunting.</p></div>
+    <div class="card grow"><h3>Every space at a glance</h3><p style="margin-top:5px;">Run multiple sites, teams or client organizations from a single dashboard.</p></div>
+  </div>
+</section>
+
+<!-- ═════════════ 4 · IN THE FIELD ═════════════ -->
+<section class="page">
+  <span class="kicker accent">(03) — In the field</span>
+  <h2 style="margin-top:12px;">Built for the technician's pocket.</h2>
+  <p class="lead" style="max-width:150mm; margin-top:12px;">
+    The mobile app puts the whole shift in one hand — and syncs it back to the office in real time.
+  </p>
+
+  <div class="row between" style="gap:10px; margin-top:24px;">
+    <div style="width:40mm;">
+      <div class="phone"><span class="island"></span><img src="../apps/web-app/public/shots/mobile-home.png" alt="Home"></div>
+      <p class="foot" style="margin-top:8px; text-align:center;">Their day, at a glance</p>
+    </div>
+    <div style="width:40mm;">
+      <div class="phone"><span class="island"></span><img src="../apps/web-app/public/shots/mobile-tasks.png" alt="Tasks"></div>
+      <p class="foot" style="margin-top:8px; text-align:center;">Every job, accept → done</p>
+    </div>
+    <div style="width:40mm;">
+      <div class="phone"><span class="island"></span><img src="../apps/web-app/public/shots/mobile-attendance.png" alt="Attendance"></div>
+      <p class="foot" style="margin-top:8px; text-align:center;">Clock in on site — verified</p>
+    </div>
+    <div style="width:40mm;">
+      <div class="phone"><span class="island"></span><img src="../apps/web-app/public/shots/mobile-team.png" alt="Team"></div>
+      <p class="foot" style="margin-top:8px; text-align:center;">The whole crew, one tap</p>
+    </div>
+  </div>
+
+  <div class="row" style="gap:14px; margin-top:30px;">
+    <div class="card grow"><span class="num">GEOFENCED</span><h3 style="margin:8px 0 5px;">Provable attendance</h3><p>Clock-in is verified against the assigned location, with a full history — hours are provable, not guessed.</p></div>
+    <div class="card grow"><span class="num">BACKGROUND</span><h3 style="margin:8px 0 5px;">Exact-route GPS</h3><p>The app records the true path even while backgrounded — battery-friendly, and accurate to the road.</p></div>
+    <div class="card grow"><span class="num">ON SITE</span><h3 style="margin:8px 0 5px;">Documented visits</h3><p>Photos, parts used and a signed service report captured at the job — a complete record every time.</p></div>
+  </div>
+
+  <div class="mt-auto card" style="border-color:var(--line2);">
+    <p style="color:var(--text); font-size:11.5px;"><strong>One login for the whole company.</strong>
+      Access adapts to each person — owners see everything, dispatchers run the board, field
+      staff see only their jobs. Role and permission are set per user, so one product fits very
+      different team shapes.</p>
+  </div>
+</section>
+
+<!-- ═════════════ 5 · WHY DIFFERENT ═════════════ -->
+<section class="page">
+  <span class="kicker accent">(04) — What makes us special</span>
+  <h2 style="margin-top:12px;">Three tools in one — cheaper, and one login.</h2>
+  <p class="lead" style="max-width:155mm; margin-top:12px;">
+    Most field businesses pay for a field-service tool, a time-clock tool, and a GPS tracker
+    separately — three bills, three logins, and hours spent reconciling them. HBCField is all
+    three, in one system.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:40%">What you'd otherwise buy</th><th style="width:24%">Typical cost</th><th>HBCField</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Field service management <span style="color:var(--faint)">(Jobber, Housecall Pro)</span></td><td class="cost">€45–65 / user</td><td class="yes">✓ included</td></tr>
+      <tr><td>Time &amp; attendance <span style="color:var(--faint)">(Deputy, When&nbsp;I&nbsp;Work)</span></td><td class="cost">€5–8 / user</td><td class="yes">✓ included</td></tr>
+      <tr><td>GPS / route tracking <span style="color:var(--faint)">(Hubstaff)</span></td><td class="cost">€8 / user</td><td class="yes">✓ included</td></tr>
+      <tr class="row-sum"><td><strong>Three separate subscriptions</strong></td><td class="cost">€60–90 / user</td><td class="us-cell">one platform ·<br>from €19 / user</td></tr>
+    </tbody>
+  </table>
+
+  <div class="divider" style="margin:22px 0;"></div>
+
+  <span class="kicker">And things the others make you pay extra for — or don't have at all</span>
+  <div class="row" style="gap:12px; margin-top:14px;">
+    <div class="card grow">
+      <h3>Exact background-route GPS</h3>
+      <p style="margin-top:5px;">The real road path a technician drove, captured even when the phone is locked. Premium even in the FSM world — most gate it behind their top tier.</p>
+    </div>
+    <div class="card grow">
+      <h3>A real overtime engine</h3>
+      <p style="margin-top:5px;">Policy-based overtime detection, geofenced auto-clock-out and an approval flow — far beyond a bolt-on time clock.</p>
+    </div>
+  </div>
+  <div class="row" style="gap:12px; margin-top:12px;">
+    <div class="card grow">
+      <h3>Multi-org &amp; cross-team delegation</h3>
+      <p style="margin-top:5px;">Franchises, subcontractors and agencies can manage many client organizations from one account — enterprise-grade, rare in SMB tools.</p>
+    </div>
+    <div class="card grow">
+      <h3>Configurable to your workflow</h3>
+      <p style="margin-top:5px;">Custom fields, task types, recurring jobs and workflows mean the system bends to how you already work — it's a platform, not a rigid app.</p>
+    </div>
+  </div>
+
+  <div class="mt-auto card" style="border-color:rgba(91,155,213,.4); background:linear-gradient(180deg,rgba(91,155,213,.10),transparent);">
+    <p style="color:var(--text); font-size:12px;"><strong class="grad">The line that sells it:</strong>
+      &nbsp;“Replaces Jobber&nbsp;+&nbsp;Deputy&nbsp;+&nbsp;Hubstaff — for less than one of them, on a single login.”</p>
+  </div>
+</section>
+
+<!-- ═════════════ 6 · OUTCOMES + PRICING + CTA ═════════════ -->
+<section class="page">
+  <span class="kicker accent">(05) — What you get</span>
+  <h2 style="margin-top:12px;">Less admin. Provable work. One source of truth.</h2>
+
+  <div class="row" style="gap:12px; margin-top:20px;">
+    <div class="card grow"><h3>End the status-call chaos</h3><p style="margin-top:5px;">A live board and map replace the “where are you?” calls and the end-of-day spreadsheet.</p></div>
+    <div class="card grow"><h3>Prove every hour</h3><p style="margin-top:5px;">Geofenced clock-in and an audit trail turn payroll disputes into a non-issue.</p></div>
+    <div class="card grow"><h3>Document every visit</h3><p style="margin-top:5px;">Photos, parts and signed reports mean you can always show exactly what was done.</p></div>
+  </div>
+
+  <div class="divider" style="margin:24px 0;"></div>
+
+  <span class="kicker">Simple, honest pricing — pay for the office seats, add the field for less</span>
+  <div class="plans" style="margin-top:14px;">
+    <div class="plan">
+      <span class="pname">Starter</span>
+      <div class="price">€19<span> /user/mo</span></div>
+      <p style="font-size:9px;">Tasks, attendance, GPS, schedules &amp; mobile.</p>
+      <ul><li>Live dispatch board</li><li>Geofenced clock-in</li><li>Exact-route GPS</li></ul>
+    </div>
+    <div class="plan pop">
+      <span class="tag">POPULAR</span>
+      <span class="pname">Professional</span>
+      <div class="price">€39<span> /user/mo</span></div>
+      <p style="font-size:9px;">Everything in Starter, plus the full field toolkit.</p>
+      <ul><li>Service reports &amp; assets</li><li>Overtime engine</li><li>Recurring &amp; custom fields</li><li>Invoicing</li></ul>
+    </div>
+    <div class="plan">
+      <span class="pname">Business</span>
+      <div class="price">€69<span> /user/mo</span></div>
+      <p style="font-size:9px;">For franchises, agencies &amp; multi-site operators.</p>
+      <ul><li>Multi-org delegation</li><li>Audit log &amp; workflows</li><li>Priority support</li></ul>
+    </div>
+  </div>
+  <p class="foot" style="margin-top:10px;">Field / mobile-only seats from ~€15 · Annual billing = 2 months free · 14-day trial, no card.</p>
+
+  <div class="mt-auto" style="border-top:1px solid var(--line2); padding-top:22px;">
+    <div class="row between center">
+      <div>
+        <span class="kicker accent">Get started</span>
+        <h1 style="font-size:38px; margin-top:8px;">Put your field<br>on the record.</h1>
+        <p class="lead" style="margin-top:12px; max-width:110mm;">Start free in minutes — no credit card. Bring your team over one crew at a time.</p>
+      </div>
+      <div style="text-align:right;">
+        <div style="display:inline-block; background:#0f1218; color:#ffffff; font-family:var(--display); font-weight:600; font-size:14px; padding:12px 22px; border-radius:99px;">hbcfield.com&nbsp;→</div>
+        <p class="foot" style="margin-top:12px;">Request a demo · office@hbcfield.com</p>
+      </div>
+    </div>
+    <div class="row between center" style="margin-top:26px;">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(24,24)">
+            <polygon points="18,-1 -10,-20 -16,0 -2,-1" fill="url(#g1)"/>
+            <polygon points="18,1 -10,20 -16,0 -2,1" fill="url(#g2)"/>
+          </g>
+        </svg>
+        <span class="name">HBC<b>FIELD</b></span>
+      </div>
+      <span class="foot">© 2026 HBCField · Field Service Management</span>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
