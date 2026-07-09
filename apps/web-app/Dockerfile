@@ -34,7 +34,9 @@ FROM base AS production
 ENV NODE_ENV=production
 COPY --from=build /app/apps/web-app/.next/standalone ./
 COPY --from=build /app/apps/web-app/.next/static ./apps/web-app/.next/static
-RUN mkdir -p apps/web-app/public
+# public/ is NOT bundled into Next's standalone output — copy it explicitly or
+# every static asset (favicon, /shots/*, /intro.mp4) 404s at runtime.
+COPY --from=build /app/apps/web-app/public ./apps/web-app/public
 
 EXPOSE 3000
 CMD ["node", "apps/web-app/server.js"]
