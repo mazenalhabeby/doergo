@@ -131,8 +131,8 @@ function Gem() {
             roughness={0.26}
             metalness={0}
             clearcoat={1}
-            clearcoatRoughness={0.45}
-            envMapIntensity={0.9}
+            clearcoatRoughness={0.4}
+            envMapIntensity={1.45}
             dispersion={1.4}
             side={THREE.DoubleSide}
           />
@@ -156,15 +156,19 @@ function Scene() {
           up — fixing the old `frames={1}` black-gem race — then it stops re-rendering
           the cubemap, which was the single biggest per-frame cost on the hero. */}
       <Environment resolution={256} frames={40}>
-        <Lightformer form="rect" intensity={1.0} position={[-4, 5, 4]} scale={[10, 8, 1]} color="#eef2f8" />
-        <Lightformer form="rect" intensity={1.0} position={[6, -3, 3]} scale={[5, 5, 1]} color="#bcd4ff" />
-        <Lightformer form="rect" intensity={0.9} position={[0, 2, -6]} scale={[7, 7, 1]} color="#8affc8" />
+        <Lightformer form="rect" intensity={1.5} position={[-4, 5, 4]} scale={[10, 8, 1]} color="#eef2f8" />
+        <Lightformer form="rect" intensity={1.3} position={[6, -3, 3]} scale={[5, 5, 1]} color="#bcd4ff" />
+        <Lightformer form="rect" intensity={1.1} position={[0, 2, -6]} scale={[7, 7, 1]} color="#8affc8" />
       </Environment>
 
       <Gem />
 
       <EffectComposer>
-        <Bloom mipmapBlur intensity={0.16} luminanceThreshold={0.95} luminanceSmoothing={0.6} radius={0.85} />
+        {/* Bright sparkle, natural glow: a high threshold means only the facets
+            that genuinely flare to near-white bloom, and a SMALL radius keeps that
+            glow tight around the facet (real light-spill) instead of ballooning
+            into a soft round "bubble" behind the gem. */}
+        <Bloom mipmapBlur intensity={0.6} luminanceThreshold={0.6} luminanceSmoothing={0.6} radius={0.5} />
       </EffectComposer>
     </>
   );
