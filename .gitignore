@@ -55,3 +55,6 @@ android/
 # Confidential / Internal
 AI_FEATURES_ANALYSIS.md
 dashboard-*.html
+
+# Claude Code agent worktrees (accidentally committed as gitlinks)
+.claude/worktrees/
