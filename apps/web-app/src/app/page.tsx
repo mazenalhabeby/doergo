@@ -256,8 +256,8 @@ export default function Home() {
               <Label className="text-white/40">{t('home.hero.hint')}</Label>
             </div>
 
-            {/* meta block */}
-            <div className="pointer-events-none absolute bottom-8 right-6 max-w-[16rem] text-right sm:right-10">
+            {/* meta block — hidden on mobile (it collided with the scroll cue and clipped off-screen) */}
+            <div className="pointer-events-none absolute bottom-8 right-6 hidden max-w-[16rem] text-right sm:right-10 md:block">
               <div className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-white/50`}>{t('home.hero.meta')}</div>
               <p className="mt-2 text-[13px] leading-relaxed text-white/40">{t('home.hero.metaDesc')}</p>
             </div>

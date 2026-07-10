@@ -12,7 +12,7 @@
  * not a painted gradient. Client-only (ssr:false).
  */
 
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { useEffect, useMemo, useRef } from 'react';
@@ -87,6 +87,15 @@ function Gem() {
 
   const geometry = useMemo(() => buildLogoGem(), []);
 
+  // Responsive size: the gem is a fixed 3D object, so on a narrow phone it
+  // overflowed the viewport and swamped the headline. Shrink it on small
+  // screens (scales with canvas width, clamped) so it stays a centrepiece,
+  // not a wall.
+  const width = useThree((s) => s.size.width);
+  // Full size on tablet/desktop (>=768px → 0.14, unchanged); shrink on phones
+  // down to 0.06 at ~390px so it no longer overflows or swamps the headline.
+  const scale = Math.max(0.06, Math.min(0.14, 0.06 + (width - 390) * 0.0002116));
+
   useEffect(() => {
     const onMove = (e: PointerEvent) =>
       raw.current.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
@@ -111,7 +120,7 @@ function Gem() {
 
   return (
     <group ref={tilt}>
-      <group ref={spin} scale={0.14} rotation={[-0.1, 0.35, 0]}>
+      <group ref={spin} scale={scale} rotation={[-0.1, 0.35, 0]}>
         <mesh geometry={geometry}>
           <meshPhysicalMaterial
             vertexColors
