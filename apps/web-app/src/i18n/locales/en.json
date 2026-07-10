@@ -236,70 +236,47 @@
     },
     "industries": {
       "label": "(06) — Who it's for",
-      "heading": "One platform for every field team.",
-      "lead": "From a single building to hundreds of rented units, HBCField coordinates the people who fix, sell and manage work on the ground — every role in one system.",
-      "benefits": [
+      "heading": "Built for field teams of every kind.",
+      "lead": "Wherever people do the work on the ground, HBCField coordinates it — and shows exactly who it helps, how, and what you save.",
+      "whoLabel": "Who",
+      "howLabel": "How",
+      "benefitLabel": "Benefit",
+      "fields": [
         {
-          "title": "Save on personnel",
-          "body": "One coordinator runs what used to take a whole back office — dispatch, tracking and reporting live in one board."
+          "name": "Property & facility management",
+          "who": "Landlords, property and facility managers running many buildings and units.",
+          "how": "Tenant requests become dispatched tasks, geofenced clock-in per building, photo and signed service reports, plus recurring safety checks — heating, smoke detectors — on a live map with a full audit log.",
+          "benefit": "One coordinator oversees more units, hours are verified, compliance is documented, and tenants get a faster response."
         },
         {
-          "title": "Save time",
-          "body": "Geofenced clock-in, exact-route GPS and recurring jobs cut wasted trips, phone calls and end-of-day paperwork."
+          "name": "HVAC, plumbing & electrical trades",
+          "who": "Installation and repair contractors with mobile technicians.",
+          "how": "Jobs assigned by location and priority, a clear status flow from en route to arrived to completed, service reports with parts used and a customer signature, then invoicing.",
+          "benefit": "Faster job turnaround, provable labour and parts, and quicker billing."
         },
         {
-          "title": "Raise customer satisfaction",
-          "body": "Faster response, documented visits and signed proof mean tenants and clients always know the job was done right."
-        }
-      ],
-      "featured": {
-        "tag": "Example",
-        "name": "Property & rental management",
-        "intro": "A company renting 300 apartments runs its entire operation here — three teams, one board.",
-        "roles": [
-          {
-            "name": "Maintenance & caretaking",
-            "body": "Tenant repair tickets, geofenced clock-in per building, before/after photos and signed reports, plus recurring checks — heating, smoke detectors, elevators.",
-            "benefit": "Fewer wasted trips and provable hours — less staff, lower cost."
-          },
-          {
-            "name": "Sales & leasing",
-            "body": "Schedule and assign viewings, track every visit, and run move-in / move-out handovers with photos and tenant signature.",
-            "benefit": "Faster turnover with no double-booking."
-          },
-          {
-            "name": "Office & administration",
-            "body": "One dispatch board and live map across all units, scheduling, availability, audit trail and invoicing.",
-            "benefit": "One coordinator manages far more units."
-          }
-        ]
-      },
-      "moreLabel": "Also built for",
-      "sectors": [
-        {
-          "name": "Facility management",
-          "body": "Building services and technical upkeep across many sites from one board.",
-          "benefit": "Less admin, more sites per manager."
+          "name": "Cleaning & janitorial services",
+          "who": "Commercial cleaning firms running recurring rounds across sites.",
+          "how": "Recurring tasks per site, geofenced clock-in that proves attendance, and checklists via custom fields.",
+          "benefit": "No missed rounds, verified presence, and less supervision."
         },
         {
-          "name": "HVAC · plumbing · electrical",
-          "body": "Trades dispatched, documented and invoiced in a single flow.",
-          "benefit": "Faster jobs, provable hours."
+          "name": "Security & guarding",
+          "who": "Security firms running patrols and inspections.",
+          "how": "Scheduled recurring patrol tasks, timestamped geofenced check-ins, GPS route proof, and photo incident reports.",
+          "benefit": "Verifiable coverage for clients and far fewer disputes."
         },
         {
-          "name": "Cleaning & janitorial",
-          "body": "Recurring rounds with verified on-site attendance and checklists.",
-          "benefit": "No missed rounds, less supervision."
+          "name": "Landscaping & grounds maintenance",
+          "who": "Outdoor crews servicing many sites.",
+          "how": "GPS route-tracked visits, recurring seasonal schedules, and before/after photos.",
+          "benefit": "Efficient routing, documented work, and clear proof for clients."
         },
         {
-          "name": "Security & patrols",
-          "body": "Guard tours and inspections with proof of presence and time.",
-          "benefit": "Verified coverage, fewer disputes."
-        },
-        {
-          "name": "Landscaping & grounds",
-          "body": "Seasonal and recurring outdoor work, routed and tracked to each site.",
-          "benefit": "Efficient routes, happier clients."
+          "name": "Equipment & appliance repair",
+          "who": "Field teams maintaining machines and assets on customer sites.",
+          "how": "Asset-linked tasks with a full maintenance history, service reports with parts, recurring maintenance and signatures.",
+          "benefit": "A complete history per asset, faster repeat visits, and provable warranty work."
         }
       ]
     },

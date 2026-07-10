@@ -236,70 +236,47 @@
     },
     "industries": {
       "label": "(06) — Für wen",
-      "heading": "Eine Plattform für jedes Außendienst-Team.",
-      "lead": "Vom einzelnen Gebäude bis zu Hunderten Mietwohnungen: HBCField koordiniert alle, die vor Ort reparieren, vermieten und verwalten — jede Rolle in einem System.",
-      "benefits": [
+      "heading": "Gebaut für Außendienst-Teams jeder Art.",
+      "lead": "Wo immer vor Ort gearbeitet wird, koordiniert HBCField den Einsatz — und zeigt genau, wem es hilft, wie und was Sie sparen.",
+      "whoLabel": "Wer",
+      "howLabel": "Wie",
+      "benefitLabel": "Nutzen",
+      "fields": [
         {
-          "title": "Personal sparen",
-          "body": "Eine Koordinationskraft erledigt, wofür früher ein ganzes Backoffice nötig war — Disposition, Tracking und Berichte in einem Board."
+          "name": "Immobilien- & Facility-Management",
+          "who": "Vermieter, Immobilien- und Facility-Manager mit vielen Gebäuden und Einheiten.",
+          "how": "Mieteranfragen werden zu disponierten Aufgaben, Geozaun-Einstempeln je Gebäude, Foto- und unterschriebene Serviceberichte sowie wiederkehrende Sicherheitsprüfungen — Heizung, Rauchmelder — auf einer Live-Karte mit vollständigem Prüfprotokoll.",
+          "benefit": "Eine Koordinationskraft betreut mehr Einheiten, Stunden sind nachweisbar, Compliance ist dokumentiert und Mieter erhalten schneller eine Antwort."
         },
         {
-          "title": "Zeit sparen",
-          "body": "Geozaun-Einstempeln, GPS mit exakter Route und wiederkehrende Aufträge sparen unnötige Fahrten, Anrufe und Papierkram am Feierabend."
-        },
-        {
-          "title": "Kundenzufriedenheit steigern",
-          "body": "Schnellere Reaktion, dokumentierte Einsätze und unterschriebener Nachweis — Mieter und Kunden wissen immer, dass die Arbeit korrekt erledigt wurde."
-        }
-      ],
-      "featured": {
-        "tag": "Beispiel",
-        "name": "Immobilien- & Vermietungsverwaltung",
-        "intro": "Ein Unternehmen mit 300 Mietwohnungen führt seinen gesamten Betrieb hier — drei Teams, ein Board.",
-        "roles": [
-          {
-            "name": "Wartung & Hausmeister",
-            "body": "Reparaturtickets von Mietern, Geozaun-Einstempeln je Gebäude, Vorher-/Nachher-Fotos und unterschriebene Berichte sowie wiederkehrende Prüfungen — Heizung, Rauchmelder, Aufzüge.",
-            "benefit": "Weniger unnötige Fahrten, nachweisbare Stunden — weniger Personal, geringere Kosten."
-          },
-          {
-            "name": "Vertrieb & Vermietung",
-            "body": "Besichtigungen planen und zuweisen, jeden Termin verfolgen und Ein-/Auszugsübergaben mit Fotos und Mieterunterschrift durchführen.",
-            "benefit": "Schnellere Neuvermietung ohne Doppelbuchungen."
-          },
-          {
-            "name": "Büro & Verwaltung",
-            "body": "Ein Dispositionsboard und eine Live-Karte über alle Einheiten, Planung, Verfügbarkeit, Prüfprotokoll und Rechnungsstellung.",
-            "benefit": "Eine Koordinationskraft verwaltet deutlich mehr Einheiten."
-          }
-        ]
-      },
-      "moreLabel": "Ebenso gebaut für",
-      "sectors": [
-        {
-          "name": "Facility-Management",
-          "body": "Gebäudedienste und technische Instandhaltung über viele Standorte aus einem Board.",
-          "benefit": "Weniger Verwaltung, mehr Standorte pro Manager."
-        },
-        {
-          "name": "HLK · Sanitär · Elektro",
-          "body": "Handwerk disponiert, dokumentiert und abgerechnet in einem Ablauf.",
-          "benefit": "Schnellere Aufträge, nachweisbare Stunden."
+          "name": "HLK-, Sanitär- & Elektrohandwerk",
+          "who": "Installations- und Reparaturbetriebe mit mobilen Technikern.",
+          "how": "Aufträge nach Standort und Priorität zugewiesen, klarer Statusfluss von unterwegs über angekommen bis abgeschlossen, Serviceberichte mit verwendeten Teilen und Kundenunterschrift, dann Rechnungsstellung.",
+          "benefit": "Schnellere Auftragsabwicklung, nachweisbare Arbeit und Teile sowie schnellere Abrechnung."
         },
         {
           "name": "Reinigung & Hausmeisterservice",
-          "body": "Wiederkehrende Runden mit verifizierter Vor-Ort-Anwesenheit und Checklisten.",
-          "benefit": "Keine verpassten Runden, weniger Aufsicht."
+          "who": "Gebäudereiniger mit wiederkehrenden Runden über mehrere Standorte.",
+          "how": "Wiederkehrende Aufgaben je Standort, Geozaun-Einstempeln als Anwesenheitsnachweis und Checklisten über benutzerdefinierte Felder.",
+          "benefit": "Keine verpassten Runden, verifizierte Anwesenheit und weniger Aufsicht."
         },
         {
-          "name": "Sicherheit & Streifen",
-          "body": "Wachrundgänge und Kontrollen mit Anwesenheits- und Zeitnachweis.",
-          "benefit": "Verifizierte Abdeckung, weniger Streit."
+          "name": "Sicherheit & Bewachung",
+          "who": "Sicherheitsdienste mit Streifen und Kontrollen.",
+          "how": "Geplante wiederkehrende Streifenaufgaben, zeitgestempelte Geozaun-Check-ins, GPS-Routennachweis und Foto-Vorfallberichte.",
+          "benefit": "Nachweisbare Abdeckung für Kunden und deutlich weniger Streitfälle."
         },
         {
-          "name": "Garten- & Außenanlagen",
-          "body": "Saisonale und wiederkehrende Außenarbeiten, geroutet und je Standort erfasst.",
-          "benefit": "Effiziente Routen, zufriedenere Kunden."
+          "name": "Garten- & Außenanlagenpflege",
+          "who": "Außenteams, die viele Standorte betreuen.",
+          "how": "GPS-routenverfolgte Besuche, wiederkehrende saisonale Pläne und Vorher-/Nachher-Fotos.",
+          "benefit": "Effiziente Routen, dokumentierte Arbeit und klarer Nachweis für Kunden."
+        },
+        {
+          "name": "Geräte- & Anlagenreparatur",
+          "who": "Serviceteams, die Maschinen und Anlagen beim Kunden warten.",
+          "how": "Anlagenbezogene Aufgaben mit vollständiger Wartungshistorie, Serviceberichte mit Teilen, wiederkehrende Wartung und Unterschriften.",
+          "benefit": "Vollständige Historie je Anlage, schnellere Folgebesuche und nachweisbare Garantiearbeiten."
         }
       ]
     },
