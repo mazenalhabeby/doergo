@@ -5,6 +5,7 @@
       "process": "Ablauf",
       "app": "App",
       "signIn": "Anmelden",
+      "industries": "Branchen",
       "pricing": "Preise"
     },
     "hero": {
@@ -160,7 +161,7 @@
       ]
     },
     "cta": {
-      "label": "(07) — Loslegen",
+      "label": "(08) — Loslegen",
       "lines": [
         "Bringen Sie Ihr Feld",
         "zu Protokoll."
@@ -233,8 +234,77 @@
         }
       ]
     },
+    "industries": {
+      "label": "(06) — Für wen",
+      "heading": "Eine Plattform für jedes Außendienst-Team.",
+      "lead": "Vom einzelnen Gebäude bis zu Hunderten Mietwohnungen: HBCField koordiniert alle, die vor Ort reparieren, vermieten und verwalten — jede Rolle in einem System.",
+      "benefits": [
+        {
+          "title": "Personal sparen",
+          "body": "Eine Koordinationskraft erledigt, wofür früher ein ganzes Backoffice nötig war — Disposition, Tracking und Berichte in einem Board."
+        },
+        {
+          "title": "Zeit sparen",
+          "body": "Geozaun-Einstempeln, GPS mit exakter Route und wiederkehrende Aufträge sparen unnötige Fahrten, Anrufe und Papierkram am Feierabend."
+        },
+        {
+          "title": "Kundenzufriedenheit steigern",
+          "body": "Schnellere Reaktion, dokumentierte Einsätze und unterschriebener Nachweis — Mieter und Kunden wissen immer, dass die Arbeit korrekt erledigt wurde."
+        }
+      ],
+      "featured": {
+        "tag": "Beispiel",
+        "name": "Immobilien- & Vermietungsverwaltung",
+        "intro": "Ein Unternehmen mit 300 Mietwohnungen führt seinen gesamten Betrieb hier — drei Teams, ein Board.",
+        "roles": [
+          {
+            "name": "Wartung & Hausmeister",
+            "body": "Reparaturtickets von Mietern, Geozaun-Einstempeln je Gebäude, Vorher-/Nachher-Fotos und unterschriebene Berichte sowie wiederkehrende Prüfungen — Heizung, Rauchmelder, Aufzüge.",
+            "benefit": "Weniger unnötige Fahrten, nachweisbare Stunden — weniger Personal, geringere Kosten."
+          },
+          {
+            "name": "Vertrieb & Vermietung",
+            "body": "Besichtigungen planen und zuweisen, jeden Termin verfolgen und Ein-/Auszugsübergaben mit Fotos und Mieterunterschrift durchführen.",
+            "benefit": "Schnellere Neuvermietung ohne Doppelbuchungen."
+          },
+          {
+            "name": "Büro & Verwaltung",
+            "body": "Ein Dispositionsboard und eine Live-Karte über alle Einheiten, Planung, Verfügbarkeit, Prüfprotokoll und Rechnungsstellung.",
+            "benefit": "Eine Koordinationskraft verwaltet deutlich mehr Einheiten."
+          }
+        ]
+      },
+      "moreLabel": "Ebenso gebaut für",
+      "sectors": [
+        {
+          "name": "Facility-Management",
+          "body": "Gebäudedienste und technische Instandhaltung über viele Standorte aus einem Board.",
+          "benefit": "Weniger Verwaltung, mehr Standorte pro Manager."
+        },
+        {
+          "name": "HLK · Sanitär · Elektro",
+          "body": "Handwerk disponiert, dokumentiert und abgerechnet in einem Ablauf.",
+          "benefit": "Schnellere Aufträge, nachweisbare Stunden."
+        },
+        {
+          "name": "Reinigung & Hausmeisterservice",
+          "body": "Wiederkehrende Runden mit verifizierter Vor-Ort-Anwesenheit und Checklisten.",
+          "benefit": "Keine verpassten Runden, weniger Aufsicht."
+        },
+        {
+          "name": "Sicherheit & Streifen",
+          "body": "Wachrundgänge und Kontrollen mit Anwesenheits- und Zeitnachweis.",
+          "benefit": "Verifizierte Abdeckung, weniger Streit."
+        },
+        {
+          "name": "Garten- & Außenanlagen",
+          "body": "Saisonale und wiederkehrende Außenarbeiten, geroutet und je Standort erfasst.",
+          "benefit": "Effiziente Routen, zufriedenere Kunden."
+        }
+      ]
+    },
     "pricing": {
-      "label": "(06) — Preise",
+      "label": "(07) — Preise",
       "heading": "Preise, die drei Tools ersetzen.",
       "lead": "Zahlen Sie für die Büro-Plätze, ergänzen Sie das Feld für weniger. 14 Tage testen, keine Kreditkarte.",
       "outcomes": [

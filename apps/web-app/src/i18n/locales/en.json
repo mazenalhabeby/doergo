@@ -5,6 +5,7 @@
       "process": "Process",
       "app": "App",
       "signIn": "Sign in",
+      "industries": "Industries",
       "pricing": "Pricing"
     },
     "hero": {
@@ -160,7 +161,7 @@
       ]
     },
     "cta": {
-      "label": "(07) — Get started",
+      "label": "(08) — Get started",
       "lines": [
         "Put your field",
         "on the record."
@@ -233,8 +234,77 @@
         }
       ]
     },
+    "industries": {
+      "label": "(06) — Who it's for",
+      "heading": "One platform for every field team.",
+      "lead": "From a single building to hundreds of rented units, HBCField coordinates the people who fix, sell and manage work on the ground — every role in one system.",
+      "benefits": [
+        {
+          "title": "Save on personnel",
+          "body": "One coordinator runs what used to take a whole back office — dispatch, tracking and reporting live in one board."
+        },
+        {
+          "title": "Save time",
+          "body": "Geofenced clock-in, exact-route GPS and recurring jobs cut wasted trips, phone calls and end-of-day paperwork."
+        },
+        {
+          "title": "Raise customer satisfaction",
+          "body": "Faster response, documented visits and signed proof mean tenants and clients always know the job was done right."
+        }
+      ],
+      "featured": {
+        "tag": "Example",
+        "name": "Property & rental management",
+        "intro": "A company renting 300 apartments runs its entire operation here — three teams, one board.",
+        "roles": [
+          {
+            "name": "Maintenance & caretaking",
+            "body": "Tenant repair tickets, geofenced clock-in per building, before/after photos and signed reports, plus recurring checks — heating, smoke detectors, elevators.",
+            "benefit": "Fewer wasted trips and provable hours — less staff, lower cost."
+          },
+          {
+            "name": "Sales & leasing",
+            "body": "Schedule and assign viewings, track every visit, and run move-in / move-out handovers with photos and tenant signature.",
+            "benefit": "Faster turnover with no double-booking."
+          },
+          {
+            "name": "Office & administration",
+            "body": "One dispatch board and live map across all units, scheduling, availability, audit trail and invoicing.",
+            "benefit": "One coordinator manages far more units."
+          }
+        ]
+      },
+      "moreLabel": "Also built for",
+      "sectors": [
+        {
+          "name": "Facility management",
+          "body": "Building services and technical upkeep across many sites from one board.",
+          "benefit": "Less admin, more sites per manager."
+        },
+        {
+          "name": "HVAC · plumbing · electrical",
+          "body": "Trades dispatched, documented and invoiced in a single flow.",
+          "benefit": "Faster jobs, provable hours."
+        },
+        {
+          "name": "Cleaning & janitorial",
+          "body": "Recurring rounds with verified on-site attendance and checklists.",
+          "benefit": "No missed rounds, less supervision."
+        },
+        {
+          "name": "Security & patrols",
+          "body": "Guard tours and inspections with proof of presence and time.",
+          "benefit": "Verified coverage, fewer disputes."
+        },
+        {
+          "name": "Landscaping & grounds",
+          "body": "Seasonal and recurring outdoor work, routed and tracked to each site.",
+          "benefit": "Efficient routes, happier clients."
+        }
+      ]
+    },
     "pricing": {
-      "label": "(06) — Pricing",
+      "label": "(07) — Pricing",
       "heading": "Priced to replace three tools.",
       "lead": "Pay for the office seats, add the field for less. 14-day trial, no credit card.",
       "outcomes": [

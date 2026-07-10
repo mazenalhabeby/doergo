@@ -210,6 +210,7 @@ export default function Home() {
                 <a href="#work" onClick={navTo('#work')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.platform')}</a>
                 <a href="#how" onClick={navTo('#how')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.process')}</a>
                 <a href="#field" onClick={navTo('#field')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white sm:block`}>{t('home.nav.app')}</a>
+                <a href="#industries" onClick={navTo('#industries')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.industries')}</a>
                 <a href="#pricing" onClick={navTo('#pricing')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.pricing')}</a>
                 <span className="[&_button]:!text-white/60 [&_button:hover]:!text-white [&_button]:hover:!bg-white/10">
                   <LanguageSwitcher />
@@ -419,6 +420,72 @@ export default function Home() {
                       <span className={`${MONO} text-[11px] tracking-[0.1em] text-[#5B9BD5]`}>{String(i + 1).padStart(2, '0')}</span>
                       <h3 className={`${DISPLAY} mt-5 text-[19px] font-medium tracking-[-0.01em] text-[#eeeeeb]`}>{d.title}</h3>
                       <p className="mt-3 text-[14px] leading-relaxed text-white/50">{d.body}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ══════ INDUSTRIES / WHO IT'S FOR ══════ */}
+          <section id="industries" className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.industries.label')}</Label>
+              <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
+                {t('home.industries.heading')}
+              </h2>
+              <p className="mt-6 max-w-[54ch] text-[15px] leading-relaxed text-white/50">{t('home.industries.lead')}</p>
+
+              {/* benefit pillars — highlighted at every point */}
+              <div className="mt-14 grid gap-x-12 gap-y-8 sm:grid-cols-3">
+                {asArray<{ title: string; body: string }>(t('home.industries.benefits', { returnObjects: true })).map((b, i) => (
+                  <Reveal key={b.title} delay={i * 0.06}>
+                    <div className="border-t border-[#10b981]/40 pt-5">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-3.5 w-3.5 shrink-0 text-[#10b981]" />
+                        <h3 className="text-[15px] font-medium text-[#e6e6e3]">{b.title}</h3>
+                      </div>
+                      <p className="mt-2 text-[13px] leading-relaxed text-white/45">{b.body}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+
+              {/* featured industry — property & rental management */}
+              <Reveal delay={0.1}>
+                <div className="mt-16 overflow-hidden rounded-[20px] border border-white/[0.1] bg-gradient-to-b from-white/[0.04] to-transparent p-8 shadow-[0_28px_70px_-45px_rgba(0,0,0,0.5)] sm:p-10">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className={`${MONO} rounded-full bg-[#5B9BD5] px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-[#04121f]`}>{t('home.industries.featured.tag')}</span>
+                    <h3 className={`${DISPLAY} text-[22px] font-medium tracking-[-0.01em] text-[#f2f2f0]`}>{t('home.industries.featured.name')}</h3>
+                  </div>
+                  <p className="mt-4 max-w-[72ch] text-[14px] leading-relaxed text-white/55">{t('home.industries.featured.intro')}</p>
+                  <div className="mt-8 grid gap-4 lg:grid-cols-3">
+                    {asArray<{ name: string; body: string; benefit: string }>(t('home.industries.featured.roles', { returnObjects: true })).map((r) => (
+                      <div key={r.name} className="flex h-full flex-col rounded-[16px] border border-white/[0.08] bg-[#0f1218] p-6">
+                        <span className={`${MONO} text-[11px] uppercase tracking-[0.16em] text-[#7db4e6]`}>{r.name}</span>
+                        <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-white/60">{r.body}</p>
+                        <div className="mt-5 flex items-start gap-2 border-t border-white/[0.08] pt-4">
+                          <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#10b981]" />
+                          <span className="text-[12.5px] font-medium leading-snug text-[#cfe8da]">{r.benefit}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* other sectors */}
+              <Label className="mb-8 mt-24 block">{t('home.industries.moreLabel')}</Label>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {asArray<{ name: string; body: string; benefit: string }>(t('home.industries.sectors', { returnObjects: true })).map((s, i) => (
+                  <Reveal key={s.name} delay={i * 0.05} className="h-full">
+                    <div className="group flex h-full flex-col rounded-[18px] border border-white/[0.09] bg-gradient-to-b from-white/[0.04] to-transparent p-7 transition-all duration-300 hover:border-white/20 hover:from-white/[0.06]">
+                      <h3 className={`${DISPLAY} text-[18px] font-medium tracking-[-0.01em] text-[#eeeeeb]`}>{s.name}</h3>
+                      <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-white/50">{s.body}</p>
+                      <div className="mt-5 flex items-start gap-2 border-t border-white/[0.08] pt-4">
+                        <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#10b981]" />
+                        <span className="text-[12.5px] font-medium leading-snug text-[#cfe8da]">{s.benefit}</span>
+                      </div>
                     </div>
                   </Reveal>
                 ))}
