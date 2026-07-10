@@ -236,12 +236,21 @@ export default function Home() {
                   <CyclingWord words={asArray<string>(t('home.hero.words', { returnObjects: true }))} className="align-baseline" />.
                 </h1>
               </Reveal>
-              <Reveal delay={0.15} className="pointer-events-auto mt-8">
+              {/* desktop/tablet: CTA sits under the headline. On mobile it moves to the bottom-right (below) */}
+              <Reveal delay={0.15} className="pointer-events-auto mt-8 hidden sm:block">
                 <Link href="/login" className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
                   {t('home.hero.requestDemo')}
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Reveal>
+            </div>
+
+            {/* mobile-only CTA — pinned bottom-right, balancing the scroll cue on the left */}
+            <div className="pointer-events-none absolute inset-x-6 bottom-8 flex justify-end sm:hidden">
+              <Link href="/login" className={`${MONO} group pointer-events-auto inline-flex items-center gap-2.5 whitespace-nowrap border-b border-white/25 pb-1 text-[11px] uppercase tracking-[0.18em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+                {t('home.hero.requestDemo')}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
 
             {/* scroll cue */}
