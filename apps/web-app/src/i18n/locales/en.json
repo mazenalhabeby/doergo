@@ -211,7 +211,7 @@
         ],
         "sumLabel": "Three separate subscriptions",
         "sumCost": "€60–90 / user",
-        "sumUs": "one platform · from €19 / user"
+        "sumUs": "one platform · from €29 / user"
       },
       "diffLabel": "And things the others charge extra for — or don't have at all",
       "diffs": [
@@ -254,11 +254,11 @@
       "popular": "Popular",
       "perUser": "/ user / mo",
       "cta": "Start free",
-      "note": "Field / mobile-only seats from ~€15 · Annual billing = 2 months free · 14-day trial, no card.",
+      "note": "Prices per office seat · Field / technician seats €19 each · Enterprise from €199/mo or custom quote · Annual billing = 2 months free · 14-day trial, no card.",
       "plans": [
         {
           "name": "Starter",
-          "price": "€19",
+          "price": "€29",
           "popular": false,
           "desc": "Tasks, attendance, GPS, schedules & mobile.",
           "features": [
@@ -269,7 +269,7 @@
         },
         {
           "name": "Professional",
-          "price": "€39",
+          "price": "€59",
           "popular": true,
           "desc": "Everything in Starter, plus the full field toolkit.",
           "features": [
@@ -281,7 +281,7 @@
         },
         {
           "name": "Business",
-          "price": "€69",
+          "price": "€99",
           "popular": false,
           "desc": "For franchises, agencies & multi-site operators.",
           "features": [
