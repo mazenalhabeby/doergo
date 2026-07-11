@@ -11,6 +11,7 @@ import {
   HelpCircle,
   LogOut,
   FlaskConical,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -25,6 +26,7 @@ const navigation = [
 ];
 
 const bottomNavigation = [
+  { nameKey: 'nav.sidebar.billing', href: '/settings/billing', icon: CreditCard },
   { nameKey: 'nav.sidebar.settings', href: '/settings', icon: Settings },
   { nameKey: 'nav.help', href: '/help', icon: HelpCircle },
 ];

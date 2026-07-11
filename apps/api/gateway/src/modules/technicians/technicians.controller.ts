@@ -42,6 +42,12 @@ export class EmployeesController {
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
   ) {}
 
+  /** Fire-and-forget: re-sync billable seat counts to Stripe after a member change. */
+  private syncSeats(organizationId: string | null | undefined) {
+    if (!organizationId) return;
+    firstValueFrom(this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId })).catch(() => {});
+  }
+
   // ============================================================================
   // LIST & SEARCH
   // ============================================================================
@@ -231,7 +237,7 @@ export class EmployeesController {
     @Body() dto: CreateEmployeeDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return firstValueFrom(
+    const result = await firstValueFrom(
       this.authClient.send(
         { cmd: 'create_technician' },
         {
@@ -240,6 +246,8 @@ export class EmployeesController {
         },
       ),
     );
+    this.syncSeats(user.organizationId);
+    return result;
   }
 
   // ============================================================================
@@ -337,7 +345,7 @@ export class EmployeesController {
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return firstValueFrom(
+    const result = await firstValueFrom(
       this.authClient.send(
         { cmd: 'deactivate_technician' },
         {
@@ -346,6 +354,8 @@ export class EmployeesController {
         },
       ),
     );
+    this.syncSeats(user.organizationId);
+    return result;
   }
 
   // ============================================================================

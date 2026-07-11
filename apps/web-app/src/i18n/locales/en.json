@@ -620,7 +620,8 @@
       "performance": "Performance",
       "slaCompliance": "SLA Compliance",
       "settings": "Settings",
-      "helpCenter": "Help Center"
+      "helpCenter": "Help Center",
+      "billing": "Billing"
     },
     "userMenu": {
       "profile": "Profile",

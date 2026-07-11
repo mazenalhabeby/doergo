@@ -30,6 +30,12 @@ export class OrganizationsController {
     private readonly authCache: AuthTokenCache,
   ) {}
 
+  /** Fire-and-forget: re-sync billable seat counts to Stripe after a member change. */
+  private syncSeats(organizationId: string | null | undefined) {
+    if (!organizationId) return;
+    firstValueFrom(this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId })).catch(() => {});
+  }
+
   @Get('join-code')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Get organization join code info' })
@@ -163,6 +169,9 @@ export class OrganizationsController {
     // logout/login required.
     await this.authCache.invalidateUser(memberId);
 
+    // Access/role change may flip this member between office and field seat.
+    this.syncSeats(user.organizationId);
+
     return result;
   }
 
@@ -220,6 +229,8 @@ export class OrganizationsController {
       userId: memberId,
       organizationId: user.organizationId,
     });
+
+    this.syncSeats(user.organizationId);
 
     return result;
   }

@@ -620,7 +620,8 @@
       "performance": "Leistung",
       "slaCompliance": "SLA-Einhaltung",
       "settings": "Einstellungen",
-      "helpCenter": "Hilfe-Center"
+      "helpCenter": "Hilfe-Center",
+      "billing": "Abrechnung"
     },
     "userMenu": {
       "profile": "Profil",
