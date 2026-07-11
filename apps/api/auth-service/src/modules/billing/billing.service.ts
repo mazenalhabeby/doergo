@@ -80,6 +80,28 @@ export class BillingService {
     private readonly stripe: StripeService,
   ) {}
 
+  // ── debounced seat reconciliation ────────────────────────────────────────────
+  // Coalesce a burst of member add/remove/access changes into ONE Stripe sync
+  // (one proration event) instead of one per change. Keyed by org; the timer is
+  // unref'd so it never keeps the process alive.
+  private readonly reconcileTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private static readonly RECONCILE_DEBOUNCE_MS = 6000;
+
+  /** Debounced entry point called on every member/seat change — returns at once. */
+  scheduleReconcile(organizationId: string) {
+    const existing = this.reconcileTimers.get(organizationId);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      this.reconcileTimers.delete(organizationId);
+      this.reconcileSeats(organizationId).catch((e) =>
+        this.logger.error(`Seat reconcile failed for org ${organizationId}: ${(e as Error).message}`),
+      );
+    }, BillingService.RECONCILE_DEBOUNCE_MS);
+    if (typeof timer.unref === 'function') timer.unref();
+    this.reconcileTimers.set(organizationId, timer);
+    return ok(undefined, 'scheduled');
+  }
+
   // ── seat counting ──────────────────────────────────────────────────────────
   private async countOrgSeats(organizationId: string): Promise<SeatCounts> {
     const users = await this.prisma.user.findMany({
@@ -217,24 +239,32 @@ export class BillingService {
     return ok(undefined, 'Subscription will cancel at period end');
   }
 
-  // ── seat reconciliation (debounced job target) ─────────────────────────────────
+  // ── seat reconciliation (debounced target — runs once per burst) ───────────────
   async reconcileSeats(organizationId: string) {
     const seats = await this.countOrgSeats(organizationId);
     const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, include: { subscription: true } });
     if (!org?.subscription) {
       return ok(seats);
     }
-    // Persist counts regardless.
+    const sub = org.subscription;
+    const changed = sub.officeSeats !== seats.office || sub.fieldSeats !== seats.field;
+
+    // Nothing to do — many member edits (rename, schedule) don't touch seat
+    // counts, so we skip the DB write AND the Stripe round-trip entirely.
+    if (!changed) return ok(seats);
+
     await this.prisma.subscription.update({
       where: { organizationId },
       data: { officeSeats: seats.office, fieldSeats: seats.field },
     });
-    // Push to Stripe only when there's a live subscription.
-    if (org.subscription.stripeSubscriptionId && this.stripe.isConfigured && org.subscription.planTier !== 'ENTERPRISE') {
-      const tier = tierFromPrisma(org.subscription.planTier)!;
-      const interval = intervalFromPrisma(org.subscription.interval);
+
+    // Push the new quantities to Stripe only when there's a live subscription and
+    // the count actually changed (proration timing chosen by interval downstream).
+    if (sub.stripeSubscriptionId && this.stripe.isConfigured && sub.planTier !== 'ENTERPRISE') {
+      const tier = tierFromPrisma(sub.planTier)!;
+      const interval = intervalFromPrisma(sub.interval);
       await this.stripe.setSubscriptionQuantities(
-        org.subscription.stripeSubscriptionId,
+        sub.stripeSubscriptionId,
         {
           officePriceId: this.stripe.priceId('office', tier, interval),
           officeQty: seats.office,

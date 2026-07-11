@@ -39,7 +39,8 @@ export class BillingController {
 
   @MessagePattern({ cmd: 'billing_reconcile_seats' })
   reconcile(@Payload() d: { organizationId: string }) {
-    return this.billing.reconcileSeats(d.organizationId);
+    // Debounced: a burst of member changes collapses into one Stripe sync.
+    return this.billing.scheduleReconcile(d.organizationId);
   }
 
   @MessagePattern({ cmd: 'billing_webhook' })
