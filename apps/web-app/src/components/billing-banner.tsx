@@ -4,17 +4,23 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, Clock, Lock, ArrowRight } from 'lucide-react';
 import { billingApi } from '@/lib/api';
+import { useAuth } from '@/contexts/auth-context';
 import type { SubscriptionView } from '@hbcfield/shared/client';
 
 /**
- * Premium status ribbon across the dashboard when billing needs attention:
- * trial countdown, failed payment, or an inactive (locked) subscription.
- * Theme-aware; hidden for healthy active subscriptions. Links to /settings/billing.
+ * Premium status ribbon shown to ADMINS only when billing needs attention:
+ * trial countdown, failed payment, or an inactive (locked) subscription. Only
+ * the org owner can act on it (all billing endpoints are ADMIN-gated), so
+ * managers/members never see the nag — and never make the billing API call.
+ * Theme-aware; hidden for healthy active subscriptions.
  */
 export function BillingBanner() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [sub, setSub] = useState<SubscriptionView | null>(null);
 
   useEffect(() => {
+    if (!isAdmin) return; // non-admins: no fetch, no banner
     let alive = true;
     billingApi
       .getSubscription()
@@ -23,9 +29,9 @@ export function BillingBanner() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [isAdmin]);
 
-  if (!sub) return null;
+  if (!isAdmin || !sub) return null;
 
   let variant: {
     grad: string;
