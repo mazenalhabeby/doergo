@@ -9,6 +9,7 @@ import { InvitationModule } from './modules/invitations/invitation.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { InvoiceModule } from './modules/invoices/invoice.module';
+import { BillingModule } from './modules/billing/billing.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { InvoiceModule } from './modules/invoices/invoice.module';
     OnboardingModule,
     AuditLogModule,
     InvoiceModule,
+    BillingModule,
   ],
 })
 export class AppModule {}
