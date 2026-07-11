@@ -13,6 +13,9 @@
 // Export all types (enums, interfaces, etc.)
 export * from './types';
 
+// Billing (plans, seat pricing, seat classifier, API types) — pure, client-safe
+export * from './billing';
+
 // Export utility functions (date, query string building)
 export * from './utils';
 

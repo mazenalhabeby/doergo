@@ -3765,3 +3765,44 @@ export const invoicesApi = {
 
 export default api;
 export { TimeEntryStatus, BreakType, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@hbcfield/shared/client';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Billing / Subscriptions
+// ──────────────────────────────────────────────────────────────────────────────
+import type { SubscriptionView, PlanTier, BillingInterval } from '@hbcfield/shared/client';
+
+export const billingApi = {
+  /** Current org subscription/billing status. */
+  getSubscription: async (): Promise<SubscriptionView> => {
+    const response = await api.get<SubscriptionView>('/billing/subscription');
+    if (response.error) throw new Error(response.error);
+    return response.data as SubscriptionView;
+  },
+
+  /** Start Stripe Checkout for a self-serve plan → returns a redirect URL. */
+  checkout: async (tier: Exclude<PlanTier, 'enterprise'>, interval: BillingInterval): Promise<{ url: string }> => {
+    const response = await api.post<{ url: string }>('/billing/checkout', { tier, interval });
+    if (response.error) throw new Error(response.error);
+    return response.data as { url: string };
+  },
+
+  /** Open the Stripe Customer Portal (payment method, invoices, cancel). */
+  portal: async (): Promise<{ url: string }> => {
+    const response = await api.post<{ url: string }>('/billing/portal', {});
+    if (response.error) throw new Error(response.error);
+    return response.data as { url: string };
+  },
+
+  /** Change the active plan/interval (returns a portal/checkout URL to confirm). */
+  changePlan: async (tier: Exclude<PlanTier, 'enterprise'>, interval: BillingInterval): Promise<{ url?: string }> => {
+    const response = await api.post<{ url?: string }>('/billing/change-plan', { tier, interval });
+    if (response.error) throw new Error(response.error);
+    return (response.data as { url?: string }) ?? {};
+  },
+
+  /** Cancel at period end. */
+  cancel: async (): Promise<void> => {
+    const response = await api.post('/billing/cancel', {});
+    if (response.error) throw new Error(response.error);
+  },
+};
