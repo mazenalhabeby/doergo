@@ -327,6 +327,17 @@ model Organization {
   securitySettings  Json?   // { sessionTimeoutHours, requireStrongPassword, maxFailedAttempts }
   enabledModules    Json?   // e.g. ["story_points", "epics", "sprints", "phases", "custom_fields", "time_tracking"]
 
+  // ── SaaS billing (denormalized for fast guard reads; Subscription + Stripe are source of truth) ──
+  stripeCustomerId  String?             @unique
+  planTier          PlanTier?           // null = no paid plan chosen yet
+  subStatus         SubscriptionStatus  @default(TRIALING)
+  billingInterval   BillingInterval     @default(MONTHLY)
+  trialEndsAt       DateTime?
+  currentPeriodEnd  DateTime?
+  cancelAtPeriodEnd Boolean             @default(false)
+  billingEmail      String?
+  vatId             String?
+
   users User[]
   tasks Task[]
 
@@ -383,6 +394,10 @@ model Organization {
 
   // Schedule templates
   scheduleTemplates ScheduleTemplate[]
+
+  // SaaS subscription / billing
+  subscription  Subscription?
+  billingEvents BillingEvent[]
 
   @@map("organizations")
 }
@@ -1848,4 +1863,74 @@ model InvoiceItem {
 
   @@index([invoiceId])
   @@map("invoice_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SaaS BILLING & SUBSCRIPTIONS
+//  (org-level subscription state; distinct from the customer-facing Invoice
+//   model above, which is orgs billing THEIR OWN clients for jobs.)
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum PlanTier {
+  STARTER
+  PROFESSIONAL
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING     // in 14-day free trial (no card yet)
+  ACTIVE       // paid & current
+  PAST_DUE     // payment failed, in dunning grace period
+  CANCELED     // canceled (access until currentPeriodEnd, then locked)
+  INCOMPLETE   // trial ended with no payment method → locked read-only
+}
+
+enum BillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
+/// One subscription per organization. Seat quantities are derived from member
+/// access (office = ADMIN + web members, field = mobile-only) and synced to Stripe.
+model Subscription {
+  id                   String   @id @default(cuid())
+  organizationId       String   @unique
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  stripeSubscriptionId String?  @unique
+  planTier             PlanTier
+  status               SubscriptionStatus @default(TRIALING)
+  interval             BillingInterval    @default(MONTHLY)
+
+  officeSeats          Int      @default(0)
+  fieldSeats           Int      @default(0)
+
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  trialEndsAt          DateTime?
+  cancelAtPeriodEnd    Boolean  @default(false)
+  canceledAt           DateTime?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([status])
+  @@map("subscriptions")
+}
+
+/// Raw Stripe webhook events — for idempotency (unique stripeEventId) and audit.
+model BillingEvent {
+  id             String   @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  stripeEventId  String   @unique
+  type           String
+  payload        Json?
+  processedAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("billing_events")
 }
