@@ -153,7 +153,8 @@ interface CreateTaskDialogProps {
 // ---------------------------------------------------------------------------
 export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultSpaceId }: CreateTaskDialogProps) {
   const { t } = useTranslation()
-  const { user, hasModule: orgHasModule } = useAuth()
+  const { user, hasModule: orgHasModule, hasPlanFeature } = useAuth()
+  const canRecur = hasPlanFeature("recurring") // Recurring tasks = Professional+
   const queryClient = useQueryClient()
 
   // ── Space state ──
@@ -627,7 +628,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             <PrioritySelector value={priority} onChange={setPriority} disabled={isSubmitting} />
           </div>
 
-          {/* Repeat (recurring) */}
+          {/* Repeat (recurring) — Professional+ */}
+          {canRecur && (
           <div className="rounded-lg border border-border bg-card p-3 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -708,6 +710,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
               </div>
             )}
           </div>
+          )}
 
           {/* Collapsible Sections */}
           <div className="space-y-1.5 pt-1">

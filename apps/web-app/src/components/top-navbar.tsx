@@ -114,7 +114,7 @@ function usePrefetchRoutes() {
 // TopNavbar
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPlanFeature } = useAuth()
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
@@ -279,6 +279,7 @@ export function TopNavbar() {
           fullName={fullName}
           avatarUrl={user.avatarUrl}
           canManageUsers={user.canManageUsers}
+          canInvoice={user.canManageUsers && hasPlanFeature('invoicing')}
           onLogout={logout}
         />
       </div>
@@ -595,6 +596,7 @@ function UserDropdown({
   fullName,
   avatarUrl,
   canManageUsers,
+  canInvoice,
   onLogout,
 }: {
   user: { email: string; role: string; firstName?: string; lastName?: string }
@@ -602,6 +604,7 @@ function UserDropdown({
   fullName: string
   avatarUrl?: string | null
   canManageUsers: boolean
+  canInvoice: boolean
   onLogout: () => void
 }) {
   const { t } = useTranslation()
@@ -656,8 +659,8 @@ function UserDropdown({
             </DropdownMenuItem>
           )}
 
-          {/* Customer invoicing (bill your clients) — admins only */}
-          {canManageUsers && (
+          {/* Customer invoicing (bill your clients) — admins only, Professional+ */}
+          {canInvoice && (
             <>
               <DropdownMenuItem asChild className="rounded-md cursor-pointer">
                 <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">

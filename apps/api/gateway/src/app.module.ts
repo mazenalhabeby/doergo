@@ -37,6 +37,8 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { SubscriptionGuard } from './common/guards/subscription.guard';
+import { PlanGuard } from './common/guards/plan.guard';
+import { ModuleGuard } from './common/guards/module.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 @Module({
@@ -122,6 +124,14 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     {
       provide: APP_GUARD,
       useClass: SubscriptionGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PlanGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ModuleGuard,
     },
     // Auto-audit every mutating request (after guards, around the handler).
     {

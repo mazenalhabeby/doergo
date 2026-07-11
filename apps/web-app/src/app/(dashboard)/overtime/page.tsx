@@ -1,5 +1,6 @@
 "use client"
 
+import { PlanGate } from "@/components/plan-gate"
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -69,6 +70,14 @@ const DURATION_OPTIONS = [
 ]
 
 export default function OvertimePage() {
+  return (
+    <PlanGate feature="overtime">
+      <OvertimePageInner />
+    </PlanGate>
+  )
+}
+
+function OvertimePageInner() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState("pending")

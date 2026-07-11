@@ -20,6 +20,8 @@ import {
   QUEUE_NAMES,
   OVERTIME_JOB_TYPES,
   buildSingleDayFilter,
+  tierAllows,
+  type PlanTier,
 } from '@hbcfield/shared';
 import { format } from 'date-fns';
 
@@ -681,6 +683,20 @@ export class AttendanceService {
       activeSchedules.map((s) => [`${s.technicianId}:${s.dayOfWeek}`, s]),
     );
 
+    // Overtime is a Professional+ capability. Batch-resolve which orgs are
+    // entitled so a shift-end triggers the overtime flow only on those plans;
+    // orgs without it just auto-clock-out normally at shift end (below).
+    const orgIds = [...new Set(openEntries.map((e) => e.organizationId))];
+    const orgTiers = await this.prisma.organization.findMany({
+      where: { id: { in: orgIds } },
+      select: { id: true, planTier: true },
+    });
+    const overtimeEntitledOrgs = new Set(
+      orgTiers
+        .filter((o) => tierAllows((o.planTier ?? '').toString().toLowerCase() as PlanTier, 'overtime'))
+        .map((o) => o.id),
+    );
+
     for (const entry of openEntries) {
       // Skip entries that are in the overtime flow (pending, approved, or waiting approval)
       const activeOvertimeRequest = overtimeByEntry.get(entry.id);
@@ -723,20 +739,24 @@ export class AttendanceService {
           const gracePeriod = ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES;
 
           if (nowMinutes >= endMinutes + gracePeriod) {
-            // Check if overtime request already exists (from the batched map)
-            const existingOT = overtimeByEntry.get(entry.id);
-            if (!existingOT) {
-              // Initiate overtime flow instead of clock-out
-              await this.overtimeQueue.add(OVERTIME_JOB_TYPES.INITIATE, {
-                userId: entry.userId,
-                timeEntryId: entry.id,
-                locationId: entry.locationId,
-                organizationId: entry.organizationId,
-              }, { removeOnComplete: true });
-              this.logger.log(`Shift ended for entry ${entry.id}: initiated overtime flow instead of auto-clock-out`);
+            if (overtimeEntitledOrgs.has(entry.organizationId)) {
+              // Check if overtime request already exists (from the batched map)
+              const existingOT = overtimeByEntry.get(entry.id);
+              if (!existingOT) {
+                // Initiate overtime flow instead of clock-out
+                await this.overtimeQueue.add(OVERTIME_JOB_TYPES.INITIATE, {
+                  userId: entry.userId,
+                  timeEntryId: entry.id,
+                  locationId: entry.locationId,
+                  organizationId: entry.organizationId,
+                }, { removeOnComplete: true });
+                this.logger.log(`Shift ended for entry ${entry.id}: initiated overtime flow instead of auto-clock-out`);
+              }
+              // Skip clock-out — overtime timeout checker handles it
+              continue;
             }
-            // Skip clock-out — overtime timeout checker handles it
-            continue;
+            // Plan without the overtime engine → normal auto-clock-out at shift end.
+            reason = 'shift_ended';
           }
         }
       }

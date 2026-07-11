@@ -11,11 +11,13 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { CreateRecurringTaskDto, UpdateRecurringTaskDto } from './dto';
 import { RecurringTasksService } from './recurring-tasks.service';
 
 @ApiTags('recurring-tasks')
 @ApiBearerAuth()
+@RequirePlan('recurring') // Professional+ (write routes; reads pass through)
 @Controller('recurring-tasks')
 export class RecurringTasksController {
   constructor(private readonly recurringTasksService: RecurringTasksService) {}

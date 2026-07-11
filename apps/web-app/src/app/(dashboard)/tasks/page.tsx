@@ -131,7 +131,7 @@ const SPRINT_STATUS_LABEL: Record<string, string> = {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function TasksPage() {
-  const { user, hasModule } = useAuth()
+  const { user, hasModule, hasPlanFeature } = useAuth()
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
@@ -1052,8 +1052,8 @@ export default function TasksPage() {
             ))}
           </div>
 
-          {/* Recurring view toggle (admins) */}
-          {user?.role === "ADMIN" && (
+          {/* Recurring view toggle (admins, Professional+) */}
+          {user?.role === "ADMIN" && hasPlanFeature("recurring") && (
             <Button
               size="sm"
               variant={recurringView ? "default" : "outline"}

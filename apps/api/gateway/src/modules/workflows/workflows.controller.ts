@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
+import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import {
   CreateWorkflowDto,
   UpdateWorkflowDto,
@@ -25,6 +26,7 @@ import { WorkflowsService } from './workflows.service';
 
 @ApiTags('workflows')
 @ApiBearerAuth()
+@RequirePlan('workflows') // Business+ (write routes; reads pass through)
 @Controller('workflows')
 export class WorkflowsController {
   constructor(private readonly workflowsService: WorkflowsService) {}

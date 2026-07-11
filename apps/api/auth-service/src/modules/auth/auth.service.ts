@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { BillingService } from '../billing/billing.service';
 import {
   MAX_SESSIONS_PER_USER,
   MAX_FAILED_ATTEMPTS,
@@ -60,6 +61,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly auditLog: AuditLogService,
+    private readonly billing: BillingService,
   ) {
     const smtpHost = this.configService.get('SMTP_HOST');
     if (smtpHost) {
@@ -215,6 +217,20 @@ export class AuthService {
           return newUser;
         });
 
+        // Start the 14-day Professional trial (sets planTier/subStatus/trialEndsAt
+        // + Subscription row). Without this a full web signup lands with
+        // planTier=null and every premium feature 402s. Non-fatal — a billing
+        // hiccup must not block registration.
+        if (result.organizationId) {
+          try {
+            await this.billing.startTrial(result.organizationId);
+          } catch (e) {
+            this.logger.warn(
+              `startTrial failed for org ${result.organizationId}: ${(e as Error).message}`,
+            );
+          }
+        }
+
         return { success: true, data: result };
       } else {
         // Orphan user: no org, onboarding required
@@ -271,7 +287,7 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, profileBadges: true, enabledModules: true } },
+          organization: { select: { name: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
         },
       });
@@ -424,6 +440,9 @@ export class AuthService {
             // Org FEATURE modules (sprints, checklists, tracking…) — always the
             // org's set, never the user's access profile. Drives hasModule/hasFeature.
             orgModules: (user.organization?.enabledModules as string[] | null) || [],
+            // Billing tier + subscription status (lowercase) — drives plan gating.
+            subStatus: (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+            planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
             // Custom role
             orgRole: user.orgRole ? { id: user.orgRole.id, name: user.orgRole.name, slug: user.orgRole.slug, color: user.orgRole.color } : null,
             rolePermissions: (user.orgRole?.permissions as Record<string, boolean>) || {},
@@ -675,6 +694,8 @@ export class AuthService {
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
             enabledModules: (storedToken.user.enabledModules ?? storedToken.user.organization?.enabledModules) || [],
             orgModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
+            subStatus: (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+            planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
             orgRole: storedToken.user.orgRole ? { id: storedToken.user.orgRole.id, name: storedToken.user.orgRole.name, slug: storedToken.user.orgRole.slug, color: storedToken.user.orgRole.color } : null,
             rolePermissions: (storedToken.user.orgRole?.permissions as Record<string, boolean>) || {},
           },

@@ -1,5 +1,6 @@
 "use client"
 
+import { PlanGate } from "@/components/plan-gate"
 import { useState, useCallback, memo, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
@@ -817,6 +818,14 @@ function StatusDialog({
 // ============================================================================
 
 export default function WorkflowsSettingsPage() {
+  return (
+    <PlanGate feature="workflows">
+      <WorkflowsSettingsPageInner />
+    </PlanGate>
+  )
+}
+
+function WorkflowsSettingsPageInner() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const router = useRouter()

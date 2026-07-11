@@ -1,7 +1,10 @@
 # HBCField — Billing & Subscriptions Plan
 
-> Status: **in progress** (feature branch `feat/billing`). Nothing deployed.
+> Status: **built, not deployed** (on `main` behind Stripe keys). Nothing deployed.
 > Last updated: 2026-07-11.
+>
+> **See also:** `billing-architecture.md` (Stripe flows) · `billing-feature-gating.md`
+> (how a tier becomes enforced access — guards, tier map, security audit, go-live + backfill).
 
 ## Pricing model (matches the marketing site)
 

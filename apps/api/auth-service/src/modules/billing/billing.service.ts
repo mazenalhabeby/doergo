@@ -378,13 +378,22 @@ export class BillingService {
     const { start: periodStart, end: periodEnd } = subPeriod(sub);
     const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
 
-    // Feature ceiling follows the (denormalized) tier; tier changes arrive as separate events.
+    // AUTHORITATIVE tier/interval = what the customer actually pays for, resolved
+    // from the subscription's Stripe price IDs. This is the ONLY correct source —
+    // reading the denormalized org.planTier would let a Starter buyer keep the
+    // trial's Professional entitlements (payment ≠ entitlement). Fall back to the
+    // stored tier only when no known price matches (e.g. Enterprise/custom).
     const org = await this.prisma.organization.findUnique({ where: { id: orgId }, select: { planTier: true } });
-    const tier = tierFromPrisma(org?.planTier ?? null);
+    const resolved = this.stripe.resolveTierInterval(sub);
+    const tier = resolved?.tier ?? tierFromPrisma(org?.planTier ?? null);
+    const prismaTier: PrismaTier = tier ? (tier.toUpperCase() as PrismaTier) : (org?.planTier ?? 'PROFESSIONAL');
+    const prismaInterval: PrismaInterval = resolved ? INTERVAL_TO_PRISMA[resolved.interval] : 'MONTHLY';
 
     await this.prisma.organization.update({
       where: { id: orgId },
       data: {
+        planTier: prismaTier,
+        billingInterval: prismaInterval,
         subStatus: status,
         currentPeriodEnd: periodEnd,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
@@ -397,9 +406,9 @@ export class BillingService {
       create: {
         organizationId: orgId,
         stripeSubscriptionId: sub.id,
-        planTier: org?.planTier ?? 'PROFESSIONAL',
+        planTier: prismaTier,
         status,
-        interval: 'MONTHLY',
+        interval: prismaInterval,
         currentPeriodStart: periodStart,
         currentPeriodEnd: periodEnd,
         trialEndsAt: trialEnd,
@@ -408,6 +417,8 @@ export class BillingService {
       },
       update: {
         stripeSubscriptionId: sub.id,
+        planTier: prismaTier,
+        interval: prismaInterval,
         status,
         currentPeriodStart: periodStart,
         currentPeriodEnd: periodEnd,

@@ -107,6 +107,26 @@ export class StripeService {
   }
 
   /**
+   * Reverse-resolve the PURCHASED office tier + interval from a subscription's
+   * line-item price IDs. This is the authoritative source of what the customer
+   * actually pays for — used on every webhook so entitlement can never drift from
+   * payment (e.g. a Starter buyer must not inherit the trial's Professional tier).
+   * Returns null if no known office price matches (e.g. Enterprise/custom).
+   */
+  resolveTierInterval(sub: Stripe.Subscription): { tier: PlanTier; interval: BillingInterval } | null {
+    const priceIds = new Set(sub.items.data.map((i) => i.price.id));
+    const tiers: Array<'starter' | 'professional' | 'business'> = ['starter', 'professional', 'business'];
+    const intervals: BillingInterval[] = ['monthly', 'annual'];
+    for (const tier of tiers) {
+      for (const interval of intervals) {
+        const id = this.config.get<string>(STRIPE_PRICE_ENV_KEYS[tier].office[interval]);
+        if (id && priceIds.has(id)) return { tier, interval };
+      }
+    }
+    return null;
+  }
+
+  /**
    * Set the office/field line quantities on an existing subscription, prorated.
    *
    * Proration timing (decided by the caller via `invoiceNow`):

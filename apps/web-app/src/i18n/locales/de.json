@@ -310,6 +310,7 @@
           "desc": "Aufgaben, Anwesenheit, GPS, Dienstpläne & Mobil.",
           "features": [
             "Live-Dispositionsboard",
+            "Serviceberichte & Fotos",
             "Geozaun-Einstempeln",
             "GPS mit exakter Route"
           ]
@@ -320,9 +321,9 @@
           "popular": true,
           "desc": "Alles aus Starter, plus das komplette Feld-Toolkit.",
           "features": [
-            "Serviceberichte & Anlagen",
             "Überstunden-Engine",
             "Wiederkehrend & benutzerdef. Felder",
+            "Aufgabenabhängigkeiten",
             "Rechnungsstellung"
           ]
         },

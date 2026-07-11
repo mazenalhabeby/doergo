@@ -22,6 +22,7 @@ import { SprintsService } from './sprints.service';
 
 @ApiTags('sprints')
 @ApiBearerAuth()
+@RequireModule('sprints') // Business+ — gates ALL mutations (create/update/start/complete/delete); reads pass
 @Controller('sprints')
 export class SprintsController {
   constructor(private readonly sprintsService: SprintsService) {}

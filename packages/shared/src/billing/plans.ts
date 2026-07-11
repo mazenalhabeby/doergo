@@ -34,45 +34,58 @@ export interface PlanDef {
   /** Per office seat, EUR cents. `null` for Enterprise (custom quote). */
   officeMonthlyCents: number | null;
   officeAnnualCents: number | null;
-  /** Feature modules this tier unlocks org-wide (drives Organization.enabledModules). */
+  /**
+   * Task FEATURE modules this tier unlocks org-wide. These are the SAME keys the
+   * `AVAILABLE_MODULES` catalog, `hasFeatureModule()` and `@RequireModule` use, and
+   * this list is what `Organization.enabledModules` is set to on trial/checkout.
+   * ONLY real, catalog-backed module keys belong here (never capability keys).
+   */
   modules: string[];
+  /**
+   * Premium CAPABILITIES this tier unlocks that are NOT task-modules (they have no
+   * entry in the AVAILABLE_MODULES catalog and are not stored on enabledModules).
+   * They are gated purely by tier via `tierAllows()` — e.g. recurring, invoicing.
+   */
+  capabilities: string[];
   /** Enterprise = sales-assisted / custom contract, not self-serve checkout. */
   custom: boolean;
 }
 
-// Feature-module keys are the same strings the existing @RequireModule guard and
-// hasFeatureModule() already check. Tiers are cumulative (each includes the ones
-// below). NOTE: refine this mapping against the final feature list before launch —
-// the STRUCTURE is fixed; the exact membership is a product decision.
+// ── Task feature MODULES (catalog-backed; written to Organization.enabledModules) ──
+// Must only contain keys present in AVAILABLE_MODULES (packages/shared/src/types).
+// Tiers are cumulative (each includes the ones below).
 const STARTER_MODULES = [
   'subtasks',
   'checklists',
   'attachments',
   'tracking', // exact-route GPS
   'time_tracking', // geofenced clock-in / attendance
+  'service_reports', // completion reports w/ photos & signatures — core field-service value
 ];
 
 const PROFESSIONAL_MODULES = [
   ...STARTER_MODULES,
-  'service_reports',
-  'recurring',
   'custom_fields',
-  'overtime',
-  'invoicing', // customer invoicing feature
+  'dependencies',
 ];
 
 const BUSINESS_MODULES = [
   ...PROFESSIONAL_MODULES,
-  'multi_org',
-  'audit_log',
-  'workflows',
   'sprints',
+  'story_points',
   'epics',
   'phases',
 ];
 
 // Enterprise unlocks everything Business has (plus bespoke add-ons handled per contract).
 const ENTERPRISE_MODULES = [...BUSINESS_MODULES];
+
+// ── Premium CAPABILITIES (tier-gated, NOT task-modules / not on enabledModules) ──
+// Gated only by tier through tierAllows(); cumulative like the modules above.
+const STARTER_CAPS: string[] = [];
+const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing'];
+const BUSINESS_CAPS = [...PROFESSIONAL_CAPS, 'workflows', 'audit_log', 'multi_org'];
+const ENTERPRISE_CAPS = [...BUSINESS_CAPS];
 
 export const PLANS: Record<PlanTier, PlanDef> = {
   starter: {
@@ -81,6 +94,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     officeMonthlyCents: 2900,
     officeAnnualCents: 29000, // €29 × 10
     modules: STARTER_MODULES,
+    capabilities: STARTER_CAPS,
     custom: false,
   },
   professional: {
@@ -89,6 +103,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     officeMonthlyCents: 5900,
     officeAnnualCents: 59000,
     modules: PROFESSIONAL_MODULES,
+    capabilities: PROFESSIONAL_CAPS,
     custom: false,
   },
   business: {
@@ -97,6 +112,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     officeMonthlyCents: 9900,
     officeAnnualCents: 99000,
     modules: BUSINESS_MODULES,
+    capabilities: BUSINESS_CAPS,
     custom: false,
   },
   enterprise: {
@@ -105,6 +121,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     officeMonthlyCents: null, // from €199/mo — custom quote
     officeAnnualCents: null,
     modules: ENTERPRISE_MODULES,
+    capabilities: ENTERPRISE_CAPS,
     custom: true,
   },
 };
@@ -117,7 +134,7 @@ export const TIER_RANK: Record<PlanTier, number> = {
   enterprise: 3,
 };
 
-/** Feature modules a tier unlocks org-wide (what Organization.enabledModules should be capped to). */
+/** Feature modules a tier unlocks org-wide (what Organization.enabledModules is set to). */
 export function modulesForTier(tier: PlanTier): string[] {
   return PLANS[tier].modules;
 }
@@ -131,6 +148,35 @@ export function tierHasModule(tier: PlanTier, moduleKey: string): boolean {
 export function minTierForModule(moduleKey: string): PlanTier | null {
   for (const tier of PLAN_TIERS) {
     if (PLANS[tier].modules.includes(moduleKey)) return tier;
+  }
+  return null;
+}
+
+// ── Entitlements (modules ∪ capabilities) — the tier's full premium surface ──────
+
+/** Every premium key a tier unlocks: task-modules AND non-module capabilities. */
+export function entitlementsForTier(tier: PlanTier): string[] {
+  return [...PLANS[tier].modules, ...PLANS[tier].capabilities];
+}
+
+/**
+ * Whether a tier is entitled to a feature key (module OR capability). This is the
+ * single gate the backend guard and the web/mobile nav use. O(1)-ish, no DB, no
+ * array plumbing beyond the static plan table — safe to call on every request.
+ *
+ * Enterprise is entitled to everything (bespoke add-ons handled per contract).
+ */
+export function tierAllows(tier: PlanTier | null | undefined, key: string): boolean {
+  if (!tier) return false;
+  if (tier === 'enterprise') return true;
+  const p = PLANS[tier];
+  return p.modules.includes(key) || p.capabilities.includes(key);
+}
+
+/** The lowest tier that unlocks a feature key (module or capability), for upgrade CTAs. */
+export function minTierForFeature(key: string): PlanTier | null {
+  for (const tier of PLAN_TIERS) {
+    if (PLANS[tier].modules.includes(key) || PLANS[tier].capabilities.includes(key)) return tier;
   }
   return null;
 }

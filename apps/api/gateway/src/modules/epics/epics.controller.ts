@@ -19,6 +19,7 @@ import { EpicsService } from './epics.service';
 
 @ApiTags('epics')
 @ApiBearerAuth()
+@RequireModule('epics') // Business+ — gates ALL mutations (create/update/delete); reads pass
 @Controller('epics')
 export class EpicsController {
   constructor(private readonly epicsService: EpicsService) {}

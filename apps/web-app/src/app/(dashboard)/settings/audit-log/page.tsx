@@ -1,5 +1,6 @@
 "use client"
 
+import { PlanGate } from "@/components/plan-gate"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -62,6 +63,14 @@ const EVENT_COLORS: Record<string, string> = {
 const EVENT_TYPES = Object.keys(EVENT_COLORS)
 
 export default function AuditLogPage() {
+  return (
+    <PlanGate feature="audit_log">
+      <AuditLogPageInner />
+    </PlanGate>
+  )
+}
+
+function AuditLogPageInner() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"

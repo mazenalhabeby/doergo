@@ -19,6 +19,7 @@ import { PhasesService } from './phases.service';
 
 @ApiTags('phases')
 @ApiBearerAuth()
+@RequireModule('phases') // Business+ — gates ALL mutations (create/update/delete); reads pass
 @Controller('phases')
 export class PhasesController {
   constructor(private readonly phasesService: PhasesService) {}

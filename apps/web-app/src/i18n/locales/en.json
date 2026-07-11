@@ -310,6 +310,7 @@
           "desc": "Tasks, attendance, GPS, schedules & mobile.",
           "features": [
             "Live dispatch board",
+            "Service reports & photos",
             "Geofenced clock-in",
             "Exact-route GPS"
           ]
@@ -320,9 +321,9 @@
           "popular": true,
           "desc": "Everything in Starter, plus the full field toolkit.",
           "features": [
-            "Service reports & assets",
             "Overtime engine",
             "Recurring & custom fields",
+            "Task dependencies",
             "Invoicing"
           ]
         },

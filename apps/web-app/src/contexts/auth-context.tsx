@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
-import { hasFeatureModule } from '@hbcfield/shared/client';
+import { hasFeatureModule, tierAllows, type PlanTier } from '@hbcfield/shared/client';
 import { DashboardSkeleton } from '@/components/skeletons';
 
 // User type
@@ -35,6 +35,9 @@ export interface User {
   enabledModules: string[] | Record<string, unknown>;
   // Org FEATURE modules (sprints, checklists, tracking…) — drives hasModule().
   orgModules?: string[];
+  // Billing tier + subscription status (lowercase) — drives hasPlanFeature().
+  planTier?: string | null;
+  subStatus?: string;
   // Avatar
   avatarUrl?: string | null;
   // Custom role
@@ -89,6 +92,8 @@ interface AuthContextType {
   manualRefresh: () => Promise<boolean>;
   /** Check if an organization module is enabled */
   hasModule: (module: string) => boolean;
+  /** Check if the org's billing tier is entitled to a premium feature/capability */
+  hasPlanFeature: (feature: string) => boolean;
   /** Check if the user has a specific permission (checks user fields + role permissions) */
   hasPermission: (perm: string) => boolean;
 }
@@ -291,6 +296,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return hasFeatureModule(user ?? {}, module);
   }, [user?.orgModules]);
 
+  // Check if the org's billing tier is entitled to a premium feature/capability
+  // (recurring, overtime, workflows, custom_fields, dependencies, …). Pure tier
+  // check — no API call. Used to gate premium nav items and pages.
+  const hasPlanFeature = useCallback((feature: string) => {
+    return tierAllows((user?.planTier ?? null) as PlanTier | null, feature);
+  }, [user?.planTier]);
+
   // Check if user has a specific permission
   const hasPermission = useCallback((perm: string) => {
     if (!user) return false;
@@ -324,6 +336,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshUser,
     manualRefresh,
     hasModule,
+    hasPlanFeature,
     hasPermission,
   };
 

@@ -1043,11 +1043,22 @@ function SecuritySection() {
 
 export default function SettingsPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, hasPlanFeature } = useAuth()
   const searchParams = useSearchParams()
 
   const isAdmin = user?.role === "ADMIN"
   const canManage = user?.canManageUsers
+
+  // Hide settings tabs the org's plan tier doesn't include (workflows = Business,
+  // audit-log = Business). Content is also PlanGate-guarded + API-enforced (402).
+  const SECTION_PLAN_FEATURE: Partial<Record<SettingsSection, string>> = {
+    workflows: "workflows",
+    "audit-log": "audit_log",
+  }
+  const orgNavItems = ORG_NAV_ITEMS.filter((i) => {
+    const feat = SECTION_PLAN_FEATURE[i.key]
+    return !feat || hasPlanFeature(feat)
+  })
 
   // Non-admins default to personal profile, admins to general
   const defaultSection: SettingsSection = canManage ? "general" : "profile"
@@ -1091,7 +1102,7 @@ export default function SettingsPage() {
                   <p className="px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("settings.nav.organizationGroup")}
                   </p>
-                  {ORG_NAV_ITEMS.map(item => {
+                  {orgNavItems.map(item => {
                     const isActive = activeSection === item.key
                     return (
                       <button

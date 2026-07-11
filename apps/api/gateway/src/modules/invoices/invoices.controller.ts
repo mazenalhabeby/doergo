@@ -16,8 +16,10 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 
 @ApiTags('invoices')
+@RequirePlan('invoicing') // Professional+ (write routes; reads pass through)
 @Controller('invoices')
 @ApiBearerAuth()
 export class InvoicesController {

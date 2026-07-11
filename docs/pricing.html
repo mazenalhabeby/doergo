@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>HBCField — Pricing Recommendation</title>
+<title>HBCField — Pricing</title>
 <style>
   :root{
     --brand:#2563EB; --brand-dark:#1D4ED8; --brand-tint:#EFF4FF;
@@ -72,45 +72,41 @@
       </g>
     </svg>
     <div>
-      <h1>HBCField — Pricing Recommendation</h1>
-      <p class="sub">Per-member pricing for the <strong>Admin / Member</strong> model, benchmarked against the field-service market</p>
-      <p class="meta">Strategic guidance — not financial advice · competitor prices are directional (verify live) · July 2026</p>
+      <h1>HBCField — Pricing</h1>
+      <p class="sub"><strong>Office / Field</strong> seat pricing (shipped model), benchmarked against the field-service market</p>
+      <p class="meta">Strategy — not financial advice · competitor prices are directional (verify live) · July 2026</p>
     </div>
   </div>
 
   <div class="tldr">
-    <b>In one line:</b> Price per member in the <b>FSM tier (~€30–39 blended)</b> — not the commoditized
+    <b>In one line:</b> Price in the <b>FSM tier (~€20–30 blended /user)</b> — not the commoditized
     time-clock tier (€2–10). HBCField overlaps three tools that are normally bought separately:
     <b>Field Service Management + Time&nbsp;&amp;&nbsp;Attendance + GPS tracking.</b>
   </div>
 
-  <h2>1 · Recommended seat pricing (Admin / Member)</h2>
+  <h2>1 · Seat pricing (Office by tier · Field flat)</h2>
   <table>
-    <thead><tr><th style="width:22%">Seat</th><th style="width:20%">Price</th><th>Who it maps to</th><th style="width:18%">Role</th></tr></thead>
+    <thead><tr><th style="width:20%">Seat</th><th style="width:26%">Price</th><th>Who it maps to</th><th style="width:16%">Role</th></tr></thead>
     <tbody>
-      <tr><td><strong>Admin</strong></td><td class="price">€39–49 / user / mo</td><td>Owners, managers — full control, all modules, web + mobile</td><td>The value seat</td></tr>
-      <tr><td><strong>Member</strong></td><td class="price">€15–19 / user / mo</td><td>Everyone else — execute tasks, clock in, GPS/route</td><td>Where the headcount is</td></tr>
+      <tr><td><strong>Office</strong></td><td class="price">€29 / €59 / €99 per user/mo (by tier)</td><td>Admins + any member with <strong>web access</strong> (managers, dispatchers, coordinators)</td><td>The value seat</td></tr>
+      <tr><td><strong>Field</strong></td><td class="price">€19 per user/mo (flat, all tiers)</td><td><strong>Mobile-only</strong> members — execute tasks, clock in, GPS/route</td><td>Where the headcount is</td></tr>
+      <tr><td><strong>Enterprise</strong></td><td class="price">from €199 / mo</td><td>Multi-site / bespoke</td><td>Sales-assisted</td></tr>
     </tbody>
   </table>
-  <p>Blended ≈ <strong>€22–28 / user</strong> for a typical crew (a few admins, many members).</p>
+  <p>Blended ≈ <strong>€20–30 / user</strong> — e.g. Professional with 3 office + 12 field = 3×€59 + 12×€19 = <strong>€405/mo for 15 users ≈ €27/user</strong>.</p>
 
-  <h3>Optional field discount — using the <code>platform</code> flag (no Manager role needed)</h3>
-  <table>
-    <thead><tr><th style="width:42%">Member type</th><th style="width:20%">Price</th><th>Example</th></tr></thead>
-    <tbody>
-      <tr><td>Member — <strong>web access</strong></td><td class="price">~€25–29</td><td>Office coordinator / back-office</td></tr>
-      <tr><td>Member — <strong>mobile-only</strong></td><td class="price">~€12–15</td><td>Field technician</td></tr>
-    </tbody>
-  </table>
+  <h3>How the seat type is decided — automatic, from <code>platform</code> access</h3>
+  <p>The seat = <strong>platform access</strong> (<code>getAccessPlatforms</code>), not role: a member with web/both access bills as an <strong>Office</strong> seat; a <strong>mobile-only</strong> member bills as a <strong>€19 Field</strong> seat. An admin re-scopes a technician to mobile-only and the seat (and price) reclassifies automatically — reconciled to Stripe on member add/remove.</p>
 
   <h2>2 · Feature tiers (what's unlocked)</h2>
-  <p class="sub">Roles decide <em>who pays what</em>; tiers decide <em>what's unlocked</em>.</p>
+  <p class="sub">Seats decide <em>who pays</em>; tiers decide <em>what's unlocked</em> (cumulative). Field seat is €19 on every tier.</p>
   <table>
-    <thead><tr><th style="width:20%">Plan</th><th style="width:24%">Price basis</th><th>Unlocks</th></tr></thead>
+    <thead><tr><th style="width:18%">Plan</th><th style="width:20%">Office · Field</th><th>Unlocks (cumulative)</th></tr></thead>
     <tbody>
-      <tr><td><strong>Starter</strong></td><td class="price">Admin €19 · Member €9</td><td>Tasks, attendance, GPS, schedules, mobile</td></tr>
-      <tr class="row-us"><td><strong>Professional</strong> <span class="pill">POPULAR</span></td><td class="price">Admin €39 · Member €15</td><td>+ service reports, overtime engine, recurring tasks, custom fields, invoicing</td></tr>
-      <tr><td><strong>Business</strong></td><td class="price">Admin €69 · Member €25</td><td>+ multi-org delegation, audit log, workflows, priority support</td></tr>
+      <tr><td><strong>Starter</strong></td><td class="price">€29 · €19</td><td>Tasks, attendance, GPS, schedules, mobile, <strong>service reports &amp; photos</strong></td></tr>
+      <tr class="row-us"><td><strong>Professional</strong> <span class="pill">POPULAR</span></td><td class="price">€59 · €19</td><td>+ custom fields, task dependencies, recurring tasks, overtime engine, invoicing</td></tr>
+      <tr><td><strong>Business</strong></td><td class="price">€99 · €19</td><td>+ project/agile (sprints, epics, phases), workflows, audit log, multi-org delegation, priority support</td></tr>
+      <tr><td><strong>Enterprise</strong></td><td class="price">from €199</td><td>+ bespoke add-ons, custom terms</td></tr>
     </tbody>
   </table>
 
@@ -122,7 +118,7 @@
       <th>FSM</th><th>Time&amp;Att.</th><th>GPS route</th><th style="width:20%">Notes</th>
     </tr></thead>
     <tbody>
-      <tr class="row-us"><td><strong>HBCField</strong> (us)</td><td>All three in one</td><td class="price">€15–49<br>(~€30 blended)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>One login replaces 3 tools</td></tr>
+      <tr class="row-us"><td><strong>HBCField</strong> (us)</td><td>All three in one</td><td class="price">€19–99<br>(~€27 blended)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>One login replaces 3 tools</td></tr>
       <tr><td>ServiceTitan</td><td>Enterprise FSM</td><td class="price">€125–398</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Enterprise, custom, heavy</td></tr>
       <tr><td>FieldEdge</td><td>Enterprise FSM</td><td class="price">Custom</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">–</td><td>Enterprise HVAC/plumbing</td></tr>
       <tr><td>Jobber</td><td>FSM (SMB)</td><td class="price">~€50</td><td class="yes">✓</td><td class="no">–</td><td class="no">–</td><td>Strong CRM/quotes/payments</td></tr>
@@ -139,7 +135,7 @@
   <div class="callout">
     <strong>The pitch (and your strongest card):</strong><br>
     A customer otherwise buys <strong>Jobber (~€50) + Deputy (~€5) + Hubstaff (~€8) ≈ €60–90/user</strong>.<br>
-    HBCField: <strong>“Replaces all three — one login — for €39 an admin, €15 a field member.”</strong> Cheaper <em>and</em> consolidated.
+    HBCField: <strong>“Replaces all three — one login — for €59 an office seat, €19 a field tech.”</strong> Cheaper <em>and</em> consolidated.
   </div>
 
   <h2>4 · Where you sit — and the rules that matter</h2>
@@ -151,17 +147,17 @@
   <ul>
     <li><strong>Annual billing = 2 months free</strong> (~17% off) — pulls cash forward, cuts churn.</li>
     <li><strong>Floor ~€99/mo</strong> — filters out 1–2 person accounts that cost more in support than they pay.</li>
-    <li><strong>14-day free trial, no card</strong> — you need logos &amp; case studies more than early margin.</li>
+    <li><strong>14-day free trial (Professional), no card</strong> — you need logos &amp; case studies more than early margin.</li>
     <li><strong>Land low, raise later</strong> — every closed gap (invoice payments, Customer/Quote module, accounting integration, SOC2) is a documented price increase.</li>
   </ul>
 
   <div class="note">
-    <strong>Two caveats:</strong> (1) You can't charge until the <strong>Stripe / seat-metering layer</strong> is built —
-    the Admin/Member model makes this <em>easier</em> (two seat types, not three). (2) Pricing is strategy, not
-    financial advice — the real number depends on infrastructure cost per user, CAC, and churn.
+    <strong>Two caveats:</strong> (1) Billing is <strong>built, not deployed</strong> — payment goes live once the Stripe
+    account + prices exist and the end-to-end test passes (seat metering is automatic: office vs field from platform access).
+    (2) Pricing is strategy, not financial advice — the real number depends on infrastructure cost per user, CAC, and churn.
   </div>
 
-  <p class="foot">HBCField · Pricing recommendation · English</p>
+  <p class="foot">HBCField · Pricing · English</p>
 
   <!-- ============ DEUTSCH ============ -->
   <div class="pagebreak"></div>
@@ -179,45 +175,41 @@
       </g>
     </svg>
     <div>
-      <h1>HBCField — Preisempfehlung</h1>
-      <p class="sub">Preis pro Mitglied für das <strong>Admin&nbsp;/&nbsp;Mitglied</strong>-Modell, im Vergleich zum Field-Service-Markt</p>
-      <p class="meta">Strategische Empfehlung — keine Finanzberatung · Wettbewerbspreise sind Richtwerte (live prüfen) · Juli 2026</p>
+      <h1>HBCField — Preise</h1>
+      <p class="sub"><strong>Büro&nbsp;/&nbsp;Außendienst</strong>-Sitzpreise (ausgeliefertes Modell), im Vergleich zum Field-Service-Markt</p>
+      <p class="meta">Strategie — keine Finanzberatung · Wettbewerbspreise sind Richtwerte (live prüfen) · Juli 2026</p>
     </div>
   </div>
 
   <div class="tldr">
-    <b>In einem Satz:</b> Preis pro Mitglied im <b>FSM-Segment (~30–39 € gemischt)</b> — nicht im
+    <b>In einem Satz:</b> Preis im <b>FSM-Segment (~20–30 € gemischt /Nutzer)</b> — nicht im
     Billig-Stempeluhr-Segment (2–10 €). HBCField vereint drei sonst getrennt gekaufte Werkzeuge:
     <b>Field-Service-Management + Zeiterfassung&nbsp;&amp;&nbsp;Anwesenheit + GPS-Tracking.</b>
   </div>
 
-  <h2>1 · Empfohlene Sitz-Preise (Admin / Mitglied)</h2>
+  <h2>1 · Sitz-Preise (Büro nach Tarif · Außendienst pauschal)</h2>
   <table>
-    <thead><tr><th style="width:22%">Sitz</th><th style="width:22%">Preis</th><th>Wer</th><th style="width:18%">Rolle</th></tr></thead>
+    <thead><tr><th style="width:20%">Sitz</th><th style="width:28%">Preis</th><th>Wer</th><th style="width:16%">Rolle</th></tr></thead>
     <tbody>
-      <tr><td><strong>Admin</strong></td><td class="price">39–49 € / Nutzer / Monat</td><td>Inhaber, Manager — volle Kontrolle, alle Module, Web + Mobil</td><td>Der Wert-Sitz</td></tr>
-      <tr><td><strong>Mitglied</strong></td><td class="price">15–19 € / Nutzer / Monat</td><td>Alle anderen — Aufgaben ausführen, ein-/ausstempeln, GPS/Route</td><td>Wo die Anzahl ist</td></tr>
+      <tr><td><strong>Büro</strong></td><td class="price">29 € / 59 € / 99 € pro Nutzer/Monat (nach Tarif)</td><td>Admins + jedes Mitglied mit <strong>Web-Zugriff</strong> (Manager, Disponenten, Koordinatoren)</td><td>Der Wert-Sitz</td></tr>
+      <tr><td><strong>Außendienst</strong></td><td class="price">19 € pro Nutzer/Monat (pauschal, alle Tarife)</td><td><strong>Nur-Mobil</strong>-Mitglieder — Aufgaben ausführen, ein-/ausstempeln, GPS/Route</td><td>Wo die Anzahl ist</td></tr>
+      <tr><td><strong>Enterprise</strong></td><td class="price">ab 199 € / Monat</td><td>Multi-Standort / maßgeschneidert</td><td>Vertriebsbegleitet</td></tr>
     </tbody>
   </table>
-  <p>Gemischt ≈ <strong>22–28 € / Nutzer</strong> für ein typisches Team (wenige Admins, viele Mitglieder).</p>
+  <p>Gemischt ≈ <strong>20–30 € / Nutzer</strong> — z. B. Professional mit 3 Büro + 12 Außendienst = 3×59 € + 12×19 € = <strong>405 €/Monat für 15 Nutzer ≈ 27 €/Nutzer</strong>.</p>
 
-  <h3>Optionaler Außendienst-Rabatt — über das <code>platform</code>-Feld (keine Manager-Rolle nötig)</h3>
-  <table>
-    <thead><tr><th style="width:42%">Mitgliedstyp</th><th style="width:22%">Preis</th><th>Beispiel</th></tr></thead>
-    <tbody>
-      <tr><td>Mitglied — <strong>mit Web-Zugriff</strong></td><td class="price">~25–29 €</td><td>Büro-Koordinator / Innendienst</td></tr>
-      <tr><td>Mitglied — <strong>nur Mobil</strong></td><td class="price">~12–15 €</td><td>Außendiensttechniker</td></tr>
-    </tbody>
-  </table>
+  <h3>Wie der Sitztyp bestimmt wird — automatisch, über den <code>platform</code>-Zugriff</h3>
+  <p>Der Sitz = <strong>Plattform-Zugriff</strong> (<code>getAccessPlatforms</code>), nicht die Rolle: ein Mitglied mit Web/Beide-Zugriff wird als <strong>Büro</strong>-Sitz abgerechnet; ein <strong>Nur-Mobil</strong>-Mitglied als <strong>19 € Außendienst</strong>-Sitz. Ein Admin setzt einen Techniker auf nur mobil, und der Sitz (und Preis) wird automatisch neu klassifiziert — bei Mitglied-Hinzufügung/-Entfernung mit Stripe abgeglichen.</p>
 
   <h2>2 · Funktionstarife (was freigeschaltet ist)</h2>
-  <p class="sub">Rollen bestimmen <em>wer wie viel zahlt</em>; Tarife bestimmen <em>was freigeschaltet ist</em>.</p>
+  <p class="sub">Sitze bestimmen <em>wer zahlt</em>; Tarife bestimmen <em>was freigeschaltet ist</em> (kumulativ). Außendienst-Sitz = 19 € in jedem Tarif.</p>
   <table>
-    <thead><tr><th style="width:20%">Tarif</th><th style="width:26%">Preisbasis</th><th>Enthält</th></tr></thead>
+    <thead><tr><th style="width:18%">Tarif</th><th style="width:22%">Büro · Außendienst</th><th>Enthält (kumulativ)</th></tr></thead>
     <tbody>
-      <tr><td><strong>Starter</strong></td><td class="price">Admin 19 € · Mitglied 9 €</td><td>Aufgaben, Anwesenheit, GPS, Zeitpläne, Mobil</td></tr>
-      <tr class="row-us"><td><strong>Professional</strong> <span class="pill">BELIEBT</span></td><td class="price">Admin 39 € · Mitglied 15 €</td><td>+ Serviceberichte, Überstunden-Engine, wiederkehrende Aufgaben, benutzerdefinierte Felder, Rechnungsstellung</td></tr>
-      <tr><td><strong>Business</strong></td><td class="price">Admin 69 € · Mitglied 25 €</td><td>+ organisationsübergreifende Delegation, Audit-Log, Workflows, priorisierter Support</td></tr>
+      <tr><td><strong>Starter</strong></td><td class="price">29 € · 19 €</td><td>Aufgaben, Anwesenheit, GPS, Zeitpläne, Mobil, <strong>Serviceberichte &amp; Fotos</strong></td></tr>
+      <tr class="row-us"><td><strong>Professional</strong> <span class="pill">BELIEBT</span></td><td class="price">59 € · 19 €</td><td>+ Benutzerdef. Felder, Aufgabenabhängigkeiten, wiederkehrende Aufgaben, Überstunden-Engine, Rechnungsstellung</td></tr>
+      <tr><td><strong>Business</strong></td><td class="price">99 € · 19 €</td><td>+ Projekt/Agile (Sprints, Epics, Phasen), Workflows, Audit-Log, org-übergreifende Delegation, priorisierter Support</td></tr>
+      <tr><td><strong>Enterprise</strong></td><td class="price">ab 199 €</td><td>+ maßgeschneiderte Add-ons, individuelle Konditionen</td></tr>
     </tbody>
   </table>
 
@@ -229,7 +221,7 @@
       <th>FSM</th><th>Zeit&amp;Anw.</th><th>GPS-Route</th><th style="width:20%">Hinweise</th>
     </tr></thead>
     <tbody>
-      <tr class="row-us"><td><strong>HBCField</strong> (wir)</td><td>Alle drei in einem</td><td class="price">15–49 €<br>(~30 € gem.)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Ein Login ersetzt 3 Tools</td></tr>
+      <tr class="row-us"><td><strong>HBCField</strong> (wir)</td><td>Alle drei in einem</td><td class="price">19–99 €<br>(~27 € gem.)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Ein Login ersetzt 3 Tools</td></tr>
       <tr><td>ServiceTitan</td><td>Enterprise-FSM</td><td class="price">125–398 €</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Enterprise, individuell</td></tr>
       <tr><td>FieldEdge</td><td>Enterprise-FSM</td><td class="price">Individuell</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">–</td><td>Enterprise HLK/Sanitär</td></tr>
       <tr><td>Jobber</td><td>FSM (KMU)</td><td class="price">~50 €</td><td class="yes">✓</td><td class="no">–</td><td class="no">–</td><td>Starkes CRM/Angebote/Zahlung</td></tr>
@@ -246,7 +238,7 @@
   <div class="callout">
     <strong>Der Pitch (Ihre stärkste Karte):</strong><br>
     Ein Kunde kauft sonst <strong>Jobber (~50 €) + Deputy (~5 €) + Hubstaff (~8 €) ≈ 60–90 €/Nutzer</strong>.<br>
-    HBCField: <strong>„Ersetzt alle drei — ein Login — für 39 € pro Admin, 15 € pro Außendienst-Mitglied.“</strong> Günstiger <em>und</em> konsolidiert.
+    HBCField: <strong>„Ersetzt alle drei — ein Login — für 59 € pro Büro-Sitz, 19 € pro Außendienst-Techniker.“</strong> Günstiger <em>und</em> konsolidiert.
   </div>
 
   <h2>4 · Positionierung — und die wichtigen Regeln</h2>
@@ -258,17 +250,18 @@
   <ul>
     <li><strong>Jahresabrechnung = 2 Monate gratis</strong> (~17 % Rabatt) — Cashflow vorziehen, Churn senken.</li>
     <li><strong>Mindestbetrag ~99 €/Monat</strong> — filtert 1–2-Personen-Konten heraus.</li>
-    <li><strong>14 Tage kostenlos, ohne Kreditkarte</strong> — Sie brauchen Referenzen &amp; Fallstudien mehr als frühe Marge.</li>
+    <li><strong>14 Tage kostenlos testen (Professional), ohne Kreditkarte</strong> — Sie brauchen Referenzen &amp; Fallstudien mehr als frühe Marge.</li>
     <li><strong>Niedrig starten, später erhöhen</strong> — jede geschlossene Lücke (Zahlungsannahme, Kunden-/Angebotsmodul, Buchhaltungs-Integration, SOC2) rechtfertigt eine Preiserhöhung.</li>
   </ul>
 
   <div class="note">
-    <strong>Zwei Hinweise:</strong> (1) Bezahlung erst möglich, sobald die <strong>Stripe-/Sitz-Metering-Ebene</strong>
-    gebaut ist — das Admin/Mitglied-Modell macht dies <em>einfacher</em> (zwei Sitztypen statt drei).
-    (2) Preisgestaltung ist Strategie, keine Finanzberatung — der echte Wert hängt von Infrastrukturkosten/Nutzer, CAC und Churn ab.
+    <strong>Zwei Hinweise:</strong> (1) Die Abrechnung ist <strong>gebaut, aber nicht ausgeliefert</strong> — Bezahlung
+    startet, sobald das Stripe-Konto + Preise existieren und der End-to-End-Test besteht (Sitz-Metering ist automatisch:
+    Büro vs. Außendienst aus dem Plattform-Zugriff). (2) Preisgestaltung ist Strategie, keine Finanzberatung — der echte
+    Wert hängt von Infrastrukturkosten/Nutzer, CAC und Churn ab.
   </div>
 
-  <p class="foot">HBCField · Preisempfehlung · Deutsch</p>
+  <p class="foot">HBCField · Preise · Deutsch</p>
 
 </div>
 </body>

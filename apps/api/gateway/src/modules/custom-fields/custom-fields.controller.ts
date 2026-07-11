@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import {
   CreateCustomFieldDto,
   UpdateCustomFieldDto,
@@ -21,6 +22,7 @@ import { CustomFieldsService } from './custom-fields.service';
 
 @ApiTags('custom-fields')
 @ApiBearerAuth()
+@RequirePlan('custom_fields') // Professional+ (write routes; reads pass through)
 @Controller('custom-fields')
 export class CustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}
@@ -73,6 +75,7 @@ export class CustomFieldsController {
 
 @ApiTags('tasks')
 @ApiBearerAuth()
+@RequirePlan('custom_fields') // setting task field values requires Professional+
 @Controller('tasks')
 export class TaskCustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}

@@ -16,6 +16,7 @@ import {
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
+import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { OvertimeGatewayService } from './overtime.service';
 import { OvertimeQueueService } from './overtime.queue.service';
 import {
@@ -27,6 +28,7 @@ import {
 
 @ApiTags('overtime')
 @ApiBearerAuth()
+@RequirePlan('overtime') // Professional+ (write routes; reads pass through)
 @Controller('overtime')
 export class OvertimeController {
   constructor(

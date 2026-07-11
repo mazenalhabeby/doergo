@@ -15,6 +15,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { Role, canCreateTaskFor } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
+import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -385,6 +386,7 @@ export class TasksController {
 
   @Post(':id/dependencies')
   @RequirePermission('canCreateTasks')
+  @RequirePlan('dependencies') // Professional+
   @ApiOperation({ summary: 'Add a dependency to a task (this task becomes the successor)' })
   async addDependency(
     @Param('id') id: string,
@@ -401,6 +403,7 @@ export class TasksController {
 
   @Delete(':id/dependencies/:depId')
   @RequirePermission('canCreateTasks')
+  @RequirePlan('dependencies') // Professional+
   @ApiOperation({ summary: 'Remove a dependency from a task' })
   async removeDependency(
     @Param('id') _id: string,

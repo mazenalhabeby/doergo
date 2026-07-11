@@ -25,7 +25,12 @@ export class ModuleGuard implements CanActivate {
     ]);
     if (!required) return true;
 
-    const { user } = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest();
+    // Reads never hard-break on a downgrade — only gate mutations (mirrors PlanGuard).
+    const method = (req.method || 'GET').toUpperCase();
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return true;
+
+    const user = req.user;
     if (!user) return true;
 
     if (!hasFeatureModule(user, required)) {

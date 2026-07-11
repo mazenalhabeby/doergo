@@ -1,6 +1,6 @@
-import { modulesForTier, PLANS, type PlanTier } from '@hbcfield/shared/client';
+import { entitlementsForTier, PLANS, type PlanTier } from '@hbcfield/shared/client';
 
-/** Human-readable labels for the raw feature-module keys (falls back to Title Case). */
+/** Human-readable labels for the raw feature keys (falls back to Title Case). */
 export const MODULE_LABELS: Record<string, string> = {
   subtasks: 'Subtasks',
   checklists: 'Checklists',
@@ -8,16 +8,18 @@ export const MODULE_LABELS: Record<string, string> = {
   tracking: 'Exact-route GPS',
   time_tracking: 'Geofenced clock-in',
   service_reports: 'Service reports & assets',
-  recurring: 'Recurring jobs',
   custom_fields: 'Custom fields',
+  dependencies: 'Task dependencies',
+  recurring: 'Recurring jobs',
   overtime: 'Overtime engine',
   invoicing: 'Invoicing',
-  multi_org: 'Multi-org delegation',
-  audit_log: 'Audit log',
-  workflows: 'Workflows',
   sprints: 'Sprints',
+  story_points: 'Story points',
   epics: 'Epics',
   phases: 'Phases',
+  workflows: 'Workflows',
+  audit_log: 'Audit log',
+  multi_org: 'Multi-org delegation',
 };
 
 export const planFeatureLabel = (m: string): string =>
@@ -38,7 +40,7 @@ const PREV: Record<SelfServeTier, SelfServeTier | null> = {
 export function tierDelta(tier: SelfServeTier): { prevName: string | null; features: string[] } {
   const prev = PREV[tier];
   const features = prev
-    ? modulesForTier(tier).filter((m) => !modulesForTier(prev).includes(m))
-    : modulesForTier(tier);
+    ? entitlementsForTier(tier).filter((m) => !entitlementsForTier(prev).includes(m))
+    : entitlementsForTier(tier);
   return { prevName: prev ? PLANS[prev].name : null, features };
 }
