@@ -23,6 +23,7 @@ import { InvitationsModule } from './modules/invitations/invitations.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { PhasesModule } from './modules/phases/phases.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
 import { EpicsModule } from './modules/epics/epics.module';
@@ -84,6 +85,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     OnboardingModule,
     JoinRequestsModule,
     OrganizationsModule,
+    BillingModule,
     PhasesModule,
     SprintsModule,
     EpicsModule,

@@ -25,7 +25,16 @@ async function bootstrap() {
 
   // Increase body size limit for base64 signatures
   const express = require('express');
-  app.use(express.json({ limit: '10mb' }));
+  // Capture the exact raw request bytes so the Stripe webhook route can verify
+  // its HMAC signature over the unparsed body (Stripe requires the raw payload).
+  app.use(
+    express.json({
+      limit: '10mb',
+      verify: (req: any, _res: any, buf: Buffer) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Parse cookies (for httpOnly refresh token)
