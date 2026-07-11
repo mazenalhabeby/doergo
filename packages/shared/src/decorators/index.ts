@@ -79,6 +79,9 @@ export interface CurrentUserData {
   enabledModules?: unknown;
   // Org FEATURE modules (sprints, checklists, tracking…) — drives hasFeature().
   orgModules?: string[];
+  // Billing (lowercase) — carried on the token for the SubscriptionGuard.
+  subStatus?: string; // 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete'
+  planTier?: string | null; // 'starter' | 'professional' | 'business' | 'enterprise'
   // Technician-specific fields
   // Profile badge visibility (resolved: user override > org default > system default)
   profileBadges?: {

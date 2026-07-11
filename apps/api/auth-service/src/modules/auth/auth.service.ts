@@ -464,7 +464,7 @@ export class AuthService {
         include: {
           user: {
             include: {
-              organization: { select: { profileBadges: true, enabledModules: true } },
+              organization: { select: { profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
               orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
             },
           },
@@ -913,7 +913,7 @@ export class AuthService {
           // Badge config
           profileBadges: true,
           enabledModules: true,
-          organization: { select: { profileBadges: true, enabledModules: true } },
+          organization: { select: { profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
           // Custom role
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
         },
@@ -937,6 +937,10 @@ export class AuthService {
           enabledModules: (userModules ?? organization?.enabledModules) || [],
           // Org FEATURE modules — always the org's set (drives hasModule/hasFeature).
           orgModules: (organization?.enabledModules as string[] | null) || [],
+          // Billing status carried on req.user so the SubscriptionGuard enforces
+          // the read-only lock with zero extra DB reads (cached with the user).
+          subStatus: (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+          planTier: organization?.planTier ? organization.planTier.toString().toLowerCase() : null,
           orgRole: orgRole ? { id: orgRole.id, name: orgRole.name, slug: orgRole.slug, color: orgRole.color } : null,
           rolePermissions: (orgRole?.permissions as Record<string, boolean>) || {},
         },

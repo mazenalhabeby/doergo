@@ -36,6 +36,7 @@ import { AuthCacheModule } from './common/cache/auth-cache.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 @Module({
@@ -117,6 +118,10 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
     },
     // Auto-audit every mutating request (after guards, around the handler).
     {
