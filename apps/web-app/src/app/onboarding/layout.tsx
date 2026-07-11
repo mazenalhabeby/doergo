@@ -24,9 +24,14 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       router.replace('/login');
       return;
     }
-    // A completed user should never sit on the onboarding screens. The only
-    // exception is the create-org path, which hands off to /welcome itself.
-    if (user?.onboardingCompleted && !pathname.startsWith('/onboarding/create-org')) {
+    // A completed user should never sit on the onboarding screens. Exceptions:
+    // create-org (hands off to /welcome) and choose-plan (the final owner step
+    // reached from /welcome — the org already exists and is on a trial).
+    if (
+      user?.onboardingCompleted &&
+      !pathname.startsWith('/onboarding/create-org') &&
+      !pathname.startsWith('/onboarding/choose-plan')
+    ) {
       router.replace('/dashboard');
     }
   }, [isLoading, isAuthenticated, user?.onboardingCompleted, pathname, router]);

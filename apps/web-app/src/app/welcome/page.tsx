@@ -22,7 +22,8 @@ export default function WelcomePage() {
   // inactive query) so the dashboard sees it immediately — no bounce back here.
   const handleCreated = async () => {
     await queryClient.refetchQueries({ queryKey: ['locations'], type: 'all' });
-    router.replace('/dashboard');
+    // Final onboarding step for the org owner: pick a plan (or keep the trial).
+    router.replace('/onboarding/choose-plan');
   };
 
   return (
