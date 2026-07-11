@@ -1,6 +1,9 @@
 // Export all types
 export * from './types';
 
+// Export billing (plans, seat pricing, seat classifier)
+export * from './billing';
+
 // Export Prisma module (for NestJS backend)
 export * from './prisma';
 
