@@ -109,19 +109,23 @@ export class StripeService {
   /**
    * Set the office/field line quantities on an existing subscription, prorated.
    *
-   * Proration timing:
-   *   • annual  → `always_invoice`: charge the prorated amount for the added seat
-   *     IMMEDIATELY (remaining fraction of the year), so a mid-term seat isn't
-   *     free until the yearly renewal. Removals become a prorated credit.
-   *   • monthly → `create_prorations`: accumulate onto the next (soon) monthly
-   *     invoice so we don't spam tiny invoices for every seat change.
+   * Proration timing (decided by the caller via `invoiceNow`):
+   *   • invoiceNow=true  → `always_invoice`: charge the prorated amount NOW. Used
+   *     for annual INCREASES so a mid-term seat isn't free until the yearly renewal.
+   *   • invoiceNow=false → `create_prorations`: bank the proration and apply it on
+   *     the next invoice/renewal. Used for monthly (next invoice is soon) AND for
+   *     annual DECREASES, so a removed seat's credit accrues cleanly to the account
+   *     and reduces the renewal instead of cutting an immediate credit note.
+   *
+   * Either way Stripe computes the exact prorated amount; a decrease always yields
+   * a credit (never a card refund), applied against future invoices.
    *
    * Idempotency key derived from the target quantities so retries are safe.
    */
   async setSubscriptionQuantities(
     subscriptionId: string,
     lines: { officePriceId: string; officeQty: number; fieldPriceId: string; fieldQty: number },
-    opts?: { interval?: BillingInterval },
+    opts?: { invoiceNow?: boolean },
   ): Promise<Stripe.Subscription> {
     const sub = await this.stripe.subscriptions.retrieve(subscriptionId);
     const items: Stripe.SubscriptionUpdateParams.Item[] = [];
@@ -138,7 +142,7 @@ export class StripeService {
     }
 
     const proration_behavior: Stripe.SubscriptionUpdateParams.ProrationBehavior =
-      opts?.interval === 'annual' ? 'always_invoice' : 'create_prorations';
+      opts?.invoiceNow ? 'always_invoice' : 'create_prorations';
 
     return this.stripe.subscriptions.update(
       subscriptionId,

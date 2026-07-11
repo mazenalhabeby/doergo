@@ -259,10 +259,18 @@ export class BillingService {
     });
 
     // Push the new quantities to Stripe only when there's a live subscription and
-    // the count actually changed (proration timing chosen by interval downstream).
+    // the count actually changed.
     if (sub.stripeSubscriptionId && this.stripe.isConfigured && sub.planTier !== 'ENTERPRISE') {
       const tier = tierFromPrisma(sub.planTier)!;
       const interval = intervalFromPrisma(sub.interval);
+
+      // Charge immediately only for an annual INCREASE (a mid-year added seat).
+      // Annual DECREASES and all monthly changes bank the proration → the credit
+      // (or charge) lands on the next invoice/renewal.
+      const oldTotal = subscriptionTotalCents(tier, interval, sub.officeSeats, sub.fieldSeats) ?? 0;
+      const newTotal = subscriptionTotalCents(tier, interval, seats.office, seats.field) ?? 0;
+      const invoiceNow = interval === 'annual' && newTotal > oldTotal;
+
       await this.stripe.setSubscriptionQuantities(
         sub.stripeSubscriptionId,
         {
@@ -271,7 +279,7 @@ export class BillingService {
           fieldPriceId: this.stripe.priceId('field', tier, interval),
           fieldQty: seats.field,
         },
-        { interval },
+        { invoiceNow },
       );
     }
     return ok(seats);
