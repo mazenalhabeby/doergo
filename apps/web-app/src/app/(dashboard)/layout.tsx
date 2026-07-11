@@ -12,7 +12,8 @@ import { ActivityPanelProvider } from '@/contexts/activity-panel-context';
 import { CommandPaletteProvider } from '@/contexts/command-palette-context';
 import { useAuth } from '@/contexts/auth-context';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
-import { Smartphone } from 'lucide-react';
+import { Smartphone, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
 import { TokenDebugPanel } from '@/components/token-debug';
@@ -70,7 +71,7 @@ function RealtimeSyncLayer() {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -106,13 +107,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (user && getAccessPlatforms(user) === 'mobile') {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Smartphone className="h-8 w-8" />
         </div>
-        <h1 className="text-xl font-semibold text-slate-800">{t('common.mobileOnlyAccount')}</h1>
-        <p className="max-w-sm text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-foreground">{t('common.mobileOnlyAccount')}</h1>
+        <p className="max-w-sm text-sm text-muted-foreground">
           {t('common.mobileOnlyAccountBody')}
         </p>
+        <Button variant="outline" className="mt-2" onClick={() => logout()}>
+          <LogOut className="mr-2 h-4 w-4" />
+          {t('nav.userMenu.signOut')}
+        </Button>
       </div>
     );
   }
