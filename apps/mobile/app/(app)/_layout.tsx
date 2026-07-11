@@ -12,6 +12,7 @@ import {
 import { SocketProvider } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
 import { useAuth } from '../../src/contexts/auth-context';
+import { SubscriptionGate } from '../../src/components/SubscriptionGate';
 import { useTheme } from '../../src/contexts/theme-context';
 import { trackingApi } from '../../src/lib/api';
 import { COLORS } from '../../src/lib/constants';
@@ -230,6 +231,7 @@ export default function AppLayout() {
           }}
         />
       </Stack>
+      <SubscriptionGate />
       </View>
     </LocationTrackingProvider>
     </SocketProvider>
