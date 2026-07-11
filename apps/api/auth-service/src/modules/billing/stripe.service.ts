@@ -92,7 +92,10 @@ export class StripeService {
       success_url: p.successUrl,
       cancel_url: p.cancelUrl,
       allow_promotion_codes: true,
-      automatic_tax: { enabled: true },
+      // Off by default so checkout works without Stripe Tax configured. Set
+      // STRIPE_AUTOMATIC_TAX=true (once Stripe Tax is active) to collect tax —
+      // no code change / redeploy of logic needed.
+      automatic_tax: { enabled: this.config.get<string>('STRIPE_AUTOMATIC_TAX') === 'true' },
       client_reference_id: p.customerId,
     });
   }

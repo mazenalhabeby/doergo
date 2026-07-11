@@ -154,6 +154,9 @@ no Stripe secret leakage (env-only, never logged/returned); mobile has no purcha
    STRIPE_PRICE_PRO_OFFICE_MONTHLY=price_…        STRIPE_PRICE_PRO_OFFICE_ANNUAL=price_…
    STRIPE_PRICE_BUSINESS_OFFICE_MONTHLY=price_…   STRIPE_PRICE_BUSINESS_OFFICE_ANNUAL=price_…
    STRIPE_PRICE_FIELD_MONTHLY=price_…             STRIPE_PRICE_FIELD_ANNUAL=price_…
+   # Tax: off by default so checkout works without Stripe Tax. Set to true once
+   # Stripe Tax is active (origin address + registrations) to collect tax.
+   STRIPE_AUTOMATIC_TAX=false
    ```
    Point the Stripe webhook at `POST /api/v1/billing/webhooks/stripe` (events: `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`).
 3. **Backfill existing orgs** so no org is left `planTier=null` (would 402 all premium — the C1b dead state). Run once on the prod DB:
