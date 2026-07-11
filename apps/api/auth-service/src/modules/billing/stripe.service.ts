@@ -108,11 +108,20 @@ export class StripeService {
 
   /**
    * Set the office/field line quantities on an existing subscription, prorated.
+   *
+   * Proration timing:
+   *   • annual  → `always_invoice`: charge the prorated amount for the added seat
+   *     IMMEDIATELY (remaining fraction of the year), so a mid-term seat isn't
+   *     free until the yearly renewal. Removals become a prorated credit.
+   *   • monthly → `create_prorations`: accumulate onto the next (soon) monthly
+   *     invoice so we don't spam tiny invoices for every seat change.
+   *
    * Idempotency key derived from the target quantities so retries are safe.
    */
   async setSubscriptionQuantities(
     subscriptionId: string,
     lines: { officePriceId: string; officeQty: number; fieldPriceId: string; fieldQty: number },
+    opts?: { interval?: BillingInterval },
   ): Promise<Stripe.Subscription> {
     const sub = await this.stripe.subscriptions.retrieve(subscriptionId);
     const items: Stripe.SubscriptionUpdateParams.Item[] = [];
@@ -128,9 +137,12 @@ export class StripeService {
       items.push({ id: field.id, deleted: true });
     }
 
+    const proration_behavior: Stripe.SubscriptionUpdateParams.ProrationBehavior =
+      opts?.interval === 'annual' ? 'always_invoice' : 'create_prorations';
+
     return this.stripe.subscriptions.update(
       subscriptionId,
-      { items, proration_behavior: 'create_prorations' },
+      { items, proration_behavior },
       { idempotencyKey: `seats_${subscriptionId}_${lines.officeQty}_${lines.fieldQty}` },
     );
   }

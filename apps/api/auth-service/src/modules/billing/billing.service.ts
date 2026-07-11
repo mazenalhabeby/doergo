@@ -233,12 +233,16 @@ export class BillingService {
     if (org.subscription.stripeSubscriptionId && this.stripe.isConfigured && org.subscription.planTier !== 'ENTERPRISE') {
       const tier = tierFromPrisma(org.subscription.planTier)!;
       const interval = intervalFromPrisma(org.subscription.interval);
-      await this.stripe.setSubscriptionQuantities(org.subscription.stripeSubscriptionId, {
-        officePriceId: this.stripe.priceId('office', tier, interval),
-        officeQty: seats.office,
-        fieldPriceId: this.stripe.priceId('field', tier, interval),
-        fieldQty: seats.field,
-      });
+      await this.stripe.setSubscriptionQuantities(
+        org.subscription.stripeSubscriptionId,
+        {
+          officePriceId: this.stripe.priceId('office', tier, interval),
+          officeQty: seats.office,
+          fieldPriceId: this.stripe.priceId('field', tier, interval),
+          fieldQty: seats.field,
+        },
+        { interval },
+      );
     }
     return ok(seats);
   }
