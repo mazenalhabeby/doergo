@@ -30,6 +30,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     scheme: 'hbcfield',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
+    // EAS Update (OTA). Fingerprint policy = JS-only changes update over-the-air;
+    // any native change bumps the fingerprint and correctly forces a new build.
+    runtimeVersion: { policy: 'fingerprint' },
+    updates: {
+      url: 'https://u.expo.dev/e0202344-e599-46e0-b546-2f07ac5b6131',
+    },
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
