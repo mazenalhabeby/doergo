@@ -1,4 +1,5 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import type Stripe from 'stripe';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { StripeService } from './stripe.service';
@@ -142,6 +143,42 @@ export class BillingService {
       }),
     ]);
     return ok();
+  }
+
+  /**
+   * Hourly sweep: lock "no-card" trials whose 14-day window has ended.
+   *
+   * Orgs that entered a card have a Stripe subscription id, and their trial end is
+   * governed by Stripe's own events (trial → active charge, or a cancel_at_period_end
+   * → canceled) — we never touch those here. Only pure trials (no stripeSubscriptionId)
+   * need this, because nothing else fires when their trial lapses. They're flipped to
+   * INCOMPLETE ("Inactive"), which blocks writes via isLocked() until they subscribe;
+   * data is preserved and access is restored the moment they check out.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async expireTrials() {
+    const now = new Date();
+    const expired = await this.prisma.organization.findMany({
+      where: {
+        subStatus: 'TRIALING',
+        trialEndsAt: { lt: now },
+        subscription: { is: { stripeSubscriptionId: null } },
+      },
+      select: { id: true },
+    });
+    if (expired.length === 0) return;
+    const ids = expired.map((o) => o.id);
+    await this.prisma.$transaction([
+      this.prisma.organization.updateMany({
+        where: { id: { in: ids } },
+        data: { subStatus: 'INCOMPLETE' },
+      }),
+      this.prisma.subscription.updateMany({
+        where: { organizationId: { in: ids } },
+        data: { status: 'INCOMPLETE' },
+      }),
+    ]);
+    this.logger.log(`Trial sweep: locked ${ids.length} expired no-card trial org(s)`);
   }
 
   // ── read ─────────────────────────────────────────────────────────────────────
