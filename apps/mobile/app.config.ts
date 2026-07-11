@@ -30,9 +30,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     scheme: 'hbcfield',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
-    // EAS Update (OTA). Fingerprint policy = JS-only changes update over-the-air;
-    // any native change bumps the fingerprint and correctly forces a new build.
-    runtimeVersion: { policy: 'fingerprint' },
+    // EAS Update (OTA). Runtime version derives from the app `version` above.
+    // JS-only changes ship over-the-air to builds with the same version; when you
+    // make a NATIVE change (new lib, permission, config), bump `version` so the new
+    // build gets a fresh runtime version and old OTA payloads can't reach it.
+    // (Using appVersion, not fingerprint: fingerprint mis-computes on EAS for
+    // managed/prebuild projects — native dirs exist post-prebuild but not locally.)
+    runtimeVersion: { policy: 'appVersion' },
     updates: {
       url: 'https://u.expo.dev/e0202344-e599-46e0-b546-2f07ac5b6131',
     },
