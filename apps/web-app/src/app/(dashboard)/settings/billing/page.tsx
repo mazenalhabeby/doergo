@@ -9,38 +9,17 @@ import { billingApi } from '@/lib/api';
 import {
   PLANS,
   officeSeatPriceCents,
-  modulesForTier,
   TIER_RANK,
   type PlanTier,
   type BillingInterval,
   type SubscriptionView,
 } from '@hbcfield/shared/client';
+import { tierDelta, planFeatureLabel } from '@/lib/plan-features';
 
 const SELF_SERVE: Exclude<PlanTier, 'enterprise'>[] = ['starter', 'professional', 'business'];
 
 const eur = (cents: number | null | undefined) =>
   cents == null ? 'Custom' : `€${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
-
-// Human-readable labels for the raw module keys (falls back to Title Case).
-const MODULE_LABELS: Record<string, string> = {
-  subtasks: 'Subtasks',
-  checklists: 'Checklists',
-  attachments: 'File attachments',
-  tracking: 'Exact-route GPS',
-  time_tracking: 'Geofenced clock-in',
-  service_reports: 'Service reports & assets',
-  recurring: 'Recurring jobs',
-  custom_fields: 'Custom fields',
-  overtime: 'Overtime engine',
-  invoicing: 'Invoicing',
-  multi_org: 'Multi-org delegation',
-  audit_log: 'Audit log',
-  workflows: 'Workflows',
-  sprints: 'Sprints',
-  epics: 'Epics',
-  phases: 'Phases',
-};
-const label = (m: string) => MODULE_LABELS[m] ?? m.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   trialing: { label: 'Trial', cls: 'bg-primary/10 text-primary' },
@@ -187,6 +166,7 @@ export default function BillingPage() {
             const isCurrent = currentTier === tier;
             const isDowngrade = currentTier ? TIER_RANK[tier] < TIER_RANK[currentTier] : false;
             const popular = tier === 'professional';
+            const { prevName, features } = tierDelta(tier);
             return (
               <div
                 key={tier}
@@ -205,12 +185,15 @@ export default function BillingPage() {
                   <span className="text-sm text-muted-foreground">/ seat / {interval === 'annual' ? 'yr' : 'mo'}</span>
                 </div>
                 <ul className="mt-5 flex-1 space-y-2.5">
-                  {modulesForTier(tier).slice(0, 7).map((m) => (
+                  {prevName && (
+                    <li className="text-sm font-medium text-muted-foreground">Everything in {prevName}, plus:</li>
+                  )}
+                  {features.map((m) => (
                     <li key={m} className="flex items-center gap-2 text-sm text-foreground/80">
                       <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
                         <Check className="h-2.5 w-2.5 text-emerald-500" strokeWidth={3} />
                       </span>
-                      {label(m)}
+                      {planFeatureLabel(m)}
                     </li>
                   ))}
                 </ul>

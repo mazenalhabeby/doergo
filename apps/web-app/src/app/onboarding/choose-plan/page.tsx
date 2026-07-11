@@ -9,10 +9,10 @@ import { billingApi } from '@/lib/api';
 import {
   PLANS,
   officeSeatPriceCents,
-  modulesForTier,
   type PlanTier,
   type BillingInterval,
 } from '@hbcfield/shared/client';
+import { tierDelta, planFeatureLabel } from '@/lib/plan-features';
 
 const SELF_SERVE: Exclude<PlanTier, 'enterprise'>[] = ['starter', 'professional', 'business'];
 
@@ -86,12 +86,20 @@ export default function ChoosePlanPage() {
                 <span className="text-sm text-slate-500"> / office seat / {interval === 'annual' ? 'yr' : 'mo'}</span>
               </div>
               <ul className="mt-5 flex-1 space-y-2">
-                {modulesForTier(tier).slice(0, 7).map((m) => (
-                  <li key={m} className="flex items-center gap-2 text-sm text-slate-600">
-                    <Check className="h-3.5 w-3.5 shrink-0 text-green-600" />
-                    {m.replace(/_/g, ' ')}
-                  </li>
-                ))}
+                {(() => {
+                  const { prevName, features } = tierDelta(tier);
+                  return (
+                    <>
+                      {prevName && <li className="text-sm font-medium text-slate-500">Everything in {prevName}, plus:</li>}
+                      {features.map((m) => (
+                        <li key={m} className="flex items-center gap-2 text-sm text-slate-600">
+                          <Check className="h-3.5 w-3.5 shrink-0 text-green-600" />
+                          {planFeatureLabel(m)}
+                        </li>
+                      ))}
+                    </>
+                  );
+                })()}
               </ul>
               <Button
                 className="mt-6"
