@@ -15,9 +15,20 @@ export const QUEUE_NAMES = {
   LOCATIONS: 'locations',
   ATTENDANCE: 'attendance',
   OVERTIME: 'overtime',
+  BILLING: 'billing',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
+
+// Billing queue job types
+export const BILLING_JOB_TYPES = {
+  PROCESS_WEBHOOK: 'billing.processWebhook', // handle a verified Stripe event async
+  RECONCILE_SEATS: 'billing.reconcileSeats', // recompute office/field seats → sync Stripe qty
+  NIGHTLY_RECONCILE: 'billing.nightlyReconcile', // backstop full sweep for missed webhooks
+  DUNNING_NOTIFY: 'billing.dunningNotify', // notify admin of failed payment / trial end
+} as const;
+
+export type BillingJobType = (typeof BILLING_JOB_TYPES)[keyof typeof BILLING_JOB_TYPES];
 
 // Task queue job types
 export const TASK_JOB_TYPES = {
