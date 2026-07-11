@@ -1,5 +1,6 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { BillingService } from '../billing/billing.service';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import {
   Role,
@@ -19,7 +20,10 @@ import {
 export class OnboardingService {
   private readonly logger = new Logger(OnboardingService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly billing: BillingService,
+  ) {}
 
   /**
    * Path A: Create organization for an orphan user.
@@ -101,6 +105,14 @@ export class OnboardingService {
     });
 
     this.logger.log(`Organization "${data.name}" created by user ${userId}`);
+
+    // Kick off the 14-day trial (subscription row + trial end + tier modules).
+    // Non-fatal: a billing hiccup must not block onboarding.
+    try {
+      await this.billing.startTrial(result.organization.id);
+    } catch (e) {
+      this.logger.warn(`Failed to start trial for org ${result.organization.id}: ${(e as Error).message}`);
+    }
 
     return {
       success: true,
