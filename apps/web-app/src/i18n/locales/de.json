@@ -629,7 +629,8 @@
       "settings": "Einstellungen",
       "managePreferences": "Einstellungen verwalten",
       "signOut": "Abmelden",
-      "endYourSession": "Sitzung beenden"
+      "endYourSession": "Sitzung beenden",
+      "billing": "Abonnement & Abrechnung"
     },
     "spaces": "Bereiche",
     "timeOff": "Abwesenheit",

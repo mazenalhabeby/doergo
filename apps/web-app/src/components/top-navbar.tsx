@@ -12,6 +12,7 @@ import {
   Shield,
   FileText,
   History,
+  CreditCard,
   MapPin,
   Calendar,
   Clock,
@@ -645,7 +646,17 @@ function UserDropdown({
             </Link>
           </DropdownMenuItem>
 
-          {/* Billing — admins only */}
+          {/* Subscription & billing (this org's plan/payment) — admins only */}
+          {canManageUsers && (
+            <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+              <Link href="/settings/billing" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                {t("nav.userMenu.billing")}
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {/* Customer invoicing (bill your clients) — admins only */}
           {canManageUsers && (
             <>
               <DropdownMenuItem asChild className="rounded-md cursor-pointer">

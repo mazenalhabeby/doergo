@@ -629,7 +629,8 @@
       "settings": "Settings",
       "managePreferences": "Manage preferences",
       "signOut": "Sign out",
-      "endYourSession": "End your session"
+      "endYourSession": "End your session",
+      "billing": "Subscription & billing"
     },
     "spaces": "Spaces",
     "timeOff": "Time Off",
