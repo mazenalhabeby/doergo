@@ -49,6 +49,39 @@ services:
     networks:
       - hbcfield-network
 
+  # Connection pooler — multiplexes many app connections onto a small pool of
+  # Postgres connections (transaction mode), so the services scale well past
+  # Postgres's 100-connection limit. Prisma runtime URLs use ?pgbouncer=true;
+  # migrations bypass it via DIRECT_DATABASE_URL.
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: hbcfield-pgbouncer
+    restart: unless-stopped
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-hbcfield}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-hbcfield_secret}
+      - DB_NAME=${POSTGRES_DB:-hbcfield}
+      - POOL_MODE=transaction
+      - LISTEN_PORT=6432
+      - MAX_CLIENT_CONN=500
+      - DEFAULT_POOL_SIZE=25
+      - MIN_POOL_SIZE=5
+      - RESERVE_POOL_SIZE=5
+      - AUTH_TYPE=scram-sha-256
+      - ADMIN_USERS=${POSTGRES_USER:-hbcfield}
+      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    networks:
+      - hbcfield-network
+
   # ==================== BACKEND SERVICES ====================
   auth-service:
     build:
@@ -58,7 +91,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
@@ -71,6 +104,8 @@ services:
       - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_FROM=${SMTP_FROM:-noreply@hbcfield.com}
       - APP_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
+      # Direct (non-pooled) connection used ONLY for `prisma migrate deploy` at startup.
+      - DIRECT_DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,7 +132,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - S3_ENDPOINT=${S3_ENDPOINT:-}
@@ -133,7 +168,7 @@ services:
       - "127.0.0.1:4001:4001"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       # Required by the websocket gateway to verify JWTs on socket connections.
@@ -173,7 +208,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
