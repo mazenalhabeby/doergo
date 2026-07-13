@@ -96,6 +96,13 @@ export class StripeService {
       // STRIPE_AUTOMATIC_TAX=true (once Stripe Tax is active) to collect tax —
       // no code change / redeploy of logic needed.
       automatic_tax: { enabled: this.config.get<string>('STRIPE_AUTOMATIC_TAX') === 'true' },
+      // Ask for a business VAT ID (UID) at checkout. Cross-border EU B2B with a
+      // valid ID gets reverse-charged (0% VAT); domestic (AT) stays 20%.
+      tax_id_collection: { enabled: true },
+      // We pass an existing customer, so persist the billing address + name that
+      // Checkout collects back onto the customer — required for automatic_tax to
+      // resolve the rate and for the reverse charge to apply.
+      customer_update: { address: 'auto', name: 'auto' },
       client_reference_id: p.customerId,
     });
   }
