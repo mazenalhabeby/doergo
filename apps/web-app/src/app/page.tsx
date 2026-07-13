@@ -604,6 +604,7 @@ export default function Home() {
                   ]} />
                   <FooterCol title={t('home.footer.legal')} links={[
                     { label: t('home.footer.linkPrivacy'), href: '/privacy' },
+                    { label: t('home.footer.linkTerms'), href: '/terms' },
                   ]} />
                 </div>
               </div>

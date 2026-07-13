@@ -181,6 +181,7 @@
       "linkSignIn": "Sign in",
       "linkGetApp": "Get the app",
       "linkPrivacy": "Privacy",
+      "linkTerms": "Terms",
       "copyrightSuffix": "· Field Service Management",
       "backToTop": "Back to top",
       "linkPricing": "Pricing"
@@ -3322,6 +3323,159 @@
       "title": "13. Contact Us",
       "company": "HBC Group GmbH",
       "emailLabel": "Email: ",
+      "websiteLabel": "Website: ",
+      "supportLabel": "Support: "
+    },
+    "footerRights": "HBC Group GmbH. All rights reserved.",
+    "print": "Print / Save as PDF",
+    "contents": "Contents"
+  },
+  "terms": {
+    "backToHbcfield": "Back to HBCField",
+    "lastUpdated": "Last updated: 13 July 2026",
+    "title": "Terms & Conditions",
+    "subtitle": "HBCField — Field Service Management Platform",
+    "intro": "These Terms & Conditions (\"Terms\") govern your access to and use of the HBCField web platform and mobile application (together, the \"Service\"), operated by HBC Group GmbH (\"we\", \"our\", \"us\"). HBCField is a business-to-business service. By creating an account or using the Service, you agree to these Terms.",
+    "s1": {
+      "title": "1. Agreement to These Terms",
+      "p1": "By registering for, accessing, or using the Service, you confirm that you have read, understood, and agree to be bound by these Terms and by our Privacy Policy. If you do not agree, you must not use the Service.",
+      "p2": "If you accept these Terms on behalf of an organization, you represent that you are authorized to bind that organization, and \"you\" refers to that organization. The Service is intended for professional and business use only and is not directed at consumers, except where mandatory law provides otherwise."
+    },
+    "s2": {
+      "title": "2. Definitions",
+      "intro": "In these Terms:",
+      "serviceLabel": "\"Service\"",
+      "serviceText": " — the HBCField web portal, mobile application, APIs, and related documentation.",
+      "orgLabel": "\"Organization\"",
+      "orgText": " — the company or entity that registers for an account and on whose behalf the Service is used.",
+      "adminLabel": "\"Admin\"",
+      "adminText": " — the organization owner or a user granted administrative rights, who manages users, access, and billing.",
+      "memberLabel": "\"Member\"",
+      "memberText": " — any user (office coordinator, dispatcher, or field technician) added to an Organization.",
+      "seatLabel": "\"Seat\"",
+      "seatText": " — a billable unit of access; an office seat (web access) is priced by plan tier, a field seat (mobile-only access) is priced at a flat rate.",
+      "dataLabel": "\"Customer Data\"",
+      "dataText": " — all data your Organization and its Members submit to the Service, including tasks, reports, photos, locations, and comments."
+    },
+    "s3": {
+      "title": "3. The Service & Licence",
+      "intro": "HBCField provides a role-based platform for managing field service work — task creation and assignment, technician execution, GPS route tracking, attendance, service reports, and related features. We may add, change, or remove features over time.",
+      "licence": "Subject to these Terms and payment of applicable fees, we grant your Organization a non-exclusive, non-transferable, non-sublicensable right to access and use the Service for its internal business purposes during the term of your subscription.",
+      "restrictTitle": "You must not",
+      "restrict1": "copy, modify, reverse-engineer, decompile, or create derivative works of the Service, except where permitted by mandatory law;",
+      "restrict2": "resell, sublicense, rent, or otherwise make the Service available to third parties outside your Organization;",
+      "restrict3": "circumvent usage limits, seat counts, plan restrictions, or security measures;",
+      "restrict4": "use the Service to build a competing product or to scrape or extract data other than your own Customer Data."
+    },
+    "s4": {
+      "title": "4. Accounts & Organizations",
+      "intro": "When you register, an Organization is created and the registering user becomes its Admin. You are responsible for your account and for all activity under it. In particular:",
+      "item1": "you must provide accurate, current, and complete information and keep it up to date;",
+      "item2": "you are responsible for keeping login credentials confidential and for all actions taken through your account;",
+      "item3": "the Admin controls which Members are added, their roles, and their access, and is responsible for their use of the Service;",
+      "item4": "you must notify us promptly of any unauthorized access or security breach affecting your account."
+    },
+    "s5": {
+      "title": "5. Subscriptions, Seats & Plans",
+      "intro": "The Service is offered on a subscription basis across several plan tiers, billed either monthly or annually. The features available to your Organization depend on the tier you select.",
+      "seats": "Billing is per seat, not per bundle. Every active Member counts as a seat: an office seat (any Member with web-portal access, including the Admin) is priced at the tier rate, while a field seat (a mobile-only Member) is charged at a flat rate. A Member's seat type follows their access — if you grant or revoke web access, their seat type changes accordingly, and your seat counts re-sync.",
+      "plansTitle": "Plans & pricing (excl. VAT)",
+      "starterLabel": "Starter",
+      "starterText": "€29 per office seat / month (€290 / year).",
+      "proLabel": "Professional",
+      "proText": "€59 per office seat / month (€590 / year).",
+      "businessLabel": "Business",
+      "businessText": "€99 per office seat / month (€990 / year).",
+      "fieldLabel": "Field seat",
+      "fieldText": "€19 per mobile-only seat / month (€190 / year), on any tier.",
+      "plansNote": "Prices are exclusive of VAT and may be updated for future terms with notice. Your current plan and seat counts are always shown in Settings → Billing."
+    },
+    "s6": {
+      "title": "6. Fees, Billing & Proration",
+      "intro": "Fees are charged in euro (EUR) in advance for each billing period, based on the plan and seat counts in effect. When you add or remove seats mid-period, the amount is prorated as follows:",
+      "monthlyLabel": "Monthly plans — ",
+      "monthlyText": "changes are prorated and applied to your next invoice; adding seats does not trigger an immediate separate charge, but the prorated amount for the remainder of the current period is added to the following invoice.",
+      "annualLabel": "Annual plans (adding seats) — ",
+      "annualText": "an increase is invoiced immediately, prorated for the remainder of the annual term, so added seats are not free until renewal.",
+      "decreaseLabel": "Removing seats — ",
+      "decreaseText": "reductions never trigger a cash refund; the prorated value is banked as an account credit and applied to future invoices.",
+      "processor": "Payments are processed by Stripe. You authorize us and Stripe to charge your payment method for all fees due. You are responsible for keeping a valid payment method on file."
+    },
+    "s7": {
+      "title": "7. Taxes (VAT)",
+      "intro": "All prices are exclusive of value-added tax (VAT) and any other applicable taxes, which are added at checkout at the rate required by law. For customers in Austria, the standard VAT rate of 20% applies.",
+      "vatId": "Business customers may enter a valid VAT identification number (UID) at checkout. For eligible cross-border transactions within the EU, the reverse-charge mechanism applies and no VAT is charged, in which case you are responsible for accounting for VAT in your own country. Domestic Austrian supplies remain subject to Austrian VAT even where a VAT ID is provided."
+    },
+    "s8": {
+      "title": "8. Free Trial",
+      "intro": "New Organizations may receive a free trial of the Professional tier (currently 14 days). No payment method is required to start the trial, and you can use eligible features during the trial period.",
+      "expiry": "Unless you subscribe to a paid plan before the trial ends, access is restricted at the end of the trial and the account is placed in a read-only state until a subscription is started. We may change or discontinue trial offers at any time."
+    },
+    "s9": {
+      "title": "9. Renewal, Cancellation & Refunds",
+      "renewLabel": "Automatic renewal — ",
+      "renewText": "subscriptions renew automatically at the end of each billing period (monthly or annual) at the then-current fees, until cancelled.",
+      "cancelLabel": "Cancellation — ",
+      "cancelText": "you may cancel at any time from Settings → Billing or the Stripe Customer Portal. Cancellation takes effect at the end of the current paid period; you keep access until then.",
+      "refundLabel": "Refunds — ",
+      "refundText": "except where required by mandatory law, fees already paid are non-refundable and we do not provide partial refunds for unused time or downgrades.",
+      "failLabel": "Failed payments — ",
+      "failText": "if a payment fails, the subscription may be marked past due and access may be suspended or restricted until payment is resolved."
+    },
+    "s10": {
+      "title": "10. Acceptable Use",
+      "intro": "You agree not to, and not to allow any Member or third party to:",
+      "item1": "use the Service in violation of any applicable law or regulation;",
+      "item2": "upload or transmit unlawful, infringing, or malicious content, or malware;",
+      "item3": "attempt to gain unauthorized access to the Service, other accounts, or our systems;",
+      "item4": "interfere with or disrupt the integrity or performance of the Service;",
+      "item5": "use location tracking or Member data in violation of employment, privacy, or data-protection laws applicable to your Organization;",
+      "item6": "misrepresent your identity or your authority to act for an Organization."
+    },
+    "s11": {
+      "title": "11. Customer Data & Privacy",
+      "ownership": "As between you and us, your Organization owns its Customer Data. You grant us a limited licence to host, process, and transmit Customer Data solely to provide and support the Service. You are responsible for the accuracy and legality of Customer Data and for having any consents or legal bases required to collect it (including location data of your Members).",
+      "privacyPre": "Our handling of personal data is described in our ",
+      "privacyLink": "Privacy Policy",
+      "privacyPost": ", which forms part of these Terms. Where we process personal data on your behalf, we act as processor and you as controller.",
+      "export": "You can access and export your Customer Data while your subscription is active. After termination, we retain Customer Data for a limited period to allow export and then delete it in accordance with our retention practices and applicable law, unless longer retention is legally required."
+    },
+    "s12": {
+      "title": "12. Intellectual Property",
+      "ownership": "The Service, including all software, design, trademarks, and content we provide, is and remains the exclusive property of HBC Group GmbH and its licensors. These Terms grant you a right to use the Service only; no ownership or other rights are transferred to you.",
+      "feedback": "If you send us feedback or suggestions, you grant us a non-exclusive, royalty-free, perpetual licence to use them to improve the Service, without obligation to you."
+    },
+    "s13": {
+      "title": "13. Third-Party Services",
+      "intro": "The Service relies on third-party providers. Their services are governed by their own terms, and we are not responsible for their acts, omissions, or availability:",
+      "stripeLabel": "Stripe — ",
+      "stripeText": "payment processing and subscription billing;",
+      "hostingLabel": "Hetzner — ",
+      "hostingText": "EU-based cloud hosting and object storage;",
+      "pushLabel": "Expo, Firebase Cloud Messaging & Apple Push Notification Service — ",
+      "pushText": "push-notification delivery;",
+      "mapsLabel": "OpenStreetMap, OSRM & Nominatim — ",
+      "mapsText": "map tiles, routing, and address search."
+    },
+    "s14": {
+      "title": "14. Warranties, Availability & Liability",
+      "availability": "We aim to keep the Service available and reliable, but we do not guarantee uninterrupted or error-free operation. The Service may be temporarily unavailable for maintenance, updates, or reasons beyond our control.",
+      "asis": "To the maximum extent permitted by law, the Service is provided \"as is\" and \"as available\", without warranties of any kind, whether express or implied, including merchantability, fitness for a particular purpose, and non-infringement.",
+      "liability": "To the maximum extent permitted by law, we are not liable for indirect, incidental, special, or consequential damages, or for loss of profits, revenue, data, or business. Our total aggregate liability arising out of or relating to the Service is limited to the fees you paid to us in the twelve (12) months preceding the event giving rise to the claim.",
+      "mandatory": "Nothing in these Terms excludes or limits liability that cannot lawfully be excluded or limited, including liability for intent, gross negligence, personal injury, or under mandatory Austrian and EU law."
+    },
+    "s15": {
+      "title": "15. Term, Suspension & Termination",
+      "term": "These Terms apply for as long as you use the Service or hold an active subscription. You may terminate by cancelling your subscription and ceasing to use the Service.",
+      "suspend": "We may suspend or restrict access, in whole or in part, if you materially breach these Terms, fail to pay fees when due, or where required for legal or security reasons. Where practicable, we will give notice and an opportunity to remedy.",
+      "effect": "On termination, your right to use the Service ends and any outstanding fees become due. We will make Customer Data available for export for a limited period and then delete it as described in Section 11, unless mandatory law requires otherwise."
+    },
+    "s16": {
+      "title": "16. Governing Law, Changes & Contact",
+      "law": "These Terms are governed by the laws of Austria, excluding its conflict-of-law rules and the UN Convention on Contracts for the International Sale of Goods (CISG). The courts competent for the registered seat of HBC Group GmbH in Austria have exclusive jurisdiction, unless mandatory consumer-protection law provides otherwise.",
+      "changes": "We may update these Terms from time to time. We will notify you of material changes by email or in-app notice, and the \"Last updated\" date reflects the latest revision. Your continued use of the Service after changes take effect constitutes acceptance of the updated Terms.",
+      "company": "HBC Group GmbH",
+      "emailLabel": "Billing & legal: ",
       "websiteLabel": "Website: ",
       "supportLabel": "Support: "
     },

@@ -181,6 +181,7 @@
       "linkSignIn": "Anmelden",
       "linkGetApp": "App holen",
       "linkPrivacy": "Datenschutz",
+      "linkTerms": "AGB",
       "copyrightSuffix": "· Außendienstverwaltung",
       "backToTop": "Nach oben",
       "linkPricing": "Preise"
@@ -3322,6 +3323,159 @@
       "title": "13. Kontaktieren Sie uns",
       "company": "HBC Group GmbH",
       "emailLabel": "E-Mail: ",
+      "websiteLabel": "Website: ",
+      "supportLabel": "Support: "
+    },
+    "footerRights": "HBC Group GmbH. Alle Rechte vorbehalten.",
+    "print": "Drucken / als PDF speichern",
+    "contents": "Inhalt"
+  },
+  "terms": {
+    "backToHbcfield": "Zurück zu HBCField",
+    "lastUpdated": "Zuletzt aktualisiert: 13. Juli 2026",
+    "title": "Allgemeine Geschäftsbedingungen",
+    "subtitle": "HBCField — Plattform für Außendienst-Management",
+    "intro": "Diese Allgemeinen Geschäftsbedingungen (\"AGB\") regeln Ihren Zugang zu und Ihre Nutzung der HBCField-Webplattform und der mobilen Anwendung (zusammen der \"Dienst\"), betrieben von der HBC Group GmbH (\"wir\", \"uns\", \"unser\"). HBCField ist ein Dienst für Geschäftskunden. Mit der Erstellung eines Kontos oder der Nutzung des Dienstes stimmen Sie diesen AGB zu.",
+    "s1": {
+      "title": "1. Zustimmung zu diesen AGB",
+      "p1": "Mit der Registrierung, dem Zugriff auf oder der Nutzung des Dienstes bestätigen Sie, dass Sie diese AGB sowie unsere Datenschutzerklärung gelesen und verstanden haben und sich damit einverstanden erklären. Wenn Sie nicht einverstanden sind, dürfen Sie den Dienst nicht nutzen.",
+      "p2": "Wenn Sie diesen AGB im Namen einer Organisation zustimmen, sichern Sie zu, dass Sie berechtigt sind, diese Organisation zu verpflichten; \"Sie\" bezieht sich dann auf diese Organisation. Der Dienst ist ausschließlich für den beruflichen und geschäftlichen Gebrauch bestimmt und richtet sich nicht an Verbraucher, soweit nicht zwingendes Recht etwas anderes vorsieht."
+    },
+    "s2": {
+      "title": "2. Begriffsbestimmungen",
+      "intro": "In diesen AGB bedeuten:",
+      "serviceLabel": "\"Dienst\"",
+      "serviceText": " — das HBCField-Webportal, die mobile App, die APIs und die zugehörige Dokumentation.",
+      "orgLabel": "\"Organisation\"",
+      "orgText": " — das Unternehmen oder die Einheit, die ein Konto registriert und in deren Namen der Dienst genutzt wird.",
+      "adminLabel": "\"Admin\"",
+      "adminText": " — der Kontoinhaber der Organisation oder ein Nutzer mit Administrationsrechten, der Nutzer, Zugriffe und die Abrechnung verwaltet.",
+      "memberLabel": "\"Mitglied\"",
+      "memberText": " — jeder Nutzer (Büro-Koordinator, Disponent oder Außendiensttechniker), der einer Organisation hinzugefügt wird.",
+      "seatLabel": "\"Platz\" (Seat)",
+      "seatText": " — eine abrechenbare Zugriffseinheit; ein Büroplatz (Web-Zugang) wird nach Tarifstufe berechnet, ein Feldplatz (reiner Mobilzugang) zu einem Pauschalpreis.",
+      "dataLabel": "\"Kundendaten\"",
+      "dataText": " — alle Daten, die Ihre Organisation und ihre Mitglieder im Dienst eingeben, einschließlich Aufgaben, Berichte, Fotos, Standorte und Kommentare."
+    },
+    "s3": {
+      "title": "3. Der Dienst & Lizenz",
+      "intro": "HBCField stellt eine rollenbasierte Plattform zur Verwaltung von Außendienstarbeiten bereit — Erstellung und Zuweisung von Aufgaben, Ausführung durch Techniker, GPS-Routenverfolgung, Anwesenheit, Serviceberichte und zugehörige Funktionen. Wir können Funktionen im Laufe der Zeit ergänzen, ändern oder entfernen.",
+      "licence": "Vorbehaltlich dieser AGB und der Zahlung der geltenden Entgelte gewähren wir Ihrer Organisation ein nicht ausschließliches, nicht übertragbares und nicht unterlizenzierbares Recht, den Dienst während der Laufzeit Ihres Abonnements für ihre internen Geschäftszwecke zu nutzen.",
+      "restrictTitle": "Sie dürfen nicht",
+      "restrict1": "den Dienst kopieren, verändern, zurückentwickeln, dekompilieren oder abgeleitete Werke erstellen, außer soweit dies durch zwingendes Recht gestattet ist;",
+      "restrict2": "den Dienst weiterverkaufen, unterlizenzieren, vermieten oder Dritten außerhalb Ihrer Organisation zugänglich machen;",
+      "restrict3": "Nutzungsgrenzen, Platzanzahlen, Tarifbeschränkungen oder Sicherheitsmaßnahmen umgehen;",
+      "restrict4": "den Dienst nutzen, um ein konkurrierendes Produkt zu entwickeln oder andere Daten als Ihre eigenen Kundendaten auszulesen oder zu extrahieren."
+    },
+    "s4": {
+      "title": "4. Konten & Organisationen",
+      "intro": "Bei der Registrierung wird eine Organisation erstellt, und der registrierende Nutzer wird deren Admin. Sie sind für Ihr Konto und für alle darüber vorgenommenen Aktivitäten verantwortlich. Insbesondere:",
+      "item1": "müssen Sie richtige, aktuelle und vollständige Angaben machen und diese aktuell halten;",
+      "item2": "sind Sie für die Vertraulichkeit der Zugangsdaten und für alle über Ihr Konto vorgenommenen Handlungen verantwortlich;",
+      "item3": "steuert der Admin, welche Mitglieder hinzugefügt werden, deren Rollen und Zugriffe, und ist für deren Nutzung des Dienstes verantwortlich;",
+      "item4": "müssen Sie uns unverzüglich über unbefugten Zugriff oder Sicherheitsvorfälle in Bezug auf Ihr Konto informieren."
+    },
+    "s5": {
+      "title": "5. Abonnements, Plätze & Tarife",
+      "intro": "Der Dienst wird auf Abonnementbasis in mehreren Tarifstufen angeboten, die monatlich oder jährlich abgerechnet werden. Der Funktionsumfang Ihrer Organisation richtet sich nach der gewählten Stufe.",
+      "seats": "Die Abrechnung erfolgt pro Platz, nicht als Paket. Jedes aktive Mitglied zählt als Platz: ein Büroplatz (jedes Mitglied mit Zugang zum Webportal, einschließlich des Admins) wird zum Tarifpreis berechnet, ein Feldplatz (nur mobiler Zugang) zu einem Pauschalpreis. Der Platztyp eines Mitglieds richtet sich nach seinem Zugang — wenn Sie den Web-Zugang gewähren oder entziehen, ändert sich der Platztyp entsprechend und Ihre Platzanzahlen werden neu synchronisiert.",
+      "plansTitle": "Tarife & Preise (zzgl. USt.)",
+      "starterLabel": "Starter",
+      "starterText": "29 € pro Büroplatz / Monat (290 € / Jahr).",
+      "proLabel": "Professional",
+      "proText": "59 € pro Büroplatz / Monat (590 € / Jahr).",
+      "businessLabel": "Business",
+      "businessText": "99 € pro Büroplatz / Monat (990 € / Jahr).",
+      "fieldLabel": "Feldplatz",
+      "fieldText": "19 € pro reinem Mobilplatz / Monat (190 € / Jahr), in jeder Stufe.",
+      "plansNote": "Die Preise verstehen sich zzgl. USt. und können für künftige Laufzeiten mit Vorankündigung angepasst werden. Ihr aktueller Tarif und Ihre Platzanzahlen werden stets unter Einstellungen → Abrechnung angezeigt."
+    },
+    "s6": {
+      "title": "6. Entgelte, Abrechnung & anteilige Berechnung",
+      "intro": "Die Entgelte werden im Voraus in Euro (EUR) für jeden Abrechnungszeitraum auf Grundlage des Tarifs und der geltenden Platzanzahlen berechnet. Wenn Sie unterjährig Plätze hinzufügen oder entfernen, wird der Betrag wie folgt anteilig berechnet:",
+      "monthlyLabel": "Monatstarife — ",
+      "monthlyText": "Änderungen werden anteilig berechnet und auf Ihre nächste Rechnung angewendet; das Hinzufügen von Plätzen löst keine sofortige gesonderte Zahlung aus, doch der anteilige Betrag für den Rest des laufenden Zeitraums wird der Folgerechnung hinzugefügt.",
+      "annualLabel": "Jahrestarife (Plätze hinzufügen) — ",
+      "annualText": "eine Erhöhung wird sofort in Rechnung gestellt, anteilig für den Rest der Jahreslaufzeit, sodass hinzugefügte Plätze nicht bis zur Verlängerung kostenlos sind.",
+      "decreaseLabel": "Plätze entfernen — ",
+      "decreaseText": "Reduzierungen lösen niemals eine Barrückerstattung aus; der anteilige Wert wird als Guthaben verbucht und auf künftige Rechnungen angerechnet.",
+      "processor": "Zahlungen werden über Stripe abgewickelt. Sie ermächtigen uns und Stripe, Ihr Zahlungsmittel für alle fälligen Entgelte zu belasten. Sie sind dafür verantwortlich, ein gültiges Zahlungsmittel zu hinterlegen."
+    },
+    "s7": {
+      "title": "7. Steuern (USt.)",
+      "intro": "Alle Preise verstehen sich zzgl. Umsatzsteuer (USt.) und sonstiger anwendbarer Steuern, die beim Bezahlvorgang zum gesetzlich vorgeschriebenen Satz hinzugefügt werden. Für Kunden in Österreich gilt der Regelsteuersatz von 20 %.",
+      "vatId": "Geschäftskunden können beim Bezahlvorgang eine gültige Umsatzsteuer-Identifikationsnummer (UID) angeben. Für berechtigte grenzüberschreitende Umsätze innerhalb der EU gilt das Reverse-Charge-Verfahren, sodass keine USt. berechnet wird; in diesem Fall sind Sie für die Abrechnung der USt. in Ihrem eigenen Land verantwortlich. Inländische österreichische Leistungen unterliegen weiterhin der österreichischen USt., auch wenn eine UID angegeben wird."
+    },
+    "s8": {
+      "title": "8. Kostenlose Testphase",
+      "intro": "Neue Organisationen können eine kostenlose Testphase der Professional-Stufe erhalten (derzeit 14 Tage). Für den Start der Testphase ist kein Zahlungsmittel erforderlich, und Sie können während des Testzeitraums die berechtigten Funktionen nutzen.",
+      "expiry": "Sofern Sie nicht vor Ablauf der Testphase ein kostenpflichtiges Abonnement abschließen, wird der Zugang am Ende der Testphase eingeschränkt und das Konto in einen schreibgeschützten Zustand versetzt, bis ein Abonnement gestartet wird. Wir können Testangebote jederzeit ändern oder einstellen."
+    },
+    "s9": {
+      "title": "9. Verlängerung, Kündigung & Erstattungen",
+      "renewLabel": "Automatische Verlängerung — ",
+      "renewText": "Abonnements verlängern sich am Ende jedes Abrechnungszeitraums (monatlich oder jährlich) automatisch zu den dann geltenden Entgelten, bis sie gekündigt werden.",
+      "cancelLabel": "Kündigung — ",
+      "cancelText": "Sie können jederzeit über Einstellungen → Abrechnung oder das Stripe-Kundenportal kündigen. Die Kündigung wird zum Ende des laufenden bezahlten Zeitraums wirksam; bis dahin bleibt der Zugang bestehen.",
+      "refundLabel": "Erstattungen — ",
+      "refundText": "soweit nicht durch zwingendes Recht vorgeschrieben, sind bereits gezahlte Entgelte nicht erstattungsfähig, und wir gewähren keine anteiligen Erstattungen für ungenutzte Zeit oder Herabstufungen.",
+      "failLabel": "Fehlgeschlagene Zahlungen — ",
+      "failText": "schlägt eine Zahlung fehl, kann das Abonnement als überfällig markiert und der Zugang ausgesetzt oder eingeschränkt werden, bis die Zahlung geklärt ist."
+    },
+    "s10": {
+      "title": "10. Zulässige Nutzung",
+      "intro": "Sie verpflichten sich, weder selbst noch durch Mitglieder oder Dritte:",
+      "item1": "den Dienst unter Verstoß gegen geltende Gesetze oder Vorschriften zu nutzen;",
+      "item2": "rechtswidrige, rechtsverletzende oder schädliche Inhalte oder Schadsoftware hochzuladen oder zu übertragen;",
+      "item3": "sich unbefugten Zugang zum Dienst, zu anderen Konten oder zu unseren Systemen zu verschaffen;",
+      "item4": "die Integrität oder Leistung des Dienstes zu beeinträchtigen oder zu stören;",
+      "item5": "Standortverfolgung oder Mitgliederdaten unter Verstoß gegen das für Ihre Organisation geltende Arbeits-, Datenschutz- oder Persönlichkeitsrecht zu nutzen;",
+      "item6": "Ihre Identität oder Ihre Berechtigung, für eine Organisation zu handeln, falsch darzustellen."
+    },
+    "s11": {
+      "title": "11. Kundendaten & Datenschutz",
+      "ownership": "Im Verhältnis zwischen Ihnen und uns bleibt Ihre Organisation Eigentümerin ihrer Kundendaten. Sie gewähren uns eine beschränkte Lizenz, Kundendaten ausschließlich zur Bereitstellung und Unterstützung des Dienstes zu hosten, zu verarbeiten und zu übertragen. Sie sind für die Richtigkeit und Rechtmäßigkeit der Kundendaten sowie für das Vorliegen der erforderlichen Einwilligungen oder Rechtsgrundlagen verantwortlich (einschließlich Standortdaten Ihrer Mitglieder).",
+      "privacyPre": "Der Umgang mit personenbezogenen Daten ist in unserer ",
+      "privacyLink": "Datenschutzerklärung",
+      "privacyPost": " beschrieben, die Bestandteil dieser AGB ist. Soweit wir personenbezogene Daten in Ihrem Auftrag verarbeiten, handeln wir als Auftragsverarbeiter und Sie als Verantwortlicher.",
+      "export": "Solange Ihr Abonnement aktiv ist, können Sie auf Ihre Kundendaten zugreifen und sie exportieren. Nach Beendigung bewahren wir Kundendaten für einen begrenzten Zeitraum auf, um den Export zu ermöglichen, und löschen sie anschließend gemäß unseren Aufbewahrungspraktiken und geltendem Recht, sofern keine längere Aufbewahrung gesetzlich vorgeschrieben ist."
+    },
+    "s12": {
+      "title": "12. Geistiges Eigentum",
+      "ownership": "Der Dienst, einschließlich aller Software, des Designs, der Marken und der von uns bereitgestellten Inhalte, ist und bleibt ausschließliches Eigentum der HBC Group GmbH und ihrer Lizenzgeber. Diese AGB gewähren Ihnen lediglich ein Nutzungsrecht am Dienst; es werden keine Eigentums- oder sonstigen Rechte auf Sie übertragen.",
+      "feedback": "Wenn Sie uns Feedback oder Vorschläge übermitteln, gewähren Sie uns eine nicht ausschließliche, unentgeltliche, unbefristete Lizenz, diese zur Verbesserung des Dienstes zu nutzen, ohne dass daraus Verpflichtungen uns gegenüber entstehen."
+    },
+    "s13": {
+      "title": "13. Drittanbieterdienste",
+      "intro": "Der Dienst nutzt Drittanbieter. Deren Leistungen unterliegen ihren eigenen Bedingungen, und wir sind nicht für deren Handlungen, Unterlassungen oder Verfügbarkeit verantwortlich:",
+      "stripeLabel": "Stripe — ",
+      "stripeText": "Zahlungsabwicklung und Abonnementabrechnung;",
+      "hostingLabel": "Hetzner — ",
+      "hostingText": "EU-basiertes Cloud-Hosting und Objektspeicher;",
+      "pushLabel": "Expo, Firebase Cloud Messaging & Apple Push Notification Service — ",
+      "pushText": "Zustellung von Push-Benachrichtigungen;",
+      "mapsLabel": "OpenStreetMap, OSRM & Nominatim — ",
+      "mapsText": "Kartenkacheln, Routing und Adresssuche."
+    },
+    "s14": {
+      "title": "14. Gewährleistung, Verfügbarkeit & Haftung",
+      "availability": "Wir bemühen uns, den Dienst verfügbar und zuverlässig zu halten, garantieren jedoch keinen unterbrechungs- oder fehlerfreien Betrieb. Der Dienst kann vorübergehend für Wartung, Aktualisierungen oder aus Gründen außerhalb unseres Einflussbereichs nicht verfügbar sein.",
+      "asis": "Soweit gesetzlich zulässig, wird der Dienst \"wie besehen\" und \"wie verfügbar\" bereitgestellt, ohne jegliche ausdrückliche oder stillschweigende Gewährleistung, einschließlich der Marktgängigkeit, Eignung für einen bestimmten Zweck und Nichtverletzung von Rechten.",
+      "liability": "Soweit gesetzlich zulässig, haften wir nicht für mittelbare, zufällige, besondere oder Folgeschäden oder für entgangenen Gewinn, entgangene Einnahmen, Daten- oder Geschäftsverluste. Unsere Gesamthaftung im Zusammenhang mit dem Dienst ist auf die Entgelte begrenzt, die Sie in den zwölf (12) Monaten vor dem schadensauslösenden Ereignis an uns gezahlt haben.",
+      "mandatory": "Nichts in diesen AGB schließt eine Haftung aus oder beschränkt sie, die gesetzlich nicht ausgeschlossen oder beschränkt werden kann, einschließlich der Haftung für Vorsatz, grobe Fahrlässigkeit, Personenschäden oder nach zwingendem österreichischem und EU-Recht."
+    },
+    "s15": {
+      "title": "15. Laufzeit, Sperrung & Beendigung",
+      "term": "Diese AGB gelten, solange Sie den Dienst nutzen oder ein aktives Abonnement halten. Sie können durch Kündigung Ihres Abonnements und Einstellung der Nutzung des Dienstes beenden.",
+      "suspend": "Wir können den Zugang ganz oder teilweise aussetzen oder einschränken, wenn Sie diese AGB wesentlich verletzen, fällige Entgelte nicht zahlen oder wenn dies aus rechtlichen oder Sicherheitsgründen erforderlich ist. Soweit möglich, informieren wir Sie vorab und geben Gelegenheit zur Abhilfe.",
+      "effect": "Mit Beendigung endet Ihr Nutzungsrecht am Dienst, und offene Entgelte werden fällig. Wir stellen Kundendaten für einen begrenzten Zeitraum zum Export bereit und löschen sie anschließend gemäß Abschnitt 11, sofern zwingendes Recht nichts anderes vorschreibt."
+    },
+    "s16": {
+      "title": "16. Anwendbares Recht, Änderungen & Kontakt",
+      "law": "Diese AGB unterliegen österreichischem Recht unter Ausschluss der Kollisionsnormen und des UN-Kaufrechts (CISG). Für Streitigkeiten sind ausschließlich die für den Sitz der HBC Group GmbH in Österreich zuständigen Gerichte zuständig, sofern nicht zwingendes Verbraucherschutzrecht etwas anderes vorsieht.",
+      "changes": "Wir können diese AGB von Zeit zu Zeit aktualisieren. Über wesentliche Änderungen informieren wir Sie per E-Mail oder In-App-Hinweis; das Datum \"Zuletzt aktualisiert\" gibt die jeweils letzte Fassung an. Ihre fortgesetzte Nutzung des Dienstes nach Inkrafttreten von Änderungen gilt als Annahme der aktualisierten AGB.",
+      "company": "HBC Group GmbH",
+      "emailLabel": "Abrechnung & Recht: ",
       "websiteLabel": "Website: ",
       "supportLabel": "Support: "
     },
