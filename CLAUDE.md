@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-06-18 (Background GPS route tracking)
+> **Last Updated**: 2026-07-13 (SaaS Billing LIVE on Stripe)
 
 ---
 
@@ -371,6 +371,18 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | POST | `/users/push-token` | Register push notification token | ALL |
 | DELETE | `/users/push-token/:token` | Remove push notification token | ALL |
 
+### Billing (`/billing`) - Stripe SaaS Subscriptions
+> StripeService lives in **auth-service** only; the gateway forwards. All mutations ADMIN-only (org from token). `planTier`/`subStatus` are server-authoritative.
+
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/billing/subscription` | Current plan, seats, status, trial info | ADMIN |
+| POST | `/billing/checkout` | Create Stripe Checkout session (tier+interval) | ADMIN |
+| POST | `/billing/portal` | Create Customer Portal session (manage/cancel) | ADMIN |
+| POST | `/billing/change-plan` | Change tier/interval on existing subscription | ADMIN |
+| POST | `/billing/cancel` | Cancel at period end | ADMIN |
+| POST | `/billing/webhooks/stripe` | Stripe webhook (HMAC + rawBody + idempotency; 6 events) | Public (signature-verified) |
+
 **Query Parameters for GET `/technicians`:**
 - `status`: `active` | `inactive` | `all` (default: `active`)
 - `type`: `FULL_TIME` | `FREELANCER` | `all` (default: `all`)
@@ -563,7 +575,7 @@ pnpm build            # Build all packages
 | App | File | Key Variables |
 |-----|------|---------------|
 | gateway | `apps/api/gateway/.env` | `PORT`, `JWT_SECRET`, `REDIS_*`, `CORS_ORIGINS`, `AUTH_CACHE_TTL_SECONDS` (optional, default 60 — TTL for the per-request token/user cache) |
-| auth-service | `apps/api/auth-service/.env` | `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `REDIS_*` |
+| auth-service | `apps/api/auth-service/.env` | `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `REDIS_*`, **Stripe billing** (StripeService lives here only): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_AUTOMATIC_TAX` (true/false), + 8 price IDs `STRIPE_PRICE_{STARTER,PRO,BUSINESS}_OFFICE_{MONTHLY,ANNUAL}` & `STRIPE_PRICE_FIELD_{MONTHLY,ANNUAL}` |
 | task-service | `apps/api/task-service/.env` | `DATABASE_URL`, `REDIS_*` |
 | notification-service | `apps/api/notification-service/.env` | `REDIS_*`, `SMTP_*`, `FCM_SERVER_KEY` |
 | tracking-service | `apps/api/tracking-service/.env` | `DATABASE_URL`, `REDIS_*`, `LOCATION_HISTORY_RETENTION_DAYS` (optional, default 90 — GPS history retention window) |
@@ -879,6 +891,17 @@ pnpm build            # Build all packages
   - [ ] Web dashboard for attendance tracking
   - [ ] Export functionality
 
+### Phase 8: SaaS Billing ✅ COMPLETE — LIVE on Stripe (2026-07-13)
+- [x] Per-seat plans (`packages/shared/src/billing/plans.ts`, `seats.ts`): office seat by tier (Starter €29 / Pro €59 / Business €99, ×10 annual), field seat flat €19/mo; seat type derived from access
+- [x] StripeService (auth-service): checkout, portal, webhooks (HMAC+idempotency, 6 events), seat proration (`setSubscriptionQuantities`), tier reverse-resolution (`resolveTierInterval`)
+- [x] Seat sync `reconcileSeats` (debounced): monthly → banked proration; annual increase → charged immediately (`always_invoice`); annual decrease → banked credit
+- [x] Feature gating: `tierAllows()` + global `PlanGuard` (402, reads pass) + `ModuleGuard`
+- [x] 14-day Professional trial on register; hourly `@Cron expireTrials()` locks no-card trials past `trialEndsAt`
+- [x] `tax_id_collection` (UID at checkout → EU B2B reverse charge) + `customer_update` address/name auto
+- [x] Gateway `/billing/*` endpoints (see section 6); DB migration `20260711120000_add_saas_billing`
+- [x] **LIVE**: 4 products / 8 prices, live webhook, Stripe Tax (AT 20%, tax_behavior exclusive, SaaS tax_code), Customer Portal, customer emails (receipt + dunning). Env via `docker-compose.override.yml` → `.env.production`. ⚠️ Account shared with "8bc store" (tax/email toggles account-wide)
+- [ ] One real live test purchase (real card) — pending, user-driven
+
 ---
 
 ## 13. SOLID & DRY PRINCIPLES
@@ -1070,6 +1093,18 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: Phase 7.3 - Technician Assignment (next up)
+
+### Recently Completed (2026-07-13) — SaaS Billing LIVE on Stripe
+- **Stripe billing switched TEST → LIVE in production** (hbcfield.com). No code change to go live — the app was already live-ready; go-live was Stripe-dashboard + prod-env config (done via Chrome + Stripe API).
+- **Plans / pricing** (`packages/shared/src/billing/plans.ts`, `seats.ts`): per-seat model, NOT bundles. **Office seat** = anyone with web access incl. the admin owner, priced by tier (**Starter €29 / Professional €59 / Business €99** per month; ×10 annual). **Field seat** = mobile-only member, flat **€19/mo** (€190/yr). Seat type is derived from ACCESS (`classifySeat`/`countSeats`), so it re-syncs whenever a member's Access Profile flips web↔mobile.
+- **Seat changes & proration** (`billing.service.ts reconcileSeats` → `stripe.service.ts setSubscriptionQuantities`): `invoiceNow = interval === 'annual' && newTotal > oldTotal`.
+  - **Monthly** add/remove → `create_prorations` (banked onto next invoice, no immediate charge). Verified live: 1→11 office +5 field mid-cycle → next invoice = new €744/mo + prorated catch-up.
+  - **Annual INCREASE** → `always_invoice` (charged immediately, prorated for the rest of the year — anti-abuse so seats aren't free until renewal). Verified live via test-clock. Annual DECREASE → banked credit.
+  - Seat syncs are debounced per-org (one proration event per burst).
+- **Feature gating** (`billing-plan-gating`): `tierAllows()` entitlement ceiling; global `PlanGuard` returns **402** (not 403) on under-tier mutations, **reads pass**; `ModuleGuard` gates task modules. Tier map: Starter = subtasks/checklists/attachments/tracking/time_tracking/**service_reports**; Pro+ = custom_fields/dependencies + recurring/overtime/invoicing; Business+ = sprints/story_points/epics/phases + workflows/audit_log/multi_org.
+- **Checkout** (`stripe.service.ts createCheckoutSession`): hosted Checkout, `automatic_tax` env-gated, `allow_promotion_codes`, **`tax_id_collection` ON** (UID at checkout → cross-border EU B2B reverse-charged to 0%; domestic AT stays 20%), `customer_update: address/name auto` (required to persist the collected address/UID onto the existing customer). Webhook `POST /api/v1/billing/webhooks/stripe` (HMAC + rawBody + idempotency) handles 6 events (checkout.session.completed, customer.subscription.created/updated/deleted, invoice.paid, invoice.payment_failed).
+- **Stripe live setup** (account `acct_1QtRRrA3luQe6reB`, HBC GmbH, AT/EUR — **SHARED with an "8bc store" project**, so a dedicated "HBCField" `sk_live` key was made + tax/email toggles are account-wide): 4 products / 8 prices; live webhook `we_...`; **Stripe Tax active** (head office AT, `tax_behavior=exclusive` VAT-on-top, tax_code `txcd_10103001` SaaS-business, AT registration → 20%); Customer Portal default config (cancel at_period_end, VAT-ID capture); customer emails ON (receipt + dunning). ⚠️ Products/prices need a `tax_code` before `STRIPE_AUTOMATIC_TAX=true` or checkout errors.
+- **Prod wiring**: `docker-compose.override.yml` injects the 11 `STRIPE_` vars into auth-service (compose uses explicit `environment:`, not `env_file`); secrets live in `/opt/doergo/infra/docker/.env.production`. Trial-expiry: hourly `@Cron` `expireTrials()` locks no-card trials past `trialEndsAt`. **Grandfather note**: new prod DBs must backfill `planTier IS NULL` orgs or PlanGuard 402s premium. Full detail in memory `billing-went-live` / `billing-deployed-prod` / `billing-plan-gating`.
 
 ### Recently Completed (2026-06-18)
 - **Background GPS Route Tracking** (Phase 5):
