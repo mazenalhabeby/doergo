@@ -178,7 +178,9 @@ export default function Home() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         /* cycling word — each letter rises from behind a clip (trionn-style) */
-        .cw-row { display: inline-block; overflow: hidden; vertical-align: bottom; }
+        /* padding-bottom + equal negative margin extends the clip area below the
+           baseline so descenders (g, y, p, q, j) aren't cut, without shifting layout */
+        .cw-row { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.2em; margin-bottom: -0.2em; }
         .cw-in { display: inline-block; transform: translateY(110%); animation: cw-rise .6s cubic-bezier(.22,1,.36,1) forwards; }
         @keyframes cw-rise { to { transform: translateY(0); } }
         @media (prefers-reduced-motion: reduce) {
@@ -273,7 +275,7 @@ export default function Home() {
           </section>
 
           {/* ══════ POSITIONING ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+          <section className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.whatItIs.label')}</Label>
               <h2 className={`${DISPLAY} text-[clamp(1.7rem,4vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.01em] text-[#e8e8e5]`}>
@@ -286,7 +288,7 @@ export default function Home() {
           </section>
 
           {/* ══════ INTRO VIDEO ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-24 sm:px-10 sm:py-32">
+          <section className="border-t border-white/[0.08] px-6 py-16 sm:px-10 sm:py-32">
             <div className="mx-auto max-w-[1600px]">
               <Reveal>
                 <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
@@ -310,8 +312,8 @@ export default function Home() {
           </section>
 
           {/* ══════ KEY FACTS ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-24 sm:px-10">
-            <div className="mx-auto grid max-w-[1600px] gap-16 sm:grid-cols-3">
+          <section className="border-t border-white/[0.08] px-6 py-16 sm:px-10 sm:py-24">
+            <div className="mx-auto grid max-w-[1600px] gap-10 sm:gap-16 sm:grid-cols-3">
               {(() => {
                 const facts = asArray<{ unit: string; label: string; desc: string }>(t('home.facts', { returnObjects: true }));
                 return [
@@ -333,7 +335,7 @@ export default function Home() {
           <LaptopShowcase />
 
           {/* ══════ HOW IT WORKS — process steps (flows with the page, no scroll-trap) ══════ */}
-          <section id="how" className="border-t border-white/[0.08] py-24 sm:py-32">
+          <section id="how" className="border-t border-white/[0.08] py-16 sm:py-32">
             <div className="mx-auto max-w-[1600px] px-6 sm:px-10">
               <div className="mb-14">
                 <Label className="mb-6 block">{t('home.process.label')}</Label>
@@ -353,7 +355,7 @@ export default function Home() {
           </section>
 
           {/* ══════ FIELD / MOBILE ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+          <section className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.field.label')}</Label>
               <h2 className={`${DISPLAY} text-[clamp(2rem,6vw,4.5rem)] font-normal leading-[0.98] tracking-[-0.02em] text-[#efefec]`}>
@@ -382,7 +384,7 @@ export default function Home() {
           <PhoneShowcase />
 
           {/* ══════ WHY / THREE-IN-ONE + DIFFERENTIATORS ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+          <section className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.why.label')}</Label>
               <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
@@ -437,7 +439,7 @@ export default function Home() {
           </section>
 
           {/* ══════ INDUSTRIES / WHO IT'S FOR ══════ */}
-          <section id="industries" className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+          <section id="industries" className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.industries.label')}</Label>
               <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
@@ -475,7 +477,7 @@ export default function Home() {
           </section>
 
           {/* ══════ PRICING ══════ */}
-          <section id="pricing" className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-40">
+          <section id="pricing" className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.pricing.label')}</Label>
               <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
@@ -544,7 +546,7 @@ export default function Home() {
           </section>
 
           {/* ══════ CTA ══════ */}
-          <section id="contact" className="border-t border-white/[0.08] px-6 py-28 sm:px-10 sm:py-44">
+          <section id="contact" className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-44">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.cta.label')}</Label>
               <h2 className={`${DISPLAY} text-[clamp(2.4rem,8vw,6.5rem)] font-normal leading-[0.95] tracking-[-0.02em] text-[#efefec]`}>
