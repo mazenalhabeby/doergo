@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { JoinOrgIcon } from '../../src/components';
+import { JoinOrgIcon, ScreenContainer } from '../../src/components';
 import { onboardingApi } from '../../src/lib/api';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -72,6 +72,7 @@ export default function JoinOrgScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScreenContainer width="content">
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + SPACING.md }]} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -151,6 +152,7 @@ export default function JoinOrgScreen() {
             </TouchableOpacity>
           )}
         </ScrollView>
+        </ScreenContainer>
       </KeyboardAvoidingView>
     </View>
   );

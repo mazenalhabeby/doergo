@@ -126,6 +126,18 @@ export class OrganizationsController {
     return result;
   }
 
+  @Get('contacts')
+  @ApiOperation({ summary: 'List the org admins/managers to contact — any org member' })
+  @ApiResponse({ status: 200, description: 'Contacts list' })
+  async listContacts(@CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'list_org_contacts' }, {
+        organizationId: user.organizationId,
+        userId: user.id,
+      }),
+    );
+  }
+
   @Patch('members/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update member profile, role, and permissions' })
@@ -153,6 +165,10 @@ export class OrganizationsController {
           canAssignTasks: dto.canAssignTasks,
           canManageUsers: dto.canManageUsers,
           enabledModules: dto.enabledModules,
+          contactable: dto.contactable,
+          contactScope: dto.contactScope,
+          contactAllowedIds: dto.contactAllowedIds,
+          allowRemote: dto.allowRemote,
         },
       }),
     );

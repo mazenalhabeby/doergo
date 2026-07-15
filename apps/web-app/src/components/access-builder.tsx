@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Smartphone, Monitor, Layers, MessageCircle, Save } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
@@ -9,6 +10,8 @@ import { getModules, getSpaceScope, getAccessPlatforms, canContactColleagues } f
 import type { MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
+import { UserAvatar } from "@/components/user-avatar"
 import {
   Select,
   SelectContent,
@@ -66,6 +69,9 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     canAssignTasks: !!member.canAssignTasks,
     canViewAllTasks: !!member.canViewAllTasks,
     canManageUsers: !!member.canManageUsers,
+    contactable: !!member.contactable,
+    contactScope: member.contactScope || "NONE",
+    contactAllowedIds: member.contactAllowedIds || [],
   }), [member])
 
   const [modules, setModules] = useState<MobileModule[]>(initial.modules)
@@ -79,7 +85,23 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
   const [canAssignTasks, setCanAssignTasks] = useState<boolean>(initial.canAssignTasks)
   const [canViewAllTasks, setCanViewAllTasks] = useState<boolean>(initial.canViewAllTasks)
   const [canManageUsers, setCanManageUsers] = useState<boolean>(initial.canManageUsers)
+  const [contactable, setContactable] = useState<boolean>(initial.contactable)
+  const [contactScope, setContactScope] = useState<string>(initial.contactScope)
+  const [contactAllowedIds, setContactAllowedIds] = useState<string[]>(initial.contactAllowedIds)
   const [saving, setSaving] = useState(false)
+
+  // Contacts directory this member could be allowed to reach: admins + contactable members.
+  const { data: membersData } = useQuery({
+    queryKey: ["orgMembers", "positions"],
+    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    staleTime: 60000,
+  })
+  const candidateContacts = useMemo(
+    () => (membersData?.data || []).filter(
+      (m) => m.id !== member.id && m.isActive && (m.role === "ADMIN" || m.role === "MANAGER" || m.contactable),
+    ),
+    [membersData, member.id],
+  )
 
   const toggleModule = (m: MobileModule) =>
     setModules((cur) => (cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m]))
@@ -93,7 +115,10 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     (canCreateTasks && taskScope !== initial.taskScope) ||
     canAssignTasks !== initial.canAssignTasks ||
     canViewAllTasks !== initial.canViewAllTasks ||
-    canManageUsers !== initial.canManageUsers
+    canManageUsers !== initial.canManageUsers ||
+    contactable !== initial.contactable ||
+    contactScope !== initial.contactScope ||
+    (contactScope === "SELECTED" && JSON.stringify(contactAllowedIds.slice().sort()) !== JSON.stringify(initial.contactAllowedIds.slice().sort()))
 
   const save = async () => {
     try {
@@ -105,6 +130,9 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
         canAssignTasks,
         canViewAllTasks,
         canManageUsers,
+        contactable,
+        contactScope,
+        contactAllowedIds: contactScope === "SELECTED" ? contactAllowedIds : [],
       })
       notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.accessUpdatedDesc", { name: member.firstName }))
       onSaved?.()
@@ -250,6 +278,60 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
               </div>
             </div>
             <Switch checked={canContact} onCheckedChange={setCanContact} />
+          </div>
+        </Field>
+
+        {/* Contact access — who this member may reach in the contacts directory */}
+        <Field label={t("accessBuilder.contactAccess", "Contact access")}>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">{t("accessBuilder.contactable.title", "Contactable")}</p>
+                <p className="text-xs text-muted-foreground">{t("accessBuilder.contactable.desc", "Appears in the contacts directory so teammates can reach them. Admins are always contactable.")}</p>
+              </div>
+              <Switch checked={contactable} onCheckedChange={setContactable} />
+            </div>
+
+            <div className="space-y-2.5 rounded-xl border border-border px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{t("accessBuilder.canContact.title", "Can contact")}</p>
+                  <p className="text-xs text-muted-foreground">{t("accessBuilder.canContact.desc", "Which admins/contacts this member may reach. Secure by default.")}</p>
+                </div>
+                <Select value={contactScope} onValueChange={setContactScope}>
+                  <SelectTrigger className="h-8 w-[168px] shrink-0 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE" className="text-xs">{t("accessBuilder.contactScope.none", "No one")}</SelectItem>
+                    <SelectItem value="ALL" className="text-xs">{t("accessBuilder.contactScope.all", "All contacts")}</SelectItem>
+                    <SelectItem value="SELECTED" className="text-xs">{t("accessBuilder.contactScope.selected", "Specific contacts…")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {contactScope === "SELECTED" && (
+                <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-lg border border-border p-1.5">
+                  {candidateContacts.length === 0 ? (
+                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">{t("accessBuilder.noContacts", "No contacts available")}</p>
+                  ) : (
+                    candidateContacts.map((c) => {
+                      const checked = contactAllowedIds.includes(c.id)
+                      return (
+                        <label key={c.id} className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) => setContactAllowedIds((prev) => (v ? [...prev, c.id] : prev.filter((id) => id !== c.id)))}
+                          />
+                          <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="sm" />
+                          <span className="min-w-0 flex-1 truncate text-sm">{c.firstName} {c.lastName}</span>
+                          <span className="shrink-0 text-[11px] text-muted-foreground">
+                            {c.role === "ADMIN" ? t("members.roles.admin") : c.role === "MANAGER" ? t("roles.manager", "Manager") : (c.position || t("accessBuilder.contactLabel", "Contact"))}
+                          </span>
+                        </label>
+                      )
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </Field>
       </div>

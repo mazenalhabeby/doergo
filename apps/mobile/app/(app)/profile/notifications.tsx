@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { SheetHeader } from '../../../src/components';
+import { SheetHeader, ScreenContainer } from '../../../src/components';
 import {
   COLORS,
   SPACING,
@@ -81,6 +81,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
+      <ScreenContainer width="content">
       <SheetHeader />
       {/* Permission Status */}
       <View style={styles.section}>
@@ -167,6 +168,7 @@ export default function NotificationsScreen() {
       <Text style={[styles.footerNote, { color: colors.textMuted }]}>
         {t('profile.notifications.footerNote')}
       </Text>
+      </ScreenContainer>
     </View>
   );
 }

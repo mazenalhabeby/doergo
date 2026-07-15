@@ -46,6 +46,10 @@ export interface TimeEntry {
   clockOutAccuracy: number | null;
   clockInWithinGeofence: boolean;
   clockOutWithinGeofence: boolean | null;
+  // Remote work (WFH/anywhere): geofence-exempt, coarse place captured from GPS
+  isRemote?: boolean;
+  clockInPlace?: string | null;
+  clockOutPlace?: string | null;
   totalMinutes: number | null;
   breakMinutes: number;
   notes: string | null;

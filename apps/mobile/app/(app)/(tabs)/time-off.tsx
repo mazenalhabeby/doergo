@@ -17,7 +17,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useFetchData } from '../../../src/hooks/useFetchData';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
-import { ConfirmSheet } from '../../../src/components';
+import { ConfirmSheet, ScreenContainer } from '../../../src/components';
 import {
   timeOffApi,
   availabilityApi,
@@ -522,6 +522,7 @@ export default function TimeOffScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <ScreenContainer width="content">
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -939,6 +940,7 @@ export default function TimeOffScreen() {
         {/* Bottom spacing */}
         <View style={{ height: SPACING.xxxl }} />
       </ScrollView>
+      </ScreenContainer>
 
       <ConfirmSheet
         visible={!!cancelTarget}

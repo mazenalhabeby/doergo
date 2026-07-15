@@ -4,7 +4,9 @@
 - **Does your app collect or share any user data?** Yes
 - **Is all user data encrypted in transit?** Yes
 - **Do you provide a way for users to request data deletion?** Yes
-- **Data deletion URL/instructions:** Contact support@hbcfield.com or organization admin
+- **In-app account deletion available?** Yes (Profile → Account → Delete Account, password-confirmed, permanent)
+- **Data deletion URL:** https://hbcfield.com/account-deletion
+- **Data deletion instructions:** Delete in-app via Profile → Account → Delete Account, or contact support@hbcfield.com / your organization admin
 
 ---
 
@@ -72,6 +74,6 @@
 
 ## Data Handling
 - **Data encrypted in transit:** Yes (HTTPS/TLS)
-- **Data deletion available:** Yes (contact admin or support@hbcfield.com)
+- **Data deletion available:** Yes (in-app: Profile → Account → Delete Account; or contact admin / support@hbcfield.com; URL: https://hbcfield.com/account-deletion)
 - **Committed to Play Families Policy:** Not applicable (not a children's app)
 - **Independent security review:** No

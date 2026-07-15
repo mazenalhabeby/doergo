@@ -8,9 +8,12 @@ export const ATTENDANCE_CONSTANTS = {
   MIN_GEOFENCE_RADIUS: 10,
   MAX_GEOFENCE_RADIUS: 100,
 
-  // GPS accuracy threshold (in meters)
-  // Reject clock-in if GPS accuracy is worse than this
-  GPS_ACCURACY_THRESHOLD: 20,
+  // GPS accuracy sanity cap (in meters). Reject a clock-in only if the fix is
+  // genuinely useless (worse than this). Kept lenient because real-world fixes
+  // are often 20-50m+ indoors / in cities / on desktop Wi-Fi positioning. The
+  // geofence check is accuracy-aware (radius + accuracy), so borderline-but-
+  // plausible fixes still pass instead of being hard-rejected.
+  GPS_ACCURACY_THRESHOLD: 100,
 
   // Location name limits
   LOCATION_NAME_MAX_LENGTH: 100,

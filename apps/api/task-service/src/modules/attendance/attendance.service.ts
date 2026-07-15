@@ -42,13 +42,14 @@ export class AttendanceService {
    */
   async clockIn(data: {
     userId: string;
-    locationId: string;
+    locationId?: string;
     lat: number;
     lng: number;
     accuracy?: number;
     organizationId: string;
+    isRemote?: boolean;
   }) {
-    this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}`);
+    this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}, remote=${!!data.isRemote}`);
 
     // Verify user is a technician with on-site work mode
     const user = await this.prisma.user.findFirst({
@@ -60,11 +61,62 @@ export class AttendanceService {
       select: {
         id: true,
         organizationId: true,
+        allowRemote: true,
       },
     });
 
     if (!user) {
       throw new NotFoundException('Employee not found');
+    }
+
+    // ---- Remote clock-in (WFH/anywhere): geofence-exempt, coarse place captured ----
+    if (data.isRemote) {
+      if (!user.allowRemote) {
+        throw new BadRequestException(
+          'You are not permitted to clock in remotely. Ask your administrator to enable remote clock-in for your account.',
+        );
+      }
+      const already = await this.prisma.timeEntry.findFirst({
+        where: { userId: data.userId, status: TimeEntryStatus.CLOCKED_IN },
+        include: { location: true },
+      });
+      if (already) {
+        throw new BadRequestException(
+          `You are already clocked in${already.location ? ` at ${already.location.name}` : ''}. Please clock out first.`,
+        );
+      }
+      const bucket = await this.getOrCreateRemoteBucket(data.organizationId);
+      const place = await this.reverseGeocode(data.lat, data.lng);
+      const entry = await this.prisma.timeEntry.create({
+        data: {
+          userId: data.userId,
+          locationId: bucket.id,
+          status: TimeEntryStatus.CLOCKED_IN,
+          clockInAt: new Date(),
+          clockInLat: data.lat,
+          clockInLng: data.lng,
+          clockInAccuracy: data.accuracy,
+          clockInWithinGeofence: true,
+          isRemote: true,
+          clockInPlace: place,
+          flagReasons: [],
+          approvalStatus: 'AUTO',
+          organizationId: data.organizationId,
+        },
+        include: { location: true, user: { select: { firstName: true, lastName: true } } },
+      });
+      this.logger.log(`Remote clock in: entry=${entry.id}, user=${data.userId}, place=${place ?? 'unknown'}`);
+      this.notificationClient.emit('attendance_clock_in', {
+        userId: data.userId,
+        organizationId: data.organizationId,
+        timeEntry: entry,
+      });
+      return success(entry, place ? `Clocked in remotely · ${place}` : 'Clocked in remotely');
+    }
+
+    // ---- On-site clock-in requires a target location ----
+    if (!data.locationId) {
+      throw new BadRequestException('A location is required to clock in on site.');
     }
 
     // Verify user has an active assignment to this location
@@ -131,7 +183,9 @@ export class AttendanceService {
         ? 0
         : haversineDistance(data.lat, data.lng, location.lat, location.lng);
 
-    const withinGeofence = distance <= location.geofenceRadius;
+    // Accuracy-aware: allow the GPS error margin so a plausible on-site fix
+    // passes instead of being hard-rejected for a fuzzy reading.
+    const withinGeofence = distance <= location.geofenceRadius + (data.accuracy ?? 0);
 
     // Reject if not within geofence (if strict mode enabled)
     if (ATTENDANCE_CONSTANTS.REQUIRE_GEOFENCE_FOR_CLOCK_IN && !withinGeofence) {
@@ -187,6 +241,7 @@ export class AttendanceService {
       },
       include: {
         location: true,
+        user: { select: { firstName: true, lastName: true } },
       },
     });
 
@@ -202,6 +257,40 @@ export class AttendanceService {
     });
 
     return success(entry, `Clocked in at ${location.name}`);
+  }
+
+  /** Find or create the org's geofence-exempt "Remote" bucket location. */
+  private async getOrCreateRemoteBucket(organizationId: string) {
+    const existing = await this.prisma.companyLocation.findFirst({
+      where: { organizationId, isRemote: true },
+    });
+    if (existing) return existing;
+    return this.prisma.companyLocation.create({
+      data: { name: 'Remote', organizationId, isRemote: true, isActive: true },
+    });
+  }
+
+  /**
+   * Coarse reverse-geocode (city-level) via OpenStreetMap Nominatim. Returns
+   * e.g. "Vienna, AT", or null on failure. zoom=10 keeps it to city/area
+   * granularity (never a precise street) for privacy.
+   */
+  private async reverseGeocode(lat: number, lng: number): Promise<string | null> {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'HBCField/1.0 (attendance clock-in)' },
+      });
+      if (!res.ok) return null;
+      const j: any = await res.json();
+      const a = j?.address ?? {};
+      const city = a.city || a.town || a.village || a.municipality || a.county || a.state;
+      const country = (a.country_code || '').toUpperCase();
+      if (!city) return null;
+      return country ? `${city}, ${country}` : city;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -239,7 +328,8 @@ export class AttendanceService {
         ? 0
         : haversineDistance(data.lat, data.lng, entry.location.lat, entry.location.lng);
 
-    const withinGeofence = distance <= entry.location.geofenceRadius;
+    // Accuracy-aware geofence (matches clock-in): tolerate the GPS error margin.
+    const withinGeofence = distance <= entry.location.geofenceRadius + (data.accuracy ?? 0);
 
     // Calculate total minutes worked
     const clockOutTime = new Date();
@@ -279,6 +369,9 @@ export class AttendanceService {
     const uniqueFlags = [...new Set(flagReasons)];
     const approvalStatus = uniqueFlags.length === 0 ? 'AUTO' : 'PENDING';
 
+    // Remote shifts capture a coarse place on clock-out too.
+    const clockOutPlace = entry.isRemote ? await this.reverseGeocode(data.lat, data.lng) : undefined;
+
     // Update time entry
     const updatedEntry = await this.prisma.timeEntry.update({
       where: { id: entry.id },
@@ -293,9 +386,11 @@ export class AttendanceService {
         notes: data.notes,
         flagReasons: uniqueFlags,
         approvalStatus,
+        clockOutPlace,
       },
       include: {
         location: true,
+        user: { select: { firstName: true, lastName: true } },
       },
     });
 

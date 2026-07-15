@@ -19,7 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { IsString, IsOptional, IsEmail, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
@@ -49,6 +49,12 @@ class UpdateMeDto {
   @IsString()
   @IsOptional()
   lastName?: string;
+
+  // Manual availability override; null clears it back to auto.
+  @IsOptional()
+  @ValidateIf((o) => o.presence !== null)
+  @IsIn(['AVAILABLE', 'BUSY', 'AWAY'])
+  presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
 }
 
 class UpdateMyEmailDto {

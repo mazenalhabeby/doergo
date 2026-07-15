@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 /**
@@ -254,4 +254,25 @@ export class UpdateMemberDto {
   @ApiPropertyOptional({ description: 'Per-user Access Profile (modules, spaceScope, platforms, canContact, webScreens) or a module string[]' })
   @IsOptional()
   enabledModules?: unknown;
+
+  @ApiPropertyOptional({ description: 'Appears in the org contacts directory' })
+  @IsOptional()
+  @IsBoolean()
+  contactable?: boolean;
+
+  @ApiPropertyOptional({ enum: ['NONE', 'ALL', 'SELECTED'], description: 'Who this member may contact' })
+  @IsOptional()
+  @IsEnum(['NONE', 'ALL', 'SELECTED'])
+  contactScope?: string;
+
+  @ApiPropertyOptional({ description: 'Allowed contact user IDs (when contactScope=SELECTED)', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  contactAllowedIds?: string[];
+
+  @ApiPropertyOptional({ description: 'May clock in remotely (WFH/anywhere)' })
+  @IsOptional()
+  @IsBoolean()
+  allowRemote?: boolean;
 }

@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { CreateOrgIcon } from '../../src/components';
+import { CreateOrgIcon, ScreenContainer } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
@@ -68,6 +68,7 @@ export default function CreateOrgScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScreenContainer width="content">
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + SPACING.md }]} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -152,6 +153,7 @@ export default function CreateOrgScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
+        </ScreenContainer>
       </KeyboardAvoidingView>
     </View>
   );

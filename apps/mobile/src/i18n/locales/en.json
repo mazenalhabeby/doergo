@@ -721,6 +721,14 @@
       "title": "About",
       "tagline": "Dispatch · Track · Deliver",
       "description": "HBCField is a field service management platform that helps teams dispatch tasks, track progress in real-time, and deliver exceptional service."
+    },
+    "status": {
+      "title": "Availability",
+      "available": "Available",
+      "busy": "Busy",
+      "away": "Away",
+      "auto": "Auto",
+      "failed": "Could not update status"
     }
   },
   "manage": {

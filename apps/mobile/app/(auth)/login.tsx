@@ -19,7 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { AnimatedLogo } from '../../src/components';
+import { AnimatedLogo, centeredContent } from '../../src/components';
+import { useResponsive } from '../../src/lib/responsive';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
 import { useTheme } from '../../src/contexts/theme-context';
 import {
@@ -36,6 +37,7 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const r = useResponsive();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -152,7 +154,7 @@ export default function LoginScreen() {
       >
         <View style={[styles.formCard, { backgroundColor: colors.card }]}>
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, r.isTablet && centeredContent(460)]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >

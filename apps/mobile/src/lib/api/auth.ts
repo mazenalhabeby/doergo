@@ -62,6 +62,13 @@ export const userApi = {
   me: async (): Promise<User> => {
     return fetchWithAuth<User>('/auth/me');
   },
+  // Set the manual availability override (AVAILABLE | BUSY | AWAY, or null = auto).
+  setPresence: async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY' | null): Promise<void> => {
+    return fetchWithAuth<void>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ presence }),
+    });
+  },
 };
 
 // Password API

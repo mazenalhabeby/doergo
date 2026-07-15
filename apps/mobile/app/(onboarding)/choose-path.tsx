@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { CreateOrgIcon, JoinOrgIcon, InvitationIcon } from '../../src/components';
+import { CreateOrgIcon, JoinOrgIcon, InvitationIcon, ScreenContainer } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
@@ -132,6 +132,7 @@ export default function ChoosePathScreen() {
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <StatusBar style="light" />
 
+      <ScreenContainer width="content">
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -231,6 +232,7 @@ export default function ChoosePathScreen() {
           })}
         </View>
       </ScrollView>
+      </ScreenContainer>
 
       {/* Footer */}
       <Animated.View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.sm, opacity: fadeAnim, borderTopColor: colors.border, backgroundColor: colors.card }]}>

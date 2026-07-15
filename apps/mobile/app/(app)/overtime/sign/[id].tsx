@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../src/contexts/theme-context';
 import { useToast } from '../../../../src/contexts/toast-context';
 import { overtimeApi, membersApi, OrgMember } from '../../../../src/lib/api';
-import { SignatureCapture } from '../../../../src/components';
+import { SignatureCapture, ScreenContainer } from '../../../../src/components';
 import {
   COLORS,
   SPACING,
@@ -106,7 +106,8 @@ export default function OvertimeSignatureScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScreenContainer width="content">
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Instructions */}
         <View style={[styles.infoCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
           <Ionicons name="information-circle" size={20} color="#2563EB" />
@@ -211,7 +212,8 @@ export default function OvertimeSignatureScreen() {
             </>
           )}
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </ScreenContainer>
     </View>
   );
 }

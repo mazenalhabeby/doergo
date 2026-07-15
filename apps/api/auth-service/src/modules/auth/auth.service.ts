@@ -428,6 +428,8 @@ export class AuthService {
             canViewAllTasks: user.canViewAllTasks,
             canAssignTasks: user.canAssignTasks,
             canManageUsers: user.canManageUsers,
+            allowRemote: user.allowRemote,
+            presence: user.presence,
             // Worker configuration
             position: user.position,
             scheduleType: user.scheduleType,
@@ -690,6 +692,8 @@ export class AuthService {
             canViewAllTasks: storedToken.user.canViewAllTasks,
             canAssignTasks: storedToken.user.canAssignTasks,
             canManageUsers: storedToken.user.canManageUsers,
+            allowRemote: storedToken.user.allowRemote,
+            presence: storedToken.user.presence,
             specialty: storedToken.user.specialty,
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
             enabledModules: (storedToken.user.enabledModules ?? storedToken.user.organization?.enabledModules) || [],
@@ -926,6 +930,8 @@ export class AuthService {
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
+          allowRemote: true,
+          presence: true,
           // Worker configuration
           position: true,
           scheduleType: true,
@@ -943,6 +949,13 @@ export class AuthService {
       if (!user || !user.isActive) {
         return { valid: false };
       }
+
+      // Best-effort "last active" heartbeat. This runs ~once per minute per active
+      // user (the gateway caches the validated user for AUTH_CACHE_TTL_SECONDS), so
+      // it's naturally throttled — no per-request DB write. Fire-and-forget.
+      this.prisma.user
+        .update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
+        .catch(() => undefined);
 
       const { organization, profileBadges, orgRole, enabledModules: userModules, ...userData } = user;
       return {

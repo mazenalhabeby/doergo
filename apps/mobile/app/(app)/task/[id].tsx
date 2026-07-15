@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   Modal,
   Linking,
   Animated,
-  Dimensions,
   Pressable,
   Image,
   StyleSheet as RNStyleSheet,
@@ -34,7 +33,8 @@ import { useLocationTrackingContext } from '../../../src/contexts/location-track
 import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
 import { PhotoGrid } from '../../../src/components/photo-grid';
 import { SignatureCapture } from '../../../src/components/signature-capture';
-import { TechnicianPicker, LoadingState, ErrorState, ConfirmSheet } from '../../../src/components';
+import { TechnicianPicker, LoadingState, ErrorState, ConfirmSheet, centeredContent } from '../../../src/components';
+import { useResponsive } from '../../../src/lib/responsive';
 import { CustomFieldsCard } from '../../../src/components/custom-fields-card';
 import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
 import { getJobId, formatRelativeDate, formatTimeAgo } from '../../../src/lib/utils';
@@ -53,11 +53,25 @@ import {
 } from '../../../src/components/task-detail';
 import { getFlowSteps, hasCapability, getStatusCapabilities, type TaskCapability } from '@hbcfield/shared/client';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-export default function TaskDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+/**
+ * The task detail UI. Rendered two ways:
+ *  - as the `/task/[id]` route (default export below) → full-screen slide-up sheet
+ *  - embedded in the tasks tab's master-detail split (embedded) → inline pane
+ */
+export function TaskDetailPane({
+  taskId,
+  embedded = false,
+  onClose,
+}: {
+  taskId: string;
+  embedded?: boolean;
+  onClose?: () => void;
+}) {
+  const id = taskId;
   const insets = useSafeAreaInsets();
+  const r = useResponsive();
+  // Live window height (updates on rotation) for the slide-up sheet animation.
+  const SCREEN_HEIGHT = r.height;
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
@@ -148,11 +162,16 @@ export default function TaskDetailScreen() {
   }, []);
 
   const handleClose = useCallback(() => {
+    // Embedded (master-detail pane): just clear the selection, no slide-out.
+    if (embedded) {
+      onClose?.();
+      return;
+    }
     Animated.parallel([
       Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }),
     ]).start(() => router.back());
-  }, [slideAnim, overlayAnim]);
+  }, [slideAnim, overlayAnim, embedded, onClose, SCREEN_HEIGHT]);
 
   // Ref to prevent duplicate fetches
   const fetchingRef = useRef(false);
@@ -660,7 +679,7 @@ export default function TaskDetailScreen() {
       setIsUpdating(true);
       await tasksApi.declineTask(task.id);
       toast.info(t('taskDetail.declineTask.successTitle'), t('taskDetail.declineTask.successMessage'));
-      router.back();
+      handleClose();
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDecline'));
     } finally {
@@ -756,8 +775,14 @@ export default function TaskDetailScreen() {
     }
   };
 
-  if (isLoading) {
-    return (
+  // Wraps branch content in the correct chrome: full-screen slide-up sheet for
+  // the route, or a plain flex pane when embedded in the master-detail split.
+  // Defined as a plain function (not a component) so children reconcile in place
+  // and are NOT remounted on every render.
+  const renderShell = (children: ReactNode) =>
+    embedded ? (
+      <View style={{ flex: 1, backgroundColor: colors.surface }}>{children}</View>
+    ) : (
       <View style={RNStyleSheet.absoluteFill} pointerEvents="box-none">
         <Animated.View style={[RNStyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
           <BlurView intensity={40} tint="dark" style={RNStyleSheet.absoluteFill}>
@@ -766,40 +791,35 @@ export default function TaskDetailScreen() {
         </Animated.View>
         <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.sheetHandle} />
-          <View style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <LoadingState />
-          </View>
+          {children}
         </Animated.View>
       </View>
+    );
+
+  if (isLoading) {
+    return renderShell(
+      <View style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
+        {!embedded && <Stack.Screen options={{ headerShown: false }} />}
+        <LoadingState />
+      </View>,
     );
   }
 
   if (error || !task) {
-    return (
-      <View style={RNStyleSheet.absoluteFill} pointerEvents="box-none">
-        <Animated.View style={[RNStyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
-          <BlurView intensity={40} tint="dark" style={RNStyleSheet.absoluteFill}>
-            <Pressable style={RNStyleSheet.absoluteFill} onPress={handleClose} />
-          </BlurView>
-        </Animated.View>
-        <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.sheetHandle} />
-          <View style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
-            <View style={[styles.errorContainer, { backgroundColor: colors.surface }]}>
-              <Stack.Screen options={{ headerShown: false }} />
-              <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-              <Text style={[styles.errorText, { color: colors.textMuted }]}>{error || t('taskDetail.taskNotFound')}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-                <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.backButton} onPress={handleClose}>
-                <Text style={styles.backButtonText}>{t('taskDetail.goBack')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Animated.View>
-      </View>
+    return renderShell(
+      <View style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
+        <View style={[styles.errorContainer, { backgroundColor: colors.surface }]}>
+          {!embedded && <Stack.Screen options={{ headerShown: false }} />}
+          <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
+          <Text style={[styles.errorText, { color: colors.textMuted }]}>{error || t('taskDetail.taskNotFound')}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.backButton} onPress={handleClose}>
+            <Text style={styles.backButtonText}>{t('taskDetail.goBack')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>,
     );
   }
 
@@ -832,15 +852,8 @@ export default function TaskDetailScreen() {
     return new Date(task.dueDate) > endOfToday;
   })();
 
-  return (
-    <View style={RNStyleSheet.absoluteFill} pointerEvents="box-none">
-    <Animated.View style={[RNStyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
-      <BlurView intensity={40} tint="dark" style={RNStyleSheet.absoluteFill}>
-        <Pressable style={RNStyleSheet.absoluteFill} onPress={handleClose} />
-      </BlurView>
-    </Animated.View>
-    <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: slideAnim }] }]}>
-    <View style={styles.sheetHandle} />
+  return renderShell(
+    <>
     <KeyboardAvoidingView
       style={[styles.sheetContent, { backgroundColor: colors.surface }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -1171,9 +1184,9 @@ export default function TaskDetailScreen() {
         </View>
       </Modal>
 
-      <Stack.Screen options={{ headerShown: false }} />
+      {!embedded && <Stack.Screen options={{ headerShown: false }} />}
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={r.isTablet ? centeredContent(720) : undefined}>
         {/* Section 1: Hero Status Card */}
         <View style={[styles.heroCard, { backgroundColor: colors.card }]}>
           <View style={styles.heroHeader}>
@@ -1590,6 +1603,7 @@ export default function TaskDetailScreen() {
       {/* Bottom Bar */}
       {showBottomBar && (
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16), backgroundColor: colors.card, borderTopColor: colors.border }]}>
+          <View style={r.isTablet ? { width: '100%', maxWidth: 720, alignSelf: 'center' } : undefined}>
           {isAdmin ? (
             /* Admin Bottom Bar: Assign, Edit, Cancel */
             <View style={styles.actionButtonsRow}>
@@ -1737,10 +1751,10 @@ export default function TaskDetailScreen() {
               </View>
             </>
           )}
+          </View>
         </View>
       )}
     </KeyboardAvoidingView>
-    </Animated.View>
 
     <ConfirmSheet
       visible={showStatusConfirm}
@@ -1786,8 +1800,13 @@ export default function TaskDetailScreen() {
       cancelLabel={t('common.no')}
       variant="danger"
     />
-
-    </View>
+    </>
   );
+}
+
+// Route entry: reads the id from the URL and renders the pane as a full-screen sheet.
+export default function TaskDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <TaskDetailPane taskId={id!} />;
 }
 

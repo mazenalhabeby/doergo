@@ -12,7 +12,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { membersApi, type OrgMember } from '../../../src/lib/api';
 import { FilterChip } from '../../../src/components/filter-chip';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet } from '../../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: COLORS.primary,
@@ -135,20 +135,22 @@ export default function MembersScreen() {
         ))}
       </View>
       <Text style={[s.count, { color: colors.textMuted }]}>{filtered.length !== 1 ? t('manage.membersScreen.memberCountPlural', { count: filtered.length }) : t('manage.membersScreen.memberCount', { count: filtered.length })}</Text>
-      <FlatList
-        data={filtered}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={s.list}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchMembers(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Ionicons name="people-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.membersScreen.noMembers')}</Text>
-          </View>
-        }
-      />
+      <ScreenContainer width="content">
+        <FlatList
+          data={filtered}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchMembers(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Ionicons name="people-outline" size={40} color={colors.textMuted} />
+              <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.membersScreen.noMembers')}</Text>
+            </View>
+          }
+        />
+      </ScreenContainer>
 
       <ConfirmSheet
         visible={!!removeTarget}

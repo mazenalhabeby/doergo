@@ -11,7 +11,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { techniciansApi, scheduleApi } from '../../../src/lib/api';
 import type { TechnicianListItem, ScheduleEntry } from '../../../src/lib/api/types';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton } from '../../../src/components';
+import { Skeleton, ScreenContainer } from '../../../src/components';
 
 // DAY_NAMES will be resolved via t() inside the component
 
@@ -119,20 +119,22 @@ export default function SchedulesScreen() {
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
-      <FlatList
-        data={data}
-        keyExtractor={item => item.tech.id}
-        renderItem={renderItem}
-        contentContainerStyle={s.list}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchSchedules(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Ionicons name="calendar-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.schedulesScreen.noTechnicians')}</Text>
-          </View>
-        }
-      />
+      <ScreenContainer width="content">
+        <FlatList
+          data={data}
+          keyExtractor={item => item.tech.id}
+          renderItem={renderItem}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchSchedules(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Ionicons name="calendar-outline" size={40} color={colors.textMuted} />
+              <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.schedulesScreen.noTechnicians')}</Text>
+            </View>
+          }
+        />
+      </ScreenContainer>
     </View>
   );
 }

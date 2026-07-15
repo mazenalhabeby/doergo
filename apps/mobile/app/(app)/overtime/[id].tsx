@@ -22,6 +22,7 @@ import {
   FONT_SIZE,
   FONT_WEIGHT,
 } from '../../../src/lib/constants';
+import { ScreenContainer } from '../../../src/components';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -129,7 +130,8 @@ export default function OvertimeRequestScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScreenContainer width="content">
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Location info */}
         <View style={[styles.locationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="location" size={24} color={COLORS.primary} />
@@ -260,7 +262,8 @@ export default function OvertimeRequestScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      </ScreenContainer>
     </View>
   );
 }

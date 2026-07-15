@@ -87,6 +87,11 @@ export class UsersController {
     return this.usersService.listOrgMembers(data);
   }
 
+  @MessagePattern({ cmd: 'list_org_contacts' })
+  async listOrgContacts(@Payload() data: { organizationId: string; userId: string }) {
+    return this.usersService.listOrgContacts(data.organizationId, data.userId);
+  }
+
   @MessagePattern({ cmd: 'update_member_role' })
   async updateMemberRole(
     @Payload()

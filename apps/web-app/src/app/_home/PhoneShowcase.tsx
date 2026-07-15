@@ -57,17 +57,17 @@ export function PhoneShowcase() {
 
   if (reduced) {
     return (
-      <section className="border-t border-white/[0.08] px-6 py-24 sm:px-10 sm:py-32">
+      <section className="border-t border-border px-6 py-24 sm:px-10 sm:py-32">
         <div className="mx-auto max-w-[1600px]">
-          <span style={{ fontFamily: MONO }} className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-white/40">{t('home.app.label')}</span>
-          <h2 style={{ fontFamily: DISPLAY }} className="mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight text-[#e8e8e5]">{t('home.app.reducedHeading')}</h2>
+          <span style={{ fontFamily: MONO }} className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.app.label')}</span>
+          <h2 style={{ fontFamily: DISPLAY }} className="mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight text-foreground">{t('home.app.reducedHeading')}</h2>
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <ul className="space-y-8">
               {SHOTS.map((s) => (
                 <li key={s.img}>
-                  <span style={{ fontFamily: MONO }} className="text-[11px] uppercase tracking-[0.28em] text-white/40">{s.kicker}</span>
-                  <h3 style={{ fontFamily: DISPLAY }} className="mt-2 text-[1.4rem] font-normal text-[#eaeae7]">{s.title}</h3>
-                  <p className="mt-2 max-w-[44ch] text-[14px] leading-relaxed text-white/50">{s.body}</p>
+                  <span style={{ fontFamily: MONO }} className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.kicker}</span>
+                  <h3 style={{ fontFamily: DISPLAY }} className="mt-2 text-[1.4rem] font-normal text-foreground">{s.title}</h3>
+                  <p className="mt-2 max-w-[44ch] text-[14px] leading-relaxed text-foreground/55">{s.body}</p>
                 </li>
               ))}
             </ul>
@@ -79,12 +79,12 @@ export function PhoneShowcase() {
   }
 
   return (
-    <section ref={sectionRef} id="field" className="relative border-t border-white/[0.08]" style={{ height: '270vh' }}>
+    <section ref={sectionRef} id="field" className="relative border-t border-border" style={{ height: '270vh' }}>
       <div className="sticky top-0 flex h-screen items-center overflow-hidden px-6 sm:px-10">
         <div className="mx-auto grid w-full max-w-[1600px] items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           {/* descriptions (left) */}
           <div className="order-2 lg:order-1">
-            <span style={{ fontFamily: MONO }} className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-white/40">{t('home.app.label')}</span>
+            <span style={{ fontFamily: MONO }} className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.app.label')}</span>
             <CrossfadeCopy items={SHOTS} active={active} titleMaxCls="max-w-[18ch]" />
             {/* progress dots — reflect the scroll position */}
             <ProgressDots count={SHOTS.length} active={active} />

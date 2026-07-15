@@ -25,7 +25,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: 'HBCField',
     slug: 'doergo',
     version: '1.0.0',
-    orientation: 'portrait',
+    // 'default' allows landscape on tablets. Phones are kept portrait so their
+    // phone-first UI is never shown rotated: iPhone via the idiom-specific
+    // infoPlist keys below, Android phones via a runtime lock in the root layout.
+    orientation: 'default',
     icon: './assets/icon.png',
     scheme: 'hbcfield',
     userInterfaceStyle: 'automatic',
@@ -46,6 +49,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       backgroundColor: '#09090b',
     },
     ios: {
+      // Native iPad support. NOTE: App Store Connect now requires a full set of
+      // 12.9" iPad screenshots to submit.
       supportsTablet: true,
       bundleIdentifier: 'com.hbcfield.app',
       // Seed for EAS remote versioning (appVersionSource: "remote").
@@ -66,6 +71,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           'HBCField needs photo library access to attach images to tasks and service reports',
         UIBackgroundModes: ['remote-notification', 'location'],
         ITSAppUsesNonExemptEncryption: false,
+        // iPhone: portrait only (phone-first UI). iPad: all orientations.
+        UISupportedInterfaceOrientations: ['UIInterfaceOrientationPortrait'],
+        // iPad: portrait + both landscapes, but NOT upside-down (rarely wanted).
+        'UISupportedInterfaceOrientations~ipad': [
+          'UIInterfaceOrientationPortrait',
+          'UIInterfaceOrientationLandscapeLeft',
+          'UIInterfaceOrientationLandscapeRight',
+        ],
       },
     },
     android: {

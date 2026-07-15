@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from 'next-themes';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowDown, ArrowUpRight, ArrowUp, Check, Zap } from 'lucide-react';
+import { ArrowRight, ArrowDown, ArrowUpRight, ArrowUp, Check, Zap, Sun, Moon } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useAuth } from '@/contexts/auth-context';
@@ -89,7 +90,7 @@ function Count({ to }: { to: number }) {
 }
 
 function Label({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <span className={`${MONO} text-[11px] uppercase tracking-[0.28em] text-white/40 ${className}`}>{children}</span>;
+  return <span className={`${MONO} text-[11px] uppercase tracking-[0.28em] text-muted-foreground ${className}`}>{children}</span>;
 }
 
 /** Cycles through `words`, revealing each new word letter-by-letter from behind
@@ -119,6 +120,10 @@ export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const reduced = usePrefersReducedMotion();
+  const { resolvedTheme, setTheme } = useTheme();
+  // next-themes: avoid hydration mismatch on the toggle icon (server can't know theme).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   useLenis(!reduced);
 
   useEffect(() => {
@@ -167,6 +172,16 @@ export default function Home() {
 
   const steps = asArray<{ key: string; desc: string }>(t('home.process.steps', { returnObjects: true }));
 
+  // Nav floats over the always-dark hero at the top (needs light chrome), then
+  // frosts over theme-aware content once scrolled (needs theme-aware chrome).
+  const navTone = scrolled ? 'text-foreground/60 hover:text-foreground' : 'text-white/55 hover:text-white';
+  const navBtnTone = scrolled
+    ? 'border-foreground/25 text-foreground/80 hover:border-foreground/50 hover:text-foreground'
+    : 'border-white/20 text-white/80 hover:border-white/50 hover:text-white';
+  const navLsTone = scrolled
+    ? '[&_button]:!text-foreground/60 [&_button:hover]:!text-foreground [&_button]:hover:!bg-foreground/10'
+    : '[&_button]:!text-white/60 [&_button:hover]:!text-white [&_button]:hover:!bg-white/10';
+
   return (
     <>
       <style>{`
@@ -196,36 +211,56 @@ export default function Home() {
       </AnimatePresence>
 
       {isLoading ? (
-        <div className="flex min-h-screen items-center justify-center bg-[#0e1116]">
-          <div className="h-6 w-6 animate-spin rounded-full border border-white/20 border-t-white/70" />
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="h-6 w-6 animate-spin rounded-full border border-foreground/20 border-t-foreground/70" />
         </div>
       ) : (
-        <div className={`min-h-screen bg-[#0e1116] text-[#d8d8d8] antialiased selection:bg-white/20 ${DISPLAY}`}>
+        <div className={`min-h-screen bg-background text-foreground antialiased selection:bg-foreground/20 ${DISPLAY}`}>
           {/* corner registration marks (fixed frame) */}
           <FramePlus />
 
           {/* ══════ NAV ══════ */}
-          <nav className={`fixed inset-x-0 top-0 z-40 px-6 transition-all duration-300 sm:px-10 ${scrolled ? 'border-b border-white/[0.08] bg-[#050608]/70 py-3 backdrop-blur-xl' : 'border-b border-transparent py-5'}`}>
+          <nav className={`fixed inset-x-0 top-0 z-40 px-6 transition-all duration-300 sm:px-10 ${scrolled ? 'border-b border-border bg-background/70 py-3 backdrop-blur-xl' : 'border-b border-transparent py-5'}`}>
             <div className="mx-auto flex max-w-[1600px] items-center justify-between">
-              <AnimatedLogo size="small" variant="light" />
+              {/* Logo → back to the top of home. Over the dark hero it must read
+                  light in both themes; once scrolled over content it follows the
+                  theme (dark logo on light). */}
+              <a href="#top" onClick={backToTop} aria-label={t('home.nav.home', 'Home')} className="inline-flex">
+                {scrolled ? (
+                  <>
+                    <span className="dark:hidden"><AnimatedLogo size="small" variant="dark" /></span>
+                    <span className="hidden dark:block"><AnimatedLogo size="small" variant="light" /></span>
+                  </>
+                ) : (
+                  <AnimatedLogo size="small" variant="light" />
+                )}
+              </a>
               <div className="flex items-center gap-7">
-                <a href="#work" onClick={navTo('#work')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.platform')}</a>
-                <a href="#how" onClick={navTo('#how')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.process')}</a>
-                <a href="#field" onClick={navTo('#field')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white sm:block`}>{t('home.nav.app')}</a>
-                <a href="#industries" onClick={navTo('#industries')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.industries')}</a>
-                <a href="#pricing" onClick={navTo('#pricing')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white md:block`}>{t('home.nav.pricing')}</a>
-                <span className="[&_button]:!text-white/60 [&_button:hover]:!text-white [&_button]:hover:!bg-white/10">
+                <a href="#work" onClick={navTo('#work')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.platform')}</a>
+                <a href="#how" onClick={navTo('#how')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.process')}</a>
+                <a href="#field" onClick={navTo('#field')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors sm:block ${navTone}`}>{t('home.nav.app')}</a>
+                <a href="#industries" onClick={navTo('#industries')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.industries')}</a>
+                <a href="#pricing" onClick={navTo('#pricing')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.pricing')}</a>
+                <button
+                  type="button"
+                  onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                  aria-label={t('home.nav.toggleTheme', 'Toggle theme')}
+                  className={`inline-flex size-8 items-center justify-center rounded-full transition-colors ${navTone} ${scrolled ? 'hover:bg-foreground/10' : 'hover:bg-white/10'}`}
+                >
+                  {mounted && resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
+                <span className={navLsTone}>
                   <LanguageSwitcher />
                 </span>
-                <Link href="/login" className={`${MONO} inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-white/80 transition-colors hover:border-white/50 hover:text-white`}>
+                <Link href="/login" className={`${MONO} inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.2em] transition-colors ${navBtnTone}`}>
                   {t('home.nav.signIn')}
                 </Link>
               </div>
             </div>
           </nav>
 
-          {/* ══════ HERO ══════ */}
-          <section id="top" className="relative flex min-h-screen flex-col justify-center overflow-hidden px-6 sm:px-10">
+          {/* ══════ HERO — always dark (explicit bg so the page theme never lightens it) ══════ */}
+          <section id="top" className="relative flex min-h-screen flex-col justify-center overflow-hidden bg-[#0e1116] px-6 text-[#d8d8d8] sm:px-10">
             {/* the logo, rebuilt as an interactive 3D faceted gemstone / crystal mark, is the centrepiece */}
             <div className="absolute inset-0"><HeroCanvas interactive={!reduced} /></div>
 
@@ -258,13 +293,13 @@ export default function Home() {
             {/* scroll cue */}
             <div className="pointer-events-none absolute bottom-8 left-6 flex items-center gap-3 sm:left-10">
               <ArrowDown className="h-4 w-4 animate-bounce text-white/40" />
-              <Label>{t('home.hero.scroll')}</Label>
+              <span className={`${MONO} text-[11px] uppercase tracking-[0.28em] text-white/40`}>{t('home.hero.scroll')}</span>
             </div>
 
             {/* interaction hint — electric + product ("the field" = electric field) */}
             <div className="pointer-events-none absolute bottom-8 left-1/2 hidden -translate-x-1/2 items-center gap-2 md:flex">
               <Zap className="h-3.5 w-3.5 text-[#5B9BD5]" />
-              <Label className="text-white/40">{t('home.hero.hint')}</Label>
+              <span className={`${MONO} text-[11px] uppercase tracking-[0.28em] text-white/40`}>{t('home.hero.hint')}</span>
             </div>
 
             {/* meta block — hidden on mobile (it collided with the scroll cue and clipped off-screen) */}
@@ -275,10 +310,10 @@ export default function Home() {
           </section>
 
           {/* ══════ POSITIONING ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
+          <section className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.whatItIs.label')}</Label>
-              <h2 className={`${DISPLAY} text-[clamp(1.7rem,4vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.01em] text-[#e8e8e5]`}>
+              <h2 className={`${DISPLAY} text-[clamp(1.7rem,4vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.01em] text-foreground`}>
                 <LineReveal
                   nowrap
                   lines={asArray<string>(t('home.whatItIs.lines', { returnObjects: true }))}
@@ -288,17 +323,17 @@ export default function Home() {
           </section>
 
           {/* ══════ INTRO VIDEO ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-16 sm:px-10 sm:py-32">
+          <section className="border-t border-foreground/[0.08] px-6 py-16 sm:px-10 sm:py-32">
             <div className="mx-auto max-w-[1600px]">
               <Reveal>
                 <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
                   <div>
                     <Label className="mb-6 block">{t('home.video.label')}</Label>
-                    <h2 className={`${DISPLAY} max-w-[16ch] text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal leading-[1.03] tracking-[-0.01em] text-[#e8e8e5]`}>
+                    <h2 className={`${DISPLAY} max-w-[16ch] text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal leading-[1.03] tracking-[-0.01em] text-foreground`}>
                       {t('home.video.title')}
                     </h2>
                   </div>
-                  <p className="max-w-[36ch] text-[13px] leading-relaxed text-white/45">
+                  <p className="max-w-[36ch] text-[13px] leading-relaxed text-foreground/45">
                     {t('home.video.desc')}
                   </p>
                 </div>
@@ -312,7 +347,7 @@ export default function Home() {
           </section>
 
           {/* ══════ KEY FACTS ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-16 sm:px-10 sm:py-24">
+          <section className="border-t border-foreground/[0.08] px-6 py-16 sm:px-10 sm:py-24">
             <div className="mx-auto grid max-w-[1600px] gap-10 sm:gap-16 sm:grid-cols-3">
               {(() => {
                 const facts = asArray<{ unit: string; label: string; desc: string }>(t('home.facts', { returnObjects: true }));
@@ -323,9 +358,9 @@ export default function Home() {
                 ];
               })().map((f, i) => (
                 <Reveal key={i} delay={i * 0.08}>
-                  <div className={`${DISPLAY} text-[clamp(3rem,7vw,5.5rem)] font-normal leading-none text-[#efefec]`}>{f.v}</div>
-                  <div className={`${MONO} mt-5 text-[11px] uppercase tracking-[0.22em] text-white/60`}>{f.l}</div>
-                  <p className="mt-3 max-w-[26ch] text-[13px] leading-relaxed text-white/40">{f.d}</p>
+                  <div className={`${DISPLAY} text-[clamp(3rem,7vw,5.5rem)] font-normal leading-none text-foreground`}>{f.v}</div>
+                  <div className={`${MONO} mt-5 text-[11px] uppercase tracking-[0.22em] text-foreground/60`}>{f.l}</div>
+                  <p className="mt-3 max-w-[26ch] text-[13px] leading-relaxed text-foreground/40">{f.d}</p>
                 </Reveal>
               ))}
             </div>
@@ -335,19 +370,19 @@ export default function Home() {
           <LaptopShowcase />
 
           {/* ══════ HOW IT WORKS — process steps (flows with the page, no scroll-trap) ══════ */}
-          <section id="how" className="border-t border-white/[0.08] py-16 sm:py-32">
+          <section id="how" className="border-t border-foreground/[0.08] py-16 sm:py-32">
             <div className="mx-auto max-w-[1600px] px-6 sm:px-10">
               <div className="mb-14">
                 <Label className="mb-6 block">{t('home.process.label')}</Label>
-                <h2 className={`${DISPLAY} max-w-[18ch] text-[clamp(1.7rem,4vw,3rem)] font-normal leading-[1.05] tracking-[-0.01em] text-[#e8e8e5]`}>
+                <h2 className={`${DISPLAY} max-w-[18ch] text-[clamp(1.7rem,4vw,3rem)] font-normal leading-[1.05] tracking-[-0.01em] text-foreground`}>
                   {t('home.process.heading')}
                 </h2>
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
                 {steps.map((s, i) => (
-                  <div key={s.key} className="flex min-h-[14rem] flex-col justify-between border border-white/[0.1] bg-white/[0.015] p-7">
-                    <div className={`${MONO} text-[11px] uppercase tracking-[0.22em] text-white/40`}>{String(i + 1).padStart(2, '0')} / {s.key}</div>
-                    <p className={`${DISPLAY} mt-8 text-[clamp(1.15rem,1.5vw,1.4rem)] font-normal leading-[1.15] text-[#e4e4e1]`}>{s.desc}</p>
+                  <div key={s.key} className="flex min-h-[14rem] flex-col justify-between border border-foreground/[0.1] bg-foreground/[0.015] p-7">
+                    <div className={`${MONO} text-[11px] uppercase tracking-[0.22em] text-foreground/40`}>{String(i + 1).padStart(2, '0')} / {s.key}</div>
+                    <p className={`${DISPLAY} mt-8 text-[clamp(1.15rem,1.5vw,1.4rem)] font-normal leading-[1.15] text-foreground`}>{s.desc}</p>
                   </div>
                 ))}
               </div>
@@ -355,24 +390,24 @@ export default function Home() {
           </section>
 
           {/* ══════ FIELD / MOBILE ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
+          <section className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.field.label')}</Label>
-              <h2 className={`${DISPLAY} text-[clamp(2rem,6vw,4.5rem)] font-normal leading-[0.98] tracking-[-0.02em] text-[#efefec]`}>
+              <h2 className={`${DISPLAY} text-[clamp(2rem,6vw,4.5rem)] font-normal leading-[0.98] tracking-[-0.02em] text-foreground`}>
                 <LineReveal nowrap lines={asArray<string>(t('home.field.lines', { returnObjects: true }))} />
               </h2>
               <div className="mt-16 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
                 {asArray<{ title: string; desc: string }>(t('home.field.features', { returnObjects: true })).map((x, i) => (
                   <Reveal key={x.title} delay={i * 0.06}>
-                    <div className="border-t border-white/[0.12] pt-5">
-                      <h3 className="text-[15px] font-medium text-[#e6e6e3]">{x.title}</h3>
-                      <p className="mt-2 text-[13px] leading-relaxed text-white/45">{x.desc}</p>
+                    <div className="border-t border-foreground/[0.12] pt-5">
+                      <h3 className="text-[15px] font-medium text-foreground">{x.title}</h3>
+                      <p className="mt-2 text-[13px] leading-relaxed text-foreground/45">{x.desc}</p>
                     </div>
                   </Reveal>
                 ))}
               </div>
               <Reveal delay={0.1} className="mt-14">
-                <Link href="/download" className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+                <Link href="/download" className={`${MONO} group inline-flex items-center gap-3 border-b border-foreground/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-foreground/80 transition-colors hover:border-foreground hover:text-foreground`}>
                   {t('home.field.getApp')}
                   <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
@@ -384,40 +419,40 @@ export default function Home() {
           <PhoneShowcase />
 
           {/* ══════ WHY / THREE-IN-ONE + DIFFERENTIATORS ══════ */}
-          <section className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
+          <section className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.why.label')}</Label>
-              <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
+              <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
                 {t('home.why.heading')}
               </h2>
-              <p className="mt-6 max-w-[54ch] text-[15px] leading-relaxed text-white/50">{t('home.why.lead')}</p>
+              <p className="mt-6 max-w-[54ch] text-[15px] leading-relaxed text-foreground/50">{t('home.why.lead')}</p>
 
               {/* comparison */}
               <Reveal delay={0.1}>
-                <div className="mt-14 overflow-hidden rounded-[20px] border border-white/[0.1] bg-gradient-to-b from-white/[0.04] to-transparent shadow-[0_28px_70px_-45px_rgba(0,0,0,0.5)]">
-                  <div className="hidden grid-cols-[1.7fr_1fr_1.1fr] items-center gap-4 border-b border-white/[0.08] px-8 py-5 sm:grid">
-                    <span className={`${MONO} text-[10px] uppercase tracking-[0.2em] text-white/35`}>{t('home.why.compare.otherwise')}</span>
-                    <span className={`${MONO} text-[10px] uppercase tracking-[0.2em] text-white/35`}>{t('home.why.compare.typicalCost')}</span>
-                    <span className={`${DISPLAY} text-[15px] font-medium text-white`}>HBCField</span>
+                <div className="mt-14 overflow-hidden rounded-[20px] border border-foreground/[0.1] bg-gradient-to-b from-foreground/[0.04] to-transparent shadow-[0_28px_70px_-45px_rgba(0,0,0,0.5)]">
+                  <div className="hidden grid-cols-[1.7fr_1fr_1.1fr] items-center gap-4 border-b border-foreground/[0.08] px-8 py-5 sm:grid">
+                    <span className={`${MONO} text-[10px] uppercase tracking-[0.2em] text-foreground/35`}>{t('home.why.compare.otherwise')}</span>
+                    <span className={`${MONO} text-[10px] uppercase tracking-[0.2em] text-foreground/35`}>{t('home.why.compare.typicalCost')}</span>
+                    <span className={`${DISPLAY} text-[15px] font-medium text-foreground`}>HBCField</span>
                   </div>
                   {asArray<{ name: string; vendors: string; cost: string }>(t('home.why.compare.rows', { returnObjects: true })).map((r) => (
-                    <div key={r.name} className="grid grid-cols-1 gap-1.5 border-b border-white/[0.05] px-8 py-5 transition-colors hover:bg-white/[0.015] sm:grid-cols-[1.7fr_1fr_1.1fr] sm:items-center sm:gap-4">
-                      <span className="text-[15px] text-white/85">
-                        {r.name} <span className="text-white/35">{r.vendors}</span>
+                    <div key={r.name} className="grid grid-cols-1 gap-1.5 border-b border-foreground/[0.05] px-8 py-5 transition-colors hover:bg-foreground/[0.015] sm:grid-cols-[1.7fr_1fr_1.1fr] sm:items-center sm:gap-4">
+                      <span className="text-[15px] text-foreground/85">
+                        {r.name} <span className="text-foreground/35">{r.vendors}</span>
                       </span>
-                      <span className={`${MONO} text-[13px] text-white/45`}>{r.cost}</span>
+                      <span className={`${MONO} text-[13px] text-foreground/45`}>{r.cost}</span>
                       <span className="inline-flex items-center gap-2.5">
                         <span className="flex size-5 items-center justify-center rounded-full bg-[#10b981]/15">
                           <Check className="h-3 w-3 text-[#10b981]" strokeWidth={3} />
                         </span>
-                        <span className="text-[13px] text-white/70">{t('home.why.compare.included')}</span>
+                        <span className="text-[13px] text-foreground/70">{t('home.why.compare.included')}</span>
                       </span>
                     </div>
                   ))}
-                  <div className="grid grid-cols-1 gap-1.5 border-t border-white/[0.1] bg-gradient-to-r from-[#5B9BD5]/[0.08] via-transparent to-transparent px-8 py-6 sm:grid-cols-[1.7fr_1fr_1.1fr] sm:items-center sm:gap-4">
-                    <span className={`${DISPLAY} text-[17px] font-medium text-white`}>{t('home.why.compare.sumLabel')}</span>
-                    <span className={`${MONO} text-[13px] text-white/40 line-through`}>{t('home.why.compare.sumCost')}</span>
-                    <span className={`${DISPLAY} text-[16px] font-medium text-[#7db4e6]`}>{t('home.why.compare.sumUs')}</span>
+                  <div className="grid grid-cols-1 gap-1.5 border-t border-foreground/[0.1] bg-gradient-to-r from-[#5B9BD5]/[0.08] via-transparent to-transparent px-8 py-6 sm:grid-cols-[1.7fr_1fr_1.1fr] sm:items-center sm:gap-4">
+                    <span className={`${DISPLAY} text-[17px] font-medium text-foreground`}>{t('home.why.compare.sumLabel')}</span>
+                    <span className={`${MONO} text-[13px] text-foreground/40 line-through`}>{t('home.why.compare.sumCost')}</span>
+                    <span className={`${DISPLAY} text-[16px] font-medium text-[#2f6fb0] dark:text-[#7db4e6]`}>{t('home.why.compare.sumUs')}</span>
                   </div>
                 </div>
               </Reveal>
@@ -427,10 +462,10 @@ export default function Home() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {asArray<{ title: string; body: string }>(t('home.why.diffs', { returnObjects: true })).map((d, i) => (
                   <Reveal key={d.title} delay={i * 0.06} className="h-full">
-                    <div className="group h-full rounded-[18px] border border-white/[0.09] bg-gradient-to-b from-white/[0.04] to-transparent p-8 transition-all duration-300 hover:border-white/20 hover:from-white/[0.06]">
+                    <div className="group h-full rounded-[18px] border border-foreground/[0.09] bg-gradient-to-b from-foreground/[0.04] to-transparent p-8 transition-all duration-300 hover:border-foreground/20 hover:from-foreground/[0.06]">
                       <span className={`${MONO} text-[11px] tracking-[0.1em] text-[#5B9BD5]`}>{String(i + 1).padStart(2, '0')}</span>
-                      <h3 className={`${DISPLAY} mt-5 text-[19px] font-medium tracking-[-0.01em] text-[#eeeeeb]`}>{d.title}</h3>
-                      <p className="mt-3 text-[14px] leading-relaxed text-white/50">{d.body}</p>
+                      <h3 className={`${DISPLAY} mt-5 text-[19px] font-medium tracking-[-0.01em] text-foreground`}>{d.title}</h3>
+                      <p className="mt-3 text-[14px] leading-relaxed text-foreground/50">{d.body}</p>
                     </div>
                   </Reveal>
                 ))}
@@ -439,35 +474,35 @@ export default function Home() {
           </section>
 
           {/* ══════ INDUSTRIES / WHO IT'S FOR ══════ */}
-          <section id="industries" className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
+          <section id="industries" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.industries.label')}</Label>
-              <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
+              <h2 className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
                 {t('home.industries.heading')}
               </h2>
-              <p className="mt-6 max-w-[56ch] text-[15px] leading-relaxed text-white/50">{t('home.industries.lead')}</p>
+              <p className="mt-6 max-w-[56ch] text-[15px] leading-relaxed text-foreground/50">{t('home.industries.lead')}</p>
 
               <div className="mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {asArray<{ name: string; who: string; how: string; benefit: string }>(t('home.industries.fields', { returnObjects: true })).map((f, i) => (
                   <Reveal key={f.name} delay={(i % 3) * 0.06} className="h-full">
-                    <div className="group flex h-full flex-col rounded-[18px] border border-white/[0.09] bg-gradient-to-b from-white/[0.04] to-transparent p-7 transition-all duration-300 hover:border-white/20 hover:from-white/[0.06]">
+                    <div className="group flex h-full flex-col rounded-[18px] border border-foreground/[0.09] bg-gradient-to-b from-foreground/[0.04] to-transparent p-7 transition-all duration-300 hover:border-foreground/20 hover:from-foreground/[0.06]">
                       <span className={`${MONO} text-[11px] tracking-[0.1em] text-[#5B9BD5]`}>{String(i + 1).padStart(2, '0')}</span>
-                      <h3 className={`${DISPLAY} mt-4 text-[19px] font-medium tracking-[-0.01em] text-[#eeeeeb]`}>{f.name}</h3>
+                      <h3 className={`${DISPLAY} mt-4 text-[19px] font-medium tracking-[-0.01em] text-foreground`}>{f.name}</h3>
                       <dl className="mt-6 flex-1 space-y-4 text-[13.5px] leading-relaxed">
                         <div>
-                          <dt className={`${MONO} text-[10px] uppercase tracking-[0.16em] text-white/35`}>{t('home.industries.whoLabel')}</dt>
-                          <dd className="mt-1 text-white/60">{f.who}</dd>
+                          <dt className={`${MONO} text-[10px] uppercase tracking-[0.16em] text-foreground/35`}>{t('home.industries.whoLabel')}</dt>
+                          <dd className="mt-1 text-foreground/60">{f.who}</dd>
                         </div>
                         <div>
-                          <dt className={`${MONO} text-[10px] uppercase tracking-[0.16em] text-white/35`}>{t('home.industries.howLabel')}</dt>
-                          <dd className="mt-1 text-white/60">{f.how}</dd>
+                          <dt className={`${MONO} text-[10px] uppercase tracking-[0.16em] text-foreground/35`}>{t('home.industries.howLabel')}</dt>
+                          <dd className="mt-1 text-foreground/60">{f.how}</dd>
                         </div>
                       </dl>
-                      <div className="mt-5 border-t border-white/[0.08] pt-4">
+                      <div className="mt-5 border-t border-foreground/[0.08] pt-4">
                         <dt className={`${MONO} flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[#10b981]`}>
                           <Zap className="h-3 w-3 shrink-0" />{t('home.industries.benefitLabel')}
                         </dt>
-                        <dd className="mt-1 text-[13.5px] font-medium leading-relaxed text-[#cfe8da]">{f.benefit}</dd>
+                        <dd className="mt-1 text-[13.5px] font-medium leading-relaxed text-emerald-700 dark:text-[#cfe8da]">{f.benefit}</dd>
                       </div>
                     </div>
                   </Reveal>
@@ -477,21 +512,21 @@ export default function Home() {
           </section>
 
           {/* ══════ PRICING ══════ */}
-          <section id="pricing" className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-40">
+          <section id="pricing" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.pricing.label')}</Label>
-              <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[#efefec]`}>
+              <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
                 {t('home.pricing.heading')}
               </h2>
-              <p className="mt-6 max-w-[50ch] text-[15px] leading-relaxed text-white/50">{t('home.pricing.lead')}</p>
+              <p className="mt-6 max-w-[50ch] text-[15px] leading-relaxed text-foreground/50">{t('home.pricing.lead')}</p>
 
               {/* outcomes strip */}
               <div className="mt-14 grid gap-x-12 gap-y-8 sm:grid-cols-3">
                 {asArray<{ title: string; body: string }>(t('home.pricing.outcomes', { returnObjects: true })).map((o, i) => (
                   <Reveal key={o.title} delay={i * 0.06}>
-                    <div className="border-t border-white/[0.12] pt-5">
-                      <h3 className="text-[15px] font-medium text-[#e6e6e3]">{o.title}</h3>
-                      <p className="mt-2 text-[13px] leading-relaxed text-white/45">{o.body}</p>
+                    <div className="border-t border-foreground/[0.12] pt-5">
+                      <h3 className="text-[15px] font-medium text-foreground">{o.title}</h3>
+                      <p className="mt-2 text-[13px] leading-relaxed text-foreground/45">{o.body}</p>
                     </div>
                   </Reveal>
                 ))}
@@ -504,24 +539,24 @@ export default function Home() {
                     <div
                       className={`h-full rounded-[20px] p-px ${p.popular
                         ? 'bg-gradient-to-b from-[#5B9BD5]/50 via-[#5B9BD5]/12 to-transparent shadow-[0_18px_50px_-28px_rgba(91,155,213,0.30)]'
-                        : 'bg-gradient-to-b from-white/[0.14] to-white/[0.02]'}`}
+                        : 'bg-gradient-to-b from-foreground/[0.14] to-foreground/[0.02]'}`}
                     >
-                      <div className={`flex h-full flex-col rounded-[19px] p-8 ${p.popular ? 'bg-gradient-to-b from-[#5B9BD5]/[0.1] to-[#0e1116]' : 'bg-[#0f1218]'}`}>
+                      <div className={`flex h-full flex-col rounded-[19px] p-8 ${p.popular ? 'bg-gradient-to-b from-[#5B9BD5]/[0.12] to-card dark:to-[#0e1116]' : 'bg-card'}`}>
                         <div className="flex items-center justify-between">
-                          <span className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-white/55`}>{p.name}</span>
+                          <span className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-foreground/55`}>{p.name}</span>
                           {p.popular && (
                             <span className={`${MONO} rounded-full bg-[#5B9BD5] px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-[#04121f]`}>{t('home.pricing.popular')}</span>
                           )}
                         </div>
                         <div className="mt-6 flex items-baseline gap-1.5">
-                          <span className={`${DISPLAY} text-[2.9rem] font-normal leading-none text-[#f3f3f0]`}>{p.price}</span>
-                          <span className={`${MONO} text-[11px] text-white/40`}>{t('home.pricing.perUser')}</span>
+                          <span className={`${DISPLAY} text-[2.9rem] font-normal leading-none text-foreground`}>{p.price}</span>
+                          <span className={`${MONO} text-[11px] text-foreground/40`}>{t('home.pricing.perUser')}</span>
                         </div>
-                        <p className="mt-4 text-[13px] leading-relaxed text-white/50">{p.desc}</p>
-                        <div className="my-6 h-px w-full bg-white/[0.08]" />
+                        <p className="mt-4 text-[13px] leading-relaxed text-foreground/50">{p.desc}</p>
+                        <div className="my-6 h-px w-full bg-foreground/[0.08]" />
                         <ul className="mb-8 flex-1 space-y-3">
                           {p.features.map((f) => (
-                            <li key={f} className="flex items-start gap-3 text-[13.5px] text-white/70">
+                            <li key={f} className="flex items-start gap-3 text-[13.5px] text-foreground/70">
                               <span className="mt-px flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#5B9BD5]/15">
                                 <Check className="h-2.5 w-2.5 text-[#5B9BD5]" strokeWidth={3} />
                               </span>
@@ -532,7 +567,7 @@ export default function Home() {
                         <a
                           href="#contact"
                           onClick={navTo('#contact')}
-                          className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${p.popular ? 'bg-[#efefec] text-[#0e1116] hover:bg-white' : 'border border-white/20 text-white/80 hover:border-white/50 hover:text-white'}`}
+                          className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${p.popular ? 'bg-foreground text-background hover:bg-foreground/90' : 'border border-foreground/20 text-foreground/80 hover:border-foreground/50 hover:text-foreground'}`}
                         >
                           {t('home.pricing.cta')}
                         </a>
@@ -541,15 +576,15 @@ export default function Home() {
                   </Reveal>
                 ))}
               </div>
-              <p className={`${MONO} mt-8 text-[11px] uppercase tracking-[0.14em] text-white/30`}>{t('home.pricing.note')}</p>
+              <p className={`${MONO} mt-8 text-[11px] uppercase tracking-[0.14em] text-foreground/30`}>{t('home.pricing.note')}</p>
             </div>
           </section>
 
           {/* ══════ CTA ══════ */}
-          <section id="contact" className="border-t border-white/[0.08] px-6 py-20 sm:px-10 sm:py-44">
+          <section id="contact" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-44">
             <div className="mx-auto max-w-[1600px]">
               <Label className="mb-10 block">{t('home.cta.label')}</Label>
-              <h2 className={`${DISPLAY} text-[clamp(2.4rem,8vw,6.5rem)] font-normal leading-[0.95] tracking-[-0.02em] text-[#efefec]`}>
+              <h2 className={`${DISPLAY} text-[clamp(2.4rem,8vw,6.5rem)] font-normal leading-[0.95] tracking-[-0.02em] text-foreground`}>
                 <LineReveal nowrap lines={asArray<string>(t('home.cta.lines', { returnObjects: true }))} />
               </h2>
               <Reveal delay={0.2} className="mt-14 max-w-xl">
@@ -560,9 +595,9 @@ export default function Home() {
                     required
                     placeholder={t('home.cta.emailPlaceholder')}
                     aria-label={t('home.cta.emailPlaceholder')}
-                    className={`${MONO} w-full border-b border-white/25 bg-transparent pb-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white`}
+                    className={`${MONO} w-full border-b border-foreground/25 bg-transparent pb-3 text-sm text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-foreground`}
                   />
-                  <button type="submit" className={`${MONO} group inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#efefec] px-6 py-3 text-[11px] uppercase tracking-[0.2em] text-[#040508] transition-colors hover:bg-white`}>
+                  <button type="submit" className={`${MONO} group inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-foreground px-6 py-3 text-[11px] uppercase tracking-[0.2em] text-background transition-colors hover:bg-foreground/90`}>
                     {t('home.cta.requestDemo')}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </button>
@@ -572,19 +607,19 @@ export default function Home() {
           </section>
 
           {/* ══════ FOOTER ══════ */}
-          <footer className="relative overflow-hidden border-t border-white/[0.08] px-6 pt-20 sm:px-10">
+          <footer className="relative overflow-hidden border-t border-foreground/[0.08] px-6 pt-20 sm:px-10">
             <div className="mx-auto max-w-[1600px]">
               {/* brand + links */}
               <div className="flex flex-col gap-14 lg:flex-row lg:justify-between lg:gap-12">
                 {/* brand + contact */}
                 <div className="max-w-sm">
                   <AnimatedLogo size="small" variant="light" />
-                  <p className="mt-6 text-[15px] leading-relaxed text-white/45">
+                  <p className="mt-6 text-[15px] leading-relaxed text-foreground/45">
                     {t('home.footer.tagline')}
                   </p>
                   <a
                     href="mailto:office@hbcfield.com"
-                    className={`${MONO} group mt-7 inline-flex items-center gap-2 border-b border-white/25 pb-1 text-[12px] tracking-[0.12em] text-white/70 transition-colors hover:border-white hover:text-white`}
+                    className={`${MONO} group mt-7 inline-flex items-center gap-2 border-b border-foreground/25 pb-1 text-[12px] tracking-[0.12em] text-foreground/70 transition-colors hover:border-foreground hover:text-foreground`}
                   >
                     office@hbcfield.com
                     <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -613,20 +648,20 @@ export default function Home() {
 
               {/* oversized brand accent */}
               <div aria-hidden className="pointer-events-none mt-14 select-none">
-                <span className={`${DISPLAY} block whitespace-nowrap text-[clamp(4rem,17vw,15rem)] font-normal leading-[0.78] tracking-[-0.04em] text-white/[0.045]`}>
+                <span className={`${DISPLAY} block whitespace-nowrap text-[clamp(4rem,17vw,15rem)] font-normal leading-[0.78] tracking-[-0.04em] text-foreground/[0.045]`}>
                   HBCField
                 </span>
               </div>
 
               {/* bottom bar */}
-              <div className="flex flex-col items-center justify-between gap-4 border-t border-white/[0.06] py-8 sm:flex-row">
-                <div className={`${MONO} text-[11px] uppercase tracking-[0.15em] text-white/30`}>
+              <div className="flex flex-col items-center justify-between gap-4 border-t border-foreground/[0.06] py-8 sm:flex-row">
+                <div className={`${MONO} text-[11px] uppercase tracking-[0.15em] text-foreground/30`}>
                   © {new Date().getFullYear()} HBCField {t('home.footer.copyrightSuffix')}
                 </div>
                 <button
                   type="button"
                   onClick={backToTop}
-                  className={`${MONO} group inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-white/40 transition-colors hover:text-white`}
+                  className={`${MONO} group inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-foreground/40 transition-colors hover:text-foreground`}
                 >
                   {t('home.footer.backToTop')}
                   <ArrowUp className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5" />
@@ -643,10 +678,10 @@ export default function Home() {
 /** A titled column of footer links — on-page anchors (#) smooth-scroll, routes
  *  use Next's client nav. */
 function FooterCol({ title, links }: { title: string; links: { label: string; href: string; onClick?: (e: React.MouseEvent) => void }[] }) {
-  const linkCls = 'text-[14px] text-white/55 transition-colors hover:text-white';
+  const linkCls = 'text-[14px] text-foreground/55 transition-colors hover:text-foreground';
   return (
     <div>
-      <div className={`${MONO} mb-5 text-[10px] uppercase tracking-[0.28em] text-white/30`}>{title}</div>
+      <div className={`${MONO} mb-5 text-[10px] uppercase tracking-[0.28em] text-foreground/30`}>{title}</div>
       <ul className="space-y-3">
         {links.map((l) => (
           <li key={l.label}>
@@ -664,7 +699,7 @@ function FooterCol({ title, links }: { title: string; links: { label: string; hr
 
 /** Four "+" registration marks pinned to the viewport corners. */
 function FramePlus() {
-  const cls = `${MONO} pointer-events-none fixed z-30 select-none text-[13px] text-white/25`;
+  const cls = `${MONO} pointer-events-none fixed z-30 select-none text-[13px] text-foreground/25`;
   return (
     <>
       <span className={`${cls} left-3 top-3`}>+</span>

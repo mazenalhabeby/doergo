@@ -19,7 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { AnimatedLogo } from '../../src/components';
+import { AnimatedLogo, centeredContent } from '../../src/components';
+import { useResponsive } from '../../src/lib/responsive';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
 import { useTheme } from '../../src/contexts/theme-context';
 import { authApi } from '../../src/lib/api';
@@ -44,6 +45,7 @@ export default function RegisterScreen() {
   const { login } = useAuth();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const r = useResponsive();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -154,7 +156,7 @@ export default function RegisterScreen() {
       {/* Form Card */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.formWrapper}>
         <View style={[styles.formCard, { backgroundColor: colors.card }]}>
-          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={[styles.scrollContent, r.isTablet && centeredContent(460)]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {/* Name Fields */}
             <View style={styles.nameRow}>
               <View style={styles.halfInputGroup}>

@@ -23,7 +23,7 @@ export function IntroVideo() {
   };
 
   return (
-    <div className="group relative aspect-video w-full overflow-hidden rounded-lg border border-white/[0.1] bg-black">
+    <div className="group relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
       <video
         ref={ref}
         className="h-full w-full object-cover"

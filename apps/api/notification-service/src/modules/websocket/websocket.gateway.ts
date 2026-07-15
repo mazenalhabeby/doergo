@@ -377,16 +377,16 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
   emitClockIn(userId: string, organizationId: string, timeEntry: any) {
     this.logger.log(`[EMIT] attendance.clockIn for user ${userId}`);
-    this.messagesSent += 2;
-    this.server.to(`user:${userId}`).emit(SocketEvents.CLOCK_IN, { timeEntry });
-    this.server.to(`org:${organizationId}`).emit(SocketEvents.CLOCK_IN, { userId, timeEntry });
+    this.messagesSent += 1;
+    // Single de-duplicated emit: a socket in BOTH rooms (e.g. the user viewing
+    // their own org) would otherwise receive two copies.
+    this.server.to(`user:${userId}`).to(`org:${organizationId}`).emit(SocketEvents.CLOCK_IN, { userId, timeEntry });
   }
 
   emitClockOut(userId: string, organizationId: string, timeEntry: any) {
     this.logger.log(`[EMIT] attendance.clockOut for user ${userId}`);
-    this.messagesSent += 2;
-    this.server.to(`user:${userId}`).emit(SocketEvents.CLOCK_OUT, { timeEntry });
-    this.server.to(`org:${organizationId}`).emit(SocketEvents.CLOCK_OUT, { userId, timeEntry });
+    this.messagesSent += 1;
+    this.server.to(`user:${userId}`).to(`org:${organizationId}`).emit(SocketEvents.CLOCK_OUT, { userId, timeEntry });
   }
 
   // =========================================================================
@@ -395,16 +395,14 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
   emitBreakStarted(userId: string, organizationId: string, breakData: any) {
     this.logger.log(`[EMIT] break.started for user ${userId}`);
-    this.messagesSent += 2;
-    this.server.to(`user:${userId}`).emit(SocketEvents.BREAK_STARTED, { break: breakData });
-    this.server.to(`org:${organizationId}`).emit(SocketEvents.BREAK_STARTED, { userId, break: breakData });
+    this.messagesSent += 1;
+    this.server.to(`user:${userId}`).to(`org:${organizationId}`).emit(SocketEvents.BREAK_STARTED, { userId, break: breakData });
   }
 
   emitBreakEnded(userId: string, organizationId: string, breakData: any) {
     this.logger.log(`[EMIT] break.ended for user ${userId}`);
-    this.messagesSent += 2;
-    this.server.to(`user:${userId}`).emit(SocketEvents.BREAK_ENDED, { break: breakData });
-    this.server.to(`org:${organizationId}`).emit(SocketEvents.BREAK_ENDED, { userId, break: breakData });
+    this.messagesSent += 1;
+    this.server.to(`user:${userId}`).to(`org:${organizationId}`).emit(SocketEvents.BREAK_ENDED, { userId, break: breakData });
   }
 
   // =========================================================================

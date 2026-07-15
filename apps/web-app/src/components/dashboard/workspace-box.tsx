@@ -524,6 +524,7 @@ const MiniWorkerCell = React.memo(function MiniWorkerCell({ person }: { person: 
           initials={person.initials}
           color={person.color}
           status={person.status}
+          online={person.online}
           imageUrl={person.imageUrl}
           hideDot
           className="[&>div:first-child]:!w-[30px] [&>div:first-child]:!h-[30px] [&>div:first-child]:!min-w-[30px] [&>div:first-child]:!min-h-[30px] [&>div:first-child]:!text-[11px]"
@@ -614,6 +615,7 @@ const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
               initials={person.initials}
               color={person.color}
               status={person.status}
+              online={person.online}
               imageUrl={person.imageUrl}
               hideDot
               className="[&>div:first-child]:!w-[58px] [&>div:first-child]:!h-[58px] [&>div:first-child]:!min-w-[58px] [&>div:first-child]:!min-h-[58px] [&>div:first-child]:!text-xl"
@@ -697,6 +699,7 @@ function WorkerDropdownContent({
               initials={person.initials}
               color={person.color}
               status={person.status}
+              online={person.online}
               imageUrl={person.imageUrl}
               hideDot
               className="[&>div:first-child]:!w-[48px] [&>div:first-child]:!h-[48px] [&>div:first-child]:!min-w-[48px] [&>div:first-child]:!min-h-[48px] [&>div:first-child]:!text-base"

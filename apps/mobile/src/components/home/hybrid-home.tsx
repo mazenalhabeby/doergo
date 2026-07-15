@@ -25,7 +25,7 @@ import {
   type CompanyLocation,
   type Task,
 } from '../../lib/api';
-import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet } from '../../components';
+import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet, ScreenContainer } from '../../components';
 import { WeekCalendar } from '../week-calendar';
 import { ROUTES } from '../../lib/constants';
 import {
@@ -417,6 +417,7 @@ export function HybridHome() {
 
   return (
     <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>
+      <ScreenContainer width="content">
       <FlatList
         data={filteredTasks}
         renderItem={renderTask}
@@ -435,6 +436,7 @@ export function HybridHome() {
         }
         contentContainerStyle={{ flexGrow: 1 }}
       />
+      </ScreenContainer>
 
       <LocationPickerSheet
         visible={locationModalVisible}

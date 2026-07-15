@@ -103,8 +103,10 @@ field service, task management, dispatch, technician, GPS tracking, service repo
 - Data is not sold to third parties
 
 ### Data Deletion
-- Users can delete their account by contacting their organization admin
-- Organization admins can remove members and their data
+- Users can delete their own account **in-app**: Profile → Account → Delete
+  Account (password-confirmed, permanent — removes the user and their personal data)
+- Organization admins can also remove members and their data
+- Web account-deletion instructions: https://hbcfield.com/account-deletion
 - Contact: support@hbcfield.com
 
 ---
@@ -155,10 +157,17 @@ https://hbcfield.com
 ```
 
 ### Demo / review credentials (App Information → App Review Information)
-Apple **requires** working credentials for any login-gated app. Create a
-dedicated reviewer account on production (do **not** use a personal account)
-with the **DISPATCHER** role so the reviewer can see the full task list, live
-map, and reports.
+Apple **requires** working credentials for any login-gated app. The mobile app
+is **technician-only** — it hard-blocks web-only roles (ADMIN/DISPATCHER) at
+login, so a DISPATCHER account will NOT work and would cause a Guideline 2.1
+rejection. Create a dedicated reviewer account on production (do **not** use a
+personal account) with:
+
+- **Role:** TECHNICIAN
+- **Work mode:** HYBRID  ← so BOTH the "Tasks" and "Clock" tabs are visible
+- **Onboarding:** completed (attached to an org, `onboardingCompleted: true`)
+- **Sample data:** a handful of assigned tasks in various statuses (NEW,
+  ASSIGNED, IN_PROGRESS) plus at least one company location for clock-in
 
 ```
 Username: appreview@hbc-group.eu
@@ -167,9 +176,18 @@ Password: <set in production DB; share via App Review Information form>
 
 ### Notes for the reviewer (App Review Information → Notes)
 ```
-HBCField is a B2B field-service management platform. The reviewer account
-above is a DISPATCHER role with sample task and technician data. To exercise
-the technician-only flows (clock in/out, complete a task), please contact
-us at support@hbc-group.eu — the technician role is mobile-only and tied to
-a real worker invitation.
+HBCField is a B2B field-service management platform. The mobile app is used by
+field technicians. The reviewer account above is a fully-provisioned TECHNICIAN
+(HYBRID work mode) with sample tasks and a company location, so every core flow
+is exercisable without contacting us:
+
+- Tasks tab: open an assigned task, accept it, mark EN_ROUTE / ARRIVED /
+  IN_PROGRESS, add a photo/comment, and complete it with a service report.
+- Clock tab: clock in/out at the assigned company location (GPS geofence).
+- Profile > Account: change password and DELETE ACCOUNT (in-app, permanent).
+
+Background location: granting "Always Allow" enables route recording while
+en route to a job and geofence verification while clocked in. It stops
+automatically on arrival / clock-out. A prominent in-app disclosure is shown
+before the OS prompt.
 ```

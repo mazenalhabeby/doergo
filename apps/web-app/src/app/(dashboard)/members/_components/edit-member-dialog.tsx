@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -202,6 +203,7 @@ export function EditMemberDialog({
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
   const [role, setRole] = useState("")
+  const [allowRemote, setAllowRemote] = useState(false)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -214,6 +216,7 @@ export function EditMemberDialog({
     setScheduleType(member.scheduleType || "NONE")
     setMonthlyHourBudget(member.monthlyHourBudget ?? "")
     setRole(member.role)
+    setAllowRemote(member.allowRemote ?? false)
     setScheduleRows(createDefaultSchedule())
     setTempPassword(null)
     setCopied(false)
@@ -231,6 +234,7 @@ export function EditMemberDialog({
     for (const m of membersData?.data || []) if (m.position) set.add(m.position)
     return Array.from(set).sort()
   }, [membersData])
+
 
   const { data: locationsData } = useQuery({
     queryKey: ["locations-all"],
@@ -337,6 +341,7 @@ export function EditMemberDialog({
         monthlyHourBudget:
           scheduleType === "FLEXIBLE" && monthlyHourBudget !== "" ? Number(monthlyHourBudget) : undefined,
         role,
+        allowRemote,
       },
     })
   }
@@ -403,6 +408,17 @@ export function EditMemberDialog({
             monthlyHourBudget={monthlyHourBudget}
             onMonthlyHourBudgetChange={setMonthlyHourBudget}
           />
+
+          {/* Remote clock-in permission (attendance) */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <Label className="text-xs font-medium text-foreground">{t("members.memberEditor.allowRemote", "Allow remote clock-in")}</Label>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {t("members.memberEditor.allowRemoteHint", "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured.")}
+              </p>
+            </div>
+            <Switch checked={allowRemote} onCheckedChange={setAllowRemote} />
+          </div>
 
           <EditSection label={t("members.memberEditor.sectionRoleAccess")} />
 

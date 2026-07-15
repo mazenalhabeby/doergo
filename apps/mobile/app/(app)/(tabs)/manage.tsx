@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { ScreenContainer } from '../../../src/components';
 import {
   COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, ROUTES,
 } from '../../../src/lib/constants';
@@ -22,6 +23,7 @@ export default function ManageScreen() {
   const { t } = useTranslation();
 
   return (
+    <ScreenContainer width="content" style={{ backgroundColor: colors.surface }}>
     <ScrollView
       style={[s.container, { backgroundColor: colors.surface }]}
       contentContainerStyle={s.content}
@@ -45,6 +47,7 @@ export default function ManageScreen() {
         </TouchableOpacity>
       ))}
     </ScrollView>
+    </ScreenContainer>
   );
 }
 

@@ -9,7 +9,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { onboardingApi } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
-import { ConfirmSheet } from '../../src/components';
+import { ConfirmSheet, ScreenContainer } from '../../src/components';
 
 const POLL_INTERVAL = 30000; // 30 seconds
 
@@ -91,6 +91,7 @@ export default function PendingApprovalScreen() {
     <View style={[styles.container, { paddingTop: insets.top + SPACING.xl }]}>
       <StatusBar style="dark" />
 
+      <ScreenContainer width="content">
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <View style={styles.iconBg}>
@@ -137,6 +138,7 @@ export default function PendingApprovalScreen() {
           </View>
         )}
       </View>
+      </ScreenContainer>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.md }]}>
         {status === 'rejected' && (

@@ -30,6 +30,8 @@ import { hasAccessModule } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
+import { ClockWidget } from "@/components/clock-widget"
+import { PresenceToggle } from "@/components/presence-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { cn } from "@/lib/utils"
 import {
@@ -133,12 +135,16 @@ export function TopNavbar() {
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
 
-  // Employee module-driven items (Access Profile). Only for non-admins; admins
-  // get the full nav above. hasAccessModule reflects the per-user profile.
-  const isEmployee = !showTeam
-  const showMyTimeOff = isEmployee && hasAccessModule(user, "time_off")
-  const showMyAttendance = isEmployee && hasAccessModule(user, "clock")
-  const showManage = isEmployee && hasAccessModule(user, "manage")
+  // Personal, module-driven items (Access Profile). These are ADDITIVE — a
+  // member who ALSO manages people keeps their own Time Off / clock. Driven by
+  // the per-user modules, not suppressed just because management nav is shown.
+  // (My Attendance hides only when the management Attendance view is present, to
+  // avoid two "Attendance" links.)
+  const showMyTimeOff = hasAccessModule(user, "time_off")
+  const showMyAttendance = hasAccessModule(user, "clock") && !showAttendance
+  // "Manage" is the management hub — redundant with "Team", so only show it when
+  // the user doesn't already have Team (i.e. not managers/admins).
+  const showManage = hasAccessModule(user, "manage") && !showTeam
   // Overflow items go into "More" menu
   const overflowItems: { label: string; href: string; icon: typeof MapPin }[] = []
 
@@ -271,6 +277,8 @@ export function TopNavbar() {
       {/* Right side */}
       <div className="ml-auto flex items-center gap-1">
         <CommandPaletteButton />
+        <ClockWidget />
+        <PresenceToggle />
         <LanguageSwitcher />
         <NotificationBell />
         <UserDropdown

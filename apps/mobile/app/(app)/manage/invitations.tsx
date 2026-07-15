@@ -10,7 +10,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { adminInvitationsApi, type Invitation } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet } from '../../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
 
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   PENDING: { color: COLORS.amber, bg: COLORS.amber + '20' },
@@ -154,20 +154,22 @@ export default function InvitationsScreen() {
         <Text style={s.createBtnText}>{t('manage.invitationsScreen.createButton')}</Text>
       </TouchableOpacity>
 
-      <FlatList
-        data={invitations}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={s.list}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchInvitations(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Ionicons name="mail-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.invitationsScreen.noInvitations')}</Text>
-          </View>
-        }
-      />
+      <ScreenContainer width="content">
+        <FlatList
+          data={invitations}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchInvitations(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Ionicons name="mail-outline" size={40} color={colors.textMuted} />
+              <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.invitationsScreen.noInvitations')}</Text>
+            </View>
+          }
+        />
+      </ScreenContainer>
 
       <ConfirmSheet
         visible={!!revokeTarget}

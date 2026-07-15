@@ -773,7 +773,7 @@ export interface Worker {
 // Users API methods
 export const usersApi = {
   // Update your OWN profile (any authenticated user — no admin permission).
-  updateMe: async (data: { firstName?: string; lastName?: string }) => {
+  updateMe: async (data: { firstName?: string; lastName?: string; presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null }) => {
     const response = await api.patch<{ success: boolean; data: { id: string; firstName: string; lastName: string } }>(
       '/users/me',
       data,
@@ -1910,6 +1910,21 @@ export const attendanceApi = {
     return (response.data as { data?: unknown })?.data ?? response.data;
   },
 
+  // Employee self-service: clock in at a company location. GPS comes from the
+  // browser Geolocation API (device location, NOT IP) so it works over a VPN.
+  clockIn: async (input: { locationId?: string; lat: number; lng: number; accuracy?: number; isRemote?: boolean }) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/clock-in`, input);
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
+  // Employee self-service: clock out of the current shift.
+  clockOut: async (input: { lat: number; lng: number; accuracy?: number; notes?: string }) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/clock-out`, input);
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
   // Employee self-service: my own time-entry history (paginated envelope)
   getMyHistory: async (params?: { page?: number; limit?: number }) => {
     const endpoint = buildUrlWithQuery('/attendance/history', params ?? {});
@@ -2874,6 +2889,12 @@ export interface OrgMember {
   createdAt: string;
   workMode?: string;
   specialty?: string;
+  presence?: string | null;
+  contactable?: boolean;
+  contactScope?: string;
+  contactAllowedIds?: string[];
+  allowRemote?: boolean;
+  lastActiveAt?: string | null;
   position: string | null;
   scheduleType: string | null;
   monthlyHourBudget: number | null;
@@ -2900,6 +2921,10 @@ export interface UpdateMemberInput {
   canManageUsers?: boolean;
   /** Per-user Access Profile object, or a legacy module string[]. */
   enabledModules?: Record<string, unknown> | string[];
+  contactable?: boolean;
+  contactScope?: string;
+  contactAllowedIds?: string[];
+  allowRemote?: boolean;
 }
 
 export const organizationsApi = {
@@ -2944,6 +2969,13 @@ export const organizationsApi = {
     }>(endpoint);
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+
+  // Contacts directory — any org member can reach the org's admins/managers.
+  getContacts: async () => {
+    const response = await api.get<{ success: boolean; data: OrgMember[] }>('/organizations/contacts');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? [];
   },
 
   updateMember: async (memberId: string, data: UpdateMemberInput) => {

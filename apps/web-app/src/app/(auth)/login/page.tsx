@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { notify } from '@/lib/toast';
 import { AuthSkeleton, LoginForm, RegisterForm } from '@/components/auth';
@@ -57,7 +58,9 @@ function AuthPageContent() {
         />
 
         <div className="relative">
-          <AnimatedLogo variant="light" size="default" />
+          <Link href="/" aria-label={t('common.backToHome', 'Back to home')} className="inline-flex">
+            <AnimatedLogo variant="light" size="default" />
+          </Link>
         </div>
 
         <div className="relative">
@@ -93,7 +96,9 @@ function AuthPageContent() {
         <div className="mx-auto w-full max-w-md">
           {/* mobile logo */}
           <div className="mb-9 mt-2 flex justify-center lg:hidden">
-            <AnimatedLogo size="large" />
+            <Link href="/" aria-label={t('common.backToHome', 'Back to home')} className="inline-flex">
+              <AnimatedLogo size="large" />
+            </Link>
           </div>
 
           <h1 className="text-[26px] font-bold tracking-tight text-slate-900">

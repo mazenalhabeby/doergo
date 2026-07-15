@@ -54,10 +54,10 @@ export function CrossfadeCopy({
           }}
         >
           <span style={{ fontFamily: FONT_MONO }} className="text-[11px] uppercase tracking-[0.28em] text-[#5B9BD5]">{s.kicker}</span>
-          <h3 style={{ fontFamily: FONT_DISPLAY }} className={`mt-4 ${titleMaxCls} text-[clamp(1.5rem,3vw,2.3rem)] font-normal leading-[1.08] tracking-tight text-[#eeeeeb]`}>
+          <h3 style={{ fontFamily: FONT_DISPLAY }} className={`mt-4 ${titleMaxCls} text-[clamp(1.5rem,3vw,2.3rem)] font-normal leading-[1.08] tracking-tight text-foreground`}>
             {s.title}
           </h3>
-          <p className="mt-5 max-w-[42ch] text-[15px] leading-relaxed text-white/55">{s.body}</p>
+          <p className="mt-5 max-w-[42ch] text-[15px] leading-relaxed text-foreground/55">{s.body}</p>
         </div>
       ))}
     </div>

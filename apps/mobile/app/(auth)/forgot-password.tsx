@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../src/contexts/toast-context';
-import { AnimatedLogo } from '../../src/components';
+import { AnimatedLogo, ScreenContainer } from '../../src/components';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
 import { useTheme } from '../../src/contexts/theme-context';
 import { passwordApi } from '../../src/lib/api/auth';
@@ -128,6 +128,7 @@ export default function ForgotPasswordScreen() {
         style={styles.formWrapper}
       >
         <View style={[styles.formCard, { backgroundColor: colors.card }]}>
+          <ScreenContainer width="content">
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
@@ -239,6 +240,7 @@ export default function ForgotPasswordScreen() {
               </>
             )}
           </ScrollView>
+          </ScreenContainer>
         </View>
       </KeyboardAvoidingView>
 

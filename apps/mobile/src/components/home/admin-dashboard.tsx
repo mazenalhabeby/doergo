@@ -25,7 +25,7 @@ import {
   type LocationWithMembers,
 } from '../../lib/api';
 import type { TimeEntry } from '../../lib/api/types';
-import { ErrorState, Skeleton } from '../../components';
+import { ErrorState, Skeleton, ScreenContainer } from '../../components';
 import { ROUTES } from '../../lib/constants';
 import { styles as homeStyles, SPACING, COLORS } from './home-styles';
 import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
@@ -438,6 +438,7 @@ export function AdminDashboard() {
 
   return (
     <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
+      <ScreenContainer width="content">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
@@ -488,6 +489,7 @@ export function AdminDashboard() {
           )}
         </View>
       </ScrollView>
+      </ScreenContainer>
 
       {/* Activity FAB — premium gradient pill */}
       <TouchableOpacity style={styles.fabWrap} onPress={() => setActivityOpen(true)} activeOpacity={0.9}>

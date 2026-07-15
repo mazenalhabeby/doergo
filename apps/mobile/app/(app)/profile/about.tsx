@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { SheetHeader } from '../../../src/components';
+import { SheetHeader, ScreenContainer } from '../../../src/components';
 import {
   COLORS,
   SPACING,
@@ -27,6 +27,7 @@ export default function AboutScreen() {
     : '—';
 
   return (
+    <ScreenContainer width="content">
     <ScrollView
       style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}
       contentContainerStyle={styles.scrollContent}
@@ -77,6 +78,7 @@ export default function AboutScreen() {
         {t('common.copyrightYear', { year: new Date().getFullYear() })}
       </Text>
     </ScrollView>
+    </ScreenContainer>
   );
 }
 

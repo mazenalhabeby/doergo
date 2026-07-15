@@ -13,7 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { tasksApi, TaskStatus, type Task } from '../../lib/api';
-import { TaskCard, LoadingState, ErrorState, Skeleton } from '../../components';
+import { TaskCard, LoadingState, ErrorState, Skeleton, ScreenContainer } from '../../components';
 import { ROUTES } from '../../lib/constants';
 import { isSameDay } from '../../lib/utils';
 import { useTheme } from '../../contexts/theme-context';
@@ -262,6 +262,7 @@ export function FreelancerHome() {
 
   return (
     <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>
+      <ScreenContainer width="content">
       <FlatList
         data={filteredTasks}
         renderItem={renderTask}
@@ -280,6 +281,7 @@ export function FreelancerHome() {
         }
         contentContainerStyle={flStyles.flatListContent}
       />
+      </ScreenContainer>
     </View>
   );
 }

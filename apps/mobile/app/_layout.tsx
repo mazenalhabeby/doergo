@@ -28,6 +28,7 @@ import { ToastProvider } from '../src/contexts/toast-context';
 import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
 import { LocationConsentModal } from '../src/components/LocationConsentModal';
+import { applyOrientationPolicy } from '../src/lib/orientation';
 
 // Keep the native splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -131,6 +132,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     i18nReady.then(() => setLangLoaded(true));
+    // Tablets rotate freely; phones are locked to portrait.
+    applyOrientationPolicy();
   }, []);
 
   if (!fontsLoaded || !langLoaded) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,9 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
 import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
-import { TaskCard, FilterChip, Skeleton } from '../../../src/components';
+import { TaskCard, FilterChip, Skeleton, ScreenContainer } from '../../../src/components';
+import { useResponsive } from '../../../src/lib/responsive';
+import { TaskDetailPane } from '../task/[id]';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { SocketEvents } from '../../../src/lib/socket';
 import {
@@ -121,6 +123,34 @@ const TAB_EMPTY_I18N: Record<TabKey, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Master-detail layout (module scope so `children` reconcile in place, no remount)
+// ---------------------------------------------------------------------------
+
+function TasksSplitLayout({
+  isSplit,
+  detail,
+  borderColor,
+  children,
+}: {
+  isSplit: boolean;
+  detail: ReactNode;
+  borderColor: string;
+  children: ReactNode;
+}) {
+  // Narrow screens: the list centered in a grid column (existing behaviour).
+  if (!isSplit) return <ScreenContainer width="grid">{children}</ScreenContainer>;
+  // Wide tablets: list on the left, task detail on the right.
+  return (
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      <View style={{ width: 380 }}>{children}</View>
+      <View style={{ flex: 1, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: borderColor }}>
+        {detail}
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -128,9 +158,18 @@ export default function TasksScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+  const r = useResponsive();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
+  // In master-detail split the list lives in a narrow left pane → single column.
+  const listColumns = r.isSplit ? 1 : r.columns;
+  // Fixed card width for the tablet grid: split the (capped) row into columns.
+  const gridWidth = r.isSplit ? 380 : Math.min(r.width, r.gridMaxWidth);
+  const cardWidth = listColumns > 1
+    ? (gridWidth - SPACING.lg * 2 - SPACING.md * (listColumns - 1)) / listColumns
+    : gridWidth;
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -251,6 +290,12 @@ export default function TasksScreen() {
   const handleRefresh = () => fetchTasks(true);
 
   const handleTaskPress = (task: Task) => {
+    // In the master-detail split, open the task in the right pane instead of
+    // navigating away.
+    if (r.isSplit) {
+      setSelectedTaskId(task.id);
+      return;
+    }
     router.push(ROUTES.taskDetail(task.id));
   };
 
@@ -344,6 +389,27 @@ export default function TasksScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <TasksSplitLayout
+        isSplit={r.isSplit}
+        borderColor={colors.border}
+        detail={
+          selectedTaskId ? (
+            <TaskDetailPane
+              key={selectedTaskId}
+              taskId={selectedTaskId}
+              embedded
+              onClose={() => setSelectedTaskId(null)}
+            />
+          ) : (
+            <View style={styles.splitEmpty}>
+              <Ionicons name="clipboard-outline" size={48} color={colors.textMuted} />
+              <Text style={[styles.splitEmptyText, { color: colors.textMuted }]}>
+                {t('tasks.selectTask', 'Select a task to view its details')}
+              </Text>
+            </View>
+          )
+        }
+      >
       {/* Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Ionicons name="search" size={18} color={colors.textMuted} />
@@ -493,15 +559,21 @@ export default function TasksScreen() {
       <FlatList
         data={filteredTasks}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TaskCard
-            task={item}
-            onPress={() => handleTaskPress(item)}
-            showAssignee={isAdmin}
-            showPriority={isAdmin}
-            showDate
-          />
-        )}
+        // numColumns can't change on a live list — key forces a remount when it does.
+        key={`cols-${listColumns}`}
+        numColumns={listColumns}
+        columnWrapperStyle={listColumns > 1 ? styles.gridRow : undefined}
+        renderItem={({ item }) =>
+          listColumns > 1 ? (
+            // Fixed-width cell so cards fill half/third of the (capped) row
+            // instead of collapsing. A lone last card stays left-aligned.
+            <View style={{ width: cardWidth }}>
+              <TaskCard task={item} onPress={() => handleTaskPress(item)} showAssignee={isAdmin} showPriority={isAdmin} showDate />
+            </View>
+          ) : (
+            <TaskCard task={item} onPress={() => handleTaskPress(item)} showAssignee={isAdmin} showPriority={isAdmin} showDate />
+          )
+        }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -519,6 +591,7 @@ export default function TasksScreen() {
           </View>
         }
       />
+      </TasksSplitLayout>
     </View>
   );
 }
@@ -670,6 +743,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xl,
     gap: SPACING.md,
+  },
+  // Column gap between cards when the list renders as a grid (tablets).
+  // justifyContent centers each row so the capped grid sits mid-screen.
+  gridRow: {
+    gap: SPACING.md,
+    justifyContent: 'center',
+  },
+  // Master-detail right pane placeholder when no task is selected.
+  splitEmpty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.xxxl,
+  },
+  splitEmptyText: {
+    fontSize: FONT_SIZE.lg,
+    textAlign: 'center',
   },
 
   // Blocked Tasks Banner

@@ -454,6 +454,13 @@ model User {
   canViewAllTasks Boolean  @default(false)   // Can view all org tasks (vs only assigned/created)
   canAssignTasks  Boolean  @default(false)   // Can assign tasks to technicians
   canManageUsers  Boolean  @default(false)   // Can manage users in organization
+  allowRemote     Boolean  @default(false)   // May clock in remotely (WFH/anywhere), geofence-exempt
+  presence        String?                     // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
+  lastActiveAt    DateTime?                    // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
+  // Contact directory / access (admins are always contacts; secure by default)
+  contactable       Boolean  @default(false)   // Appears in the org contacts directory (for non-admin "manager" members)
+  contactScope      String   @default("NONE")  // Who this member may contact: NONE | ALL | SELECTED
+  contactAllowedIds String[] @default([])      // When SELECTED: the specific contact user IDs this member may reach
 
   // Worker configuration
   position       String?   // Free-form: "technician", "driver", "sales", "office_manager"
@@ -989,6 +996,7 @@ model CompanyLocation {
   timezone       String  @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   isActive       Boolean @default(true)
   isDefault      Boolean @default(false) // The org's default space (holds otherwise-unassigned tasks)
+  isRemote       Boolean @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1073,6 +1081,11 @@ model TimeEntry {
   // Geofence validation results
   clockInWithinGeofence  Boolean  @default(true)
   clockOutWithinGeofence Boolean?
+
+  // Remote work (WFH/anywhere): geofence-exempt, coarse place captured from GPS
+  isRemote      Boolean @default(false)
+  clockInPlace  String? // Coarse reverse-geocoded place, e.g. "Vienna, AT"
+  clockOutPlace String?
 
   // Calculated duration (set on clock-out)
   totalMinutes Int?

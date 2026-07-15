@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
-import { SheetHeader } from '../../../src/components';
+import { SheetHeader, ScreenContainer } from '../../../src/components';
 import {
   COLORS,
   SPACING,
@@ -25,6 +25,7 @@ export default function AppearanceScreen() {
   const { t } = useTranslation();
 
   return (
+    <ScreenContainer width="content">
     <ScrollView
       style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}
       contentContainerStyle={styles.content}
@@ -97,6 +98,7 @@ export default function AppearanceScreen() {
         </Text>
       </View>
     </ScrollView>
+    </ScreenContainer>
   );
 }
 

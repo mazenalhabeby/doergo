@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Pressable,
   KeyboardAvoidingView,
   Platform,
@@ -41,7 +41,7 @@ import {
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet } from '../../../src/components';
+import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
 import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import {
@@ -96,8 +96,9 @@ export default function AttendanceScreen() {
   // Overtime state
   const [activeOvertime, setActiveOvertime] = useState<OvertimeRequest | null>(null);
 
-  // Break bottom sheet animation
-  const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+  // Break bottom sheet animation. useWindowDimensions re-renders on rotation
+  // (Dimensions.get is a one-time snapshot that goes stale on tablets).
+  const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const breakSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const breakOverlayAnim = useRef(new Animated.Value(0)).current;
 
@@ -500,6 +501,7 @@ export default function AttendanceScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <ScreenContainer width="content">
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -889,6 +891,7 @@ export default function AttendanceScreen() {
         {/* Bottom spacing */}
         <View style={{ height: SPACING.xl }} />
       </ScrollView>
+      </ScreenContainer>
 
       {/* Location Selection Bottom Sheet */}
       <LocationPickerSheet

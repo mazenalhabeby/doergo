@@ -6,7 +6,8 @@
       "app": "App",
       "signIn": "Anmelden",
       "industries": "Branchen",
-      "pricing": "Preise"
+      "pricing": "Preise",
+      "toggleTheme": "Design wechseln"
     },
     "hero": {
       "line1": "Das Feld,",
@@ -751,6 +752,9 @@
       "noTasks": "Noch keine Aufgaben",
       "willAppear": "Aufgaben erscheinen hier, sobald sie erstellt werden",
       "viewAllTasks": "Alle Aufgaben anzeigen"
+    },
+    "management": {
+      "title": "Leitung"
     }
   },
   "tasks": {
@@ -1808,7 +1812,19 @@
       "removedFrom": "Aus {{name}} entfernt",
       "failedToRemove": "Entfernen fehlgeschlagen",
       "assignedTo": "{{name}} zugewiesen",
-      "failedToAssign": "Zuweisung fehlgeschlagen"
+      "failedToAssign": "Zuweisung fehlgeschlagen",
+      "sectionContact": "Kontaktzugriff",
+      "contactable": "Kontaktierbar",
+      "contactableHint": "Erscheint im Kontaktverzeichnis, damit Kollegen ihn erreichen können. Admins sind immer kontaktierbar.",
+      "canContact": "Darf kontaktieren",
+      "contactNone": "Niemanden",
+      "contactAll": "Alle Kontakte",
+      "contactSelected": "Bestimmte Kontakte…",
+      "allowedContacts": "Erlaubte Kontakte",
+      "noContacts": "Keine Kontakte verfügbar",
+      "contact": "Kontakt",
+      "allowRemote": "Remote-Einstempeln erlauben",
+      "allowRemoteHint": "Kann von überall einstempeln (Homeoffice/unterwegs) ohne Standort-Geofence. Der Standort wird trotzdem erfasst."
     },
     "detail": {
       "backToTeam": "Zurück zum Team",
@@ -2170,7 +2186,9 @@
     "geofenceAlert": "Geofence-Alarm",
     "pendingApproval": "Zeiteintrag muss genehmigt werden",
     "breakStarted": "Pause begonnen",
-    "breakEnded": "Pause beendet"
+    "breakEnded": "Pause beendet",
+    "clockInAction": "Eingestempelt",
+    "clockOutAction": "Ausgestempelt"
   },
   "landing": {
     "nav": {
@@ -2484,7 +2502,7 @@
     "my": {
       "noAccess": "Sie haben keinen Zugriff auf die Anwesenheit.",
       "title": "Anwesenheit",
-      "subtitle": "Ihr Einstempelverlauf und Ihre Stunden. Das Ein- und Ausstempeln erfolgt in der mobilen App.",
+      "subtitle": "Ihr Einstempelverlauf und Ihre Stunden. Stempeln Sie unten oder in der mobilen App ein und aus.",
       "currentStatus": "Aktueller Status",
       "clockedIn": "Eingestempelt",
       "clockedOut": "Ausgestempelt",
@@ -2492,7 +2510,23 @@
       "hoursLast": "Stunden (letzte {{count}})",
       "recentEntries": "Letzte Einträge",
       "noRecords": "Noch keine Anwesenheitseinträge.",
-      "active": "aktiv"
+      "active": "aktiv",
+      "clockIn": "Einstempeln",
+      "clockOut": "Ausstempeln",
+      "locating": "Standort wird ermittelt…",
+      "clockedInToast": "Eingestempelt",
+      "clockedOutToast": "Ausgestempelt",
+      "noLocations": "Kein Arbeitsort mit GPS eingerichtet. Bitten Sie Ihren Administrator, einen hinzuzufügen, bevor Sie einstempeln.",
+      "gpsHint": "Verwendet Ihren Gerätestandort zur Vor-Ort-Prüfung. Funktioniert über VPN.",
+      "geo": {
+        "denied": "Standortzugriff verweigert. Erlauben Sie den Standortzugriff im Browser, um einzustempeln.",
+        "insecure": "Einstempeln erfordert eine sichere (HTTPS-)Verbindung.",
+        "unsupported": "Ihr Browser unterstützt keine Standortdienste.",
+        "timeout": "Zeitüberschreitung bei der Standortermittlung. Bitte erneut versuchen.",
+        "unavailable": "Standort konnte nicht ermittelt werden. Bitte erneut versuchen."
+      },
+      "remote": "Remote",
+      "clockInOnsite": "Vor Ort"
     },
     "management": {
       "title": "Anwesenheitsverwaltung",
@@ -2797,9 +2831,25 @@
       }
     },
     "contact": {
-      "title": "Kann Kollegen kontaktieren",
-      "desc": "Teammitglieder in ihren sichtbaren Bereichen anschreiben & anrufen."
-    }
+      "title": "Teammitglieder kontaktieren",
+      "desc": "Kollegen in gemeinsamen Bereichen anschreiben & anrufen."
+    },
+    "contactAccess": "Kontaktzugriff",
+    "contactable": {
+      "title": "Kontaktierbar",
+      "desc": "Erscheint im Kontaktverzeichnis, damit Kollegen ihn erreichen können. Admins sind immer kontaktierbar."
+    },
+    "canContact": {
+      "title": "Leitung kontaktieren",
+      "desc": "Welche Admins/Kontakte dieses Mitglied erreichen darf. Standardmäßig gesperrt."
+    },
+    "contactScope": {
+      "none": "Niemanden",
+      "all": "Alle Kontakte",
+      "selected": "Bestimmte Kontakte…"
+    },
+    "noContacts": "Keine Kontakte verfügbar",
+    "contactLabel": "Kontakt"
   },
   "customFields": {
     "fieldTypes": {
@@ -3617,5 +3667,19 @@
     "title": "Richten Sie Ihren ersten Bereich ein",
     "subtitle": "In einem Bereich befinden sich Ihre Aufgaben – ein Standort, ein Team oder ein Projekt. Sie können jederzeit weitere hinzufügen.",
     "createAndContinue": "Bereich erstellen & fortfahren"
+  },
+  "presence": {
+    "title": "Verfügbarkeit",
+    "available": "Verfügbar",
+    "busy": "Beschäftigt",
+    "away": "Abwesend",
+    "auto": "Auto",
+    "autoDesc": "Auto (aus Aufgabe)",
+    "online": "Online",
+    "activeAgo": "Vor {{time}} aktiv"
+  },
+  "roles": {
+    "admin": "Admin",
+    "manager": "Manager"
   }
 }

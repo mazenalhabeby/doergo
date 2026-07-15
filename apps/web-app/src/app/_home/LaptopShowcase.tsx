@@ -62,18 +62,18 @@ export function LaptopShowcase() {
   /* ── reduced motion / no-JS friendly: static open laptop + list ── */
   if (reduced) {
     return (
-      <section className="border-t border-white/[0.08] px-6 py-24 sm:px-10 sm:py-32">
+      <section className="border-t border-border px-6 py-24 sm:px-10 sm:py-32">
         <div className="mx-auto max-w-[1600px]">
-          <span style={{ fontFamily: MONO }} className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-white/40">{t('home.product.label')}</span>
-          <h2 style={{ fontFamily: DISPLAY }} className="mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight text-[#e8e8e5]">{t('home.product.reducedHeading')}</h2>
+          <span style={{ fontFamily: MONO }} className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.product.label')}</span>
+          <h2 style={{ fontFamily: DISPLAY }} className="mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight text-foreground">{t('home.product.reducedHeading')}</h2>
           <div className="grid gap-10 lg:grid-cols-2">
             <Laptop activeSrc={SHOTS[0].img} lidStatic />
             <ul className="space-y-8">
               {SHOTS.map((s) => (
                 <li key={s.img}>
-                  <span style={{ fontFamily: MONO }} className="text-[11px] uppercase tracking-[0.28em] text-white/40">{s.kicker}</span>
-                  <h3 style={{ fontFamily: DISPLAY }} className="mt-2 text-[1.4rem] font-normal text-[#eaeae7]">{s.title}</h3>
-                  <p className="mt-2 max-w-[44ch] text-[14px] leading-relaxed text-white/50">{s.body}</p>
+                  <span style={{ fontFamily: MONO }} className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.kicker}</span>
+                  <h3 style={{ fontFamily: DISPLAY }} className="mt-2 text-[1.4rem] font-normal text-foreground">{s.title}</h3>
+                  <p className="mt-2 max-w-[44ch] text-[14px] leading-relaxed text-foreground/55">{s.body}</p>
                 </li>
               ))}
             </ul>
@@ -84,7 +84,7 @@ export function LaptopShowcase() {
   }
 
   return (
-    <section ref={sectionRef} id="work" className="relative border-t border-white/[0.08]" style={{ height: '280vh' }}>
+    <section ref={sectionRef} id="work" className="relative border-t border-border" style={{ height: '280vh' }}>
       <div className="sticky top-0 flex h-screen items-center overflow-hidden px-6 sm:px-10">
         <div className="mx-auto grid w-full max-w-[1600px] items-center gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
           {/* laptop */}
@@ -96,7 +96,7 @@ export function LaptopShowcase() {
 
           {/* descriptions (cross-fade with the active shot) */}
           <div>
-            <span style={{ fontFamily: MONO }} className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-white/40">{t('home.product.label')}</span>
+            <span style={{ fontFamily: MONO }} className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.product.label')}</span>
             {/* FIXED-height crossfade area — every slide's text is top-aligned in the
                 same box, so the kicker and the dots below never shift. */}
             <CrossfadeCopy items={SHOTS} active={active} titleMaxCls="max-w-[20ch]" />

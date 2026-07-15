@@ -2,10 +2,10 @@
 
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
-import { ChevronRight, MapPin, Calendar, User, Inbox } from "lucide-react"
+import { Inbox } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
-import { getStatusConfig, getPriorityConfig } from "@/lib/constants"
+import { getStatusConfig } from "@/lib/constants"
 
 export interface RecentTask {
   id: string
@@ -43,64 +43,43 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
   }
 
   return (
-    <div className={cn("space-y-1", className)}>
+    <div className={cn("space-y-2.5", className)}>
       {tasks.map((task) => {
         const statusConfig = getStatusConfig(task.status)
-        const priorityConfig = getPriorityConfig(task.priority)
+        const hex = statusConfig.hex
+        const meta = [
+          task.location,
+          task.dueDate ? formatDistanceToNow(task.dueDate, { addSuffix: true }) : null,
+          task.assignee?.name,
+        ].filter(Boolean) as string[]
 
         return (
           <Link
             key={task.id}
             href={`/tasks/${task.id}`}
             className={cn(
-              "group flex items-center gap-4 rounded-xl p-4 -mx-2",
-              "transition-all duration-200",
-              "hover:bg-accent"
+              "group block rounded-2xl bg-card p-4",
+              "border border-border/50 shadow-sm",
+              "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
             )}
           >
-            {/* Priority indicator */}
-            <div
-              className={cn("w-1 h-12 rounded-full shrink-0", priorityConfig.dotColor)}
-            />
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-1.5">
-                <span className="text-sm font-medium text-foreground truncate">
-                  {task.title}
-                </span>
-                <span className={cn(
-                  "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium",
-                  statusConfig.bgClass,
-                  statusConfig.textClass
-                )}>
-                  {statusConfig.label}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-[13px] text-muted-foreground">
-                {task.assignee && (
-                  <span className="flex items-center gap-1">
-                    <User className="size-3" strokeWidth={1.5} />
-                    {task.assignee.name}
-                  </span>
-                )}
-                {task.dueDate && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="size-3" strokeWidth={1.5} />
-                    {formatDistanceToNow(task.dueDate, { addSuffix: true })}
-                  </span>
-                )}
-                {task.location && (
-                  <span className="flex items-center gap-1 truncate max-w-[140px]">
-                    <MapPin className="size-3" strokeWidth={1.5} />
-                    {task.location}
-                  </span>
-                )}
-              </div>
+            <div className="flex items-center gap-3">
+              <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                {task.title}
+              </p>
+              <span
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+                style={{ backgroundColor: `${hex}14`, color: hex }}
+              >
+                <span className="size-1.5 rounded-full" style={{ backgroundColor: hex }} />
+                {statusConfig.label}
+              </span>
             </div>
-
-            {/* Arrow */}
-            <ChevronRight className="size-4 text-muted-foreground transition-all group-hover:text-muted-foreground group-hover:translate-x-0.5" strokeWidth={1.5} />
+            {meta.length > 0 && (
+              <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                {meta.join("  ·  ")}
+              </p>
+            )}
           </Link>
         )
       })}

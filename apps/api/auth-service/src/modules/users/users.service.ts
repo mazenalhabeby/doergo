@@ -661,6 +661,51 @@ export class UsersService {
   // ============================================================================
 
   /**
+   * Contacts directory — ANY org member can see the org's admins/managers to
+   * reach out to. Safe fields only (no email/permissions); includes presence so
+   * teammates know availability. Independent of member-management permission.
+   */
+  async listOrgContacts(organizationId: string, userId: string) {
+    // The requesting member's contact policy (secure by default: NONE).
+    const me = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { contactScope: true, contactAllowedIds: true },
+    });
+    if (!me || me.contactScope === 'NONE') {
+      return { success: true, data: [] };
+    }
+
+    // Directory = admins (always) + members flagged contactable.
+    const candidates = await this.prisma.user.findMany({
+      where: {
+        organizationId,
+        isActive: true,
+        id: { not: userId },
+        OR: [{ role: Role.ADMIN }, { role: Role.MANAGER }, { contactable: true }],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        avatarUrl: true,
+        presence: true,
+        position: true,
+        lastActiveAt: true,
+      },
+      orderBy: [{ role: 'asc' }, { firstName: 'asc' }],
+    });
+
+    // SELECTED → only the explicitly allowed contacts; ALL → everyone in the directory.
+    const data =
+      me.contactScope === 'SELECTED'
+        ? candidates.filter((c) => me.contactAllowedIds.includes(c.id))
+        : candidates;
+
+    return { success: true, data };
+  }
+
+  /**
    * List all members of an organization with filtering and pagination
    */
   async listOrgMembers(dto: ListOrgMembersDto) {
@@ -694,6 +739,7 @@ export class UsersService {
         avatarUrl: true,
         createdAt: true,
         position: true,
+        presence: true,
         scheduleType: true,
         monthlyHourBudget: true,
         enabledModules: true,
@@ -703,6 +749,11 @@ export class UsersService {
         canViewAllTasks: true,
         canAssignTasks: true,
         canManageUsers: true,
+        allowRemote: true,
+        contactable: true,
+        contactScope: true,
+        contactAllowedIds: true,
+        lastActiveAt: true,
       },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       skip: (page - 1) * limit,
@@ -922,6 +973,11 @@ export class UsersService {
     if (dto.monthlyHourBudget !== undefined) data.monthlyHourBudget = dto.monthlyHourBudget;
     // Per-user Access Profile (modules / spaceScope / platforms / canContact / webScreens)
     if ((dto as any).enabledModules !== undefined) data.enabledModules = (dto as any).enabledModules;
+    // Contact directory + access control
+    if ((dto as any).contactable !== undefined) data.contactable = (dto as any).contactable;
+    if ((dto as any).contactScope !== undefined) data.contactScope = (dto as any).contactScope;
+    if ((dto as any).contactAllowedIds !== undefined) data.contactAllowedIds = (dto as any).contactAllowedIds;
+    if ((dto as any).allowRemote !== undefined) data.allowRemote = (dto as any).allowRemote;
 
     // Role/permission fields — only if role is provided
     if (dto.role !== undefined) {
@@ -1005,11 +1061,13 @@ export class UsersService {
    */
   async updateOwnProfile(
     userId: string,
-    dto: { firstName?: string; lastName?: string },
+    dto: { firstName?: string; lastName?: string; presence?: string | null },
   ) {
-    const data: { firstName?: string; lastName?: string } = {};
+    const data: { firstName?: string; lastName?: string; presence?: string | null } = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
     if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
+    // presence: a value sets the manual override; null clears it back to auto.
+    if (dto.presence !== undefined) data.presence = dto.presence;
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
@@ -1021,6 +1079,7 @@ export class UsersService {
         lastName: true,
         avatarUrl: true,
         role: true,
+        presence: true,
       },
     });
 

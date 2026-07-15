@@ -25,6 +25,7 @@ import {
   WorkspaceGrid,
   ActivityPanel,
   RecentTasks,
+  ManagementContacts,
   type RecentTask,
   type WorkspaceBoxProps,
   type PersonNodeProps,
@@ -51,6 +52,7 @@ function getEmployeeStatus(opts: {
   isOnBreak: boolean
   isLate: boolean // clocked in late based on schedule
   hasActiveTask: boolean
+  presence?: string | null // manual availability override
 }): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
   if (!opts.isClockedIn) {
     return { status: "off" }
@@ -61,10 +63,26 @@ function getEmployeeStatus(opts: {
   if (opts.isLate) {
     return { status: "late", tag: { text: "Late", variant: "late" } }
   }
+  // Manual presence override (hybrid): the worker's chosen status wins over the
+  // auto task-derived one.
+  if (opts.presence === "BUSY") {
+    return { status: "busy", tag: { text: "Busy", variant: "task" } }
+  }
+  if (opts.presence === "AWAY") {
+    return { status: "on", tag: { text: "Away", variant: "hrs" } }
+  }
+  if (opts.presence === "AVAILABLE") {
+    return { status: "on", tag: { text: "Available", variant: "hrs" } }
+  }
   if (opts.hasActiveTask) {
     return { status: "busy", tag: { text: "Working", variant: "task" } }
   }
   return { status: "on", tag: { text: "Available", variant: "hrs" } }
+}
+
+/** App-active within the last 3 minutes → show the green "online" ring. */
+function isOnline(lastActiveAt?: string | null): boolean {
+  return !!lastActiveAt && Date.now() - new Date(lastActiveAt).getTime() < 3 * 60 * 1000
 }
 
 /** Build a PersonNodeProps from an OrgMember */
@@ -78,6 +96,7 @@ function memberToPersonNode(
     initials: getInitials(member.firstName, member.lastName),
     color: getAvatarColor(member.id),
     status,
+    online: isOnline(member.lastActiveAt),
     imageUrl: member.avatarUrl || undefined,
     name: `${member.firstName} ${member.lastName?.[0] || ""}.`,
     tag,
@@ -386,6 +405,7 @@ export function ClientDashboard() {
           isOnBreak,
           isLate: false, // TODO: compare clock-in time vs schedule
           hasActiveTask,
+          presence: member.presence,
         })
 
         const node = memberToPersonNode(member, status, tag, activeTaskTitle)
@@ -472,6 +492,7 @@ export function ClientDashboard() {
         isOnBreak: onBreakUserIds.has(userId),
         isLate: false,
         hasActiveTask: true,
+        presence: member.presence,
       })
       onTaskPeople.push(memberToPersonNode(member, status, tag, task.title))
     }
@@ -576,6 +597,10 @@ export function ClientDashboard() {
           <h1 className="text-2xl font-semibold text-foreground mb-6">
             {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
           </h1>
+          {/* Reach management — visible before tasks */}
+          <div className="mb-6">
+            <ManagementContacts />
+          </div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
             <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
@@ -748,16 +773,21 @@ export function ClientDashboard() {
                 <WorkspaceGrid boxes={workspaceBoxes} autoExpandSingle />
               </section>
 
-              {/* My Tasks — always present */}
-              <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
-                  <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
-                </div>
-                <div className="rounded-2xl border border-border bg-card px-4 py-2">
-                  <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
-                </div>
-              </section>
+              {/* Right column: management contacts (top, always visible) + my tasks */}
+              <div className="space-y-6">
+                {/* Reach management — independent of space membership */}
+                <ManagementContacts />
+
+                <section>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
+                    <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-card px-4 py-2">
+                    <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
+                  </div>
+                </section>
+              </div>
             </div>
           </div>
         </div>

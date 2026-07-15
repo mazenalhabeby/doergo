@@ -21,6 +21,8 @@ export interface WorkerAvatarProps {
   imageUrl?: string
   hideDot?: boolean
   className?: string
+  /** App-active recently (last-seen) — shows a green "online" ring on the avatar. */
+  online?: boolean
 }
 
 const STATUS_STYLES: Record<WorkerStatus, { color: string; glow: string; ring: string }> = {
@@ -58,6 +60,7 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
   imageUrl,
   hideDot,
   className,
+  online,
 }: WorkerAvatarProps) {
   const st = STATUS_STYLES[status]
 
@@ -74,6 +77,9 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
           "text-[clamp(10px,1.6cqw,18px)]",
           "transition-all duration-300",
           "overflow-hidden",
+          // Green "online" ring (app-active recently) — sits around the avatar,
+          // distinct from the bottom-right attendance status dot.
+          online && "ring-2 ring-green-500 ring-offset-1 ring-offset-[hsl(var(--card))]",
         )}
         style={{ background: color }}
       >

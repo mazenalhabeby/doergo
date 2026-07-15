@@ -1,12 +1,18 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Clock, MapPin, CircleDot } from "lucide-react"
+import { toast } from "sonner"
+import { Clock, MapPin, CircleDot, LogIn, LogOut, Loader2, Home } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
+import { getBrowserPosition, distanceMeters, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
+import { Button } from "@/components/ui/button"
 import { hasAccessModule } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
+import type { TFunction } from "i18next"
+
+type ClockLocation = { id: string; name: string; lat?: number | null; lng?: number | null }
 
 /** Human-readable duration between two ISO timestamps (or to now). */
 function duration(fromIso?: string | null, toIso?: string | null): string {
@@ -28,9 +34,25 @@ function fmtTime(iso?: string | null): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
 }
 
+function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
+  switch (reason) {
+    case "denied":
+      return t("attendance.my.geo.denied", "Location permission denied. Allow location access in your browser to clock in.")
+    case "insecure":
+      return t("attendance.my.geo.insecure", "Clock-in requires a secure (HTTPS) connection.")
+    case "unsupported":
+      return t("attendance.my.geo.unsupported", "Your browser does not support location services.")
+    case "timeout":
+      return t("attendance.my.geo.timeout", "Timed out getting your location. Please try again.")
+    default:
+      return t("attendance.my.geo.unavailable", "Could not determine your location. Please try again.")
+  }
+}
+
 export default function MyAttendancePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const qc = useQueryClient()
   const canSee = !user || hasAccessModule(user, "clock")
 
   const { data: status } = useQuery({
@@ -46,6 +68,66 @@ export default function MyAttendancePage() {
     enabled: canSee,
   })
 
+  // Org work locations — needed to resolve which site the user is clocking in at.
+  const { data: locationsData } = useQuery({
+    queryKey: ["my-attendance-locations"],
+    queryFn: () => attendanceApi.getLocations(),
+    enabled: canSee,
+    staleTime: 5 * 60_000,
+  })
+
+  const entries: TimeEntry[] = (history as { data?: TimeEntry[] })?.data ?? []
+  const st = (status ?? {}) as Record<string, unknown>
+  const activeEntry = (st.currentEntry ?? st.activeEntry ?? st.entry) as TimeEntry | undefined
+  const clockedIn = Boolean(st.isClockedIn) || st.status === "CLOCKED_IN" || Boolean(activeEntry && !activeEntry.clockOutAt)
+  const locations = (locationsData ?? []) as ClockLocation[]
+
+  // Clock in/out. GPS is read from the browser (device location, VPN-proof); the
+  // backend re-checks the geofence and records whether the fix was within it.
+  const clock = useMutation({
+    mutationFn: async (mode: "out" | "onsite" | "remote") => {
+      const pos = await getBrowserPosition()
+      if (mode === "out") {
+        return attendanceApi.clockOut({ lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
+      }
+      if (mode === "remote") {
+        // No location — geofence-exempt; the backend captures a coarse place.
+        return attendanceApi.clockIn({ isRemote: true, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
+      }
+      const geoLocations = locations.filter(
+        (l): l is ClockLocation & { lat: number; lng: number } => typeof l.lat === "number" && typeof l.lng === "number",
+      )
+      if (geoLocations.length === 0) {
+        throw new Error(
+          t("attendance.my.noLocations", "No work location with GPS is set up. Ask your admin to add one before clocking in."),
+        )
+      }
+      // Clock in at the nearest configured site; the backend enforces the geofence.
+      let nearest = geoLocations[0]
+      let best = distanceMeters(pos, { lat: nearest.lat, lng: nearest.lng })
+      for (const l of geoLocations.slice(1)) {
+        const d = distanceMeters(pos, { lat: l.lat, lng: l.lng })
+        if (d < best) {
+          best = d
+          nearest = l
+        }
+      }
+      return attendanceApi.clockIn({ locationId: nearest.id, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
+    },
+    onSuccess: (_data, mode) => {
+      qc.invalidateQueries({ queryKey: ["my-attendance-status"] })
+      qc.invalidateQueries({ queryKey: ["my-attendance-history"] })
+      toast.success(mode === "out" ? t("attendance.my.clockedOutToast", "Clocked out") : t("attendance.my.clockedInToast", "Clocked in"))
+    },
+    onError: (err: unknown) => {
+      if (err instanceof GeolocationError) {
+        toast.error(geoErrorMessage(t, err.reason))
+      } else {
+        toast.error(err instanceof Error ? err.message : t("common.error", "Something went wrong"))
+      }
+    },
+  })
+
   if (!canSee) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-muted-foreground">
@@ -53,11 +135,6 @@ export default function MyAttendancePage() {
       </div>
     )
   }
-
-  const entries: TimeEntry[] = (history as { data?: TimeEntry[] })?.data ?? []
-  const st = (status ?? {}) as Record<string, unknown>
-  const activeEntry = (st.activeEntry ?? st.entry) as TimeEntry | undefined
-  const clockedIn = Boolean(st.isClockedIn) || st.status === "CLOCKED_IN" || (activeEntry && !activeEntry.clockOutAt)
 
   // Total hours this list (rough sum of completed entries)
   const totalMins = entries.reduce((acc, e) => {
@@ -67,6 +144,8 @@ export default function MyAttendancePage() {
   }, 0)
   const totalH = Math.floor(totalMins / 60)
   const totalM = Math.round(totalMins % 60)
+
+  const pending = clock.isPending
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
@@ -86,6 +165,44 @@ export default function MyAttendancePage() {
           {clockedIn && activeEntry?.clockInAt && (
             <p className="text-xs text-muted-foreground">{t("attendance.my.since", { time: fmtTime(activeEntry.clockInAt), duration: duration(activeEntry.clockInAt) })}</p>
           )}
+
+          {clockedIn ? (
+            <Button onClick={() => clock.mutate("out")} disabled={pending} variant="outline" className="mt-4 w-full">
+              {pending ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
+              ) : (
+                <><LogOut className="h-4 w-4" />{t("attendance.my.clockOut", "Clock Out")}</>
+              )}
+            </Button>
+          ) : (
+            <div className="mt-4 space-y-2">
+              <Button
+                onClick={() => clock.mutate("onsite")}
+                disabled={pending}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                {pending && clock.variables === "onsite" ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
+                ) : (
+                  <><LogIn className="h-4 w-4" />{t("attendance.my.clockIn", "Clock In")}</>
+                )}
+              </Button>
+              {user?.allowRemote && (
+                <Button onClick={() => clock.mutate("remote")} disabled={pending} variant="outline" className="w-full">
+                  {pending && clock.variables === "remote" ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
+                  ) : (
+                    <><Home className="h-4 w-4" />{t("attendance.my.clockInRemote", "Clock in remotely")}</>
+                  )}
+                </Button>
+              )}
+            </div>
+          )}
+          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+            {user?.allowRemote
+              ? t("attendance.my.gpsHintRemote", "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN.")
+              : t("attendance.my.gpsHint", "Uses your device location to verify you're on site. Works over VPN.")}
+          </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -109,11 +226,16 @@ export default function MyAttendancePage() {
               <div className="w-28 shrink-0 text-sm font-medium text-foreground">{fmtDate(e.clockInAt)}</div>
               <div className="flex-1 text-sm text-muted-foreground">
                 {fmtTime(e.clockInAt)} → {e.clockOutAt ? fmtTime(e.clockOutAt) : <span className="text-green-600">{t("attendance.my.active")}</span>}
-                {e.location?.name && (
+                {e.isRemote ? (
+                  <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Home className="h-3 w-3" />{t("attendance.my.remote", "Remote")}
+                    {e.clockInPlace ? ` · ${e.clockInPlace}` : ""}
+                  </span>
+                ) : e.location?.name ? (
                   <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3" />{e.location.name}
                   </span>
-                )}
+                ) : null}
               </div>
               <div className="shrink-0 text-sm font-semibold text-foreground">{duration(e.clockInAt, e.clockOutAt)}</div>
             </div>

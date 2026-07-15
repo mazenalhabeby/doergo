@@ -23,7 +23,7 @@ import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { useImagePicker } from '../../../src/hooks/useImagePicker';
-import { avatarApi } from '../../../src/lib/api';
+import { avatarApi, userApi } from '../../../src/lib/api';
 import {
   COLORS,
   SPACING,
@@ -32,7 +32,7 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../../../src/lib/constants';
-import { ConfirmSheet } from '../../../src/components';
+import { ConfirmSheet, ScreenContainer } from '../../../src/components';
 import {
   getRoleLabel,
   Role,
@@ -70,7 +70,21 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [savingPresence, setSavingPresence] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+
+  // Manual availability override (mirrors the web navbar toggle).
+  const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY' | null) => {
+    setSavingPresence(true);
+    try {
+      await userApi.setPresence(presence);
+      await refreshUser();
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('profile.status.failed', 'Could not update status'));
+    } finally {
+      setSavingPresence(false);
+    }
+  }, [refreshUser, toast, t]);
   const hasRefreshed = useRef(false);
   const lastFetchTimeRef = useRef(0);
 
@@ -186,6 +200,7 @@ export default function ProfileScreen() {
   };
 
   return (
+    <ScreenContainer width="content">
     <ScrollView
       style={[styles.container, { backgroundColor: colors.surface }]}
       contentContainerStyle={{ paddingBottom: insets.bottom + SPACING.xxxl }}
@@ -259,6 +274,39 @@ export default function ProfileScreen() {
             </View>
           );
         })()}
+      </View>
+
+      {/* ── Availability status ──────────────────────────────────────── */}
+      <View style={styles.section}>
+        <Text style={[styles.menuGroupLabel, { color: colors.textMuted }]}>{t('profile.status.title', 'Availability')}</Text>
+        <View style={[styles.statusRow, { backgroundColor: colors.card }]}>
+          {([
+            { value: 'AVAILABLE' as const, color: '#22c55e', label: t('profile.status.available', 'Available') },
+            { value: 'BUSY' as const, color: '#ef4444', label: t('profile.status.busy', 'Busy') },
+            { value: 'AWAY' as const, color: '#f59e0b', label: t('profile.status.away', 'Away') },
+            { value: null, color: colors.textMuted, label: t('profile.status.auto', 'Auto') },
+          ]).map((opt) => {
+            const active = (user?.presence ?? null) === opt.value;
+            return (
+              <TouchableOpacity
+                key={String(opt.value)}
+                style={[
+                  styles.statusPill,
+                  { borderColor: colors.border },
+                  active && { backgroundColor: colors.primaryLight, borderColor: opt.color },
+                ]}
+                onPress={() => handleSetPresence(opt.value)}
+                disabled={savingPresence}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.statusDot, { backgroundColor: opt.color }]} />
+                <Text style={[styles.statusPillText, { color: active ? colors.textPrimary : colors.textSecondary }]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* ── 2. Settings Menu ──────────────────────────────────────────── */}
@@ -409,6 +457,7 @@ export default function ProfileScreen() {
         icon="log-out-outline"
       />
     </ScrollView>
+    </ScreenContainer>
   );
 }
 
@@ -535,6 +584,33 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: SPACING.lg,
     marginTop: SPACING.xl,
+  },
+
+  // ── Availability status ──
+  statusRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusPillText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
   },
 
   // ── Menu ──

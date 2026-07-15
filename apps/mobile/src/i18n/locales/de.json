@@ -721,6 +721,14 @@
       "title": "Über",
       "tagline": "Disponieren · Verfolgen · Liefern",
       "description": "HBCField ist eine Plattform für Außendienstmanagement, die Teams dabei unterstützt, Aufgaben zu disponieren, Fortschritte in Echtzeit zu verfolgen und herausragenden Service zu liefern."
+    },
+    "status": {
+      "title": "Verfügbarkeit",
+      "available": "Verfügbar",
+      "busy": "Beschäftigt",
+      "away": "Abwesend",
+      "auto": "Auto",
+      "failed": "Status konnte nicht aktualisiert werden"
     }
   },
   "manage": {

@@ -31,6 +31,8 @@ export interface User {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  allowRemote?: boolean;
+  presence?: "AVAILABLE" | "BUSY" | "AWAY" | null;
   // Access Profile (mobile tabs / web screens) — array or object form.
   enabledModules: string[] | Record<string, unknown>;
   // Org FEATURE modules (sprints, checklists, tracking…) — drives hasModule().

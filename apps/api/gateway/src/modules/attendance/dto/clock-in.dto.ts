@@ -1,11 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean } from 'class-validator';
 
 export class ClockInDto {
-  @ApiProperty({ description: 'Location ID to clock in at' })
+  // Optional: not needed for a remote clock-in (no fixed site).
+  @ApiPropertyOptional({ description: 'Location ID to clock in at (omit for remote)' })
   @IsString()
-  @IsNotEmpty()
-  locationId: string;
+  @IsOptional()
+  locationId?: string;
 
   @ApiProperty({ description: 'Current latitude' })
   @IsNumber()
@@ -21,4 +22,9 @@ export class ClockInDto {
   @IsNumber()
   @IsOptional()
   accuracy?: number;
+
+  @ApiPropertyOptional({ description: 'Clock in remotely (WFH/anywhere), geofence-exempt' })
+  @IsBoolean()
+  @IsOptional()
+  isRemote?: boolean;
 }

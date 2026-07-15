@@ -8,6 +8,7 @@ import {
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { formatDistanceToNow } from "date-fns"
+import type { TFunction } from "i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
@@ -31,6 +32,18 @@ const evTaskTitle = (d: any): string => d?.task?.title ?? d?.title ?? ""
 const taskLink = (d: any): string | undefined => {
   const id = evTaskId(d)
   return id ? `/tasks/${id}` : undefined
+}
+
+// Attendance events carry { userId, timeEntry }. Pull a readable name (from the
+// included user) and where the shift happened (site name, or "Remote · city").
+const attendanceInfo = (d: any, remotePlace: string | null | undefined, t: TFunction) => {
+  const te = d?.timeEntry
+  const u = te?.user
+  const name = d?.userName || (u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : "")
+  const place = te?.isRemote
+    ? `${t("attendance.my.remote", "Remote")}${remotePlace ? ` · ${remotePlace}` : ""}`
+    : te?.location?.name || ""
+  return { name, place }
 }
 
 // ============================================================================
@@ -89,6 +102,9 @@ export function NotificationBell() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const router = useRouter()
+  // The management /attendance page is ADMIN/MANAGER only; everyone else has
+  // /my/attendance. Route attendance notifications to the page the viewer can open.
+  const attendanceHref = user?.role === "ADMIN" || user?.role === "MANAGER" ? "/attendance" : "/my/attendance"
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const idCounter = useRef(0)
@@ -150,16 +166,18 @@ export function NotificationBell() {
 
       // Attendance events
       subscribe("attendance.clockIn", (d: any) => {
-        add("clock_in", t("notifications.clockIn"), d.userName || "", "/attendance")
+        const { name, place } = attendanceInfo(d, d?.timeEntry?.clockInPlace, t)
+        add("clock_in", name || t("notifications.clockIn"), [t("notifications.clockInAction", "Clocked in"), place].filter(Boolean).join(" · "), attendanceHref)
       }),
       subscribe("attendance.clockOut", (d: any) => {
-        add("clock_out", t("notifications.clockOut"), d.userName || "", "/attendance")
+        const { name, place } = attendanceInfo(d, d?.timeEntry?.clockOutPlace ?? d?.timeEntry?.clockInPlace, t)
+        add("clock_out", name || t("notifications.clockOut"), [t("notifications.clockOutAction", "Clocked out"), place].filter(Boolean).join(" · "), attendanceHref)
       }),
       subscribe("attendance_auto_clock_out", (d: any) => {
-        add("auto_clock_out", t("notifications.autoClockOut"), d.userName || "", "/attendance")
+        add("auto_clock_out", t("notifications.autoClockOut"), d.userName || "", attendanceHref)
       }),
       subscribe("attendance_geofence_alert", (d: any) => {
-        add("geofence_alert", t("notifications.geofenceAlert"), d.userName || "", "/attendance")
+        add("geofence_alert", t("notifications.geofenceAlert"), d.userName || "", attendanceHref)
       }),
       subscribe("attendance_pending_approval", (d: any) => {
         add(
@@ -170,17 +188,17 @@ export function NotificationBell() {
         )
       }),
 
-      // Break events
+      // Break events — the name is nested under `break` in the payload.
       subscribe("break.started", (d: any) => {
-        add("break_started", t("notifications.breakStarted"), d.userName || "", "/attendance")
+        add("break_started", d.break?.userName || t("notifications.breakStarted"), t("notifications.breakStarted"), attendanceHref)
       }),
       subscribe("break.ended", (d: any) => {
-        add("break_ended", t("notifications.breakEnded"), d.userName || "", "/attendance")
+        add("break_ended", d.break?.userName || t("notifications.breakEnded"), t("notifications.breakEnded"), attendanceHref)
       }),
     ]
 
     return () => unsubs.forEach(fn => fn())
-  }, [isConnected, subscribe, add, t])
+  }, [isConnected, subscribe, add, t, attendanceHref])
 
   // ── Actions ────────────────────────────────────────────────────────
   const unreadCount = notifications.filter(n => !n.read).length
@@ -246,8 +264,8 @@ export function NotificationBell() {
                   key={notif.id}
                   onClick={() => handleClick(notif)}
                   className={cn(
-                    "w-full flex gap-3 px-4 py-3 text-left transition-colors hover:bg-muted border-b border-border last:border-0",
-                    !notif.read && "bg-blue-50/40"
+                    "w-full flex gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60 border-b border-border last:border-0",
+                    !notif.read && "bg-primary/5"
                   )}
                 >
                   <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", config.bg)}>
@@ -257,8 +275,8 @@ export function NotificationBell() {
                     <p className={cn("text-sm truncate", notif.read ? "text-muted-foreground" : "text-foreground font-medium")}>
                       {notif.title}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">{notif.message}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
+                    {notif.message && <p className="text-xs text-foreground/70 truncate">{notif.message}</p>}
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
                       {formatDistanceToNow(notif.createdAt, { addSuffix: true })}
                     </p>
                   </div>

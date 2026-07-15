@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { SheetHeader } from '../../../src/components';
+import { SheetHeader, ScreenContainer } from '../../../src/components';
 import { useToast } from '../../../src/contexts/toast-context';
 import { passwordApi, accountApi } from '../../../src/lib/api';
 import {
@@ -112,6 +112,7 @@ export default function AccountScreen() {
       style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <ScreenContainer width="content">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <SheetHeader />
         {/* Account Info */}
@@ -279,6 +280,7 @@ export default function AccountScreen() {
           </View>
         </View>
       </ScrollView>
+      </ScreenContainer>
     </KeyboardAvoidingView>
   );
 }

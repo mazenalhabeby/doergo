@@ -22,7 +22,7 @@ import {
   type CompanyLocation,
   type BreakStatus,
 } from '../../lib/api';
-import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet } from '../../components';
+import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../components';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
@@ -249,6 +249,7 @@ export function FullTimeHome() {
 
   return (
     <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>
+      <ScreenContainer width="content">
       <ScrollView
         style={sharedStyles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -434,6 +435,7 @@ export function FullTimeHome() {
         {/* Bottom spacing */}
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
+      </ScreenContainer>
 
       {/* Location Selection Bottom Sheet */}
       <LocationPickerSheet

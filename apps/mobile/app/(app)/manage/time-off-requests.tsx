@@ -14,7 +14,7 @@ import { FilterChip } from '../../../src/components/filter-chip';
 import {
   COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS,
 } from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet } from '../../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
 import { getTimeOffStatusStyle } from '../../../src/lib/styles';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
@@ -174,20 +174,22 @@ export default function TimeOffRequestsScreen() {
           <FilterChip key={f} label={t(`manage.timeOffRequestsScreen.filters.${f.toLowerCase()}`)} active={filter === f} onPress={() => setFilter(f)} />
         ))}
       </View>
-      <FlatList
-        data={filtered}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={s.list}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchRequests(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Ionicons name="calendar-outline" size={40} color={colors.textMuted} />
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>{filter !== 'ALL' ? t('manage.timeOffRequestsScreen.noRequests', { filter: t(`manage.timeOffRequestsScreen.filters.${filter.toLowerCase()}`) }) : t('manage.timeOffRequestsScreen.noRequestsAll')}</Text>
-          </View>
-        }
-      />
+      <ScreenContainer width="content">
+        <FlatList
+          data={filtered}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchRequests(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Ionicons name="calendar-outline" size={40} color={colors.textMuted} />
+              <Text style={[s.emptyText, { color: colors.textMuted }]}>{filter !== 'ALL' ? t('manage.timeOffRequestsScreen.noRequests', { filter: t(`manage.timeOffRequestsScreen.filters.${filter.toLowerCase()}`) }) : t('manage.timeOffRequestsScreen.noRequestsAll')}</Text>
+            </View>
+          }
+        />
+      </ScreenContainer>
 
       <ConfirmSheet
         visible={!!rejectTarget}

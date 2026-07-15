@@ -7,6 +7,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { teamApi, type Colleague } from '../../../src/lib/api';
 import { Avatar } from '../../../src/components/home/workspace/avatar';
 import { getInitials } from '../../../src/components/home/workspace/helpers';
+import { ScreenContainer } from '../../../src/components';
 import { COLORS } from '../../../src/lib/constants';
 
 export default function TeamScreen() {
@@ -38,6 +39,7 @@ export default function TeamScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <ScreenContainer width="content">
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
@@ -72,6 +74,7 @@ export default function TeamScreen() {
           ))
         )}
       </ScrollView>
+      </ScreenContainer>
     </View>
   );
 }

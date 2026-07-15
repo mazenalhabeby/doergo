@@ -1,5 +1,6 @@
 export { AnimatedLogo } from './animated-logo';
 export type { AnimatedLogoProps } from './animated-logo';
+export { ScreenContainer, centeredContent } from './screen-container';
 export { FieldArrowIcon } from './field-arrow-icon';
 export { AnimatedSplash } from './animated-splash';
 export { TokenMonitor } from './token-monitor';

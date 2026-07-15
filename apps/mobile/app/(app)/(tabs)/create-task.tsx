@@ -17,7 +17,7 @@ import { router } from 'expo-router';
 import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, locationsApi, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
-import { TechnicianPicker } from '../../../src/components';
+import { TechnicianPicker, ScreenContainer } from '../../../src/components';
 import { LocationSearchPicker } from '../../../src/components/location-search-picker';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -139,6 +139,7 @@ export default function CreateTaskScreen() {
       style={[styles.container, { backgroundColor: colors.surface }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <ScreenContainer width="content">
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -377,6 +378,7 @@ export default function CreateTaskScreen() {
 
         <View style={{ height: SPACING.xxxl }} />
       </ScrollView>
+      </ScreenContainer>
 
       {/* Technician Picker Modal - only for users with assign permission */}
       {canAssign && (

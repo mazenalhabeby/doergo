@@ -10,7 +10,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { joinRequestsApi, type JoinRequest } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet } from '../../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
 
 export default function JoinRequestsScreen() {
   const { colors } = useTheme();
@@ -136,21 +136,23 @@ export default function JoinRequestsScreen() {
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
-      <FlatList
-        data={requests}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={s.list}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchRequests(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Ionicons name="checkmark-done-circle-outline" size={48} color={colors.textMuted} />
-            <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>{t('manage.joinRequestsScreen.allCaughtUp')}</Text>
-            <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.joinRequestsScreen.noPendingRequests')}</Text>
-          </View>
-        }
-      />
+      <ScreenContainer width="content">
+        <FlatList
+          data={requests}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchRequests(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Ionicons name="checkmark-done-circle-outline" size={48} color={colors.textMuted} />
+              <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>{t('manage.joinRequestsScreen.allCaughtUp')}</Text>
+              <Text style={[s.emptyText, { color: colors.textMuted }]}>{t('manage.joinRequestsScreen.noPendingRequests')}</Text>
+            </View>
+          }
+        />
+      </ScreenContainer>
 
       <ConfirmSheet
         visible={!!approveTarget}

@@ -6,7 +6,8 @@
       "app": "App",
       "signIn": "Sign in",
       "industries": "Industries",
-      "pricing": "Pricing"
+      "pricing": "Pricing",
+      "toggleTheme": "Toggle theme"
     },
     "hero": {
       "line1": "The field,",
@@ -751,6 +752,9 @@
       "noTasks": "No tasks yet",
       "willAppear": "Tasks will appear here once created",
       "viewAllTasks": "View all tasks"
+    },
+    "management": {
+      "title": "Management"
     }
   },
   "tasks": {
@@ -1808,7 +1812,19 @@
       "removedFrom": "Removed from {{name}}",
       "failedToRemove": "Failed to remove",
       "assignedTo": "Assigned to {{name}}",
-      "failedToAssign": "Failed to assign"
+      "failedToAssign": "Failed to assign",
+      "sectionContact": "Contact access",
+      "contactable": "Contactable",
+      "contactableHint": "Appears in the contacts directory so teammates can reach them. Admins are always contactable.",
+      "canContact": "Can contact",
+      "contactNone": "No one",
+      "contactAll": "All contacts",
+      "contactSelected": "Specific contacts…",
+      "allowedContacts": "Allowed contacts",
+      "noContacts": "No contacts available",
+      "contact": "Contact",
+      "allowRemote": "Allow remote clock-in",
+      "allowRemoteHint": "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured."
     },
     "detail": {
       "backToTeam": "Back to Team",
@@ -2170,7 +2186,9 @@
     "geofenceAlert": "Geofence alert",
     "pendingApproval": "Time entry needs approval",
     "breakStarted": "Break started",
-    "breakEnded": "Break ended"
+    "breakEnded": "Break ended",
+    "clockInAction": "Clocked in",
+    "clockOutAction": "Clocked out"
   },
   "landing": {
     "nav": {
@@ -2484,7 +2502,7 @@
     "my": {
       "noAccess": "You don't have access to Attendance.",
       "title": "Attendance",
-      "subtitle": "Your clock-in history and hours. Clock in/out happens on the mobile app.",
+      "subtitle": "Your clock-in history and hours. Clock in and out below, or on the mobile app.",
       "currentStatus": "Current status",
       "clockedIn": "Clocked in",
       "clockedOut": "Clocked out",
@@ -2492,7 +2510,23 @@
       "hoursLast": "Hours (last {{count}})",
       "recentEntries": "Recent entries",
       "noRecords": "No attendance records yet.",
-      "active": "active"
+      "active": "active",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "locating": "Getting your location…",
+      "clockedInToast": "Clocked in",
+      "clockedOutToast": "Clocked out",
+      "noLocations": "No work location with GPS is set up. Ask your admin to add one before clocking in.",
+      "gpsHint": "Uses your device location to verify you're on site. Works over VPN.",
+      "geo": {
+        "denied": "Location permission denied. Allow location access in your browser to clock in.",
+        "insecure": "Clock-in requires a secure (HTTPS) connection.",
+        "unsupported": "Your browser does not support location services.",
+        "timeout": "Timed out getting your location. Please try again.",
+        "unavailable": "Could not determine your location. Please try again."
+      },
+      "remote": "Remote",
+      "clockInOnsite": "On-site"
     },
     "management": {
       "title": "Attendance Management",
@@ -2797,9 +2831,25 @@
       }
     },
     "contact": {
-      "title": "Can contact colleagues",
-      "desc": "Message & call teammates in their visible spaces."
-    }
+      "title": "Contact teammates",
+      "desc": "Message & call coworkers in shared spaces."
+    },
+    "contactAccess": "Contact access",
+    "contactable": {
+      "title": "Contactable",
+      "desc": "Appears in the contacts directory so teammates can reach them. Admins are always contactable."
+    },
+    "canContact": {
+      "title": "Contact management",
+      "desc": "Which admins/contacts this member may reach. Secure by default."
+    },
+    "contactScope": {
+      "none": "No one",
+      "all": "All contacts",
+      "selected": "Specific contacts…"
+    },
+    "noContacts": "No contacts available",
+    "contactLabel": "Contact"
   },
   "customFields": {
     "fieldTypes": {
@@ -3617,5 +3667,19 @@
     "title": "Set up your first space",
     "subtitle": "A space is where your tasks live — a site, a team, or a project. You can add more anytime.",
     "createAndContinue": "Create space & continue"
+  },
+  "presence": {
+    "title": "Availability",
+    "available": "Available",
+    "busy": "Busy",
+    "away": "Away",
+    "auto": "Auto",
+    "autoDesc": "Auto (from task)",
+    "online": "Online",
+    "activeAgo": "Active {{time}} ago"
+  },
+  "roles": {
+    "admin": "Admin",
+    "manager": "Manager"
   }
 }
