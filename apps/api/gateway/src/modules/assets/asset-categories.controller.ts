@@ -50,6 +50,7 @@ export class AssetCategoriesController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -61,6 +62,7 @@ export class AssetCategoriesController {
     return this.assetsService.findAllCategories({
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -79,6 +81,7 @@ export class AssetCategoriesController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -92,6 +95,7 @@ export class AssetCategoriesController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -114,6 +118,7 @@ export class AssetCategoriesController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -130,6 +135,7 @@ export class AssetCategoriesController {
       categoryId,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -159,6 +165,7 @@ export class AssetTypesController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -172,6 +179,7 @@ export class AssetTypesController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }

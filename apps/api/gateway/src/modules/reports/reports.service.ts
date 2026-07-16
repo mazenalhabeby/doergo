@@ -28,6 +28,7 @@ export class ReportsService extends BaseGatewayService {
     taskId: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     this.logger.debug(`Getting report for task ${data.taskId} via direct microservice call`);
@@ -43,6 +44,7 @@ export class ReportsService extends BaseGatewayService {
     limit?: number;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     this.logger.debug(`Getting reports for asset ${data.assetId} via direct microservice call`);

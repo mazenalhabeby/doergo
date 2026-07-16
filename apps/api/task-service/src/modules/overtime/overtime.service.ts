@@ -145,7 +145,7 @@ export class OvertimeService {
     const leaders = await this.prisma.user.findMany({
       where: {
         organizationId: data.organizationId,
-        role: { in: ['ADMIN', 'MANAGER'] },
+        OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
         isActive: true,
       },
       select: { id: true },
@@ -207,7 +207,7 @@ export class OvertimeService {
       where: {
         id: data.approverId,
         organizationId: data.organizationId,
-        role: { in: ['ADMIN', 'MANAGER'] },
+        OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
         isActive: true,
       },
     });

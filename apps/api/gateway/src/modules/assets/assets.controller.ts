@@ -43,6 +43,7 @@ export class AssetsController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -55,6 +56,7 @@ export class AssetsController {
       ...query,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -68,6 +70,7 @@ export class AssetsController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -86,6 +89,7 @@ export class AssetsController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -99,6 +103,7 @@ export class AssetsController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -121,6 +126,7 @@ export class AssetsController {
       limit,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }

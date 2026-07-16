@@ -1824,7 +1824,11 @@
       "noContacts": "No contacts available",
       "contact": "Contact",
       "allowRemote": "Allow remote clock-in",
-      "allowRemoteHint": "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured."
+      "allowRemoteHint": "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured.",
+      "subRole": "Sub-role / title",
+      "showInManagement": "Show in Management",
+      "showInManagementHint": "Lists this person (with their sub-role) so teammates can reach them from anywhere.",
+      "showInManagementAdmin": "Admins always appear in the Management directory."
     },
     "detail": {
       "backToTeam": "Back to Team",

@@ -194,7 +194,7 @@ export class ReportsService {
     }
 
     // Authorization check
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const report = await this.prisma.serviceReport.findUnique({
       where: { taskId: data.taskId },
@@ -619,31 +619,25 @@ export class ReportsService {
     userId: string,
     userRole: string,
     organizationId: string,
+    canViewAllTasks?: boolean,
   ) {
-    switch (userRole) {
-      case Role.ADMIN:
-        // CLIENT can only access their own tasks
-        if (task.createdById !== userId || task.organizationId !== organizationId) {
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-
-      case Role.MANAGER:
-        // DISPATCHER can access all tasks in their org
-        if (task.organizationId !== organizationId) {
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-
-      case Role.EMPLOYEE:
-        // Employee can only access tasks in their org that are assigned to them
-        if (task.organizationId !== organizationId || task.assignedToId !== userId) {
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-
-      default:
+    // Admin: only their own created tasks (in their org).
+    if (userRole === Role.ADMIN) {
+      if (task.createdById !== userId || task.organizationId !== organizationId) {
         throw new ForbiddenException('Access denied');
+      }
+      return;
+    }
+    // "View all tasks" grant → any task in their org.
+    if (canViewAllTasks) {
+      if (task.organizationId !== organizationId) {
+        throw new ForbiddenException('Access denied');
+      }
+      return;
+    }
+    // Otherwise: only tasks in their org assigned to them.
+    if (task.organizationId !== organizationId || task.assignedToId !== userId) {
+      throw new ForbiddenException('Access denied');
     }
   }
 }

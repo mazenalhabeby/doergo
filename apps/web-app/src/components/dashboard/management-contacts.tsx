@@ -60,7 +60,12 @@ export function ManagementContacts() {
           const p = m.presence ? PRESENCE[m.presence] : null
           const online = isOnline(m.lastActiveAt)
           const name = `${m.firstName} ${m.lastName ?? ""}`.trim()
-          const roleLabel = m.role === "ADMIN" ? t("roles.admin", "Admin") : t("roles.manager", "Manager")
+          // Prefer the member's sub-role/title; fall back to the permission role.
+          const roleLabel = m.position?.trim()
+            ? m.position
+            : m.role === "ADMIN"
+              ? t("roles.admin", "Admin")
+              : t("roles.manager", "Manager")
           // Dot: manual presence wins; otherwise green when recently active, grey when not.
           const dotClass = p ? p.color : online ? "bg-green-500" : "bg-muted-foreground/40"
           // Status text: manual presence label, else the online/last-seen label.

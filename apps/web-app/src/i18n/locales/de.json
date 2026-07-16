@@ -1824,7 +1824,11 @@
       "noContacts": "Keine Kontakte verfügbar",
       "contact": "Kontakt",
       "allowRemote": "Remote-Einstempeln erlauben",
-      "allowRemoteHint": "Kann von überall einstempeln (Homeoffice/unterwegs) ohne Standort-Geofence. Der Standort wird trotzdem erfasst."
+      "allowRemoteHint": "Kann von überall einstempeln (Homeoffice/unterwegs) ohne Standort-Geofence. Der Standort wird trotzdem erfasst.",
+      "subRole": "Unterrolle / Titel",
+      "showInManagement": "In Management anzeigen",
+      "showInManagementHint": "Zeigt diese Person (mit ihrer Unterrolle) an, damit Teammitglieder sie von überall erreichen können.",
+      "showInManagementAdmin": "Admins erscheinen immer im Management-Verzeichnis."
     },
     "detail": {
       "backToTeam": "Zurück zum Team",

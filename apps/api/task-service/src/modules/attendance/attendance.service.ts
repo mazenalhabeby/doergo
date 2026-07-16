@@ -1090,7 +1090,7 @@ export class AttendanceService {
       const managers = await this.prisma.user.findMany({
         where: {
           organizationId: data.organizationId,
-          role: { in: ['ADMIN', 'MANAGER'] },
+          OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
           isActive: true,
         },
         select: { id: true, email: true },
@@ -1143,7 +1143,7 @@ export class AttendanceService {
       const managers = await this.prisma.user.findMany({
         where: {
           organizationId: data.organizationId,
-          role: { in: ['ADMIN', 'MANAGER'] },
+          OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
           isActive: true,
         },
         select: { id: true },

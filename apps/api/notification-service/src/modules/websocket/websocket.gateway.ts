@@ -240,8 +240,8 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     const token = authHeader.slice(7);
     try {
       const decoded: any = jwt.verify(token, this.jwtSecret);
-      // Only ADMIN and MANAGER roles can view stats
-      return decoded.role === 'ADMIN' || decoded.role === 'MANAGER';
+      // Only ADMIN can view socket stats (the token carries no fine-grained flags).
+      return decoded.role === 'ADMIN';
     } catch {
       return false;
     }

@@ -204,6 +204,10 @@ export function EditMemberDialog({
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
   const [role, setRole] = useState("")
   const [allowRemote, setAllowRemote] = useState(false)
+  // "Show in Management" — surfaces this member (with their sub-role/title) in the
+  // Management directory teammates use to reach leadership. Decoupled from the
+  // permission role: an EMPLOYEE can be shown without being made an admin/manager.
+  const [contactable, setContactable] = useState(false)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -217,6 +221,7 @@ export function EditMemberDialog({
     setMonthlyHourBudget(member.monthlyHourBudget ?? "")
     setRole(member.role)
     setAllowRemote(member.allowRemote ?? false)
+    setContactable(member.contactable ?? false)
     setScheduleRows(createDefaultSchedule())
     setTempPassword(null)
     setCopied(false)
@@ -342,6 +347,7 @@ export function EditMemberDialog({
           scheduleType === "FLEXIBLE" && monthlyHourBudget !== "" ? Number(monthlyHourBudget) : undefined,
         role,
         allowRemote,
+        contactable,
       },
     })
   }
@@ -393,9 +399,29 @@ export function EditMemberDialog({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.position")}</Label>
-            <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
+          {/* Sub-role / title — a free-text designation (e.g. "Logistics Manager",
+              "Team Lead") independent of the permission role, plus an explicit
+              choice to surface this person in the Management directory. */}
+          <div className="space-y-2.5 rounded-lg border border-border/60 p-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.subRole", "Sub-role / title")}</Label>
+              <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2.5">
+              <div className="min-w-0">
+                <Label className="text-xs font-medium text-foreground">{t("members.memberEditor.showInManagement", "Show in Management")}</Label>
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  {role === "ADMIN"
+                    ? t("members.memberEditor.showInManagementAdmin", "Admins always appear in the Management directory.")
+                    : t("members.memberEditor.showInManagementHint", "Lists this person (with their sub-role) so teammates can reach them from anywhere.")}
+                </p>
+              </div>
+              <Switch
+                checked={role === "ADMIN" ? true : contactable}
+                disabled={role === "ADMIN"}
+                onCheckedChange={setContactable}
+              />
+            </div>
           </div>
 
           <EditSection label={t("members.memberEditor.sectionWorkSchedule")} />

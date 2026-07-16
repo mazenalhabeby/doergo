@@ -229,6 +229,7 @@ export class TasksService {
       includeNoDueDate,
       userId,
       userRole,
+      canViewAllTasks,
       organizationId,
       spaceId,
     } = query;
@@ -246,36 +247,18 @@ export class TasksService {
     // Priority filter
     if (priority) where.priority = priority;
 
-    // Role-based filtering
-    // Normalize legacy roles
-    const normalizedRole = userRole === 'CLIENT' ? Role.ADMIN
-      : userRole === 'DISPATCHER' ? Role.MANAGER
-      : userRole === 'TECHNICIAN' ? Role.EMPLOYEE
-      : userRole;
-
-    switch (normalizedRole) {
-      case Role.ADMIN:
-        // Admin sees all tasks in their org
-        where.organizationId = organizationId;
-        break;
-
-      case Role.MANAGER:
-        // Manager sees all tasks in their org
-        where.organizationId = organizationId;
-        break;
-
-      case Role.EMPLOYEE:
-        // Employee sees tasks assigned to them — as the LEAD (legacy
-        // assignedToId, incl. seed data) OR as any multi-assignee MEMBER.
-        // Wrapped in AND so it composes with other OR filters below.
-        where.AND = [
-          ...(where.AND || []),
-          { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
-        ];
-        break;
-
-      default:
-        return paginated([], { page: safePage, limit: safeLimit, total: 0 });
+    // Visibility (new access-flag model): ADMIN or anyone granted "view all
+    // tasks" sees the whole org; everyone else sees only tasks they're on.
+    if (userRole === Role.ADMIN || canViewAllTasks) {
+      where.organizationId = organizationId;
+    } else {
+      // Sees tasks assigned to them — as the LEAD (legacy assignedToId, incl.
+      // seed data) OR as any multi-assignee MEMBER. Wrapped in AND so it
+      // composes with other OR filters below.
+      where.AND = [
+        ...(where.AND || []),
+        { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
+      ];
     }
 
     // Space filter — verify it belongs to the user's org before applying
@@ -434,7 +417,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     // Derive task-time anchors from the status history (no schema change), so the
     // timer is DB-backed and identical on web, mobile and the admin view:
@@ -688,6 +671,7 @@ export class TasksService {
     status: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
     reason?: string;
     lat?: number;
@@ -722,31 +706,23 @@ export class TasksService {
         throw new ForbiddenException('You can only update execution status of tasks assigned to you');
       }
     } else if (isCancelation) {
-      // Cancellation authorization
-      switch (data.userRole) {
-        case Role.ADMIN:
-          if (task.createdById !== data.userId && task.organizationId !== data.organizationId) {
-            throw new ForbiddenException('You can only cancel tasks in your organization');
-          }
-          break;
-        case Role.MANAGER:
-          if (task.organizationId !== data.organizationId) {
-            throw new ForbiddenException('You can only cancel tasks in your organization');
-          }
-          break;
-        case Role.EMPLOYEE:
-          // Technicians (non-assigned) cannot cancel
-          if (!isAssignedUser) {
-            throw new ForbiddenException('You can only update status of tasks assigned to you');
-          }
-          throw new ForbiddenException('Technicians cannot cancel tasks. Contact the dispatcher.');
-        default:
-          // For any other role, check if they are the assigned user
-          if (isAssignedUser) {
-            // Assigned users cannot cancel their own tasks
-            throw new ForbiddenException('You cannot cancel tasks assigned to you. Contact a dispatcher.');
-          }
-          throw new ForbiddenException('Access denied');
+      // Cancellation authorization (new access-flag model).
+      if (data.userRole === Role.ADMIN) {
+        if (task.createdById !== data.userId && task.organizationId !== data.organizationId) {
+          throw new ForbiddenException('You can only cancel tasks in your organization');
+        }
+      } else if (data.canViewAllTasks) {
+        // "View all tasks" grant → can cancel any task in their org.
+        if (task.organizationId !== data.organizationId) {
+          throw new ForbiddenException('You can only cancel tasks in your organization');
+        }
+      } else {
+        // No org-wide authority: cannot cancel (assigned users execute, they
+        // don't cancel — they contact someone who can).
+        if (!isAssignedUser) {
+          throw new ForbiddenException('You can only update status of tasks assigned to you');
+        }
+        throw new ForbiddenException('You cannot cancel tasks assigned to you. Contact an administrator.');
       }
     } else {
       throw new ForbiddenException('Access denied');
@@ -956,7 +932,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const events = await this.prisma.taskEvent.findMany({
       where: { taskId: data.id },
@@ -978,6 +954,7 @@ export class TasksService {
     userId: string,
     userRole: string,
     organizationId: string,
+    canViewAllTasks?: boolean,
   ) {
     // Any user assigned to the task can access it (regardless of role). This
     // covers BOTH the legacy single-assignee field (LEAD, mirrored into
@@ -996,32 +973,27 @@ export class TasksService {
       if (membership) return;
     }
 
-    switch (userRole) {
-      case Role.ADMIN:
-        // ADMIN can access tasks they created or in their org
-        if (task.createdById !== userId && task.organizationId !== organizationId) {
-          this.logger.warn(`Authorization denied: ADMIN access to task outside org`, { userId, taskId: task.id });
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-
-      case Role.MANAGER:
-        // DISPATCHER can access all tasks in their org
-        if (task.organizationId !== organizationId) {
-          this.logger.warn(`Authorization denied: DISPATCHER access to task outside org`, { userId, taskId: task.id });
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-
-      case Role.EMPLOYEE:
-        // TECHNICIAN can only access tasks assigned to them (already checked above)
-        this.logger.warn(`Authorization denied: TECHNICIAN access to unassigned task`, { userId, taskId: task.id });
+    // ADMIN can access tasks they created or anything in their org.
+    if (userRole === Role.ADMIN) {
+      if (task.createdById !== userId && task.organizationId !== organizationId) {
+        this.logger.warn(`Authorization denied: ADMIN access to task outside org`, { userId, taskId: task.id });
         throw new ForbiddenException('Access denied');
-
-      default:
-        this.logger.warn(`Authorization denied: unknown role`, { userId, userRole, taskId: task.id });
-        throw new ForbiddenException('Access denied');
+      }
+      return;
     }
+
+    // "View all tasks" grant → access to any task in their org.
+    if (canViewAllTasks) {
+      if (task.organizationId !== organizationId) {
+        this.logger.warn(`Authorization denied: view-all access to task outside org`, { userId, taskId: task.id });
+        throw new ForbiddenException('Access denied');
+      }
+      return;
+    }
+
+    // Otherwise: only tasks assigned to them (already checked above) → deny.
+    this.logger.warn(`Authorization denied: access to unassigned task`, { userId, taskId: task.id });
+    throw new ForbiddenException('Access denied');
   }
 
   /**
@@ -1044,7 +1016,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const comment = await this.prisma.comment.create({
       data: {
@@ -1091,7 +1063,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const comments = await this.prisma.comment.findMany({
       where: { taskId: data.taskId },
@@ -1251,7 +1223,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     // Determine position: use provided or append at end
     let position = data.position;
@@ -1296,7 +1268,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const existing = await this.prisma.checklistItem.findFirst({
       where: { id: data.itemId, taskId: data.taskId },
@@ -1337,7 +1309,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const existing = await this.prisma.checklistItem.findFirst({
       where: { id: data.itemId, taskId: data.taskId },
@@ -1368,7 +1340,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     // Update positions in a transaction
     await this.prisma.$transaction(
@@ -1400,7 +1372,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const assignees = await this.prisma.taskAssignee.findMany({
       where: { taskId: data.taskId },
@@ -1424,7 +1396,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const items = await this.prisma.checklistItem.findMany({
       where: { taskId: data.taskId },
@@ -1441,10 +1413,11 @@ export class TasksService {
   async getStatusCounts(query: {
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
     spaceId?: string;
   }) {
-    const { userId, userRole, organizationId, spaceId } = query;
+    const { userId, userRole, canViewAllTasks, organizationId, spaceId } = query;
 
     if (!userRole) {
       return success({});
@@ -1464,19 +1437,15 @@ export class TasksService {
     // Build where clause based on role (same logic as findAll)
     const where: any = {};
 
-    switch (userRole) {
-      case Role.ADMIN:
-        where.organizationId = organizationId;
-        where.createdById = userId;
-        break;
-
-      case Role.MANAGER:
-        where.organizationId = organizationId;
-        break;
-
-      case Role.EMPLOYEE:
-        where.assignedToId = userId;
-        break;
+    if (userRole === Role.ADMIN) {
+      // Admin dashboard widget: counts of tasks they created in their org.
+      where.organizationId = organizationId;
+      where.createdById = userId;
+    } else if (canViewAllTasks) {
+      // "View all tasks" grant → org-wide counts.
+      where.organizationId = organizationId;
+    } else {
+      where.assignedToId = userId;
     }
 
     // Space filter — verify it belongs to the user's org before applying
@@ -1554,6 +1523,7 @@ export class TasksService {
     taskId: string;
     userId: string;
     userRole: string;
+    canAssignTasks?: boolean;
     organizationId: string;
   }) {
     // First verify task exists and user has access
@@ -1565,9 +1535,9 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    // Authorization: Only DISPATCHER or CLIENT can see suggested technicians
-    if (data.userRole !== Role.MANAGER && data.userRole !== Role.ADMIN) {
-      throw new ForbiddenException('Only dispatchers and clients can view suggested technicians');
+    // Authorization: admins and members granted "assign tasks" can see suggestions.
+    if (data.userRole !== Role.ADMIN && !data.canAssignTasks) {
+      throw new ForbiddenException('You do not have permission to view suggested workers');
     }
 
     if (task.organizationId !== data.organizationId) {
@@ -1940,7 +1910,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const subtasks = await this.prisma.task.findMany({
       where: { parentId: data.taskId },

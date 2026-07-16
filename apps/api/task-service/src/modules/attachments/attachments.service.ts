@@ -60,7 +60,7 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data.uploadedById, data.userRole || '', data.organizationId);
+    this.checkTaskAccess(task, data.uploadedById, data.userRole || '', data.organizationId, (data as any).canViewAllTasks);
 
     // The confirmed URL must be the presigned object for THIS task — never an
     // arbitrary client-supplied URL (would be stored-XSS/phishing in the gallery).
@@ -113,7 +113,7 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const attachments = await this.prisma.attachment.findMany({
       where: { taskId: data.taskId },
@@ -195,7 +195,7 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId);
+    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     // Validate file type format and allowed types
     if (!data.fileType || !/^[a-z]+\/[a-z0-9\-\.+]+$/i.test(data.fileType)) {
@@ -294,25 +294,18 @@ export class AttachmentsService {
     userId: string,
     userRole: string,
     organizationId: string,
+    canViewAllTasks?: boolean,
   ) {
-    switch (userRole) {
-      case Role.ADMIN:
-        if (task.organizationId !== organizationId) {
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-      case Role.MANAGER:
-        if (task.organizationId !== organizationId) {
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-      case Role.EMPLOYEE:
-        if (task.organizationId !== organizationId || task.assignedToId !== userId) {
-          throw new ForbiddenException('Access denied');
-        }
-        break;
-      default:
+    // Admin or "view all tasks" grant → any task in their org.
+    if (userRole === Role.ADMIN || canViewAllTasks) {
+      if (task.organizationId !== organizationId) {
         throw new ForbiddenException('Access denied');
+      }
+      return;
+    }
+    // Otherwise: only tasks in their org assigned to them.
+    if (task.organizationId !== organizationId || task.assignedToId !== userId) {
+      throw new ForbiddenException('Access denied');
     }
   }
 }

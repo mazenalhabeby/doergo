@@ -47,6 +47,7 @@ export class ReportsController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -62,6 +63,7 @@ export class ReportsController {
       taskId,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -84,6 +86,7 @@ export class ReportsController {
       limit,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -104,6 +107,7 @@ export class ReportsController {
       ...dto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -125,6 +129,7 @@ export class ReportsController {
       fileType: body.fileType,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -149,6 +154,7 @@ export class ReportsController {
       ...body,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -168,6 +174,7 @@ export class ReportsController {
       attachmentId,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -194,6 +201,7 @@ export class ReportsController {
       ...body,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -221,6 +229,7 @@ export class ReportsController {
       ...body,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -240,6 +249,7 @@ export class ReportsController {
       partId,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }

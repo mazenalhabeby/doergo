@@ -110,6 +110,8 @@ export class TasksController {
       limit,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -122,6 +124,8 @@ export class TasksController {
     return this.tasksService.getStatusCounts({
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       ...(spaceId && { spaceId }),
     });
@@ -136,6 +140,8 @@ export class TasksController {
       taskId: id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -148,6 +154,8 @@ export class TasksController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -161,6 +169,8 @@ export class TasksController {
       ...updateTaskDto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -174,6 +184,8 @@ export class TasksController {
       ...assignTaskDto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -186,6 +198,8 @@ export class TasksController {
       ...updateStatusDto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -197,6 +211,8 @@ export class TasksController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -209,6 +225,8 @@ export class TasksController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -221,6 +239,8 @@ export class TasksController {
       id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -233,6 +253,8 @@ export class TasksController {
       ...body,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -245,6 +267,8 @@ export class TasksController {
       taskId: id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -264,6 +288,8 @@ export class TasksController {
       ...addAssigneeDto,
       requestUserId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -281,6 +307,8 @@ export class TasksController {
       userId,
       requestUserId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -299,6 +327,8 @@ export class TasksController {
       ...addChecklistItemDto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -315,6 +345,8 @@ export class TasksController {
       ...reorderChecklistDto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -333,6 +365,8 @@ export class TasksController {
       ...updateChecklistItemDto,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -349,6 +383,8 @@ export class TasksController {
       itemId,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -378,6 +414,8 @@ export class TasksController {
       taskId: id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -432,6 +470,8 @@ export class TasksController {
       fileType: body.fileType,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -451,6 +491,8 @@ export class TasksController {
       fileSize: body.fileSize,
       uploadedById: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -463,6 +505,8 @@ export class TasksController {
       taskId: id,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }
@@ -478,6 +522,8 @@ export class TasksController {
       id: attachmentId,
       userId: req.user.id,
       userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
   }

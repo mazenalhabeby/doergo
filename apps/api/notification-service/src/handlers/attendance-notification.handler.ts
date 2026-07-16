@@ -165,8 +165,16 @@ export class AttendanceNotificationHandler {
       flagSummary,
       timestamp: new Date().toISOString(),
     };
-    this.websocketGateway.emitToRole('ADMIN', 'attendance_pending_approval', payload);
-    this.websocketGateway.emitToRole('MANAGER', 'attendance_pending_approval', payload);
+    // Target the exact approvers task-service resolved (admins + members granted
+    // "view all tasks"); fall back to the ADMIN room if none were provided.
+    const approverIds = data.managerIds || [];
+    if (approverIds.length) {
+      for (const id of approverIds) {
+        this.websocketGateway.emitToUser(id, 'attendance_pending_approval', payload);
+      }
+    } else {
+      this.websocketGateway.emitToRole('ADMIN', 'attendance_pending_approval', payload);
+    }
   }
 
   @EventPattern('attendance_clock_in')
