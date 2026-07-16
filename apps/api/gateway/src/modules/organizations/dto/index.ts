@@ -30,9 +30,9 @@ export class ListMembersQueryDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ enum: ['ADMIN', 'MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'], description: 'Filter by role' })
+  @ApiPropertyOptional({ enum: ['ADMIN', 'EMPLOYEE'], description: 'Filter by role' })
   @IsOptional()
-  @IsEnum(['ADMIN', 'MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'])
+  @IsEnum(['ADMIN', 'EMPLOYEE'])
   role?: string;
 
   @ApiPropertyOptional({ description: 'Page number' })
@@ -221,9 +221,9 @@ export class UpdateMemberDto {
   @IsNumber()
   monthlyHourBudget?: number;
 
-  @ApiPropertyOptional({ enum: ['ADMIN', 'MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'], description: 'New role' })
+  @ApiPropertyOptional({ enum: ['ADMIN', 'EMPLOYEE'], description: 'New role' })
   @IsOptional()
-  @IsEnum(['ADMIN', 'MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'])
+  @IsEnum(['ADMIN', 'EMPLOYEE'])
   role?: string;
 
   @ApiPropertyOptional({ description: 'Can create tasks' })

@@ -351,7 +351,7 @@ export class TasksService {
   /**
    * Find a single task by ID with authorization
    */
-  async findOne(data: { id: string; userId: string; userRole: string; organizationId: string }) {
+  async findOne(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {
@@ -533,7 +533,7 @@ export class TasksService {
   /**
    * Assign a task to a technician (CLIENT or DISPATCHER)
    */
-  async assign(data: { id: string; workerId: string; userId: string; userRole: string; organizationId: string }) {
+  async assign(data: { id: string; workerId: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
     });
@@ -608,7 +608,7 @@ export class TasksService {
    * Decline task assignment (TECHNICIAN only)
    * Returns task to NEW status and removes assignment
    */
-  async decline(data: { id: string; userId: string; userRole: string; organizationId: string }) {
+  async decline(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {
@@ -887,7 +887,7 @@ export class TasksService {
   /**
    * Delete a task (CLIENT only - own tasks)
    */
-  async remove(data: { id: string; userId: string; userRole: string; organizationId: string }) {
+  async remove(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
     });
@@ -922,7 +922,7 @@ export class TasksService {
   /**
    * Get task timeline/activity
    */
-  async getTimeline(data: { id: string; userId: string; userRole: string; organizationId: string }) {
+  async getTimeline(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
     // First verify access
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -1004,6 +1004,7 @@ export class TasksService {
     content: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     // First verify the task exists and user has access
@@ -1051,6 +1052,7 @@ export class TasksService {
     taskId: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     // First verify the task exists and user has access
@@ -1106,6 +1108,7 @@ export class TasksService {
     role?: string;
     requestUserId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1162,6 +1165,7 @@ export class TasksService {
     userId: string;
     requestUserId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1219,6 +1223,7 @@ export class TasksService {
     position?: number;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1264,6 +1269,7 @@ export class TasksService {
     isCompleted?: boolean;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1305,6 +1311,7 @@ export class TasksService {
     itemId: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1336,6 +1343,7 @@ export class TasksService {
     itemIds: string[];
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1368,6 +1376,7 @@ export class TasksService {
     taskId: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1392,6 +1401,7 @@ export class TasksService {
     taskId: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -1523,6 +1533,7 @@ export class TasksService {
     taskId: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     canAssignTasks?: boolean;
     organizationId: string;
   }) {
@@ -1536,7 +1547,7 @@ export class TasksService {
     }
 
     // Authorization: admins and members granted "assign tasks" can see suggestions.
-    if (data.userRole !== Role.ADMIN && !data.canAssignTasks) {
+    if (data.userRole !== Role.ADMIN && !data.canAssignTasks && !data.canViewAllTasks) {
       throw new ForbiddenException('You do not have permission to view suggested workers');
     }
 
@@ -1900,6 +1911,7 @@ export class TasksService {
     taskId: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({

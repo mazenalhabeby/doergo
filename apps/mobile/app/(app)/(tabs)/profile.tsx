@@ -100,7 +100,7 @@ export default function ProfileScreen() {
     }, [refreshUser])
   );
 
-  const isTechnician = user?.role === Role.TECHNICIAN;
+  const isTechnician = user?.role === Role.EMPLOYEE;
   const appVersion = Constants.expoConfig?.version || '1.0.0';
   const hasAvatar = !!user?.avatarUrl;
 

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { ModuleGuard } from '../../common/guards/module.guard';
@@ -25,7 +26,7 @@ export class EpicsController {
   constructor(private readonly epicsService: EpicsService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization epics with task counts' })
   async findAll(@Request() req: any) {
     return this.epicsService.findAll({
@@ -34,7 +35,7 @@ export class EpicsController {
   }
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @UseGuards(ModuleGuard)
   @RequireModule('epics')
   @ApiOperation({ summary: 'Create a new epic' })
@@ -46,7 +47,7 @@ export class EpicsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Update an epic' })
   async update(
     @Param('id') id: string,
@@ -61,7 +62,7 @@ export class EpicsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Delete an epic (unlinks tasks)' })
   async remove(@Param('id') id: string, @Request() req: any) {
     return this.epicsService.remove({

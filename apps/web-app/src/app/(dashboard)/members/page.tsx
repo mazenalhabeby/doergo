@@ -83,10 +83,6 @@ const ROLE_CONFIG: Record<string, { className: string; gradient: string }> = {
     className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
     gradient: "from-blue-500 to-blue-600",
   },
-  MANAGER: {
-    className: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-200/50 dark:border-purple-800/50",
-    gradient: "from-purple-500 to-purple-600",
-  },
   EMPLOYEE: {
     className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50",
     gradient: "from-emerald-500 to-emerald-600",
@@ -96,7 +92,6 @@ const ROLE_CONFIG: Record<string, { className: string; gradient: string }> = {
 // Role label translation keys (labels live in i18n, colors in ROLE_CONFIG).
 const ROLE_LABEL_KEY: Record<string, string> = {
   ADMIN: "members.roles.admin",
-  MANAGER: "members.roles.manager",
   EMPLOYEE: "members.roles.employee",
 }
 // ---------------------------------------------------------------------------

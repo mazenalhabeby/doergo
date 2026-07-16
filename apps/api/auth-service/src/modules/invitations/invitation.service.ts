@@ -57,12 +57,12 @@ export class InvitationService {
     specialty?: string;
     maxDailyJobs?: number;
   }) {
-    // Permission check: DISPATCHER can only invite TECHNICIAN
-    if (data.creatorRole === Role.MANAGER && data.targetRole !== Role.EMPLOYEE) {
+    // Non-admin creators may only invite employees (never other admins).
+    if (data.creatorRole !== Role.ADMIN && data.targetRole !== Role.EMPLOYEE) {
       return {
         success: false,
         statusCode: HttpStatus.FORBIDDEN,
-        message: 'Dispatchers can only invite technicians',
+        message: 'You can only invite employees',
       };
     }
 
@@ -75,12 +75,12 @@ export class InvitationService {
       };
     }
 
-    // Validate target role
-    if (data.targetRole !== Role.MANAGER && data.targetRole !== Role.EMPLOYEE) {
+    // Validate target role (ADMIN already blocked above → must be EMPLOYEE).
+    if (data.targetRole !== Role.EMPLOYEE) {
       return {
         success: false,
         statusCode: HttpStatus.BAD_REQUEST,
-        message: 'Target role must be DISPATCHER or TECHNICIAN',
+        message: 'Target role must be EMPLOYEE',
       };
     }
 

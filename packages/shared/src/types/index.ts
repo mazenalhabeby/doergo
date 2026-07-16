@@ -26,37 +26,27 @@ import {
   TaskCreationScope,
 } from './enums';
 
-// Legacy role aliases for backward compatibility during migration
+// Legacy role aliases → the two surviving roles (managers are now flagged employees).
 export const LegacyRoleMap = {
   PARTNER: Role.ADMIN,
-  OFFICE: Role.MANAGER,
+  OFFICE: Role.EMPLOYEE,
   WORKER: Role.EMPLOYEE,
   CLIENT: Role.ADMIN,
-  DISPATCHER: Role.MANAGER,
+  DISPATCHER: Role.EMPLOYEE,
   TECHNICIAN: Role.EMPLOYEE,
 } as const;
 
-// Helper to normalize role (handles backward compatibility)
+// Normalize any (incl. legacy) role string to one of the two surviving roles.
+// ADMIN/CLIENT/PARTNER → ADMIN; everything else (EMPLOYEE + legacy
+// MANAGER/OFFICE/DISPATCHER/TECHNICIAN/WORKER) → EMPLOYEE.
 export function normalizeRole(role: string): Role {
-  if (role === 'CLIENT') return Role.ADMIN;
-  if (role === 'DISPATCHER') return Role.MANAGER;
-  if (role === 'TECHNICIAN' || role === 'WORKER') return Role.EMPLOYEE;
-  return role as Role;
+  if (role === 'ADMIN' || role === 'CLIENT' || role === 'PARTNER') return Role.ADMIN;
+  return Role.EMPLOYEE;
 }
 
 // Get display label for a role
 export function getRoleLabel(role: string): string {
-  const normalized = normalizeRole(role);
-  switch (normalized) {
-    case Role.ADMIN:
-      return 'Admin';
-    case Role.MANAGER:
-      return 'Manager';
-    case Role.EMPLOYEE:
-      return 'Employee';
-    default:
-      return role;
-  }
+  return normalizeRole(role) === Role.ADMIN ? 'Admin' : 'Employee';
 }
 
 // Socket.IO Events
@@ -144,36 +134,6 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: true,
-  },
-  [Role.CLIENT]: {
-    // Deprecated, same as ADMIN for backward compatibility
-    canCreateTasks: true,
-    taskCreationScope: TaskCreationScope.ORG,
-    canViewAllTasks: true,
-    canAssignTasks: true,
-    canManageUsers: true,
-  },
-  [Role.MANAGER]: {
-    canCreateTasks: false,
-    taskCreationScope: TaskCreationScope.SPACE,
-    canViewAllTasks: true,
-    canAssignTasks: true,
-    canManageUsers: false,
-  },
-  [Role.DISPATCHER]: {
-    // Legacy — same as MANAGER
-    canCreateTasks: false,
-    taskCreationScope: TaskCreationScope.SPACE,
-    canViewAllTasks: true,
-    canAssignTasks: true,
-    canManageUsers: false,
-  },
-  [Role.TECHNICIAN]: {
-    canCreateTasks: false,
-    taskCreationScope: TaskCreationScope.SELF,
-    canViewAllTasks: false,
-    canAssignTasks: false,
-    canManageUsers: false,
   },
   [Role.EMPLOYEE]: {
     canCreateTasks: false,

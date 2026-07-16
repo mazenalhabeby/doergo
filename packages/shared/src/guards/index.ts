@@ -30,9 +30,10 @@ export function isAdmin(user: { role: string }): boolean {
 }
 
 /** Check if user is MANAGER (formerly Dispatcher) */
-export function isManager(user: { role: string }): boolean {
-  const r = normalizeRole(user.role);
-  return r === Role.MANAGER;
+export function isManager(_user: { role: string }): boolean {
+  // The MANAGER role has been retired — "manager" is now the canViewAllTasks
+  // access flag, not a role. Kept as a no-op alias for backward compatibility.
+  return false;
 }
 
 /** Check if user is EMPLOYEE (formerly Technician) */

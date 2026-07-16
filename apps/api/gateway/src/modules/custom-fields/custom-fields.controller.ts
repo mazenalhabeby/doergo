@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import {
@@ -28,7 +29,7 @@ export class CustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List custom field definitions (optionally scoped to a Task Type)' })
   async findAll(@Request() req: any, @Query('forWorkflow') forWorkflow?: string) {
     return this.customFieldsService.findAll({
@@ -81,7 +82,7 @@ export class TaskCustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}
 
   @Get(':id/custom-fields')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: "Get a task's custom field values" })
   async getTaskValues(@Param('id') taskId: string, @Request() req: any) {
     return this.customFieldsService.getTaskValues({
@@ -91,7 +92,7 @@ export class TaskCustomFieldsController {
   }
 
   @Patch(':id/custom-fields')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: "Set/update a task's custom field values (batch)" })
   async setTaskValues(
     @Param('id') taskId: string,

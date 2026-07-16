@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { CreateRecurringTaskDto, UpdateRecurringTaskDto } from './dto';
@@ -23,7 +24,7 @@ export class RecurringTasksController {
   constructor(private readonly recurringTasksService: RecurringTasksService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization recurring task templates' })
   async findAll(@Request() req: any) {
     return this.recurringTasksService.findAll({

@@ -59,7 +59,7 @@ export default function InviteMemberPage() {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const isDispatcher = user?.role === "MANAGER"
+  const isDispatcher = user?.role !== "ADMIN" && !!user?.canViewAllTasks
   const isEmployee = role === "EMPLOYEE"
 
   const createMutation = useMutation({
@@ -105,7 +105,7 @@ export default function InviteMemberPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const canInvite = user?.role === "ADMIN" || user?.role === "MANAGER"
+  const canInvite = user?.role === "ADMIN" || !!user?.canViewAllTasks
   if (!canInvite) {
     return (
       <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">

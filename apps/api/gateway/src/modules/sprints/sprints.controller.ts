@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { ModuleGuard } from '../../common/guards/module.guard';
@@ -28,7 +29,7 @@ export class SprintsController {
   constructor(private readonly sprintsService: SprintsService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization sprints' })
   @ApiQuery({ name: 'status', required: false, description: 'Filter by status: PLANNING, ACTIVE, COMPLETED' })
   async findAll(@Query('status') status: string | undefined, @Request() req: any) {
@@ -39,7 +40,7 @@ export class SprintsController {
   }
 
   @Get('velocity')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get velocity data for the last N sprints' })
   @ApiQuery({ name: 'limit', required: false, description: 'Number of sprints to include (default 6)' })
   async getVelocity(
@@ -53,7 +54,7 @@ export class SprintsController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a sprint with its tasks' })
   async findOne(@Param('id') id: string, @Request() req: any) {
     return this.sprintsService.findOne({
@@ -63,7 +64,7 @@ export class SprintsController {
   }
 
   @Get(':id/report')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get sprint report (burndown, velocity, stats)' })
   async getReport(@Param('id') id: string, @Request() req: any) {
     return this.sprintsService.getReport({

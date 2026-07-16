@@ -16,7 +16,7 @@ export class TrackingController {
   ) {}
 
   @Post('location')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Update user location (any authenticated user on a task)' })
   async updateLocation(@Body() updateLocationDto: UpdateTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(
@@ -28,7 +28,7 @@ export class TrackingController {
   }
 
   @Post('location/batch')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Batch-update route points (mobile background tracker flush)' })
   async updateLocationBatch(@Body() batchDto: BatchTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(

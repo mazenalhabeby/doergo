@@ -248,8 +248,8 @@ export default function EmployeeDetailPage() {
   const stats = employee?.stats
 
 
-  // Check if user can manage employees (ADMIN or MANAGER)
-  const canManage = user?.role === "ADMIN" || user?.role === "MANAGER"
+  // Check if user can manage employees (ADMIN or can-view-all-tasks)
+  const canManage = user?.role === "ADMIN" || !!user?.canViewAllTasks
 
   if (isLoading) {
     return (

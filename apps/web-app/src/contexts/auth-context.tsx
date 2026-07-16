@@ -153,8 +153,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (userData) {
         setUser({
           ...userData,
-          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.role === 'MANAGER' ? 'SPACE' : 'NONE'),
-          canCreateTasks: userData.role === 'ADMIN' || userData.role === 'MANAGER' || (userData.taskCreationScope || 'NONE') !== 'NONE',
+          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.canViewAllTasks ? 'SPACE' : 'NONE'),
+          canCreateTasks: userData.role === 'ADMIN' || userData.canViewAllTasks || (userData.taskCreationScope || 'NONE') !== 'NONE',
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
           orgModules: userData.orgModules || [],
@@ -219,8 +219,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const u = response.user;
     setUser({
       ...u,
-      taskCreationScope: u.taskCreationScope || (u.role === 'ADMIN' ? 'ORG' : u.role === 'MANAGER' ? 'SPACE' : 'NONE'),
-      canCreateTasks: u.role === 'ADMIN' || u.role === 'MANAGER' || (u.taskCreationScope || 'NONE') !== 'NONE',
+      taskCreationScope: u.taskCreationScope || (u.role === 'ADMIN' ? 'ORG' : u.canViewAllTasks ? 'SPACE' : 'NONE'),
+      canCreateTasks: u.role === 'ADMIN' || u.canViewAllTasks || (u.taskCreationScope || 'NONE') !== 'NONE',
       avatarUrl: u.avatarUrl || null,
       enabledModules: u.enabledModules || [],
       orgModules: u.orgModules || [],
@@ -251,8 +251,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (userData) {
         setUser({
           ...userData,
-          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.role === 'MANAGER' ? 'SPACE' : 'NONE'),
-          canCreateTasks: userData.role === 'ADMIN' || userData.role === 'MANAGER' || (userData.taskCreationScope || 'NONE') !== 'NONE',
+          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.canViewAllTasks ? 'SPACE' : 'NONE'),
+          canCreateTasks: userData.role === 'ADMIN' || userData.canViewAllTasks || (userData.taskCreationScope || 'NONE') !== 'NONE',
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
           orgModules: userData.orgModules || [],

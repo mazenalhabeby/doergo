@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { ModuleGuard } from '../../common/guards/module.guard';
@@ -25,7 +26,7 @@ export class PhasesController {
   constructor(private readonly phasesService: PhasesService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization phases' })
   async findAll(@Request() req: any) {
     return this.phasesService.findAll({

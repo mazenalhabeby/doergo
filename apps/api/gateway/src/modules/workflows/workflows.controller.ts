@@ -32,7 +32,7 @@ export class WorkflowsController {
   constructor(private readonly workflowsService: WorkflowsService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization workflows' })
   async findAll(@Request() req: any) {
     return this.workflowsService.findAll({
@@ -43,7 +43,7 @@ export class WorkflowsController {
   // ==================== Definition of Done (before :id routes) ====================
 
   @Get('definition-of-done')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get active Definition of Done for the organization' })
   @ApiQuery({ name: 'workflowId', required: false, description: 'Filter by workflow ID' })
   async getDefinitionOfDone(
@@ -85,7 +85,7 @@ export class WorkflowsController {
   // ==================== Workflow CRUD ====================
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a workflow with its statuses' })
   async findOne(@Param('id') id: string, @Request() req: any) {
     return this.workflowsService.findOne({

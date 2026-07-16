@@ -23,6 +23,7 @@ import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf } from 'cla
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -223,7 +224,7 @@ export class UsersController {
   @Get('workers')
   @ApiOperation({ summary: 'Get all employees (ADMIN or MANAGER)' })
   @ApiQuery({ name: 'organizationId', required: false })
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   async getWorkers(
     @CurrentUser() user: CurrentUserData,
     @Query() query: Record<string, any>,
@@ -243,8 +244,10 @@ export class UsersController {
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    // Users can only access their own data, or DISPATCHER can access users in their org
-    if (user.id !== id && user.role !== Role.MANAGER) {
+    // Users can access their own data; admins and members granted "view all
+    // tasks" can access other users (scoped to their org below).
+    const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
+    if (user.id !== id && !privileged) {
       throw new ForbiddenException('You can only access your own profile');
     }
 
@@ -256,8 +259,8 @@ export class UsersController {
       throw new NotFoundException('User not found');
     }
 
-    // DISPATCHER can only access users in their organization
-    if (user.role === Role.MANAGER && result.data.organizationId !== user.organizationId) {
+    // Non-admin privileged accessors are limited to their own organization.
+    if (user.role !== Role.ADMIN && result.data.organizationId !== user.organizationId) {
       throw new ForbiddenException('You can only access users in your organization');
     }
 
@@ -266,18 +269,19 @@ export class UsersController {
 
   @Get(':id/tasks')
   @ApiOperation({ summary: 'Get tasks assigned to an employee' })
-  @Roles(Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   async getWorkerTasks(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    // Employees can only see their own tasks, MANAGER can see any employee's tasks in their org
-    if (user.role === Role.EMPLOYEE && user.id !== id) {
+    // Plain workers see only their own tasks; admins and "view all tasks" members
+    // can see any worker's tasks (scoped to their org).
+    const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
+    if (!privileged && user.id !== id) {
       throw new ForbiddenException('You can only access your own tasks');
     }
 
-    // For MANAGER, verify the employee is in their organization
-    if (user.role === Role.MANAGER) {
+    if (privileged && user.id !== id) {
       const workerResult = await firstValueFrom(
         this.authClient.send({ cmd: 'find_user' }, { id }),
       );
@@ -298,7 +302,7 @@ export class UsersController {
 
   @Get(':id/assignments')
   @ApiOperation({ summary: 'Get company location assignments for a user' })
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   async getUserAssignments(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,

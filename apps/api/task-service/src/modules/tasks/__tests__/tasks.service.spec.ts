@@ -181,7 +181,7 @@ describe('TasksService', () => {
       const result = await service.findAll({
         page: 1,
         limit: 10,
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
         userId: 'user-456',
       }) as any;
@@ -247,7 +247,7 @@ describe('TasksService', () => {
       await service.findAll({
         page: 1,
         limit: 10,
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
         userId: 'user-123',
         status: TaskStatus.NEW,
@@ -285,7 +285,7 @@ describe('TasksService', () => {
       const result = await service.findOne({
         id: 'task-123',
         userId: 'user-456',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -300,7 +300,7 @@ describe('TasksService', () => {
         service.findOne({
           id: 'non-existent',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -346,7 +346,7 @@ describe('TasksService', () => {
         id: 'task-123',
         title: 'Updated Title',
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -362,7 +362,7 @@ describe('TasksService', () => {
           id: 'non-existent',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -377,7 +377,7 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -392,7 +392,7 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -407,7 +407,7 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -426,7 +426,7 @@ describe('TasksService', () => {
         id: 'task-123',
         workerId: 'tech-123',
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -443,7 +443,7 @@ describe('TasksService', () => {
           id: 'non-existent',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -458,7 +458,7 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -473,7 +473,7 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -488,7 +488,7 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'non-existent',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -661,7 +661,7 @@ describe('TasksService', () => {
         id: 'task-123',
         status: TaskStatus.CANCELED,
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -739,7 +739,7 @@ describe('TasksService', () => {
       const result = await service.getTimeline({
         id: 'task-123',
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -754,7 +754,7 @@ describe('TasksService', () => {
         service.getTimeline({
           id: 'non-existent',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -779,7 +779,7 @@ describe('TasksService', () => {
         taskId: 'task-123',
         content: 'Test comment',
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -796,7 +796,7 @@ describe('TasksService', () => {
           taskId: 'non-existent',
           content: 'Test comment',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -816,7 +816,7 @@ describe('TasksService', () => {
       const result = await service.getComments({
         taskId: 'task-123',
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -836,7 +836,7 @@ describe('TasksService', () => {
 
       const result = await service.getStatusCounts({
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -873,7 +873,7 @@ describe('TasksService', () => {
       const result = await service.getSuggestedTechnicians({
         taskId: 'task-123',
         userId: 'user-123',
-        userRole: Role.MANAGER,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -901,7 +901,7 @@ describe('TasksService', () => {
         service.getSuggestedTechnicians({
           taskId: 'non-existent',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -915,7 +915,7 @@ describe('TasksService', () => {
         service.getSuggestedTechnicians({
           taskId: 'task-123',
           userId: 'user-123',
-          userRole: Role.MANAGER,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);

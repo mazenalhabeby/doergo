@@ -32,8 +32,8 @@ export class ListJoinRequestsDto {
  * Approve join request DTO
  */
 export class ApproveJoinRequestDto {
-  @ApiProperty({ enum: [Role.MANAGER, Role.EMPLOYEE], description: 'Role to assign' })
-  @IsEnum([Role.MANAGER, Role.EMPLOYEE], { message: 'Role must be DISPATCHER or TECHNICIAN' })
+  @ApiProperty({ enum: [Role.ADMIN, Role.EMPLOYEE], description: 'Role to assign' })
+  @IsEnum([Role.ADMIN, Role.EMPLOYEE], { message: 'Role must be ADMIN or EMPLOYEE' })
   role: string;
 
   @IsOptional()

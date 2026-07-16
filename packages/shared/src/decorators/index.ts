@@ -30,7 +30,7 @@ export const IS_PUBLIC_KEY = 'isPublic';
  * Decorator to specify required roles for a route
  *
  * @example
- * @Roles(Role.DISPATCHER, Role.CLIENT)
+ * @Roles(Role.ADMIN, Role.EMPLOYEE)
  * @Get('tasks')
  * getTasks() {}
  */

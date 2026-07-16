@@ -72,22 +72,16 @@ const EXECUTION_STATUSES: TaskStatus[] = [
 ];
 
 export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
-  [Role.ADMIN]: [...EXECUTION_STATUSES, TaskStatus.CANCELED],
-  [Role.MANAGER]: [...EXECUTION_STATUSES, TaskStatus.ASSIGNED, TaskStatus.CANCELED],
+  [Role.ADMIN]: [...EXECUTION_STATUSES, TaskStatus.ASSIGNED, TaskStatus.CANCELED],
   [Role.EMPLOYEE]: EXECUTION_STATUSES,
-  // Legacy
-  [Role.CLIENT]: [...EXECUTION_STATUSES, TaskStatus.CANCELED],
-  [Role.DISPATCHER]: [...EXECUTION_STATUSES, TaskStatus.ASSIGNED, TaskStatus.CANCELED],
-  [Role.TECHNICIAN]: EXECUTION_STATUSES,
 };
 
 /**
- * Check if a role can transition to a specific status
- * Handles backward compatibility: CLIENT is treated as ADMIN
+ * Check if a role can transition to a specific status.
+ * Any legacy/admin string collapses to ADMIN; everything else to EMPLOYEE.
  */
 export function canRoleSetStatus(role: Role | string, status: TaskStatus): boolean {
-  // Handle backward compatibility: CLIENT maps to ADMIN
-  const normalizedRole = role === 'CLIENT' ? Role.ADMIN : (role as Role);
+  const normalizedRole = role === 'ADMIN' || role === 'CLIENT' ? Role.ADMIN : Role.EMPLOYEE;
   return ROLE_STATUS_PERMISSIONS[normalizedRole]?.includes(status) || false;
 }
 

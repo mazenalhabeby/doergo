@@ -58,7 +58,7 @@ export default function TaskDetailPage({
   const queryClient = useQueryClient()
   const { user, hasModule: orgHasModule } = useAuth()
   const { setOverride, clearOverride } = useBreadcrumbOverride()
-  const isDispatcher = user?.role === "MANAGER"
+  const isDispatcher = user?.role !== "ADMIN" && !!user?.canViewAllTasks
   const isAdmin = user?.role === "ADMIN"
 
   const [showAssignModal, setShowAssignModal] = useState(false)

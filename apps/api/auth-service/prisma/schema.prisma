@@ -10,12 +10,9 @@ datasource db {
 // Enums
 enum Role {
   ADMIN       // Organization owner/admin - full control
-  MANAGER     // Office manager - assigns workers, monitors operations
-  EMPLOYEE    // Worker - executes tasks
-  // Legacy values kept for backward compatibility (normalizeRole maps them)
-  CLIENT      // DEPRECATED → ADMIN
-  DISPATCHER  // DEPRECATED → MANAGER
-  TECHNICIAN  // DEPRECATED → EMPLOYEE
+  EMPLOYEE    // Everyone else. "Manager" capability is now the canViewAllTasks /
+              // canAssignTasks access flags, not a role. (MANAGER + legacy
+              // CLIENT/DISPATCHER/TECHNICIAN retired 2026-07-16.)
 }
 
 // Platform access restriction

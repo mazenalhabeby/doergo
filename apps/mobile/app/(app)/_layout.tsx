@@ -43,7 +43,7 @@ function usePresencePing() {
   }, []);
 
   useEffect(() => {
-    if (user?.role !== Role.TECHNICIAN) return;
+    if (user?.role !== Role.EMPLOYEE) return;
 
     // Initial ping with cached location
     sendPing();

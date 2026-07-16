@@ -15,7 +15,7 @@ async function main() {
 
   // Find existing technician and organization
   const technician = await prisma.user.findFirst({
-    where: { role: Role.TECHNICIAN },
+    where: { role: Role.EMPLOYEE },
   });
 
   if (!technician) {

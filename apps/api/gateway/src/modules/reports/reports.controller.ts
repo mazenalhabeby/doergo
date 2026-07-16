@@ -17,6 +17,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ReportsService } from './reports.service';
 import { ReportsQueueService } from './reports.queue.service';
@@ -34,7 +35,7 @@ export class ReportsController {
   // ============ Task Completion (Main Flow) ============
 
   @Post('tasks/:taskId/complete')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Complete a task with service report (assigned user)' })
   @ApiParam({ name: 'taskId', description: 'Task ID to complete' })
   async completeTask(
@@ -55,7 +56,7 @@ export class ReportsController {
   // ============ Report READ Operations ============
 
   @Get('tasks/:taskId/report')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get service report for a task' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
   async getTaskReport(@Param('taskId') taskId: string, @Request() req: any) {
@@ -69,7 +70,7 @@ export class ReportsController {
   }
 
   @Get('assets/:assetId/reports')
-  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get maintenance history (service reports) for an asset' })
   @ApiParam({ name: 'assetId', description: 'Asset ID' })
   @ApiQuery({ name: 'page', required: false })
@@ -94,7 +95,7 @@ export class ReportsController {
   // ============ Report UPDATE Operations ============
 
   @Patch('reports/:id')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Update a service report (assigned user, within 24 hours)' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async updateReport(
@@ -115,7 +116,7 @@ export class ReportsController {
   // ============ Attachment Operations ============
 
   @Post('reports/:id/attachments/presign')
-  @Roles(Role.ADMIN, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get presigned URL for uploading attachment' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async getPresignedUrl(
@@ -135,7 +136,7 @@ export class ReportsController {
   }
 
   @Post('reports/:id/attachments')
-  @Roles(Role.ADMIN, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Confirm attachment upload (after S3 upload)' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async addAttachment(
@@ -160,7 +161,7 @@ export class ReportsController {
   }
 
   @Delete('reports/:id/attachments/:attachmentId')
-  @Roles(Role.ADMIN, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Delete an attachment from a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiParam({ name: 'attachmentId', description: 'Attachment ID' })
@@ -182,7 +183,7 @@ export class ReportsController {
   // ============ Parts Operations ============
 
   @Post('reports/:id/parts')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Add a part to a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   async addPart(
@@ -207,7 +208,7 @@ export class ReportsController {
   }
 
   @Patch('reports/:id/parts/:partId')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Update a part on a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiParam({ name: 'partId', description: 'Part ID' })
@@ -235,7 +236,7 @@ export class ReportsController {
   }
 
   @Delete('reports/:id/parts/:partId')
-  @Roles(Role.ADMIN, Role.DISPATCHER, Role.TECHNICIAN)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Delete a part from a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiParam({ name: 'partId', description: 'Part ID' })

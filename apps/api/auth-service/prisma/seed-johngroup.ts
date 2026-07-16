@@ -73,8 +73,8 @@ async function main() {
   type M = { id: string; first: string; last: string; role: Role; position: string; space: string; scheduleType: 'FIXED' | 'FLEXIBLE' | 'NONE'; budget?: number; active?: boolean }
   const members: M[] = [
     // Managers
-    { id: 'jg-anna',    first: 'Anna',    last: 'Müller',   role: Role.MANAGER,  position: 'Operations Manager',    space: 'jg-space-head',    scheduleType: 'FIXED',    active: true },
-    { id: 'jg-thomas',  first: 'Thomas',  last: 'Bauer',    role: Role.MANAGER,  position: 'Dispatch Manager',      space: 'jg-space-north',   scheduleType: 'FIXED',    active: true },
+    { id: 'jg-anna',    first: 'Anna',    last: 'Müller',   role: Role.EMPLOYEE,  position: 'Operations Manager',    space: 'jg-space-head',    scheduleType: 'FIXED',    active: true },
+    { id: 'jg-thomas',  first: 'Thomas',  last: 'Bauer',    role: Role.EMPLOYEE,  position: 'Dispatch Manager',      space: 'jg-space-north',   scheduleType: 'FIXED',    active: true },
     // Head Office
     { id: 'jg-mike',    first: 'Mike',    last: 'Weber',    role: Role.EMPLOYEE, position: 'Field Technician',      space: 'jg-space-head',    scheduleType: 'FIXED',    active: true },
     { id: 'jg-sarah',   first: 'Sarah',   last: 'Wagner',   role: Role.EMPLOYEE, position: 'Service Engineer',      space: 'jg-space-head',    scheduleType: 'FIXED',    active: true },
@@ -98,7 +98,7 @@ async function main() {
   ]
 
   for (const m of members) {
-    const isMgr = m.role === Role.MANAGER
+    const isMgr = m.position.includes('Manager')
     await prisma.user.upsert({
       where: { email: `${m.id}@johngroup.com` },
       update: { position: m.position, scheduleType: m.scheduleType, monthlyHourBudget: m.budget ?? null, avatarUrl: AVATARS[m.id] },

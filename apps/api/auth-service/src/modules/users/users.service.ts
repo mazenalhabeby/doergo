@@ -681,7 +681,7 @@ export class UsersService {
         organizationId,
         isActive: true,
         id: { not: userId },
-        OR: [{ role: Role.ADMIN }, { role: Role.MANAGER }, { contactable: true }],
+        OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { contactable: true }],
       },
       select: {
         id: true,
@@ -851,10 +851,10 @@ export class UsersService {
         canCreateTasks: dto.canCreateTasks ?? (dto.role === Role.ADMIN),
         canViewAllTasks:
           dto.canViewAllTasks ??
-          (dto.role === Role.ADMIN || dto.role === Role.MANAGER),
+          dto.role === Role.ADMIN,
         canAssignTasks:
           dto.canAssignTasks ??
-          (dto.role === Role.ADMIN || dto.role === Role.MANAGER),
+          dto.role === Role.ADMIN,
         canManageUsers: dto.canManageUsers ?? (dto.role === Role.ADMIN),
       },
       select: {
@@ -1009,16 +1009,14 @@ export class UsersService {
       // Set default platform based on role if not provided
       data.canCreateTasks = dto.canCreateTasks ?? (dto.role === Role.ADMIN);
       // Default taskCreationScope by role
-      const defaultScope = dto.role === Role.ADMIN ? 'ORG'
-        : dto.role === Role.MANAGER ? 'SPACE'
-        : 'SELF';
+      const defaultScope = dto.role === Role.ADMIN ? 'ORG' : 'SELF';
       data.taskCreationScope = dto.taskCreationScope ?? defaultScope;
       data.canViewAllTasks =
         dto.canViewAllTasks ??
-        (dto.role === Role.ADMIN || dto.role === Role.MANAGER);
+        dto.role === Role.ADMIN;
       data.canAssignTasks =
         dto.canAssignTasks ??
-        (dto.role === Role.ADMIN || dto.role === Role.MANAGER);
+        dto.role === Role.ADMIN;
       data.canManageUsers = dto.canManageUsers ?? (dto.role === Role.ADMIN);
     } else {
       // No role change — still allow updating individual permission/platform fields

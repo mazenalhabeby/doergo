@@ -63,7 +63,7 @@ async function main() {
       passwordHash,
       firstName: 'Anna',
       lastName: 'Müller',
-      role: Role.MANAGER,
+      role: Role.EMPLOYEE,
       organization: { connect: { id: orgId } },
       onboardingCompleted: true,
       position: 'Operations Manager',

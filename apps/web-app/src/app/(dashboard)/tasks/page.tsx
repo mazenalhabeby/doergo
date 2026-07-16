@@ -325,7 +325,7 @@ export default function TasksPage() {
   // Role-based space filtering:
   // Admin/Dispatcher → all spaces
   // Employee → only spaces from their assigned tasks
-  const isAdminOrManager = user?.role === "ADMIN" || user?.role === "MANAGER"
+  const isAdminOrManager = user?.role === "ADMIN" || !!user?.canViewAllTasks
   const spaces = useMemo(() => {
     if (isAdminOrManager) return allSpaces
     // Filter to spaces the employee has tasks in

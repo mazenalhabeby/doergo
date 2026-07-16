@@ -31,7 +31,7 @@ export class AttendanceController {
   ) {}
 
   @Post('clock-in')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Clock in at a company location' })
   async clockIn(@Body() dto: ClockInDto, @Request() req: any) {
     return this.attendanceQueueService.clockIn({
@@ -42,7 +42,7 @@ export class AttendanceController {
   }
 
   @Post('clock-out')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Clock out from current shift' })
   async clockOut(@Body() dto: ClockOutDto, @Request() req: any) {
     return this.attendanceQueueService.clockOut({
@@ -53,7 +53,7 @@ export class AttendanceController {
   }
 
   @Post('heartbeat')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Send location heartbeat while clocked in' })
   async heartbeat(@Body() dto: HeartbeatDto, @Request() req: any) {
     return this.attendanceQueueService.heartbeat({
@@ -64,7 +64,7 @@ export class AttendanceController {
   }
 
   @Get('status')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get current clock-in status' })
   async getStatus(@Request() req: any) {
     return this.attendanceService.getStatus({
@@ -74,7 +74,7 @@ export class AttendanceController {
   }
 
   @Get('history')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get own attendance history' })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
@@ -98,7 +98,7 @@ export class AttendanceController {
   }
 
   @Get('entries')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: "Today's entries for multiple spaces at once (member-scoped for non-admins)" })
   @ApiQuery({ name: 'ids', required: true, description: 'Comma-separated company-location IDs' })
   @ApiQuery({ name: 'date', required: false, type: String })
@@ -117,7 +117,7 @@ export class AttendanceController {
   }
 
   @Get('locations/:id/entries')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get time entries for a location (admins, or members of that space)' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Date in ISO format (defaults to today)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -281,7 +281,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Post('breaks/start')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Start a break during current shift' })
   async startBreak(@Body() dto: StartBreakDto, @Request() req: any) {
     return this.attendanceService.startBreak({
@@ -293,7 +293,7 @@ export class AttendanceController {
   }
 
   @Post('breaks/end')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'End current break' })
   async endBreak(@Body() dto: EndBreakDto, @Request() req: any) {
     return this.attendanceService.endBreak({
@@ -304,7 +304,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/status')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get current break status' })
   async getBreakStatus(@Request() req: any) {
     return this.attendanceService.getBreakStatus({

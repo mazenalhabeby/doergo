@@ -34,11 +34,11 @@ export class InvitationScheduleEntryDto {
 
 export class CreateInvitationDto {
   @ApiProperty({
-    enum: ['MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'],
+    enum: ['ADMIN', 'EMPLOYEE'],
     description: 'Role for the invitee',
   })
   @IsString()
-  @IsEnum(['MANAGER', 'EMPLOYEE', 'DISPATCHER', 'TECHNICIAN'], {
+  @IsEnum(['ADMIN', 'EMPLOYEE'], {
     message: 'Target role must be MANAGER or EMPLOYEE',
   })
   targetRole: string;

@@ -98,7 +98,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
   })
   const candidateContacts = useMemo(
     () => (membersData?.data || []).filter(
-      (m) => m.id !== member.id && m.isActive && (m.role === "ADMIN" || m.role === "MANAGER" || m.contactable),
+      (m) => m.id !== member.id && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || m.contactable),
     ),
     [membersData, member.id],
   )
@@ -323,7 +323,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                           <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="sm" />
                           <span className="min-w-0 flex-1 truncate text-sm">{c.firstName} {c.lastName}</span>
                           <span className="shrink-0 text-[11px] text-muted-foreground">
-                            {c.role === "ADMIN" ? t("members.roles.admin") : c.role === "MANAGER" ? t("roles.manager", "Manager") : (c.position || t("accessBuilder.contactLabel", "Contact"))}
+                            {c.role === "ADMIN" ? t("members.roles.admin") : (c.position || t("accessBuilder.contactLabel", "Contact"))}
                           </span>
                         </label>
                       )

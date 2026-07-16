@@ -479,7 +479,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Get employee weekly schedule' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Schedule retrieved' })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   async getEmployeeSchedule(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
@@ -531,7 +531,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Get employee time-off requests' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Time-off requests retrieved' })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   async getEmployeeTimeOff(
     @Param('id') id: string,
     @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
@@ -558,7 +558,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Request time off for employee' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 201, description: 'Time-off request created' })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
   async requestTimeOff(
     @Param('id') id: string,
     @Body() body: { startDate: string; endDate: string; reason?: string },

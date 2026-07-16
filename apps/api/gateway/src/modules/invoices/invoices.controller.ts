@@ -15,6 +15,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 
@@ -53,7 +54,7 @@ export class InvoicesController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List invoices' })
   async findAll(
     @Query() query: { status?: string; page?: string; limit?: string },
@@ -70,7 +71,7 @@ export class InvoicesController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get invoice detail' })
   async findOne(
     @Param('id') id: string,

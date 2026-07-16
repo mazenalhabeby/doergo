@@ -13,7 +13,7 @@ const DispatcherDashboard = dynamic(
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const isDispatcher = user?.role === "MANAGER"
+  const isDispatcher = user?.role !== "ADMIN" && !!user?.canViewAllTasks
 
   return isDispatcher ? <DispatcherDashboard /> : <ClientDashboard />
 }

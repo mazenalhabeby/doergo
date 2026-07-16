@@ -101,7 +101,7 @@ function memberToPersonNode(
     name: `${member.firstName} ${member.lastName?.[0] || ""}.`,
     tag,
     userId: member.id,
-    role: member.role === "EMPLOYEE" ? "Employee" : member.role === "MANAGER" ? "Manager" : "Admin",
+    role: member.role === "EMPLOYEE" ? "Employee" : "Admin",
     currentTask,
   }
 }
@@ -127,7 +127,7 @@ export function ClientDashboard() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { isOpen: panelOpen } = useActivityPanel()
-  const isAdminOrDispatcher = user?.role === "ADMIN" || user?.role === "MANAGER"
+  const isAdminOrDispatcher = user?.role === "ADMIN" || !!user?.canViewAllTasks
 
   const handleEditLocation = useCallback((locationId: string) => {
     router.push(`/locations?edit=${locationId}`)

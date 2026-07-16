@@ -2,12 +2,9 @@
 
 export enum Role {
   ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
   EMPLOYEE = 'EMPLOYEE',
-  // Legacy — kept for backward compatibility (normalizeRole maps these)
-  CLIENT = 'CLIENT',
-  DISPATCHER = 'DISPATCHER',
-  TECHNICIAN = 'TECHNICIAN',
+  // Note: legacy roles (CLIENT/DISPATCHER/TECHNICIAN) and MANAGER have been
+  // retired. normalizeRole() still collapses any legacy string → ADMIN/EMPLOYEE.
 }
 
 export const WORKER_ROLE = 'WORKER' as const;

@@ -88,8 +88,6 @@ function getRoleBadge(role: string, t: (key: string) => string) {
   switch (role) {
     case "EMPLOYEE":
       return <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100">{t("members.roles.technician")}</Badge>
-    case "MANAGER":
-      return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-100">{t("members.roles.dispatcher")}</Badge>
     default:
       return <Badge variant="outline">{role}</Badge>
   }

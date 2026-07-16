@@ -88,7 +88,7 @@ async function main() {
       passwordHash,
       firstName: 'Jane',
       lastName: 'Manager',
-      role: Role.DISPATCHER,
+      role: Role.EMPLOYEE,
       organizationId: organization.id,
       onboardingCompleted: true,
       // DISPATCHER permissions - web only, can view all and assign
@@ -109,7 +109,7 @@ async function main() {
       passwordHash,
       firstName: 'Mike',
       lastName: 'Worker',
-      role: Role.TECHNICIAN,
+      role: Role.EMPLOYEE,
       organizationId: organization.id,
       onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
@@ -129,7 +129,7 @@ async function main() {
       passwordHash,
       firstName: 'Sarah',
       lastName: 'Worker',
-      role: Role.TECHNICIAN,
+      role: Role.EMPLOYEE,
       organizationId: organization.id,
       onboardingCompleted: true,
       // TECHNICIAN permissions - mobile only, execute tasks
@@ -151,7 +151,7 @@ async function main() {
       passwordHash,
       firstName: 'Alex',
       lastName: 'Hybrid',
-      role: Role.TECHNICIAN,
+      role: Role.EMPLOYEE,
       organizationId: organization.id,
       onboardingCompleted: true,
       canCreateTasks: false,
@@ -1605,7 +1605,7 @@ async function main() {
   await prisma.invitation.create({
     data: {
       codeHash: hashCode('TEST01'),
-      targetRole: Role.TECHNICIAN,
+      targetRole: Role.EMPLOYEE,
       organizationId: organization.id,
       createdById: clientUser.id,
       expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), // 3 days
@@ -1620,7 +1620,7 @@ async function main() {
   await prisma.invitation.create({
     data: {
       codeHash: hashCode('TEST02'),
-      targetRole: Role.DISPATCHER,
+      targetRole: Role.EMPLOYEE,
       organizationId: organization.id,
       createdById: clientUser.id,
       expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), // 3 days
@@ -1632,7 +1632,7 @@ async function main() {
   await prisma.invitation.create({
     data: {
       codeHash: hashCode('USED01'),
-      targetRole: Role.TECHNICIAN,
+      targetRole: Role.EMPLOYEE,
       organizationId: organization.id,
       createdById: clientUser.id,
       expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000),

@@ -134,8 +134,8 @@ export default function NewTechnicianPage() {
     router.push("/employees")
   }
 
-  // Check if user can create employees (ADMIN or MANAGER)
-  const canCreateEmployees = user?.role === "ADMIN" || user?.role === "MANAGER"
+  // Check if user can create employees (ADMIN or can-view-all-tasks)
+  const canCreateEmployees = user?.role === "ADMIN" || !!user?.canViewAllTasks
   if (!canCreateEmployees) {
     return (
       <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">

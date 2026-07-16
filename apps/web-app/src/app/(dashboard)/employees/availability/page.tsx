@@ -755,7 +755,7 @@ export default function ScheduleAndTimeOffPage() {
     return format(currentDate, "MMMM yyyy")
   }, [currentDate, viewMode])
 
-  const canManage = user?.role === "ADMIN" || user?.role === "MANAGER"
+  const canManage = user?.role === "ADMIN" || !!user?.canViewAllTasks
 
   if (!canManage) {
     return (

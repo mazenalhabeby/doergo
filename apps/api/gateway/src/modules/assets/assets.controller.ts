@@ -18,6 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
+import { RequirePermission } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -36,7 +37,7 @@ export class AssetsController {
   ) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Create a new asset' })
   async create(@Body() dto: CreateAssetDto, @Request() req: any) {
     return this.assetsQueueService.create({
@@ -49,7 +50,7 @@ export class AssetsController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List all assets' })
   async findAll(@Query() query: AssetQueryDto, @Request() req: any) {
     return this.assetsService.findAll({
@@ -62,7 +63,7 @@ export class AssetsController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get asset by ID' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async findOne(@Param('id') id: string, @Request() req: any) {
@@ -76,7 +77,7 @@ export class AssetsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Update an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async update(
@@ -95,7 +96,7 @@ export class AssetsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Delete an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async delete(@Param('id') id: string, @Request() req: any) {
@@ -109,7 +110,7 @@ export class AssetsController {
   }
 
   @Get(':id/history')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get maintenance history for an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiQuery({ name: 'page', required: false })
