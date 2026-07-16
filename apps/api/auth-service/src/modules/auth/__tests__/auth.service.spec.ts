@@ -5,6 +5,8 @@ import { HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../auth.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { AuditLogService } from '../../audit-log/audit-log.service';
+import { BillingService } from '../../billing/billing.service';
 import { Role, Platform, BCRYPT_COST_FACTOR } from '@hbcfield/shared';
 
 // Mock bcrypt
@@ -90,6 +92,8 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: AuditLogService, useValue: { log: jest.fn() } },
+        { provide: BillingService, useValue: { startTrial: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
 

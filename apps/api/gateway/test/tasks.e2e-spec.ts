@@ -37,7 +37,7 @@ describe('TasksController (e2e)', () => {
     email: 'dispatcher@example.com',
     firstName: 'Dispatcher',
     lastName: 'User',
-    role: Role.DISPATCHER,
+    role: Role.EMPLOYEE,   // former dispatcher — now an employee with canViewAllTasks/canAssignTasks
     organizationId: 'org-123',
     platform: 'WEB',
     canCreateTasks: false,
@@ -51,7 +51,7 @@ describe('TasksController (e2e)', () => {
     email: 'tech@example.com',
     firstName: 'Technician',
     lastName: 'User',
-    role: Role.TECHNICIAN,
+    role: Role.EMPLOYEE,
     organizationId: 'org-123',
     platform: 'MOBILE',
     canCreateTasks: false,

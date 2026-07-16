@@ -104,6 +104,9 @@ describe('AttendanceService', () => {
       findFirst: jest.fn(),
       findMany: jest.fn().mockResolvedValue([]),
     },
+    organization: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   };
 
   const mockNotificationClient = {
