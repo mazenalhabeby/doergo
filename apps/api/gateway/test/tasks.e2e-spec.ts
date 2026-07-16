@@ -7,7 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
-import { Role, TaskStatus, TaskPriority } from '@hbcfield/shared';
+import { Role, TaskStatus, TaskPriority, PermissionsGuard } from '@hbcfield/shared';
 import { TasksController } from '../src/modules/tasks/tasks.controller';
 import { TasksService } from '../src/modules/tasks/tasks.service';
 import { TasksQueueService } from '../src/modules/tasks/tasks.queue.service';
@@ -27,25 +27,30 @@ describe('TasksController (e2e)', () => {
     organizationId: 'org-123',
     platform: 'BOTH',
     canCreateTasks: true,
+    taskCreationScope: 'ORG',
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: true,
   };
 
+  // Former "dispatcher" — now an employee granted the manager-tier flags
+  // (view-all, assign, create). Represents a sub-role manager in the new model.
   const mockDispatcherUser = {
     id: 'dispatcher-123',
     email: 'dispatcher@example.com',
     firstName: 'Dispatcher',
     lastName: 'User',
-    role: Role.EMPLOYEE,   // former dispatcher — now an employee with canViewAllTasks/canAssignTasks
+    role: Role.EMPLOYEE,
     organizationId: 'org-123',
     platform: 'WEB',
-    canCreateTasks: false,
+    canCreateTasks: true,
+    taskCreationScope: 'SPACE',
     canViewAllTasks: true,
     canAssignTasks: true,
     canManageUsers: false,
   };
 
+  // Plain field worker — no management flags.
   const mockTechnicianUser = {
     id: 'tech-123',
     email: 'tech@example.com',
@@ -55,6 +60,7 @@ describe('TasksController (e2e)', () => {
     organizationId: 'org-123',
     platform: 'MOBILE',
     canCreateTasks: false,
+    taskCreationScope: 'NONE',
     canViewAllTasks: false,
     canAssignTasks: false,
     canManageUsers: false,
@@ -184,6 +190,12 @@ describe('TasksController (e2e)', () => {
           useFactory: (reflector: Reflector) => {
             return new TestRolesGuard(reflector);
           },
+          inject: [Reflector],
+        },
+        // Enforce @RequirePermission using the real guard (flag-based, admin-passes).
+        {
+          provide: APP_GUARD,
+          useFactory: (reflector: Reflector) => new PermissionsGuard(reflector),
           inject: [Reflector],
         },
       ],
@@ -517,22 +529,23 @@ describe('TasksController (e2e)', () => {
       expect(response.body.success).toBe(true);
     });
 
-    it('should reject ADMIN from declining task', async () => {
+    it('forwards decline to task-service, which enforces the assigned-worker rule', async () => {
+      // The gateway does not role-gate decline — only the assigned worker may
+      // decline, and that check requires the task's assignee, so it lives in
+      // task-service. The gateway simply forwards the call and returns its result.
       const token = jwtService.sign(mockAdminUser);
+      mockTaskQueueService.declineTask.mockResolvedValue({
+        success: false,
+        message: 'Only the assigned worker can decline this task',
+      });
 
       await request(app.getHttpServer())
         .post('/tasks/task-123/decline')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(403);
-    });
+        .set('Authorization', `Bearer ${token}`);
 
-    it('should reject DISPATCHER from declining task', async () => {
-      const token = jwtService.sign(mockDispatcherUser);
-
-      await request(app.getHttpServer())
-        .post('/tasks/task-123/decline')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(403);
+      expect(mockTaskQueueService.declineTask).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'task-123', userId: mockAdminUser.id }),
+      );
     });
   });
 

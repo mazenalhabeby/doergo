@@ -56,18 +56,31 @@ describe('AuthService', () => {
     refreshToken: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
-      findMany: jest.fn(),
+      // Default [] so the active-token-cap check (reads .length) doesn't throw.
+      findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
+      delete: jest.fn(),
       deleteMany: jest.fn(),
-      count: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    passwordResetToken: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    // Seeded during full registration (seedDefaultWorkflow).
+    statusWorkflow: {
+      create: jest.fn().mockResolvedValue({ id: 'wf-1' }),
     },
     $transaction: jest.fn((callback: (prisma: Record<string, any>) => any) => callback(mockPrismaService)),
   };
 
   const mockJwtService = {
-    sign: jest.fn(),
+    sign: jest.fn(() => 'mock-jwt-token'),
     verify: jest.fn(),
   };
 
@@ -329,7 +342,7 @@ describe('AuthService', () => {
     };
 
     it('should refresh token successfully with valid refresh token', async () => {
-      mockPrismaService.refreshToken.findFirst.mockResolvedValue(mockRefreshTokenRecord);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(mockRefreshTokenRecord);
       mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('new-access-token');
@@ -348,7 +361,7 @@ describe('AuthService', () => {
         ...mockRefreshTokenRecord,
         expiresAt: new Date(Date.now() - 1000), // Expired
       };
-      mockPrismaService.refreshToken.findFirst.mockResolvedValue(expiredToken);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(expiredToken);
 
       const result = await service.refresh('expired-token');
 
@@ -361,7 +374,7 @@ describe('AuthService', () => {
         ...mockRefreshTokenRecord,
         usedAt: new Date(),
       };
-      mockPrismaService.refreshToken.findFirst.mockResolvedValue(usedToken);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(usedToken);
 
       const result = await service.refresh('used-token');
 
@@ -369,7 +382,7 @@ describe('AuthService', () => {
     });
 
     it('should reject invalid refresh token', async () => {
-      mockPrismaService.refreshToken.findFirst.mockResolvedValue(null);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(null);
 
       const result = await service.refresh('invalid-token');
 
@@ -380,21 +393,17 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('should invalidate refresh token on logout', async () => {
-      mockPrismaService.refreshToken.findFirst.mockResolvedValue({
-        id: 'token-123',
-        tokenHash: 'hashed',
-        usedAt: null,
-      });
-      mockPrismaService.refreshToken.update.mockResolvedValue({});
+      mockPrismaService.refreshToken.deleteMany.mockResolvedValue({ count: 1 });
 
       const result = await service.logout('valid-token');
 
       expect(result.success).toBe(true);
-      expect(mockPrismaService.refreshToken.update).toHaveBeenCalled();
+      // logout revokes by hashing the token and deleting matching rows.
+      expect(mockPrismaService.refreshToken.deleteMany).toHaveBeenCalled();
     });
 
     it('should return success even if token not found', async () => {
-      mockPrismaService.refreshToken.findFirst.mockResolvedValue(null);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(null);
 
       const result = await service.logout('invalid-token');
 
