@@ -82,6 +82,10 @@ function AndroidCard() {
   );
 }
 
+// iOS is ready only when a REAL public TestFlight link is configured — otherwise
+// show a "coming soon" state instead of a dead placeholder link.
+const IOS_READY = !!TESTFLIGHT_URL && !TESTFLIGHT_URL.includes('XXXXXXXX');
+
 function IosCard() {
   const { t } = useTranslation();
   return (
@@ -93,15 +97,24 @@ function IosCard() {
       <p className="text-muted-foreground mb-6 text-sm">
         {t('download.ios.description')}
       </p>
-      <a
-        href={TESTFLIGHT_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold shadow-md hover:shadow-lg active:scale-[0.98]"
-      >
-        <ExternalLinkIcon className="w-5 h-5" />
-        {t('download.ios.button')}
-      </a>
+      {IOS_READY ? (
+        <a
+          href={TESTFLIGHT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold shadow-md hover:shadow-lg active:scale-[0.98]"
+        >
+          <ExternalLinkIcon className="w-5 h-5" />
+          {t('download.ios.button')}
+        </a>
+      ) : (
+        <span
+          aria-disabled="true"
+          className="inline-flex items-center gap-2 px-7 py-3.5 bg-muted text-muted-foreground rounded-xl font-semibold cursor-not-allowed select-none"
+        >
+          {t('download.ios.comingSoon', 'Coming soon on TestFlight')}
+        </span>
+      )}
       <p className="text-xs text-muted-foreground mt-4">{t('download.ios.meta', { version: APP_VERSION })}</p>
     </div>
   );
