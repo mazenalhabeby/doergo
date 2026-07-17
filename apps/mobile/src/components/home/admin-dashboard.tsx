@@ -37,6 +37,7 @@ import {
   getInitials,
   shortName,
   getEmployeeStatus,
+  isOnline,
   isClockedIn,
   getTodayString,
   timeAgo,
@@ -57,6 +58,7 @@ function estimateHeight(box: WorkspaceBoxData): number {
   h += box.people.length > 0 ? Math.ceil(box.people.length / 2) * 74 : 34;
   h += groupRows(box.onRoadPeople?.length || 0);
   h += groupRows(box.remotePeople?.length || 0);
+  h += groupRows(box.offShiftPeople?.length || 0);
   h += groupRows(box.offDutyPeople?.length || 0);
   if (box.type === 'fixed') h += 44; // actions row
   return h + 12; // marginBottom
@@ -78,6 +80,13 @@ export function AdminDashboard() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { t } = useTranslation();
+
+  // The viewer is online by definition (they're on this screen right now) — never
+  // let their own lastActiveAt lag drop them into "Off Duty".
+  const memberOnline = useCallback(
+    (m: { id: string; lastActiveAt?: string | null }) => m.id === user?.id || isOnline(m.lastActiveAt),
+    [user?.id],
+  );
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [locations, setLocations] = useState<LocationWithMembers[]>([]);
@@ -180,6 +189,16 @@ export function AdminDashboard() {
     return map;
   }, [entries]);
 
+  // userId -> whether their current clock-in is remote (WFH). Drives Remote vs On Shift.
+  const attendanceRemoteMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    const sorted = [...entries].sort(
+      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
+    );
+    for (const e of sorted) if (!map.has(e.userId)) map.set(e.userId, !!e.isRemote);
+    return map;
+  }, [entries]);
+
   const activeTaskMap = useMemo(() => {
     const map = new Map<string, Task>();
     for (const task of tasks) {
@@ -214,6 +233,7 @@ export function AdminDashboard() {
       const present: PersonNodeData[] = [];
       const onRoad: PersonNodeData[] = [];
       const remote: PersonNodeData[] = [];
+      const offShift: PersonNodeData[] = [];
       const offDuty: PersonNodeData[] = [];
 
       for (const userId of assigned) {
@@ -221,23 +241,26 @@ export function AdminDashboard() {
         if (!m || !m.isActive) continue;
         accounted.add(userId);
 
-        const activeTask = activeTaskMap.get(userId);
         const clocked = clockedInUserIds.has(userId);
         const clockedLoc = attendanceLocationMap.get(userId);
+        const online = memberOnline(m);
         const { status, tag } = getEmployeeStatus({
           isClockedIn: clocked,
           isOnBreak: onBreakUserIds.has(userId),
-          isLate: false,
-          hasActiveTask: !!activeTask,
+          isOnline: online,
+          presence: m.presence,
+          isRemote: attendanceRemoteMap.get(userId) ?? false,
+          isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
         });
         const node = toNode(m, status, tag);
 
-        if (!clocked && !activeTask) {
-          offDuty.push(toNode(m, 'off'));
-        } else if (activeTask && (activeTask.status === 'EN_ROUTE' || activeTask.status === 'ARRIVED')) {
-          onRoad.push({ ...node, tag: tag || { text: 'In Field', variant: 'task' } });
-        } else if (clocked && clockedLoc && clockedLoc !== loc.id) {
-          remote.push({ ...node, tag: tag || { text: 'Off-site', variant: 'hrs' } });
+        if (!clocked) {
+          // Off the clock → Off-shift (online/reachable) vs Off Duty (offline).
+          (online ? offShift : offDuty).push(node);
+        } else if ((m.workMode || 'HYBRID') === 'ON_ROAD') {
+          onRoad.push(node);
+        } else if (clockedLoc && clockedLoc !== loc.id) {
+          remote.push(node);
         } else {
           present.push(node);
         }
@@ -258,6 +281,7 @@ export function AdminDashboard() {
         people: present,
         onRoadPeople: onRoad,
         remotePeople: remote,
+        offShiftPeople: offShift,
         offDutyPeople: offDuty,
         totalAssigned: assigned.length,
         activeCount: present.length + onRoad.length + remote.length,
@@ -275,8 +299,10 @@ export function AdminDashboard() {
         const { status, tag } = getEmployeeStatus({
           isClockedIn: clockedInUserIds.has(userId),
           isOnBreak: onBreakUserIds.has(userId),
-          isLate: false,
-          hasActiveTask: true,
+          isOnline: memberOnline(m),
+          presence: m.presence,
+          isRemote: attendanceRemoteMap.get(userId) ?? false,
+          isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
         });
         onTask.push(toNode(m, status, tag));
       } else if (task.assignedTo) {
@@ -294,10 +320,54 @@ export function AdminDashboard() {
       result.push({ locationId: 'on-task', title: 'On Task', type: 'dynamic', people: onTask });
     }
 
+    // Catch-all for anyone NOT already placed:
+    //  • clocked in → "On the Clock" (so a clocked-in driver is never invisible)
+    //  • off the clock → "Off-shift" (online) vs "Off Duty" (offline)
+    const onClock: PersonNodeData[] = [];
+    const offShiftDyn: PersonNodeData[] = [];
+    const offDutyDyn: PersonNodeData[] = [];
+    for (const m of memberMap.values()) {
+      if (accounted.has(m.id)) continue;
+      if (m.role !== 'EMPLOYEE' || !m.isActive) continue;
+      const clocked = clockedInUserIds.has(m.id);
+      const online = memberOnline(m);
+
+      if (clocked) {
+        accounted.add(m.id);
+        const { status, tag } = getEmployeeStatus({
+          isClockedIn: true,
+          isOnBreak: onBreakUserIds.has(m.id),
+          isOnline: online,
+          presence: m.presence,
+          isRemote: attendanceRemoteMap.get(m.id) ?? false,
+          isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
+        });
+        onClock.push(toNode(m, status, tag));
+      } else if (!activeTaskMap.has(m.id)) {
+        accounted.add(m.id);
+        const { status, tag } = getEmployeeStatus({
+          isClockedIn: false,
+          isOnBreak: false,
+          isOnline: online,
+          presence: m.presence,
+        });
+        (online ? offShiftDyn : offDutyDyn).push(toNode(m, status, tag));
+      }
+    }
+    if (onClock.length > 0) {
+      result.push({ locationId: 'on-clock', title: 'On the Clock', type: 'dynamic', people: onClock });
+    }
+    if (offShiftDyn.length > 0) {
+      result.push({ locationId: 'off-shift', title: 'Off-shift', type: 'dynamic', people: offShiftDyn });
+    }
+    if (offDutyDyn.length > 0) {
+      result.push({ locationId: 'off-duty', title: 'Off Duty', type: 'dynamic', people: offDutyDyn });
+    }
+
     return result;
   }, [
     locations, assignments, tasks, memberMap,
-    clockedInUserIds, onBreakUserIds, attendanceLocationMap, activeTaskMap,
+    clockedInUserIds, onBreakUserIds, attendanceLocationMap, attendanceRemoteMap, activeTaskMap, memberOnline,
   ]);
 
   // ── Live events ──────────────────────────────────────────────────────────
@@ -404,8 +474,10 @@ export function AdminDashboard() {
     const { status } = getEmployeeStatus({
       isClockedIn: clockedInUserIds.has(m.id),
       isOnBreak: onBreakUserIds.has(m.id),
-      isLate: false,
-      hasActiveTask: activeTaskMap.has(m.id),
+      isOnline: memberOnline(m),
+      presence: m.presence,
+      isRemote: attendanceRemoteMap.get(m.id) ?? false,
+      isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
     });
     return {
       userId: m.id,
@@ -416,7 +488,7 @@ export function AdminDashboard() {
       email: m.email,
       status,
     };
-  }, [selectedMemberId, memberMap, clockedInUserIds, onBreakUserIds, activeTaskMap]);
+  }, [selectedMemberId, memberMap, clockedInUserIds, onBreakUserIds, attendanceRemoteMap, memberOnline]);
 
   const selectedMemberTasks = useMemo(() => {
     if (!selectedMemberId) return [];

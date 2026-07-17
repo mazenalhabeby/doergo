@@ -37,6 +37,8 @@ export interface OrgMember {
   position?: string | null;
   specialty?: string | null;
   workMode?: string;
+  presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
+  lastActiveAt?: string | null;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
@@ -60,9 +62,12 @@ export interface Invitation {
 export interface CreateInvitationInput {
   targetRole: string;
   expiresInHours?: number;
+  position?: string;
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;
+  /** Pre-assigned space (CompanyLocation id) — user is assigned to it on accept. */
+  spaceId?: string;
 }
 
 // ============================================================================

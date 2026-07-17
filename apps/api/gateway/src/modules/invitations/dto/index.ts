@@ -101,6 +101,11 @@ export class CreateInvitationDto {
   @MaxLength(50)
   specialty?: string;
 
+  @ApiPropertyOptional({ description: 'Pre-assigned space (CompanyLocation id)' })
+  @IsString()
+  @IsOptional()
+  spaceId?: string;
+
   @ApiPropertyOptional({
     example: 5,
     description: 'Maximum daily jobs for technician',

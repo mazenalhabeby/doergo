@@ -93,8 +93,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     if (scheduleType === "FLEXIBLE" && monthlyHourBudget !== "") {
       input.monthlyHourBudget = Number(monthlyHourBudget)
     }
+    if (spaceId && spaceId !== "none") input.spaceId = spaceId
     createMutation.mutate(input)
-  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, createMutation])
+  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, createMutation])
 
   const handleCopyCode = useCallback(async () => {
     if (!generatedCode) return

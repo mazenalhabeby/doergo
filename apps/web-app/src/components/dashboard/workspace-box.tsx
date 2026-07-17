@@ -43,6 +43,7 @@ export interface WorkspaceBoxProps {
   type: "fixed" | "dynamic"
   people: PersonNodeProps[]
   offDutyPeople?: PersonNodeProps[]
+  offShiftPeople?: PersonNodeProps[]
   onRoadPeople?: PersonNodeProps[]
   remotePeople?: PersonNodeProps[]
   activeCount?: number
@@ -53,6 +54,8 @@ export interface WorkspaceBoxProps {
   onAssign?: (locationId: string) => void
   onViewTasks?: (locationId: string) => void
   onPersonClick?: (userId: string) => void
+  /** Show absence reasons in the Off-Duty list — admins & managers only. */
+  canSeeAbsenceReason?: boolean
   isExpanded?: boolean
   isOtherExpanded?: boolean
   isClosing?: boolean
@@ -79,7 +82,7 @@ function getSpanClasses(count: number, isExpanded: boolean, isOtherExpanded: boo
 
 type ViewMode = "normal" | "expanded" | "collapsed"
 
-type SubPanel = "inField" | "offSite" | "offDuty" | null
+type SubPanel = "inField" | "offSite" | "offShift" | "offDuty" | null
 
 export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, WorkspaceBoxProps>(function WorkspaceBox({
   title,
@@ -93,7 +96,9 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
   onAssign,
   onViewTasks,
   onPersonClick,
+  canSeeAbsenceReason = false,
   offDutyPeople = [],
+  offShiftPeople = [],
   onRoadPeople = [],
   remotePeople = [],
   isExpanded = false,
@@ -127,7 +132,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
 
   const visibleCount = people.length + onRoadPeople.length + remotePeople.length
   const physicallyEmpty = people.length === 0 && visibleCount > 0
-  const trulyEmpty = visibleCount === 0 && offDutyPeople.length === 0
+  const trulyEmpty = visibleCount === 0 && offShiftPeople.length === 0 && offDutyPeople.length === 0
 
   let spanClasses: string
   if (isExpanded) {
@@ -215,6 +220,11 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
                 <span className="text-foreground/80 font-bold">{remotePeople.length}</span> {t("workspace.offSite")}
               </span>
             )}
+            {offShiftPeople.length > 0 && (
+              <span className="text-xs text-foreground/40 font-medium">
+                <span className="text-foreground/60 font-bold">{offShiftPeople.length}</span> {t("workspace.offShift", "off-shift")}
+              </span>
+            )}
             {offDutyPeople.length > 0 && (
               <span className="text-xs text-foreground/40 font-medium">
                 <span className="text-foreground/60 font-bold">{offDutyPeople.length}</span> {t("workspace.off")}
@@ -248,6 +258,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
               { key: null as SubPanel, label: t("workspace.groupPresent"), people, variant: "cells" as const },
               { key: "inField" as SubPanel, label: t("workspace.groupInField"), people: onRoadPeople, variant: "cells" as const },
               { key: "offSite" as SubPanel, label: t("workspace.groupOffSite"), people: remotePeople, variant: "cells" as const },
+              { key: "offShift" as SubPanel, label: t("workspace.groupOffShift", "Off-shift"), people: offShiftPeople, variant: "cells" as const },
               { key: "offDuty" as SubPanel, label: t("workspace.groupOffDuty"), people: offDutyPeople, variant: "offduty" as const },
             ].filter(g => g.people.length > 0 || g.key === null)
 
@@ -272,7 +283,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
                   {activeGroup && activeGroup.variant === "offduty" ? (
                     <div className="flex-1 flex flex-col gap-1 overflow-auto">
                       {activeGroup.people.map((person, i) => (
-                        <OffDutyRow key={`${person.name}-${i}`} person={person} delay={i * 0.05} />
+                        <OffDutyRow key={`${person.name}-${i}`} person={person} delay={i * 0.05} canSeeAbsenceReason={canSeeAbsenceReason} />
                       ))}
                       {activeGroup.people.length === 0 && (
                         <div className="flex-1 flex items-center justify-center text-xs text-foreground/30">{t("workspace.allAccountedFor")}</div>
@@ -391,7 +402,10 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
 
       {/* ═══ NORMAL VIEW ═══ */}
       {mode === "normal" && (() => {
-        const allActive = [...people, ...onRoadPeople, ...remotePeople]
+        // Show clocked-in people first, then off-shift (online, reachable).
+        // Offline (off-duty) members are NOT shown here — they live only in the
+        // expanded Off Duty group. Ring = clocked in, dot = availability.
+        const allActive = [...people, ...onRoadPeople, ...remotePeople, ...offShiftPeople]
         const allEmpty = allActive.length === 0
         return (
           <>
@@ -404,7 +418,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
               <div
                 className={cn(
                   "flex-1 p-[1cqw]",
-                  visibleCount <= 4
+                  allActive.length <= 4
                     ? cn(
                         "flex flex-wrap items-center justify-center content-center",
                         "gap-[1cqw]",
@@ -441,10 +455,8 @@ const StatusIcon = React.memo(function StatusIcon({ status }: { status: string }
       return <Circle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500" />
     case "busy":
       return <Briefcase className="h-3.5 w-3.5 text-blue-500" />
-    case "late":
-      return <Clock className="h-3.5 w-3.5 text-amber-500" />
-    case "miss":
-      return <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+    case "away":
+      return <Circle className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
     case "off":
       return <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
     default:
@@ -524,7 +536,7 @@ const MiniWorkerCell = React.memo(function MiniWorkerCell({ person }: { person: 
           initials={person.initials}
           color={person.color}
           status={person.status}
-          online={person.online}
+          clockedIn={person.clockedIn}
           imageUrl={person.imageUrl}
           hideDot
           className="[&>div:first-child]:!w-[30px] [&>div:first-child]:!h-[30px] [&>div:first-child]:!min-w-[30px] [&>div:first-child]:!min-h-[30px] [&>div:first-child]:!text-[11px]"
@@ -541,10 +553,12 @@ const ABSENCE_INFO: Record<string, { labelKey: string; color: string; bgColor: s
   unexcused: { labelKey: "workspace.absenceReason.unexcused", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-500/10", icon: <ShieldAlert className="h-3.5 w-3.5" /> },
 }
 
-const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0 }: { person: PersonNodeProps; delay?: number }) {
+const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0, canSeeAbsenceReason = false }: { person: PersonNodeProps; delay?: number; canSeeAbsenceReason?: boolean }) {
   const { t } = useTranslation()
-  const reason = person.absenceReason || "unexcused"
-  const info = ABSENCE_INFO[reason] || ABSENCE_INFO.unexcused!
+  // Absence reason (Sick / Unexcused / …) is HR-sensitive — admins & managers
+  // only. And only when the reason is actually KNOWN (never default to
+  // "Unexcused", which wrongly flags everyone who's simply off-shift).
+  const info = canSeeAbsenceReason && person.absenceReason ? ABSENCE_INFO[person.absenceReason] : undefined
 
   return (
     <div
@@ -564,10 +578,12 @@ const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0 }: { perso
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-foreground/70">{person.name}</div>
       </div>
-      <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shrink-0", info.color, info.bgColor)}>
-        {info.icon}
-        {t(info.labelKey)}
-      </div>
+      {info && (
+        <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shrink-0", info.color, info.bgColor)}>
+          {info.icon}
+          {t(info.labelKey)}
+        </div>
+      )}
     </div>
   )
 })
@@ -603,7 +619,6 @@ const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
               <span className={cn(
                 "text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase",
                 person.tag.variant === "task" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" :
-                person.tag.variant === "late" || person.tag.variant === "miss" ? "bg-red-500/15 text-red-500" :
                 "bg-purple-500/15 text-purple-600 dark:text-purple-400",
               )}>
                 {person.tag.text}
@@ -615,7 +630,7 @@ const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
               initials={person.initials}
               color={person.color}
               status={person.status}
-              online={person.online}
+              clockedIn={person.clockedIn}
               imageUrl={person.imageUrl}
               hideDot
               className="[&>div:first-child]:!w-[58px] [&>div:first-child]:!h-[58px] [&>div:first-child]:!min-w-[58px] [&>div:first-child]:!min-h-[58px] [&>div:first-child]:!text-xl"
@@ -699,7 +714,7 @@ function WorkerDropdownContent({
               initials={person.initials}
               color={person.color}
               status={person.status}
-              online={person.online}
+              clockedIn={person.clockedIn}
               imageUrl={person.imageUrl}
               hideDot
               className="[&>div:first-child]:!w-[48px] [&>div:first-child]:!h-[48px] [&>div:first-child]:!min-w-[48px] [&>div:first-child]:!min-h-[48px] [&>div:first-child]:!text-base"
@@ -709,7 +724,7 @@ function WorkerDropdownContent({
             <p className="text-sm font-bold text-white truncate drop-shadow-sm">
               {person.name}{isSelf ? ` ${t("workspace.you")}` : ""}
             </p>
-            <p className="text-[11px] text-white/70">{emp?.position || person.role || t("workspace.employee")}</p>
+            {emp?.position ? <p className="text-[11px] text-white/70">{emp.position}</p> : null}
           </div>
           {person.tag && (
             <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm shrink-0">

@@ -13,6 +13,7 @@ export interface WorkspaceBoxData {
   people: PersonNodeData[];
   onRoadPeople?: PersonNodeData[];
   remotePeople?: PersonNodeData[];
+  offShiftPeople?: PersonNodeData[];
   offDutyPeople?: PersonNodeData[];
   totalAssigned?: number;
   activeCount?: number;
@@ -71,6 +72,7 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
     present.length +
       (box.onRoadPeople?.length || 0) +
       (box.remotePeople?.length || 0) +
+      (box.offShiftPeople?.length || 0) +
       (box.offDutyPeople?.length || 0) >
     0;
 
@@ -111,6 +113,7 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
           )}
           <SubGroup label={t('components.workspaceCard.inField')} people={box.onRoadPeople || []} onPersonPress={onPersonPress} color="#60a5fa" />
           <SubGroup label={t('components.workspaceCard.offSite')} people={box.remotePeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
+          <SubGroup label={t('components.workspaceCard.offShift', 'Off-shift')} people={box.offShiftPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
           <SubGroup label={t('components.workspaceCard.offDuty')} people={box.offDutyPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
         </View>
       ) : (

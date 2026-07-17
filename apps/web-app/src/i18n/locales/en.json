@@ -2940,7 +2940,9 @@
       "sick": "Sick Leave",
       "day_off": "Day Off",
       "unexcused": "Unexcused"
-    }
+    },
+    "offShift": "off-shift",
+    "groupOffShift": "Off-shift"
   },
   "timeOff": {
     "my": {

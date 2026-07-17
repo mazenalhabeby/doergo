@@ -34,7 +34,6 @@ import {
 } from '../../../src/lib/constants';
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
 import {
-  getRoleLabel,
   Role,
 } from '@hbcfield/shared/client';
 
@@ -73,8 +72,8 @@ export default function ProfileScreen() {
   const [savingPresence, setSavingPresence] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
-  // Manual availability override (mirrors the web navbar toggle).
-  const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY' | null) => {
+  // Availability control (mirrors the web navbar toggle): Available / Busy / Away.
+  const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
     setSavingPresence(true);
     try {
       await userApi.setPresence(presence);
@@ -237,33 +236,25 @@ export default function ProfileScreen() {
         </Text>
         <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email}</Text>
 
-        {/* Badges — controlled by profileBadges config */}
+        {/* Identity badges — show the job POSITION only (no ADMIN/EMPLOYEE role
+            label) plus specialty for technicians. */}
         {(() => {
           const badges = user?.profileBadges;
-          const showRole = badges?.showRole !== false;
-          const showType = badges?.showType !== false;
           const showSpecialty = badges?.showSpecialty !== false;
-          const hasBadges = showRole || (isTechnician && !!user?.position)
-            || (isTechnician && showType && !!user?.technicianType)
+          const hasBadges = !!user?.position
             || (isTechnician && showSpecialty && !!user?.specialty);
 
           if (!hasBadges) return null;
 
           return (
             <View style={styles.badgesRow}>
-              {showRole && (
-                <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
-                  <Ionicons name="briefcase-outline" size={13} color={COLORS.primary} />
-                  <Text style={styles.badgeText}>{getRoleLabel(user?.role ?? '')}</Text>
-                </View>
-              )}
               {isTechnician && showSpecialty && !!user?.specialty && (
                 <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}>
                   <Ionicons name="construct-outline" size={13} color={COLORS.primary} />
                   <Text style={styles.badgeText}>{user.specialty}</Text>
                 </View>
               )}
-              {isTechnician && !!user?.position && (
+              {!!user?.position && (
                 <View style={[styles.badge, styles.badgeSecondary, { backgroundColor: colors.emeraldLight }]}>
                   <Ionicons name="navigate-outline" size={13} color={COLORS.emerald} />
                   <Text style={[styles.badgeText, { color: COLORS.emerald }]}>
@@ -284,9 +275,9 @@ export default function ProfileScreen() {
             { value: 'AVAILABLE' as const, color: '#22c55e', label: t('profile.status.available', 'Available') },
             { value: 'BUSY' as const, color: '#ef4444', label: t('profile.status.busy', 'Busy') },
             { value: 'AWAY' as const, color: '#f59e0b', label: t('profile.status.away', 'Away') },
-            { value: null, color: colors.textMuted, label: t('profile.status.auto', 'Auto') },
           ]).map((opt) => {
-            const active = (user?.presence ?? null) === opt.value;
+            // No "auto" state — default to Available (the login default) when unset.
+            const active = (user?.presence ?? 'AVAILABLE') === opt.value;
             return (
               <TouchableOpacity
                 key={String(opt.value)}

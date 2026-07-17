@@ -61,7 +61,7 @@ export default function TeamScreen() {
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>{c.firstName} {c.lastName}</Text>
                 <Text style={[styles.meta, { color: colors.textMuted }]} numberOfLines={1}>
-                  {(c.position || t('roles.EMPLOYEE'))}{c.spaceName ? ` · ${c.spaceName}` : ''}
+                  {[c.position, c.spaceName].filter(Boolean).join(' · ')}
                 </Text>
               </View>
               <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.primary }]} onPress={() => toast.info(t('team.messagingSoon'))} activeOpacity={0.8}>

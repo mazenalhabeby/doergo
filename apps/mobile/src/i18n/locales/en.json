@@ -786,11 +786,11 @@
       "createModal": {
         "title": "New Invitation",
         "successTitle": "Invitation Created",
-        "roleLabel": "Role",
-        "technician": "Employee",
-        "dispatcher": "Dispatcher",
+        "employee": "Employee",
         "jobTitleLabel": "Job Title (optional)",
         "jobTitlePlaceholder": "e.g. Electrician",
+        "spaceLabel": "Space (optional)",
+        "noSpace": "No space",
         "generateButton": "Generate Code",
         "tapToCopy": "Tap to copy · Expires in 3 days",
         "shareMessage": "Join with invitation code: {{code}}"
@@ -890,6 +890,7 @@
       "activeCount": "{{active}} of {{total}} active",
       "inField": "In field",
       "offSite": "Off-site",
+      "offShift": "Off-shift",
       "offDuty": "Off duty",
       "noneAssigned": "No one assigned yet",
       "assign": "Assign",

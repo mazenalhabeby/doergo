@@ -106,12 +106,14 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                   <h3 className="text-lg font-semibold text-foreground leading-tight">
                     {employee.firstName} {employee.lastName}
                   </h3>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Briefcase className="size-3 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {employee.position || employee.specialty || t("dashboard.employeePanel.employee")}
-                    </span>
-                  </div>
+                  {(employee.position || employee.specialty) && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Briefcase className="size-3 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {employee.position || employee.specialty}
+                      </span>
+                    </div>
+                  )}
                   {employee.email && (
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <Mail className="size-3 text-muted-foreground" />

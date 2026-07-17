@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
-import { adminInvitationsApi, type Invitation } from '../../../src/lib/api';
+import { adminInvitationsApi, locationsApi, type Invitation } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
 
@@ -28,8 +28,9 @@ export default function InvitationsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [newRole, setNewRole] = useState<'TECHNICIAN' | 'DISPATCHER'>('TECHNICIAN');
   const [newSpecialty, setNewSpecialty] = useState('');
+  const [newSpaceId, setNewSpaceId] = useState<string | null>(null);
+  const [spaces, setSpaces] = useState<{ id: string; name: string }[]>([]);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<Invitation | null>(null);
 
@@ -37,8 +38,12 @@ export default function InvitationsScreen() {
     try {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
-      const result = await adminInvitationsApi.list();
+      const [result, locs] = await Promise.all([
+        adminInvitationsApi.list(),
+        locationsApi.list().catch(() => []),
+      ]);
       setInvitations(result);
+      setSpaces((locs as { id: string; name: string }[]).map((l) => ({ id: l.id, name: l.name })));
     } catch (err: any) {
       if (err?.statusCode === 401) return;
       toast.error(t('common.error'), err?.message || t('manage.invitationsScreen.failedToLoad'));
@@ -53,9 +58,11 @@ export default function InvitationsScreen() {
   const handleCreate = async () => {
     setIsCreating(true);
     try {
+      // Invitations are always for Employees; management is granted via permissions.
       const result = await adminInvitationsApi.create({
-        targetRole: newRole,
+        targetRole: 'EMPLOYEE',
         specialty: newSpecialty.trim() || undefined,
+        spaceId: newSpaceId || undefined,
         expiresInHours: 72,
       });
       setGeneratedCode(result.code);
@@ -102,7 +109,7 @@ export default function InvitationsScreen() {
           <View style={s.cardInfo}>
             <View style={s.roleRow}>
               <Text style={[s.role, { color: colors.textPrimary }]}>
-                {item.targetRole === 'TECHNICIAN' ? t('manage.invitationsScreen.createModal.technician') : t('manage.invitationsScreen.createModal.dispatcher')}
+                {t('manage.invitationsScreen.createModal.employee', 'Employee')}
               </Text>
               {item.specialty && <Text style={[s.specialty, { color: colors.textMuted }]}> · {item.specialty}</Text>}
             </View>
@@ -147,7 +154,7 @@ export default function InvitationsScreen() {
       {/* Create Button */}
       <TouchableOpacity
         style={s.createBtn}
-        onPress={() => { setShowCreate(true); setGeneratedCode(null); setNewSpecialty(''); }}
+        onPress={() => { setShowCreate(true); setGeneratedCode(null); setNewSpecialty(''); setNewSpaceId(null); }}
         activeOpacity={0.8}
       >
         <Ionicons name="add-circle" size={20} color={COLORS.white} />
@@ -203,33 +210,38 @@ export default function InvitationsScreen() {
               <>
                 <Text style={[s.modalTitle, { color: colors.textPrimary }]}>{t('manage.invitationsScreen.createModal.title')}</Text>
 
-                <Text style={[s.label, { color: colors.textSecondary }]}>{t('manage.invitationsScreen.createModal.roleLabel')}</Text>
-                <View style={s.roleToggle}>
-                  {(['TECHNICIAN', 'DISPATCHER'] as const).map(r => (
-                    <TouchableOpacity
-                      key={r}
-                      style={[s.roleOption, newRole === r && { backgroundColor: COLORS.primary }]}
-                      onPress={() => setNewRole(r)}
-                    >
-                      <Text style={[s.roleOptionText, { color: newRole === r ? COLORS.white : colors.textSecondary }]}>
-                        {r === 'TECHNICIAN' ? t('manage.invitationsScreen.createModal.technician') : t('manage.invitationsScreen.createModal.dispatcher')}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <Text style={[s.label, { color: colors.textSecondary }]}>{t('manage.invitationsScreen.createModal.jobTitleLabel')}</Text>
+                <TextInput
+                  style={[s.input, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.textPrimary }]}
+                  placeholder={t('manage.invitationsScreen.createModal.jobTitlePlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  value={newSpecialty}
+                  onChangeText={setNewSpecialty}
+                />
 
-                {newRole === 'TECHNICIAN' && (
-                  <>
-                    <Text style={[s.label, { color: colors.textSecondary, marginTop: SPACING.md }]}>{t('manage.invitationsScreen.createModal.jobTitleLabel')}</Text>
-                    <TextInput
-                      style={[s.input, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.textPrimary }]}
-                      placeholder={t('manage.invitationsScreen.createModal.jobTitlePlaceholder')}
-                      placeholderTextColor={colors.textMuted}
-                      value={newSpecialty}
-                      onChangeText={setNewSpecialty}
-                    />
-                  </>
-                )}
+                <Text style={[s.label, { color: colors.textSecondary, marginTop: SPACING.md }]}>{t('manage.invitationsScreen.createModal.spaceLabel')}</Text>
+                <View style={s.chipWrap}>
+                  <TouchableOpacity
+                    style={[s.chip, { borderColor: colors.inputBorder }, !newSpaceId && { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}
+                    onPress={() => setNewSpaceId(null)}
+                  >
+                    <Text style={[s.chipText, { color: !newSpaceId ? COLORS.white : colors.textSecondary }]}>
+                      {t('manage.invitationsScreen.createModal.noSpace')}
+                    </Text>
+                  </TouchableOpacity>
+                  {spaces.map((sp) => {
+                    const active = newSpaceId === sp.id;
+                    return (
+                      <TouchableOpacity
+                        key={sp.id}
+                        style={[s.chip, { borderColor: colors.inputBorder }, active && { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}
+                        onPress={() => setNewSpaceId(sp.id)}
+                      >
+                        <Text style={[s.chipText, { color: active ? COLORS.white : colors.textSecondary }]}>{sp.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
                 <TouchableOpacity style={s.submitBtn} onPress={handleCreate} disabled={isCreating} activeOpacity={0.8}>
                   {isCreating ? <ActivityIndicator size="small" color={COLORS.white} /> : (
@@ -271,10 +283,10 @@ const s = StyleSheet.create({
   modal: { borderRadius: RADIUS.xl, padding: SPACING.xxl, ...SHADOWS.lg },
   modalTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg },
   label: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.sm },
-  roleToggle: { flexDirection: 'row', gap: SPACING.sm },
-  roleOption: { flex: 1, paddingVertical: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', borderWidth: 1, borderColor: COLORS.primary },
-  roleOptionText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   input: { borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, fontSize: FONT_SIZE.base },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  chip: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.full, borderWidth: 1 },
+  chipText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
   submitBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: SPACING.lg, alignItems: 'center', marginTop: SPACING.xl },
   submitBtnText: { color: COLORS.white, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
   codeBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md, backgroundColor: '#f0fdf4', paddingVertical: SPACING.lg, paddingHorizontal: SPACING.xxl, borderRadius: RADIUS.md, marginTop: SPACING.lg },

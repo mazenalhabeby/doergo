@@ -72,6 +72,10 @@ export class LocationsService {
 
     const where: any = {
       organizationId: data.organizationId,
+      // Never surface the org's internal "Remote" bucket (the geofence-exempt
+      // WFH clock-in target). It's an attendance implementation detail, not a
+      // real Space/work location — schema marks it "hidden from pickers".
+      isRemote: false,
     };
 
     // By default, only show active locations

@@ -4,10 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getAvatarColors, type WorkerStatus } from './helpers';
 
 const STATUS_COLOR: Record<WorkerStatus, string> = {
-  on: '#10b981',
-  busy: '#3b82f6',
-  late: '#f59e0b',
-  off: '#8b8d98',
+  on: '#10b981',   // Available / On shift — green
+  busy: '#ef4444', // Busy — red
+  away: '#f59e0b', // Away — amber
+  off: '#8b8d98',  // Offline — grey
 };
 
 export interface AvatarProps {

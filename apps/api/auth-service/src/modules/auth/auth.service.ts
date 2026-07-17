@@ -360,13 +360,21 @@ export class AuthService {
         };
       }
 
-      // SECURITY: Reset failed attempts on successful login
-      if (user.failedLoginAttempts > 0 || user.lockedUntil) {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { failedLoginAttempts: 0, lockedUntil: null },
-        });
-      }
+      // Every successful login starts the session as Available; the user can
+      // change it to Busy/Away later. Also reset any failed-attempt lockout.
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          presence: 'AVAILABLE',
+          // Mark active immediately so the user reads as online the moment they
+          // sign in (don't wait for the first token-validation ping).
+          lastActiveAt: new Date(),
+          ...(user.failedLoginAttempts > 0 || user.lockedUntil
+            ? { failedLoginAttempts: 0, lockedUntil: null }
+            : {}),
+        },
+      });
+      user.presence = 'AVAILABLE'; // reflect in the login response below
 
       // Clean up expired tokens for this user
       await this.prisma.refreshToken.deleteMany({
@@ -396,7 +404,7 @@ export class AuthService {
       const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
         userAgent: data.userAgent,
         ipAddress: data.ipAddress,
-      });
+      }, user.canViewAllTasks);
 
       // Audit: successful login (fire-and-forget, never blocks response)
       if (user.organizationId) {
@@ -646,6 +654,8 @@ export class AuthService {
         storedToken.user.email,
         storedToken.user.role,
         storedToken.user.organizationId,
+        undefined,
+        storedToken.user.canViewAllTasks,
       );
 
       // Find the new refresh token hash (it was just created by generateTokens)
@@ -721,11 +731,32 @@ export class AuthService {
       // SECURITY: Hash the token to find and delete
       const tokenHash = hashToken(refreshToken);
 
+      // Look up the owner so we can mark them offline + let the gateway notify
+      // teammates in real time.
+      const stored = await this.prisma.refreshToken.findUnique({
+        where: { tokenHash },
+        select: { userId: true, user: { select: { organizationId: true } } },
+      });
+
       await this.prisma.refreshToken.deleteMany({
         where: { tokenHash },
       });
 
-      return { success: true, message: 'Logged out successfully' };
+      if (stored?.userId) {
+        // Clear last-active so the user reads as offline immediately (no 3-min
+        // lag). If they're still active on another device, their next request
+        // re-sets it within ~a minute.
+        await this.prisma.user
+          .update({ where: { id: stored.userId }, data: { lastActiveAt: null } })
+          .catch(() => undefined);
+      }
+
+      return {
+        success: true,
+        message: 'Logged out successfully',
+        userId: stored?.userId,
+        organizationId: stored?.user?.organizationId,
+      };
     } catch (error) {
       this.logger.error('Logout error:', error);
       return { success: true, message: 'Logged out successfully' };
@@ -984,12 +1015,15 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }) {
+  private async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }, canViewAllTasks = false) {
     // organizationId is embedded so downstream services (e.g. the Socket.IO
     // gateway) can scope rooms from the verified token instead of trusting a
     // client-supplied org id.
     const basePayload: Record<string, any> = { sub: userId, email, role };
     if (organizationId) basePayload.organizationId = organizationId;
+    // Lets the Socket.IO gateway scope task events to admins + "view all tasks"
+    // holders (a room they join) instead of broadcasting to the whole org.
+    if (canViewAllTasks) basePayload.canViewAllTasks = true;
 
     // Token expiration from environment variables
     const accessExpiration = this.configService.get('JWT_ACCESS_EXPIRATION') || '15m';

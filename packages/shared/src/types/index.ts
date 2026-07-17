@@ -68,6 +68,8 @@ export const SocketEvents = {
   // Break events
   BREAK_STARTED: 'break.started',
   BREAK_ENDED: 'break.ended',
+  // Availability status (Available/Busy/Away) changed
+  PRESENCE_CHANGED: 'presence.changed',
 } as const;
 
 // API Response wrapper

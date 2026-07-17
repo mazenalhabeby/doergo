@@ -8,10 +8,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
-import { SocketEvents } from '@hbcfield/shared';
+import { SocketEvents, PrismaService } from '@hbcfield/shared';
 
 export interface ClientInfo {
   userId: string;
@@ -37,7 +37,7 @@ export interface SocketStats {
     credentials: true,
   },
 })
-export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
   @WebSocketServer()
   server: Server;
 
@@ -47,8 +47,23 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   private messagesReceived = 0;
   private messagesSent = 0;
   private readonly jwtSecret: string;
+  // Per-worker throttle for GPS location broadcasts (workerId -> last emit ms).
+  private lastLocationEmit = new Map<string, number>();
+  // Pending "mark offline" timers, keyed by userId. When a user's LAST socket
+  // drops we wait out a grace window (survives refresh / reconnect / network
+  // blips) before flipping them offline. A new authenticate cancels it.
+  private offlineTimers = new Map<string, NodeJS.Timeout>();
+  // Grace window before an ungraceful disconnect is treated as "offline".
+  private readonly OFFLINE_GRACE_MS = 60000;
+  // Server-side "still here" heartbeat: while a socket is connected the user is
+  // online, even if their browser is idle and makes no API calls. We refresh
+  // lastActiveAt for all connected users on this interval so an open-but-idle
+  // tab never falls out of the 3-minute online window. One query per tick,
+  // regardless of how many users are connected.
+  private readonly HEARTBEAT_MS = 60000;
+  private heartbeatTimer?: NodeJS.Timeout;
 
-  constructor(configService: ConfigService) {
+  constructor(private readonly prisma: PrismaService, configService: ConfigService) {
     const secret = configService.get<string>('JWT_ACCESS_SECRET');
     if (!secret) {
       throw new Error('CRITICAL: JWT_ACCESS_SECRET must be configured for socket authentication');
@@ -56,39 +71,76 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.jwtSecret = secret;
   }
 
+  /** True if the user still has at least one authenticated socket connected. */
+  private userHasActiveSocket(userId: string): boolean {
+    for (const info of this.connectedClients.values()) {
+      if (info.userId === userId) return true;
+    }
+    return false;
+  }
+
   afterInit(server: Server) {
     this.logger.log('Socket.IO Gateway initialized');
 
-    // Enable Socket.IO Admin UI
-    // Access at: https://admin.socket.io
-    // Server URL: http://localhost:4001
+    // Socket.IO Admin UI (https://admin.socket.io) — FAIL CLOSED: in production it
+    // is only enabled when a non-empty SOCKET_ADMIN_PASSWORD is set, otherwise it
+    // stays off (an unauthenticated Admin UI can inspect every socket and emit
+    // arbitrary events).
     const isProduction = process.env.NODE_ENV === 'production';
-    instrument(server, {
-      auth: isProduction
-        ? { type: 'basic', username: process.env.SOCKET_ADMIN_USER || 'admin', password: process.env.SOCKET_ADMIN_PASSWORD || '' }
-        : false,
-      mode: isProduction ? 'production' : 'development',
-    });
-
-    // Global middleware for connection logging
-    server.use((socket, next) => {
-      // Track this socket for message counting via event listeners
-      socket.onAny((event, ...args) => {
-        this.messagesReceived++;
-        this.logger.debug(`[RECV] ${socket.id} -> ${event}: ${JSON.stringify(args).substring(0, 200)}`);
+    const adminPassword = process.env.SOCKET_ADMIN_PASSWORD;
+    if (isProduction && !adminPassword) {
+      this.logger.warn('Socket.IO Admin UI DISABLED — set SOCKET_ADMIN_PASSWORD to enable it in production.');
+    } else {
+      instrument(server, {
+        auth: isProduction
+          ? { type: 'basic', username: process.env.SOCKET_ADMIN_USER || 'admin', password: adminPassword as string }
+          : false,
+        mode: isProduction ? 'production' : 'development',
       });
+      this.logger.log('Socket.IO Admin UI enabled at https://admin.socket.io');
+    }
 
-      socket.onAnyOutgoing((event, ...args) => {
+    // Per-socket message counters. NOTE: we deliberately do NOT stringify the
+    // payload here — that ran on every inbound/outbound event and was pure CPU
+    // waste. Event names only.
+    server.use((socket, next) => {
+      socket.onAny((event) => {
+        this.messagesReceived++;
+        this.logger.debug(`[RECV] ${socket.id} -> ${event}`);
+      });
+      socket.onAnyOutgoing((event) => {
         if (event !== 'disconnect') {
           this.messagesSent++;
-          this.logger.debug(`[SEND] ${socket.id} <- ${event}: ${JSON.stringify(args).substring(0, 200)}`);
+          this.logger.debug(`[SEND] ${socket.id} <- ${event}`);
         }
       });
-
       next();
     });
 
-    this.logger.log('Socket.IO Admin UI enabled at https://admin.socket.io');
+    // Keep connected users "online" while their tab is open (see HEARTBEAT_MS).
+    this.heartbeatTimer = setInterval(() => {
+      void this.refreshConnectedPresence();
+    }, this.HEARTBEAT_MS);
+  }
+
+  onModuleDestroy() {
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    for (const timer of this.offlineTimers.values()) clearTimeout(timer);
+    this.offlineTimers.clear();
+  }
+
+  /** Bump lastActiveAt for every currently-connected user in one query. */
+  private async refreshConnectedPresence() {
+    const userIds = new Set<string>();
+    for (const info of this.connectedClients.values()) userIds.add(info.userId);
+    if (userIds.size === 0) return;
+
+    await this.prisma.user
+      .updateMany({
+        where: { id: { in: Array.from(userIds) } },
+        data: { lastActiveAt: new Date() },
+      })
+      .catch((err) => this.logger.warn(`[PRESENCE] heartbeat failed: ${err}`));
   }
 
   handleConnection(client: Socket) {
@@ -104,6 +156,16 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       timestamp: new Date().toISOString(),
       message: 'Connected to notification service',
     });
+
+    // Reject sockets that never authenticate: disconnect after 15s if they
+    // haven't sent a valid `authenticate` by then. Stops unauthenticated
+    // connections from piling up (cheap resource exhaustion).
+    (client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer = setTimeout(() => {
+      if (!this.connectedClients.has(client.id)) {
+        this.logger.warn(`[AUTH] Disconnecting ${client.id}: not authenticated within 15s`);
+        client.disconnect(true);
+      }
+    }, 15000);
   }
 
   handleDisconnect(client: Socket) {
@@ -115,11 +177,76 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       this.logger.log(`[DISCONNECT] Client ${client.id} (unauthenticated)`);
     }
 
+    clearTimeout((client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer);
+
     // Clean up event listeners to prevent memory leaks
     client.offAny();
     client.offAnyOutgoing();
 
     this.connectedClients.delete(client.id);
+
+    // Real-time offline: if this was the user's LAST socket, start a grace timer.
+    // If they don't reconnect within the window AND they aren't on the clock,
+    // clear lastActiveAt + broadcast offline so teammates' dashboards move them
+    // to "Off Duty" immediately (instead of waiting out the 3-min stale window).
+    if (clientInfo && !this.userHasActiveSocket(clientInfo.userId)) {
+      this.scheduleOfflineCheck(clientInfo.userId, clientInfo.organizationId);
+    }
+  }
+
+  private scheduleOfflineCheck(userId: string, organizationId: string) {
+    const existing = this.offlineTimers.get(userId);
+    if (existing) clearTimeout(existing);
+
+    const timer = setTimeout(() => {
+      this.offlineTimers.delete(userId);
+      void this.markOfflineIfIdle(userId, organizationId);
+    }, this.OFFLINE_GRACE_MS);
+
+    this.offlineTimers.set(userId, timer);
+  }
+
+  private async markOnline(userId: string, organizationId: string, wasOffline: boolean) {
+    try {
+      const updated = await this.prisma.user.update({
+        where: { id: userId },
+        data: { lastActiveAt: new Date() },
+        select: { presence: true },
+      });
+
+      // Only broadcast on a real offline→online transition, so opening a second
+      // tab or a socket reconnect doesn't spam every dashboard with refetches.
+      if (wasOffline) {
+        this.emitPresenceChanged(userId, updated.presence ?? 'AVAILABLE', organizationId);
+      }
+    } catch (err) {
+      this.logger.warn(`[PRESENCE] online mark failed for user ${userId}: ${err}`);
+    }
+  }
+
+  private async markOfflineIfIdle(userId: string, organizationId: string) {
+    // Reconnected during the grace window? Leave them online.
+    if (this.userHasActiveSocket(userId)) return;
+
+    try {
+      // Clocked-in guard: a technician driving or working on-site with the app
+      // backgrounded is still "at work" — never mark them offline. Their clock-in
+      // (a DB record) is untouched regardless.
+      const openEntry = await this.prisma.timeEntry.findFirst({
+        where: { userId, status: 'CLOCKED_IN' },
+        select: { id: true },
+      });
+      if (openEntry) return;
+
+      // Genuinely gone: clear last-active so they compute as offline, then push.
+      await this.prisma.user
+        .update({ where: { id: userId }, data: { lastActiveAt: null } })
+        .catch(() => undefined);
+
+      this.emitPresenceChanged(userId, null, organizationId);
+    } catch (err) {
+      this.logger.warn(`[PRESENCE] offline check failed for user ${userId}: ${err}`);
+    }
   }
 
   @SubscribeMessage('authenticate')
@@ -181,7 +308,33 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     client.join(`user:${userId}`);
     clientInfo.rooms.push(`user:${userId}`);
 
+    // "Task viewers" room — admins and members granted "view all tasks". Org-wide
+    // task events go here instead of to the whole org, so plain employees don't
+    // receive (or get the payload of) tasks they can't see.
+    if (role === 'ADMIN' || decoded.canViewAllTasks === true) {
+      client.join(`taskviewers:${organizationId}`);
+      clientInfo.rooms.push(`taskviewers:${organizationId}`);
+    }
+
+    // Authenticated — cancel the idle-disconnect timer.
+    clearTimeout((client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer);
+
+    // Reconnected within the grace window → cancel any pending "mark offline".
+    const pendingOffline = this.offlineTimers.get(userId);
+    if (pendingOffline) {
+      clearTimeout(pendingOffline);
+      this.offlineTimers.delete(userId);
+    }
+
+    // Was this user fully offline before this socket? (no other live socket)
+    const wasOffline = !this.userHasActiveSocket(userId);
+
     this.connectedClients.set(client.id, clientInfo);
+
+    // Mark them active immediately, and — only on a true offline→online flip —
+    // broadcast so teammates' dashboards pull them back in without a refresh.
+    // (Skipped for extra tabs/reconnects where they were already online.)
+    void this.markOnline(userId, organizationId, wasOffline);
 
     this.logger.log(`[AUTH] Client ${client.id} joined rooms: ${clientInfo.rooms.join(', ')}`);
 
@@ -197,7 +350,16 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       return { success: false, error: 'Must authenticate before joining task rooms' };
     }
 
+    // Cap task-room membership per socket (a client only ever views a handful of
+    // tasks at once) — stops a socket from joining unbounded rooms.
+    const taskRoomCount = clientInfo.rooms.filter((r) => r.startsWith('task:')).length;
+    if (taskRoomCount >= 50) {
+      this.logger.warn(`[JOIN] Client ${client.id} rejected: task-room limit reached`);
+      return { success: false, error: 'Too many task subscriptions' };
+    }
+
     const roomName = `task:${payload.taskId}`;
+    if (clientInfo.rooms.includes(roomName)) return { success: true };
     client.join(roomName);
     clientInfo.rooms.push(roomName);
 
@@ -277,9 +439,9 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // =========================================================================
 
   emitTaskDeleted(taskId: string, organizationId: string) {
-    this.logger.log(`[EMIT] task.deleted (taskId: ${taskId}) to org:${organizationId}`);
+    this.logger.log(`[EMIT] task.deleted (taskId: ${taskId}) to taskviewers:${organizationId}`);
     this.messagesSent++;
-    this.server.to(`org:${organizationId}`).emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
+    this.server.to(`taskviewers:${organizationId}`).emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
     // Also notify anyone watching this specific task
     this.server.to(`task:${taskId}`).emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
   }
@@ -317,20 +479,20 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   emitTaskCreated(task: any) {
     this.logger.log(`[EMIT] task.created to org:${task.organizationId}`);
     this.messagesSent++;
-    this.server.to(`org:${task.organizationId}`).emit(SocketEvents.TASK_CREATED, task);
+    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_CREATED, task);
   }
 
   emitTaskAssigned(task: any, workerId: string) {
     this.logger.log(`[EMIT] task.assigned to org:${task.organizationId} and user:${workerId}`);
     this.messagesSent += 2;
-    this.server.to(`org:${task.organizationId}`).emit(SocketEvents.TASK_ASSIGNED, task);
+    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_ASSIGNED, task);
     this.server.to(`user:${workerId}`).emit(SocketEvents.TASK_ASSIGNED, task);
   }
 
   emitTaskUpdated(task: any) {
     this.logger.log(`[EMIT] task.updated to org:${task.organizationId}`);
     this.messagesSent++;
-    this.server.to(`org:${task.organizationId}`).emit(SocketEvents.TASK_UPDATED, task);
+    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_UPDATED, task);
     if (task.assignedToId) {
       this.messagesSent++;
       this.server.to(`user:${task.assignedToId}`).emit(SocketEvents.TASK_UPDATED, task);
@@ -341,7 +503,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.logger.log(`[EMIT] task.declined to org:${task.organizationId} (declined by: ${declinedBy?.firstName} ${declinedBy?.lastName})`);
     this.messagesSent += 2;
     // Notify the organization (dispatcher and client will see this)
-    this.server.to(`org:${task.organizationId}`).emit(SocketEvents.TASK_DECLINED, { task, declinedBy });
+    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_DECLINED, { task, declinedBy });
     // Notify anyone watching this specific task
     this.server.to(`task:${task.id}`).emit(SocketEvents.TASK_DECLINED, { task, declinedBy });
   }
@@ -350,7 +512,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.logger.log(`[EMIT] task.statusChanged (${oldStatus} -> ${newStatus}) to task:${task.id}`);
     this.messagesSent += 2;
     this.server.to(`task:${task.id}`).emit(SocketEvents.TASK_STATUS_CHANGED, { task, oldStatus, newStatus });
-    this.server.to(`org:${task.organizationId}`).emit(SocketEvents.TASK_STATUS_CHANGED, { task, oldStatus, newStatus });
+    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_STATUS_CHANGED, { task, oldStatus, newStatus });
   }
 
   emitCommentAdded(taskId: string, comment: any) {
@@ -366,9 +528,17 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   }
 
   emitWorkerLocationUpdated(workerId: string, location: any) {
+    // Throttle: GPS points can arrive every few seconds — the live map only
+    // needs ~1 update / 3s per worker, so we drop the in-between broadcasts.
+    const now = Date.now();
+    if (now - (this.lastLocationEmit.get(workerId) || 0) < 3000) return;
+    this.lastLocationEmit.set(workerId, now);
+
     this.logger.debug(`[EMIT] worker.locationUpdated for worker ${workerId}`);
     this.messagesSent++;
-    this.server.to('role:DISPATCHER').emit(SocketEvents.WORKER_LOCATION_UPDATED, { workerId, location });
+    // Live-map viewers = admins (role room). Historical points are still stored
+    // by tracking-service regardless of this throttle.
+    this.server.to('role:ADMIN').emit(SocketEvents.WORKER_LOCATION_UPDATED, { workerId, location });
   }
 
   // =========================================================================
@@ -403,6 +573,14 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.logger.log(`[EMIT] break.ended for user ${userId}`);
     this.messagesSent += 1;
     this.server.to(`user:${userId}`).to(`org:${organizationId}`).emit(SocketEvents.BREAK_ENDED, { userId, break: breakData });
+  }
+
+  // Availability (Available/Busy/Away) changed — org-wide (teammates see status
+  // on dashboards / contact lists). Low frequency, so a plain org broadcast.
+  emitPresenceChanged(userId: string, presence: string | null, organizationId: string) {
+    this.logger.debug(`[EMIT] presence.changed for user ${userId} -> ${presence}`);
+    this.messagesSent += 1;
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.PRESENCE_CHANGED, { userId, presence });
   }
 
   // =========================================================================

@@ -36,6 +36,8 @@ const Events = {
   CLOCK_OUT: "attendance.clockOut",
   BREAK_STARTED: "break.started",
   BREAK_ENDED: "break.ended",
+  // Availability status (Available/Busy/Away)
+  PRESENCE_CHANGED: "presence.changed",
   // Tracking
   WORKER_LOCATION: "worker.locationUpdated",
   // Future: messaging, calls
@@ -55,11 +57,14 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.TASK_DECLINED]: [["tasks"], ["taskStatusCounts"]],
   [Events.TASK_DELETED]: [["tasks"], ["taskStatusCounts"]],
 
-  // Attendance events → invalidate attendance + dashboard
-  [Events.CLOCK_IN]: [["attendance-today"], ["active-breaks"], ["orgMembers-dashboard"]],
-  [Events.CLOCK_OUT]: [["attendance-today"], ["active-breaks"], ["orgMembers-dashboard"]],
+  // Attendance events → invalidate attendance + dashboard roster
+  [Events.CLOCK_IN]: [["attendance-today"], ["active-breaks"], ["orgMembers", "dashboard"]],
+  [Events.CLOCK_OUT]: [["attendance-today"], ["active-breaks"], ["orgMembers", "dashboard"]],
   [Events.BREAK_STARTED]: [["active-breaks"], ["attendance-today"]],
   [Events.BREAK_ENDED]: [["active-breaks"], ["attendance-today"]],
+
+  // Availability change → refresh the dashboard roster + contacts (their dot updates)
+  [Events.PRESENCE_CHANGED]: [["orgMembers", "dashboard"], ["orgContacts"]],
 
   // Location events → invalidate tracking data
   [Events.WORKER_LOCATION]: [["workerLocations"]],

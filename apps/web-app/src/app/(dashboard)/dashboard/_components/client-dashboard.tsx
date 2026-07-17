@@ -46,37 +46,45 @@ import { buildRecentActivity, buildPendingActions } from "./dashboard-activity"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Employee status based on ATTENDANCE (not task status) */
+/**
+ * Worker status shown on the dashboard. Availability (Available/Busy/Away — the
+ * status the user sets, defaulting to Available) is the primary signal; clock-in
+ * is a SEPARATE concept and only adds context ("On Break"/"Late") when on the
+ * clock. Not being clocked in no longer means "Offline" — the green "online"
+ * ring (app-active) conveys online/offline independently.
+ */
 function getEmployeeStatus(opts: {
   isClockedIn: boolean
   isOnBreak: boolean
-  isLate: boolean // clocked in late based on schedule
-  hasActiveTask: boolean
-  presence?: string | null // manual availability override
+  isOnline: boolean // app-active within the last few minutes
+  presence?: string | null // availability status (defaults to Available)
+  isRemote?: boolean // clocked in via remote / WFH (not on-site)
+  isOnRoad?: boolean // workMode ON_ROAD (driving / field work)
 }): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
-  if (!opts.isClockedIn) {
+  // Genuinely offline: not app-active AND not on the clock. Their stored
+  // availability doesn't apply because they aren't currently reachable.
+  if (!opts.isOnline && !opts.isClockedIn) {
     return { status: "off" }
   }
-  if (opts.isOnBreak) {
+  // Attendance exceptions first (only while on the clock).
+  if (opts.isClockedIn && opts.isOnBreak) {
     return { status: "on", tag: { text: "On Break", variant: "hrs" } }
   }
-  if (opts.isLate) {
-    return { status: "late", tag: { text: "Late", variant: "late" } }
-  }
-  // Manual presence override (hybrid): the worker's chosen status wins over the
-  // auto task-derived one.
+  // Availability the user DELIBERATELY set overrides the default clock label.
   if (opts.presence === "BUSY") {
     return { status: "busy", tag: { text: "Busy", variant: "task" } }
   }
   if (opts.presence === "AWAY") {
-    return { status: "on", tag: { text: "Away", variant: "hrs" } }
+    return { status: "away", tag: { text: "Away", variant: "hrs" } }
   }
-  if (opts.presence === "AVAILABLE") {
-    return { status: "on", tag: { text: "Available", variant: "hrs" } }
+  // On the clock with default availability → label by HOW/WHERE they're working,
+  // so it reads differently from a plain logged-in "Available".
+  if (opts.isClockedIn) {
+    if (opts.isOnRoad) return { status: "on", tag: { text: "In Field", variant: "task" } }
+    if (opts.isRemote) return { status: "on", tag: { text: "Remote", variant: "task" } }
+    return { status: "on", tag: { text: "On Shift", variant: "hrs" } }
   }
-  if (opts.hasActiveTask) {
-    return { status: "busy", tag: { text: "Working", variant: "task" } }
-  }
+  // Logged in / online but not clocked in.
   return { status: "on", tag: { text: "Available", variant: "hrs" } }
 }
 
@@ -85,18 +93,19 @@ function isOnline(lastActiveAt?: string | null): boolean {
   return !!lastActiveAt && Date.now() - new Date(lastActiveAt).getTime() < 3 * 60 * 1000
 }
 
-/** Build a PersonNodeProps from an OrgMember */
+/** Build a PersonNodeProps from an OrgMember. `clockedIn` drives the green ring. */
 function memberToPersonNode(
   member: OrgMember,
   status: WorkerStatus,
   tag?: PersonNodeProps["tag"],
   currentTask?: string,
+  clockedIn = false,
 ): PersonNodeProps {
   return {
     initials: getInitials(member.firstName, member.lastName),
     color: getAvatarColor(member.id),
     status,
-    online: isOnline(member.lastActiveAt),
+    clockedIn,
     imageUrl: member.avatarUrl || undefined,
     name: `${member.firstName} ${member.lastName?.[0] || ""}.`,
     tag,
@@ -168,6 +177,12 @@ export function ClientDashboard() {
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
     staleTime: 30000,
     refetchOnMount: true,
+    // Self-heal the online/offline dots on a continuously-open dashboard.
+    // "Online" is computed client-side as (now - lastActiveAt < 3min); without a
+    // periodic refetch the cached timestamp ages past the window and a
+    // still-connected member wrongly disappears. 60s keeps every connected user
+    // (server bumps lastActiveAt ≤60s) safely inside the 3-min window.
+    refetchInterval: 60000,
   })
 
   // Attendance entries for today — who is clocked in? Admins read org-wide;
@@ -177,6 +192,8 @@ export function ClientDashboard() {
     queryFn: () => attendanceApi.getAllEntries({ date: getTodayString(), limit: 500 }),
     staleTime: 30000,
     enabled: isAdminOrDispatcher,
+    // Safety refetch so clock-in/out state self-heals if a socket event is missed.
+    refetchInterval: 60000,
   })
 
   // Active breaks — who is currently on break? (admin-only endpoint)
@@ -285,6 +302,21 @@ export function ClientDashboard() {
     return map
   }, [todayEntries])
 
+  // Map userId -> whether their current clock-in is remote (WFH), from the most
+  // recent entry. Drives the "Remote" vs "On Shift" label.
+  const attendanceRemoteMap = useMemo(() => {
+    const map = new Map<string, boolean>()
+    const sorted = [...todayEntries].sort(
+      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
+    )
+    for (const entry of sorted) {
+      if (!map.has(entry.userId)) {
+        map.set(entry.userId, !!entry.isRemote)
+      }
+    }
+    return map
+  }, [todayEntries])
+
   // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED)
   const activeTaskMap = useMemo(() => {
     const map = new Map<string, Task>()
@@ -363,6 +395,12 @@ export function ClientDashboard() {
   const workspaceBoxes: WorkspaceBoxProps[] = useMemo(() => {
     const boxes: WorkspaceBoxProps[] = []
 
+    // The viewer is, by definition, online right now (they're looking at this
+    // page) — never let their own lastActiveAt lag drop them into "Off Duty".
+    const currentUserId = user?.id
+    const memberOnline = (m: { id: string; lastActiveAt?: string | null }) =>
+      m.id === currentUserId || isOnline(m.lastActiveAt)
+
     // Track which worker IDs are accounted for (placed in a location box)
     const accountedWorkerIds = new Set<string>()
 
@@ -377,6 +415,7 @@ export function ClientDashboard() {
 
       const people: PersonNodeProps[] = []
       const offDutyPeople: PersonNodeProps[] = []
+      const offShiftPeople: PersonNodeProps[] = []
       const onRoadPeople: PersonNodeProps[] = []
       const remotePeople: PersonNodeProps[] = []
 
@@ -396,31 +435,39 @@ export function ClientDashboard() {
         const clockedInLocationId = attendanceLocationMap.get(userId)
         const workMode = member.workMode || "HYBRID"
 
-        // Determine employee status based on ATTENDANCE (not task)
-        const hasActiveTask = !!ownTask || !!rosterTask
         const isOnBreak = onBreakUserIds.has(userId)
 
         const { status, tag } = getEmployeeStatus({
           isClockedIn: isCurrentlyClockedIn,
           isOnBreak,
-          isLate: false, // TODO: compare clock-in time vs schedule
-          hasActiveTask,
+          isOnline: memberOnline(member),
           presence: member.presence,
+          isRemote: attendanceRemoteMap.get(userId) ?? false,
+          isOnRoad: workMode === "ON_ROAD",
         })
 
-        const node = memberToPersonNode(member, status, tag, activeTaskTitle)
+        const node = memberToPersonNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
 
-        if (!isCurrentlyClockedIn && !hasActiveTask) {
-          // Not clocked in, no task → off duty
-          offDutyPeople.push(memberToPersonNode(member, "off"))
+        // "Present" means clocked in AT THIS location. Availability and tasks do
+        // NOT put someone in Present — only being on the clock here does.
+        if (!isCurrentlyClockedIn) {
+          // Everyone sees WHO is off (online + not-clocked-in → "Off-shift";
+          // offline → "Off Duty"). The absence REASON is gated separately (admins
+          // & managers only) inside the card.
+          if (memberOnline(member)) {
+            offShiftPeople.push(memberToPersonNode(member, status, tag))
+          } else {
+            offDutyPeople.push(memberToPersonNode(member, status, tag))
+          }
         } else if (workMode === "ON_ROAD") {
-          // On-road workers go in field sub-panel
-          onRoadPeople.push({ ...node, tag: tag || { text: "In Field", variant: "task" } })
-        } else if (isCurrentlyClockedIn && clockedInLocationId !== locId) {
-          // Clocked in at a different location → remote
-          remotePeople.push({ ...node, tag: tag || { text: "Off-site", variant: "hrs" } })
+          // Clocked in, working on the road → "In Field" group (node.tag already
+          // reads "In Field" from getEmployeeStatus).
+          onRoadPeople.push(node)
+        } else if (clockedInLocationId !== locId) {
+          // Clocked in somewhere other than this space → "Off-site" group.
+          remotePeople.push(node)
         } else {
-          // Present at this location (clocked in here, or has task here)
+          // Clocked in here → Present
           people.push(node)
         }
       }
@@ -443,6 +490,7 @@ export function ClientDashboard() {
         type: "fixed",
         people,
         offDutyPeople,
+        offShiftPeople,
         onRoadPeople,
         remotePeople,
         totalAssigned: assignedUserIds.size,
@@ -468,8 +516,8 @@ export function ClientDashboard() {
           const fallbackStatus = getEmployeeStatus({
             isClockedIn: clockedInUserIds.has(task.assignedTo.id),
             isOnBreak: onBreakUserIds.has(task.assignedTo.id),
-            isLate: false,
-            hasActiveTask: true,
+            isOnline: false, // no last-active data on the task fallback
+            isRemote: attendanceRemoteMap.get(task.assignedTo.id) ?? false,
           })
           onTaskPeople.push({
             initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
@@ -490,11 +538,12 @@ export function ClientDashboard() {
       const { status, tag } = getEmployeeStatus({
         isClockedIn,
         isOnBreak: onBreakUserIds.has(userId),
-        isLate: false,
-        hasActiveTask: true,
+        isOnline: memberOnline(member),
         presence: member.presence,
+        isRemote: attendanceRemoteMap.get(userId) ?? false,
+        isOnRoad: (member.workMode || "HYBRID") === "ON_ROAD",
       })
-      onTaskPeople.push(memberToPersonNode(member, status, tag, task.title))
+      onTaskPeople.push(memberToPersonNode(member, status, tag, task.title, isClockedIn))
     }
 
     if (onTaskPeople.length > 0) {
@@ -506,17 +555,59 @@ export function ClientDashboard() {
       })
     }
 
-    // "Off Duty" dynamic box — workers who are clocked out and not assigned to any location
+    // Workers not already placed in a space/task box:
+    //  • clocked in  → "On the Clock" catch-all, so a clocked-in driver/worker is
+    //    NEVER invisible even with no space assignment and no active task (their
+    //    clock-in is server state — independent of whether the app is in use).
+    //  • off the clock → "Off-shift" (online/reachable) vs "Off Duty" (offline).
     const offDutyPeople: PersonNodeProps[] = []
+    const offShiftPeople: PersonNodeProps[] = []
+    const onClockPeople: PersonNodeProps[] = []
     const workers = members.filter(m => m.role === "EMPLOYEE" && m.isActive)
     for (const worker of workers) {
       if (accountedWorkerIds.has(worker.id)) continue
-      if (!clockedInUserIds.has(worker.id) && !activeTaskMap.has(worker.id)) {
+      const isClockedIn = clockedInUserIds.has(worker.id)
+      const online = memberOnline(worker)
+
+      if (isClockedIn) {
         accountedWorkerIds.add(worker.id)
-        offDutyPeople.push(memberToPersonNode(worker, "off"))
+        const { status, tag } = getEmployeeStatus({
+          isClockedIn: true,
+          isOnBreak: onBreakUserIds.has(worker.id),
+          isOnline: online,
+          presence: worker.presence,
+          isRemote: attendanceRemoteMap.get(worker.id) ?? false,
+          isOnRoad: (worker.workMode || "HYBRID") === "ON_ROAD",
+        })
+        onClockPeople.push(memberToPersonNode(worker, status, tag, undefined, true))
+      } else if (!activeTaskMap.has(worker.id)) {
+        accountedWorkerIds.add(worker.id)
+        const { status, tag } = getEmployeeStatus({
+          isClockedIn: false,
+          isOnBreak: false,
+          isOnline: online,
+          presence: worker.presence,
+        })
+        ;(online ? offShiftPeople : offDutyPeople).push(memberToPersonNode(worker, status, tag))
       }
     }
 
+    if (onClockPeople.length > 0) {
+      boxes.push({
+        title: "On the Clock",
+        type: "dynamic",
+        people: onClockPeople,
+        onPersonClick: handleNavigateToProfile,
+      })
+    }
+    if (offShiftPeople.length > 0) {
+      boxes.push({
+        title: "Off-shift",
+        type: "dynamic",
+        people: offShiftPeople,
+        onPersonClick: handleNavigateToProfile,
+      })
+    }
     if (offDutyPeople.length > 0) {
       boxes.push({
         title: "Off Duty",
@@ -529,9 +620,9 @@ export function ClientDashboard() {
     return boxes
   }, [
     locations, tasks, members, assignmentsPerLocation,
-    memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, activeTaskMap, rosterActiveTaskMap,
+    memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, attendanceRemoteMap, activeTaskMap, rosterActiveTaskMap,
     handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
-    isAdminOrDispatcher,
+    isAdminOrDispatcher, user?.id,
   ])
 
   // ── Live Events ────────────────────────────────────────────────────────────
@@ -770,7 +861,7 @@ export function ClientDashboard() {
               {/* Spaces — a single space opens automatically */}
               <section>
                 <h2 className="mb-3 text-sm font-semibold text-foreground">{t("dashboard.client.mySpaces")}</h2>
-                <WorkspaceGrid boxes={workspaceBoxes} autoExpandSingle />
+                <WorkspaceGrid boxes={workspaceBoxes} autoExpandSingle canSeeAbsenceReason={isAdminOrDispatcher} />
               </section>
 
               {/* Right column: management contacts (top, always visible) + my tasks */}
@@ -825,7 +916,7 @@ export function ClientDashboard() {
 
         {/* Workspace Grid — contained */}
         <div className="max-w-[1440px] mx-auto px-6 py-6">
-          <WorkspaceGrid boxes={workspaceBoxes} />
+          <WorkspaceGrid boxes={workspaceBoxes} canSeeAbsenceReason={isAdminOrDispatcher} />
         </div>
       </div>
 

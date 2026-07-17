@@ -20,13 +20,14 @@ import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto, DeleteAccountDto } from './dto';
 import { Public } from '../../common/decorators';
-import { CurrentUser, CurrentUserData, SkipOnboardingCheck } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData, SkipOnboardingCheck, SERVICE_NAMES } from '@hbcfield/shared';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   @Public()
@@ -98,6 +99,18 @@ export class AuthController {
       });
     }
 
+    // Signing in sets the user Available + active (done in auth-service).
+    // Broadcast a presence event so teammates' dashboards move them online
+    // (Off Duty → Off-shift/Present) in real time.
+    const loggedIn = result?.data?.user;
+    if (loggedIn?.id && loggedIn?.organizationId) {
+      this.notificationClient.emit('presence_changed', {
+        userId: loggedIn.id,
+        presence: loggedIn.presence ?? 'AVAILABLE',
+        organizationId: loggedIn.organizationId,
+      });
+    }
+
     return result;
   }
 
@@ -152,9 +165,24 @@ export class AuthController {
     // ('/'), otherwise the browser keeps the cookie after logout.
     res.clearCookie('refreshToken', { path: '/' });
 
-    return firstValueFrom(
+    const result = await firstValueFrom(
       this.authClient.send({ cmd: 'logout' }, { refreshToken }),
     );
+
+    // Signing out clears the user's lastActiveAt (done in auth-service), so they
+    // read as offline immediately. Broadcast a presence event so teammates'
+    // dashboards move them to "Off Duty" in real time instead of waiting for the
+    // 3-minute online window to lapse. Sign-out ≠ clock-out — attendance is
+    // untouched.
+    if (result?.userId && result?.organizationId) {
+      this.notificationClient.emit('presence_changed', {
+        userId: result.userId,
+        presence: null,
+        organizationId: result.organizationId,
+      });
+    }
+
+    return { success: true, message: 'Logged out successfully' };
   }
 
   @Public()

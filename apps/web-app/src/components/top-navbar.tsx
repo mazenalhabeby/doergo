@@ -7,6 +7,7 @@ import { useState, useCallback } from "react"
 import {
   LayoutDashboard,
   ChevronDown,
+  Check,
   LogOut,
   Settings,
   Shield,
@@ -31,7 +32,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
 import { ClockWidget } from "@/components/clock-widget"
-import { PresenceToggle } from "@/components/presence-toggle"
+import { usePresence, PRESENCE_OPTS, presenceRingClass } from "@/components/presence-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { cn } from "@/lib/utils"
 import {
@@ -278,7 +279,6 @@ export function TopNavbar() {
       <div className="ml-auto flex items-center gap-1">
         <CommandPaletteButton />
         <ClockWidget />
-        <PresenceToggle />
         <LanguageSwitcher />
         <NotificationBell />
         <UserDropdown
@@ -616,15 +616,20 @@ function UserDropdown({
   onLogout: () => void
 }) {
   const { t } = useTranslation()
+  const { current: presence, set: setPresence, saving: savingPresence } = usePresence()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="ml-2 flex items-center gap-2 rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+      <DropdownMenuTrigger
+        className="ml-2 flex items-center gap-2 rounded-full outline-none transition-opacity hover:opacity-80"
+        title={t("presence.title", "Availability")}
+      >
+        {/* Ring color = availability (Slack/Teams-style status on the avatar). */}
         <UserAvatar
           firstName={user.firstName}
           lastName={user.lastName}
           avatarUrl={avatarUrl}
           size="md"
-          className="ring-1 ring-border"
+          className={cn("ring-2 ring-offset-1 ring-offset-background", presenceRingClass(presence))}
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={10} className="w-64 rounded-xl p-1.5">
@@ -636,7 +641,7 @@ function UserDropdown({
               lastName={user.lastName}
               avatarUrl={avatarUrl}
               size="lg"
-              className="ring-1 ring-border"
+              className={cn("ring-2 ring-offset-1 ring-offset-background", presenceRingClass(presence))}
             />
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-foreground">{fullName}</span>
@@ -644,6 +649,27 @@ function UserDropdown({
             </div>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        {/* Availability (Available / Busy / Away) — sets the ring on the avatar
+            and what teammates see. No separate top-bar pill. */}
+        <DropdownMenuLabel className="px-2 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          {t("presence.title", "Availability")}
+        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          {PRESENCE_OPTS.map((o) => (
+            <DropdownMenuItem
+              key={o.value}
+              onClick={() => setPresence(o.value)}
+              disabled={savingPresence}
+              className="rounded-md cursor-pointer gap-2 px-2 py-1.5 text-sm"
+            >
+              <span className={cn("h-2 w-2 rounded-full", o.dot)} />
+              {t(o.key, o.def)}
+              {presence === o.value && <Check className="ml-auto h-3.5 w-3.5" />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
 
         {/* Settings — everyone. No ?section so the page picks the role-appropriate

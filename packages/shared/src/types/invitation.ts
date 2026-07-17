@@ -24,6 +24,7 @@ export interface Invitation {
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;
+  spaceId?: string | null;
   // Populated relations
   createdBy?: {
     id: string;
@@ -67,6 +68,8 @@ export interface CreateInvitationInput {
   workMode?: string;
   specialty?: string;
   maxDailyJobs?: number;
+  /** Pre-assigned space (CompanyLocation id) — user is assigned to it on accept. */
+  spaceId?: string;
 }
 
 // Accept invitation input (from mobile/web registration)

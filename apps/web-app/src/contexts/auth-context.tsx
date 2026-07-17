@@ -91,6 +91,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  /** Optimistically merge fields into the local user (e.g. presence) without a round-trip. */
+  patchUser: (partial: Partial<User>) => void;
   manualRefresh: () => Promise<boolean>;
   /** Check if an organization module is enabled */
   hasModule: (module: string) => boolean;
@@ -265,6 +267,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  // Optimistic local patch — lets UI (e.g. the presence ring) reflect a change
+  // instantly, before the server round-trip / refreshUser confirms it.
+  const patchUser = useCallback((partial: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+  }, []);
+
   // Reconcile the session when the tab regains focus or periodically, so an
   // access-profile change an admin makes takes effect without a re-login. The
   // gateway purges the member's auth cache on update, so /auth/me returns fresh.
@@ -336,6 +344,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     refreshUser,
+    patchUser,
     manualRefresh,
     hasModule,
     hasPlanFeature,

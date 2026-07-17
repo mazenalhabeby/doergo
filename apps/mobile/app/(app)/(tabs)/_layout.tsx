@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity, Image } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,12 +21,22 @@ function HeaderLogo() {
 }
 
 // Profile avatar button for header right — modern floating style
+// Availability → dot color (matches profile.tsx status colors).
+function presenceColor(presence?: string | null): string {
+  if (presence === 'BUSY') return '#ef4444';
+  if (presence === 'AWAY') return '#f59e0b';
+  return '#22c55e'; // AVAILABLE / default
+}
+
+// Profile avatar button for header right — shows the user's photo (or initials)
+// with an availability status dot.
 function ProfileButton() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const router = useRouter();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const initial = user?.firstName?.[0]?.toUpperCase() || '?';
+  const avatarUrl = user?.avatarUrl;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, { toValue: 0.88, friction: 5, useNativeDriver: true }).start();
@@ -42,14 +52,22 @@ function ProfileButton() {
       onPressOut={handlePressOut}
       style={styles.profileBtn}
     >
-      <Animated.View style={[
-        styles.profileAvatar,
-        {
-          backgroundColor: isDark ? COLORS.primary + '25' : COLORS.primary,
-          transform: [{ scale: scaleAnim }],
-        },
-      ]}>
-        <Text style={[styles.profileInitials, { color: isDark ? COLORS.primary : '#fff' }]}>{initial}</Text>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <View style={[
+          styles.profileAvatar,
+          { backgroundColor: avatarUrl ? colors.surface : (isDark ? COLORS.primary + '25' : COLORS.primary) },
+        ]}>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.profileImage} />
+          ) : (
+            <Text style={[styles.profileInitials, { color: isDark ? COLORS.primary : '#fff' }]}>{initial}</Text>
+          )}
+        </View>
+        {/* Availability status dot */}
+        <View style={[
+          styles.statusDot,
+          { backgroundColor: presenceColor(user?.presence), borderColor: colors.background },
+        ]} />
       </Animated.View>
     </Pressable>
   );
@@ -354,11 +372,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
   },
   profileInitials: {
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  statusDot: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
   },
   // Glassmorphism Tab Bar
   tabBarOuter: {

@@ -26,6 +26,13 @@ export class AttendanceNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
+  // Availability status (Available/Busy/Away) changed — broadcast so teammates'
+  // dashboards / contact lists update in real time.
+  @EventPattern('presence_changed')
+  handlePresenceChanged(@Payload() data: { userId: string; presence: string | null; organizationId: string }) {
+    this.websocketGateway.emitPresenceChanged(data.userId, data.presence, data.organizationId);
+  }
+
   @EventPattern('attendance_auto_clock_out')
   async handleAutoClockOut(@Payload() data: {
     userId: string;

@@ -15,8 +15,6 @@ export interface PersonNodeData {
 
 const TAG_COLORS: Record<TagVariant, { bg: string; fg: string }> = {
   task: { bg: 'rgba(59,130,246,0.18)', fg: '#60a5fa' },
-  late: { bg: 'rgba(245,158,11,0.18)', fg: '#fbbf24' },
-  miss: { bg: 'rgba(239,68,68,0.18)', fg: '#f87171' },
   hrs: { bg: 'rgba(139,92,246,0.18)', fg: '#a78bfa' },
 };
 

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -56,6 +57,7 @@ export class InvitationService {
     enabledModules?: string[];
     specialty?: string;
     maxDailyJobs?: number;
+    spaceId?: string;
   }) {
     // Non-admin creators may only invite employees (never other admins).
     if (data.creatorRole !== Role.ADMIN && data.targetRole !== Role.EMPLOYEE) {
@@ -153,6 +155,8 @@ export class InvitationService {
           : null,
         specialty: isTechnician ? data.specialty || null : null,
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
+        // Pre-assigned space — applied to the user on accept.
+        spaceId: isTechnician ? (data.spaceId || null) : null,
       },
       include: {
         organization: { select: { id: true, name: true } },
@@ -216,6 +220,30 @@ export class InvitationService {
       specialty: invitation.specialty,
       expiresAt: invitation.expiresAt.toISOString(),
     };
+  }
+
+  /**
+   * Assign an accepting user to the invitation's pre-set space (CompanyLocation).
+   * No-op if there is no spaceId or the space no longer belongs to the org. Runs
+   * inside the caller's transaction. Idempotent via the userId+locationId unique.
+   */
+  private async assignInvitationSpace(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    organizationId: string,
+    spaceId: string | null | undefined,
+  ) {
+    if (!spaceId) return;
+    const space = await tx.companyLocation.findFirst({
+      where: { id: spaceId, organizationId, isActive: true },
+      select: { id: true },
+    });
+    if (!space) return;
+    await tx.technicianAssignment.upsert({
+      where: { userId_locationId: { userId, locationId: spaceId } },
+      update: { isPrimary: true, effectiveTo: null },
+      create: { userId, locationId: spaceId, isPrimary: true },
+    });
   }
 
   /**
@@ -347,6 +375,9 @@ export class InvitationService {
           });
         }
       }
+
+      // Pre-assigned space: assign the new user to it (if it still exists in the org).
+      await this.assignInvitationSpace(tx, newUser.id, invitation.organizationId, invitation.spaceId);
 
       await tx.invitation.update({
         where: { id: invitation.id },

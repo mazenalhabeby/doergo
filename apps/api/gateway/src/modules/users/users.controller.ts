@@ -96,6 +96,16 @@ export class UsersController {
     );
     // Drop the cached session so the new name takes effect on the next request.
     await this.authCache.invalidateUser(user.id);
+
+    // Real-time: broadcast availability changes so teammates' dashboards /
+    // contact lists update without a refresh.
+    if (dto.presence !== undefined) {
+      this.notificationClient.emit('presence_changed', {
+        userId: user.id,
+        presence: dto.presence,
+        organizationId: user.organizationId,
+      });
+    }
     return result;
   }
 

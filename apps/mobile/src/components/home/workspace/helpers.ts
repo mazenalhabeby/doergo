@@ -6,8 +6,8 @@
 import type { Task } from '../../../lib/api';
 import type { TimeEntry } from '../../../lib/api/types';
 
-export type WorkerStatus = 'on' | 'busy' | 'late' | 'off';
-export type TagVariant = 'task' | 'late' | 'miss' | 'hrs';
+export type WorkerStatus = 'on' | 'busy' | 'away' | 'off';
+export type TagVariant = 'task' | 'hrs';
 export interface PersonTag {
   text: string;
   variant: TagVariant;
@@ -43,18 +43,39 @@ export function getAvatarColors(id: string): [string, string] {
   return AVATAR_COLORS[hashString(id) % AVATAR_COLORS.length]!;
 }
 
-/** Employee status based on ATTENDANCE (not task status). */
+/**
+ * Employee status/label — kept in sync with the web dashboard
+ * (client-dashboard.tsx). Availability (the status the user sets) is the primary
+ * signal; clock-in adds context ("On Shift"/"Remote"/"In Field"). "Available"
+ * (logged in, not clocked in) reads differently from being on the clock.
+ */
 export function getEmployeeStatus(opts: {
   isClockedIn: boolean;
   isOnBreak: boolean;
-  isLate: boolean;
-  hasActiveTask: boolean;
+  isOnline: boolean; // app-active within the last few minutes
+  presence?: string | null; // AVAILABLE / BUSY / AWAY (defaults to Available)
+  isRemote?: boolean; // clocked in via remote / WFH
+  isOnRoad?: boolean; // workMode ON_ROAD (driving / field)
 }): { status: WorkerStatus; tag?: PersonTag } {
-  if (!opts.isClockedIn) return { status: 'off' };
-  if (opts.isOnBreak) return { status: 'on', tag: { text: 'On Break', variant: 'hrs' } };
-  if (opts.isLate) return { status: 'late', tag: { text: 'Late', variant: 'late' } };
-  if (opts.hasActiveTask) return { status: 'busy', tag: { text: 'Working', variant: 'task' } };
+  // Genuinely offline: not app-active AND not on the clock.
+  if (!opts.isOnline && !opts.isClockedIn) return { status: 'off' };
+  if (opts.isClockedIn && opts.isOnBreak) return { status: 'on', tag: { text: 'On Break', variant: 'hrs' } };
+  // Availability the user deliberately set overrides the default clock label.
+  if (opts.presence === 'BUSY') return { status: 'busy', tag: { text: 'Busy', variant: 'task' } };
+  if (opts.presence === 'AWAY') return { status: 'away', tag: { text: 'Away', variant: 'hrs' } };
+  // On the clock → label by how/where they're working.
+  if (opts.isClockedIn) {
+    if (opts.isOnRoad) return { status: 'on', tag: { text: 'In Field', variant: 'task' } };
+    if (opts.isRemote) return { status: 'on', tag: { text: 'Remote', variant: 'task' } };
+    return { status: 'on', tag: { text: 'On Shift', variant: 'hrs' } };
+  }
+  // Logged in / online but not clocked in.
   return { status: 'on', tag: { text: 'Available', variant: 'hrs' } };
+}
+
+/** App-active within the last 3 minutes → treated as online (matches web). */
+export function isOnline(lastActiveAt?: string | null): boolean {
+  return !!lastActiveAt && Date.now() - new Date(lastActiveAt).getTime() < 3 * 60 * 1000;
 }
 
 /** "Currently clocked in" = active entry with no clock-out yet. */

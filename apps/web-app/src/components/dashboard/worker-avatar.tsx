@@ -1,56 +1,38 @@
 "use client"
 
 import React from "react"
+import { Lock, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export type WorkerStatus = "on" | "busy" | "late" | "miss" | "off"
+export type WorkerStatus = "on" | "busy" | "away" | "off"
 
+// Availability-aligned labels (the status a user sets: Available/Busy/Away).
+// "off" = offline (app not active).
 const STATUS_LABELS: Record<WorkerStatus, string> = {
-  on: "Online",
-  busy: "On Task",
-  late: "Late",
-  miss: "Missing",
+  on: "Available",
+  busy: "Busy",
+  away: "Away",
   off: "Offline",
 }
 
 export interface WorkerAvatarProps {
   initials: string
   color: string
+  /** Availability (Available/Busy/Away) or Offline — shown as the corner dot. */
   status: WorkerStatus
   size?: "sm" | "md" | "lg"
   imageUrl?: string
   hideDot?: boolean
   className?: string
-  /** App-active recently (last-seen) — shows a green "online" ring on the avatar. */
-  online?: boolean
+  /** On the clock right now — shows a green ring around the avatar. */
+  clockedIn?: boolean
 }
 
-const STATUS_STYLES: Record<WorkerStatus, { color: string; glow: string; ring: string }> = {
-  on: {
-    color: "#10b981",
-    glow: "0 0 12px rgba(16,185,129,0.4), 0 0 4px rgba(16,185,129,0.2)",
-    ring: "0 0 0 1.5px rgba(16,185,129,0.15)",
-  },
-  busy: {
-    color: "#3b82f6",
-    glow: "0 0 12px rgba(59,130,246,0.4), 0 0 4px rgba(59,130,246,0.2)",
-    ring: "0 0 0 1.5px rgba(59,130,246,0.15)",
-  },
-  late: {
-    color: "#f59e0b",
-    glow: "0 0 14px rgba(245,158,11,0.5), 0 0 4px rgba(245,158,11,0.3)",
-    ring: "0 0 0 1.5px rgba(245,158,11,0.2)",
-  },
-  miss: {
-    color: "#ef4444",
-    glow: "0 0 12px rgba(239,68,68,0.4), 0 0 4px rgba(239,68,68,0.2)",
-    ring: "0 0 0 1.5px rgba(239,68,68,0.15)",
-  },
-  off: {
-    color: "#64748b",
-    glow: "none",
-    ring: "0 0 0 1.5px rgba(100,116,139,0.1)",
-  },
+const STATUS_STYLES: Record<WorkerStatus, { color: string }> = {
+  on: { color: "#10b981" },   // Available — green
+  busy: { color: "#ef4444" }, // Busy — red (with lock icon)
+  away: { color: "#f59e0b" }, // Away — amber (with moon icon)
+  off: { color: "#94a3b8" },  // Offline — grey
 }
 
 export const WorkerAvatar = React.memo(function WorkerAvatar({
@@ -60,10 +42,9 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
   imageUrl,
   hideDot,
   className,
-  online,
+  clockedIn,
 }: WorkerAvatarProps) {
   const st = STATUS_STYLES[status]
-
   const label = STATUS_LABELS[status]
 
   return (
@@ -77,9 +58,9 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
           "text-[clamp(10px,1.6cqw,18px)]",
           "transition-all duration-300",
           "overflow-hidden",
-          // Green "online" ring (app-active recently) — sits around the avatar,
-          // distinct from the bottom-right attendance status dot.
-          online && "ring-2 ring-green-500 ring-offset-1 ring-offset-[hsl(var(--card))]",
+          // Green ring = clocked in (on shift right now). Distinct from the
+          // bottom-right availability dot.
+          clockedIn && "ring-2 ring-green-500 ring-offset-1 ring-offset-[hsl(var(--card))]",
         )}
         style={{ background: color }}
       >
@@ -90,12 +71,21 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
         )}
       </div>
 
-      {/* Small status dot (bottom-right) */}
-      {!hideDot && status !== "off" && (
+      {/* Availability dot (bottom-right): green Available, red Busy (lock),
+          amber Away (moon), grey Offline. */}
+      {!hideDot && (
         <div
-          className="absolute bottom-0 right-0 w-[0.9cqw] h-[0.9cqw] min-w-[8px] min-h-[8px] rounded-full border-2 border-[hsl(var(--card))]"
-          style={{ backgroundColor: st.color, boxShadow: `0 0 6px ${st.color}` }}
-        />
+          className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full border-2 border-[hsl(var(--card))]"
+          style={{
+            backgroundColor: st.color,
+            boxShadow: status === "off" ? "none" : `0 0 6px ${st.color}80`,
+            width: status === "busy" || status === "away" ? 16 : 11,
+            height: status === "busy" || status === "away" ? 16 : 11,
+          }}
+        >
+          {status === "busy" && <Lock className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
+          {status === "away" && <Moon className="h-2.5 w-2.5 text-white" strokeWidth={2.5} />}
+        </div>
       )}
 
       {/* Hover tooltip */}
@@ -104,7 +94,7 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
           className="px-2.5 py-1 rounded-lg text-[10px] font-semibold text-white whitespace-nowrap backdrop-blur-sm border border-white/10"
           style={{ backgroundColor: `${st.color}dd`, boxShadow: `0 4px 12px ${st.color}40` }}
         >
-          {label}
+          {clockedIn ? `${label} · Clocked in` : label}
         </div>
         {/* Arrow */}
         <div

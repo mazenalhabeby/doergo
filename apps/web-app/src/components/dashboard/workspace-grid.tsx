@@ -9,6 +9,8 @@ export interface WorkspaceGridProps {
   className?: string
   /** When there is exactly one box, open it by default (employee single-space view). */
   autoExpandSingle?: boolean
+  /** Show absence reasons (Sick/Unexcused/…) in the Off-Duty list — admins & managers only. */
+  canSeeAbsenceReason?: boolean
 }
 
 type BoxLayout = { cols: number; rows: number; forceVertical: boolean }
@@ -84,6 +86,7 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
   boxes,
   className,
   autoExpandSingle = false,
+  canSeeAbsenceReason = false,
 }: WorkspaceGridProps) {
   const [expandedTitle, setExpandedTitle] = useState<string | null>(null)
   const [visualExpanded, setVisualExpanded] = useState<string | null>(null)
@@ -201,6 +204,7 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
               key={`${box.title}-${box.type}-${i}`}
               ref={(el) => { boxRefs.current[i] = el }}
               {...box}
+              canSeeAbsenceReason={canSeeAbsenceReason}
               isExpanded={isThis}
               isOtherExpanded={isAnyExpanded && !isThis}
               isClosing={isThis && expandedTitle === null}

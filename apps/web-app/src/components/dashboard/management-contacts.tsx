@@ -47,6 +47,9 @@ export function ManagementContacts() {
     queryKey: ["orgContacts"],
     queryFn: () => organizationsApi.getContacts(),
     staleTime: 60_000,
+    // Online dots are computed client-side from lastActiveAt vs a 3-min window;
+    // refetch so a continuously-open list self-heals instead of aging out.
+    refetchInterval: 60_000,
   })
 
   const managers = ((data ?? []) as OrgMember[]).filter((m) => m.id !== user?.id)
@@ -60,12 +63,9 @@ export function ManagementContacts() {
           const p = m.presence ? PRESENCE[m.presence] : null
           const online = isOnline(m.lastActiveAt)
           const name = `${m.firstName} ${m.lastName ?? ""}`.trim()
-          // Prefer the member's sub-role/title; fall back to the permission role.
-          const roleLabel = m.position?.trim()
-            ? m.position
-            : m.role === "ADMIN"
-              ? t("roles.admin", "Admin")
-              : t("roles.manager", "Manager")
+          // Show the member's job title/position only — never the ADMIN/EMPLOYEE
+          // permission role as an identity label.
+          const positionLabel = m.position?.trim() || ""
           // Dot: manual presence wins; otherwise green when recently active, grey when not.
           const dotClass = p ? p.color : online ? "bg-green-500" : "bg-muted-foreground/40"
           // Status text: manual presence label, else the online/last-seen label.
@@ -79,14 +79,13 @@ export function ManagementContacts() {
                 <UserAvatar firstName={m.firstName} lastName={m.lastName} avatarUrl={m.avatarUrl} seed={m.id} size="md" />
                 <span
                   className={cn("absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card", dotClass)}
-                  title={statusText || t("presence.auto", "Auto")}
+                  title={statusText || t("presence.available", "Available")}
                 />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{name}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {roleLabel}
-                  {statusText ? ` · ${statusText}` : ""}
+                  {[positionLabel, statusText].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">

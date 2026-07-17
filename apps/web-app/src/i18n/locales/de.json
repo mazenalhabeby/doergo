@@ -2940,7 +2940,9 @@
       "sick": "Krankschreibung",
       "day_off": "Freier Tag",
       "unexcused": "Unentschuldigt"
-    }
+    },
+    "offShift": "nicht im Dienst",
+    "groupOffShift": "Nicht im Dienst"
   },
   "timeOff": {
     "my": {

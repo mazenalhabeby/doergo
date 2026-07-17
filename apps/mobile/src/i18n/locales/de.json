@@ -786,11 +786,11 @@
       "createModal": {
         "title": "Neue Einladung",
         "successTitle": "Einladung erstellt",
-        "roleLabel": "Rolle",
-        "technician": "Techniker",
-        "dispatcher": "Disponent",
+        "employee": "Mitarbeiter",
         "jobTitleLabel": "Berufsbezeichnung (optional)",
         "jobTitlePlaceholder": "z.B. Elektriker",
+        "spaceLabel": "Bereich (optional)",
+        "noSpace": "Kein Bereich",
         "generateButton": "Code generieren",
         "tapToCopy": "Zum Kopieren tippen · Läuft in 3 Tagen ab",
         "shareMessage": "Mit Einladungscode beitreten: {{code}}"
@@ -890,7 +890,8 @@
       "activeCount": "{{active}} von {{total}} aktiv",
       "inField": "Im Einsatz",
       "offSite": "Außer Haus",
-      "offDuty": "Nicht im Dienst",
+      "offShift": "Nicht im Dienst",
+      "offDuty": "Feierabend",
       "noneAssigned": "Noch niemand zugewiesen",
       "assign": "Zuweisen",
       "tasks": "Aufgaben"
