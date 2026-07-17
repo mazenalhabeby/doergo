@@ -3553,6 +3553,7 @@
       "title": "iOS",
       "description": "Install via TestFlight — Apple's official beta testing platform. No App Store needed.",
       "button": "Open TestFlight",
+      "comingSoon": "Coming soon on TestFlight",
       "meta": "v{{version}} · iOS 16.0+"
     },
     "howToInstall": "How to install",
