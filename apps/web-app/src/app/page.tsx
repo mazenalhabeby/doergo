@@ -656,6 +656,7 @@ export default function Home() {
                   <FooterCol title={t('home.footer.company')} links={[
                     { label: t('home.footer.linkSignIn'), href: '/login' },
                     { label: t('home.footer.linkGetApp'), href: '/download' },
+                    { label: t('home.footer.linkHelp', 'Help Center'), href: '/help' },
                   ]} />
                   <FooterCol title={t('home.footer.legal')} links={[
                     { label: t('home.footer.linkPrivacy'), href: '/privacy' },
