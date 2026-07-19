@@ -82,13 +82,16 @@ const ENTERPRISE_MODULES = [...BUSINESS_MODULES];
 
 // ── Premium CAPABILITIES (tier-gated, NOT task-modules / not on enabledModules) ──
 // Gated only by tier through tierAllows(); cumulative like the modules above.
+// `priority_routing` — support tickets from this tier jump the agent queue (Pro+).
 const STARTER_CAPS: string[] = [];
-const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing'];
+const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing', 'priority_routing'];
 // NOTE: `multi_org` was removed — the OrganizationAccess delegation flow isn't
 // wired to any billing gate, so advertising it would be a phantom feature.
 // Re-add here (with real enforcement) when multi-org delegation actually ships.
-const BUSINESS_CAPS = [...PROFESSIONAL_CAPS, 'workflows', 'audit_log'];
-const ENTERPRISE_CAPS = [...BUSINESS_CAPS];
+// `live_chat` — real-time human support chat (Business+).
+const BUSINESS_CAPS = [...PROFESSIONAL_CAPS, 'workflows', 'audit_log', 'live_chat'];
+// `dedicated_support` — named contact + onboarding call, Enterprise-only.
+const ENTERPRISE_CAPS = [...BUSINESS_CAPS, 'dedicated_support'];
 
 export const PLANS: Record<PlanTier, PlanDef> = {
   starter: {

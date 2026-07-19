@@ -24,6 +24,7 @@ import { EpicsModule } from './modules/epics/epics.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
 import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.module';
+import { SupportModule } from './modules/support/support.module';
 
 @Module({
   imports: [
@@ -48,6 +49,9 @@ import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.
     BullModule.registerQueue({
       name: QUEUE_NAMES.ATTENDANCE,
     }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.SUPPORT,
+    }),
     // Client for notification service (to emit events)
     ClientsModule.registerAsync([
       createClientOptions(SERVICE_NAMES.NOTIFICATION),
@@ -68,6 +72,7 @@ import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.
     WorkflowsModule,
     CustomFieldsModule,
     RecurringTasksModule,
+    SupportModule,
   ],
 })
 export class AppModule {}

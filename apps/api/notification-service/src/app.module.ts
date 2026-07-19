@@ -8,6 +8,7 @@ import { NotificationController } from './notification.controller';
 import { TaskNotificationHandler } from './handlers/task-notification.handler';
 import { AttendanceNotificationHandler } from './handlers/attendance-notification.handler';
 import { JoinRequestNotificationHandler } from './handlers/join-request-notification.handler';
+import { SupportNotificationHandler } from './handlers/support-notification.handler';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { JoinRequestNotificationHandler } from './handlers/join-request-notifica
     TaskNotificationHandler,
     AttendanceNotificationHandler,
     JoinRequestNotificationHandler,
+    SupportNotificationHandler,
   ],
 })
 export class AppModule {}

@@ -1027,5 +1027,24 @@
     "somethingWentWrong": "Something went wrong",
     "unexpectedError": "An unexpected error occurred",
     "tryAgain": "Try Again"
+  },
+  "support": {
+    "title": "Support",
+    "agentOnline": "Live chat — agent online",
+    "leaveMessage": "Leave a message",
+    "typicalReply": "Typical reply within",
+    "empty": "No tickets yet.",
+    "newTicket": "New request",
+    "subjectPlaceholder": "Subject",
+    "bodyPlaceholder": "How can we help?",
+    "send": "Send",
+    "replyPlaceholder": "Write a reply…",
+    "status": {
+      "OPEN": "Open",
+      "PENDING_AGENT": "Awaiting support",
+      "PENDING_CUSTOMER": "Awaiting your reply",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed"
+    }
   }
 }

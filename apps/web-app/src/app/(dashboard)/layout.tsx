@@ -18,6 +18,7 @@ import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
 import { TokenDebugPanel } from '@/components/token-debug';
 import { useRealtimeSync } from '@/hooks/use-realtime-sync';
+import { SupportWidget } from '@/components/support/support-widget';
 import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
@@ -142,6 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
       <CommandPalette />
+      <SupportWidget />
       {/* Debug-only token countdown — hidden in production unless explicitly enabled */}
       {(process.env.NODE_ENV !== 'production' ||
         process.env.NEXT_PUBLIC_SHOW_TOKEN_MONITOR === 'true') && <TokenDebugPanel />}

@@ -9,34 +9,34 @@ datasource db {
 
 // Enums
 enum Role {
-  ADMIN       // Organization owner/admin - full control
-  EMPLOYEE    // Everyone else. "Manager" capability is now the canViewAllTasks /
-              // canAssignTasks access flags, not a role. (MANAGER + legacy
-              // CLIENT/DISPATCHER/TECHNICIAN retired 2026-07-16.)
+  ADMIN // Organization owner/admin - full control
+  EMPLOYEE // Everyone else. "Manager" capability is now the canViewAllTasks /
+  // canAssignTasks access flags, not a role. (MANAGER + legacy
+  // CLIENT/DISPATCHER/TECHNICIAN retired 2026-07-16.)
 }
 
 // Platform access restriction
 enum Platform {
-  WEB     // Web app only
-  MOBILE  // Mobile app only
-  BOTH    // Both platforms
+  WEB // Web app only
+  MOBILE // Mobile app only
+  BOTH // Both platforms
 }
 
 // Access level for organization delegation
 enum AccessLevel {
-  NONE           // No access - manager sees nothing
-  TASKS_ONLY     // Can view tasks only
-  TASKS_ASSIGN   // Can view tasks + assign workers
-  FULL           // Can view everything + assign
+  NONE // No access - manager sees nothing
+  TASKS_ONLY // Can view tasks only
+  TASKS_ASSIGN // Can view tasks + assign workers
+  FULL // Can view everything + assign
 }
 
 enum TaskStatus {
   DRAFT
   NEW
   ASSIGNED
-  ACCEPTED     // Technician acknowledges the assigned task
-  EN_ROUTE     // Technician is traveling to the job location
-  ARRIVED      // Technician has arrived at the location
+  ACCEPTED // Technician acknowledges the assigned task
+  EN_ROUTE // Technician is traveling to the job location
+  ARRIVED // Technician has arrived at the location
   IN_PROGRESS
   BLOCKED
   COMPLETED
@@ -86,53 +86,53 @@ enum AssetStatus {
 }
 
 enum ReportAttachmentType {
-  BEFORE  // Photo taken before work started
-  AFTER   // Photo taken after work completed
+  BEFORE // Photo taken before work started
+  AFTER // Photo taken after work completed
 }
 
 // Time entry status for attendance tracking
 enum TimeEntryStatus {
-  CLOCKED_IN   // Currently clocked in
-  CLOCKED_OUT  // Normal clock out
-  AUTO_OUT     // System auto clock-out (midnight, etc.)
+  CLOCKED_IN // Currently clocked in
+  CLOCKED_OUT // Normal clock out
+  AUTO_OUT // System auto clock-out (midnight, etc.)
 }
 
 // Time entry approval status
 enum ApprovalStatus {
-  PENDING    // Awaiting manager review
-  APPROVED   // Manager approved
-  REJECTED   // Manager rejected
-  AUTO       // Auto-approved (e.g., within geofence, normal hours)
+  PENDING // Awaiting manager review
+  APPROVED // Manager approved
+  REJECTED // Manager rejected
+  AUTO // Auto-approved (e.g., within geofence, normal hours)
 }
 
 // Break type for attendance tracking
 enum BreakType {
-  LUNCH    // Lunch break (typically 30-60 min)
-  SHORT    // Short break (typically 10-15 min)
-  OTHER    // Other break type
+  LUNCH // Lunch break (typically 30-60 min)
+  SHORT // Short break (typically 10-15 min)
+  OTHER // Other break type
 }
 
 // Time-off request status
 enum TimeOffStatus {
-  PENDING    // Awaiting manager approval
-  APPROVED   // Manager approved
-  REJECTED   // Manager rejected
-  CANCELED   // Technician canceled the request
+  PENDING // Awaiting manager approval
+  APPROVED // Manager approved
+  REJECTED // Manager rejected
+  CANCELED // Technician canceled the request
 }
 
 // Invitation status
 enum InvitationStatus {
-  PENDING    // Created, waiting to be used
-  ACCEPTED   // Used by a new user
-  EXPIRED    // Past expiry date
-  REVOKED    // Manually canceled by creator/admin
+  PENDING // Created, waiting to be used
+  ACCEPTED // Used by a new user
+  EXPIRED // Past expiry date
+  REVOKED // Manually canceled by creator/admin
 }
 
 // Organization join policy
 enum JoinPolicy {
-  OPEN          // Anyone with org code can request to join
-  INVITE_ONLY   // Only via one-time invitation codes
-  CLOSED        // No new members
+  OPEN // Anyone with org code can request to join
+  INVITE_ONLY // Only via one-time invitation codes
+  CLOSED // No new members
 }
 
 // Join request status
@@ -205,27 +205,27 @@ enum NotificationStatus {
 }
 
 enum OvertimeRequestStatus {
-  PENDING_TECHNICIAN  // Notification sent, waiting for tech to respond
-  PENDING_APPROVAL    // Technician said YES, waiting for team leader
-  APPROVED            // Team leader approved, overtime active
-  REJECTED            // Team leader rejected
+  PENDING_TECHNICIAN // Notification sent, waiting for tech to respond
+  PENDING_APPROVAL // Technician said YES, waiting for team leader
+  APPROVED // Team leader approved, overtime active
+  REJECTED // Team leader rejected
   EXPIRED_NO_RESPONSE // Technician didn't respond in time
   EXPIRED_NO_APPROVAL // Team leader didn't respond in time
-  COMPLETED           // Overtime ended normally
-  CANCELED            // Technician declined
+  COMPLETED // Overtime ended normally
+  CANCELED // Technician declined
 }
 
 enum OvertimeApprovalMethod {
-  REMOTE    // Team leader approved via push notification on their device
+  REMOTE // Team leader approved via push notification on their device
   SIGNATURE // Team leader signed on the technician's phone
 }
 
 // Task creation scope — controls who the user can create tasks for
 enum TaskCreationScope {
-  NONE   // Cannot create tasks
-  SELF   // Can only create tasks assigned to self
-  SPACE  // Can create tasks in spaces the user is assigned to
-  ORG    // Can create tasks for anyone in the organization
+  NONE // Cannot create tasks
+  SELF // Can only create tasks assigned to self
+  SPACE // Can create tasks in spaces the user is assigned to
+  ORG // Can create tasks for anyone in the organization
 }
 
 // Custom field types for organization-specific task fields
@@ -252,17 +252,17 @@ enum RecurrenceFrequency {
 
 // Task dependency types (project management)
 enum DependencyType {
-  FINISH_TO_START   // Predecessor must finish before successor starts
-  START_TO_START    // Predecessor must start before successor starts
-  FINISH_TO_FINISH  // Predecessor must finish before successor finishes
-  START_TO_FINISH   // Predecessor must start before successor finishes
+  FINISH_TO_START // Predecessor must finish before successor starts
+  START_TO_START // Predecessor must start before successor starts
+  FINISH_TO_FINISH // Predecessor must finish before successor finishes
+  START_TO_FINISH // Predecessor must start before successor finishes
 }
 
 // Sprint status for agile workflow
 enum SprintStatus {
-  PLANNING   // Sprint is being planned
-  ACTIVE     // Sprint is in progress
-  COMPLETED  // Sprint is completed
+  PLANNING // Sprint is being planned
+  ACTIVE // Sprint is in progress
+  COMPLETED // Sprint is completed
 }
 
 // Models
@@ -277,10 +277,10 @@ model OrgRole {
   description    String?
   color          String?      @default("#6b7280")
   isSystem       Boolean      @default(false)
-  legacyRole     String?      // Maps to Role enum for backward compat (ADMIN, DISPATCHER, TECHNICIAN)
+  legacyRole     String? // Maps to Role enum for backward compat (ADMIN, DISPATCHER, TECHNICIAN)
   position       Int          @default(0)
   isActive       Boolean      @default(true)
-  permissions    Json         // { canCreateTasks: bool, canViewAllTasks: bool, ... }
+  permissions    Json // { canCreateTasks: bool, canViewAllTasks: bool, ... }
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   users          User[]
@@ -299,39 +299,39 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   // Organization profile
-  industry    String?   // e.g. "HVAC", "Plumbing", "Electrical", "General Contracting"
-  address     String?   // Legacy single-line address (kept for back-compat)
-  addressLine1 String?  // Street address
-  addressLine2 String?  // Suite / floor / unit (optional)
-  city        String?
-  state       String?   // State / province / region
-  postalCode  String?   // ZIP / postal code
-  country     String?   // ISO 3166-1 alpha-2 code (e.g. "DE", "AT")
-  phone       String?   // Contact phone
-  email       String?   // Contact email (org-level, not user)
-  website     String?   // Website URL
-  timezone    String?   @default("Europe/Vienna")  // IANA timezone
-  logoUrl     String?   // Organization logo
+  industry     String? // e.g. "HVAC", "Plumbing", "Electrical", "General Contracting"
+  address      String? // Legacy single-line address (kept for back-compat)
+  addressLine1 String? // Street address
+  addressLine2 String? // Suite / floor / unit (optional)
+  city         String?
+  state        String? // State / province / region
+  postalCode   String? // ZIP / postal code
+  country      String? // ISO 3166-1 alpha-2 code (e.g. "DE", "AT")
+  phone        String? // Contact phone
+  email        String? // Contact email (org-level, not user)
+  website      String? // Website URL
+  timezone     String? @default("Europe/Vienna") // IANA timezone
+  logoUrl      String? // Organization logo
 
   // Join system
-  joinCode     String?              // Plaintext join code (displayed to admin)
-  joinCodeHash String?     @unique  // SHA-256 hash of persistent org join code
-  joinPolicy   JoinPolicy  @default(INVITE_ONLY)
+  joinCode     String? // Plaintext join code (displayed to admin)
+  joinCodeHash String?    @unique // SHA-256 hash of persistent org join code
+  joinPolicy   JoinPolicy @default(INVITE_ONLY)
 
   // Organization settings (JSON blobs for flexible config)
-  profileBadges     Json?   // { showRole, showWorkMode, showType, showSpecialty }
-  notificationPrefs Json?   // { emailOnTaskCreate, emailOnTaskComplete, emailOnJoinRequest, pushEnabled }
-  securitySettings  Json?   // { sessionTimeoutHours, requireStrongPassword, maxFailedAttempts }
-  enabledModules    Json?   // e.g. ["story_points", "epics", "sprints", "phases", "custom_fields", "time_tracking"]
+  profileBadges     Json? // { showRole, showWorkMode, showType, showSpecialty }
+  notificationPrefs Json? // { emailOnTaskCreate, emailOnTaskComplete, emailOnJoinRequest, pushEnabled }
+  securitySettings  Json? // { sessionTimeoutHours, requireStrongPassword, maxFailedAttempts }
+  enabledModules    Json? // e.g. ["story_points", "epics", "sprints", "phases", "custom_fields", "time_tracking"]
 
   // ── SaaS billing (denormalized for fast guard reads; Subscription + Stripe are source of truth) ──
-  stripeCustomerId  String?             @unique
-  planTier          PlanTier?           // null = no paid plan chosen yet
-  subStatus         SubscriptionStatus  @default(TRIALING)
-  billingInterval   BillingInterval     @default(MONTHLY)
+  stripeCustomerId  String?            @unique
+  planTier          PlanTier? // null = no paid plan chosen yet
+  subStatus         SubscriptionStatus @default(TRIALING)
+  billingInterval   BillingInterval    @default(MONTHLY)
   trialEndsAt       DateTime?
   currentPeriodEnd  DateTime?
-  cancelAtPeriodEnd Boolean             @default(false)
+  cancelAtPeriodEnd Boolean            @default(false)
   billingEmail      String?
   vatId             String?
 
@@ -342,8 +342,8 @@ model Organization {
   orgRoles OrgRole[]
 
   // Organization delegation relationships
-  grantedAccess  OrganizationAccess[] @relation("Grantor")  // Access this org has granted to others
-  receivedAccess OrganizationAccess[] @relation("Grantee")  // Access this org has received from others
+  grantedAccess  OrganizationAccess[] @relation("Grantor") // Access this org has granted to others
+  receivedAccess OrganizationAccess[] @relation("Grantee") // Access this org has received from others
 
   // Asset management
   assetCategories AssetCategory[]
@@ -368,9 +368,9 @@ model Organization {
   joinRequests JoinRequest[]
 
   // Project management
-  phases   Phase[]
-  sprints  Sprint[]
-  epics    Epic[]
+  phases  Phase[]
+  sprints Sprint[]
+  epics   Epic[]
 
   // Agile
   definitionsOfDone DefinitionOfDone[]
@@ -383,14 +383,16 @@ model Organization {
   recurringTemplates RecurringTaskTemplate[]
 
   // Monitoring
-  activityLogs          ActivityLog[]
+  activityLogs           ActivityLog[]
   notificationDeliveries NotificationDelivery[]
-  alerts                Alert[]
-  dailyMetrics          DailyMetric[]
-  overtimeRequests      OvertimeRequest[]
+  alerts                 Alert[]
+  dailyMetrics           DailyMetric[]
+  overtimeRequests       OvertimeRequest[]
 
   // Invoicing
   invoices Invoice[]
+
+  supportTickets SupportTicket[]
 
   // Schedule templates
   scheduleTemplates ScheduleTemplate[]
@@ -434,51 +436,51 @@ model OrganizationAccess {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  passwordHash   String
-  firstName      String
-  lastName       String
-  role           Role
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Security: Account lockout fields
-  failedLoginAttempts Int      @default(0)
+  failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
 
   // Permission fields (granular access control)
-  canCreateTasks  Boolean  @default(false)   // Can create new tasks
+  canCreateTasks    Boolean           @default(false) // Can create new tasks
   taskCreationScope TaskCreationScope @default(NONE) // Granular task creation scope
-  canViewAllTasks Boolean  @default(false)   // Can view all org tasks (vs only assigned/created)
-  canAssignTasks  Boolean  @default(false)   // Can assign tasks to technicians
-  canManageUsers  Boolean  @default(false)   // Can manage users in organization
-  allowRemote     Boolean  @default(false)   // May clock in remotely (WFH/anywhere), geofence-exempt
-  presence        String?                     // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
-  lastActiveAt    DateTime?                    // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
+  canViewAllTasks   Boolean           @default(false) // Can view all org tasks (vs only assigned/created)
+  canAssignTasks    Boolean           @default(false) // Can assign tasks to technicians
+  canManageUsers    Boolean           @default(false) // Can manage users in organization
+  allowRemote       Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
+  presence          String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
+  lastActiveAt      DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
   // Contact directory / access (admins are always contacts; secure by default)
-  contactable       Boolean  @default(false)   // Appears in the org contacts directory (for non-admin "manager" members)
-  contactScope      String   @default("NONE")  // Who this member may contact: NONE | ALL | SELECTED
-  contactAllowedIds String[] @default([])      // When SELECTED: the specific contact user IDs this member may reach
+  contactable       Boolean           @default(false) // Appears in the org contacts directory (for non-admin "manager" members)
+  contactScope      String            @default("NONE") // Who this member may contact: NONE | ALL | SELECTED
+  contactAllowedIds String[]          @default([]) // When SELECTED: the specific contact user IDs this member may reach
   // Per-recipient notification opt-outs by category, e.g. { "attendance": false }.
   // Missing/true = subscribed. Filters what THIS user receives (see NotificationWatch).
   notificationPrefs Json?
 
   // Worker configuration
-  position       String?   // Free-form: "technician", "driver", "sales", "office_manager"
-  scheduleType   String?   @default("NONE")  // "FIXED", "FLEXIBLE", "NONE"
+  position          String? // Free-form: "technician", "driver", "sales", "office_manager"
+  scheduleType      String? @default("NONE") // "FIXED", "FLEXIBLE", "NONE"
   monthlyHourBudget Float? // For FLEXIBLE: target hours per month (e.g., 160)
-  enabledModules Json?     // Mobile modules: ["tasks", "clock", "time_off"]
+  enabledModules    Json? // Mobile modules: ["tasks", "clock", "time_off"]
 
   // Employee fields
-  specialty      String?   // e.g., "Electrical", "Plumbing", "Mechanical", "General"
-  rating         Float?    @default(5.0) // Average rating (1-5)
-  ratingCount    Int?      @default(0)   // Number of ratings received
-  maxDailyJobs   Int?      @default(5)   // Maximum jobs per day
+  specialty    String? // e.g., "Electrical", "Plumbing", "Mechanical", "General"
+  rating       Float?  @default(5.0) // Average rating (1-5)
+  ratingCount  Int?    @default(0) // Number of ratings received
+  maxDailyJobs Int?    @default(5) // Maximum jobs per day
 
   // Profile avatar
-  avatarUrl  String?
+  avatarUrl String?
 
   // Profile badge visibility override (null = use org default)
   // JSON: { showRole, showWorkMode, showType, showSpecialty }
@@ -494,42 +496,42 @@ model User {
   orgRoleId String?
   orgRole   OrgRole? @relation(fields: [orgRoleId], references: [id], onDelete: SetNull)
 
-  createdTasks   Task[]       @relation("TaskCreator")
-  assignedTasks  Task[]       @relation("TaskAssignee")
-  taskAssignments  TaskAssignee[] @relation("TaskAssignees")
-  comments       Comment[]
-  attachments    Attachment[]
-  taskEvents     TaskEvent[]
-  lastLocation         WorkerLastLocation?
-  locationHistory      LocationHistory[]
-  refreshTokens        RefreshToken[]
-  passwordResetTokens  PasswordResetToken[]
-  serviceReports       ServiceReport[]
-  assignments          TechnicianAssignment[]  // Technician location assignments
-  timeEntries          TimeEntry[]             // Clock-in/clock-out records
-  approvedTimeEntries  TimeEntry[]  @relation("ApprovedTimeEntries")  // Time entries approved by this user
-  editedTimeEntries    TimeEntry[]  @relation("EditedTimeEntries")    // Time entries edited by this user
+  createdTasks        Task[]                 @relation("TaskCreator")
+  assignedTasks       Task[]                 @relation("TaskAssignee")
+  taskAssignments     TaskAssignee[]         @relation("TaskAssignees")
+  comments            Comment[]
+  attachments         Attachment[]
+  taskEvents          TaskEvent[]
+  lastLocation        WorkerLastLocation?
+  locationHistory     LocationHistory[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  serviceReports      ServiceReport[]
+  assignments         TechnicianAssignment[] // Technician location assignments
+  timeEntries         TimeEntry[] // Clock-in/clock-out records
+  approvedTimeEntries TimeEntry[]            @relation("ApprovedTimeEntries") // Time entries approved by this user
+  editedTimeEntries   TimeEntry[]            @relation("EditedTimeEntries") // Time entries edited by this user
 
   // Monitoring
-  activityLogs         ActivityLog[] @relation("ActivityLogUser")     // Activity performed by this user
-  targetedActivityLogs ActivityLog[] @relation("ActivityLogTarget")   // Activity targeting this user
-  notificationDeliveries NotificationDelivery[]                       // Notifications sent to this user
-  alerts               Alert[]                                        // Alerts related to this user
+  activityLogs           ActivityLog[]          @relation("ActivityLogUser") // Activity performed by this user
+  targetedActivityLogs   ActivityLog[]          @relation("ActivityLogTarget") // Activity targeting this user
+  notificationDeliveries NotificationDelivery[] // Notifications sent to this user
+  alerts                 Alert[] // Alerts related to this user
 
   // Push notifications
-  pushTokens           UserPushToken[]                                // Device push tokens for notifications
+  pushTokens UserPushToken[] // Device push tokens for notifications
 
   // Availability management
-  schedules            TechnicianSchedule[]                           // Weekly recurring schedule
-  timeOffRequests      TimeOff[]             @relation("TechnicianTimeOff")   // Time-off requests submitted
-  approvedTimeOffs     TimeOff[]             @relation("TimeOffApprover")     // Time-off requests approved by this user
+  schedules        TechnicianSchedule[] // Weekly recurring schedule
+  timeOffRequests  TimeOff[]            @relation("TechnicianTimeOff") // Time-off requests submitted
+  approvedTimeOffs TimeOff[]            @relation("TimeOffApprover") // Time-off requests approved by this user
 
   // Invitations
-  createdInvitations   Invitation[]          @relation("InvitationCreator")   // Invitations created by this user
+  createdInvitations Invitation[] @relation("InvitationCreator") // Invitations created by this user
 
   // Join requests
-  joinRequests         JoinRequest[]         @relation("UserJoinRequests")    // Join requests submitted by this user
-  reviewedJoinRequests JoinRequest[]         @relation("JoinRequestReviewer") // Join requests reviewed by this user
+  joinRequests         JoinRequest[] @relation("UserJoinRequests") // Join requests submitted by this user
+  reviewedJoinRequests JoinRequest[] @relation("JoinRequestReviewer") // Join requests reviewed by this user
 
   // Overtime
   overtimeRequests         OvertimeRequest[] @relation("TechnicianOvertime")
@@ -541,6 +543,9 @@ model User {
   // Invoices
   createdInvoices Invoice[] @relation("InvoiceCreator")
 
+  // Support tickets this user opened (assigned agents are platform staff, not Users)
+  supportTickets SupportTicket[] @relation("SupportCreatedBy")
+
   // Notification routing: who is watched by whom (per-employee override)
   watchedBy NotificationWatch[] @relation("WatchSubject") // managers watching THIS user
   watching  NotificationWatch[] @relation("WatchWatcher") // users THIS manager watches
@@ -549,39 +554,39 @@ model User {
   @@index([role])
   @@index([email])
   @@index([orgRoleId])
-  @@index([organizationId, role, isActive])  // list technicians/members in org
+  @@index([organizationId, role, isActive]) // list technicians/members in org
   @@map("users")
 }
 
 model RefreshToken {
   id        String   @id @default(cuid())
-  tokenHash String   @unique  // Store SHA-256 hash, not plain token
+  tokenHash String   @unique // Store SHA-256 hash, not plain token
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   // Grace period fields for handling concurrent refresh requests
-  usedAt               DateTime?  // When the token was first used (null = not used yet)
-  replacedByTokenHash  String?    // Hash of the new token that replaced this one
-  cachedAccessToken    String?    // Cached access token to return during grace period
-  cachedRefreshToken   String?    // Cached refresh token to return during grace period (temporary, deleted after grace period)
+  usedAt              DateTime? // When the token was first used (null = not used yet)
+  replacedByTokenHash String? // Hash of the new token that replaced this one
+  cachedAccessToken   String? // Cached access token to return during grace period
+  cachedRefreshToken  String? // Cached refresh token to return during grace period (temporary, deleted after grace period)
 
   // Device/session tracking
-  userAgent  String?
-  ipAddress  String?
+  userAgent String?
+  ipAddress String?
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tokenHash])
-  @@index([usedAt])      // For cleanup of old used tokens
-  @@index([expiresAt])   // For expired token cleanup
+  @@index([usedAt]) // For cleanup of old used tokens
+  @@index([expiresAt]) // For expired token cleanup
   @@map("refresh_tokens")
 }
 
 model PasswordResetToken {
   id        String   @id @default(cuid())
-  tokenHash String   @unique  // Store SHA-256 hash, not plain token
+  tokenHash String   @unique // Store SHA-256 hash, not plain token
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -597,9 +602,9 @@ model PasswordResetToken {
 // Push notification tokens for mobile devices
 model UserPushToken {
   id        String   @id @default(cuid())
-  token     String   @unique  // Expo push token (e.g., ExponentPushToken[xxx])
-  platform  String             // 'ios' | 'android' | 'web'
-  deviceId  String?            // Optional device identifier for deduplication
+  token     String   @unique // Expo push token (e.g., ExponentPushToken[xxx])
+  platform  String // 'ios' | 'android' | 'web'
+  deviceId  String? // Optional device identifier for deduplication
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -612,27 +617,27 @@ model UserPushToken {
 }
 
 model Task {
-  id          String       @id @default(cuid())
-  title       String
-  description String?
-  status      String       @default("NEW")
-  priority    TaskPriority @default(MEDIUM)
-  dueDate     DateTime?
-  startDate       DateTime?
-  estimatedHours  Float?
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  status         String       @default("NEW")
+  priority       TaskPriority @default(MEDIUM)
+  dueDate        DateTime?
+  startDate      DateTime?
+  estimatedHours Float?
 
   // Custom workflow association
-  workflowId  String?
-  workflow    StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  workflowId String?
+  workflow   StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
 
   locationLat     Float?
   locationLng     Float?
   locationAddress String?
 
   // Route tracking fields
-  routeStartedAt DateTime?  // When EN_ROUTE started
-  routeEndedAt   DateTime?  // When ARRIVED
-  routeDistance  Float?     // Total distance in meters
+  routeStartedAt DateTime? // When EN_ROUTE started
+  routeEndedAt   DateTime? // When ARRIVED
+  routeDistance  Float? // Total distance in meters
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -655,22 +660,22 @@ model Task {
   asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
   // Subtask hierarchy
-  parentId    String?
-  parent      Task?     @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
-  subtasks    Task[]    @relation("TaskSubtasks")
-  depth       Int       @default(0)  // Nesting level (0 = root, max 5)
-  position    Int       @default(0)  // Order within siblings
+  parentId String?
+  parent   Task?   @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks Task[]  @relation("TaskSubtasks")
+  depth    Int     @default(0) // Nesting level (0 = root, max 5)
+  position Int     @default(0) // Order within siblings
 
   // Agile fields
-  storyPoints Int?      // Fibonacci: 1,2,3,5,8,13,21
+  storyPoints Int? // Fibonacci: 1,2,3,5,8,13,21
 
   // Phase, Sprint & Epic associations
-  phaseId     String?
-  phase       Phase?    @relation(fields: [phaseId], references: [id], onDelete: SetNull)
-  sprintId    String?
-  sprint      Sprint?   @relation(fields: [sprintId], references: [id], onDelete: SetNull)
-  epicId      String?
-  epic        Epic?     @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  phaseId  String?
+  phase    Phase?  @relation(fields: [phaseId], references: [id], onDelete: SetNull)
+  sprintId String?
+  sprint   Sprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  epicId   String?
+  epic     Epic?   @relation(fields: [epicId], references: [id], onDelete: SetNull)
 
   // Dependencies
   predecessors TaskDependency[] @relation("DependencySuccessor")
@@ -693,14 +698,14 @@ model Task {
   @@index([createdAt])
   @@index([organizationId, status])
   @@index([organizationId, status, createdAt])
-  @@index([assignedToId, status])  // technician task stats groupBy, suggested technicians _count
-  @@index([dueDate])               // due date filtering/sorting
-  @@index([parentId])              // subtask queries
-  @@index([phaseId])               // phase filtering
-  @@index([sprintId])              // sprint filtering
-  @@index([epicId])                // epic filtering
-  @@index([workflowId])            // workflow filtering
-  @@index([spaceId])               // space filtering
+  @@index([assignedToId, status]) // technician task stats groupBy, suggested technicians _count
+  @@index([dueDate]) // due date filtering/sorting
+  @@index([parentId]) // subtask queries
+  @@index([phaseId]) // phase filtering
+  @@index([sprintId]) // sprint filtering
+  @@index([epicId]) // epic filtering
+  @@index([workflowId]) // workflow filtering
+  @@index([spaceId]) // space filtering
   @@index([organizationId, spaceId, status]) // space + status filtering
   @@map("tasks")
 }
@@ -785,7 +790,7 @@ model TaskEvent {
   @@index([taskId])
   @@index([eventType])
   @@index([createdAt])
-  @@index([taskId, createdAt])  // timeline queries
+  @@index([taskId, createdAt]) // timeline queries
   @@map("task_events")
 }
 
@@ -814,7 +819,7 @@ model LocationHistory {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   taskId String?
-  task   Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([userId, timestamp])
   @@index([taskId, timestamp])
@@ -823,7 +828,7 @@ model LocationHistory {
 
 // Dynamic category created by organization (e.g., "HVAC", "Electrical", "Plumbing")
 model AssetCategory {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
   icon        String?
@@ -845,7 +850,7 @@ model AssetCategory {
 
 // Dynamic type within a category (e.g., under HVAC: "Air Conditioner", "Heater")
 model AssetType {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
 
@@ -864,7 +869,7 @@ model AssetType {
 
 // The actual equipment/asset
 model Asset {
-  id           String      @id @default(cuid())
+  id           String  @id @default(cuid())
   name         String
   serialNumber String?
   model        String?
@@ -918,9 +923,9 @@ model ServiceReport {
   asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
   // Work details
-  summary       String  // Brief summary of work done
+  summary       String // Brief summary of work done
   workPerformed String? // Detailed description
-  workDuration  Int     // Duration in seconds (from mobile timer)
+  workDuration  Int // Duration in seconds (from mobile timer)
 
   // Signatures (base64 encoded PNG or URL)
   technicianSignature String? @db.Text
@@ -962,8 +967,8 @@ model ReportAttachment {
   type     ReportAttachmentType // BEFORE or AFTER
   fileName String
   fileUrl  String
-  fileSize Int                  // bytes
-  caption  String?              // Optional description
+  fileSize Int // bytes
+  caption  String? // Optional description
 
   createdAt DateTime @default(now())
 
@@ -978,10 +983,10 @@ model PartUsed {
   reportId String
   report   ServiceReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
-  name       String  // "Air Filter", "Compressor Belt"
+  name       String // "Air Filter", "Compressor Belt"
   partNumber String? // Optional SKU/part number
   quantity   Int     @default(1)
-  unitCost   Float?  // Optional cost per unit
+  unitCost   Float? // Optional cost per unit
   notes      String?
 
   createdAt DateTime @default(now())
@@ -995,10 +1000,10 @@ model PartUsed {
 // belongs to a space; modules + workflow are configured per space.
 model CompanyLocation {
   id             String  @id @default(cuid())
-  name           String  // "Main Office", "Warehouse A", "General"
+  name           String // "Main Office", "Warehouse A", "General"
   address        String? // Full address string
-  lat            Float?  // Latitude (only for physical locations / attendance)
-  lng            Float?  // Longitude (only for physical locations / attendance)
+  lat            Float? // Latitude (only for physical locations / attendance)
+  lng            Float? // Longitude (only for physical locations / attendance)
   geofenceRadius Int     @default(15) // Radius in meters for clock-in zone
   timezone       String  @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   isActive       Boolean @default(true)
@@ -1012,12 +1017,12 @@ model CompanyLocation {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   // Space configuration
-  enabledModules Json?          // Override org modules for this space, e.g. ["time_tracking", "sprints"]
+  enabledModules Json? // Override org modules for this space, e.g. ["time_tracking", "sprints"]
   workflowId     String?
   workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
 
   // Tasks linked to this space
-  tasks          Task[]
+  tasks Task[]
 
   // Recurring task templates that generate into this space
   recurringTemplates RecurringTaskTemplate[]
@@ -1041,16 +1046,16 @@ model TechnicianAssignment {
   id String @id @default(cuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   locationId String
   location   CompanyLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
   isPrimary Boolean  @default(false) // Main work location
-  schedule  String[] @default([])    // Work days: ["MON", "TUE", "WED", "THU", "FRI"]
+  schedule  String[] @default([]) // Work days: ["MON", "TUE", "WED", "THU", "FRI"]
 
   effectiveFrom DateTime  @default(now()) // Assignment start date
-  effectiveTo   DateTime?                 // Assignment end date (null = indefinite)
+  effectiveTo   DateTime? // Assignment end date (null = indefinite)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1089,7 +1094,7 @@ model TimeEntry {
   id String @id @default(cuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   locationId String
   location   CompanyLocation @relation(fields: [locationId], references: [id])
@@ -1126,20 +1131,20 @@ model TimeEntry {
   notes String?
 
   // Smart auto-approval
-  flagReasons      String[]       @default([])  // e.g. ["OVERTIME", "LATE_ARRIVAL"]
-  approvalStatus   ApprovalStatus @default(PENDING)
-  approvedById     String?
-  approvedBy       User?          @relation("ApprovedTimeEntries", fields: [approvedById], references: [id])
-  approvedAt       DateTime?
-  approvalNotes    String?
+  flagReasons    String[]       @default([]) // e.g. ["OVERTIME", "LATE_ARRIVAL"]
+  approvalStatus ApprovalStatus @default(PENDING)
+  approvedById   String?
+  approvedBy     User?          @relation("ApprovedTimeEntries", fields: [approvedById], references: [id])
+  approvedAt     DateTime?
+  approvalNotes  String?
 
   // Edit tracking
-  isEdited         Boolean        @default(false)
+  isEdited         Boolean   @default(false)
   editedById       String?
-  editedBy         User?          @relation("EditedTimeEntries", fields: [editedById], references: [id])
+  editedBy         User?     @relation("EditedTimeEntries", fields: [editedById], references: [id])
   editedAt         DateTime?
-  originalClockIn  DateTime?      // Original value before edit
-  originalClockOut DateTime?      // Original value before edit
+  originalClockIn  DateTime? // Original value before edit
+  originalClockOut DateTime? // Original value before edit
   editReason       String?
 
   createdAt DateTime @default(now())
@@ -1156,11 +1161,11 @@ model TimeEntry {
 
   @@index([userId, clockInAt])
   @@index([locationId])
-  @@index([locationId, clockInAt])     // per-location attendance by day
+  @@index([locationId, clockInAt]) // per-location attendance by day
   @@index([organizationId])
   @@index([status])
   @@index([approvalStatus])
-  @@index([userId, status])            // check active clock-in
+  @@index([userId, status]) // check active clock-in
   @@index([organizationId, clockInAt]) // org attendance reports
   @@map("time_entries")
 }
@@ -1174,7 +1179,7 @@ model Break {
 
   type BreakType @default(SHORT)
 
-  startedAt DateTime @default(now())
+  startedAt DateTime  @default(now())
   endedAt   DateTime?
 
   // Duration in minutes (calculated on end)
@@ -1197,15 +1202,15 @@ model TechnicianSchedule {
   id String @id @default(cuid())
 
   technicianId String
-  technician   User @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  technician   User   @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 
-  dayOfWeek Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
-  startTime String   // "09:00" (24h format)
-  endTime   String   // "17:00" (24h format)
-  isActive  Boolean  @default(true)
+  dayOfWeek Int // 0=Sunday, 1=Monday, ..., 6=Saturday
+  startTime String // "09:00" (24h format)
+  endTime   String // "17:00" (24h format)
+  isActive  Boolean @default(true)
 
   // Optional: schedule can be location-specific
-  notes String?      // Optional note (e.g., "Remote day")
+  notes String? // Optional note (e.g., "Remote day")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1219,15 +1224,15 @@ model TechnicianSchedule {
 
 // Reusable schedule template (e.g., "Morning Shift", "Night Shift")
 model ScheduleTemplate {
-  id              String       @id @default(cuid())
-  name            String       // "Morning Shift", "Night Shift", "Flex 4x10"
-  description     String?
-  entries         Json         // Array of { dayOfWeek, startTime, endTime, isActive, notes? }
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  isDefault       Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  name           String // "Morning Shift", "Night Shift", "Flex 4x10"
+  description    String?
+  entries        Json // Array of { dayOfWeek, startTime, endTime, isActive, notes? }
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  isDefault      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -1239,19 +1244,19 @@ model TimeOff {
   id String @id @default(cuid())
 
   technicianId String
-  technician   User @relation("TechnicianTimeOff", fields: [technicianId], references: [id], onDelete: Cascade)
+  technician   User   @relation("TechnicianTimeOff", fields: [technicianId], references: [id], onDelete: Cascade)
 
-  startDate DateTime @db.Date  // First day of time off
-  endDate   DateTime @db.Date  // Last day of time off (inclusive)
-  reason    String?            // "Vacation", "Sick leave", "Personal", etc.
+  startDate DateTime @db.Date // First day of time off
+  endDate   DateTime @db.Date // Last day of time off (inclusive)
+  reason    String? // "Vacation", "Sick leave", "Personal", etc.
 
   status TimeOffStatus @default(PENDING)
 
   // Approval workflow
-  approvedById String?
-  approvedBy   User?    @relation("TimeOffApprover", fields: [approvedById], references: [id])
-  approvedAt   DateTime?
-  rejectionReason String?  // If rejected, reason why
+  approvedById    String?
+  approvedBy      User?     @relation("TimeOffApprover", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  rejectionReason String? // If rejected, reason why
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1271,7 +1276,7 @@ model Invitation {
 
   // Short code (plaintext for display + SHA-256 hash for validation)
   code     String?
-  codeHash String @unique
+  codeHash String  @unique
 
   // Target role and organization
   targetRole     Role
@@ -1285,8 +1290,8 @@ model Invitation {
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
   position          String?
   scheduleType      String? // NONE | FIXED | FLEXIBLE — applied to the user on accept
-  schedule          Json?   // Weekly rows when FIXED: [{dayOfWeek,startTime,endTime,isActive}]
-  monthlyHourBudget Int?    // When FLEXIBLE
+  schedule          Json? // Weekly rows when FIXED: [{dayOfWeek,startTime,endTime,isActive}]
+  monthlyHourBudget Int? // When FLEXIBLE
   enabledModules    Json?
   specialty         String?
   maxDailyJobs      Int?
@@ -1304,7 +1309,7 @@ model Invitation {
 
   // Who created the invitation
   createdById String
-  createdBy   User @relation("InvitationCreator", fields: [createdById], references: [id])
+  createdBy   User   @relation("InvitationCreator", fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1321,21 +1326,21 @@ model Invitation {
 
 // Request from an orphan user to join an organization
 model JoinRequest {
-  id              String             @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId          String
-  user            User               @relation("UserJoinRequests", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("UserJoinRequests", fields: [userId], references: [id], onDelete: Cascade)
 
-  organizationId  String
-  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  message         String?            // Optional message from the requesting user
+  message String? // Optional message from the requesting user
 
-  status          JoinRequestStatus  @default(PENDING)
+  status JoinRequestStatus @default(PENDING)
 
   // Review fields (set when admin approves/rejects)
   reviewedById    String?
-  reviewedBy      User?              @relation("JoinRequestReviewer", fields: [reviewedById], references: [id])
+  reviewedBy      User?     @relation("JoinRequestReviewer", fields: [reviewedById], references: [id])
   reviewedAt      DateTime?
   rejectionReason String?
 
@@ -1343,8 +1348,8 @@ model JoinRequest {
   assignedRole     Role?
   assignedPlatform Platform?
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, organizationId, status])
   @@index([organizationId, status])
@@ -1357,34 +1362,34 @@ model JoinRequest {
 
 // Activity log for audit trail
 model ActivityLog {
-  id              String              @id @default(cuid())
+  id        String @id @default(cuid())
   // Free-form action string (e.g. "USER_LOGIN", "MEMBER_ROLE_CHANGED",
   // "TASK_DELETED", "LOCATIONS_UPDATED") so any mutation can be audited without
   // an enum migration. The gateway audit interceptor writes these.
-  eventType       String
+  eventType String
 
   // Who performed the action
-  userId          String?
-  user            User?               @relation("ActivityLogUser", fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+  user   User?   @relation("ActivityLogUser", fields: [userId], references: [id], onDelete: SetNull)
 
   // Who was affected (e.g., user being assigned, deleted)
-  targetUserId    String?
-  targetUser      User?               @relation("ActivityLogTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetUserId String?
+  targetUser   User?   @relation("ActivityLogTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   // Resource context
-  resourceType    String?             // "task", "user", "report", "timeEntry", etc.
-  resourceId      String?
+  resourceType String? // "task", "user", "report", "timeEntry", etc.
+  resourceId   String?
 
   // Additional context
-  metadata        Json?               // { previousStatus, newStatus, reason, etc. }
-  ipAddress       String?
-  userAgent       String?
+  metadata  Json? // { previousStatus, newStatus, reason, etc. }
+  ipAddress String?
+  userAgent String?
 
   // Organization scope
-  organizationId  String
-  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime            @default(now())
+  createdAt DateTime @default(now())
 
   @@index([organizationId, createdAt])
   @@index([userId, createdAt])
@@ -1395,12 +1400,12 @@ model ActivityLog {
 
 // System health metrics (time-series data)
 model HealthMetric {
-  id              String   @id @default(cuid())
-  serviceName     String   // "gateway", "auth-service", "task-service", etc.
-  metricType      String   // "latency", "error_rate", "request_count", "memory_usage"
-  value           Float
-  timestamp       DateTime @default(now())
-  metadata        Json?    // { endpoint, statusCode, errorMessage, etc. }
+  id          String   @id @default(cuid())
+  serviceName String // "gateway", "auth-service", "task-service", etc.
+  metricType  String // "latency", "error_rate", "request_count", "memory_usage"
+  value       Float
+  timestamp   DateTime @default(now())
+  metadata    Json? // { endpoint, statusCode, errorMessage, etc. }
 
   @@index([serviceName, timestamp])
   @@index([metricType, timestamp])
@@ -1409,30 +1414,30 @@ model HealthMetric {
 
 // Notification delivery tracking
 model NotificationDelivery {
-  id              String              @id @default(cuid())
-  channel         NotificationChannel
-  status          NotificationStatus  @default(PENDING)
+  id      String              @id @default(cuid())
+  channel NotificationChannel
+  status  NotificationStatus  @default(PENDING)
 
   // Recipient
-  recipientId     String
-  recipient       User                @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User   @relation(fields: [recipientId], references: [id], onDelete: Cascade)
 
   // Event that triggered the notification
-  eventType       String              // "task.assigned", "task.completed", "alert.raised", etc.
-  payload         Json?               // The notification content/data
+  eventType String // "task.assigned", "task.completed", "alert.raised", etc.
+  payload   Json? // The notification content/data
 
   // Delivery tracking
-  sentAt          DateTime?
-  deliveredAt     DateTime?
-  failureReason   String?
-  retryCount      Int                 @default(0)
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  failureReason String?
+  retryCount    Int       @default(0)
 
   // Organization scope
-  organizationId  String
-  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId, createdAt])
   @@index([recipientId, createdAt])
@@ -1443,33 +1448,33 @@ model NotificationDelivery {
 
 // Real-time alerts
 model Alert {
-  id              String        @id @default(cuid())
-  type            String        // "technician_offline", "task_overdue", "geofence_violation", "high_error_rate"
-  severity        AlertSeverity @default(WARNING)
-  status          AlertStatus   @default(ACTIVE)
+  id       String        @id @default(cuid())
+  type     String // "technician_offline", "task_overdue", "geofence_violation", "high_error_rate"
+  severity AlertSeverity @default(WARNING)
+  status   AlertStatus   @default(ACTIVE)
 
   // Alert content
-  title           String
-  message         String
-  metadata        Json?         // { technicianName, taskId, lastSeen, overdueBy, etc. }
+  title    String
+  message  String
+  metadata Json? // { technicianName, taskId, lastSeen, overdueBy, etc. }
 
   // Related entities (optional)
-  userId          String?       // Related user (e.g., offline technician)
-  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  taskId          String?       // Related task
+  userId String? // Related user (e.g., offline technician)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  taskId String? // Related task
 
   // Lifecycle tracking
-  acknowledgedAt  DateTime?
+  acknowledgedAt   DateTime?
   acknowledgedById String?
-  resolvedAt      DateTime?
-  resolvedById    String?
+  resolvedAt       DateTime?
+  resolvedById     String?
 
   // Organization scope
-  organizationId  String
-  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId, status])
   @@index([severity, status])
@@ -1480,42 +1485,42 @@ model Alert {
 
 // Daily aggregated metrics for reports (computed nightly)
 model DailyMetric {
-  id              String   @id @default(cuid())
-  date            DateTime @db.Date
+  id   String   @id @default(cuid())
+  date DateTime @db.Date
 
   // Organization scope
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   // Task metrics
-  tasksCreated        Int      @default(0)
-  tasksCompleted      Int      @default(0)
-  tasksCanceled       Int      @default(0)
-  tasksOverdue        Int      @default(0)
-  avgCompletionTime   Float?   // Average time to complete tasks (in minutes)
+  tasksCreated      Int    @default(0)
+  tasksCompleted    Int    @default(0)
+  tasksCanceled     Int    @default(0)
+  tasksOverdue      Int    @default(0)
+  avgCompletionTime Float? // Average time to complete tasks (in minutes)
 
   // User metrics
-  activeUsers         Int      @default(0)
-  loginCount          Int      @default(0)
-  failedLoginCount    Int      @default(0)
+  activeUsers      Int @default(0)
+  loginCount       Int @default(0)
+  failedLoginCount Int @default(0)
 
   // Attendance metrics
-  clockInCount        Int      @default(0)
-  avgWorkHours        Float?   // Average hours worked
-  geofenceViolations  Int      @default(0)
+  clockInCount       Int    @default(0)
+  avgWorkHours       Float? // Average hours worked
+  geofenceViolations Int    @default(0)
 
   // Notification metrics
-  emailsSent          Int      @default(0)
-  emailsFailed        Int      @default(0)
-  pushSent            Int      @default(0)
-  pushFailed          Int      @default(0)
+  emailsSent   Int @default(0)
+  emailsFailed Int @default(0)
+  pushSent     Int @default(0)
+  pushFailed   Int @default(0)
 
   // Alert metrics
-  alertsRaised        Int      @default(0)
-  alertsResolved      Int      @default(0)
+  alertsRaised   Int @default(0)
+  alertsResolved Int @default(0)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([date, organizationId])
   @@index([organizationId, date])
@@ -1528,10 +1533,10 @@ model OvertimeRequest {
 
   // Who is requesting overtime
   technicianId String
-  technician   User @relation("TechnicianOvertime", fields: [technicianId], references: [id], onDelete: Cascade)
+  technician   User   @relation("TechnicianOvertime", fields: [technicianId], references: [id], onDelete: Cascade)
 
   // Which time entry this overtime extends
-  timeEntryId String @unique
+  timeEntryId String    @unique
   timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
 
   // Which location
@@ -1543,12 +1548,12 @@ model OvertimeRequest {
 
   // Technician response
   technicianRespondedAt DateTime?
-  technicianReason      String?   // Why tech needs overtime
+  technicianReason      String? // Why tech needs overtime
 
   // Approval details
   approvalMethod  OvertimeApprovalMethod?
   approvedById    String?
-  approvedBy      User?    @relation("OvertimeApprover", fields: [approvedById], references: [id])
+  approvedBy      User?                   @relation("OvertimeApprover", fields: [approvedById], references: [id])
   approvedAt      DateTime?
   rejectedAt      DateTime?
   rejectionReason String?
@@ -1556,20 +1561,20 @@ model OvertimeRequest {
 
   // Signature (Path B - team leader signs on tech's phone)
   leaderName      String?
-  leaderSignature String?  @db.Text  // base64 PNG
+  leaderSignature String? @db.Text // base64 PNG
 
   // Overtime parameters
-  maxDurationMinutes Int?       // Max overtime allowed (set by leader)
-  overtimeStartAt    DateTime?  // When overtime period began
-  overtimeEndAt      DateTime?  // When overtime should end (scheduled)
-  actualEndAt        DateTime?  // When overtime actually ended
+  maxDurationMinutes Int? // Max overtime allowed (set by leader)
+  overtimeStartAt    DateTime? // When overtime period began
+  overtimeEndAt      DateTime? // When overtime should end (scheduled)
+  actualEndAt        DateTime? // When overtime actually ended
 
   // Calculated
-  overtimeMinutes Int?  // Actual overtime worked
+  overtimeMinutes Int? // Actual overtime worked
 
   // Timeout tracking
-  technicianTimeoutAt DateTime?  // When 15-min window expires
-  approvalTimeoutAt   DateTime?  // When 10-min approval window expires
+  technicianTimeoutAt DateTime? // When 15-min window expires
+  approvalTimeoutAt   DateTime? // When 10-min approval window expires
 
   // Organization scope
   organizationId String
@@ -1611,17 +1616,17 @@ model Phase {
 
 // Sprint for agile workflow
 model Sprint {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   name           String
   goal           String?
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   startDate      DateTime
   endDate        DateTime
-  status         SprintStatus @default(PLANNING)
-  position       Int          @default(0)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  status         SprintStatus  @default(PLANNING)
+  position       Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   tasks          Task[]
   report         SprintReport?
 
@@ -1664,8 +1669,8 @@ model SprintReport {
   carriedOverPoints Int      @default(0)
   addedMidSprint    Int      @default(0)
   removedMidSprint  Int      @default(0)
-  velocity          Float    @default(0)  // completedPoints
-  dailyBurndown     Json     // array of { date: string, remaining: number, ideal: number }
+  velocity          Float    @default(0) // completedPoints
+  dailyBurndown     Json // array of { date: string, remaining: number, ideal: number }
   createdAt         DateTime @default(now())
 
   @@index([organizationId])
@@ -1677,8 +1682,8 @@ model DefinitionOfDone {
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  workflowId     String?      // optional: tied to specific workflow
-  items          Json         // array of { text: string, isRequired: boolean }
+  workflowId     String? // optional: tied to specific workflow
+  items          Json // array of { text: string, isRequired: boolean }
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -1689,14 +1694,14 @@ model DefinitionOfDone {
 
 // Task dependency (predecessor/successor relationship)
 model TaskDependency {
-  id             String         @id @default(cuid())
-  predecessorId  String
-  predecessor    Task           @relation("DependencyPredecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
-  successorId    String
-  successor      Task           @relation("DependencySuccessor", fields: [successorId], references: [id], onDelete: Cascade)
-  type           DependencyType @default(FINISH_TO_START)
-  lagDays        Int            @default(0)
-  createdAt      DateTime       @default(now())
+  id            String         @id @default(cuid())
+  predecessorId String
+  predecessor   Task           @relation("DependencyPredecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successorId   String
+  successor     Task           @relation("DependencySuccessor", fields: [successorId], references: [id], onDelete: Cascade)
+  type          DependencyType @default(FINISH_TO_START)
+  lagDays       Int            @default(0)
+  createdAt     DateTime       @default(now())
 
   @@unique([predecessorId, successorId])
   @@index([predecessorId])
@@ -1708,18 +1713,18 @@ model TaskDependency {
 
 // Organization-level custom status workflow
 model StatusWorkflow {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String       // "Default", "Field Service", "Logistics", etc.
-  isDefault      Boolean      @default(false)
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  statuses       WorkflowStatus[]
-  tasks          Task[]
-  spaces         CompanyLocation[]
-  customFields   CustomFieldDefinition[]
+  id                 String                  @id @default(cuid())
+  organizationId     String
+  organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name               String // "Default", "Field Service", "Logistics", etc.
+  isDefault          Boolean                 @default(false)
+  isActive           Boolean                 @default(true)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  statuses           WorkflowStatus[]
+  tasks              Task[]
+  spaces             CompanyLocation[]
+  customFields       CustomFieldDefinition[]
   recurringTemplates RecurringTaskTemplate[]
 
   @@unique([organizationId, name])
@@ -1729,19 +1734,19 @@ model StatusWorkflow {
 
 // Individual status within a workflow
 model WorkflowStatus {
-  id         String         @id @default(cuid())
-  workflowId String
-  workflow   StatusWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  name       String         // "New", "In Transit", "Delivered", etc.
-  key        String         // "NEW", "IN_TRANSIT", "DELIVERED" — machine-readable
-  color      String         @default("#3b82f6")
-  icon       String?        // optional lucide icon name
-  position   Int            @default(0)
-  isFinal    Boolean        @default(false) // marks completion states
-  isCanceled Boolean        @default(false) // marks cancellation states
-  transitions String[]      // array of WorkflowStatus keys this status can transition TO
-  capabilities String[]     @default([]) // execution widgets active at this step (gps, timer, …)
-  createdAt  DateTime       @default(now())
+  id           String         @id @default(cuid())
+  workflowId   String
+  workflow     StatusWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name         String // "New", "In Transit", "Delivered", etc.
+  key          String // "NEW", "IN_TRANSIT", "DELIVERED" — machine-readable
+  color        String         @default("#3b82f6")
+  icon         String? // optional lucide icon name
+  position     Int            @default(0)
+  isFinal      Boolean        @default(false) // marks completion states
+  isCanceled   Boolean        @default(false) // marks cancellation states
+  transitions  String[] // array of WorkflowStatus keys this status can transition TO
+  capabilities String[]       @default([]) // execution widgets active at this step (gps, timer, …)
+  createdAt    DateTime       @default(now())
 
   @@unique([workflowId, key])
   @@index([workflowId])
@@ -1752,22 +1757,22 @@ model WorkflowStatus {
 
 // Organization-level custom field definition
 model CustomFieldDefinition {
-  id             String          @id @default(cuid())
+  id             String             @id @default(cuid())
   organizationId String
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   // Scope: a field belongs to a Task Type (workflowId) OR is global (null → all tasks).
   // A task collects its type's fields + the global fields (cascade, like workflows).
   workflowId     String?
-  workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  name           String          // "Customer PO Number", "Equipment Model"
-  key            String          // "customer_po", "equipment_model"
+  workflow       StatusWorkflow?    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name           String // "Customer PO Number", "Equipment Model"
+  key            String // "customer_po", "equipment_model"
   type           CustomFieldType
-  options        Json?           // for DROPDOWN: ["Option A", "Option B"]
-  isRequired     Boolean         @default(false)
-  position       Int             @default(0)
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  options        Json? // for DROPDOWN: ["Option A", "Option B"]
+  isRequired     Boolean            @default(false)
+  position       Int                @default(0)
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   values         CustomFieldValue[]
 
   @@unique([organizationId, workflowId, key])
@@ -1783,7 +1788,7 @@ model CustomFieldValue {
   definition   CustomFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
   taskId       String
   task         Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  value        String                // stored as string, parsed by type
+  value        String // stored as string, parsed by type
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
 
@@ -1796,37 +1801,37 @@ model CustomFieldValue {
 
 // Template for automatically creating recurring tasks
 model RecurringTaskTemplate {
-  id             String              @id @default(cuid())
-  organizationId String
-  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id              String              @id @default(cuid())
+  organizationId  String
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   // Generated tasks land in this space and carry this Task Type, so they fit the
   // space-centric / type-driven model (not orphaned, org-level generic tasks).
-  spaceId        String?
-  space          CompanyLocation?    @relation(fields: [spaceId], references: [id], onDelete: SetNull)
-  workflowId     String?
-  workflow       StatusWorkflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
-  title          String
-  description    String?
-  priority       TaskPriority        @default(MEDIUM)
-  locationLat    Float?
-  locationLng    Float?
+  spaceId         String?
+  space           CompanyLocation?    @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  workflowId      String?
+  workflow        StatusWorkflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  title           String
+  description     String?
+  priority        TaskPriority        @default(MEDIUM)
+  locationLat     Float?
+  locationLng     Float?
   locationAddress String?
-  assigneeIds    Json?               // array of user IDs to assign
-  estimatedHours Float?
-  checklist      Json?               // array of { text: string }
-  frequency      RecurrenceFrequency
-  customDays     Int?                // for CUSTOM: every N days
-  dayOfWeek      Int?                // for WEEKLY/BIWEEKLY: 0=Sun, 1=Mon, etc.
-  dayOfMonth     Int?                // for MONTHLY: 1-31
-  startDate      DateTime
-  endDate        DateTime?           // null = forever
+  assigneeIds     Json? // array of user IDs to assign
+  estimatedHours  Float?
+  checklist       Json? // array of { text: string }
+  frequency       RecurrenceFrequency
+  customDays      Int? // for CUSTOM: every N days
+  dayOfWeek       Int? // for WEEKLY/BIWEEKLY: 0=Sun, 1=Mon, etc.
+  dayOfMonth      Int? // for MONTHLY: 1-31
+  startDate       DateTime
+  endDate         DateTime? // null = forever
   lastGeneratedAt DateTime?
-  nextRunAt      DateTime?
-  isActive       Boolean             @default(true)
-  createdById    String
-  createdBy      User                @relation("RecurringTaskCreator", fields: [createdById], references: [id])
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  nextRunAt       DateTime?
+  isActive        Boolean             @default(true)
+  createdById     String
+  createdBy       User                @relation("RecurringTaskCreator", fields: [createdById], references: [id])
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
   @@index([organizationId])
   @@index([nextRunAt, isActive])
@@ -1849,41 +1854,41 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id              String          @id @default(cuid())
-  invoiceNumber   String          // Auto-generated: INV-YYYY-XXXX
-  status          InvoiceStatus   @default(DRAFT)
+  id            String        @id @default(cuid())
+  invoiceNumber String // Auto-generated: INV-YYYY-XXXX
+  status        InvoiceStatus @default(DRAFT)
 
   // Client info
-  clientName      String
-  clientEmail     String?
-  clientAddress   String?
+  clientName    String
+  clientEmail   String?
+  clientAddress String?
 
   // Amounts
-  subtotal        Float           @default(0)
-  taxRate         Float?          // e.g., 0.15 for 15%
-  taxAmount       Float           @default(0)
-  discount        Float           @default(0)
-  total           Float           @default(0)
-  currency        String          @default("USD")
+  subtotal  Float  @default(0)
+  taxRate   Float? // e.g., 0.15 for 15%
+  taxAmount Float  @default(0)
+  discount  Float  @default(0)
+  total     Float  @default(0)
+  currency  String @default("USD")
 
   // Dates
-  issueDate       DateTime        @default(now())
-  dueDate         DateTime?
-  paidAt          DateTime?
+  issueDate DateTime  @default(now())
+  dueDate   DateTime?
+  paidAt    DateTime?
 
   // Notes
-  notes           String?
+  notes String?
 
   // Relations
-  organizationId  String
-  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdById     String
-  createdBy       User            @relation("InvoiceCreator", fields: [createdById], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User         @relation("InvoiceCreator", fields: [createdById], references: [id])
 
-  items           InvoiceItem[]
+  items InvoiceItem[]
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([organizationId, invoiceNumber]) // backstop: no duplicate invoice numbers per org
   @@index([organizationId, status])
@@ -1892,23 +1897,122 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id              String    @id @default(cuid())
-  invoiceId       String
-  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  description     String
-  quantity        Float     @default(1)
-  unitPrice       Float     @default(0)
-  amount          Float     @default(0)
+  description String
+  quantity    Float  @default(1)
+  unitPrice   Float  @default(0)
+  amount      Float  @default(0)
 
   // Optional link to task/service report
-  taskId          String?
-  reportId        String?
+  taskId   String?
+  reportId String?
 
-  createdAt       DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([invoiceId])
   @@map("invoice_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  IN-APP SUPPORT (tickets + conversation backbone)
+//  Every support channel (web widget, mobile, email, live chat) writes to a
+//  SupportTicket. Agents are platform staff (operator-key auth), so agent ids
+//  are plain strings — NOT User FKs. Author of a message is disambiguated by
+//  authorType, not a relation.
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum SupportStatus {
+  OPEN // new, awaiting first agent reply
+  PENDING_AGENT // customer replied last — our turn
+  PENDING_CUSTOMER // agent replied last — customer's turn
+  RESOLVED // agent marked solved (customer may reopen)
+  CLOSED // archived
+}
+
+enum SupportCategory {
+  BILLING
+  TECHNICAL
+  HOWTO
+  FEEDBACK
+  OTHER
+}
+
+enum SupportChannel {
+  WEB
+  MOBILE
+  EMAIL
+  LIVE_CHAT
+}
+
+enum SupportAuthorType {
+  CUSTOMER
+  AGENT
+  SYSTEM
+}
+
+model SupportTicket {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User         @relation("SupportCreatedBy", fields: [createdById], references: [id])
+
+  subject  String
+  category SupportCategory @default(OTHER)
+  channel  SupportChannel  @default(WEB)
+  status   SupportStatus   @default(OPEN)
+
+  // Priority routing: lower = served first. Snapshot of the tier at creation.
+  priority           Int     @default(4)
+  planTierAtCreation String?
+
+  // Agent (platform staff) currently owning the ticket — plain id, not a User FK.
+  assignedAgentId String?
+
+  // SLA (first response). Due date computed from tier's business-hours SLA.
+  slaFirstResponseDueAt DateTime?
+  firstRespondedAt      DateTime?
+  slaBreached           Boolean   @default(false)
+
+  lastCustomerMessageAt DateTime?
+  lastAgentMessageAt    DateTime?
+  resolvedAt            DateTime?
+  closedAt              DateTime?
+
+  messages SupportMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status]) // customer ticket list
+  @@index([status, priority, createdAt]) // agent inbox (priority routing order)
+  @@index([assignedAgentId, status]) // an agent's assigned view
+  @@index([slaBreached, slaFirstResponseDueAt]) // breach sweep / at-risk
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id       String        @id @default(cuid())
+  ticketId String
+  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  // Author id: a User id for CUSTOMER, an agent handle for AGENT, null for SYSTEM.
+  authorId       String?
+  authorType     SupportAuthorType
+  body           String
+  attachments    Json              @default("[]") // SupportAttachment[]
+  isInternalNote Boolean           @default(false) // agent-only; never delivered to the customer
+
+  readByCustomerAt DateTime?
+  readByAgentAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1925,11 +2029,11 @@ enum PlanTier {
 }
 
 enum SubscriptionStatus {
-  TRIALING     // in 14-day free trial (no card yet)
-  ACTIVE       // paid & current
-  PAST_DUE     // payment failed, in dunning grace period
-  CANCELED     // canceled (access until currentPeriodEnd, then locked)
-  INCOMPLETE   // trial ended with no payment method → locked read-only
+  TRIALING // in 14-day free trial (no card yet)
+  ACTIVE // paid & current
+  PAST_DUE // payment failed, in dunning grace period
+  CANCELED // canceled (access until currentPeriodEnd, then locked)
+  INCOMPLETE // trial ended with no payment method → locked read-only
 }
 
 enum BillingInterval {
@@ -1940,26 +2044,26 @@ enum BillingInterval {
 /// One subscription per organization. Seat quantities are derived from member
 /// access (office = ADMIN + web members, field = mobile-only) and synced to Stripe.
 model Subscription {
-  id                   String   @id @default(cuid())
-  organizationId       String   @unique
-  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  stripeSubscriptionId String?  @unique
+  stripeSubscriptionId String?            @unique
   planTier             PlanTier
   status               SubscriptionStatus @default(TRIALING)
   interval             BillingInterval    @default(MONTHLY)
 
-  officeSeats          Int      @default(0)
-  fieldSeats           Int      @default(0)
+  officeSeats Int @default(0)
+  fieldSeats  Int @default(0)
 
-  currentPeriodStart   DateTime?
-  currentPeriodEnd     DateTime?
-  trialEndsAt          DateTime?
-  cancelAtPeriodEnd    Boolean  @default(false)
-  canceledAt           DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  trialEndsAt        DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  canceledAt         DateTime?
 
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@map("subscriptions")
@@ -1967,15 +2071,15 @@ model Subscription {
 
 /// Raw Stripe webhook events — for idempotency (unique stripeEventId) and audit.
 model BillingEvent {
-  id             String   @id @default(cuid())
+  id             String        @id @default(cuid())
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
-  stripeEventId  String   @unique
-  type           String
-  payload        Json?
-  processedAt    DateTime?
-  createdAt      DateTime @default(now())
+  stripeEventId String    @unique
+  type          String
+  payload       Json?
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
 
   @@index([organizationId, createdAt])
   @@map("billing_events")

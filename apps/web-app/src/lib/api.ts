@@ -3864,3 +3864,55 @@ export const billingApi = {
     if (response.error) throw new Error(response.error);
   },
 };
+
+// ============================================================================
+// SUPPORT API (customer-facing)
+// ============================================================================
+import type { SupportTicket, SupportMessage, SupportAttachment } from '@hbcfield/shared/client';
+
+export interface SupportConfig {
+  tier: string | null;
+  slaBusinessMinutes: number;
+  liveChat: boolean;
+  priorityRouting: boolean;
+  dedicatedSupport: boolean;
+}
+
+export const supportApi = {
+  getConfig: async (): Promise<SupportConfig> => {
+    const res = await api.get<{ data: SupportConfig }>('/support/config');
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  list: async (status?: string): Promise<{ data: SupportTicket[]; meta: { total: number } }> => {
+    const res = await api.get<{ data: SupportTicket[]; meta: { total: number } }>(
+      `/support/tickets${status ? `?status=${status}` : ''}`,
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  get: async (id: string): Promise<SupportTicket> => {
+    const res = await api.get<{ data: SupportTicket }>(`/support/tickets/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  create: async (payload: {
+    subject: string;
+    body: string;
+    category?: string;
+    channel?: string;
+    attachments?: SupportAttachment[];
+  }): Promise<SupportTicket> => {
+    const res = await api.post<{ data: SupportTicket }>('/support/tickets', payload);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  reply: async (id: string, body: string, attachments?: SupportAttachment[]): Promise<SupportMessage> => {
+    const res = await api.post<{ data: SupportMessage }>(`/support/tickets/${id}/messages`, { body, attachments });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  markRead: async (id: string): Promise<void> => {
+    await api.post(`/support/tickets/${id}/read`, {});
+  },
+};

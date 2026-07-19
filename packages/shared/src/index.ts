@@ -4,6 +4,9 @@ export * from './types';
 // Export billing (plans, seat pricing, seat classifier)
 export * from './billing';
 
+// Export support (ticket/message types, per-tier SLA + priority helpers)
+export * from './support';
+
 // Export Prisma module (for NestJS backend)
 export * from './prisma';
 

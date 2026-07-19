@@ -16,6 +16,7 @@ export const QUEUE_NAMES = {
   ATTENDANCE: 'attendance',
   OVERTIME: 'overtime',
   BILLING: 'billing',
+  SUPPORT: 'support',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -110,6 +111,17 @@ export const OVERTIME_JOB_TYPES = {
 } as const;
 
 export type OvertimeJobType = (typeof OVERTIME_JOB_TYPES)[keyof typeof OVERTIME_JOB_TYPES];
+
+export const SUPPORT_JOB_TYPES = {
+  CREATE_TICKET: 'support.createTicket',
+  ADD_MESSAGE: 'support.addMessage',
+  ASSIGN: 'support.assign',
+  SET_STATUS: 'support.setStatus',
+  MARK_READ: 'support.markRead',
+  SLA_BREACH_CHECK: 'support.slaBreachCheck', // delayed job fired at the SLA deadline
+} as const;
+
+export type SupportJobType = (typeof SUPPORT_JOB_TYPES)[keyof typeof SUPPORT_JOB_TYPES];
 
 export type AttendanceJobType = (typeof ATTENDANCE_JOB_TYPES)[keyof typeof ATTENDANCE_JOB_TYPES];
 

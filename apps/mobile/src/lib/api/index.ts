@@ -74,6 +74,9 @@ export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput, Colleag
 export { overtimeApi } from './overtime';
 export type { OvertimeRequest } from './overtime';
 export { locationsApi } from './locations';
+
+export { supportApi } from './support';
+export type { SupportConfig } from './support';
 export type { LocationAssignment, AssignMemberInput, LocationWithMembers } from './locations';
 export { customFieldsApi } from './custom-fields';
 export type { MobileCustomFieldDefinition, MobileCustomFieldValue, MobileCustomFieldType } from './custom-fields';

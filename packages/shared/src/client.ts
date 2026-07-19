@@ -16,6 +16,9 @@ export * from './types';
 // Billing (plans, seat pricing, seat classifier, API types) — pure, client-safe
 export * from './billing';
 
+// Support (ticket/message types, per-tier SLA + priority helpers) — pure, client-safe
+export * from './support';
+
 // Export utility functions (date, query string building)
 export * from './utils';
 

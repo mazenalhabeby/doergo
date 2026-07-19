@@ -41,7 +41,19 @@ const MARKETING_DESC: Record<string, string> = {
   invoicing: 'Turn completed work into an invoice in a couple of clicks and keep track of what’s been paid.',
   workflows: 'Build your own task stages — the exact steps your business uses — instead of a fixed status list.',
   audit_log: 'Keep a complete record of every action, so you always know who changed what and when.',
+  // Support
+  priority_routing: 'Your tickets jump the queue ahead of lower plans, so you’re answered sooner when it’s busy.',
+  live_chat: 'Chat with a real person in real time, right inside the app, when an agent is online.',
+  dedicated_support: 'A named contact and an onboarding call — hands-on help tailored to your team.',
 };
+
+// Support entitlements (help center + email + AI-free ticketing are on every plan;
+// these are the tier-gated extras — keys live in plans.ts, checked via tierAllows).
+const SUPPORT_ROWS: { key: string; label: string }[] = [
+  { key: 'priority_routing', label: 'Priority queue routing' },
+  { key: 'live_chat', label: 'Live chat' },
+  { key: 'dedicated_support', label: 'Dedicated contact & onboarding' },
+];
 
 // Premium capabilities are NOT in the module catalog — their keys live in
 // plans.ts (gated by tierAllows). Labels here are display-only.
@@ -74,6 +86,11 @@ const GROUPS: { key: string; label: string; rows: Row[] }[] = [
     key: 'premium',
     label: 'Premium',
     rows: CAPABILITIES.map((c) => ({ key: c.key, label: c.label, description: MARKETING_DESC[c.key] ?? '' })),
+  },
+  {
+    key: 'support',
+    label: 'Support',
+    rows: SUPPORT_ROWS.map((r) => ({ key: r.key, label: r.label, description: MARKETING_DESC[r.key] ?? '' })),
   },
 ];
 

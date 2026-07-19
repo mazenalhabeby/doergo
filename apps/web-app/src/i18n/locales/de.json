@@ -291,7 +291,8 @@
         "task": "Aufgaben-Bereiche",
         "field": "Außendienst",
         "agile": "Projekt / Agile",
-        "premium": "Premium"
+        "premium": "Premium",
+        "support": "Support"
       },
       "popular": "Beliebt",
       "custom": "Individuell",
@@ -364,6 +365,18 @@
         "audit_log": {
           "label": "Audit-Protokoll",
           "desc": "Führen Sie eine lückenlose Aufzeichnung jeder Aktion – so wissen Sie immer, wer was wann geändert hat."
+        },
+        "priority_routing": {
+          "label": "Priorisierte Warteschlange",
+          "desc": "Ihre Tickets überholen niedrigere Pläne in der Warteschlange — bei Andrang werden Sie schneller beantwortet."
+        },
+        "live_chat": {
+          "label": "Live-Chat",
+          "desc": "Chatten Sie in Echtzeit mit einem echten Mitarbeiter, direkt in der App, wenn ein Agent online ist."
+        },
+        "dedicated_support": {
+          "label": "Fester Ansprechpartner & Onboarding",
+          "desc": "Ein fester Ansprechpartner und ein Onboarding-Gespräch — praktische, auf Ihr Team zugeschnittene Hilfe."
         }
       }
     },
@@ -420,9 +433,10 @@
           "popular": false,
           "desc": "Für Franchises, Agenturen & Multi-Standort-Betriebe.",
           "features": [
-            "Multi-Org-Delegation",
+            "Sprints & Story Points",
+            "Epics & Phasen",
             "Prüfprotokoll & Workflows",
-            "Priorisierter Support"
+            "Live-Chat & priorisierter Support"
           ]
         },
         {
@@ -3795,5 +3809,26 @@
   "roles": {
     "admin": "Admin",
     "manager": "Manager"
+  },
+  "support": {
+    "title": "Support",
+    "agentOnline": "Live-Chat — Mitarbeiter online",
+    "leaveMessage": "Nachricht hinterlassen",
+    "email": "E-Mail-Support",
+    "typicalReply": "Antwort typischerweise innerhalb von",
+    "empty": "Noch keine Tickets.",
+    "newTicket": "Neue Anfrage",
+    "subjectPlaceholder": "Betreff",
+    "bodyPlaceholder": "Wie können wir helfen?",
+    "chatPlaceholder": "Beschreiben Sie Ihr Anliegen — ein Mitarbeiter ist online",
+    "send": "Senden",
+    "replyPlaceholder": "Antwort schreiben…",
+    "status": {
+      "OPEN": "Offen",
+      "PENDING_AGENT": "Wartet auf Support",
+      "PENDING_CUSTOMER": "Wartet auf Ihre Antwort",
+      "RESOLVED": "Gelöst",
+      "CLOSED": "Geschlossen"
+    }
   }
 }

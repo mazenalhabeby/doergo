@@ -63,12 +63,24 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   private readonly HEARTBEAT_MS = 60000;
   private heartbeatTimer?: NodeJS.Timeout;
 
+  // Support live-chat: socket ids of connected human agents (operator staff).
+  // Presence = "is any agent online" → drives the customer's live-chat availability.
+  private agentSockets = new Set<string>();
+  private readonly platformAdminKey?: string;
+
   constructor(private readonly prisma: PrismaService, configService: ConfigService) {
     const secret = configService.get<string>('JWT_ACCESS_SECRET');
     if (!secret) {
       throw new Error('CRITICAL: JWT_ACCESS_SECRET must be configured for socket authentication');
     }
     this.jwtSecret = secret;
+    // Optional: agent sockets authenticate with this platform key (operator console).
+    this.platformAdminKey = configService.get<string>('PLATFORM_ADMIN_KEY');
+  }
+
+  /** True if at least one human support agent socket is connected. */
+  private anyAgentOnline(): boolean {
+    return this.agentSockets.size > 0;
   }
 
   /** True if the user still has at least one authenticated socket connected. */
@@ -184,6 +196,12 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     client.offAnyOutgoing();
 
     this.connectedClients.delete(client.id);
+
+    // Support agent presence: if this was an agent socket and the last one, tell
+    // customers live chat just went offline.
+    if (this.agentSockets.delete(client.id) && !this.anyAgentOnline()) {
+      this.server.emit(SocketEvents.SUPPORT_AGENT_PRESENCE, { online: false });
+    }
 
     // Real-time offline: if this was the user's LAST socket, start a grace timer.
     // If they don't reconnect within the window AND they aren't on the clock,
@@ -339,6 +357,44 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.logger.log(`[AUTH] Client ${client.id} joined rooms: ${clientInfo.rooms.join(', ')}`);
 
     return { success: true, rooms: clientInfo.rooms };
+  }
+
+  // Support agents (operator staff) authenticate with the platform key, NOT a JWT
+  // — they are not app users. They join the `support-agents` room to receive every
+  // ticket event (including internal notes) and drive live-chat presence.
+  @SubscribeMessage('authenticate_agent')
+  handleAuthenticateAgent(client: Socket) {
+    const key = client.handshake?.auth?.platformKey;
+    if (!this.platformAdminKey || !key || key !== this.platformAdminKey) {
+      this.logger.warn(`[AUTH] Agent socket ${client.id} rejected: bad platform key`);
+      return { success: false, error: 'Invalid platform key' };
+    }
+    clearTimeout((client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer);
+    client.join('support-agents');
+    const wasEmpty = !this.anyAgentOnline();
+    this.agentSockets.add(client.id);
+    this.logger.log(`[AUTH] Support agent socket ${client.id} joined support-agents`);
+    // First agent online → tell customers live chat is available.
+    if (wasEmpty) this.server.emit(SocketEvents.SUPPORT_AGENT_PRESENCE, { online: true });
+    return { success: true };
+  }
+
+  // Live-chat typing indicator relay. Customer → agents; agent → the ticket owner.
+  @SubscribeMessage('support_typing')
+  handleSupportTyping(client: Socket, payload: { ticketId: string; customerId?: string; from: 'CUSTOMER' | 'AGENT' }) {
+    if (!payload?.ticketId) return;
+    const evt = { ticketId: payload.ticketId, from: payload.from };
+    if (payload.from === 'CUSTOMER') {
+      this.server.to('support-agents').emit(SocketEvents.SUPPORT_TYPING, evt);
+    } else if (payload.customerId) {
+      this.server.to(`user:${payload.customerId}`).emit(SocketEvents.SUPPORT_TYPING, evt);
+    }
+  }
+
+  // Lets a client ask whether a human agent is online right now (live-chat gating).
+  @SubscribeMessage('support_agent_presence')
+  handleSupportAgentPresenceQuery() {
+    return { online: this.anyAgentOnline() };
   }
 
   @SubscribeMessage('join_task')
@@ -581,6 +637,43 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.logger.debug(`[EMIT] presence.changed for user ${userId} -> ${presence}`);
     this.messagesSent += 1;
     this.server.to(`org:${organizationId}`).emit(SocketEvents.PRESENCE_CHANGED, { userId, presence });
+  }
+
+  // =========================================================================
+  // SUPPORT EVENTS
+  // =========================================================================
+
+  /** A new support message. Internal notes go to agents only; else customer + agents. */
+  emitSupportMessage(payload: {
+    ticketId: string;
+    message: any;
+    ticket: any;
+    isInternalNote?: boolean;
+    customerId: string;
+  }) {
+    this.messagesSent += 1;
+    const evt = { ticketId: payload.ticketId, message: payload.message, ticket: payload.ticket };
+    this.server.to('support-agents').emit(SocketEvents.SUPPORT_MESSAGE, evt);
+    if (!payload.isInternalNote) {
+      this.server.to(`user:${payload.customerId}`).emit(SocketEvents.SUPPORT_MESSAGE, evt);
+    }
+  }
+
+  /** Ticket status/assignment/SLA changed → refresh the customer + agent views. */
+  emitSupportTicketUpdated(ticket: any) {
+    this.messagesSent += 1;
+    const evt = { ticket };
+    this.server.to('support-agents').emit(SocketEvents.SUPPORT_TICKET_UPDATED, evt);
+    if (ticket?.createdById) {
+      this.server.to(`user:${ticket.createdById}`).emit(SocketEvents.SUPPORT_TICKET_UPDATED, evt);
+    }
+  }
+
+  /** SLA breached → agents only (escalation surfaces in the inbox). */
+  emitSupportSlaBreached(ticket: any) {
+    this.messagesSent += 1;
+    this.logger.warn(`[EMIT] support SLA breached: ticket ${ticket?.id}`);
+    this.server.to('support-agents').emit(SocketEvents.SUPPORT_TICKET_UPDATED, { ticket, slaBreached: true });
   }
 
   // =========================================================================

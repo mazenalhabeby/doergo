@@ -70,6 +70,11 @@ export const SocketEvents = {
   BREAK_ENDED: 'break.ended',
   // Availability status (Available/Busy/Away) changed
   PRESENCE_CHANGED: 'presence.changed',
+  // Support events
+  SUPPORT_MESSAGE: 'support.message', // new message on a ticket
+  SUPPORT_TICKET_UPDATED: 'support.ticketUpdated', // status/assignment/SLA change
+  SUPPORT_TYPING: 'support.typing', // live-chat typing indicator
+  SUPPORT_AGENT_PRESENCE: 'support.agentPresence', // is a human agent online
 } as const;
 
 // API Response wrapper

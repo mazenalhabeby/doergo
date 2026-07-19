@@ -1027,5 +1027,24 @@
     "somethingWentWrong": "Etwas ist schiefgelaufen",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
     "tryAgain": "Erneut versuchen"
+  },
+  "support": {
+    "title": "Support",
+    "agentOnline": "Live-Chat — Mitarbeiter online",
+    "leaveMessage": "Nachricht hinterlassen",
+    "typicalReply": "Antwort typischerweise innerhalb von",
+    "empty": "Noch keine Tickets.",
+    "newTicket": "Neue Anfrage",
+    "subjectPlaceholder": "Betreff",
+    "bodyPlaceholder": "Wie können wir helfen?",
+    "send": "Senden",
+    "replyPlaceholder": "Antwort schreiben…",
+    "status": {
+      "OPEN": "Offen",
+      "PENDING_AGENT": "Wartet auf Support",
+      "PENDING_CUSTOMER": "Wartet auf Ihre Antwort",
+      "RESOLVED": "Gelöst",
+      "CLOSED": "Geschlossen"
+    }
   }
 }

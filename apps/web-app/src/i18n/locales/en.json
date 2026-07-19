@@ -291,7 +291,8 @@
         "task": "Task sections",
         "field": "Field service",
         "agile": "Project / Agile",
-        "premium": "Premium"
+        "premium": "Premium",
+        "support": "Support"
       },
       "popular": "Popular",
       "custom": "Custom",
@@ -364,6 +365,18 @@
         "audit_log": {
           "label": "Audit log",
           "desc": "Keep a complete record of every action, so you always know who changed what and when."
+        },
+        "priority_routing": {
+          "label": "Priority queue routing",
+          "desc": "Your tickets jump the queue ahead of lower plans, so you’re answered sooner when it’s busy."
+        },
+        "live_chat": {
+          "label": "Live chat",
+          "desc": "Chat with a real person in real time, right inside the app, when an agent is online."
+        },
+        "dedicated_support": {
+          "label": "Dedicated contact & onboarding",
+          "desc": "A named contact and an onboarding call — hands-on help tailored to your team."
         }
       }
     },
@@ -420,9 +433,10 @@
           "popular": false,
           "desc": "For franchises, agencies & multi-site operators.",
           "features": [
-            "Multi-org delegation",
+            "Sprints & story points",
+            "Epics & phases",
             "Audit log & workflows",
-            "Priority support"
+            "Live chat & priority support"
           ]
         },
         {
@@ -3795,5 +3809,26 @@
   "roles": {
     "admin": "Admin",
     "manager": "Manager"
+  },
+  "support": {
+    "title": "Support",
+    "agentOnline": "Live chat — agent online",
+    "leaveMessage": "Leave a message",
+    "email": "Email support",
+    "typicalReply": "Typical reply within",
+    "empty": "No tickets yet.",
+    "newTicket": "New request",
+    "subjectPlaceholder": "Subject",
+    "bodyPlaceholder": "How can we help?",
+    "chatPlaceholder": "Describe your issue — an agent is online",
+    "send": "Send",
+    "replyPlaceholder": "Write a reply…",
+    "status": {
+      "OPEN": "Open",
+      "PENDING_AGENT": "Awaiting support",
+      "PENDING_CUSTOMER": "Awaiting your reply",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed"
+    }
   }
 }

@@ -97,6 +97,13 @@ export default function AppLayout() {
       return;
     }
 
+    // Support: deep-link into the ticket thread.
+    if (type === 'support' || data?.type === 'support') {
+      const ticketId = data?.ticketId;
+      router.push((ticketId ? `/support?ticketId=${ticketId}` : '/support') as Href);
+      return;
+    }
+
     if (taskId) {
       // Navigate to task detail
       router.push(`/task/${taskId}` as Href);
@@ -187,6 +194,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
+        <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/notifications"
           options={{

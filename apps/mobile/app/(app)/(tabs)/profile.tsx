@@ -372,7 +372,7 @@ export default function ProfileScreen() {
             iconColor={COLORS.cyan}
             iconBg={colors.cyanLight}
             label={t('profile.menu.contactSupport')}
-            onPress={() => Linking.openURL('mailto:support@hbcfield.com').catch(() => {})}
+            onPress={() => router.push('/support' as Href)}
             themeColors={colors}
           />
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
