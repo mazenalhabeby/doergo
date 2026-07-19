@@ -144,9 +144,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       <CommandPalette />
       <SupportWidget />
-      {/* Debug-only token countdown — hidden in production unless explicitly enabled */}
-      {(process.env.NODE_ENV !== 'production' ||
-        process.env.NEXT_PUBLIC_SHOW_TOKEN_MONITOR === 'true') && <TokenDebugPanel />}
+      {/* Debug-only token countdown — hidden everywhere by default; opt in with
+          NEXT_PUBLIC_SHOW_TOKEN_MONITOR=true (dev or prod). */}
+      {process.env.NEXT_PUBLIC_SHOW_TOKEN_MONITOR === 'true' && <TokenDebugPanel />}
     </BreadcrumbProvider>
     </CommandPaletteProvider>
     </ActivityPanelProvider>
