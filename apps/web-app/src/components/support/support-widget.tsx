@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Headset, X, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
+import { MessageCircle, X, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
 import { SocketEvents, isSupportOpen, type SupportTicket } from '@hbcfield/shared/client';
 import { supportApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
@@ -101,7 +101,7 @@ export function SupportWidget() {
         {/* subtle top-light sheen for depth */}
         <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/25 to-transparent opacity-70" />
         <span className="relative transition-transform duration-300 group-hover:scale-110">
-          {open ? <X className="h-5 w-5" /> : <Headset className="h-[23px] w-[23px]" strokeWidth={1.75} />}
+          {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-[23px] w-[23px]" strokeWidth={1.75} />}
         </span>
         {!open && unreadTotal > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
