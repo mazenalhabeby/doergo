@@ -8,6 +8,7 @@ import { SocketEvents, isSupportOpen, type SupportTicket } from '@hbcfield/share
 import { supportApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';
+import { useActivityPanel, ACTIVITY_PANEL_WIDTH } from '@/contexts/activity-panel-context';
 
 /**
  * Floating, tier-aware support widget. Everyone can open tickets; Business+ sees
@@ -84,6 +85,11 @@ export function SupportWidget() {
 
   const liveChat = !!config?.liveChat && agentOnline;
 
+  // Slide left of the docked activity/pending-actions panel when it's open, so
+  // the button never covers it. On pages without that panel, stays bottom-right.
+  const { isOpen: panelOpen, present: panelPresent } = useActivityPanel();
+  const panelGap = panelPresent && panelOpen ? ACTIVITY_PANEL_WIDTH + 16 : 0;
+
   if (!enabled) return null;
 
   return (
@@ -92,7 +98,8 @@ export function SupportWidget() {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={t('support.title', 'Support')}
-        className="group fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-[0_10px_30px_-6px_rgba(37,99,235,0.55)] ring-1 ring-white/20 transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_14px_40px_-6px_rgba(37,99,235,0.7)] active:scale-95"
+        style={{ right: 24 + panelGap }}
+        className="group fixed bottom-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-[0_10px_30px_-6px_rgba(37,99,235,0.55)] ring-1 ring-white/20 transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_14px_40px_-6px_rgba(37,99,235,0.7)] active:scale-95"
       >
         {/* soft attention pulse when there are unread replies */}
         {!open && unreadTotal > 0 && (
@@ -111,7 +118,10 @@ export function SupportWidget() {
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-5 z-40 flex h-[560px] max-h-[80vh] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div
+          style={{ right: 20 + panelGap }}
+          className="fixed bottom-24 z-40 flex h-[560px] max-h-[80vh] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-300"
+        >
           {/* Header */}
           <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
             {(activeId || composing) && (

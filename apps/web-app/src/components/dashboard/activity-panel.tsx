@@ -4,7 +4,7 @@ import React from "react"
 import { Check, X, MessageCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useActivityPanel } from "@/contexts/activity-panel-context"
+import { useActivityPanel, useRegisterActivityPanel } from "@/contexts/activity-panel-context"
 
 // ─── Activity Feed Types ───
 
@@ -43,6 +43,7 @@ const DOT_COLORS = {
 
 export function ActivityPanel({ events, pending, className }: ActivityPanelProps) {
   const { isOpen } = useActivityPanel()
+  useRegisterActivityPanel() // tell the support button a panel is docked here
 
   return (
     <div
