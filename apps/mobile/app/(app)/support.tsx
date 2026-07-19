@@ -40,6 +40,7 @@ export default function SupportScreen() {
   const [body, setBody] = useState('');
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const liveChat = !!config?.liveChat;
@@ -49,18 +50,26 @@ export default function SupportScreen() {
       const [cfg, list] = await Promise.all([supportApi.getConfig(), supportApi.list()]);
       setConfig(cfg);
       setTickets(list.data);
+      setError(null);
+    } catch {
+      setError(t('support.loadError', 'Could not load support. Check your connection.'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const openTicket = useCallback(async (id: string) => {
-    const tk = await supportApi.get(id);
-    setActive(tk);
-    setView('thread');
-    supportApi.markRead(id).catch(() => {});
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 50);
-  }, []);
+    try {
+      const tk = await supportApi.get(id);
+      setActive(tk);
+      setView('thread');
+      setError(null);
+      supportApi.markRead(id).catch(() => {});
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 50);
+    } catch {
+      setError(t('support.loadError', 'Could not load support. Check your connection.'));
+    }
+  }, [t]);
 
   useEffect(() => {
     loadList();
@@ -71,18 +80,22 @@ export default function SupportScreen() {
     if (params.ticketId) openTicket(String(params.ticketId));
   }, [params.ticketId, openTicket]);
 
-  // Real-time refresh.
+  // Real-time refresh. Reads the open ticket via a ref so a new message doesn't
+  // re-subscribe the listeners on every render.
+  const activeRef = useRef(active);
+  activeRef.current = active;
   useEffect(() => {
     const offs = [
       subscribe(SocketEvents.SUPPORT_MESSAGE, (d: any) => {
         loadList();
-        if (active && d?.ticketId === active.id) supportApi.get(active.id).then(setActive);
+        const open = activeRef.current;
+        if (open && d?.ticketId === open.id) supportApi.get(open.id).then(setActive).catch(() => {});
       }),
       subscribe(SocketEvents.SUPPORT_TICKET_UPDATED, () => loadList()),
       subscribe(SocketEvents.SUPPORT_AGENT_PRESENCE, (d: any) => setAgentOnline(!!d?.online)),
     ];
     return () => offs.forEach((o) => o());
-  }, [subscribe, active, loadList]);
+  }, [subscribe, loadList]);
 
   const submitNew = async () => {
     if (subject.trim().length < 2 || body.trim().length < 1) return;
@@ -91,8 +104,11 @@ export default function SupportScreen() {
       const tk = await supportApi.create({ subject: subject.trim(), body: body.trim() });
       setSubject('');
       setBody('');
+      setError(null);
       await loadList();
       openTicket(tk.id);
+    } catch {
+      setError(t('support.sendError', 'Could not send. Please try again.'));
     } finally {
       setSending(false);
     }
@@ -104,9 +120,12 @@ export default function SupportScreen() {
     try {
       await supportApi.reply(active.id, reply.trim());
       setReply('');
+      setError(null);
       const tk = await supportApi.get(active.id);
       setActive(tk);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+    } catch {
+      setError(t('support.sendError', 'Could not send. Please try again.'));
     } finally {
       setSending(false);
     }
@@ -131,6 +150,12 @@ export default function SupportScreen() {
         </Text>
         <View style={styles.back} />
       </View>
+
+      {error ? (
+        <View style={styles.errorBar}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
 
       {loading ? (
         <View style={styles.center}>
@@ -233,6 +258,8 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   slaRow: { paddingHorizontal: SPACING.md, paddingTop: SPACING.sm },
+  errorBar: { backgroundColor: '#FEE2E2', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm },
+  errorText: { color: '#B91C1C', fontSize: FONT_SIZE.sm },
   empty: { textAlign: 'center', marginTop: 40, fontSize: FONT_SIZE.sm },
   ticketRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, borderBottomWidth: 1 },
   dot: { width: 8, height: 8, borderRadius: 4 },

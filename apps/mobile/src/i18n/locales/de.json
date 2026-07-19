@@ -1045,6 +1045,8 @@
       "PENDING_CUSTOMER": "Wartet auf Ihre Antwort",
       "RESOLVED": "Gelöst",
       "CLOSED": "Geschlossen"
-    }
+    },
+    "loadError": "Support konnte nicht geladen werden. Prüfen Sie Ihre Verbindung.",
+    "sendError": "Konnte nicht gesendet werden. Bitte erneut versuchen."
   }
 }

@@ -29,6 +29,7 @@ export class SupportController {
 
   @Get('config')
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Support entitlements for the current org (SLA, live chat)' })
   getConfig(@Req() req: any) {
     const tier = (req.user.planTier ?? null) as PlanTier | null;
@@ -62,6 +63,7 @@ export class SupportController {
 
   @Get('tickets')
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'List my support tickets' })
   listMine(@Query('status') status: string, @Query('page') page: string, @Query('limit') limit: string, @Req() req: any) {
     return this.support.list({ createdById: req.user.id, status, page, limit });
@@ -69,9 +71,10 @@ export class SupportController {
 
   @Get('tickets/:id')
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Get one of my tickets (thread)' })
   getMine(@Param('id') id: string, @Req() req: any) {
-    return this.support.thread({ ticketId: id, organizationId: req.user.organizationId, asAgent: false });
+    return this.support.thread({ ticketId: id, organizationId: req.user.organizationId, userId: req.user.id, asAgent: false });
   }
 
   @Post('tickets/:id/messages')
@@ -86,11 +89,13 @@ export class SupportController {
       body: dto.body,
       attachments: dto.attachments,
       organizationId: req.user.organizationId,
+      userId: req.user.id,
     });
   }
 
   @Post('tickets/:id/read')
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Mark my ticket read' })
   readMine(@Param('id') id: string) {
     return this.support.markRead({ ticketId: id, reader: 'CUSTOMER' });

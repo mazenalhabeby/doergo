@@ -31,6 +31,10 @@ export default function OperatorSupportPage() {
   const [note, setNote] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<any>(null);
+  // Keep the current ticket id in a ref so the socket effect can read it without
+  // re-subscribing (and tearing down the socket) every time it changes.
+  const activeIdRef = useRef<string | null>(null);
+  activeIdRef.current = activeId;
 
   useEffect(() => {
     const saved = sessionStorage.getItem('platformKey');
@@ -50,9 +54,14 @@ export default function OperatorSupportPage() {
 
   const loadTicket = useCallback(
     async (id: string) => {
-      const res = await agentFetch<{ data: any }>(key, `/support/agent/tickets/${id}`);
-      setActive(res.data);
-      await agentFetch(key, `/support/agent/tickets/${id}/read`, { method: 'POST', body: '{}' });
+      try {
+        const res = await agentFetch<{ data: any }>(key, `/support/agent/tickets/${id}`);
+        setActive(res.data);
+        setError(null);
+        await agentFetch(key, `/support/agent/tickets/${id}/read`, { method: 'POST', body: '{}' });
+      } catch (e) {
+        setError((e as Error).message === '403' ? 'Invalid key' : 'Failed to load ticket');
+      }
     },
     [key],
   );
@@ -64,24 +73,31 @@ export default function OperatorSupportPage() {
     if (activeId) loadTicket(activeId);
   }, [activeId, loadTicket]);
 
-  // Live: connect an agent socket with the platform key; refresh on any event.
+  // Live: connect ONE agent socket per key; refresh on any event. Reads the open
+  // ticket via a ref so it never re-subscribes (and drops the socket) mid-session.
   useEffect(() => {
     if (!key) return;
     let socket: any;
+    let cancelled = false;
     (async () => {
       const { io } = await import('socket.io-client');
+      if (cancelled) return;
       socket = io(SOCKET_URL, { auth: { platformKey: key }, transports: ['websocket', 'polling'] });
       socketRef.current = socket;
       socket.on('connect', () => socket.emit('authenticate_agent'));
       const refresh = (d: any) => {
         loadInbox();
-        if (activeId && (!d?.ticket || d.ticket.id === activeId || d?.ticketId === activeId)) loadTicket(activeId);
+        const openId = activeIdRef.current;
+        if (openId && (!d?.ticket || d.ticket.id === openId || d?.ticketId === openId)) loadTicket(openId);
       };
       socket.on(SocketEvents.SUPPORT_MESSAGE, refresh);
       socket.on(SocketEvents.SUPPORT_TICKET_UPDATED, refresh);
     })();
-    return () => socket?.disconnect();
-  }, [key, activeId, loadInbox, loadTicket]);
+    return () => {
+      cancelled = true;
+      socket?.disconnect();
+    };
+  }, [key, loadInbox, loadTicket]);
 
   const saveKey = (k: string) => {
     sessionStorage.setItem('platformKey', k);
@@ -90,20 +106,30 @@ export default function OperatorSupportPage() {
 
   const doReply = async () => {
     if (!activeId || !reply.trim()) return;
-    await agentFetch(key, `/support/agent/tickets/${activeId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ body: reply.trim(), isInternalNote: note }),
-    });
-    setReply('');
-    loadTicket(activeId);
-    loadInbox();
+    try {
+      await agentFetch(key, `/support/agent/tickets/${activeId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ body: reply.trim(), isInternalNote: note }),
+      });
+      setReply(''); // clear only on success
+      setError(null);
+      loadTicket(activeId);
+      loadInbox();
+    } catch {
+      setError('Failed to send reply');
+    }
   };
 
   const setStatus = async (status: string) => {
     if (!activeId) return;
-    await agentFetch(key, `/support/agent/tickets/${activeId}/status`, { method: 'POST', body: JSON.stringify({ status }) });
-    loadTicket(activeId);
-    loadInbox();
+    try {
+      await agentFetch(key, `/support/agent/tickets/${activeId}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+      setError(null);
+      loadTicket(activeId);
+      loadInbox();
+    } catch {
+      setError('Failed to update status');
+    }
   };
 
   if (!key) {
@@ -182,6 +208,7 @@ export default function OperatorSupportPage() {
               ))}
             </div>
             <div className="border-t border-slate-100 p-3">
+              {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
               <label className="mb-1 flex items-center gap-1.5 text-xs text-slate-500">
                 <input type="checkbox" checked={note} onChange={(e) => setNote(e.target.checked)} /> Internal note (not sent to customer)
               </label>

@@ -1987,7 +1987,8 @@ model SupportTicket {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([organizationId, status]) // customer ticket list
+  @@index([organizationId, status]) // org-scoped ticket queries
+  @@index([createdById, updatedAt]) // a customer's own ticket list (owner-scoped)
   @@index([status, priority, createdAt]) // agent inbox (priority routing order)
   @@index([assignedAgentId, status]) // an agent's assigned view
   @@index([slaBreached, slaFirstResponseDueAt]) // breach sweep / at-risk

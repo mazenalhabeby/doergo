@@ -35,7 +35,7 @@ export function SupportWidget() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: tickets } = useQuery({
+  const { data: tickets, isLoading: ticketsLoading } = useQuery({
     queryKey: ['support', 'tickets'],
     queryFn: () => supportApi.list(),
     enabled: enabled && open,
@@ -64,10 +64,20 @@ export function SupportWidget() {
     return () => offs.forEach((off) => off());
   }, [enabled, subscribe, qc, activeId]);
 
-  // Mark the open thread read.
+  // Mark the open thread read whenever its message count changes — but drive it
+  // off a ref, not an effect dep, so opening a ticket / new message marks read
+  // once without re-subscribing or looping.
+  const lastReadLenRef = useRef<Record<string, number>>({});
+  const msgLen = active?.messages?.length ?? 0;
   useEffect(() => {
-    if (activeId) supportApi.markRead(activeId).then(() => qc.invalidateQueries({ queryKey: ['support', 'tickets'] }));
-  }, [activeId, active?.messages?.length, qc]);
+    if (!activeId) return;
+    if (lastReadLenRef.current[activeId] === msgLen) return;
+    lastReadLenRef.current[activeId] = msgLen;
+    supportApi
+      .markRead(activeId)
+      .then(() => qc.invalidateQueries({ queryKey: ['support', 'tickets'] }))
+      .catch(() => {});
+  }, [activeId, msgLen, qc]);
 
   const liveChat = !!config?.liveChat && agentOnline;
 
@@ -114,7 +124,7 @@ export function SupportWidget() {
           ) : activeId ? (
             <Thread ticket={active} />
           ) : (
-            <TicketList tickets={tickets?.data} onOpen={setActiveId} onNew={() => setComposing(true)} t={t} />
+            <TicketList tickets={tickets?.data} loading={ticketsLoading} onOpen={setActiveId} onNew={() => setComposing(true)} t={t} />
           )}
         </div>
       )}
@@ -130,11 +140,13 @@ function SlaLine({ minutes, t }: { minutes?: number; t: import("i18next").TFunct
 
 function TicketList({
   tickets,
+  loading,
   onOpen,
   onNew,
   t,
 }: {
   tickets?: SupportTicket[];
+  loading?: boolean;
   onOpen: (id: string) => void;
   onNew: () => void;
   t: import("i18next").TFunction;
@@ -142,7 +154,11 @@ function TicketList({
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
-        {tickets && tickets.length > 0 ? (
+        {loading ? (
+          <div className="flex h-full items-center justify-center py-10">
+            <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+          </div>
+        ) : tickets && tickets.length > 0 ? (
           tickets.map((tk) => (
             <button
               key={tk.id}
@@ -249,6 +265,7 @@ function Thread({ ticket }: { ticket?: SupportTicket }) {
           );
         })}
       </div>
+      {mut.isError && <p className="px-3 pb-1 text-xs text-red-500">{(mut.error as Error).message}</p>}
       <div className="flex items-end gap-2 border-t border-slate-100 p-3">
         <textarea
           value={text}

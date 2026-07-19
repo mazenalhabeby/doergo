@@ -97,12 +97,19 @@ export class SupportService {
     isInternalNote?: boolean;
     // Authorization context (one of):
     organizationId?: string; // customer path — must own the ticket's org
+    userId?: string; // customer path — must be the ticket OWNER (not just same org)
     asAgent?: boolean; // agent path — already authorized upstream
   }) {
     const ticket = await this.prisma.supportTicket.findUnique({ where: { id: data.ticketId } });
     if (!ticket) throw new NotFoundException('Ticket not found');
-    if (!data.asAgent && ticket.organizationId !== data.organizationId) {
+    // A customer may only touch a ticket they OPENED — org-scope alone would let a
+    // coworker read/reply to someone else's private ticket by id (IDOR).
+    if (!data.asAgent && (ticket.organizationId !== data.organizationId || ticket.createdById !== data.userId)) {
       throw new ForbiddenException('Not your ticket');
+    }
+    // Closed tickets are archived — a customer reply must not resurrect them.
+    if (!data.asAgent && ticket.status === 'CLOSED') {
+      throw new ForbiddenException('This ticket is closed — please open a new request.');
     }
 
     const now = new Date();
@@ -206,10 +213,11 @@ export class SupportService {
       }),
       this.prisma.supportTicket.count({ where }),
     ]);
-    return { data: rows, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    const enriched = await this.attachUnread(rows, 'CUSTOMER');
+    return { data: enriched, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
-  async getThread(data: { ticketId: string; organizationId?: string; asAgent?: boolean }) {
+  async getThread(data: { ticketId: string; organizationId?: string; userId?: string; asAgent?: boolean }) {
     const ticket = await this.prisma.supportTicket.findUnique({
       where: { id: data.ticketId },
       include: {
@@ -221,10 +229,30 @@ export class SupportService {
       },
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
-    if (!data.asAgent && ticket.organizationId !== data.organizationId) {
+    // Owner-scoped for customers (not just same-org) — see addMessage note (IDOR).
+    if (!data.asAgent && (ticket.organizationId !== data.organizationId || ticket.createdById !== data.userId)) {
       throw new ForbiddenException('Not your ticket');
     }
     return { success: true, data: ticket };
+  }
+
+  /**
+   * Attach per-ticket unread counts for the given reader with ONE groupBy (no
+   * N+1). Unread = inbound messages from the OTHER party not yet read, excluding
+   * internal notes.
+   */
+  private async attachUnread<T extends { id: string }>(rows: T[], reader: 'CUSTOMER' | 'AGENT') {
+    if (rows.length === 0) return rows as (T & { unreadForCustomer?: number; unreadForAgent?: number })[];
+    const fromType = reader === 'CUSTOMER' ? 'AGENT' : 'CUSTOMER';
+    const readField = reader === 'CUSTOMER' ? 'readByCustomerAt' : 'readByAgentAt';
+    const grouped = await this.prisma.supportMessage.groupBy({
+      by: ['ticketId'],
+      where: { ticketId: { in: rows.map((r) => r.id) }, authorType: fromType, isInternalNote: false, [readField]: null } as any,
+      _count: { _all: true },
+    });
+    const map = new Map(grouped.map((g) => [g.ticketId, g._count._all]));
+    const key = reader === 'CUSTOMER' ? 'unreadForCustomer' : 'unreadForAgent';
+    return rows.map((r) => ({ ...r, [key]: map.get(r.id) ?? 0 }));
   }
 
   async agentInbox(data: { status?: string; tier?: string; atRisk?: boolean; page?: number; limit?: number }) {
@@ -251,7 +279,8 @@ export class SupportService {
       }),
       this.prisma.supportTicket.count({ where }),
     ]);
-    return { data: rows, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    const enriched = await this.attachUnread(rows, 'AGENT');
+    return { data: enriched, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
   // ── SLA breach (delayed BullMQ job) ─────────────────────────────────────────

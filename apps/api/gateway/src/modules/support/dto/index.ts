@@ -4,18 +4,23 @@ import {
   IsArray,
   IsBoolean,
   IsIn,
+  IsUrl,
+  IsInt,
+  Min,
+  Max,
   MaxLength,
   MinLength,
+  ArrayMaxSize,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from '@hbcfield/shared';
 
 export class SupportAttachmentDto {
-  @IsString() fileName!: string;
-  @IsString() fileUrl!: string;
-  @IsString() fileType!: string;
-  @IsOptional() fileSize?: number;
+  @IsString() @MaxLength(255) fileName!: string;
+  @IsUrl({ require_protocol: true, protocols: ['http', 'https'] }) fileUrl!: string;
+  @IsString() @MaxLength(120) fileType!: string;
+  @IsOptional() @IsInt() @Min(0) @Max(50_000_000) fileSize?: number;
 }
 
 export class CreateTicketDto {
@@ -39,6 +44,7 @@ export class CreateTicketDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(10)
   @ValidateNested({ each: true })
   @Type(() => SupportAttachmentDto)
   attachments?: SupportAttachmentDto[];
@@ -52,6 +58,7 @@ export class AddMessageDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(10)
   @ValidateNested({ each: true })
   @Type(() => SupportAttachmentDto)
   attachments?: SupportAttachmentDto[];

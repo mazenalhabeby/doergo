@@ -356,6 +356,11 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
     this.logger.log(`[AUTH] Client ${client.id} joined rooms: ${clientInfo.rooms.join(', ')}`);
 
+    // Seed current support agent presence to this socket — presence is otherwise
+    // only broadcast on transitions, so a customer connecting while an agent is
+    // already online would never learn live chat is available.
+    client.emit(SocketEvents.SUPPORT_AGENT_PRESENCE, { online: this.anyAgentOnline() });
+
     return { success: true, rooms: clientInfo.rooms };
   }
 
