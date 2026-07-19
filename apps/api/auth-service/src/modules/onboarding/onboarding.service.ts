@@ -1,8 +1,10 @@
-import { Injectable, Logger, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import {
+  SERVICE_NAMES,
   Role,
   DEFAULT_PERMISSIONS,
   ORG_CODE_LENGTH,
@@ -24,7 +26,43 @@ export class OnboardingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly billing: BillingService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
+
+  /**
+   * Alert the org's admins + "Show in Management" members that a join request
+   * needs approval. Best-effort — never blocks/breaks the submit flow.
+   */
+  private async notifyJoinRequestSubmitted(
+    userId: string,
+    organizationId: string,
+    organizationName: string,
+    message: string | null,
+  ): Promise<void> {
+    try {
+      const [requester, recipients] = await Promise.all([
+        this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } }),
+        this.prisma.user.findMany({
+          where: {
+            organizationId,
+            isActive: true,
+            OR: [{ role: Role.ADMIN }, { showInManagement: true }],
+          },
+          select: { id: true },
+        }),
+      ]);
+      this.notificationClient.emit('join_request_submitted', {
+        userId,
+        userName: requester ? `${requester.firstName} ${requester.lastName}`.trim() : 'Someone',
+        organizationId,
+        organizationName,
+        message: message || undefined,
+        recipientIds: recipients.map((r) => r.id),
+      });
+    } catch (error) {
+      this.logger.error(`Failed to emit join_request_submitted: ${error}`);
+    }
+  }
 
   /**
    * Path A: Create organization for an orphan user.
@@ -289,6 +327,9 @@ export class OnboardingService {
     });
 
     this.logger.log(`Join request created (INVITE_ONLY): user ${userId} → org ${organization.name}`);
+
+    // Alert admins + "Show in Management" members that approval is needed.
+    await this.notifyJoinRequestSubmitted(userId, organization.id, organization.name, message || null);
 
     return {
       success: true,

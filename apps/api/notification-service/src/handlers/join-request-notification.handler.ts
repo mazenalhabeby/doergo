@@ -19,15 +19,37 @@ export class JoinRequestNotificationHandler {
     organizationId: string;
     organizationName: string;
     message?: string;
+    recipientIds?: string[];
   }) {
     this.logger.log(`Join request submitted: user=${data.userName}, org=${data.organizationName}`);
-    this.websocketGateway.emitToOrganization(data.organizationId, 'join_request_submitted', {
+    const payload = {
       userId: data.userId,
       userName: data.userName,
       organizationName: data.organizationName,
       message: data.message,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Target the resolved approvers (admins + Show-in-Management). Fall back to an
+    // org-wide broadcast only if none were provided (older producers).
+    const recipientIds = data.recipientIds || [];
+    if (recipientIds.length) {
+      for (const id of recipientIds) {
+        this.websocketGateway.emitToUser(id, 'join_request_submitted', payload);
+        try {
+          await this.pushService.sendToUser(
+            id,
+            'New join request',
+            `${data.userName} asked to join ${data.organizationName}`,
+            { type: 'join_request_submitted', organizationId: data.organizationId },
+          );
+        } catch (error) {
+          this.logger.error(`Failed to send join-request push to ${id}: ${error}`);
+        }
+      }
+    } else {
+      this.websocketGateway.emitToOrganization(data.organizationId, 'join_request_submitted', payload);
+    }
   }
 
   @EventPattern('join_request_approved')
