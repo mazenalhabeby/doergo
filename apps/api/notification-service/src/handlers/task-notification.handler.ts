@@ -14,6 +14,29 @@ export class TaskNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
+  /**
+   * Deliver a task event to the assignee's configured "Notifications about"
+   * watchers — a targeted bell (so non-taskviewer watchers still get it) + push.
+   * Excludes the assignee (already notified) and never throws.
+   */
+  private async notifyTaskWatchers(
+    watcherIds: string[] | undefined,
+    event: string,
+    payload: any,
+    push: { title: string; body: string; data?: any },
+    exclude?: string,
+  ) {
+    const ids = (watcherIds || []).filter((id) => id && id !== exclude);
+    for (const id of ids) {
+      this.websocketGateway.emitToUser(id, event, payload);
+      try {
+        await this.pushService.sendToUser(id, push.title, push.body, push.data);
+      } catch (error) {
+        this.logger.error(`Failed to send task watcher push to ${id}: ${error}`);
+      }
+    }
+  }
+
   @EventPattern('task_created')
   async handleTaskCreated(@Payload() data: any) {
     this.logger.log(`Task created: ${data.id}`);
@@ -42,6 +65,15 @@ export class TaskNotificationHandler {
         this.logger.error(`Failed to send task assigned email: ${error}`);
       }
     }
+
+    // Alert the assignee's "Notifications about" watchers (their managers).
+    await this.notifyTaskWatchers(
+      data.watcherIds,
+      'task.assigned',
+      data.task,
+      { title: 'Task assigned', body: `"${data.task.title}" was assigned`, data: { taskId: data.task.id } },
+      data.workerId,
+    );
   }
 
   @EventPattern('task_status_changed')
@@ -69,6 +101,15 @@ export class TaskNotificationHandler {
         this.logger.error(`Failed to send task completed email: ${error}`);
       }
     }
+
+    // Alert the assignee's "Notifications about" watchers (their managers).
+    await this.notifyTaskWatchers(
+      data.watcherIds,
+      'task.statusChanged',
+      { task: data.task, oldStatus: data.oldStatus, newStatus: data.newStatus },
+      { title: 'Task status changed', body: `"${data.task.title}" → ${data.newStatus}`, data: { taskId: data.task.id } },
+      data.task.assignedToId,
+    );
   }
 
   @EventPattern('task_declined')

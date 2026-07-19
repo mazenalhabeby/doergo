@@ -11,6 +11,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import Redis from 'ioredis';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationRoutingService } from '../../common/notification-routing.service';
 import {
   TaskStatus,
   TaskEventType,
@@ -40,10 +41,29 @@ export class TasksService {
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     configService: ConfigService,
     private readonly workflowCache: WorkflowConfigCache,
+    private readonly notificationRouting: NotificationRoutingService,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
     this.redis = new Redis({ host: redisHost, port: redisPort, maxRetriesPerRequest: 1 });
+  }
+
+  /**
+   * Explicit "Notifications about" watchers of the task's assignee, so their
+   * managers get pinged about task events. Explicit-only (no default admin blast)
+   * and never throws — task flow must not fail on a routing hiccup.
+   */
+  private async taskWatcherIds(
+    assigneeId: string | null | undefined,
+    organizationId: string | null | undefined,
+  ): Promise<string[]> {
+    if (!assigneeId || !organizationId) return [];
+    try {
+      const { ids } = await this.notificationRouting.resolveWatchers(assigneeId, organizationId, 'tasks', true);
+      return ids;
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -200,6 +220,7 @@ export class TasksService {
       this.notificationClient.emit('task_assigned', {
         task,
         workerId: data.assignedToId,
+        watcherIds: await this.taskWatcherIds(data.assignedToId, task.organizationId),
       });
     }
 
@@ -597,6 +618,7 @@ export class TasksService {
     this.notificationClient.emit('task_assigned', {
       task: updatedTask,
       workerId: data.workerId,
+      watcherIds: await this.taskWatcherIds(data.workerId, updatedTask.organizationId),
     });
 
     this.invalidateStatusCountsCache(updatedTask.organizationId);
@@ -857,6 +879,7 @@ export class TasksService {
       task: updatedTask,
       oldStatus: task.status,
       newStatus: data.status,
+      watcherIds: await this.taskWatcherIds(updatedTask.assignedToId, updatedTask.organizationId),
     });
 
     // (c) Blocked Task Reminder — after accepting a new task, remind about blocked ones

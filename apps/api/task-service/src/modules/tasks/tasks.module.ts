@@ -5,6 +5,7 @@ import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 import { TasksProcessor } from './tasks.processor';
 import { AttachmentsModule } from '../attachments/attachments.module';
+import { NotificationRoutingService } from '../../common/notification-routing.service';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AttachmentsModule } from '../attachments/attachments.module';
   providers: [
     TasksService,
     TasksProcessor, // BullMQ processor for exactly-once job processing
+    NotificationRoutingService, // resolve per-member watchers for task alerts
   ],
   exports: [TasksService],
 })

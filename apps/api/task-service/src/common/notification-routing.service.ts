@@ -29,6 +29,10 @@ export class NotificationRoutingService {
     subjectUserId: string,
     organizationId: string,
     category: NotificationCategory = 'attendance',
+    // When true, skip the admins+space-managers default — return ONLY the
+    // explicitly-configured watchers (used for tasks, so a routine assignment
+    // doesn't blast every admin; empty result → no watcher notification).
+    explicitOnly = false,
   ): Promise<{ ids: string[]; emails: string[] }> {
     // 1. Explicit per-employee watchers override the default routing entirely.
     const watches = await this.prisma.notificationWatch.findMany({
@@ -45,7 +49,7 @@ export class NotificationRoutingService {
       .map((w) => ({ id: w.id, email: w.email, notificationPrefs: w.notificationPrefs }));
 
     // 2. Default routing when no explicit watchers: admins + space managers.
-    if (candidates.length === 0) {
+    if (candidates.length === 0 && !explicitOnly) {
       const spaces = await this.prisma.technicianAssignment.findMany({
         where: {
           userId: subjectUserId,
