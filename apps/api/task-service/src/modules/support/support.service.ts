@@ -116,27 +116,17 @@ export class SupportService {
     const isAgent = data.authorType === 'AGENT';
     const isInternal = isAgent && !!data.isInternalNote;
 
-    const message = await this.prisma.supportMessage.create({
-      data: {
-        ticketId: data.ticketId,
-        authorId: data.authorId,
-        authorType: data.authorType,
-        body: data.body,
-        attachments: (data.attachments ?? []) as any,
-        isInternalNote: isInternal,
-      },
-    });
-
-    // Derive the ticket state transition from who spoke.
+    // Decide the ticket state transition BEFORE writing so message + ticket commit
+    // together (a message must never persist with stale ticket status/timestamps).
     const patch: Record<string, any> = {};
+    let firstAgentReply = false;
     if (!isInternal) {
       if (isAgent) {
         patch.lastAgentMessageAt = now;
         patch.status = 'PENDING_CUSTOMER';
         if (!ticket.firstRespondedAt) {
           patch.firstRespondedAt = now;
-          // First human reply landed — stop the breach clock (unless already breached).
-          await this.cancelSlaJob(ticket.id);
+          firstAgentReply = true;
         }
       } else {
         patch.lastCustomerMessageAt = now;
@@ -144,9 +134,28 @@ export class SupportService {
         patch.status = 'PENDING_AGENT';
       }
     }
-    const updated = Object.keys(patch).length
-      ? await this.prisma.supportTicket.update({ where: { id: ticket.id }, data: patch })
-      : ticket;
+
+    const writes: any[] = [
+      this.prisma.supportMessage.create({
+        data: {
+          ticketId: data.ticketId,
+          authorId: data.authorId,
+          authorType: data.authorType,
+          body: data.body,
+          attachments: (data.attachments ?? []) as any,
+          isInternalNote: isInternal,
+        },
+      }),
+    ];
+    if (Object.keys(patch).length) {
+      writes.push(this.prisma.supportTicket.update({ where: { id: ticket.id }, data: patch }));
+    }
+    const results = await this.prisma.$transaction(writes);
+    const message = results[0];
+    const updated = Object.keys(patch).length ? results[results.length - 1] : ticket;
+
+    // First human reply landed — stop the breach clock (after the reply is committed).
+    if (firstAgentReply) await this.cancelSlaJob(ticket.id);
 
     // Real-time + push: internal notes go only to agents.
     this.notificationClient.emit('support_message', {
@@ -186,7 +195,18 @@ export class SupportService {
     return { success: true, data: ticket };
   }
 
-  async markRead(data: { ticketId: string; reader: 'CUSTOMER' | 'AGENT' }) {
+  async markRead(data: { ticketId: string; reader: 'CUSTOMER' | 'AGENT'; userId?: string }) {
+    // Customer path must own the ticket — otherwise any authed user could mark
+    // someone else's ticket read by id (write IDOR).
+    if (data.reader === 'CUSTOMER') {
+      const ticket = await this.prisma.supportTicket.findUnique({
+        where: { id: data.ticketId },
+        select: { createdById: true },
+      });
+      if (!ticket || ticket.createdById !== data.userId) {
+        throw new ForbiddenException('Not your ticket');
+      }
+    }
     const now = new Date();
     const field = data.reader === 'CUSTOMER' ? 'readByCustomerAt' : 'readByAgentAt';
     // Mark unread inbound messages (from the OTHER party) as read.
@@ -225,6 +245,7 @@ export class SupportService {
         messages: {
           where: data.asAgent ? undefined : publicMessageWhere,
           orderBy: { createdAt: 'asc' },
+          take: 500, // defensive cap — real threads are tiny; guards against abuse
         },
       },
     });

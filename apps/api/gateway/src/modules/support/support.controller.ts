@@ -97,8 +97,8 @@ export class SupportController {
   @ApiBearerAuth()
   @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Mark my ticket read' })
-  readMine(@Param('id') id: string) {
-    return this.support.markRead({ ticketId: id, reader: 'CUSTOMER' });
+  readMine(@Param('id') id: string, @Req() req: any) {
+    return this.support.markRead({ ticketId: id, reader: 'CUSTOMER', userId: req.user.id });
   }
 
   // ════════════════════ AGENT (platform-key gated, no JWT) ════════════════════
