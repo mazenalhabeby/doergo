@@ -180,6 +180,14 @@ function TicketList({
         )}
       </div>
       <div className="border-t border-slate-100 p-3">
+        <a
+          href="/help"
+          target="_blank"
+          rel="noreferrer"
+          className="mb-2 block rounded-lg border border-slate-200 py-2 text-center text-[13px] font-medium text-slate-600 transition hover:bg-slate-50"
+        >
+          {t('support.browseHelp', 'Browse the help center')}
+        </a>
         <button onClick={onNew} className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700">
           {t('support.newTicket', 'New request')}
         </button>

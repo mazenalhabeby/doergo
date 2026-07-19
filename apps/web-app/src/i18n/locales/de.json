@@ -3829,6 +3829,20 @@
       "PENDING_CUSTOMER": "Wartet auf Ihre Antwort",
       "RESOLVED": "Gelöst",
       "CLOSED": "Geschlossen"
-    }
+    },
+    "browseHelp": "Hilfe-Center durchsuchen"
+  },
+  "help": {
+    "backToApp": "Zurück zur App",
+    "allArticles": "Alle Artikel",
+    "title": "Wie können wir helfen?",
+    "subtitle": "Durchsuchen Sie unsere Anleitungen oder stöbern Sie nach Thema.",
+    "searchPlaceholder": "Nach Antworten suchen…",
+    "resultsFor": "Ergebnis(se) für",
+    "noResults": "Keine Artikel gefunden. Versuchen Sie andere Begriffe.",
+    "stillStuck": "Nicht das Richtige gefunden?",
+    "stillStuckSub": "Öffnen Sie den Support-Button in der App, um unser Team zu erreichen.",
+    "articleCount": "Artikel",
+    "related": "Ähnliche Artikel"
   }
 }

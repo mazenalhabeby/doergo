@@ -3829,6 +3829,20 @@
       "PENDING_CUSTOMER": "Awaiting your reply",
       "RESOLVED": "Resolved",
       "CLOSED": "Closed"
-    }
+    },
+    "browseHelp": "Browse the help center"
+  },
+  "help": {
+    "backToApp": "Back to app",
+    "allArticles": "All articles",
+    "title": "How can we help?",
+    "subtitle": "Search our guides, or browse by topic below.",
+    "searchPlaceholder": "Search for answers…",
+    "resultsFor": "result(s) for",
+    "noResults": "No articles matched. Try different words.",
+    "stillStuck": "Can't find what you need?",
+    "stillStuckSub": "Open the support button in the app to reach our team.",
+    "articleCount": "articles",
+    "related": "Related articles"
   }
 }
