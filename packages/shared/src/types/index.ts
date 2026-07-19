@@ -75,6 +75,10 @@ export const SocketEvents = {
   SUPPORT_TICKET_UPDATED: 'support.ticketUpdated', // status/assignment/SLA change
   SUPPORT_TYPING: 'support.typing', // live-chat typing indicator
   SUPPORT_AGENT_PRESENCE: 'support.agentPresence', // is a human agent online
+  // Chat (member-to-member) events
+  CHAT_MESSAGE: 'chat.message', // new message in a conversation
+  CHAT_CONVERSATION_UPDATED: 'chat.conversationUpdated', // last message / read / membership
+  CHAT_TYPING: 'chat.typing', // typing indicator in a conversation
 } as const;
 
 // API Response wrapper

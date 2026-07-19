@@ -3916,3 +3916,41 @@ export const supportApi = {
     await api.post(`/support/tickets/${id}/read`, {});
   },
 };
+
+// ============================================================================
+// CHAT API (member-to-member)
+// ============================================================================
+import type { ChatConversation, ChatMessage, ChatUserRef, ChatAttachment } from '@hbcfield/shared/client';
+
+export const chatApi = {
+  contacts: async (): Promise<ChatUserRef[]> => {
+    const res = await api.get<{ data: ChatUserRef[] }>('/chat/contacts');
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  conversations: async (): Promise<ChatConversation[]> => {
+    const res = await api.get<{ data: ChatConversation[] }>('/chat/conversations');
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  openDirect: async (userId: string): Promise<ChatConversation> => {
+    const res = await api.post<{ data: ChatConversation }>('/chat/conversations', { userId });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  history: async (conversationId: string, before?: string): Promise<{ data: ChatMessage[]; hasMore: boolean }> => {
+    const res = await api.get<{ data: ChatMessage[]; hasMore: boolean }>(
+      `/chat/conversations/${conversationId}/messages${before ? `?before=${encodeURIComponent(before)}` : ''}`,
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  send: async (conversationId: string, body: string, attachments?: ChatAttachment[]): Promise<ChatMessage> => {
+    const res = await api.post<{ data: ChatMessage }>(`/chat/conversations/${conversationId}/messages`, { body, attachments });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  markRead: async (conversationId: string): Promise<void> => {
+    await api.post(`/chat/conversations/${conversationId}/read`, {});
+  },
+};

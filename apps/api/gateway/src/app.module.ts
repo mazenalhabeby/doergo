@@ -25,6 +25,7 @@ import { JoinRequestsModule } from './modules/join-requests/join-requests.module
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { SupportModule } from './modules/support/support.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { PhasesModule } from './modules/phases/phases.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
 import { EpicsModule } from './modules/epics/epics.module';
@@ -91,6 +92,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     OrganizationsModule,
     BillingModule,
     SupportModule,
+    ChatModule,
     PhasesModule,
     SprintsModule,
     EpicsModule,

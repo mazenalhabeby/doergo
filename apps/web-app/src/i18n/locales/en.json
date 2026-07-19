@@ -3845,5 +3845,14 @@
     "stillStuckSub": "Open the support button in the app to reach our team.",
     "articleCount": "articles",
     "related": "Related articles"
+  },
+  "chat": {
+    "title": "Messages",
+    "newMessage": "New message",
+    "empty": "No conversations yet.",
+    "noMessages": "No messages yet",
+    "messagePlaceholder": "Write a message…",
+    "searchContacts": "Search people…",
+    "noContacts": "No one to message."
   }
 }

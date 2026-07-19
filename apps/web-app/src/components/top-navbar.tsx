@@ -31,6 +31,7 @@ import { hasAccessModule } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
+import { MessagesButton } from "@/components/chat/chat-drawer"
 import { ClockWidget } from "@/components/clock-widget"
 import { usePresence, PRESENCE_OPTS, presenceRingClass } from "@/components/presence-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
@@ -280,6 +281,7 @@ export function TopNavbar() {
         <CommandPaletteButton />
         <ClockWidget />
         <LanguageSwitcher />
+        <MessagesButton />
         <NotificationBell />
         <UserDropdown
           user={user}

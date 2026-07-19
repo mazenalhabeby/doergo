@@ -3845,5 +3845,14 @@
     "stillStuckSub": "Öffnen Sie den Support-Button in der App, um unser Team zu erreichen.",
     "articleCount": "Artikel",
     "related": "Ähnliche Artikel"
+  },
+  "chat": {
+    "title": "Nachrichten",
+    "newMessage": "Neue Nachricht",
+    "empty": "Noch keine Unterhaltungen.",
+    "noMessages": "Noch keine Nachrichten",
+    "messagePlaceholder": "Nachricht schreiben…",
+    "searchContacts": "Personen suchen…",
+    "noContacts": "Niemand zum Anschreiben."
   }
 }

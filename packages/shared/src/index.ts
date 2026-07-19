@@ -7,6 +7,9 @@ export * from './billing';
 // Export support (ticket/message types, per-tier SLA + priority helpers)
 export * from './support';
 
+// Export chat (member-to-member conversation/message types)
+export * from './chat';
+
 // Export Prisma module (for NestJS backend)
 export * from './prisma';
 

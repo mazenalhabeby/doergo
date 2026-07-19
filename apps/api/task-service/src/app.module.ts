@@ -25,6 +25,7 @@ import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
 import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.module';
 import { SupportModule } from './modules/support/support.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { SupportModule } from './modules/support/support.module';
     CustomFieldsModule,
     RecurringTasksModule,
     SupportModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

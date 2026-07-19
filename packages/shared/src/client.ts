@@ -19,6 +19,9 @@ export * from './billing';
 // Support (ticket/message types, per-tier SLA + priority helpers) — pure, client-safe
 export * from './support';
 
+// Chat (member-to-member conversation/message types) — pure, client-safe
+export * from './chat';
+
 // Export utility functions (date, query string building)
 export * from './utils';
 

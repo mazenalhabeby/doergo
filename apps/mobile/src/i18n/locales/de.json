@@ -1048,5 +1048,16 @@
     },
     "loadError": "Support konnte nicht geladen werden. Prüfen Sie Ihre Verbindung.",
     "sendError": "Konnte nicht gesendet werden. Bitte erneut versuchen."
+  },
+  "chat": {
+    "title": "Nachrichten",
+    "newMessage": "Neue Nachricht",
+    "empty": "Noch keine Unterhaltungen.",
+    "noMessages": "Noch keine Nachrichten",
+    "messagePlaceholder": "Nachricht schreiben…",
+    "noContacts": "Niemand zum Anschreiben.",
+    "loadError": "Nachrichten konnten nicht geladen werden.",
+    "sendError": "Konnte nicht gesendet werden. Bitte erneut versuchen.",
+    "cannotContact": "Sie dürfen dieses Mitglied nicht anschreiben."
   }
 }

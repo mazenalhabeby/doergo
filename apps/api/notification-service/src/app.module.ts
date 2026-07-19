@@ -9,6 +9,7 @@ import { TaskNotificationHandler } from './handlers/task-notification.handler';
 import { AttendanceNotificationHandler } from './handlers/attendance-notification.handler';
 import { JoinRequestNotificationHandler } from './handlers/join-request-notification.handler';
 import { SupportNotificationHandler } from './handlers/support-notification.handler';
+import { ChatNotificationHandler } from './handlers/chat-notification.handler';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { SupportNotificationHandler } from './handlers/support-notification.hand
     AttendanceNotificationHandler,
     JoinRequestNotificationHandler,
     SupportNotificationHandler,
+    ChatNotificationHandler,
   ],
 })
 export class AppModule {}

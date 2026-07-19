@@ -1048,5 +1048,16 @@
     },
     "loadError": "Could not load support. Check your connection.",
     "sendError": "Could not send. Please try again."
+  },
+  "chat": {
+    "title": "Messages",
+    "newMessage": "New message",
+    "empty": "No conversations yet.",
+    "noMessages": "No messages yet",
+    "messagePlaceholder": "Write a message…",
+    "noContacts": "No one to message.",
+    "loadError": "Could not load messages.",
+    "sendError": "Could not send. Please try again.",
+    "cannotContact": "You cannot message this member."
   }
 }

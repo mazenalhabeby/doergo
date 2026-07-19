@@ -76,6 +76,7 @@ export type { OvertimeRequest } from './overtime';
 export { locationsApi } from './locations';
 
 export { supportApi } from './support';
+export { chatApi } from './chat';
 export type { SupportConfig } from './support';
 export type { LocationAssignment, AssignMemberInput, LocationWithMembers } from './locations';
 export { customFieldsApi } from './custom-fields';

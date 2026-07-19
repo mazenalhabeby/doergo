@@ -19,6 +19,7 @@ import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
 import { TokenDebugPanel } from '@/components/token-debug';
 import { useRealtimeSync } from '@/hooks/use-realtime-sync';
 import { SupportWidget } from '@/components/support/support-widget';
+import { ChatProvider } from '@/components/chat/chat-drawer';
 import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
@@ -129,6 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <ActivityPanelProvider>
     <CommandPaletteProvider>
     <BreadcrumbProvider>
+    <ChatProvider>
       <div className="h-screen flex flex-col">
         <FirstSpaceGate />
         <RouteChangeIndicator />
@@ -147,6 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Debug-only token countdown — hidden everywhere by default; opt in with
           NEXT_PUBLIC_SHOW_TOKEN_MONITOR=true (dev or prod). */}
       {process.env.NEXT_PUBLIC_SHOW_TOKEN_MONITOR === 'true' && <TokenDebugPanel />}
+    </ChatProvider>
     </BreadcrumbProvider>
     </CommandPaletteProvider>
     </ActivityPanelProvider>

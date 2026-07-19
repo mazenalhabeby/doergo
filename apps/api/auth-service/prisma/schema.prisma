@@ -394,6 +394,8 @@ model Organization {
 
   supportTickets SupportTicket[]
 
+  conversations Conversation[]
+
   // Schedule templates
   scheduleTemplates ScheduleTemplate[]
 
@@ -545,6 +547,10 @@ model User {
 
   // Support tickets this user opened (assigned agents are platform staff, not Users)
   supportTickets SupportTicket[] @relation("SupportCreatedBy")
+
+  // Member-to-member chat
+  chatMemberships ConversationMember[]
+  chatMessages    Message[]            @relation("ChatMessageSender")
 
   // Notification routing: who is watched by whom (per-employee override)
   watchedBy NotificationWatch[] @relation("WatchSubject") // managers watching THIS user
@@ -2014,6 +2020,69 @@ model SupportMessage {
 
   @@index([ticketId, createdAt])
   @@map("support_messages")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MEMBER-TO-MEMBER CHAT (1:1 DMs now; GROUP later)
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+model Conversation {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           ConversationType @default(DIRECT)
+  title          String? // group name; DMs derive title from the other member
+  // Stable key for a 1:1 thread (sorted userIds) so two people share ONE
+  // conversation. Null for GROUP (multiple nulls are allowed by the unique idx).
+  dmKey          String?
+  createdById    String
+  lastMessageAt  DateTime?
+
+  members  ConversationMember[]
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, dmKey]) // one DM per pair per org
+  @@index([organizationId, lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("ChatMessageSender", fields: [senderId], references: [id])
+  body           String
+  attachments    Json         @default("[]") // ChatAttachment[]
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

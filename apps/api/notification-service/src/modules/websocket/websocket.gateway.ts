@@ -396,6 +396,16 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     }
   }
 
+  // Chat typing indicator — relayed to the other conversation members' user rooms.
+  @SubscribeMessage('chat_typing')
+  handleChatTyping(client: Socket, payload: { conversationId: string; recipientIds: string[]; from: string }) {
+    if (!payload?.conversationId || !Array.isArray(payload.recipientIds)) return;
+    const evt = { conversationId: payload.conversationId, from: payload.from };
+    for (const uid of payload.recipientIds) {
+      this.server.to(`user:${uid}`).emit(SocketEvents.CHAT_TYPING, evt);
+    }
+  }
+
   // Lets a client ask whether a human agent is online right now (live-chat gating).
   @SubscribeMessage('support_agent_presence')
   handleSupportAgentPresenceQuery() {
@@ -679,6 +689,22 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.messagesSent += 1;
     this.logger.warn(`[EMIT] support SLA breached: ticket ${ticket?.id}`);
     this.server.to('support-agents').emit(SocketEvents.SUPPORT_TICKET_UPDATED, { ticket, slaBreached: true });
+  }
+
+  // =========================================================================
+  // CHAT EVENTS (member-to-member)
+  // =========================================================================
+
+  /** Deliver a new chat message to every member's user room (incl. the sender's
+   *  other devices) — they're already joined to user:{id} after authenticate. */
+  emitChatMessage(payload: { conversationId: string; message: any; recipients: string[] }) {
+    this.messagesSent += 1;
+    const evt = { conversationId: payload.conversationId, message: payload.message };
+    const targets = new Set<string>([...(payload.recipients || [])]);
+    if (payload.message?.senderId) targets.add(payload.message.senderId);
+    for (const uid of targets) {
+      this.server.to(`user:${uid}`).emit(SocketEvents.CHAT_MESSAGE, evt);
+    }
   }
 
   // =========================================================================

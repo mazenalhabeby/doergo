@@ -305,6 +305,15 @@ export default function ProfileScreen() {
         <Text style={[styles.menuGroupLabel, { color: colors.textMuted }]}>{t('profile.menu.general')}</Text>
         <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <MenuItem
+            icon="chatbubbles-outline"
+            iconColor={COLORS.primary}
+            iconBg={colors.primaryLight}
+            label={t('chat.title', 'Messages')}
+            onPress={() => router.push('/chat' as Href)}
+            themeColors={colors}
+          />
+          <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+          <MenuItem
             icon="notifications-outline"
             iconColor={COLORS.primary}
             iconBg={colors.primaryLight}

@@ -104,6 +104,13 @@ export default function AppLayout() {
       return;
     }
 
+    // Chat: deep-link into the conversation.
+    if (type === 'chat' || data?.type === 'chat') {
+      const conversationId = data?.conversationId;
+      router.push((conversationId ? `/chat?conversationId=${conversationId}` : '/chat') as Href);
+      return;
+    }
+
     if (taskId) {
       // Navigate to task detail
       router.push(`/task/${taskId}` as Href);
@@ -195,6 +202,7 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen name="support" options={{ headerShown: false }} />
+        <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/notifications"
           options={{

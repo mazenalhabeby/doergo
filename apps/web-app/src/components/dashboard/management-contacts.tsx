@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { Phone, MessageSquare } from "lucide-react"
 import { organizationsApi, type OrgMember } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { useChat } from "@/components/chat/chat-drawer"
 import { notify } from "@/lib/toast"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
@@ -38,6 +39,7 @@ function lastActiveLabel(iso: string | null | undefined, t: TFunction): string {
  * query (no extra fetch).
  */
 export function ManagementContacts() {
+  const { openChatWith } = useChat()
   const { user } = useAuth()
   const { t } = useTranslation()
 
@@ -91,7 +93,7 @@ export function ManagementContacts() {
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => notify.success(t("workspace.messagingComingSoon"))}
+                  onClick={() => openChatWith(m.id)}
                   className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   title={t("workspace.message", "Message")}
                 >
