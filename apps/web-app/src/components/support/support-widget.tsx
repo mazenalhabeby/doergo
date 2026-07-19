@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LifeBuoy, X, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
+import { Headset, X, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
 import { SocketEvents, isSupportOpen, type SupportTicket } from '@hbcfield/shared/client';
 import { supportApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
@@ -38,8 +38,11 @@ export function SupportWidget() {
   const { data: tickets, isLoading: ticketsLoading } = useQuery({
     queryKey: ['support', 'tickets'],
     queryFn: () => supportApi.list(),
-    enabled: enabled && open,
+    enabled, // fetch even while closed so the launcher can show an unread badge
   });
+
+  // Total unread agent replies across the customer's tickets (drives the badge).
+  const unreadTotal = (tickets?.data ?? []).reduce((n, tk) => n + (tk.unreadForCustomer ?? 0), 0);
 
   const { data: active } = useQuery({
     queryKey: ['support', 'ticket', activeId],
@@ -89,9 +92,22 @@ export function SupportWidget() {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={t('support.title', 'Support')}
-        className="fixed bottom-5 right-5 z-40 flex h-13 w-13 items-center justify-center rounded-full bg-blue-600 p-3.5 text-white shadow-lg transition hover:bg-blue-700"
+        className="group fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-[0_10px_30px_-6px_rgba(37,99,235,0.55)] ring-1 ring-white/20 transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_14px_40px_-6px_rgba(37,99,235,0.7)] active:scale-95"
       >
-        {open ? <X className="h-5 w-5" /> : <LifeBuoy className="h-5 w-5" />}
+        {/* soft attention pulse when there are unread replies */}
+        {!open && unreadTotal > 0 && (
+          <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-blue-500/40" />
+        )}
+        {/* subtle top-light sheen for depth */}
+        <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/25 to-transparent opacity-70" />
+        <span className="relative transition-transform duration-300 group-hover:scale-110">
+          {open ? <X className="h-5 w-5" /> : <Headset className="h-[23px] w-[23px]" strokeWidth={1.75} />}
+        </span>
+        {!open && unreadTotal > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+            {unreadTotal > 9 ? '9+' : unreadTotal}
+          </span>
+        )}
       </button>
 
       {open && (
