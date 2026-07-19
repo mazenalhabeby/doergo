@@ -2982,7 +2982,8 @@
     "managementLabel": "Management-Verzeichnis",
     "applyToAll": "Auf alle anwenden",
     "bulkSubtitle": "Wendet diese Zugriffswerte auf {{count}} ausgewählte Mitglieder an.",
-    "bulkAppliedDesc": "Zugriff auf {{count}} Mitglieder angewendet"
+    "bulkAppliedDesc": "Zugriff auf {{count}} Mitglieder angewendet",
+    "selectedMembers": "ausgewählte Mitglieder"
   },
   "customFields": {
     "fieldTypes": {

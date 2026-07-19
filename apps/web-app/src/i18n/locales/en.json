@@ -2982,7 +2982,8 @@
     "managementLabel": "Management directory",
     "applyToAll": "Apply to all",
     "bulkSubtitle": "Applies these access values to {{count}} selected members.",
-    "bulkAppliedDesc": "Access applied to {{count}} members"
+    "bulkAppliedDesc": "Access applied to {{count}} members",
+    "selectedMembers": "selected members"
   },
   "customFields": {
     "fieldTypes": {

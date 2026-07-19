@@ -1,9 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Smartphone, Monitor, Layers, MessageCircle, Save } from "lucide-react"
+import { Smartphone, Monitor, Layers, MessageCircle, Save, Bell } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
 import type { OrgMember } from "@/lib/api"
 import { getModules, getSpaceScope, getAccessPlatforms, canContactColleagues } from "@hbcfield/shared/client"
@@ -107,6 +107,25 @@ export function AccessBuilder({
   const [allowRemote, setAllowRemote] = useState<boolean>(initial.allowRemote)
   const [saving, setSaving] = useState(false)
 
+  // ── Notification watchers (who is alerted ABOUT this member) ────────────────
+  // Persisted together with the access on Save — NOT per-toggle. In bulk mode we
+  // apply the same watcher set to every selected member (only when touched, so an
+  // untouched Save never wipes existing watchers).
+  const [watcherIds, setWatcherIds] = useState<Set<string>>(new Set())
+  const [watchersTouched, setWatchersTouched] = useState(false)
+  const { data: watchersData } = useQuery({
+    queryKey: ["memberWatchers", member.id],
+    queryFn: () => organizationsApi.getMemberWatchers(member.id),
+    enabled: !isBulk,
+  })
+  useEffect(() => {
+    if (!isBulk) { setWatcherIds(new Set((watchersData || []).map((w) => w.id))); setWatchersTouched(false) }
+  }, [watchersData, isBulk])
+  const toggleWatcher = (id: string) => {
+    setWatchersTouched(true)
+    setWatcherIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
   // Contacts this member could be allowed to reach: ONLY admins + members flagged
   // "Show in Management". NOT every contactable member (chat is open-by-default →
   // contactable=true for all) and NOT plain managers unless they're flagged.
@@ -120,6 +139,15 @@ export function AccessBuilder({
       (m) => m.id !== member.id && m.isActive && (m.role === "ADMIN" || m.showInManagement),
     ),
     [membersData, member.id],
+  )
+  // Eligible watchers = admins + Show-in-Management members (same rule as the
+  // contacts picker). In single mode exclude the member itself; in bulk keep all
+  // (the backend drops self per-subject).
+  const watcherCandidates = useMemo(
+    () => (membersData?.data || []).filter(
+      (m) => (isBulk || m.id !== member.id) && m.isActive && (m.role === "ADMIN" || m.showInManagement),
+    ),
+    [membersData, member.id, isBulk],
   )
 
   const toggleModule = (m: MobileModule) =>
@@ -139,6 +167,7 @@ export function AccessBuilder({
     contactScope !== initial.contactScope ||
     showInManagement !== initial.showInManagement ||
     allowRemote !== initial.allowRemote ||
+    watchersTouched ||
     (contactScope === "SELECTED" && JSON.stringify(contactAllowedIds.slice().sort()) !== JSON.stringify(initial.contactAllowedIds.slice().sort()))
 
   const save = async () => {
@@ -160,6 +189,12 @@ export function AccessBuilder({
       // Bulk: apply the same access to every selected member. Single: just this one.
       const targetIds = isBulk ? (applyToIds as string[]) : [member.id]
       await Promise.all(targetIds.map((id) => organizationsApi.updateMember(id, payload)))
+      // Persist notification watchers together with the access — only when the
+      // admin actually touched them, so an untouched Save never clears them.
+      if (watchersTouched) {
+        const ids = [...watcherIds]
+        await Promise.all(targetIds.map((id) => organizationsApi.setMemberWatchers(id, ids)))
+      }
       if (isBulk) {
         notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.bulkAppliedDesc", "Access applied to {{count}} members", { count: targetIds.length }))
       } else {
@@ -406,6 +441,41 @@ export function AccessBuilder({
               disabled={!isBulk && member.role === "ADMIN"}
               onCheckedChange={setShowInManagement}
             />
+          </div>
+        </Field>
+
+        {/* Notifications about — who is alerted ABOUT this member (approvals,
+            geofence, …). Selection is held locally and persisted on Save/Apply,
+            NOT per-toggle. Empty = default routing (org admins + space managers). */}
+        <Field label={t("members.watchers.title", "Notifications about {{name}}", { name: isBulk ? t("accessBuilder.selectedMembers", "selected members") : member.firstName })}>
+          <div className="rounded-xl border border-border overflow-hidden">
+            <div className="flex items-start gap-2 px-4 py-2.5 border-b border-border/60">
+              <Bell className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                {t("members.watchers.hint", "Choose who is alerted about this member (approvals, geofence, …). If no one is selected, it defaults to org admins and this member's space managers.")}
+              </p>
+            </div>
+            {watcherCandidates.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                {t("members.watchers.noManagers", "No admins or managers to assign yet.")}
+              </p>
+            ) : (
+              <div className="max-h-56 overflow-auto divide-y divide-border/40">
+                {watcherCandidates.map((m) => (
+                  <label key={m.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-accent/40 transition-colors">
+                    <Checkbox checked={watcherIds.has(m.id)} onCheckedChange={() => toggleWatcher(m.id)} />
+                    <UserAvatar firstName={m.firstName} lastName={m.lastName} avatarUrl={m.avatarUrl} seed={m.id} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground truncate">{m.firstName} {m.lastName}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {m.role === "ADMIN" ? t("members.roles.admin", "Admin") : t("roles.manager", "Manager")}
+                        {m.email ? ` · ${m.email}` : ""}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         </Field>
       </div>
