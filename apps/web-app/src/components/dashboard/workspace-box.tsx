@@ -11,6 +11,7 @@ import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { hasAccessModule } from "@hbcfield/shared/client"
 import { PersonNode, type PersonNodeProps } from "./person-node"
+import { useChat } from "@/components/chat/chat-drawer"
 import { WorkerAvatar } from "./worker-avatar"
 import {
   DropdownMenu,
@@ -663,6 +664,7 @@ function WorkerDropdownContent({
   const { t } = useTranslation()
   const router = useRouter()
   const { user } = useAuth()
+  const { openChatWith } = useChat()
   const userId = person.userId!
   // O(1) identity check — you can't message/call yourself; show self actions.
   const isSelf = !!user?.id && user.id === userId
@@ -841,7 +843,7 @@ function WorkerDropdownContent({
           {/* ── Communication ── */}
           <div className="px-3 py-2 flex items-center gap-1.5">
             <button
-              onClick={(e) => { e.stopPropagation(); notify.success(t("workspace.messagingComingSoon")) }}
+              onClick={(e) => { e.stopPropagation(); openChatWith(userId) }}
               className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
             >
               <MessageCircle className="size-3.5" />

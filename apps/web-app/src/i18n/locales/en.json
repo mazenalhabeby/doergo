@@ -3853,6 +3853,14 @@
     "noMessages": "No messages yet",
     "messagePlaceholder": "Write a message…",
     "searchContacts": "Search people…",
-    "noContacts": "No one to message."
+    "noContacts": "No one to message.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "presence": {
+      "active": "Active now",
+      "busy": "Busy",
+      "away": "Away",
+      "offline": "Offline"
+    }
   }
 }

@@ -13,6 +13,7 @@ export interface ChatUserRef {
   lastName: string;
   avatarUrl?: string | null;
   position?: string | null;
+  presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
 }
 
 export interface ChatAttachment {

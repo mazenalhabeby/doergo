@@ -3853,6 +3853,14 @@
     "noMessages": "Noch keine Nachrichten",
     "messagePlaceholder": "Nachricht schreiben…",
     "searchContacts": "Personen suchen…",
-    "noContacts": "Niemand zum Anschreiben."
+    "noContacts": "Niemand zum Anschreiben.",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "presence": {
+      "active": "Jetzt aktiv",
+      "busy": "Beschäftigt",
+      "away": "Abwesend",
+      "offline": "Offline"
+    }
   }
 }

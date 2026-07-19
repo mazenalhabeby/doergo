@@ -5,7 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 
 type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
 
-const userSelect = { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true } };
+const userSelect = { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, presence: true } };
 
 @Injectable()
 export class ChatService {

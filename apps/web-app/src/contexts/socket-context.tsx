@@ -14,11 +14,13 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001"
 interface SocketContextValue {
   isConnected: boolean
   subscribe: (event: string, handler: (data: any) => void) => () => void
+  emit: (event: string, payload?: unknown) => void
 }
 
 const SocketContext = createContext<SocketContextValue>({
   isConnected: false,
   subscribe: () => () => {},
+  emit: () => {},
 })
 
 export function useSocketContext() {
@@ -80,8 +82,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => { socket.off(event, handler) }
   }, []) // Empty deps — uses ref which is always current
 
+  // Fire-and-forget emit (typing indicators etc.). No-op if not connected.
+  const emit = useCallback((event: string, payload?: unknown) => {
+    socketRef.current?.emit(event, payload)
+  }, [])
+
   return (
-    <SocketContext.Provider value={{ isConnected, subscribe }}>
+    <SocketContext.Provider value={{ isConnected, subscribe, emit }}>
       {children}
     </SocketContext.Provider>
   )
