@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocketEvents, type SupportTicket } from '@hbcfield/shared/client';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useSocketContext } from '../../src/contexts/socket-context';
@@ -27,6 +28,9 @@ export default function SupportScreen() {
   const { colors } = useTheme();
   const { subscribe } = useSocketContext();
   const params = useLocalSearchParams<{ ticketId?: string }>();
+  const insets = useSafeAreaInsets();
+  // Keep the bottom action clear of the Android nav bar / home indicator.
+  const bottomPad = Math.max(insets.bottom, SPACING.sm);
 
   const [view, setView] = useState<SupportView>('list');
   const [config, setConfig] = useState<SupportConfig | null>(null);
@@ -46,16 +50,15 @@ export default function SupportScreen() {
   const liveChat = !!config?.liveChat;
 
   const loadList = useCallback(async () => {
-    try {
-      const [cfg, list] = await Promise.all([supportApi.getConfig(), supportApi.list()]);
-      setConfig(cfg);
-      setTickets(list.data);
-      setError(null);
-    } catch {
-      setError(t('support.loadError', 'Could not load support. Check your connection.'));
-    } finally {
-      setLoading(false);
-    }
+    // Settle independently — a hiccup on one call shouldn't blank the whole screen.
+    const [cfgR, listR] = await Promise.allSettled([supportApi.getConfig(), supportApi.list()]);
+    if (cfgR.status === 'fulfilled') setConfig(cfgR.value);
+    if (listR.status === 'fulfilled') setTickets(listR.value.data);
+    // Only surface an error if BOTH failed (a real connectivity problem).
+    setError(cfgR.status === 'rejected' && listR.status === 'rejected'
+      ? t('support.loadError', 'Could not load support. Check your connection.')
+      : null);
+    setLoading(false);
   }, [t]);
 
   const openTicket = useCallback(async (id: string) => {
@@ -194,7 +197,7 @@ export default function SupportScreen() {
               ))
             )}
           </ScrollView>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => setView('new')}>
+          <TouchableOpacity style={[styles.primaryBtn, { marginBottom: SPACING.md + bottomPad }]} onPress={() => setView('new')}>
             <Text style={styles.primaryBtnText}>{t('support.newTicket', 'New request')}</Text>
           </TouchableOpacity>
         </>
@@ -215,7 +218,7 @@ export default function SupportScreen() {
             multiline
             style={[styles.input, styles.textarea, { color: colors.textPrimary, borderColor: colors.border }]}
           />
-          <TouchableOpacity style={[styles.primaryBtn, sending && { opacity: 0.6 }]} disabled={sending} onPress={submitNew}>
+          <TouchableOpacity style={[styles.primaryBtn, { marginBottom: SPACING.md + bottomPad }, sending && { opacity: 0.6 }]} disabled={sending} onPress={submitNew}>
             <Text style={styles.primaryBtnText}>{sending ? '…' : t('support.send', 'Send')}</Text>
           </TouchableOpacity>
         </KeyboardAvoidingView>
@@ -233,7 +236,7 @@ export default function SupportScreen() {
               );
             })}
           </ScrollView>
-          <View style={[styles.replyBar, { borderColor: colors.border }]}>
+          <View style={[styles.replyBar, { borderColor: colors.border, paddingBottom: SPACING.sm + bottomPad }]}>
             <TextInput
               value={reply}
               onChangeText={setReply}
