@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { BillingService } from './billing.service';
-import type { CheckoutRequest, ChangePlanRequest } from '@hbcfield/shared';
+import type { CheckoutRequest, ChangePlanRequest, PlanTier } from '@hbcfield/shared';
 
 @Controller()
 export class BillingController {
@@ -15,6 +15,16 @@ export class BillingController {
   @MessagePattern({ cmd: 'billing_start_trial' })
   startTrial(@Payload() d: { organizationId: string }) {
     return this.billing.startTrial(d.organizationId);
+  }
+
+  @MessagePattern({ cmd: 'billing_admin_list_orgs' })
+  adminListOrgs() {
+    return this.billing.adminListOrgs();
+  }
+
+  @MessagePattern({ cmd: 'billing_admin_set_tier' })
+  adminSetOrgTier(@Payload() d: { organizationId: string; tier: PlanTier }) {
+    return this.billing.adminSetOrgTier(d);
   }
 
   @MessagePattern({ cmd: 'billing_create_checkout' })

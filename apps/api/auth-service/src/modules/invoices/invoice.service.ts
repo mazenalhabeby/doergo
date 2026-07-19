@@ -26,8 +26,6 @@ export class InvoiceService {
       reportId?: string;
     }[];
   }) {
-    const invoiceNumber = await this.generateInvoiceNumber(data.organizationId);
-
     const items = (data.items || []).map((item) => {
       const quantity = item.quantity ?? 1;
       const unitPrice = item.unitPrice ?? 0;
@@ -47,34 +45,49 @@ export class InvoiceService {
     const taxAmount = subtotal * taxRate;
     const total = subtotal + taxAmount - discount;
 
-    const invoice = await this.prisma.invoice.create({
-      data: {
-        invoiceNumber,
-        clientName: data.clientName,
-        clientEmail: data.clientEmail,
-        clientAddress: data.clientAddress,
-        currency: data.currency ?? 'USD',
-        taxRate,
-        discount,
-        subtotal,
-        taxAmount,
-        total,
-        issueDate: data.issueDate ? new Date(data.issueDate) : new Date(),
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-        notes: data.notes,
-        organizationId: data.organizationId,
-        createdById: data.createdById,
-        items: {
-          create: items,
-        },
-      },
-      include: {
-        items: true,
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
-    });
+    // Invoice-number generation is read-then-write, so two concurrent creates can
+    // pick the same sequence. @@unique([organizationId, invoiceNumber]) makes the
+    // collision loud (P2002) instead of silently duplicating; retry a few times,
+    // re-reading the latest number each pass, before surfacing the error.
+    let invoice;
+    for (let attempt = 0; ; attempt++) {
+      const invoiceNumber = await this.generateInvoiceNumber(data.organizationId);
+      try {
+        invoice = await this.prisma.invoice.create({
+          data: {
+            invoiceNumber,
+            clientName: data.clientName,
+            clientEmail: data.clientEmail,
+            clientAddress: data.clientAddress,
+            currency: data.currency ?? 'USD',
+            taxRate,
+            discount,
+            subtotal,
+            taxAmount,
+            total,
+            issueDate: data.issueDate ? new Date(data.issueDate) : new Date(),
+            dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+            notes: data.notes,
+            organizationId: data.organizationId,
+            createdById: data.createdById,
+            items: {
+              create: items,
+            },
+          },
+          include: {
+            items: true,
+            createdBy: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+          },
+        });
+        break;
+      } catch (err: any) {
+        // P2002 = another request grabbed this number first; retry with the next.
+        if (err?.code === 'P2002' && attempt < 4) continue;
+        throw err;
+      }
+    }
 
     return { success: true, data: invoice };
   }

@@ -130,4 +130,53 @@ export class BillingController {
     }
     return { received: true };
   }
+
+  /**
+   * PLATFORM-OPERATOR endpoint — set an org's tier (mainly ENTERPRISE for custom
+   * Stripe quotes). NOT a customer action: it's Public (no JWT) but gated by the
+   * `x-platform-admin-key` secret so only the operator (you) can call it. Fails
+   * closed if PLATFORM_ADMIN_KEY isn't configured.
+   */
+  /** Fail-closed platform-secret gate for operator endpoints. */
+  private assertPlatformKey(req: any): void {
+    const expected = this.config.get<string>('PLATFORM_ADMIN_KEY');
+    const provided = (req.headers['x-platform-admin-key'] as string) || '';
+    if (!expected || provided !== expected) {
+      throw new HttpException({ message: 'Forbidden' }, HttpStatus.FORBIDDEN);
+    }
+  }
+
+  @Public()
+  @Get('admin/orgs')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({ summary: 'Operator: list orgs + billing state (secret-gated)' })
+  async adminListOrgs(@Req() req: any) {
+    this.assertPlatformKey(req);
+    return firstValueFrom(this.authClient.send({ cmd: 'billing_admin_list_orgs' }, {}));
+  }
+
+  @Public()
+  @Post('admin/org-tier')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Operator: set an org tier (secret-gated, not a customer route)' })
+  async adminSetOrgTier(
+    @Body() dto: { organizationId?: string; tier?: string },
+    @Req() req: any,
+  ) {
+    this.assertPlatformKey(req);
+    const tier = String(dto?.tier || 'enterprise').toLowerCase();
+    if (!['starter', 'professional', 'business', 'enterprise'].includes(tier)) {
+      throw new HttpException({ message: 'Invalid tier' }, HttpStatus.BAD_REQUEST);
+    }
+    if (!dto?.organizationId) {
+      throw new HttpException({ message: 'organizationId is required' }, HttpStatus.BAD_REQUEST);
+    }
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'billing_admin_set_tier' }, { organizationId: dto.organizationId, tier }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
 }

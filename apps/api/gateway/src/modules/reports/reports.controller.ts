@@ -19,6 +19,7 @@ import {
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { ReportsService } from './reports.service';
 import { ReportsQueueService } from './reports.queue.service';
 import { CompleteTaskDto, UpdateReportDto } from './dto';
@@ -36,6 +37,7 @@ export class ReportsController {
 
   @Post('tasks/:taskId/complete')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @RequireModule('service_reports')
   @ApiOperation({ summary: 'Complete a task with service report (assigned user)' })
   @ApiParam({ name: 'taskId', description: 'Task ID to complete' })
   async completeTask(

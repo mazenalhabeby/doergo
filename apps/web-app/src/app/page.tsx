@@ -14,6 +14,7 @@ import { HeroCanvas } from './_home/HeroCanvas';
 import { IntroVideo } from './_home/IntroVideo';
 import { LaptopShowcase } from './_home/LaptopShowcase';
 import { PhoneShowcase } from './_home/PhoneShowcase';
+import { FeatureMatrix } from './_home/FeatureMatrix';
 import { usePrefersReducedMotion } from './_home/use-reduced-motion';
 import { useLenis } from './_home/use-lenis';
 import { scrollToHash } from './_home/lenis-bus';
@@ -241,6 +242,7 @@ export default function Home() {
                 <a href="#field" onClick={navTo('#field')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors sm:block ${navTone}`}>{t('home.nav.app')}</a>
                 <a href="#industries" onClick={navTo('#industries')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.industries')}</a>
                 <a href="#pricing" onClick={navTo('#pricing')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.pricing')}</a>
+                <a href="#features" onClick={navTo('#features')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors lg:block ${navTone}`}>{t('home.nav.compare', 'Compare')}</a>
                 <button
                   type="button"
                   onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
@@ -533,8 +535,8 @@ export default function Home() {
               </div>
 
               {/* tiers */}
-              <div className="mt-16 grid gap-5 lg:grid-cols-3">
-                {asArray<{ name: string; price: string; popular: boolean; desc: string; features: string[] }>(t('home.pricing.plans', { returnObjects: true })).map((p, i) => (
+              <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {asArray<{ name: string; price: string; popular: boolean; desc: string; features: string[]; custom?: boolean; cta?: string }>(t('home.pricing.plans', { returnObjects: true })).map((p, i) => (
                   <Reveal key={p.name} delay={i * 0.08} className="h-full">
                     <div
                       className={`h-full rounded-[20px] p-px ${p.popular
@@ -550,7 +552,7 @@ export default function Home() {
                         </div>
                         <div className="mt-6 flex items-baseline gap-1.5">
                           <span className={`${DISPLAY} text-[2.9rem] font-normal leading-none text-foreground`}>{p.price}</span>
-                          <span className={`${MONO} text-[11px] text-foreground/40`}>{t('home.pricing.perUser')}</span>
+                          {!p.custom && <span className={`${MONO} text-[11px] text-foreground/40`}>{t('home.pricing.perUser')}</span>}
                         </div>
                         <p className="mt-4 text-[13px] leading-relaxed text-foreground/50">{p.desc}</p>
                         <div className="my-6 h-px w-full bg-foreground/[0.08]" />
@@ -569,7 +571,7 @@ export default function Home() {
                           onClick={navTo('#contact')}
                           className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${p.popular ? 'bg-foreground text-background hover:bg-foreground/90' : 'border border-foreground/20 text-foreground/80 hover:border-foreground/50 hover:text-foreground'}`}
                         >
-                          {t('home.pricing.cta')}
+                          {p.cta || t('home.pricing.cta')}
                         </a>
                       </div>
                     </div>
@@ -577,6 +579,22 @@ export default function Home() {
                 ))}
               </div>
               <p className={`${MONO} mt-8 text-[11px] uppercase tracking-[0.14em] text-foreground/30`}>{t('home.pricing.note')}</p>
+            </div>
+          </section>
+
+          {/* ══════ FEATURE COMPARISON (code-driven) ══════ */}
+          <section id="features" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.compare.label', 'Compare plans')}</Label>
+              <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
+                {t('home.compare.heading', 'Every feature, by plan')}
+              </h2>
+              <p className="mt-6 max-w-[50ch] text-[15px] leading-relaxed text-foreground/50">
+                {t('home.compare.lead', 'Exactly what each plan unlocks — tiers are cumulative, so every plan includes everything below it.')}
+              </p>
+              <Reveal className="mt-14">
+                <FeatureMatrix />
+              </Reveal>
             </div>
           </section>
 

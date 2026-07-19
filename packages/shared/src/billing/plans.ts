@@ -84,7 +84,10 @@ const ENTERPRISE_MODULES = [...BUSINESS_MODULES];
 // Gated only by tier through tierAllows(); cumulative like the modules above.
 const STARTER_CAPS: string[] = [];
 const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing'];
-const BUSINESS_CAPS = [...PROFESSIONAL_CAPS, 'workflows', 'audit_log', 'multi_org'];
+// NOTE: `multi_org` was removed — the OrganizationAccess delegation flow isn't
+// wired to any billing gate, so advertising it would be a phantom feature.
+// Re-add here (with real enforcement) when multi-org delegation actually ships.
+const BUSINESS_CAPS = [...PROFESSIONAL_CAPS, 'workflows', 'audit_log'];
 const ENTERPRISE_CAPS = [...BUSINESS_CAPS];
 
 export const PLANS: Record<PlanTier, PlanDef> = {

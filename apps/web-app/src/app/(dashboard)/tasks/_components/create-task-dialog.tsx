@@ -155,6 +155,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const { t } = useTranslation()
   const { user, hasModule: orgHasModule, hasPlanFeature } = useAuth()
   const canRecur = hasPlanFeature("recurring") // Recurring tasks = Professional+
+  const canCustomFields = hasPlanFeature("custom_fields") // Custom Fields = Professional+
   const queryClient = useQueryClient()
 
   // ── Space state ──
@@ -321,8 +322,10 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   // Fields applicable to the chosen Task Type: globals always, plus the selected
   // type's own fields. ("auto" = type decided at creation → globals only here.)
   const applicableCustomFields = useMemo(
-    () => activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === workflowId),
-    [activeCustomFields, workflowId],
+    // Custom Fields is a Professional+ feature — don't render the inputs below tier
+    // (the backend also 402s the write; this keeps a downgraded org from seeing them).
+    () => (canCustomFields ? activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === workflowId) : []),
+    [activeCustomFields, workflowId, canCustomFields],
   )
 
   // ── Submission state ──

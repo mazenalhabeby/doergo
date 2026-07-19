@@ -10,12 +10,15 @@ import {
   Query,
   Request,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role, canCreateTaskFor } from '@hbcfield/shared';
+import { Role, canCreateTaskFor, minTierForFeature } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
+import { isFeatureEntitled } from '../../common/entitlements';
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -53,10 +56,40 @@ export class TasksController {
     private readonly tasksService: TasksService,
   ) {}
 
+  /**
+   * Closes the "set a premium field via the plain task endpoint" backdoor: the
+   * dedicated sprints/epics/phases controllers are gated, but sprintId/epicId/
+   * phaseId/storyPoints also flow through create/update. Reject (402) any
+   * premium field the org's tier/modules don't entitle. DRY via isFeatureEntitled.
+   */
+  private assertTaskFieldEntitlements(user: any, dto: { sprintId?: string; epicId?: string; phaseId?: string; storyPoints?: number }) {
+    const checks: Array<[unknown, string]> = [
+      [dto.sprintId, 'sprints'],
+      [dto.epicId, 'epics'],
+      [dto.phaseId, 'phases'],
+      [dto.storyPoints, 'story_points'],
+    ];
+    for (const [value, feature] of checks) {
+      if (value !== undefined && value !== null && value !== '' && !isFeatureEntitled(user, feature)) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.PAYMENT_REQUIRED,
+            message: `The "${feature}" feature is not available on your plan.`,
+            error: 'PlanUpgradeRequired',
+            feature,
+            requiredTier: minTierForFeature(feature),
+          },
+          HttpStatus.PAYMENT_REQUIRED,
+        );
+      }
+    }
+  }
+
   @Post()
   @RequirePermission('canCreateTasks')
   @ApiOperation({ summary: 'Create a new task' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
+    this.assertTaskFieldEntitlements(req.user, createTaskDto);
     const scope = req.user.taskCreationScope || 'NONE';
 
     // NONE scope cannot create tasks (should be caught by canCreateTasks guard, but double-check)
@@ -164,6 +197,7 @@ export class TasksController {
   @RequirePermission('canCreateTasks')
   @ApiOperation({ summary: 'Update a task' })
   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
+    this.assertTaskFieldEntitlements(req.user, updateTaskDto);
     return this.tasksQueueService.updateTask({
       id,
       ...updateTaskDto,

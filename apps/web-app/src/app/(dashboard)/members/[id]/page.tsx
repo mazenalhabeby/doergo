@@ -35,6 +35,7 @@ import { getStatusConfig } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MemberWatchers } from "./_components/member-watchers"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -521,7 +522,11 @@ export default function MemberProfilePage({
               </TabsContent>
 
               <TabsContent value="access" className="mt-6">
-                <AccessBuilder member={member} onSaved={() => refetchMember()} />
+                <div className="space-y-6">
+                  <AccessBuilder member={member} onSaved={() => refetchMember()} />
+                  {/* Member configuration lives together here (not on Overview). */}
+                  <MemberWatchers memberId={member.id} memberName={member.firstName} />
+                </div>
               </TabsContent>
             </Tabs>
           )

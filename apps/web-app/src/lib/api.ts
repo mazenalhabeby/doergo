@@ -2927,6 +2927,15 @@ export interface UpdateMemberInput {
   allowRemote?: boolean;
 }
 
+export interface MemberWatcher {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatarUrl?: string | null;
+  role: string;
+}
+
 export const organizationsApi = {
   getJoinCode: async () => {
     const response = await api.get<{
@@ -3003,6 +3012,23 @@ export const organizationsApi = {
     }>(`/organizations/members/${memberId}`);
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+
+  // Notification routing — who gets notified ABOUT this member.
+  getMemberWatchers: async (memberId: string) => {
+    const response = await api.get<{ data: MemberWatcher[] }>(
+      `/organizations/members/${memberId}/watchers`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+  setMemberWatchers: async (memberId: string, watcherIds: string[]) => {
+    const response = await api.put<{ data: MemberWatcher[] }>(
+      `/organizations/members/${memberId}/watchers`,
+      { watcherIds },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
   },
 
   getProfileBadges: async () => {

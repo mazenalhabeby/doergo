@@ -72,6 +72,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     contactable: !!member.contactable,
     contactScope: member.contactScope || "NONE",
     contactAllowedIds: member.contactAllowedIds || [],
+    allowRemote: !!member.allowRemote,
   }), [member])
 
   const [modules, setModules] = useState<MobileModule[]>(initial.modules)
@@ -88,6 +89,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
   const [contactable, setContactable] = useState<boolean>(initial.contactable)
   const [contactScope, setContactScope] = useState<string>(initial.contactScope)
   const [contactAllowedIds, setContactAllowedIds] = useState<string[]>(initial.contactAllowedIds)
+  const [allowRemote, setAllowRemote] = useState<boolean>(initial.allowRemote)
   const [saving, setSaving] = useState(false)
 
   // Contacts directory this member could be allowed to reach: admins + contactable members.
@@ -118,6 +120,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     canManageUsers !== initial.canManageUsers ||
     contactable !== initial.contactable ||
     contactScope !== initial.contactScope ||
+    allowRemote !== initial.allowRemote ||
     (contactScope === "SELECTED" && JSON.stringify(contactAllowedIds.slice().sort()) !== JSON.stringify(initial.contactAllowedIds.slice().sort()))
 
   const save = async () => {
@@ -133,6 +136,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
         contactable,
         contactScope,
         contactAllowedIds: contactScope === "SELECTED" ? contactAllowedIds : [],
+        allowRemote,
       })
       notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.accessUpdatedDesc", { name: member.firstName }))
       onSaved?.()
@@ -239,6 +243,25 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                 </button>
               )
             })}
+          </div>
+        </Field>
+
+        {/* Attendance — remote clock-in. Always shown; disabled with a hint when
+            the Clock module is off (remote clock-in needs clock access). */}
+        <Field label={t("accessBuilder.attendance", "Attendance")}>
+          <div className={cn(
+            "flex items-center justify-between rounded-xl border border-border px-4 py-3",
+            !modules.includes("clock") && "opacity-70",
+          )}>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">{t("members.memberEditor.allowRemote", "Allow remote clock-in")}</p>
+              <p className="text-xs text-muted-foreground">
+                {modules.includes("clock")
+                  ? t("members.memberEditor.allowRemoteHint", "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured.")
+                  : t("accessBuilder.allowRemoteNeedsClock", "Enable the Clock module above to use remote clock-in.")}
+              </p>
+            </div>
+            <Switch checked={allowRemote} onCheckedChange={setAllowRemote} disabled={!modules.includes("clock")} />
           </div>
         </Field>
 

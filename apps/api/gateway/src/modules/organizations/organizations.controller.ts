@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Body,
   Param,
@@ -14,7 +15,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, minTierForFeature } from '@hbcfield/shared';
+import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
@@ -189,6 +191,35 @@ export class OrganizationsController {
     this.syncSeats(user.organizationId);
 
     return result;
+  }
+
+  @Get('members/:id/watchers')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'List who is notified about this member (per-employee routing)' })
+  async getMemberWatchers(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'get_member_watchers' }, {
+        memberId,
+        organizationId: user.organizationId,
+      }),
+    );
+  }
+
+  @Put('members/:id/watchers')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Set who is notified about this member (empty = default space/admin routing)' })
+  async setMemberWatchers(
+    @Param('id') memberId: string,
+    @Body() dto: { watcherIds: string[] },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'set_member_watchers' }, {
+        memberId,
+        organizationId: user.organizationId,
+        watcherIds: Array.isArray(dto?.watcherIds) ? dto.watcherIds : [],
+      }),
+    );
   }
 
   @Post('members/:id/reset-password')
@@ -376,6 +407,20 @@ export class OrganizationsController {
     },
     @CurrentUser() user: CurrentUserData,
   ) {
+    // audit_log is a Business capability. This is a READ (guards pass reads by
+    // design), so gate the premium data here explicitly.
+    if (!isFeatureEntitled(user as any, 'audit_log')) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.PAYMENT_REQUIRED,
+          message: 'The "audit_log" feature is not available on your plan.',
+          error: 'PlanUpgradeRequired',
+          feature: 'audit_log',
+          requiredTier: minTierForFeature('audit_log'),
+        },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
     return firstValueFrom(
       this.authClient.send({ cmd: 'audit_log_list' }, {
         organizationId: user.organizationId,

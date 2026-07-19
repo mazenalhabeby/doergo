@@ -10,6 +10,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationRoutingService } from '../../common/notification-routing.service';
 import {
   success,
   paginated,
@@ -35,6 +36,7 @@ export class AttendanceService {
     private readonly notificationClient: ClientProxy,
     @InjectQueue(QUEUE_NAMES.OVERTIME)
     private readonly overtimeQueue: Queue,
+    private readonly notificationRouting: NotificationRoutingService,
   ) {}
 
   /**
@@ -1086,18 +1088,14 @@ export class AttendanceService {
 
       if (!user) return;
 
-      // Get dispatchers and admins for the organization
-      const managers = await this.prisma.user.findMany({
-        where: {
-          organizationId: data.organizationId,
-          OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
-          isActive: true,
-        },
-        select: { id: true, email: true },
-      });
-
-      const dispatcherEmails = managers.map((m) => m.email);
-      const dispatcherIds = managers.map((m) => m.id);
+      // Route to the employee's watchers (per-employee override) or the admins +
+      // managers of their space — not the whole org. See NotificationRoutingService.
+      const { ids: dispatcherIds, emails: dispatcherEmails } =
+        await this.notificationRouting.resolveWatchers(
+          data.userId,
+          data.organizationId,
+          'attendance',
+        );
 
       // Emit notification event
       this.notificationClient.emit('attendance_geofence_alert', {
@@ -1140,14 +1138,11 @@ export class AttendanceService {
       });
       if (!user) return;
 
-      const managers = await this.prisma.user.findMany({
-        where: {
-          organizationId: data.organizationId,
-          OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
-          isActive: true,
-        },
-        select: { id: true },
-      });
+      const { ids: managerIds } = await this.notificationRouting.resolveWatchers(
+        data.userId,
+        data.organizationId,
+        'attendance',
+      );
 
       this.notificationClient.emit('attendance_pending_approval', {
         entryId: data.entryId,
@@ -1156,7 +1151,7 @@ export class AttendanceService {
         locationName: data.locationName,
         flagReasons: data.flagReasons,
         totalMinutes: data.totalMinutes,
-        managerIds: managers.map((m) => m.id),
+        managerIds,
         organizationId: data.organizationId,
       });
 

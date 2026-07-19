@@ -408,7 +408,10 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(actualPassword, BCRYPT_COST_FACTOR);
 
     // Determine default modules from position if not provided
-    const modules = enabledModules || getDefaultModules(position);
+    const providedModules = enabledModules || getDefaultModules(position);
+    const moduleList = Array.isArray(providedModules)
+      ? providedModules
+      : ((providedModules as { modules?: string[] })?.modules ?? getDefaultModules(position));
 
     // Create employee
     const employee = await this.prisma.user.create({
@@ -419,7 +422,9 @@ export class UsersService {
         passwordHash,
         role: Role.EMPLOYEE,
         position,
-        enabledModules: modules,
+        // New members start LEAST-PRIVILEGE: their own assigned spaces only
+        // (admins widen via the Access tab). Stored as an Access Profile.
+        enabledModules: { modules: moduleList, spaceScope: 'own' },
         specialty,
         maxDailyJobs,
         organizationId,
@@ -1456,5 +1461,93 @@ export class UsersService {
     }
 
     return trends;
+  }
+
+  // ===========================================================================
+  // NOTIFICATION ROUTING — per-employee watchers + per-recipient preferences
+  // ===========================================================================
+
+  /** List the managers/admins watching a specific employee (notifications about them). */
+  async getWatchers(subjectUserId: string, organizationId: string) {
+    const subject = await this.prisma.user.findFirst({
+      where: { id: subjectUserId, organizationId },
+      select: { id: true },
+    });
+    if (!subject) throw new NotFoundException('Member not found');
+
+    const watches = await this.prisma.notificationWatch.findMany({
+      where: { subjectUserId, organizationId },
+      select: {
+        watcher: {
+          select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true, role: true },
+        },
+      },
+    });
+    return { data: watches.map((w) => w.watcher) };
+  }
+
+  /**
+   * Replace the full set of watchers for an employee. `watcherIds` must be
+   * admins or managers (canViewAllTasks) in the same org. Empty = clear (falls
+   * back to default space/admin routing).
+   */
+  async setWatchers(subjectUserId: string, organizationId: string, watcherIds: string[]) {
+    const subject = await this.prisma.user.findFirst({
+      where: { id: subjectUserId, organizationId },
+      select: { id: true },
+    });
+    if (!subject) throw new NotFoundException('Member not found');
+
+    const unique = [...new Set(watcherIds)].filter((id) => id && id !== subjectUserId);
+
+    // Only admins / managers in this org may be watchers.
+    const valid = unique.length
+      ? await this.prisma.user.findMany({
+          where: {
+            id: { in: unique },
+            organizationId,
+            isActive: true,
+            OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }],
+          },
+          select: { id: true },
+        })
+      : [];
+    const validIds = valid.map((v) => v.id);
+
+    await this.prisma.$transaction([
+      this.prisma.notificationWatch.deleteMany({ where: { subjectUserId, organizationId } }),
+      ...(validIds.length
+        ? [
+            this.prisma.notificationWatch.createMany({
+              data: validIds.map((watcherUserId) => ({ subjectUserId, organizationId, watcherUserId })),
+              skipDuplicates: true,
+            }),
+          ]
+        : []),
+    ]);
+
+    return this.getWatchers(subjectUserId, organizationId);
+  }
+
+  /** Get a user's own notification opt-out preferences (category → boolean). */
+  async getNotificationPrefs(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { notificationPrefs: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return { data: (user.notificationPrefs as Record<string, boolean> | null) ?? {} };
+  }
+
+  /** Merge-update a user's own notification preferences. */
+  async updateNotificationPrefs(userId: string, prefs: Record<string, boolean>) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { notificationPrefs: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    const merged = { ...((user.notificationPrefs as Record<string, boolean> | null) ?? {}), ...prefs };
+    await this.prisma.user.update({ where: { id: userId }, data: { notificationPrefs: merged } });
+    return { data: merged };
   }
 }

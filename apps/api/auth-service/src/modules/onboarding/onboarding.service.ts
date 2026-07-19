@@ -12,6 +12,7 @@ import {
   JOIN_REQUEST_MESSAGE_MAX_LENGTH,
   INVITATION_CODE_CHARSET,
   DEFAULT_ORG_MODULES,
+  getDefaultModules,
   hashCode,
   generateSecureCode,
 } from '@hbcfield/shared';
@@ -367,6 +368,11 @@ export class OnboardingService {
                 // Schedule pre-set on the invite (mirror of the register-path accept).
                 scheduleType: invitation.scheduleType || 'NONE',
                 monthlyHourBudget: invitation.monthlyHourBudget ?? null,
+                // Least-privilege default: own assigned spaces only (see accept).
+                enabledModules: {
+                  modules: getDefaultModules(invitation.position),
+                  spaceScope: 'own',
+                },
               }
             : {}),
         },

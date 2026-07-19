@@ -7,6 +7,7 @@
       "signIn": "Anmelden",
       "industries": "Branchen",
       "pricing": "Preise",
+      "compare": "Vergleich",
       "toggleTheme": "Design wechseln"
     },
     "hero": {
@@ -162,7 +163,7 @@
       ]
     },
     "cta": {
-      "label": "(08) — Loslegen",
+      "label": "(09) — Loslegen",
       "lines": [
         "Bringen Sie Ihr Feld",
         "zu Protokoll."
@@ -282,6 +283,90 @@
         }
       ]
     },
+    "compare": {
+      "label": "(08) — Vergleich",
+      "heading": "Jede Funktion, nach Plan.",
+      "lead": "Genau das, was jeder Plan freischaltet — die Stufen bauen aufeinander auf, jeder Plan enthält alles darunter.",
+      "groups": {
+        "task": "Aufgaben-Bereiche",
+        "field": "Außendienst",
+        "agile": "Projekt / Agile",
+        "premium": "Premium"
+      },
+      "popular": "Beliebt",
+      "custom": "Individuell",
+      "perSeat": "/Platz",
+      "features": {
+        "subtasks": {
+          "label": "Teilaufgaben",
+          "desc": "Teilen Sie einen großen Auftrag in kleinere Schritte auf, die sich einzeln zuweisen und verfolgen lassen – so geht nichts verloren."
+        },
+        "checklists": {
+          "label": "Checklisten",
+          "desc": "Fügen Sie jeder Aufgabe eine Schritt-für-Schritt-Checkliste hinzu, damit Ihr Team jedes Mal denselben Ablauf befolgt und nichts vergisst."
+        },
+        "attachments": {
+          "label": "Anhänge",
+          "desc": "Hängen Sie Fotos, PDFs und Dokumente direkt an eine Aufgabe an – alles zum Auftrag an einem Ort."
+        },
+        "dependencies": {
+          "label": "Abhängigkeiten",
+          "desc": "Verknüpfen Sie Aufgaben so, dass eine erst beginnen kann, wenn eine andere abgeschlossen ist – mehrstufige Aufträge bleiben in der richtigen Reihenfolge."
+        },
+        "custom_fields": {
+          "label": "Benutzerdefinierte Felder",
+          "desc": "Erfassen Sie die zusätzlichen Details, die Ihr Betrieb braucht – Referenznummern, Gerätemodelle und mehr – mit eigenen Feldern an jeder Aufgabe."
+        },
+        "tracking": {
+          "label": "Routenverfolgung",
+          "desc": "Sehen Sie auf einer Live-Karte genau, wo Ihr Außendienst ist, und verfolgen Sie die gefahrene Route zu jedem Einsatz."
+        },
+        "service_reports": {
+          "label": "Serviceberichte",
+          "desc": "Machen Sie aus einem erledigten Auftrag einen professionellen Bericht mit Fotos, verwendeten Teilen und Kundenunterschrift – bereit zum Teilen oder Abrechnen."
+        },
+        "time_tracking": {
+          "label": "Zeiterfassung",
+          "desc": "Erfassen Sie, wie lange Aufträge tatsächlich dauern – im Vergleich zur Schätzung – für genauere Angebote und Planung."
+        },
+        "sprints": {
+          "label": "Sprints",
+          "desc": "Planen Sie Arbeit in kurzen, fokussierten Zyklen und sehen Sie auf einen Blick, wie viel Ihr Team pro Runde schafft."
+        },
+        "story_points": {
+          "label": "Story Points",
+          "desc": "Bewerten Sie jede Aufgabe nach Aufwand, um die Auslastung auszubalancieren und vorherzusagen, was in eine Woche passt."
+        },
+        "epics": {
+          "label": "Epics",
+          "desc": "Bündeln Sie viele zusammengehörige Aufgaben unter einer großen Initiative, um umfangreiche Projekte von Anfang bis Ende zu verfolgen."
+        },
+        "phases": {
+          "label": "Phasen",
+          "desc": "Gliedern Sie ein Projekt in Phasen – etwa Planung, Ausführung und Übergabe – und verfolgen Sie den Fortschritt durch jede."
+        },
+        "recurring": {
+          "label": "Wiederkehrende Aufgaben",
+          "desc": "Legen Sie fest, dass ein Auftrag sich täglich, wöchentlich oder monatlich wiederholt – das System erstellt ihn automatisch, ganz ohne erneute Eingabe."
+        },
+        "overtime": {
+          "label": "Überstunden",
+          "desc": "Mitarbeitende beantragen Zusatzstunden, Führungskräfte genehmigen sie – jede Minute für die Lohnabrechnung erfasst."
+        },
+        "invoicing": {
+          "label": "Rechnungsstellung",
+          "desc": "Verwandeln Sie erledigte Arbeit mit wenigen Klicks in eine Rechnung und behalten Sie den Überblick, was bezahlt wurde."
+        },
+        "workflows": {
+          "label": "Individuelle Workflows",
+          "desc": "Erstellen Sie Ihre eigenen Aufgaben-Phasen – genau die Schritte, die Ihr Betrieb nutzt – statt einer festen Statusliste."
+        },
+        "audit_log": {
+          "label": "Audit-Protokoll",
+          "desc": "Führen Sie eine lückenlose Aufzeichnung jeder Aktion – so wissen Sie immer, wer was wann geändert hat."
+        }
+      }
+    },
     "pricing": {
       "label": "(07) — Preise",
       "heading": "Preise, die drei Tools ersetzen.",
@@ -338,6 +423,19 @@
             "Multi-Org-Delegation",
             "Prüfprotokoll & Workflows",
             "Priorisierter Support"
+          ]
+        },
+        {
+          "name": "Enterprise",
+          "price": "Individuell",
+          "popular": false,
+          "custom": true,
+          "cta": "Vertrieb kontaktieren",
+          "desc": "Ab 199 €/Mon. Individuelles Angebot für große Flotten & Multi-Standort-Gruppen.",
+          "features": [
+            "Alles aus Business",
+            "Individuelles Angebot & Vertragskonditionen",
+            "Verhandelbare Sitzplatzpreise"
           ]
         }
       ]
@@ -1661,6 +1759,13 @@
     "title": "Organisationsmitglieder",
     "subtitle": "Verwalten Sie Ihre Teammitglieder, Rollen und Berechtigungen",
     "searchPlaceholder": "Nach Name oder E-Mail suchen...",
+    "watchers": {
+      "title": "Benachrichtigungen über {{name}}",
+      "hint": "Wählen Sie, wer über dieses Mitglied benachrichtigt wird (Freigaben, Geofence, …). Ohne Auswahl gilt die Standardregel: Admins und die Bereichs-Manager dieses Mitglieds.",
+      "usingDefault": "Standard-Routing aktiv",
+      "noManagers": "Noch keine Admins oder Manager zum Zuweisen.",
+      "saved": "Benachrichtigungsempfänger aktualisiert"
+    },
     "inviteMember": "Mitglied einladen",
     "invite": {
       "title": "Mitglied einladen",
@@ -2786,6 +2891,8 @@
     "permissions": "Berechtigungen",
     "featureTabsLabel": "Funktions-Tabs",
     "spaceVisibility": "Bereichssichtbarkeit",
+    "attendance": "Anwesenheit",
+    "allowRemoteNeedsClock": "Aktivieren Sie oben das Zeiterfassungs-Modul, um Remote-Einstempeln zu nutzen.",
     "collaboration": "Zusammenarbeit",
     "featureTabs": {
       "tasks": "Aufgaben",

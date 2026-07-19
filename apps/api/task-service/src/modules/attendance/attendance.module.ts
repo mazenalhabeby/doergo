@@ -9,6 +9,7 @@ import { AttendanceReportService } from './attendance-report.service';
 import { ApprovalService } from './approval.service';
 import { AttendanceProcessor } from './attendance.processor';
 import { AttendanceScheduler } from './attendance.scheduler';
+import { NotificationRoutingService } from '../../common/notification-routing.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AttendanceScheduler } from './attendance.scheduler';
     ApprovalService,
     AttendanceProcessor,
     AttendanceScheduler,
+    NotificationRoutingService,
   ],
   exports: [AttendanceService, AttendanceScheduler],
 })

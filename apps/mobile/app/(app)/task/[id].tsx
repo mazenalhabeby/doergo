@@ -51,7 +51,7 @@ import {
   getStatusAction,
   formatElapsedTime,
 } from '../../../src/components/task-detail';
-import { getFlowSteps, hasCapability, getStatusCapabilities, type TaskCapability } from '@hbcfield/shared/client';
+import { getFlowSteps, hasCapability, getStatusCapabilities, tierAllows, type TaskCapability } from '@hbcfield/shared/client';
 
 /**
  * The task detail UI. Rendered two ways:
@@ -1410,8 +1410,8 @@ export function TaskDetailPane({
           </View>
         ) : null}
 
-        {/* Custom Fields — type-scoped; self-hides when the task type has none */}
-        <CustomFieldsCard taskId={task.id} />
+        {/* Custom Fields — Professional+ only (tier-gated), type-scoped; self-hides when the task type has none */}
+        {tierAllows(user?.planTier, 'custom_fields') ? <CustomFieldsCard taskId={task.id} /> : null}
 
         {/* Section 5: Location Card */}
         {task.locationLat && task.locationLng ? (

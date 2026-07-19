@@ -109,6 +109,28 @@ export class UsersController {
     return result;
   }
 
+  @Get('me/notification-prefs')
+  @ApiOperation({ summary: 'Get your notification opt-out preferences' })
+  async getNotificationPrefs(@CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'get_notification_prefs' }, { userId: user.id }),
+    );
+  }
+
+  @Patch('me/notification-prefs')
+  @ApiOperation({ summary: 'Update your notification opt-out preferences (category → boolean)' })
+  async updateNotificationPrefs(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: { prefs?: Record<string, boolean> },
+  ) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'update_notification_prefs' }, {
+        userId: user.id,
+        prefs: dto?.prefs || {},
+      }),
+    );
+  }
+
   @Patch('me/email')
   @ApiOperation({ summary: 'Change your own email (requires current password)' })
   async updateMyEmail(@CurrentUser() user: CurrentUserData, @Body() dto: UpdateMyEmailDto) {

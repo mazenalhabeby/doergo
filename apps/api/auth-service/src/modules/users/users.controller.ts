@@ -110,6 +110,30 @@ export class UsersController {
     );
   }
 
+  @MessagePattern({ cmd: 'get_member_watchers' })
+  async getMemberWatchers(@Payload() data: { memberId: string; organizationId: string }) {
+    return this.usersService.getWatchers(data.memberId, data.organizationId);
+  }
+
+  @MessagePattern({ cmd: 'set_member_watchers' })
+  async setMemberWatchers(
+    @Payload() data: { memberId: string; organizationId: string; watcherIds: string[] },
+  ) {
+    return this.usersService.setWatchers(data.memberId, data.organizationId, data.watcherIds || []);
+  }
+
+  @MessagePattern({ cmd: 'get_notification_prefs' })
+  async getNotificationPrefs(@Payload() data: { userId: string }) {
+    return this.usersService.getNotificationPrefs(data.userId);
+  }
+
+  @MessagePattern({ cmd: 'update_notification_prefs' })
+  async updateNotificationPrefs(
+    @Payload() data: { userId: string; prefs: Record<string, boolean> },
+  ) {
+    return this.usersService.updateNotificationPrefs(data.userId, data.prefs || {});
+  }
+
   @MessagePattern({ cmd: 'update_member_profile' })
   async updateMemberProfile(
     @Payload()

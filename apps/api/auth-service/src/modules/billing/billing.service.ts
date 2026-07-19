@@ -76,6 +76,51 @@ const fail = (statusCode: number, message: string) => ({ success: false, statusC
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
 
+  /**
+   * PLATFORM-OPERATOR action (gated by a secret at the gateway — NOT a customer
+   * action). Force an org onto a tier — mainly ENTERPRISE, whose price is a
+   * custom Stripe quote outside self-serve checkout. Sets planTier + its modules
+   * + ACTIVE and clears any trial lock. The subscription webhook preserves this
+   * tier because a custom price doesn't resolve to a known tier (see line ~425).
+   */
+  /** PLATFORM-OPERATOR: list every org with its billing state (one indexed query). */
+  async adminListOrgs() {
+    const orgs = await this.prisma.organization.findMany({
+      select: {
+        id: true,
+        name: true,
+        planTier: true,
+        subStatus: true,
+        currentPeriodEnd: true,
+        trialEndsAt: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+    return { success: true, data: orgs };
+  }
+
+  async adminSetOrgTier(data: { organizationId: string; tier: PlanTier }) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true },
+    });
+    if (!org) {
+      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Organization not found' };
+    }
+    const updated = await this.prisma.organization.update({
+      where: { id: data.organizationId },
+      data: {
+        planTier: TIER_TO_PRISMA[data.tier],
+        subStatus: 'ACTIVE',
+        enabledModules: modulesForTier(data.tier),
+        trialEndsAt: null,
+      },
+      select: { id: true, name: true, planTier: true, subStatus: true },
+    });
+    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) set to ${updated.planTier} by operator`);
+    return { success: true, data: updated };
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly stripe: StripeService,
@@ -116,19 +161,27 @@ export class BillingService {
   /** Start the 14-day trial for a fresh org (top self-serve tier, no card). */
   async startTrial(organizationId: string) {
     const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 86_400_000);
-    const seats = await this.countOrgSeats(organizationId);
-    await this.prisma.$transaction([
-      this.prisma.organization.update({
-        where: { id: organizationId },
-        data: {
-          planTier: 'PROFESSIONAL',
-          subStatus: 'TRIALING',
-          billingInterval: 'MONTHLY',
-          trialEndsAt,
-          enabledModules: modulesForTier('professional'),
-        },
-      }),
-      this.prisma.subscription.upsert({
+    // 1) Set the TIER on the org first and independently. This is the single
+    //    value PlanGuard reads, so it must land durably — a fresh org can never
+    //    be left on a null tier (which would 402 every premium feature). Kept
+    //    OUT of the transaction below so a subscription-row hiccup can't roll it
+    //    back into a hard lockout.
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        planTier: 'PROFESSIONAL',
+        subStatus: 'TRIALING',
+        billingInterval: 'MONTHLY',
+        trialEndsAt,
+        enabledModules: modulesForTier('professional'),
+      },
+    });
+    // 2) Seat-accurate subscription row — best-effort. If seat counting or the
+    //    upsert fails the org still has a working trial tier; the row is
+    //    reconciled on the next seat change / checkout anyway.
+    try {
+      const seats = await this.countOrgSeats(organizationId);
+      await this.prisma.subscription.upsert({
         where: { organizationId },
         create: {
           organizationId,
@@ -140,8 +193,12 @@ export class BillingService {
           trialEndsAt,
         },
         update: {},
-      }),
-    ]);
+      });
+    } catch (e) {
+      this.logger.warn(
+        `startTrial: tier set but subscription row upsert failed for org ${organizationId}: ${(e as Error).message}`,
+      );
+    }
     return ok();
   }
 

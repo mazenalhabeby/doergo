@@ -203,7 +203,6 @@ export function EditMemberDialog({
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
   const [role, setRole] = useState("")
-  const [allowRemote, setAllowRemote] = useState(false)
   // "Show in Management" — surfaces this member (with their sub-role/title) in the
   // Management directory teammates use to reach leadership. Decoupled from the
   // permission role: an EMPLOYEE can be shown without being made an admin/manager.
@@ -220,7 +219,6 @@ export function EditMemberDialog({
     setScheduleType(member.scheduleType || "NONE")
     setMonthlyHourBudget(member.monthlyHourBudget ?? "")
     setRole(member.role)
-    setAllowRemote(member.allowRemote ?? false)
     setContactable(member.contactable ?? false)
     setScheduleRows(createDefaultSchedule())
     setTempPassword(null)
@@ -346,7 +344,6 @@ export function EditMemberDialog({
         monthlyHourBudget:
           scheduleType === "FLEXIBLE" && monthlyHourBudget !== "" ? Number(monthlyHourBudget) : undefined,
         role,
-        allowRemote,
         contactable,
       },
     })
@@ -435,16 +432,7 @@ export function EditMemberDialog({
             onMonthlyHourBudgetChange={setMonthlyHourBudget}
           />
 
-          {/* Remote clock-in permission (attendance) */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <Label className="text-xs font-medium text-foreground">{t("members.memberEditor.allowRemote", "Allow remote clock-in")}</Label>
-              <p className="text-[11px] leading-snug text-muted-foreground">
-                {t("members.memberEditor.allowRemoteHint", "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured.")}
-              </p>
-            </div>
-            <Switch checked={allowRemote} onCheckedChange={setAllowRemote} />
-          </div>
+          {/* Remote clock-in moved to the member's Access tab (single config home). */}
 
           <EditSection label={t("members.memberEditor.sectionRoleAccess")} />
 

@@ -62,6 +62,9 @@ export interface User {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  // Billing tier the org is on — gates premium features (custom fields, etc.).
+  // Server-authoritative; sent in the login/validateToken payload.
+  planTier?: 'starter' | 'professional' | 'business' | 'enterprise' | null;
   // Technician-specific fields
   position?: string | null;
   technicianType?: string | null;

@@ -7,6 +7,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   BCRYPT_COST_FACTOR,
   DEFAULT_PERMISSIONS,
+  getDefaultModules,
   Role,
   INVITATION_CODE_LENGTH,
   INVITATION_CODE_CHARSET,
@@ -340,6 +341,12 @@ export class InvitationService {
                 monthlyHourBudget: invitation.monthlyHourBudget ?? null,
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
+                // New members start LEAST-PRIVILEGE: their own assigned spaces
+                // only (admins widen to all via the Access tab). Standard tabs.
+                enabledModules: {
+                  modules: getDefaultModules(invitation.position),
+                  spaceScope: 'own',
+                },
               }
             : {}),
         },

@@ -251,9 +251,10 @@ export class CustomFieldsService {
       throw new BadRequestException('One or more custom field definitions not found in this organization');
     }
 
-    // Validate values by type
+    // Validate values by type (O(1) definition lookup via Map)
+    const defById = new Map(definitions.map((d) => [d.id, d]));
     for (const val of data.values) {
-      const def = definitions.find((d) => d.id === val.definitionId);
+      const def = defById.get(val.definitionId);
       if (!def) continue;
 
       this.validateFieldValue(def.type, val.value, def.options, def.name);

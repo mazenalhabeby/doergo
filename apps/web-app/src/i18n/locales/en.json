@@ -7,6 +7,7 @@
       "signIn": "Sign in",
       "industries": "Industries",
       "pricing": "Pricing",
+      "compare": "Compare",
       "toggleTheme": "Toggle theme"
     },
     "hero": {
@@ -162,7 +163,7 @@
       ]
     },
     "cta": {
-      "label": "(08) — Get started",
+      "label": "(09) — Get started",
       "lines": [
         "Put your field",
         "on the record."
@@ -282,6 +283,90 @@
         }
       ]
     },
+    "compare": {
+      "label": "(08) — Compare",
+      "heading": "Every feature, by plan.",
+      "lead": "Exactly what each plan unlocks — tiers are cumulative, so every plan includes everything below it.",
+      "groups": {
+        "task": "Task sections",
+        "field": "Field service",
+        "agile": "Project / Agile",
+        "premium": "Premium"
+      },
+      "popular": "Popular",
+      "custom": "Custom",
+      "perSeat": "/seat",
+      "features": {
+        "subtasks": {
+          "label": "Subtasks",
+          "desc": "Split a big job into smaller steps you can assign and track on their own, so nothing slips through the cracks."
+        },
+        "checklists": {
+          "label": "Checklists",
+          "desc": "Add a tick-off list of steps to any task so your team follows the same process every time and never misses one."
+        },
+        "attachments": {
+          "label": "Attachments",
+          "desc": "Attach photos, PDFs, and documents straight to a task — everything about the job lives in one place."
+        },
+        "dependencies": {
+          "label": "Dependencies",
+          "desc": "Link tasks so one can’t start until another finishes, keeping multi-step jobs in the right order."
+        },
+        "custom_fields": {
+          "label": "Custom Fields",
+          "desc": "Capture the extra details your business needs — reference numbers, equipment models, anything — with your own fields on every task."
+        },
+        "tracking": {
+          "label": "Route Tracking",
+          "desc": "See exactly where your field team is on a live map and replay the route they drove to each job."
+        },
+        "service_reports": {
+          "label": "Service Reports",
+          "desc": "Turn a finished job into a professional report with photos, parts used, and a customer signature — ready to share or bill."
+        },
+        "time_tracking": {
+          "label": "Time Tracking",
+          "desc": "Record how long jobs actually take versus the estimate, so you can quote and schedule more accurately."
+        },
+        "sprints": {
+          "label": "Sprints",
+          "desc": "Plan work in short, focused cycles and see at a glance how much your team completes each round."
+        },
+        "story_points": {
+          "label": "Story Points",
+          "desc": "Score each task by effort so you can balance workloads and predict how much fits in a week."
+        },
+        "epics": {
+          "label": "Epics",
+          "desc": "Bundle many related tasks under one big initiative to track large projects from start to finish."
+        },
+        "phases": {
+          "label": "Phases",
+          "desc": "Break a project into stages — like planning, execution, and handover — and watch progress move through each."
+        },
+        "recurring": {
+          "label": "Recurring tasks",
+          "desc": "Set a job to repeat daily, weekly, or monthly and the system creates it automatically — no manual re-entry."
+        },
+        "overtime": {
+          "label": "Overtime",
+          "desc": "Let staff request extra hours and managers approve them, with every minute logged for payroll."
+        },
+        "invoicing": {
+          "label": "Invoicing",
+          "desc": "Turn completed work into an invoice in a couple of clicks and keep track of what’s been paid."
+        },
+        "workflows": {
+          "label": "Custom workflows",
+          "desc": "Build your own task stages — the exact steps your business uses — instead of a fixed status list."
+        },
+        "audit_log": {
+          "label": "Audit log",
+          "desc": "Keep a complete record of every action, so you always know who changed what and when."
+        }
+      }
+    },
     "pricing": {
       "label": "(07) — Pricing",
       "heading": "Priced to replace three tools.",
@@ -338,6 +423,19 @@
             "Multi-org delegation",
             "Audit log & workflows",
             "Priority support"
+          ]
+        },
+        {
+          "name": "Enterprise",
+          "price": "Custom",
+          "popular": false,
+          "custom": true,
+          "cta": "Contact sales",
+          "desc": "From €199/mo. Custom-quoted for large fleets & multi-site groups.",
+          "features": [
+            "Everything in Business",
+            "Custom quote & contract terms",
+            "Negotiated seat pricing"
           ]
         }
       ]
@@ -1661,6 +1759,13 @@
     "title": "Organization Members",
     "subtitle": "Manage your team members, roles, and permissions",
     "searchPlaceholder": "Search by name or email...",
+    "watchers": {
+      "title": "Notifications about {{name}}",
+      "hint": "Choose who is alerted about this member (approvals, geofence, …). If no one is selected, it defaults to org admins and this member's space managers.",
+      "usingDefault": "Using default routing",
+      "noManagers": "No admins or managers to assign yet.",
+      "saved": "Notification recipients updated"
+    },
     "inviteMember": "Invite Member",
     "invite": {
       "title": "Invite Member",
@@ -2786,6 +2891,8 @@
     "permissions": "Permissions",
     "featureTabsLabel": "Feature tabs",
     "spaceVisibility": "Space visibility",
+    "attendance": "Attendance",
+    "allowRemoteNeedsClock": "Enable the Clock module above to use remote clock-in.",
     "collaboration": "Collaboration",
     "featureTabs": {
       "tasks": "Tasks",
