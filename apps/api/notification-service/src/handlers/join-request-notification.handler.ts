@@ -2,6 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
+import { NotificationStore } from '../common/notification-store.service';
 
 @Controller()
 export class JoinRequestNotificationHandler {
@@ -10,6 +11,7 @@ export class JoinRequestNotificationHandler {
   constructor(
     private readonly pushService: PushService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly store: NotificationStore,
   ) {}
 
   @EventPattern('join_request_submitted')
@@ -50,6 +52,16 @@ export class JoinRequestNotificationHandler {
     } else {
       this.websocketGateway.emitToOrganization(data.organizationId, 'join_request_submitted', payload);
     }
+
+    // Persist to the in-app inbox for the resolved approvers.
+    await this.store.record({
+      recipientIds: recipientIds,
+      organizationId: data.organizationId,
+      eventType: 'join_request_submitted',
+      title: 'New join request',
+      body: `${data.userName} asked to join ${data.organizationName}`,
+      link: '/join-requests',
+    });
   }
 
   @EventPattern('join_request_approved')

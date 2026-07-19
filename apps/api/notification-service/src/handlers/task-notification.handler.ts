@@ -3,6 +3,7 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { EmailService } from '../modules/email/email.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
+import { NotificationStore } from '../common/notification-store.service';
 
 @Controller()
 export class TaskNotificationHandler {
@@ -12,6 +13,7 @@ export class TaskNotificationHandler {
     private readonly emailService: EmailService,
     private readonly pushService: PushService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly store: NotificationStore,
   ) {}
 
   /**
@@ -74,6 +76,17 @@ export class TaskNotificationHandler {
       { title: 'Task assigned', body: `"${data.task.title}" was assigned`, data: { taskId: data.task.id } },
       data.workerId,
     );
+
+    // Persist to the in-app inbox for the assignee + their watchers.
+    await this.store.record({
+      recipientIds: [data.workerId, ...(data.watcherIds || [])],
+      organizationId: data.task.organizationId,
+      eventType: 'task.assigned',
+      title: 'Task assigned',
+      body: `"${data.task.title}" was assigned`,
+      link: `/tasks/${data.task.id}`,
+      data: { taskId: data.task.id },
+    });
   }
 
   @EventPattern('task_status_changed')
@@ -110,6 +123,17 @@ export class TaskNotificationHandler {
       { title: 'Task status changed', body: `"${data.task.title}" → ${data.newStatus}`, data: { taskId: data.task.id } },
       data.task.assignedToId,
     );
+
+    // Persist to the in-app inbox for the creator + watchers.
+    await this.store.record({
+      recipientIds: [data.task.createdById, ...(data.watcherIds || [])],
+      organizationId: data.task.organizationId,
+      eventType: 'task.statusChanged',
+      title: 'Task status changed',
+      body: `"${data.task.title}" → ${data.newStatus}`,
+      link: `/tasks/${data.task.id}`,
+      data: { taskId: data.task.id },
+    });
   }
 
   @EventPattern('task_declined')

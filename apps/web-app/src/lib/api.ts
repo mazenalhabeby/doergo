@@ -771,7 +771,31 @@ export interface Worker {
 }
 
 // Users API methods
+export interface InboxNotification {
+  id: string;
+  eventType: string;
+  payload: { title?: string; body?: string; link?: string | null; [k: string]: unknown } | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
 export const usersApi = {
+  // In-app notification inbox — persisted notifications + unread count.
+  getNotifications: async (limit = 30) => {
+    const response = await api.get<{ data: { items: InboxNotification[]; unread: number } }>(
+      `/users/me/notifications?limit=${limit}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? { items: [], unread: 0 };
+  },
+
+  // Mark notifications read (all unread, or specific ids).
+  markNotificationsRead: async (ids?: string[]) => {
+    const response = await api.post<{ success: boolean }>(`/users/me/notifications/read`, ids ? { ids } : {});
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
   // Update your OWN profile (any authenticated user — no admin permission).
   updateMe: async (data: { firstName?: string; lastName?: string; presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null }) => {
     const response = await api.patch<{ success: boolean; data: { id: string; firstName: string; lastName: string } }>(

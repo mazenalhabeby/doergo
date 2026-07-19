@@ -122,6 +122,16 @@ export class UsersController {
     return this.usersService.setWatchers(data.memberId, data.organizationId, data.watcherIds || []);
   }
 
+  @MessagePattern({ cmd: 'list_notifications' })
+  async listNotifications(@Payload() data: { userId: string; limit?: number }) {
+    return this.usersService.listNotifications(data.userId, data.limit);
+  }
+
+  @MessagePattern({ cmd: 'mark_notifications_read' })
+  async markNotificationsRead(@Payload() data: { userId: string; ids?: string[] }) {
+    return this.usersService.markNotificationsRead(data.userId, data.ids);
+  }
+
   @MessagePattern({ cmd: 'get_notification_prefs' })
   async getNotificationPrefs(@Payload() data: { userId: string }) {
     return this.usersService.getNotificationPrefs(data.userId);

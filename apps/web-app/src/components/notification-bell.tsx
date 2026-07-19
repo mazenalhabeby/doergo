@@ -9,7 +9,9 @@ import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { formatDistanceToNow } from "date-fns"
 import type { TFunction } from "i18next"
+import { useQuery } from "@tanstack/react-query"
 
+import { usersApi, type InboxNotification } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
 import { useChat } from "@/components/chat/chat-drawer"
@@ -97,6 +99,32 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   invitation_created: { icon: Send, color: "text-indigo-600", bg: "bg-indigo-50" },
 }
 
+// Map a persisted delivery eventType → the bell's NotificationType (for icon/color).
+function eventTypeToNotifType(eventType: string): NotificationType {
+  const map: Record<string, NotificationType> = {
+    "task.assigned": "task_assigned",
+    "task.statusChanged": "task_status_changed",
+    "task.created": "task_created",
+    "attendance_pending_approval": "pending_approval",
+    "attendance_geofence_alert": "geofence_alert",
+    "join_request_submitted": "join_request",
+    "chat.message": "chat_message",
+  }
+  return map[eventType] || "task_status_changed"
+}
+
+function mapInboxItem(item: InboxNotification): Notification {
+  return {
+    id: item.id,
+    type: eventTypeToNotifType(item.eventType),
+    title: (item.payload?.title as string) || "Notification",
+    message: (item.payload?.body as string) || "",
+    link: (item.payload?.link as string) || undefined,
+    read: !!item.readAt,
+    createdAt: new Date(item.createdAt),
+  }
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -112,8 +140,23 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const idCounter = useRef(0)
+  const seededRef = useRef(false)
 
   const { isConnected, subscribe } = useSocketContext()
+
+  // ── Load the persisted inbox once, then keep live events on top ──────
+  const { data: inbox } = useQuery({
+    queryKey: ["inboxNotifications"],
+    queryFn: () => usersApi.getNotifications(50),
+    staleTime: 60_000,
+  })
+  useEffect(() => {
+    if (!inbox || seededRef.current) return
+    seededRef.current = true
+    const persisted = inbox.items.map(mapInboxItem)
+    // Live events that arrived before the fetch stay on top; persisted below.
+    setNotifications(prev => [...prev, ...persisted].slice(0, 50))
+  }, [inbox])
 
   // ── Add notification helper ────────────────────────────────────────
   const add = useCallback((type: NotificationType, title: string, message: string, link?: string) => {
@@ -215,7 +258,10 @@ export function NotificationBell() {
   // ── Actions ────────────────────────────────────────────────────────
   const unreadCount = notifications.filter(n => !n.read).length
 
-  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  const markAllRead = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    usersApi.markNotificationsRead().catch(() => {}) // persist read state
+  }, [])
   const clearAll = () => setNotifications([])
 
   const handleClick = (notif: Notification) => {
@@ -232,7 +278,7 @@ export function NotificationBell() {
 
   // ── Render ─────────────────────────────────────────────────────────
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o && unreadCount > 0) markAllRead() }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative rounded-lg">
           <Bell className="h-5 w-5 text-muted-foreground" />

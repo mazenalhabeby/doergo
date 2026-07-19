@@ -109,6 +109,34 @@ export class UsersController {
     return result;
   }
 
+  @Get('me/notifications')
+  @ApiOperation({ summary: 'Your in-app notification inbox (recent + unread count)' })
+  async listNotifications(
+    @CurrentUser() user: CurrentUserData,
+    @Query('limit') limit?: string,
+  ) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'list_notifications' }, {
+        userId: user.id,
+        limit: limit ? Number(limit) : undefined,
+      }),
+    );
+  }
+
+  @Post('me/notifications/read')
+  @ApiOperation({ summary: 'Mark notifications read (all, or the given ids)' })
+  async markNotificationsRead(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: { ids?: string[] },
+  ) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'mark_notifications_read' }, {
+        userId: user.id,
+        ids: dto?.ids,
+      }),
+    );
+  }
+
   @Get('me/notification-prefs')
   @ApiOperation({ summary: 'Get your notification opt-out preferences' })
   async getNotificationPrefs(@CurrentUser() user: CurrentUserData) {

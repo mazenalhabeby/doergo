@@ -1442,6 +1442,8 @@ model NotificationDelivery {
   deliveredAt   DateTime?
   failureReason String?
   retryCount    Int       @default(0)
+  // In-app inbox read state (null = unread). Powers the notification bell.
+  readAt        DateTime?
 
   // Organization scope
   organizationId String
@@ -1452,6 +1454,7 @@ model NotificationDelivery {
 
   @@index([organizationId, createdAt])
   @@index([recipientId, createdAt])
+  @@index([recipientId, readAt])
   @@index([channel, status])
   @@index([eventType])
   @@map("notification_deliveries")

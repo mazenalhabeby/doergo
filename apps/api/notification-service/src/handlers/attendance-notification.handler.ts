@@ -3,6 +3,7 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { EmailService } from '../modules/email/email.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
+import { NotificationStore } from '../common/notification-store.service';
 
 // Human-friendly labels for attendance approval flags (keep in sync with the web
 // attendance helpers).
@@ -24,6 +25,7 @@ export class AttendanceNotificationHandler {
     private readonly emailService: EmailService,
     private readonly pushService: PushService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly store: NotificationStore,
   ) {}
 
   // Availability status (Available/Busy/Away) changed — broadcast so teammates'
@@ -132,6 +134,16 @@ export class AttendanceNotificationHandler {
       action: data.action,
       timestamp: new Date().toISOString(),
     });
+
+    // Persist to the in-app inbox for the resolved dispatchers/managers.
+    await this.store.record({
+      recipientIds: data.dispatcherIds,
+      organizationId: data.organizationId,
+      eventType: 'attendance_geofence_alert',
+      title: 'Geofence alert',
+      body: `${data.userName} ${data.action === 'clock_in' ? 'clocked in' : 'clocked out'} ${data.distance}m from ${data.locationName}`,
+      link: '/attendance',
+    });
   }
 
   @EventPattern('attendance_pending_approval')
@@ -182,6 +194,16 @@ export class AttendanceNotificationHandler {
     } else {
       this.websocketGateway.emitToRole('ADMIN', 'attendance_pending_approval', payload);
     }
+
+    // Persist to the in-app inbox for the approvers.
+    await this.store.record({
+      recipientIds: approverIds,
+      organizationId: data.organizationId,
+      eventType: 'attendance_pending_approval',
+      title: 'Approval needed',
+      body: `${data.userName}'s time entry needs review (${flagSummary})`,
+      link: '/attendance?tab=approvals',
+    });
   }
 
   @EventPattern('attendance_clock_in')
