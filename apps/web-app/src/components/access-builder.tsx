@@ -55,7 +55,20 @@ const TASK_SCOPES = [
  * the permission fields together, so the navigation UI and the server-side
  * permission guard can never disagree.
  */
-export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?: () => void }) {
+export function AccessBuilder({
+  member,
+  onSaved,
+  applyToIds,
+  bulkCount,
+}: {
+  member: OrgMember
+  onSaved?: () => void
+  /** Bulk mode: apply the SAME access values to every id here (member is the template/seed). */
+  applyToIds?: string[]
+  /** How many members the bulk apply will affect (for labels). */
+  bulkCount?: number
+}) {
+  const isBulk = Array.isArray(applyToIds) && applyToIds.length > 0
   const { t } = useTranslation()
   const initial = useMemo(() => ({
     modules: getModules(member as any).filter((m) =>
@@ -72,6 +85,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     contactable: !!member.contactable,
     contactScope: member.contactScope || "NONE",
     contactAllowedIds: member.contactAllowedIds || [],
+    showInManagement: !!member.showInManagement,
     allowRemote: !!member.allowRemote,
   }), [member])
 
@@ -89,10 +103,13 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
   const [contactable, setContactable] = useState<boolean>(initial.contactable)
   const [contactScope, setContactScope] = useState<string>(initial.contactScope)
   const [contactAllowedIds, setContactAllowedIds] = useState<string[]>(initial.contactAllowedIds)
+  const [showInManagement, setShowInManagement] = useState<boolean>(initial.showInManagement)
   const [allowRemote, setAllowRemote] = useState<boolean>(initial.allowRemote)
   const [saving, setSaving] = useState(false)
 
-  // Contacts directory this member could be allowed to reach: admins + contactable members.
+  // Contacts this member could be allowed to reach: ONLY admins + members flagged
+  // "Show in Management". NOT every contactable member (chat is open-by-default →
+  // contactable=true for all) and NOT plain managers unless they're flagged.
   const { data: membersData } = useQuery({
     queryKey: ["orgMembers", "positions"],
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
@@ -100,7 +117,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
   })
   const candidateContacts = useMemo(
     () => (membersData?.data || []).filter(
-      (m) => m.id !== member.id && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || m.contactable),
+      (m) => m.id !== member.id && m.isActive && (m.role === "ADMIN" || m.showInManagement),
     ),
     [membersData, member.id],
   )
@@ -120,13 +137,14 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
     canManageUsers !== initial.canManageUsers ||
     contactable !== initial.contactable ||
     contactScope !== initial.contactScope ||
+    showInManagement !== initial.showInManagement ||
     allowRemote !== initial.allowRemote ||
     (contactScope === "SELECTED" && JSON.stringify(contactAllowedIds.slice().sort()) !== JSON.stringify(initial.contactAllowedIds.slice().sort()))
 
   const save = async () => {
     try {
       setSaving(true)
-      await organizationsApi.updateMember(member.id, {
+      const payload = {
         enabledModules: { modules, platforms, spaceScope, canContact },
         canCreateTasks,
         taskCreationScope: canCreateTasks ? taskScope : "NONE",
@@ -136,9 +154,17 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
         contactable,
         contactScope,
         contactAllowedIds: contactScope === "SELECTED" ? contactAllowedIds : [],
+        showInManagement,
         allowRemote,
-      })
-      notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.accessUpdatedDesc", { name: member.firstName }))
+      }
+      // Bulk: apply the same access to every selected member. Single: just this one.
+      const targetIds = isBulk ? (applyToIds as string[]) : [member.id]
+      await Promise.all(targetIds.map((id) => organizationsApi.updateMember(id, payload)))
+      if (isBulk) {
+        notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.bulkAppliedDesc", "Access applied to {{count}} members", { count: targetIds.length }))
+      } else {
+        notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.accessUpdatedDesc", { name: member.firstName }))
+      }
       onSaved?.()
     } catch (e) {
       notify.error(e instanceof Error ? e.message : t("accessBuilder.updateFailed"))
@@ -152,11 +178,15 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div>
           <h3 className="text-sm font-semibold text-foreground">{t("accessBuilder.title")}</h3>
-          <p className="text-xs text-muted-foreground">{t("accessBuilder.subtitle", { name: member.firstName })}</p>
+          <p className="text-xs text-muted-foreground">
+            {isBulk
+              ? t("accessBuilder.bulkSubtitle", "Applies these access values to {{count}} selected members.", { count: bulkCount ?? applyToIds!.length })
+              : t("accessBuilder.subtitle", { name: member.firstName })}
+          </p>
         </div>
-        <Button size="sm" className="gap-1.5" disabled={!dirty || saving} onClick={save}>
+        <Button size="sm" className="gap-1.5" disabled={saving || (!isBulk && !dirty)} onClick={save}>
           <Save className="h-3.5 w-3.5" />
-          {saving ? t("common.saving") : t("common.save")}
+          {saving ? t("common.saving") : (isBulk ? t("accessBuilder.applyToAll", "Apply to all") : t("common.save"))}
         </Button>
       </div>
 
@@ -290,7 +320,9 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
           </div>
         </Field>
 
-        {/* Collaboration */}
+        {/* Messaging — ONE symmetric switch: being able to reach teammates and
+            being reachable by them are the same capability. Drives both
+            canContact (outbound) and contactable (inbound) together. */}
         <Field label={t("accessBuilder.collaboration")}>
           <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3">
             <div className="flex items-center gap-2">
@@ -300,21 +332,17 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                 <p className="text-xs text-muted-foreground">{t("accessBuilder.contact.desc")}</p>
               </div>
             </div>
-            <Switch checked={canContact} onCheckedChange={setCanContact} />
+            <Switch
+              checked={canContact && contactable}
+              onCheckedChange={(v) => { setCanContact(v); setContactable(v) }}
+            />
           </div>
         </Field>
 
-        {/* Contact access — who this member may reach in the contacts directory */}
+        {/* Contact management — a SEPARATE control: scopes WHO this member may
+            reach (No one / All / Specific). Independent of the on/off above. */}
         <Field label={t("accessBuilder.contactAccess", "Contact access")}>
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{t("accessBuilder.contactable.title", "Contactable")}</p>
-                <p className="text-xs text-muted-foreground">{t("accessBuilder.contactable.desc", "Appears in the contacts directory so teammates can reach them. Admins are always contactable.")}</p>
-              </div>
-              <Switch checked={contactable} onCheckedChange={setContactable} />
-            </div>
-
             <div className="space-y-2.5 rounded-xl border border-border px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -355,6 +383,29 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
                 </div>
               )}
             </div>
+          </div>
+        </Field>
+
+        {/* Show in Management — SEPARATE from chat: lists this member in the org
+            Management directory (reach leadership). Own field `showInManagement`,
+            independent of chat contactable. A single admin is always shown (toggle
+            locked ON) — but NOT in bulk mode, where the template may be an admin
+            yet the switch must stay editable for the whole selection. */}
+        <Field label={t("accessBuilder.managementLabel", "Management directory")}>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">{t("members.memberEditor.showInManagement", "Show in Management")}</p>
+              <p className="text-xs text-muted-foreground">
+                {!isBulk && member.role === "ADMIN"
+                  ? t("members.memberEditor.showInManagementAdmin", "Admins always appear in the Management directory.")
+                  : t("members.memberEditor.showInManagementHint", "Lists this person (with their sub-role) so teammates can reach them from anywhere.")}
+              </p>
+            </div>
+            <Switch
+              checked={!isBulk && member.role === "ADMIN" ? true : showInManagement}
+              disabled={!isBulk && member.role === "ADMIN"}
+              onCheckedChange={setShowInManagement}
+            />
           </div>
         </Field>
       </div>

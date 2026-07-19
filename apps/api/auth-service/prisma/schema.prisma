@@ -463,9 +463,13 @@ model User {
   lastActiveAt      DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
   // Contact directory / access — open within the org by default; admins restrict
   // via the Access Builder (canContact:false, or contactScope SELECTED).
-  contactable       Boolean           @default(true) // Reachable in the org contacts directory
+  contactable       Boolean           @default(true) // CHAT: reachable in chat / messaging (inbound)
   contactScope      String            @default("ALL") // Who this member may contact: NONE | ALL | SELECTED
   contactAllowedIds String[]          @default([]) // When SELECTED: the specific contact user IDs this member may reach
+  // MANAGEMENT DIRECTORY (separate from chat): surfaces this member in the org
+  // "Management" contacts list teammates use to reach leadership. Admins always
+  // appear regardless. Decoupled from chat `contactable` and from the perm role.
+  showInManagement  Boolean           @default(false) // Listed in the Management directory
   // Per-recipient notification opt-outs by category, e.g. { "attendance": false }.
   // Missing/true = subscribed. Filters what THIS user receives (see NotificationWatch).
   notificationPrefs Json?

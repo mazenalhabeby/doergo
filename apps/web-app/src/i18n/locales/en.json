@@ -1879,7 +1879,10 @@
       "selected": "{{count}} selected",
       "role": "Role",
       "space": "Space",
-      "removeConfirm": "Remove {{count}} member(s) from the organization?"
+      "removeConfirm": "Remove {{count}} member(s) from the organization?",
+      "access": "Access",
+      "accessTitle": "Bulk access",
+      "accessDesc": "Apply access to the selected members"
     },
     "empty": {
       "title": "Build your team",
@@ -2957,8 +2960,8 @@
       }
     },
     "contact": {
-      "title": "Contact teammates",
-      "desc": "Message & call coworkers in shared spaces."
+      "title": "Messaging",
+      "desc": "Message & call teammates — and be reachable by them. Turn off to remove this member from chat entirely."
     },
     "contactAccess": "Contact access",
     "contactable": {
@@ -2975,7 +2978,11 @@
       "selected": "Specific contacts…"
     },
     "noContacts": "No contacts available",
-    "contactLabel": "Contact"
+    "contactLabel": "Contact",
+    "managementLabel": "Management directory",
+    "applyToAll": "Apply to all",
+    "bulkSubtitle": "Applies these access values to {{count}} selected members.",
+    "bulkAppliedDesc": "Access applied to {{count}} members"
   },
   "customFields": {
     "fieldTypes": {

@@ -2893,6 +2893,7 @@ export interface OrgMember {
   contactable?: boolean;
   contactScope?: string;
   contactAllowedIds?: string[];
+  showInManagement?: boolean;
   allowRemote?: boolean;
   lastActiveAt?: string | null;
   position: string | null;
@@ -2924,6 +2925,7 @@ export interface UpdateMemberInput {
   contactable?: boolean;
   contactScope?: string;
   contactAllowedIds?: string[];
+  showInManagement?: boolean;
   allowRemote?: boolean;
 }
 

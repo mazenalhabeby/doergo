@@ -1879,7 +1879,10 @@
       "selected": "{{count}} ausgewählt",
       "role": "Rolle",
       "space": "Bereich",
-      "removeConfirm": "{{count}} Mitglied(er) aus der Organisation entfernen?"
+      "removeConfirm": "{{count}} Mitglied(er) aus der Organisation entfernen?",
+      "access": "Zugriff",
+      "accessTitle": "Massen-Zugriff",
+      "accessDesc": "Zugriff auf die ausgewählten Mitglieder anwenden"
     },
     "empty": {
       "title": "Bauen Sie Ihr Team auf",
@@ -2957,8 +2960,8 @@
       }
     },
     "contact": {
-      "title": "Teammitglieder kontaktieren",
-      "desc": "Kollegen in gemeinsamen Bereichen anschreiben & anrufen."
+      "title": "Nachrichten",
+      "desc": "Teammitglieder anschreiben & anrufen – und für sie erreichbar sein. Ausschalten, um dieses Mitglied ganz aus dem Chat zu entfernen."
     },
     "contactAccess": "Kontaktzugriff",
     "contactable": {
@@ -2975,7 +2978,11 @@
       "selected": "Bestimmte Kontakte…"
     },
     "noContacts": "Keine Kontakte verfügbar",
-    "contactLabel": "Kontakt"
+    "contactLabel": "Kontakt",
+    "managementLabel": "Management-Verzeichnis",
+    "applyToAll": "Auf alle anwenden",
+    "bulkSubtitle": "Wendet diese Zugriffswerte auf {{count}} ausgewählte Mitglieder an.",
+    "bulkAppliedDesc": "Zugriff auf {{count}} Mitglieder angewendet"
   },
   "customFields": {
     "fieldTypes": {

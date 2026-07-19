@@ -680,13 +680,13 @@ export class UsersService {
       return { success: true, data: [] };
     }
 
-    // Directory = admins (always) + members flagged contactable.
+    // Directory = admins (always) + members flagged "Show in Management".
     const candidates = await this.prisma.user.findMany({
       where: {
         organizationId,
         isActive: true,
         id: { not: userId },
-        OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { contactable: true }],
+        OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { showInManagement: true }],
       },
       select: {
         id: true,
@@ -758,6 +758,7 @@ export class UsersService {
         contactable: true,
         contactScope: true,
         contactAllowedIds: true,
+        showInManagement: true,
         lastActiveAt: true,
       },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
@@ -982,6 +983,7 @@ export class UsersService {
     if ((dto as any).contactable !== undefined) data.contactable = (dto as any).contactable;
     if ((dto as any).contactScope !== undefined) data.contactScope = (dto as any).contactScope;
     if ((dto as any).contactAllowedIds !== undefined) data.contactAllowedIds = (dto as any).contactAllowedIds;
+    if ((dto as any).showInManagement !== undefined) data.showInManagement = (dto as any).showInManagement;
     if ((dto as any).allowRemote !== undefined) data.allowRemote = (dto as any).allowRemote;
 
     // Role/permission fields — only if role is provided
@@ -1500,14 +1502,15 @@ export class UsersService {
 
     const unique = [...new Set(watcherIds)].filter((id) => id && id !== subjectUserId);
 
-    // Only admins / managers in this org may be watchers.
+    // Only admins + "Show in Management" members may be watchers
+    // (mirrors the eligible-watchers list in the web UI).
     const valid = unique.length
       ? await this.prisma.user.findMany({
           where: {
             id: { in: unique },
             organizationId,
             isActive: true,
-            OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }],
+            OR: [{ role: Role.ADMIN }, { showInManagement: true }],
           },
           select: { id: true },
         })

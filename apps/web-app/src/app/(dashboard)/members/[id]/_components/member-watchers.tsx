@@ -19,7 +19,8 @@ export function MemberWatchers({ memberId, memberName }: { memberId: string; mem
   const { t } = useTranslation()
   const qc = useQueryClient()
 
-  // Eligible watchers = admins + managers (view-all-tasks), excluding the member.
+  // Eligible watchers = ONLY admins + members flagged "Show in Management"
+  // (leadership directory), excluding the member itself.
   const { data: membersResp } = useQuery({
     queryKey: ["orgMembers", "managers"],
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
@@ -28,7 +29,7 @@ export function MemberWatchers({ memberId, memberName }: { memberId: string; mem
   const managers = useMemo(
     () =>
       ((membersResp?.data || []) as OrgMember[]).filter(
-        (m) => m.id !== memberId && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks),
+        (m) => m.id !== memberId && m.isActive && (m.role === "ADMIN" || m.showInManagement),
       ),
     [membersResp, memberId],
   )

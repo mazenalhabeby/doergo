@@ -20,6 +20,7 @@ import {
   ChevronUp,
   Plus,
   Trash2,
+  ShieldCheck,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { useTranslation } from "react-i18next"
@@ -28,6 +29,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
 import { EditMemberDialog } from "./_components/edit-member-dialog"
+import { AccessBuilder } from "@/components/access-builder"
 import { cn } from "@/lib/utils"
 import {
   organizationsApi,
@@ -104,6 +106,7 @@ interface MemberBulkActionBarProps {
   onClear: () => void
   onBulkRoleChange: (memberIds: string[], role: string) => void
   onBulkSpaceAssign: (memberIds: string[], locationId: string) => void
+  onBulkAccess: (memberIds: string[]) => void
   onBulkRemove: (memberIds: string[]) => void
 }
 
@@ -113,6 +116,7 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
   onClear,
   onBulkRoleChange,
   onBulkSpaceAssign,
+  onBulkAccess,
   onBulkRemove,
 }: MemberBulkActionBarProps) {
   const { t } = useTranslation()
@@ -171,6 +175,17 @@ const MemberBulkActionBar = memo(function MemberBulkActionBar({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+
+      {/* Access — full Access Builder applied to all selected members */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2.5 text-xs font-medium rounded-lg"
+        onClick={() => onBulkAccess(ids)}
+      >
+        <ShieldCheck className="size-3.5 mr-1 text-muted-foreground" />
+        {t("members.bulk.access", "Access")}
+      </Button>
 
       <div className="w-px h-5 bg-border/60 mx-1" />
 
@@ -424,6 +439,7 @@ export default function MembersPage() {
   // Dialogs
   const [editTarget, setEditTarget] = useState<OrgMember | null>(null)
   const [removeTarget, setRemoveTarget] = useState<OrgMember | null>(null)
+  const [bulkAccessIds, setBulkAccessIds] = useState<string[] | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
 
   // Pending invitations
@@ -579,6 +595,10 @@ export default function MembersPage() {
       notify.error(error.message || t("members.toast.removeMembersFailed"))
     }
   }, [queryClient])
+
+  const handleBulkAccess = useCallback((memberIds: string[]) => {
+    setBulkAccessIds(memberIds)
+  }, [])
 
   // ── Render ───────────────────────────────────────────────────────────
 
@@ -883,9 +903,36 @@ export default function MembersPage() {
           onClear={() => setSelectedIds(new Set())}
           onBulkRoleChange={handleBulkRoleChange}
           onBulkSpaceAssign={handleBulkSpaceAssign}
+          onBulkAccess={handleBulkAccess}
           onBulkRemove={handleBulkRemove}
         />
       )}
+
+      {/* ── Bulk Access Dialog — full Access Builder applied to all selected ── */}
+      <Dialog open={!!bulkAccessIds} onOpenChange={(open) => !open && setBulkAccessIds(null)}>
+        <DialogContent className="max-w-2xl p-0 gap-0 max-h-[88vh] overflow-y-auto">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{t("members.bulk.accessTitle", "Bulk access")}</DialogTitle>
+            <DialogDescription>{t("members.bulk.accessDesc", "Apply access to the selected members")}</DialogDescription>
+          </DialogHeader>
+          {bulkAccessIds && bulkAccessIds.length > 0 && (() => {
+            const template = members.find((m) => m.id === bulkAccessIds[0]) || members.find((m) => bulkAccessIds.includes(m.id))
+            if (!template) return null
+            return (
+              <AccessBuilder
+                member={template}
+                applyToIds={bulkAccessIds}
+                bulkCount={bulkAccessIds.length}
+                onSaved={() => {
+                  queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+                  setBulkAccessIds(null)
+                  setSelectedIds(new Set())
+                }}
+              />
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

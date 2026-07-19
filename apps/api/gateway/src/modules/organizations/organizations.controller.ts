@@ -170,6 +170,7 @@ export class OrganizationsController {
           contactable: dto.contactable,
           contactScope: dto.contactScope,
           contactAllowedIds: dto.contactAllowedIds,
+          showInManagement: dto.showInManagement,
           allowRemote: dto.allowRemote,
         },
       }),

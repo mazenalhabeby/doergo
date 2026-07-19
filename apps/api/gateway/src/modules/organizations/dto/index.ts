@@ -255,10 +255,15 @@ export class UpdateMemberDto {
   @IsOptional()
   enabledModules?: unknown;
 
-  @ApiPropertyOptional({ description: 'Appears in the org contacts directory' })
+  @ApiPropertyOptional({ description: 'Reachable in chat / messaging (inbound)' })
   @IsOptional()
   @IsBoolean()
   contactable?: boolean;
+
+  @ApiPropertyOptional({ description: 'Listed in the org Management directory (reach leadership)' })
+  @IsOptional()
+  @IsBoolean()
+  showInManagement?: boolean;
 
   @ApiPropertyOptional({ enum: ['NONE', 'ALL', 'SELECTED'], description: 'Who this member may contact' })
   @IsOptional()
