@@ -11,6 +11,8 @@ export {
   processOfflineQueue,
   fetchApi,
   fetchWithAuth,
+  getApiUrl,
+  resolveMediaUrl,
 } from './client';
 
 // All types (local + re-exported from @hbcfield/shared)

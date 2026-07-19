@@ -81,9 +81,13 @@ export function getAccessPlatforms(user: { enabledModules?: unknown }): AccessPl
   return asProfile(user.enabledModules)?.platforms ?? 'both';
 }
 
-/** Whether the user may contact colleagues (defaults to false). */
+/**
+ * Whether the user may contact colleagues. Open within the org by default:
+ * only an explicit `canContact: false` (set by an admin in the Access Builder)
+ * blocks messaging. Undefined / legacy profiles are treated as allowed.
+ */
 export function canContactColleagues(user: { enabledModules?: unknown }): boolean {
-  return asProfile(user.enabledModules)?.canContact === true;
+  return asProfile(user.enabledModules)?.canContact !== false;
 }
 
 /** Allowed web screens (defaults: Dashboard + Tasks when not specified). */

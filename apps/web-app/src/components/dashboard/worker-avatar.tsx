@@ -52,10 +52,10 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
       {/* Avatar circle */}
       <div
         className={cn(
-          "w-[5cqw] h-[5cqw] min-w-[36px] min-h-[36px]",
+          "w-11 h-11", // fixed 44px — no cqw so it never scales with the screen
           "rounded-full flex items-center justify-center",
           "font-bold text-white select-none",
-          "text-[clamp(10px,1.6cqw,18px)]",
+          "text-[15px]",
           "transition-all duration-300",
           "overflow-hidden",
           // Green ring = clocked in (on shift right now). Distinct from the

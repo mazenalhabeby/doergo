@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getAvatarColors, type WorkerStatus } from './helpers';
+import { resolveMediaUrl } from '../../../lib/api';
 
 const STATUS_COLOR: Record<WorkerStatus, string> = {
   on: '#10b981',   // Available / On shift — green
@@ -39,11 +40,12 @@ export const Avatar = React.memo(function Avatar({
   const radius = size / 2;
   const fontSize = Math.max(10, Math.round(size * 0.33));
   const dotSize = Math.max(10, Math.round(size * 0.28));
+  const img = resolveMediaUrl(imageUrl);
 
   return (
     <View style={{ width: size, height: size }}>
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={{ width: size, height: size, borderRadius: radius }} />
+      {img ? (
+        <Image source={{ uri: img }} style={{ width: size, height: size, borderRadius: radius }} />
       ) : (
         <LinearGradient
           colors={[c1, c2]}

@@ -461,9 +461,10 @@ model User {
   allowRemote       Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
   presence          String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
   lastActiveAt      DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
-  // Contact directory / access (admins are always contacts; secure by default)
-  contactable       Boolean           @default(false) // Appears in the org contacts directory (for non-admin "manager" members)
-  contactScope      String            @default("NONE") // Who this member may contact: NONE | ALL | SELECTED
+  // Contact directory / access — open within the org by default; admins restrict
+  // via the Access Builder (canContact:false, or contactScope SELECTED).
+  contactable       Boolean           @default(true) // Reachable in the org contacts directory
+  contactScope      String            @default("ALL") // Who this member may contact: NONE | ALL | SELECTED
   contactAllowedIds String[]          @default([]) // When SELECTED: the specific contact user IDs this member may reach
   // Per-recipient notification opt-outs by category, e.g. { "attendance": false }.
   // Missing/true = subscribed. Filters what THIS user receives (see NotificationWatch).

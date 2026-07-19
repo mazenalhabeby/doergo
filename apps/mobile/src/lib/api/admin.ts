@@ -184,11 +184,20 @@ export interface Colleague {
   position?: string | null;
   role?: string;
   spaceName?: string | null;
+  presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
+  /** "Show in Management" — surfaces this member in the Managers group. */
+  contactable?: boolean;
 }
 
 export const teamApi = {
   list: async (): Promise<Colleague[]> => {
     const result = await fetchWithAuth<any>('/locations/team');
+    return Array.isArray(result) ? result : result?.data || [];
+  },
+  // Org-wide management directory (admins + "Show in Management" members),
+  // independent of space membership.
+  managers: async (): Promise<Colleague[]> => {
+    const result = await fetchWithAuth<any>('/organizations/contacts');
     return Array.isArray(result) ? result : result?.data || [];
   },
 };

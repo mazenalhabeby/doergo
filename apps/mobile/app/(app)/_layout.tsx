@@ -9,9 +9,12 @@ import {
   getTaskIdFromNotification,
   getNotificationType,
 } from '../../src/hooks/usePushNotifications';
-import { SocketProvider } from '../../src/contexts/socket-context';
+import { SocketProvider, useSocketContext } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
+import { useToast } from '../../src/contexts/toast-context';
 import { useAuth } from '../../src/contexts/auth-context';
+import { activeChat } from '../../src/lib/active-chat';
+import { SocketEvents } from '@hbcfield/shared/client';
 import { SubscriptionGate } from '../../src/components/SubscriptionGate';
 import { useTheme } from '../../src/contexts/theme-context';
 import { trackingApi } from '../../src/lib/api';
@@ -71,6 +74,32 @@ function usePresencePing() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [user?.role, sendPing]);
+}
+
+/**
+ * Global in-app chat notifier — lives inside SocketProvider so it receives
+ * CHAT_MESSAGE on every screen (not just the chat screen). Shows a toast for
+ * messages from others, unless you're already viewing that conversation. This is
+ * the in-app path; push (via Expo) covers the app-closed case on real builds.
+ */
+function GlobalChatNotifier() {
+  const { subscribe, isAuthenticated } = useSocketContext();
+  const { user } = useAuth();
+  const toast = useToast();
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    return subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
+      const m = d?.message;
+      if (!m || !m.senderId || m.senderId === user?.id) return;
+      if (d.conversationId && d.conversationId === activeChat.conversationId) return; // already reading it
+      const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}`.trim() : t('chat.title', 'Messages');
+      toast.info(name, (m.body || '').slice(0, 80));
+    });
+  }, [isAuthenticated, subscribe, user?.id, toast, t]);
+
+  return null;
 }
 
 export default function AppLayout() {
@@ -172,6 +201,7 @@ export default function AppLayout() {
 
   return (
     <SocketProvider>
+    <GlobalChatNotifier />
     <LocationTrackingProvider>
       <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <Stack

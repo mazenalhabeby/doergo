@@ -84,6 +84,11 @@ export function useSocket(user?: SocketUser | null) {
     };
   }, []);
 
+  // Fire-and-forget emit (typing indicators etc.). No-op if not connected.
+  const emit = useCallback((event: string, payload?: unknown) => {
+    socketRef.current?.emit(event, payload);
+  }, []);
+
   // Connect when user becomes available, disconnect when removed
   useEffect(() => {
     if (user) {
@@ -111,6 +116,7 @@ export function useSocket(user?: SocketUser | null) {
     isConnected,
     isAuthenticated,
     subscribe,
+    emit,
     socket: socketRef.current,
   };
 }

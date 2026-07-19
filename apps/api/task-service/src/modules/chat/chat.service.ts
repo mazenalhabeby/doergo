@@ -18,14 +18,14 @@ export class ChatService {
   async listContacts(data: { userId: string; organizationId: string }) {
     const me = await this.prisma.user.findUnique({
       where: { id: data.userId },
-      select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true },
+      select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true, canManageUsers: true },
     });
     if (!me) throw new NotFoundException('User not found');
     const all = await this.prisma.user.findMany({
       where: { organizationId: data.organizationId, isActive: true, id: { not: data.userId } },
       select: {
         id: true, firstName: true, lastName: true, avatarUrl: true, position: true,
-        role: true, contactable: true, presence: true,
+        role: true, contactable: true, canManageUsers: true, presence: true,
       },
       orderBy: [{ firstName: 'asc' }],
     });
@@ -33,34 +33,49 @@ export class ChatService {
     return { data: reachable };
   }
 
-  /** Contact-permission rule: may `me` message `target`? Mirrors access profiles. */
+  /**
+   * Contact-permission rule: may `me` message `target`? Open within the org by
+   * default (defaults are contactable:true / contactScope:ALL / canContact:≠false),
+   * so anyone can message anyone. Admins restrict via the Access Builder:
+   * `canContact:false` blocks a member from messaging at all, `contactable:false`
+   * hides a member from being reached, and `contactScope: NONE | SELECTED` limits
+   * who a member may reach. Admins are always reachable and may reach anyone.
+   */
   private canReach(
-    me: { role: string; enabledModules: unknown; contactScope: string; contactAllowedIds: string[] },
-    target: { id: string; role: string; contactable: boolean },
+    me: { role: string; enabledModules: unknown; contactScope: string; contactAllowedIds: string[]; canManageUsers?: boolean },
+    target: { id: string; role: string; contactable: boolean; canManageUsers?: boolean },
   ): boolean {
-    const targetReachable = target.contactable || target.role === 'ADMIN';
-    if (me.role === 'ADMIN') return true; // admins may contact anyone
-    if (!canContactColleagues({ enabledModules: me.enabledModules })) return false;
-    if (!targetReachable) return false;
+    // Admins and managers (canManageUsers) may contact anyone and are always reachable.
+    const meIsManager = me.role === 'ADMIN' || me.canManageUsers === true;
+    const targetIsManager = target.role === 'ADMIN' || target.canManageUsers === true;
+    if (meIsManager) return true;
+    if (!canContactColleagues({ enabledModules: me.enabledModules })) return false; // admin disabled messaging
+    if (!(target.contactable || targetIsManager)) return false;
     if (me.contactScope === 'NONE') return false;
-    if (me.contactScope === 'SELECTED') return me.contactAllowedIds.includes(target.id);
+    if (me.contactScope === 'SELECTED') return (me.contactAllowedIds ?? []).includes(target.id);
     return true; // ALL
   }
 
   // ── open (or create) a 1:1 conversation with another member ─────────────────
   async openDirect(data: { organizationId: string; userId: string; otherUserId: string }) {
+    if (!data.otherUserId || typeof data.otherUserId !== 'string') {
+      throw new NotFoundException('Member not found');
+    }
     if (data.userId === data.otherUserId) throw new ForbiddenException('Cannot message yourself');
     const [me, other] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: data.userId },
-        select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true },
+        select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true, canManageUsers: true },
       }),
       this.prisma.user.findFirst({
         where: { id: data.otherUserId, organizationId: data.organizationId },
-        select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, contactable: true },
+        select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, contactable: true, canManageUsers: true },
       }),
     ]);
-    if (!me || !other) throw new NotFoundException('Member not found');
+    // `other.id` must match exactly — findFirst with a bad id could otherwise fall
+    // through to an unintended row. Also re-check self by resolved id.
+    if (!me || !other || other.id !== data.otherUserId) throw new NotFoundException('Member not found');
+    if (other.id === data.userId) throw new ForbiddenException('Cannot message yourself');
     if (!this.canReach(me as any, other as any)) {
       throw new ForbiddenException('You are not allowed to contact this member');
     }

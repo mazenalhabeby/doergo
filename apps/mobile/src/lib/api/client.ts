@@ -25,6 +25,20 @@ export function getApiUrl(): string {
 
 export const API_URL = getApiUrl();
 
+/**
+ * Resolve a media path (e.g. an uploaded avatar `/uploads/avatars/…`) to an
+ * absolute URL. React Native's <Image> can't load relative URIs, so uploaded
+ * avatars render blank without this. Absolute URLs (http/https, data:) pass
+ * through unchanged. The origin is the API host without the `/api/v1` prefix,
+ * since static uploads are served from the host root.
+ */
+export function resolveMediaUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:')) return url;
+  const origin = getApiUrl().replace(/\/api\/v1\/?$/, '');
+  return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'hbcfield_access_token';
 const REFRESH_TOKEN_KEY = 'hbcfield_refresh_token';

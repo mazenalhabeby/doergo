@@ -1014,6 +1014,8 @@
     "title": "Team",
     "subtitle": "Teammates in your spaces.",
     "empty": "No teammates in your spaces yet.",
+    "managers": "Managers",
+    "members": "Team",
     "messagingSoon": "Messaging coming soon",
     "callsSoon": "Calls coming soon"
   },
@@ -1058,6 +1060,16 @@
     "noContacts": "No one to message.",
     "loadError": "Could not load messages.",
     "sendError": "Could not send. Please try again.",
-    "cannotContact": "You cannot message this member."
+    "cannotContact": "You cannot message this member.",
+    "typing": "is typing…",
+    "threadEmpty": "No messages yet. Say hello 👋",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "presence": {
+      "active": "Active now",
+      "busy": "Busy",
+      "away": "Away",
+      "offline": "Offline"
+    }
   }
 }

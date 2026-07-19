@@ -1014,6 +1014,8 @@
     "title": "Team",
     "subtitle": "Teamkollegen in Ihren Bereichen.",
     "empty": "Noch keine Teamkollegen in Ihren Bereichen.",
+    "managers": "Manager",
+    "members": "Team",
     "messagingSoon": "Nachrichten folgen in Kürze",
     "callsSoon": "Anrufe folgen in Kürze"
   },
@@ -1058,6 +1060,16 @@
     "noContacts": "Niemand zum Anschreiben.",
     "loadError": "Nachrichten konnten nicht geladen werden.",
     "sendError": "Konnte nicht gesendet werden. Bitte erneut versuchen.",
-    "cannotContact": "Sie dürfen dieses Mitglied nicht anschreiben."
+    "cannotContact": "Sie dürfen dieses Mitglied nicht anschreiben.",
+    "typing": "schreibt …",
+    "threadEmpty": "Noch keine Nachrichten. Sag Hallo 👋",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "presence": {
+      "active": "Jetzt aktiv",
+      "busy": "Beschäftigt",
+      "away": "Abwesend",
+      "offline": "Offline"
+    }
   }
 }

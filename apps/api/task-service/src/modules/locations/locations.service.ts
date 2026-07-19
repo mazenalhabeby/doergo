@@ -392,7 +392,7 @@ export class LocationsService {
         OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
       },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true } },
+        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, presence: true, contactable: true } },
         location: { select: { id: true, name: true } },
       },
     });

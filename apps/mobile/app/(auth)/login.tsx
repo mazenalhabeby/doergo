@@ -161,7 +161,7 @@ export default function LoginScreen() {
             {/* Email Input */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.login.emailLabel')}</Text>
-              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.email && styles.inputError]}>
+              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.email && { backgroundColor: colors.errorLight, borderColor: COLORS.error }]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="mail-outline" size={20} color={colors.textMuted} />
                 </View>
@@ -190,7 +190,7 @@ export default function LoginScreen() {
             {/* Password Input */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.login.passwordLabel')}</Text>
-              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.password && styles.inputError]}>
+              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.password && { backgroundColor: colors.errorLight, borderColor: COLORS.error }]}>
                 <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
                   <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
                 </View>
@@ -396,10 +396,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     height: 56,
     overflow: 'hidden',
-  },
-  inputError: {
-    borderColor: COLORS.errorBorder,
-    backgroundColor: COLORS.errorLight,
   },
   inputIconContainer: {
     width: 52,

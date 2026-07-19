@@ -12,6 +12,7 @@ import type { TFunction } from "i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
+import { useChat } from "@/components/chat/chat-drawer"
 import { Button } from "@/components/ui/button"
 import {
   Popover,
@@ -58,6 +59,7 @@ type NotificationType =
   | "pending_approval"
   | "break_started" | "break_ended"
   | "invitation_created"
+  | "chat_message"
 
 interface Notification {
   id: string
@@ -80,6 +82,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   task_declined:      { icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
   task_status_changed:{ icon: ClipboardList, color: "text-muted-foreground", bg: "bg-muted" },
   comment_added:      { icon: MessageSquare, color: "text-amber-600", bg: "bg-amber-50" },
+  chat_message:       { icon: MessageSquare, color: "text-blue-600", bg: "bg-blue-50" },
   attachment_added:   { icon: Paperclip, color: "text-cyan-600", bg: "bg-cyan-50" },
   join_request:       { icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50" },
   join_approved:      { icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
@@ -100,6 +103,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
 
 export function NotificationBell() {
   const { user } = useAuth()
+  const { openChatWith } = useChat()
   const { t } = useTranslation()
   const router = useRouter()
   // The management /attendance page is ADMIN / can-view-all-tasks only; everyone else has
@@ -151,6 +155,14 @@ export function NotificationBell() {
       }),
       subscribe("task.attachmentAdded", (d: any) => {
         add("attachment_added", t("notifications.attachmentAdded"), d.attachment?.fileName || "", taskLink(d))
+      }),
+
+      // Chat: an incoming message from a colleague → persistent notification.
+      subscribe("chat.message", (d: any) => {
+        const m = d?.message
+        if (!m || !m.senderId || m.senderId === user?.id) return
+        const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}`.trim() : t("chat.title", "Messages")
+        add("chat_message", name, (m.body || "").slice(0, 80), `chat:${m.senderId}`)
       }),
 
       // Join request events
@@ -208,7 +220,11 @@ export function NotificationBell() {
 
   const handleClick = (notif: Notification) => {
     setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n))
-    if (notif.link) {
+    if (notif.link?.startsWith("chat:")) {
+      // Chat opens the drawer (not a route). link = "chat:<senderUserId>".
+      setOpen(false)
+      openChatWith(notif.link.slice(5))
+    } else if (notif.link) {
       setOpen(false)
       router.push(notif.link)
     }

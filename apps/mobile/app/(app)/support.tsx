@@ -26,7 +26,7 @@ type SupportView = 'list' | 'new' | 'thread';
 export default function SupportScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { subscribe } = useSocketContext();
+  const { subscribe, isAuthenticated } = useSocketContext();
   const params = useLocalSearchParams<{ ticketId?: string }>();
   const insets = useSafeAreaInsets();
   // Keep the bottom action clear of the Android nav bar / home indicator.
@@ -88,6 +88,7 @@ export default function SupportScreen() {
   const activeRef = useRef(active);
   activeRef.current = active;
   useEffect(() => {
+    if (!isAuthenticated) return;
     const offs = [
       subscribe(SocketEvents.SUPPORT_MESSAGE, (d: any) => {
         loadList();
@@ -98,7 +99,7 @@ export default function SupportScreen() {
       subscribe(SocketEvents.SUPPORT_AGENT_PRESENCE, (d: any) => setAgentOnline(!!d?.online)),
     ];
     return () => offs.forEach((o) => o());
-  }, [subscribe, loadList]);
+  }, [isAuthenticated, subscribe, loadList]);
 
   const submitNew = async () => {
     if (subject.trim().length < 2 || body.trim().length < 1) return;

@@ -23,7 +23,7 @@ import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { useImagePicker } from '../../../src/hooks/useImagePicker';
-import { avatarApi, userApi } from '../../../src/lib/api';
+import { avatarApi, userApi, resolveMediaUrl } from '../../../src/lib/api';
 import {
   COLORS,
   SPACING,
@@ -218,7 +218,7 @@ export default function ProfileScreen() {
               <ActivityIndicator size="large" color={COLORS.white} />
             </View>
           ) : hasAvatar ? (
-            <Image source={{ uri: user!.avatarUrl! }} style={styles.avatarImage} />
+            <Image source={{ uri: resolveMediaUrl(user!.avatarUrl!) }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>

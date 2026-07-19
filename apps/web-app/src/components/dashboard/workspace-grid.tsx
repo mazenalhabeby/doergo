@@ -13,75 +13,6 @@ export interface WorkspaceGridProps {
   canSeeAbsenceReason?: boolean
 }
 
-type BoxLayout = { cols: number; rows: number; forceVertical: boolean }
-
-/** Get natural col span for a box */
-function getNaturalCols(vis: number): number {
-  if (vis <= 1) return 1
-  if (vis <= 3) return 2
-  return 3
-}
-
-/** Get row span */
-function getRowSpan(vis: number, cols: number): number {
-  if (cols === 1 && vis >= 2) return vis
-  if (vis <= 4) return 1
-  return Math.ceil(vis / 4)
-}
-
-/**
- * Compute layout: keep natural box sizes, but allow 2-3 worker boxes
- * to go vertical (1 col) if it helps fill the row. Gaps stay at the end.
- */
-function computeLayout(boxes: WorkspaceBoxProps[]): Map<string, BoxLayout> {
-  const result = new Map<string, BoxLayout>()
-
-  const boxInfos = boxes
-    .map(b => {
-      const vis = b.people.length + (b.onRoadPeople?.length || 0) + (b.remotePeople?.length || 0)
-      return { title: b.title, vis, type: b.type }
-    })
-    .filter(b => !(b.type === "dynamic" && b.vis === 0))
-
-  // First pass: assign natural cols
-  const assignments = boxInfos.map(b => ({
-    ...b,
-    cols: getNaturalCols(b.vis),
-    forceVertical: false,
-  }))
-
-  // Pack into rows — try to fit 6 cols per row
-  // If a 2-3 worker box doesn't fit, try shrinking it to 1 col (vertical)
-  let currentRowCols = 0
-
-  for (const box of assignments) {
-    if (currentRowCols + box.cols > 6) {
-      // Doesn't fit — can we shrink this box to 1 col?
-      if (box.vis >= 2 && box.vis <= 3 && currentRowCols + 1 <= 6) {
-        box.cols = 1
-        box.forceVertical = true
-        currentRowCols += 1
-      } else {
-        // Start new row
-        currentRowCols = box.cols
-      }
-    } else {
-      currentRowCols += box.cols
-    }
-  }
-
-  for (const box of assignments) {
-    const rows = getRowSpan(box.vis, box.cols)
-    result.set(box.title, { cols: box.cols, rows, forceVertical: box.forceVertical })
-  }
-
-  return result
-}
-
-function getVisibleCount(box: WorkspaceBoxProps): number {
-  return box.people.length + (box.onRoadPeople?.length || 0) + (box.remotePeople?.length || 0)
-}
-
 export const WorkspaceGrid = React.memo(function WorkspaceGrid({
   boxes,
   className,
@@ -130,8 +61,6 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
     if (autoExpandSingle && only) setExpandedTitle(only.title)
   }, [autoExpandSingle, filteredBoxes])
 
-  const layoutMap = useMemo(() => computeLayout(filteredBoxes), [filteredBoxes])
-
   const isAnyExpanded = visualExpanded !== null
 
   // Keyboard navigation
@@ -179,46 +108,43 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
     }
   }, [handleBoxClick, expandedTitle])
 
+  const renderBox = (box: WorkspaceBoxProps, i: number) => {
+    const isThis = box.title === visualExpanded
+    return (
+      <WorkspaceBox
+        key={`${box.title}-${box.type}-${i}`}
+        ref={(el) => { boxRefs.current[i] = el }}
+        {...box}
+        canSeeAbsenceReason={canSeeAbsenceReason}
+        isExpanded={isThis}
+        isOtherExpanded={isAnyExpanded && !isThis}
+        isClosing={isThis && expandedTitle === null}
+        onBoxClick={(title) => { setFocusedIndex(i); handleBoxClick(title) }}
+        onKeyDown={(e) => handleBoxKeyDown(e, box.title, i)}
+      />
+    )
+  }
+
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
-      {/* Grid */}
-      <div
-        ref={gridRef}
-        className="grid grid-cols-6 [grid-auto-flow:dense]"
-        style={{
-          containerType: "inline-size",
-          gap: isAnyExpanded ? "4px" : "0.6cqw",
-          gridTemplateRows: isAnyExpanded ? "auto 1fr" : undefined,
-          gridAutoRows: isAnyExpanded ? undefined : "minmax(120px, auto)",
-          minHeight: isAnyExpanded ? "calc(100vh - 14rem)" : undefined,
-          transition: "gap 0.7s cubic-bezier(0.32, 0.72, 0, 1)",
-        }}
-        onKeyDown={handleGridKeyDown}
-      >
-        {filteredBoxes.map((box, i) => {
-          const isThis = box.title === visualExpanded
-          const layout = layoutMap.get(box.title)
-
-          return (
-            <WorkspaceBox
-              key={`${box.title}-${box.type}-${i}`}
-              ref={(el) => { boxRefs.current[i] = el }}
-              {...box}
-              canSeeAbsenceReason={canSeeAbsenceReason}
-              isExpanded={isThis}
-              isOtherExpanded={isAnyExpanded && !isThis}
-              isClosing={isThis && expandedTitle === null}
-              totalBoxes={filteredBoxes.length}
-              layoutCols={layout?.cols}
-              layoutRows={layout?.rows}
-              forceVertical={layout?.forceVertical || false}
-              onBoxClick={(title) => { setFocusedIndex(i); handleBoxClick(title) }}
-              onKeyDown={(e) => handleBoxKeyDown(e, box.title, i)}
-            />
-          )
-        })}
-      </div>
-
+    <div className={cn("flex flex-col gap-4", className)} onKeyDown={handleGridKeyDown}>
+      {isAnyExpanded ? (
+        // Open: chip strip on top, then the expanded space filling the rest of the
+        // available width AND height.
+        <div className="flex flex-col gap-3" style={{ height: "calc(100vh - 13rem)" }}>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            {filteredBoxes.map((box, i) => (box.title === visualExpanded ? null : renderBox(box, i)))}
+          </div>
+          <div className="flex-1 min-h-0 flex">
+            {filteredBoxes.map((box, i) => (box.title === visualExpanded ? renderBox(box, i) : null))}
+          </div>
+        </div>
+      ) : (
+        // Closed: cards sized to their content — an empty / 1-person space is just
+        // one node (76×89) + padding; bigger teams grow wider. Packed left, wrap.
+        <div ref={gridRef} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 14 }}>
+          {filteredBoxes.map(renderBox)}
+        </div>
+      )}
     </div>
   )
 })

@@ -26,19 +26,6 @@ import {
 const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 const APPLE_EASE_CLASS = "ease-[cubic-bezier(0.32,0.72,0,1)]"
 
-const COL_SPANS: Record<number, string> = {
-  1: "col-span-1", 2: "col-span-2", 3: "col-span-3",
-  4: "col-span-4", 5: "col-span-5", 6: "col-span-6",
-}
-
-const ROW_SPANS: Record<number, string> = {
-  1: "row-span-1",
-  2: "row-span-2",
-  3: "row-span-3",
-  4: "row-span-4",
-  5: "row-span-5",
-}
-
 export interface WorkspaceBoxProps {
   title: string
   type: "fixed" | "dynamic"
@@ -69,18 +56,6 @@ export interface WorkspaceBoxProps {
   className?: string
 }
 
-function getSpanClasses(count: number, isExpanded: boolean, isOtherExpanded: boolean, totalBoxes: number): string {
-  if (isExpanded) return "col-span-6 row-start-2 row-end-3"
-  if (isOtherExpanded) return "col-span-1 row-start-1 row-end-2"
-  if (count <= 1) return "col-span-1 row-span-1"
-  // For 2-3 workers: horizontal if few boxes (plenty of space), vertical if many boxes
-  if (count === 2) return "col-span-2 row-span-1"
-  if (count === 3) return "col-span-2 row-span-1"
-  if (count <= 4) return "col-span-3 row-span-1"
-  const rows = Math.ceil(count / 4)
-  return `col-span-3 ${ROW_SPANS[rows] || "row-span-1"}`
-}
-
 type ViewMode = "normal" | "expanded" | "collapsed"
 
 type SubPanel = "inField" | "offSite" | "offShift" | "offDuty" | null
@@ -105,10 +80,6 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
   isExpanded = false,
   isOtherExpanded = false,
   isClosing = false,
-  totalBoxes = 6,
-  layoutCols,
-  layoutRows,
-  forceVertical = false,
   onBoxClick,
   onKeyDown,
   className,
@@ -135,19 +106,33 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
   const physicallyEmpty = people.length === 0 && visibleCount > 0
   const trulyEmpty = visibleCount === 0 && offShiftPeople.length === 0 && offDutyPeople.length === 0
 
-  let spanClasses: string
-  if (isExpanded) {
-    spanClasses = "col-span-6 row-start-2 row-end-3"
-  } else if (isOtherExpanded) {
-    spanClasses = "col-span-1 row-start-1 row-end-2"
-  } else if (layoutCols && layoutRows) {
-    spanClasses = `${COL_SPANS[layoutCols] || "col-span-2"} ${ROW_SPANS[layoutRows] || "row-span-1"}`
-  } else {
-    spanClasses = getSpanClasses(visibleCount, isExpanded, isOtherExpanded, totalBoxes)
-  }
+  // Card width snaps to node columns so every card of the same size matches
+  // exactly (an empty / 1-person card is always 1 node + padding — no variation
+  // from title length). 1–4 columns; each column is a 76px node.
+  // PAD_X = the card's p-3 padding (24) + 1px border ×2 (box-border) + ~5px of
+  // slack, so N nodes actually fit on a row instead of wrapping down by ~2px.
+  const NODE_W = 76, NODE_GAP = 8, PAD_X = 31
+  const MAX_COLS = 4
+  // Floor the 1-column size so an empty and a 1-person card are always the SAME
+  // width AND wide enough to keep the "All quiet today" label on a single line
+  // (a bare 1 node + padding = 100px is too narrow for the label to fit).
+  const MIN_CARD_W = 140
+  const shownNodes = people.length + onRoadPeople.length + remotePeople.length + offShiftPeople.length
+  const wCols = Math.min(Math.max(shownNodes, 1), MAX_COLS)
+  const cardWidth = Math.max(wCols * NODE_W + (wCols - 1) * NODE_GAP + PAD_X, MIN_CARD_W)
 
-  const isVertical = mode === "normal" && forceVertical && visibleCount >= 2
-  const isHorizontal = mode === "normal" && visibleCount >= 2 && !isVertical
+  // OPEN state is untouched — keep the original CSS-grid span placement so an
+  // expanded space (and the collapsed strip beside it) looks exactly as before.
+  // Only NORMAL (closed) cards get the new "fit its users" sizing.
+  // Placement:
+  //  • normal   → masonry column item (compact, equal gaps)
+  //  • expanded → full-width row (flex-basis 100%), ordered after the chip strip
+  //  • collapsed→ small chip in the strip above the expanded card
+  const sizeStyle: React.CSSProperties = isExpanded
+    ? { flex: 1, minWidth: 0 } // fills the open wrapper's width AND height
+    : isOtherExpanded
+      ? { flex: "0 0 116px", maxWidth: 116 } // compact chip in the strip
+      : { width: cardWidth, flexShrink: 0 } // fixed node-column width (consistent per size)
 
   return (
     <div
@@ -167,13 +152,14 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
         mode === "collapsed" && !isClosing && "opacity-60 hover:opacity-80",
         mode === "collapsed" && "overflow-hidden",
         mode === "normal" && "hover:bg-accent/30",
-        spanClasses,
         trulyEmpty && mode !== "expanded" && "border-dashed opacity-50 hover:opacity-70",
         physicallyEmpty && mode !== "expanded" && "border-dashed opacity-75 hover:opacity-90",
         className,
       )}
       style={{
-        minHeight: mode === "collapsed" ? 50 : 120,
+        ...sizeStyle,
+        // Compact, content-height cards; the masonry columns keep gaps equal.
+        minHeight: mode === "collapsed" ? 50 : 135,
         transform: mode === "collapsed" ? "scale(0.98)" : "scale(1)",
         transition: `all 0.7s ${APPLE_EASE}`,
       }}
@@ -408,30 +394,33 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
         // expanded Off Duty group. Ring = clocked in, dot = availability.
         const allActive = [...people, ...onRoadPeople, ...remotePeople, ...offShiftPeople]
         const allEmpty = allActive.length === 0
+        // Bounded, UNIFORM preview: show at most 12 members (4 per row × 3 rows).
+        // Any overflow becomes a centered "+N more" pill. Combined with the card's
+        // fixed height every card is the same size → equal spacing everywhere.
+        const MAX_SHOWN = MAX_COLS * 3
+        const shown = allActive.length > MAX_SHOWN ? allActive.slice(0, MAX_SHOWN) : allActive
+        const extra = allActive.length - shown.length
         return (
           <>
             {allEmpty ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-2 p-[1cqw]">
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 p-3">
                 <Ghost className="h-8 w-8 text-foreground/80" />
-                <span className="text-xs text-foreground/80 font-medium">{t("workspace.allQuietToday")}</span>
+                <span className="text-xs text-foreground/80 font-medium whitespace-nowrap">{t("workspace.allQuietToday")}</span>
               </div>
             ) : (
-              <div
-                className={cn(
-                  "flex-1 p-[1cqw]",
-                  allActive.length <= 4
-                    ? cn(
-                        "flex flex-wrap items-center justify-center content-center",
-                        "gap-[1cqw]",
-                        isVertical && "flex-col",
-                        isHorizontal && "flex-row",
-                      )
-                    : "grid grid-cols-[repeat(4,min-content)] gap-[1cqw] content-center justify-items-center justify-center",
+              <div className="flex-1 flex flex-col justify-center gap-2 p-3">
+                <div className="flex flex-wrap items-center content-center justify-center gap-2">
+                  {shown.map((person, i) => (
+                    <PersonNode key={`${person.name}-${i}`} {...person} />
+                  ))}
+                </div>
+                {extra > 0 && (
+                  <div className="flex justify-center">
+                    <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground/60">
+                      +{extra} {t("workspace.more", "more")}
+                    </span>
+                  </div>
                 )}
-              >
-                {allActive.map((person, i) => (
-                  <PersonNode key={`${person.name}-${i}`} {...person} />
-                ))}
               </div>
             )}
           </>

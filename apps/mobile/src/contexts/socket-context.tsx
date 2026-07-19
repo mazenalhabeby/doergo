@@ -6,12 +6,14 @@ interface SocketContextType {
   isConnected: boolean;
   isAuthenticated: boolean;
   subscribe: <T>(event: string, handler: (data: T) => void) => () => void;
+  emit: (event: string, payload?: unknown) => void;
 }
 
 const SocketContext = createContext<SocketContextType>({
   isConnected: false,
   isAuthenticated: false,
   subscribe: () => () => {},
+  emit: () => {},
 });
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
@@ -23,10 +25,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [user?.id, user?.role, user?.organizationId],
   );
 
-  const { isConnected, isAuthenticated, subscribe } = useSocket(socketUser);
+  const { isConnected, isAuthenticated, subscribe, emit } = useSocket(socketUser);
 
   return (
-    <SocketContext.Provider value={{ isConnected, isAuthenticated, subscribe }}>
+    <SocketContext.Provider value={{ isConnected, isAuthenticated, subscribe, emit }}>
       {children}
     </SocketContext.Provider>
   );

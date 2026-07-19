@@ -3036,6 +3036,7 @@
     "addMember": "Add Member",
     "viewTasks": "View Tasks",
     "allQuietToday": "All quiet today",
+    "more": "more",
     "busy": "Busy",
     "noProfileData": "No profile data",
     "you": "(You)",
@@ -3861,6 +3862,11 @@
       "busy": "Busy",
       "away": "Away",
       "offline": "Offline"
-    }
+    },
+    "callsSoon": "Calls are coming soon",
+    "voiceCall": "Voice call",
+    "videoCall": "Video call",
+    "open": "Open",
+    "typing": "is typing…"
   }
 }

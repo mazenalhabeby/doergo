@@ -3036,6 +3036,7 @@
     "addMember": "Mitglied hinzufügen",
     "viewTasks": "Aufgaben anzeigen",
     "allQuietToday": "Heute ist alles ruhig",
+    "more": "mehr",
     "busy": "Beschäftigt",
     "noProfileData": "Keine Profildaten",
     "you": "(Sie)",
@@ -3861,6 +3862,11 @@
       "busy": "Beschäftigt",
       "away": "Abwesend",
       "offline": "Offline"
-    }
+    },
+    "callsSoon": "Anrufe kommen bald",
+    "voiceCall": "Sprachanruf",
+    "videoCall": "Videoanruf",
+    "open": "Öffnen",
+    "typing": "schreibt…"
   }
 }

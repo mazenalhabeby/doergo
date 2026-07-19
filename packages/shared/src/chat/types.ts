@@ -54,9 +54,11 @@ export function directConversationKey(userIdA: string, userIdB: string): string 
   return [userIdA, userIdB].sort().join(':');
 }
 
-/** Display name for a conversation from the viewer's perspective. */
-export function conversationTitle(c: ChatConversation, lang?: string): string {
+/** Display name for a conversation from the viewer's perspective. Null-safe. */
+export function conversationTitle(c: ChatConversation | null | undefined, lang?: string): string {
+  const fallback = lang?.startsWith('de') ? 'Unterhaltung' : 'Conversation';
+  if (!c) return fallback;
   if (c.type === 'GROUP') return c.title || (lang?.startsWith('de') ? 'Gruppe' : 'Group');
   const o = c.otherMember;
-  return o ? `${o.firstName} ${o.lastName}`.trim() : lang?.startsWith('de') ? 'Unterhaltung' : 'Conversation';
+  return o ? `${o.firstName} ${o.lastName}`.trim() : fallback;
 }

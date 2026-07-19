@@ -319,7 +319,7 @@ export function AccessBuilder({ member, onSaved }: { member: OrgMember; onSaved?
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">{t("accessBuilder.canContact.title", "Can contact")}</p>
-                  <p className="text-xs text-muted-foreground">{t("accessBuilder.canContact.desc", "Which admins/contacts this member may reach. Secure by default.")}</p>
+                  <p className="text-xs text-muted-foreground">{t("accessBuilder.canContact.desc", "Who this member may reach. Open to all teammates by default; restrict to specific people if needed.")}</p>
                 </div>
                 <Select value={contactScope} onValueChange={setContactScope}>
                   <SelectTrigger className="h-8 w-[168px] shrink-0 text-xs"><SelectValue /></SelectTrigger>

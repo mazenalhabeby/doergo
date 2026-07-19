@@ -60,17 +60,17 @@ export const PersonNode = React.memo(function PersonNode({
       onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); onPersonClick!(userId!) } } : undefined}
       className={cn(
         "flex flex-col items-center",
-        "gap-2.5 w-[8cqw] min-w-[60px]",
+        "gap-1.5 w-[76px]", // fixed size — no cqw
         dimmed && "opacity-30",
         isClickable && "cursor-pointer hover:opacity-80 transition-opacity",
         className,
       )}
     >
       <WorkerAvatar {...avatarProps} />
-      <span className="text-[clamp(7px,0.9cqw,12px)] leading-tight text-foreground/70 truncate w-full text-center font-medium">
+      <span className="text-xs leading-tight text-foreground/70 truncate w-full text-center font-medium">
         {name}
       </span>
-      <div className="min-h-[clamp(10px,1.2cqw,16px)] flex items-center">
+      <div className="min-h-[18px] flex items-center">
         {tag ? (
           <span
             className={cn(
