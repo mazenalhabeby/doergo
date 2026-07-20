@@ -465,6 +465,7 @@ model User {
   canViewAllTasks   Boolean           @default(false) // Can view all org tasks (vs only assigned/created)
   canAssignTasks    Boolean           @default(false) // Can assign tasks to technicians
   canManageUsers    Boolean           @default(false) // Can manage users in organization
+  canViewReports    Boolean           @default(false) // May build/run reports (granted to Show-in-Management members)
   allowRemote       Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
   presence          String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
   lastActiveAt      DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen

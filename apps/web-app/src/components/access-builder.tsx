@@ -86,6 +86,7 @@ export function AccessBuilder({
     contactScope: member.contactScope || "NONE",
     contactAllowedIds: member.contactAllowedIds || [],
     showInManagement: !!member.showInManagement,
+    canViewReports: !!member.canViewReports,
     allowRemote: !!member.allowRemote,
   }), [member])
 
@@ -104,6 +105,7 @@ export function AccessBuilder({
   const [contactScope, setContactScope] = useState<string>(initial.contactScope)
   const [contactAllowedIds, setContactAllowedIds] = useState<string[]>(initial.contactAllowedIds)
   const [showInManagement, setShowInManagement] = useState<boolean>(initial.showInManagement)
+  const [canViewReports, setCanViewReports] = useState<boolean>(initial.canViewReports)
   const [allowRemote, setAllowRemote] = useState<boolean>(initial.allowRemote)
   const [saving, setSaving] = useState(false)
 
@@ -166,6 +168,7 @@ export function AccessBuilder({
     contactable !== initial.contactable ||
     contactScope !== initial.contactScope ||
     showInManagement !== initial.showInManagement ||
+    canViewReports !== initial.canViewReports ||
     allowRemote !== initial.allowRemote ||
     watchersTouched ||
     (contactScope === "SELECTED" && JSON.stringify(contactAllowedIds.slice().sort()) !== JSON.stringify(initial.contactAllowedIds.slice().sort()))
@@ -184,6 +187,8 @@ export function AccessBuilder({
         contactScope,
         contactAllowedIds: contactScope === "SELECTED" ? contactAllowedIds : [],
         showInManagement,
+        // Report access follows Show-in-Management: only meaningful when surfaced.
+        canViewReports: showInManagement ? canViewReports : false,
         allowRemote,
       }
       // Bulk: apply the same access to every selected member. Single: just this one.
@@ -427,20 +432,36 @@ export function AccessBuilder({
             locked ON) — but NOT in bulk mode, where the template may be an admin
             yet the switch must stay editable for the whole selection. */}
         <Field label={t("accessBuilder.managementLabel", "Management directory")}>
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{t("members.memberEditor.showInManagement", "Show in Management")}</p>
-              <p className="text-xs text-muted-foreground">
-                {!isBulk && member.role === "ADMIN"
-                  ? t("members.memberEditor.showInManagementAdmin", "Admins always appear in the Management directory.")
-                  : t("members.memberEditor.showInManagementHint", "Lists this person (with their sub-role) so teammates can reach them from anywhere.")}
-              </p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">{t("members.memberEditor.showInManagement", "Show in Management")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {!isBulk && member.role === "ADMIN"
+                    ? t("members.memberEditor.showInManagementAdmin", "Admins always appear in the Management directory.")
+                    : t("members.memberEditor.showInManagementHint", "Lists this person (with their sub-role) so teammates can reach them from anywhere.")}
+                </p>
+              </div>
+              <Switch
+                checked={!isBulk && member.role === "ADMIN" ? true : showInManagement}
+                disabled={!isBulk && member.role === "ADMIN"}
+                onCheckedChange={setShowInManagement}
+              />
             </div>
-            <Switch
-              checked={!isBulk && member.role === "ADMIN" ? true : showInManagement}
-              disabled={!isBulk && member.role === "ADMIN"}
-              onCheckedChange={setShowInManagement}
-            />
+            {/* Reports access — only offered to Management members. */}
+            {(showInManagement || (!isBulk && member.role === "ADMIN")) && (
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{t("accessBuilder.canViewReports.title", "Allow reports")}</p>
+                  <p className="text-xs text-muted-foreground">{t("accessBuilder.canViewReports.desc", "Let this member build and run reports.")}</p>
+                </div>
+                <Switch
+                  checked={!isBulk && member.role === "ADMIN" ? true : canViewReports}
+                  disabled={!isBulk && member.role === "ADMIN"}
+                  onCheckedChange={setCanViewReports}
+                />
+              </div>
+            )}
           </div>
         </Field>
 

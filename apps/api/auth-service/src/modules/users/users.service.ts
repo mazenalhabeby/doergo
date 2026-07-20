@@ -754,6 +754,7 @@ export class UsersService {
         canViewAllTasks: true,
         canAssignTasks: true,
         canManageUsers: true,
+        canViewReports: true,
         allowRemote: true,
         contactable: true,
         contactScope: true,
@@ -984,6 +985,7 @@ export class UsersService {
     if ((dto as any).contactScope !== undefined) data.contactScope = (dto as any).contactScope;
     if ((dto as any).contactAllowedIds !== undefined) data.contactAllowedIds = (dto as any).contactAllowedIds;
     if ((dto as any).showInManagement !== undefined) data.showInManagement = (dto as any).showInManagement;
+    if ((dto as any).canViewReports !== undefined) data.canViewReports = (dto as any).canViewReports;
     if ((dto as any).allowRemote !== undefined) data.allowRemote = (dto as any).allowRemote;
 
     // Role/permission fields — only if role is provided

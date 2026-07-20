@@ -961,6 +961,7 @@ export class AuthService {
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
+          canViewReports: true,
           allowRemote: true,
           presence: true,
           // Worker configuration

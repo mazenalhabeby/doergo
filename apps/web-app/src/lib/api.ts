@@ -2928,6 +2928,7 @@ export interface OrgMember {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  canViewReports?: boolean;
   orgRoleId?: string | null;
   orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
 }
@@ -2944,6 +2945,7 @@ export interface UpdateMemberInput {
   canViewAllTasks?: boolean;
   canAssignTasks?: boolean;
   canManageUsers?: boolean;
+  canViewReports?: boolean;
   /** Per-user Access Profile object, or a legacy module string[]. */
   enabledModules?: Record<string, unknown> | string[];
   contactable?: boolean;

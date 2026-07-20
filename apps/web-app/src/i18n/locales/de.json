@@ -2980,6 +2980,10 @@
     "noContacts": "Keine Kontakte verfügbar",
     "contactLabel": "Kontakt",
     "managementLabel": "Management-Verzeichnis",
+    "canViewReports": {
+      "title": "Berichte erlauben",
+      "desc": "Diesem Mitglied erlauben, Berichte zu erstellen und auszuführen."
+    },
     "applyToAll": "Auf alle anwenden",
     "bulkSubtitle": "Wendet diese Zugriffswerte auf {{count}} ausgewählte Mitglieder an.",
     "bulkAppliedDesc": "Zugriff auf {{count}} Mitglieder angewendet",

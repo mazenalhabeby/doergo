@@ -2980,6 +2980,10 @@
     "noContacts": "No contacts available",
     "contactLabel": "Contact",
     "managementLabel": "Management directory",
+    "canViewReports": {
+      "title": "Allow reports",
+      "desc": "Let this member build and run reports."
+    },
     "applyToAll": "Apply to all",
     "bulkSubtitle": "Applies these access values to {{count}} selected members.",
     "bulkAppliedDesc": "Access applied to {{count}} members",

@@ -137,7 +137,7 @@ export function TopNavbar() {
   const showSpaces = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
-  const showReports = user.canViewAllTasks // report viewers (admins + managers)
+  const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
 
   // Personal, module-driven items (Access Profile). These are ADDITIVE — a
   // member who ALSO manages people keeps their own Time Off / clock. Driven by

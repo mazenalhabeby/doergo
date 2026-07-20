@@ -166,6 +166,7 @@ export class OrganizationsController {
           canViewAllTasks: dto.canViewAllTasks,
           canAssignTasks: dto.canAssignTasks,
           canManageUsers: dto.canManageUsers,
+          canViewReports: dto.canViewReports,
           enabledModules: dto.enabledModules,
           contactable: dto.contactable,
           contactScope: dto.contactScope,

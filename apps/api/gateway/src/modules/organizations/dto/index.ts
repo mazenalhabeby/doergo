@@ -251,6 +251,11 @@ export class UpdateMemberDto {
   @IsBoolean()
   canManageUsers?: boolean;
 
+  @ApiPropertyOptional({ description: 'May build/run reports (report access)' })
+  @IsOptional()
+  @IsBoolean()
+  canViewReports?: boolean;
+
   @ApiPropertyOptional({ description: 'Per-user Access Profile (modules, spaceScope, platforms, canContact, webScreens) or a module string[]' })
   @IsOptional()
   enabledModules?: unknown;
