@@ -2543,6 +2543,9 @@
       "pdfNotePlaceholder": "z. B. Vertraulich — nur zum internen Gebrauch",
       "pdfBuilding": "Vorschau wird erstellt…",
       "pdfUpdating": "Wird aktualisiert…",
+      "exportStudioTitle": "Bericht exportieren",
+      "print": "Drucken",
+      "pdfPreview": "PDF-Vorschau",
       "pdfTpl": {
         "classic": { "name": "Klassisch", "desc": "Briefkopf, Diagrammvorschau und vollständige Datentabelle." },
         "executive": { "name": "Management-Zusammenfassung", "desc": "KPI-Summen oben, Diagramm und kompakte Tabelle." },

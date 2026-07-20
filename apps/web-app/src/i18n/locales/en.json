@@ -2543,6 +2543,9 @@
       "pdfNotePlaceholder": "e.g. Confidential — internal use only",
       "pdfBuilding": "Building preview…",
       "pdfUpdating": "Updating…",
+      "exportStudioTitle": "Export report",
+      "print": "Print",
+      "pdfPreview": "PDF preview",
       "pdfTpl": {
         "classic": { "name": "Classic", "desc": "Letterhead, chart preview, and full data table." },
         "executive": { "name": "Executive summary", "desc": "KPI totals up top, chart, and a compact table." },
