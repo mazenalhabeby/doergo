@@ -237,19 +237,15 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-[1280px] mx-auto px-6 py-8 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="grid place-items-center h-11 w-11 rounded-xl bg-primary/10 text-primary shrink-0">
-              <BarChart3 className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-[22px] font-bold tracking-tight text-foreground leading-tight">{t("reports.title", "Reports")}</h1>
-              <p className="text-sm text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
-            </div>
+      <div className="max-w-screen-xl mx-auto px-6 py-8">
+        {/* Page Header — matches the app's standard page header */}
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("reports.title", "Reports")}</h1>
+            <p className="mt-1.5 text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
           </div>
           {canBuild && (
-            <Button onClick={newReport} className="gap-1.5 shadow-sm"><Plus className="h-4 w-4" />{t("reports.new", "New report")}</Button>
+            <Button onClick={newReport} className="h-11 rounded-xl shadow-sm gap-1.5"><Plus className="h-4 w-4" />{t("reports.new", "New report")}</Button>
           )}
         </div>
 
