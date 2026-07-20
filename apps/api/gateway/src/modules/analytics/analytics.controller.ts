@@ -31,6 +31,16 @@ export class AnalyticsController {
     );
   }
 
+  @Post('ai')
+  @RequirePermission('canViewAllTasks')
+  @RequirePlan('ai_reports')
+  @ApiOperation({ summary: 'Generate a report from a natural-language prompt (Business+)' })
+  async ai(@Body() body: { prompt: string }, @Request() req: any) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'analytics_ai' }, { organizationId: req.user.organizationId, prompt: body?.prompt }),
+    );
+  }
+
   // ── Saved reports (custom builder). View = all tiers; build = Pro+. ──────────
   @Get('reports')
   @RequirePermission('canViewAllTasks')

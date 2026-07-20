@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { BarChart3, Download, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock } from "lucide-react"
+import { BarChart3, Download, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, Sparkles } from "lucide-react"
 
 import {
   analyticsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
@@ -64,6 +64,8 @@ export default function ReportsPage() {
   const qc = useQueryClient()
   const canBuild = hasPlanFeature("reports_builder")
   const canSchedule = hasPlanFeature("report_scheduling")
+  const canAI = hasPlanFeature("ai_reports")
+  const [aiPrompt, setAiPrompt] = useState("")
 
   const [active, setActive] = useState<ActiveReport | null>(null)
   const [result, setResult] = useState<ReportResult | null>(null)
@@ -82,6 +84,17 @@ export default function ReportsPage() {
     mutationFn: (def: ReportDefinition) => analyticsApi.run(def),
     onSuccess: setResult,
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to run report"),
+  })
+  const ai = useMutation({
+    mutationFn: (prompt: string) => analyticsApi.ai(prompt),
+    onSuccess: (def) => {
+      // AI returns a validated definition → open it in the builder and run it.
+      setResult(null)
+      setActive({ def, name: "AI report", builder: canBuild })
+      run.mutate(def)
+      setAiPrompt("")
+    },
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to generate report"),
   })
   const save = useMutation({
     mutationFn: async () => {
@@ -180,6 +193,23 @@ export default function ReportsPage() {
             <p className="text-sm text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
           </div>
         </div>
+
+        {/* AI — natural language → report (Business+) */}
+        {canAI && (
+          <div className="flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/[0.04] px-3 py-2.5">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <Input
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && aiPrompt.trim()) ai.mutate(aiPrompt.trim()) }}
+              placeholder={t("reports.aiPlaceholder", "Ask for a report — e.g. “overtime hours per technician last month”")}
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+            />
+            <Button size="sm" className="gap-1.5 shrink-0" disabled={!aiPrompt.trim() || ai.isPending} onClick={() => ai.mutate(aiPrompt.trim())}>
+              <Sparkles className="h-3.5 w-3.5" />{ai.isPending ? t("reports.generating", "Generating…") : t("reports.generate", "Generate")}
+            </Button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
           {/* Left: templates + saved + new */}
