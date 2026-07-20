@@ -21,6 +21,7 @@ import { OvertimeModule } from './modules/overtime/overtime.module';
 import { EmployeesModule } from './modules/technicians/technicians.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
@@ -89,6 +90,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     EmployeesModule,
     InvitationsModule,
     CustomersModule,
+    AnalyticsModule,
     OnboardingModule,
     JoinRequestsModule,
     OrganizationsModule,

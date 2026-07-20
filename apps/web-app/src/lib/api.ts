@@ -4027,3 +4027,44 @@ export const customersApi = {
     return res.data;
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Analytics / Reports — dynamic report engine (semantic registry + query engine)
+// ─────────────────────────────────────────────────────────────────────────────
+export type ReportGranularity = "none" | "day" | "week" | "month" | "quarter" | "year";
+export type ReportDatePreset = "last_7d" | "last_30d" | "last_90d" | "this_month" | "last_month" | "this_year" | "all";
+
+export interface ReportDefinition {
+  dataset: string;
+  measures: string[];
+  dimensions?: string[];
+  granularity?: ReportGranularity;
+  dateRange?: { preset?: ReportDatePreset; from?: string; to?: string };
+  filters?: Array<{ field: string; op: "eq" | "neq" | "in"; value: string | number | Array<string | number> }>;
+  sort?: { key: string; dir: "asc" | "desc" };
+  limit?: number;
+}
+
+export interface ReportColumn { key: string; label: string; kind: "dimension" | "measure" | "period"; format?: string }
+export interface ReportResult { columns: ReportColumn[]; rows: Array<Record<string, unknown>> }
+
+export interface ReportTemplate { key: string; name: string; description: string; def: ReportDefinition }
+export interface DatasetMeta {
+  key: string;
+  label: string;
+  dimensions: Array<{ key: string; label: string; type: string }>;
+  measures: Array<{ key: string; label: string; format: string }>;
+}
+
+export const analyticsApi = {
+  catalog: async () => {
+    const res = await api.get<{ data: { datasets: DatasetMeta[]; templates: ReportTemplate[] } }>("/analytics/catalog");
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  run: async (definition: ReportDefinition) => {
+    const res = await api.post<{ data: ReportResult }>("/analytics/run", { definition });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+};

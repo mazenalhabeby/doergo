@@ -10,6 +10,7 @@ import {
   Check,
   LogOut,
   Settings,
+  BarChart3,
   Shield,
   FileText,
   History,
@@ -136,6 +137,7 @@ export function TopNavbar() {
   const showSpaces = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
+  const showReports = user.canViewAllTasks // report viewers (admins + managers)
 
   // Personal, module-driven items (Access Profile). These are ADDITIVE — a
   // member who ALSO manages people keeps their own Time Off / clock. Driven by
@@ -170,6 +172,7 @@ export function TopNavbar() {
         showSpaces={showSpaces}
         showSchedule={showSchedule}
         showAttendance={showAttendance}
+        showReports={showReports}
         showMyTimeOff={showMyTimeOff}
         showMyAttendance={showMyAttendance}
         showManage={showManage}
@@ -252,6 +255,21 @@ export function TopNavbar() {
             )}
           >
             {t("nav.sidebar.attendance")}
+          </Link>
+        )}
+
+        {/* Reports */}
+        {showReports && (
+          <Link
+            href="/reports"
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/reports")
+                ? cn(navItemActiveStyle, bottomIndicator)
+                : navItemInactive,
+            )}
+          >
+            {t("nav.reports", "Reports")}
           </Link>
         )}
 
@@ -377,6 +395,7 @@ function MobileMenu({
   showSpaces,
   showSchedule,
   showAttendance,
+  showReports,
   showMyTimeOff,
   showMyAttendance,
   showManage,
@@ -386,6 +405,7 @@ function MobileMenu({
   showSpaces: boolean
   showSchedule: boolean
   showAttendance: boolean
+  showReports: boolean
   showMyTimeOff: boolean
   showMyAttendance: boolean
   showManage: boolean
@@ -519,6 +539,15 @@ function MobileMenu({
               className={cn(mobileItemBase, isActive(pathname, "/my/attendance") ? mobileItemActiveStyle : mobileItemInactive)}>
               <Clock className="h-4 w-4" />
               {t("nav.sidebar.attendance")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showReports && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/reports" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/reports") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <BarChart3 className="h-4 w-4" />
+              {t("nav.reports", "Reports")}
             </Link>
           </DropdownMenuItem>
         )}
