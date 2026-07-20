@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { BarChart3, Download, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock } from "lucide-react"
+import { BarChart3, Download, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock } from "lucide-react"
 
 import {
   analyticsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
   type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
+  type ReportCadence,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
@@ -62,11 +63,14 @@ export default function ReportsPage() {
   const { hasPlanFeature } = useAuth()
   const qc = useQueryClient()
   const canBuild = hasPlanFeature("reports_builder")
+  const canSchedule = hasPlanFeature("report_scheduling")
 
   const [active, setActive] = useState<ActiveReport | null>(null)
   const [result, setResult] = useState<ReportResult | null>(null)
   const [saveOpen, setSaveOpen] = useState(false)
   const [saveMeta, setSaveMeta] = useState({ name: "", description: "", isShared: true })
+  const [schedOpen, setSchedOpen] = useState(false)
+  const [schedForm, setSchedForm] = useState<{ cadence: ReportCadence; hour: number; dayOfWeek: number; dayOfMonth: number; recipients: string }>({ cadence: "weekly", hour: 7, dayOfWeek: 1, dayOfMonth: 1, recipients: "" })
 
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
@@ -97,6 +101,28 @@ export default function ReportsPage() {
     mutationFn: (id: string) => analyticsApi.deleteSaved(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["savedReports"] }); setActive(null); setResult(null); notify.success(t("reports.deleted", "Report deleted")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to delete"),
+  })
+
+  const { data: schedules } = useQuery({
+    queryKey: ["reportSchedules", active?.savedId],
+    queryFn: () => analyticsApi.listSchedules(active!.savedId!),
+    enabled: !!active?.savedId && canSchedule && schedOpen,
+  })
+  const createSched = useMutation({
+    mutationFn: () => analyticsApi.createSchedule({
+      reportDefinitionId: active!.savedId!,
+      cadence: schedForm.cadence,
+      hour: schedForm.hour,
+      dayOfWeek: schedForm.cadence === "weekly" ? schedForm.dayOfWeek : null,
+      dayOfMonth: schedForm.cadence === "monthly" ? schedForm.dayOfMonth : null,
+      recipients: schedForm.recipients.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean),
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["reportSchedules"] }); setSchedForm((f) => ({ ...f, recipients: "" })); notify.success(t("reports.scheduled", "Schedule created")) },
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to schedule"),
+  })
+  const delSched = useMutation({
+    mutationFn: (id: string) => analyticsApi.deleteSchedule(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["reportSchedules"] }),
   })
 
   const pickTemplate = (tpl: ReportTemplate) => { setResult(null); setActive({ def: { ...tpl.def }, name: tpl.name, builder: false }) }
@@ -246,6 +272,11 @@ export default function ReportsPage() {
                       <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.update", "Update") : t("reports.save", "Save")}
                     </Button>
                   )}
+                  {canSchedule && active.savedId && (
+                    <Button variant="outline" className="gap-1.5 h-9" onClick={() => setSchedOpen(true)}>
+                      <CalendarClock className="h-3.5 w-3.5" />{t("reports.schedule", "Schedule")}
+                    </Button>
+                  )}
                   {canBuild && !active.builder && (
                     <Button variant="ghost" className="gap-1.5 h-9" onClick={() => setActive((a) => a ? { ...a, builder: true } : a)}>
                       <Pencil className="h-3.5 w-3.5" />{t("reports.customize", "Customize")}
@@ -303,6 +334,73 @@ export default function ReportsPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSaveOpen(false)}>{t("common.cancel", "Cancel")}</Button>
             <Button disabled={!saveMeta.name.trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule dialog */}
+      <Dialog open={schedOpen} onOpenChange={setSchedOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{t("reports.scheduleTitle", "Schedule email delivery")}</DialogTitle></DialogHeader>
+
+          {/* Existing schedules */}
+          {schedules && schedules.length > 0 && (
+            <div className="space-y-1.5 rounded-lg border border-border p-2">
+              {schedules.map((s) => (
+                <div key={s.id} className="flex items-center gap-2 text-xs">
+                  <CalendarClock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="flex-1 min-w-0 truncate">
+                    <span className="font-medium capitalize">{s.cadence}</span> @ {String(s.hour).padStart(2, "0")}:00 UTC → {s.recipients.join(", ")}
+                  </span>
+                  <button onClick={() => delSched.mutate(s.id)} className="text-muted-foreground hover:text-red-600 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New schedule */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">{t("reports.cadence", "Frequency")}</Label>
+                <Select value={schedForm.cadence} onValueChange={(v) => setSchedForm({ ...schedForm, cadence: v as ReportCadence })}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily" className="text-xs">Daily</SelectItem>
+                    <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
+                    <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">{t("reports.hour", "Hour (UTC)")}</Label>
+                <Input type="number" min={0} max={23} value={schedForm.hour} onChange={(e) => setSchedForm({ ...schedForm, hour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) })} />
+              </div>
+            </div>
+            {schedForm.cadence === "weekly" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">{t("reports.dayOfWeek", "Day of week")}</Label>
+                <Select value={String(schedForm.dayOfWeek)} onValueChange={(v) => setSchedForm({ ...schedForm, dayOfWeek: Number(v) })}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((d, i) => <SelectItem key={i} value={String(i)} className="text-xs">{d}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            {schedForm.cadence === "monthly" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">{t("reports.dayOfMonth", "Day of month (1–28)")}</Label>
+                <Input type="number" min={1} max={28} value={schedForm.dayOfMonth} onChange={(e) => setSchedForm({ ...schedForm, dayOfMonth: Math.min(28, Math.max(1, Number(e.target.value) || 1)) })} />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("reports.recipients", "Recipients (comma-separated emails)")}</Label>
+              <Input value={schedForm.recipients} onChange={(e) => setSchedForm({ ...schedForm, recipients: e.target.value })} placeholder="anna@example.com, john@example.com" />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSchedOpen(false)}>{t("common.close", "Close")}</Button>
+            <Button disabled={!schedForm.recipients.trim() || createSched.isPending} onClick={() => createSched.mutate()}>{createSched.isPending ? t("common.saving", "Saving…") : t("reports.addSchedule", "Add schedule")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

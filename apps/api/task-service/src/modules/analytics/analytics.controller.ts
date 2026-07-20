@@ -1,11 +1,15 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AnalyticsService } from './analytics.service';
+import { ReportScheduleService } from './report-schedule.service';
 import { ReportDefinition } from './query-engine';
 
 @Controller()
 export class AnalyticsController {
-  constructor(private readonly analytics: AnalyticsService) {}
+  constructor(
+    private readonly analytics: AnalyticsService,
+    private readonly schedules: ReportScheduleService,
+  ) {}
 
   @MessagePattern({ cmd: 'analytics_catalog' })
   catalog() {
@@ -35,5 +39,26 @@ export class AnalyticsController {
   @MessagePattern({ cmd: 'analytics_delete_saved' })
   deleteSaved(@Payload() data: { id: string; organizationId: string }) {
     return this.analytics.deleteSaved(data);
+  }
+
+  // ── Schedules ───────────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'analytics_list_schedules' })
+  listSchedules(@Payload() data: { organizationId: string; reportDefinitionId?: string }) {
+    return this.schedules.list(data);
+  }
+
+  @MessagePattern({ cmd: 'analytics_create_schedule' })
+  createSchedule(@Payload() data: any) {
+    return this.schedules.create(data);
+  }
+
+  @MessagePattern({ cmd: 'analytics_update_schedule' })
+  updateSchedule(@Payload() data: any) {
+    return this.schedules.update(data);
+  }
+
+  @MessagePattern({ cmd: 'analytics_delete_schedule' })
+  deleteSchedule(@Payload() data: { id: string; organizationId: string }) {
+    return this.schedules.remove(data);
   }
 }

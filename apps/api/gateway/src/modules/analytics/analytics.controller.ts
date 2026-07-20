@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, Request } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -74,6 +74,46 @@ export class AnalyticsController {
   async deleteSaved(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
       this.taskClient.send({ cmd: 'analytics_delete_saved' }, { id, organizationId: req.user.organizationId }),
+    );
+  }
+
+  // ── Scheduled delivery (Business+). Reads open; mutations gated. ─────────────
+  @Get('schedules')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'List report delivery schedules' })
+  async listSchedules(@Request() req: any, @Query('reportId') reportId?: string) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'analytics_list_schedules' }, { organizationId: req.user.organizationId, reportDefinitionId: reportId }),
+    );
+  }
+
+  @Post('schedules')
+  @RequirePermission('canViewAllTasks')
+  @RequirePlan('report_scheduling')
+  @ApiOperation({ summary: 'Schedule a report for email delivery (Business+)' })
+  async createSchedule(@Body() body: any, @Request() req: any) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'analytics_create_schedule' }, { ...body, organizationId: req.user.organizationId, userId: req.user.id }),
+    );
+  }
+
+  @Patch('schedules/:id')
+  @RequirePermission('canViewAllTasks')
+  @RequirePlan('report_scheduling')
+  @ApiOperation({ summary: 'Update a report schedule (Business+)' })
+  async updateSchedule(@Param('id') id: string, @Body() body: any, @Request() req: any) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'analytics_update_schedule' }, { ...body, id, organizationId: req.user.organizationId }),
+    );
+  }
+
+  @Delete('schedules/:id')
+  @RequirePermission('canViewAllTasks')
+  @RequirePlan('report_scheduling')
+  @ApiOperation({ summary: 'Delete a report schedule (Business+)' })
+  async deleteSchedule(@Param('id') id: string, @Request() req: any) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'analytics_delete_schedule' }, { id, organizationId: req.user.organizationId }),
     );
   }
 }

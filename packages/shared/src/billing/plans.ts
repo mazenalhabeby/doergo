@@ -91,7 +91,8 @@ const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing'
 // wired to any billing gate, so advertising it would be a phantom feature.
 // Re-add here (with real enforcement) when multi-org delegation actually ships.
 // `live_chat` — real-time human support chat (Business+).
-const BUSINESS_CAPS = [...PROFESSIONAL_CAPS, 'workflows', 'audit_log', 'live_chat'];
+// `report_scheduling` — scheduled report delivery by email (Business+).
+const BUSINESS_CAPS = [...PROFESSIONAL_CAPS, 'workflows', 'audit_log', 'live_chat', 'report_scheduling'];
 // `dedicated_support` — named contact + onboarding call, Enterprise-only.
 const ENTERPRISE_CAPS = [...BUSINESS_CAPS, 'dedicated_support'];
 

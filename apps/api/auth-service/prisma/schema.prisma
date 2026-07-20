@@ -357,6 +357,7 @@ model Organization {
 
   // Saved report definitions (custom report builder)
   reportDefinitions ReportDefinition[]
+  reportSchedules   ReportSchedule[]
 
   // Company locations for full-time technician attendance
   companyLocations CompanyLocation[]
@@ -521,6 +522,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   serviceReports      ServiceReport[]
   reportDefinitions   ReportDefinition[]     @relation("ReportCreator") // saved reports created
+  reportSchedules     ReportSchedule[]       @relation("ReportScheduleCreator")
   assignments         TechnicianAssignment[] // Technician location assignments
   timeEntries         TimeEntry[] // Clock-in/clock-out records
   approvedTimeEntries TimeEntry[]            @relation("ApprovedTimeEntries") // Time entries approved by this user
@@ -977,11 +979,44 @@ model ReportDefinition {
   createdById String
   createdBy   User   @relation("ReportCreator", fields: [createdById], references: [id])
 
+  schedules ReportSchedule[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([organizationId, createdAt])
   @@map("report_definitions")
+}
+
+// Scheduled delivery of a saved report (Business+). A poller runs due schedules,
+// renders the report and emails it to recipients, then reschedules nextRunAt.
+model ReportSchedule {
+  id                 String           @id @default(cuid())
+  organizationId     String
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reportDefinitionId String
+  reportDefinition   ReportDefinition @relation(fields: [reportDefinitionId], references: [id], onDelete: Cascade)
+
+  cadence    String // 'daily' | 'weekly' | 'monthly'
+  hour       Int      @default(7) // hour of day (UTC) to send
+  dayOfWeek  Int? // 0-6 (Sun-Sat) for weekly
+  dayOfMonth Int? // 1-28 for monthly
+  recipients String[] @default([]) // email addresses
+  isActive   Boolean  @default(true)
+
+  lastRunAt DateTime?
+  nextRunAt DateTime
+
+  createdById String
+  createdBy   User   @relation("ReportScheduleCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, nextRunAt])
+  @@index([organizationId])
+  @@index([reportDefinitionId])
+  @@map("report_schedules")
 }
 
 model ServiceReport {

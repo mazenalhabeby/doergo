@@ -4099,4 +4099,49 @@ export const analyticsApi = {
     if (res.error) throw new Error(res.error);
     return res.data;
   },
+  // ── Scheduled delivery ──
+  listSchedules: async (reportId?: string) => {
+    const res = await api.get<{ data: ReportSchedule[] }>(`/analytics/schedules${reportId ? `?reportId=${reportId}` : ""}`);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  createSchedule: async (input: ScheduleInput) => {
+    const res = await api.post<{ data: ReportSchedule }>("/analytics/schedules", input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  updateSchedule: async (id: string, input: Partial<ScheduleInput>) => {
+    const res = await api.patch<{ data: ReportSchedule }>(`/analytics/schedules/${id}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  deleteSchedule: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/analytics/schedules/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
 };
+
+export type ReportCadence = "daily" | "weekly" | "monthly";
+export interface ReportSchedule {
+  id: string;
+  reportDefinitionId: string;
+  cadence: ReportCadence;
+  hour: number;
+  dayOfWeek?: number | null;
+  dayOfMonth?: number | null;
+  recipients: string[];
+  isActive: boolean;
+  lastRunAt?: string | null;
+  nextRunAt: string;
+  createdAt: string;
+}
+export interface ScheduleInput {
+  reportDefinitionId: string;
+  cadence: ReportCadence;
+  hour?: number;
+  dayOfWeek?: number | null;
+  dayOfMonth?: number | null;
+  recipients: string[];
+  isActive?: boolean;
+}
