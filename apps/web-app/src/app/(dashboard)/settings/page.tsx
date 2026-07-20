@@ -25,6 +25,9 @@ import {
   AlertCircle,
   GitBranch,
   Puzzle,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
 } from "lucide-react"
 import NextLink from "next/link"
 import { notify } from "@/lib/toast"
@@ -57,6 +60,7 @@ import { organizationsApi, usersApi, authApi, JoinPolicy } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -277,6 +281,32 @@ function SaveBar({
 // Tab Content Components
 // ============================================================================
 
+/** Downscale an image file to a PNG data URL (max edge = `max`px). Data URLs
+ *  avoid CORS when the PDF renderer draws the logo onto a canvas. */
+function resizeImageToDataUrl(file: File, max = 400): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error("read failed"))
+    reader.onload = () => {
+      const img = new window.Image()
+      img.onerror = () => reject(new Error("decode failed"))
+      img.onload = () => {
+        let { width, height } = img
+        if (width >= height && width > max) { height = Math.round((height * max) / width); width = max }
+        else if (height > max) { width = Math.round((width * max) / height); height = max }
+        const canvas = document.createElement("canvas")
+        canvas.width = width; canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return reject(new Error("no canvas"))
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL("image/png"))
+      }
+      img.src = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 function GeneralSection() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -318,6 +348,30 @@ function GeneralSection() {
   })
 
   const set = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }))
+
+  const [logoBusy, setLogoBusy] = useState(false)
+  const saveLogo = async (logoUrl: string) => {
+    setLogoBusy(true)
+    try {
+      await organizationsApi.updateProfile({ logoUrl })
+      queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+      notify.success(logoUrl ? t("settings.general.logoSaved", "Logo updated") : t("settings.general.logoRemoved", "Logo removed"))
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : t("settings.general.failed"))
+    } finally { setLogoBusy(false) }
+  }
+  const onLogoPick = async (file?: File) => {
+    if (!file) return
+    if (!file.type.startsWith("image/")) { notify.error(t("settings.general.logoType", "Please choose an image file")); return }
+    setLogoBusy(true)
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, 400)
+      await saveLogo(dataUrl)
+    } catch {
+      setLogoBusy(false)
+      notify.error(t("settings.general.logoFailed", "Could not process that image"))
+    }
+  }
 
   const industryOptions: ComboboxOption[] = useMemo(
     () =>
@@ -361,6 +415,32 @@ function GeneralSection() {
         description={t("settings.general.description")}
       >
         <div className="space-y-5">
+          <FormField icon={ImageIcon} label={t("settings.general.logo", "Company logo")}>
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 shrink-0 rounded-xl border border-border bg-muted/40 grid place-items-center overflow-hidden">
+                {profile?.logoUrl
+                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={profile.logoUrl} alt="Logo" className="h-full w-full object-contain" />
+                  : <ImageIcon className="h-6 w-6 text-muted-foreground/50" />}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <label className={cn("inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-sm font-medium cursor-pointer hover:bg-accent/50 transition-colors", logoBusy && "opacity-60 pointer-events-none")}>
+                    {logoBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    {profile?.logoUrl ? t("settings.general.logoReplace", "Replace") : t("settings.general.logoUpload", "Upload logo")}
+                    <input type="file" accept="image/*" className="hidden" disabled={logoBusy}
+                      onChange={e => { onLogoPick(e.target.files?.[0]); e.target.value = "" }} />
+                  </label>
+                  {profile?.logoUrl && (
+                    <Button type="button" variant="ghost" size="sm" className="h-9 gap-1.5 text-red-600 hover:text-red-700" disabled={logoBusy} onClick={() => saveLogo("")}>
+                      <Trash2 className="h-3.5 w-3.5" />{t("settings.general.logoRemove", "Remove")}
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">{t("settings.general.logoHint", "PNG or JPG. Shows on report & statement PDFs. Saved instantly.")}</p>
+              </div>
+            </div>
+          </FormField>
+
           <FormField icon={Building2} label={t("settings.general.orgName")}>
             <Input
               value={form.name}
