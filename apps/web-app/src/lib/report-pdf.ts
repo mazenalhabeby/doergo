@@ -447,11 +447,16 @@ async function buildDoc(
   const ph = doc.internal.pageSize.getHeight()
   for (let p = 1; p <= total; p++) {
     doc.setPage(p)
+    doc.setFont(FF, "normal")
+    // Page numbers (left) + org name (right).
     doc.setFontSize(8)
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-    doc.setFont(FF, "normal")
     if (cfg.pageNumbers) doc.text(`Page ${p} of ${total}`, margin, ph - 8)
     doc.text(branding.name || "HBCField", pageW - margin, ph - 8, { align: "right" })
+    // "Powered by HBCField" — centered SaaS mark on every page.
+    doc.setFontSize(7)
+    doc.setTextColor(148, 163, 184) // slate-400 (subtle)
+    doc.text("Powered by HBCField", pageW / 2, ph - 8, { align: "center" })
   }
 
   const safe = (cfg.heading || meta.title || "report").replace(/[^\w-]+/g, "-").replace(/-+/g, "-").toLowerCase()
