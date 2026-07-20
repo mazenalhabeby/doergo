@@ -749,6 +749,8 @@
       "billing": "Subscription & billing"
     },
     "spaces": "Spaces",
+    "customers": "Customers",
+    "reports": "Reports",
     "timeOff": "Time Off",
     "manage": "Manage",
     "team": "Team",
