@@ -140,6 +140,9 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY:-}
       - S3_BUCKET=${S3_BUCKET:-hbcfield}
       - S3_REGION=${S3_REGION:-eu-central-1}
+      # AI reports (Phase 4) — natural-language → report via Claude. Optional:
+      # feature returns a graceful 402/400 until this is set in .env.production.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
