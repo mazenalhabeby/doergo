@@ -12,7 +12,10 @@ import {
 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
-import { exportReportPdf, type ReportBranding } from "@/lib/report-pdf"
+import {
+  exportReportPdf, PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE,
+  type ReportBranding, type PdfTemplate, type CustomPdfOptions,
+} from "@/lib/report-pdf"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -76,6 +79,9 @@ export default function ReportsPage() {
   const [saveMeta, setSaveMeta] = useState({ name: "", description: "", isShared: true })
   const [schedOpen, setSchedOpen] = useState(false)
   const [schedForm, setSchedForm] = useState<{ cadence: ReportCadence; hour: number; dayOfWeek: number; dayOfMonth: number; recipients: string }>({ cadence: "weekly", hour: 7, dayOfWeek: 1, dayOfMonth: 1, recipients: "" })
+  const [pdfOpen, setPdfOpen] = useState(false)
+  const [pdfTemplate, setPdfTemplate] = useState<PdfTemplate>("classic")
+  const [pdfCustom, setPdfCustom] = useState<CustomPdfOptions>({ accent: "#2563EB", orientation: "portrait", logo: true, summary: true, chart: true, table: true, heading: "", note: "" })
 
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
@@ -174,7 +180,14 @@ export default function ReportsPage() {
     const preset = active.def.dateRange?.preset
     const rangeLabel = DATE_PRESETS.find((p) => p.value === preset)?.label
     try {
-      await exportReportPdf(result, { title: active.name, subtitle: rangeLabel }, (orgProfile || {}) as ReportBranding)
+      await exportReportPdf(
+        result,
+        { title: active.name, subtitle: rangeLabel },
+        (orgProfile || {}) as ReportBranding,
+        pdfTemplate,
+        pdfTemplate === "custom" ? pdfCustom : undefined,
+      )
+      setPdfOpen(false)
     } catch (e) {
       notify.error(e instanceof Error ? e.message : "Failed to export PDF")
     }
@@ -297,7 +310,7 @@ export default function ReportsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={download} className="gap-2"><Table2 className="h-4 w-4" />{t("reports.exportCsv", "Download CSV")}</DropdownMenuItem>
-                          <DropdownMenuItem onClick={downloadPdf} className="gap-2"><FileText className="h-4 w-4" />{t("reports.exportPdf", "Download PDF")}</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setPdfOpen(true)} className="gap-2"><FileText className="h-4 w-4" />{t("reports.exportPdfMenu", "Export PDF…")}</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
@@ -482,6 +495,77 @@ export default function ReportsPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSchedOpen(false)}>{t("common.close", "Close")}</Button>
             <Button disabled={!schedForm.recipients.trim() || createSched.isPending} onClick={() => createSched.mutate()}>{createSched.isPending ? t("common.saving", "Saving…") : t("reports.addSchedule", "Add schedule")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF export dialog — template picker (+ custom for Pro+) */}
+      <Dialog open={pdfOpen} onOpenChange={setPdfOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t("reports.exportPdfTitle", "Export PDF")}</DialogTitle></DialogHeader>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              {[...PDF_TEMPLATES, ...(canBuild ? [CUSTOM_PDF_TEMPLATE] : [])].map((tpl) => {
+                const on = pdfTemplate === tpl.key
+                return (
+                  <button
+                    key={tpl.key}
+                    onClick={() => setPdfTemplate(tpl.key)}
+                    className={cn("text-left rounded-xl border p-3 transition-colors", on ? "border-primary bg-primary/[0.06]" : "border-border hover:bg-accent/40")}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-medium text-foreground">{t(`reports.pdfTpl.${tpl.key}.name`, tpl.name)}</span>
+                      {tpl.key === "custom" && <span className="rounded-full bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 font-medium">Pro</span>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t(`reports.pdfTpl.${tpl.key}.desc`, tpl.description)}</p>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Custom controls (Pro+) */}
+            {pdfTemplate === "custom" && canBuild && (
+              <div className="rounded-xl border border-border p-3 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label className="text-xs">{t("reports.pdfAccent", "Accent color")}</Label>
+                  <div className="flex items-center gap-1.5">
+                    {["#2563EB", "#334155", "#059669", "#7C3AED", "#E11D48", "#D97706"].map((hex) => (
+                      <button key={hex} onClick={() => setPdfCustom((c) => ({ ...c, accent: hex }))} className={cn("h-6 w-6 rounded-full border-2", pdfCustom.accent === hex ? "border-foreground" : "border-transparent")} style={{ backgroundColor: hex }} aria-label={hex} />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <Label className="text-xs">{t("reports.pdfOrientation", "Orientation")}</Label>
+                  <div className="flex gap-1">
+                    {(["portrait", "landscape"] as const).map((o) => (
+                      <button key={o} onClick={() => setPdfCustom((c) => ({ ...c, orientation: o }))} className={cn("rounded-lg border px-2.5 py-1 text-xs capitalize", pdfCustom.orientation === o ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>{t(`reports.pdf_${o}`, o)}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                  {([["logo", "Company logo"], ["summary", "KPI summary"], ["chart", "Chart"], ["table", "Data table"]] as const).map(([key, label]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <Label className="text-xs">{t(`reports.pdfInc_${key}`, label)}</Label>
+                      <Switch checked={pdfCustom[key]} onCheckedChange={(v) => setPdfCustom((c) => ({ ...c, [key]: v }))} />
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">{t("reports.pdfHeading", "Custom heading (optional)")}</Label>
+                  <Input value={pdfCustom.heading} onChange={(e) => setPdfCustom((c) => ({ ...c, heading: e.target.value }))} placeholder={active?.name} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">{t("reports.pdfNote", "Note / disclaimer (optional)")}</Label>
+                  <Input value={pdfCustom.note} onChange={(e) => setPdfCustom((c) => ({ ...c, note: e.target.value }))} placeholder={t("reports.pdfNotePlaceholder", "e.g. Confidential — internal use only")} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPdfOpen(false)}>{t("common.cancel", "Cancel")}</Button>
+            <Button className="gap-1.5" disabled={pdfTemplate === "custom" && !(pdfCustom.table || pdfCustom.chart || pdfCustom.summary)} onClick={downloadPdf}><FileText className="h-3.5 w-3.5" />{t("reports.downloadPdf", "Download PDF")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

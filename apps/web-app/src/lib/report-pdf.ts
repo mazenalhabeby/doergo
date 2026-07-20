@@ -21,9 +21,91 @@ export interface ReportBranding {
   website?: string | null
 }
 
-const BRAND = { r: 37, g: 99, b: 235 } // #2563EB (blue-600)
-const INK = { r: 30, g: 41, b: 59 } // slate-800
-const MUTED = { r: 100, g: 116, b: 139 } // slate-500
+export type PdfTemplate = "classic" | "executive" | "data" | "presentation" | "custom"
+
+interface RGB { r: number; g: number; b: number }
+
+/** Fully-resolved render config. Templates are presets over this shape. */
+export interface PdfConfig {
+  accent: RGB
+  orientation: "portrait" | "landscape"
+  logo: boolean
+  headerBand: boolean // colored letterhead band (presentation style)
+  summary: boolean // KPI totals cards
+  chart: boolean // bar chart of the first measure
+  table: boolean
+  heading?: string // overrides the report title in the document
+  note?: string // short intro / disclaimer under the title
+}
+
+/** Custom options surfaced in the UI for higher-tier users. */
+export interface CustomPdfOptions {
+  accent: string // hex, e.g. "#2563EB"
+  orientation: "portrait" | "landscape"
+  logo: boolean
+  summary: boolean
+  chart: boolean
+  table: boolean
+  heading?: string
+  note?: string
+}
+
+const BLUE: RGB = { r: 37, g: 99, b: 235 } // #2563EB (blue-600)
+const SLATE: RGB = { r: 51, g: 65, b: 85 } // slate-700
+const INK: RGB = { r: 30, g: 41, b: 59 } // slate-800
+const MUTED: RGB = { r: 100, g: 116, b: 139 } // slate-500
+
+export interface PdfTemplateMeta {
+  key: PdfTemplate
+  name: string
+  description: string
+}
+
+/** Catalog shown in the export dialog. `custom` is appended only for eligible tiers. */
+export const PDF_TEMPLATES: PdfTemplateMeta[] = [
+  { key: "classic", name: "Classic", description: "Letterhead, chart preview, and full data table." },
+  { key: "executive", name: "Executive summary", description: "KPI totals up top, chart, and a compact table." },
+  { key: "data", name: "Data table", description: "Dense landscape table — no chart, best for wide reports." },
+  { key: "presentation", name: "Presentation", description: "Bold colored header band, KPIs, big chart and table." },
+]
+
+export const CUSTOM_PDF_TEMPLATE: PdfTemplateMeta = {
+  key: "custom",
+  name: "Custom",
+  description: "Choose colors, orientation, and which sections to include.",
+}
+
+function hexToRgb(hex: string): RGB {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim())
+  if (!m) return BLUE
+  return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) }
+}
+
+function presetFor(template: PdfTemplate, custom?: CustomPdfOptions): PdfConfig {
+  switch (template) {
+    case "executive":
+      return { accent: BLUE, orientation: "portrait", logo: true, headerBand: false, summary: true, chart: true, table: true }
+    case "data":
+      return { accent: SLATE, orientation: "landscape", logo: true, headerBand: false, summary: false, chart: false, table: true }
+    case "presentation":
+      return { accent: BLUE, orientation: "portrait", logo: true, headerBand: true, summary: true, chart: true, table: true }
+    case "custom":
+      return {
+        accent: custom ? hexToRgb(custom.accent) : BLUE,
+        orientation: custom?.orientation ?? "portrait",
+        logo: custom?.logo ?? true,
+        headerBand: false,
+        summary: custom?.summary ?? false,
+        chart: custom?.chart ?? true,
+        table: custom?.table ?? true,
+        heading: custom?.heading?.trim() || undefined,
+        note: custom?.note?.trim() || undefined,
+      }
+    case "classic":
+    default:
+      return { accent: BLUE, orientation: "portrait", logo: true, headerBand: false, summary: false, chart: true, table: true }
+  }
+}
 
 /** Format a cell value the same way the on-screen table does. */
 function fmt(value: unknown, format?: string): string {
@@ -36,6 +118,18 @@ function fmt(value: unknown, format?: string): string {
   const d = new Date(s)
   if (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(s)) return d.toLocaleDateString()
   return s
+}
+
+/** Sum (or average, for percent) each measure column → KPI cards. */
+function summarize(result: ReportResult): { label: string; value: string }[] {
+  return result.columns
+    .filter((c) => c.kind === "measure")
+    .map((c) => {
+      const nums = result.rows.map((r) => Number(r[c.key]) || 0)
+      const total = nums.reduce((a, b) => a + b, 0)
+      const value = c.format === "percent" && nums.length ? total / nums.length : total
+      return { label: c.label, value: fmt(value, c.format) }
+    })
 }
 
 /** Load a (possibly cross-origin) logo into a PNG data URL. Resolves null on any failure. */
@@ -79,84 +173,169 @@ export interface ReportPdfMeta {
 }
 
 /**
- * Build and download a branded PDF of a report result — company letterhead,
- * report title, the full data table, and paginated footer.
+ * Build and download a branded PDF of a report result using one of four
+ * templates (or a fully custom config). Renders company letterhead, optional
+ * KPI summary + chart, the data table, and a paginated footer.
  */
-export async function exportReportPdf(result: ReportResult, meta: ReportPdfMeta, branding: ReportBranding): Promise<void> {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
+export async function exportReportPdf(
+  result: ReportResult,
+  meta: ReportPdfMeta,
+  branding: ReportBranding,
+  template: PdfTemplate = "classic",
+  custom?: CustomPdfOptions,
+): Promise<void> {
+  const cfg = presetFor(template, custom)
+  const doc = new jsPDF({ orientation: cfg.orientation, unit: "mm", format: "a4" })
   const pageW = doc.internal.pageSize.getWidth()
   const margin = 14
-  const logo = await loadLogo(branding.logoUrl)
+  const contentW = pageW - margin * 2
+  const logo = cfg.logo ? await loadLogo(branding.logoUrl) : null
+
+  let y = margin
 
   // ── Letterhead ────────────────────────────────────────────────────────────
-  let headerBottom = margin
-  const textX = margin
-  let logoW = 0
-  if (logo) {
-    const maxH = 16
-    const maxW = 40
-    const ratio = logo.w / logo.h
-    let h = maxH
-    let w = h * ratio
-    if (w > maxW) { w = maxW; h = w / ratio }
-    doc.addImage(logo.dataUrl, "PNG", margin, margin, w, h)
-    logoW = w + 4
+  if (cfg.headerBand) {
+    // Colored band: name + address reversed out on the accent color.
+    const bandH = 26
+    doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+    doc.rect(0, 0, pageW, bandH, "F")
+    let bx = margin
+    if (logo) {
+      const h = 14, w = (logo.w / logo.h) * h
+      doc.addImage(logo.dataUrl, "PNG", margin, 6, Math.min(w, 34), h)
+      bx += Math.min(w, 34) + 4
+    }
+    doc.setTextColor(255, 255, 255)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(15)
+    doc.text(branding.name || "Company", bx, 12)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8)
+    doc.text(addressLines(branding).slice(0, 2).join("   "), bx, 18)
+    y = bandH + 8
+  } else {
+    let logoW = 0
+    if (logo) {
+      const maxH = 16, maxW = 40, ratio = logo.w / logo.h
+      let h = maxH, w = h * ratio
+      if (w > maxW) { w = maxW; h = w / ratio }
+      doc.addImage(logo.dataUrl, "PNG", margin, margin, w, h)
+      logoW = w + 4
+    }
+    doc.setTextColor(INK.r, INK.g, INK.b)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(15)
+    doc.text(branding.name || "Company", margin + logoW, margin + 5)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+    let ly = margin + 10
+    for (const line of addressLines(branding)) { doc.text(line, margin + logoW, ly); ly += 4 }
+    y = Math.max(ly, margin + (logo ? 18 : 12))
+    doc.setDrawColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+    doc.setLineWidth(0.8)
+    doc.line(margin, y, pageW - margin, y)
+    y += 8
   }
-  doc.setTextColor(INK.r, INK.g, INK.b)
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(15)
-  doc.text(branding.name || "Company", margin + logoW, margin + 5)
-
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(8.5)
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-  let ly = margin + 10
-  for (const line of addressLines(branding)) {
-    doc.text(line, margin + logoW, ly)
-    ly += 4
-  }
-  headerBottom = Math.max(ly, margin + (logo ? 18 : 12))
-
-  // Brand rule under the letterhead
-  doc.setDrawColor(BRAND.r, BRAND.g, BRAND.b)
-  doc.setLineWidth(0.8)
-  doc.line(margin, headerBottom, pageW - margin, headerBottom)
 
   // ── Title block ─────────────────────────────────────────────────────────
-  let y = headerBottom + 8
   doc.setTextColor(INK.r, INK.g, INK.b)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(16)
-  doc.text(meta.title, margin, y)
+  doc.text(cfg.heading || meta.title, margin, y)
   y += 6
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
   doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
   const generated = `Generated ${new Date().toLocaleString()}`
   doc.text(meta.subtitle ? `${meta.subtitle}   •   ${generated}` : generated, margin, y)
-  y += 4
+  y += 5
+  if (cfg.note) {
+    doc.setFontSize(8.5)
+    const wrapped = doc.splitTextToSize(cfg.note, contentW)
+    doc.text(wrapped, margin, y)
+    y += wrapped.length * 4 + 2
+  }
+
+  // ── KPI summary cards ─────────────────────────────────────────────────────
+  if (cfg.summary) {
+    const cards = summarize(result)
+    if (cards.length) {
+      const gap = 3
+      const perRow = Math.min(cards.length, cfg.orientation === "landscape" ? 5 : 4)
+      const cardW = (contentW - gap * (perRow - 1)) / perRow
+      const cardH = 16
+      cards.forEach((card, i) => {
+        const col = i % perRow
+        const row = Math.floor(i / perRow)
+        const cx = margin + col * (cardW + gap)
+        const cy = y + row * (cardH + gap)
+        doc.setFillColor(248, 250, 252)
+        doc.setDrawColor(226, 232, 240)
+        doc.setLineWidth(0.2)
+        doc.roundedRect(cx, cy, cardW, cardH, 1.5, 1.5, "FD")
+        doc.setFontSize(7)
+        doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+        doc.setFont("helvetica", "normal")
+        doc.text(doc.splitTextToSize(card.label, cardW - 4)[0], cx + 2.5, cy + 5)
+        doc.setFontSize(12)
+        doc.setTextColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+        doc.setFont("helvetica", "bold")
+        doc.text(card.value, cx + 2.5, cy + 12)
+      })
+      const rows = Math.ceil(cards.length / perRow)
+      y += rows * (cardH + gap) + 4
+    }
+  }
+
+  // ── Chart (horizontal bars of the first measure) ──────────────────────────
+  const measureCol = result.columns.find((c) => c.kind === "measure")
+  const labelCol = result.columns.find((c) => c.kind === "period" || c.kind === "dimension")
+  if (cfg.chart && measureCol && labelCol && result.rows.length) {
+    const maxVal = Math.max(...result.rows.map((r) => Number(r[measureCol.key]) || 0), 1)
+    const top = result.rows.slice(0, 10)
+    const labelW = 42
+    const valW = 24
+    const barX = margin + labelW
+    const barMaxW = contentW - labelW - valW
+    const rowH = 6
+    doc.setFontSize(8)
+    for (const r of top) {
+      doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+      doc.setFont("helvetica", "normal")
+      doc.text(doc.splitTextToSize(fmt(r[labelCol.key], labelCol.format), labelW - 2)[0], margin, y + 4)
+      doc.setFillColor(226, 232, 240)
+      doc.roundedRect(barX, y + 1, barMaxW, rowH - 2, 0.6, 0.6, "F")
+      const w = Math.max(((Number(r[measureCol.key]) || 0) / maxVal) * barMaxW, 0.5)
+      doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+      doc.roundedRect(barX, y + 1, w, rowH - 2, 0.6, 0.6, "F")
+      doc.setTextColor(INK.r, INK.g, INK.b)
+      doc.setFont("helvetica", "bold")
+      doc.text(fmt(r[measureCol.key], measureCol.format), pageW - margin, y + 4, { align: "right" })
+      y += rowH
+    }
+    y += 4
+  }
 
   // ── Data table ────────────────────────────────────────────────────────────
-  const head = [result.columns.map((c) => c.label)]
-  const body = result.rows.map((row) => result.columns.map((c) => fmt(row[c.key], c.format)))
-  const measureCols = result.columns
-    .map((c, i) => ({ c, i }))
-    .filter(({ c }) => c.kind === "measure")
-  const columnStyles: Record<number, { halign: "right" }> = {}
-  for (const { i } of measureCols) columnStyles[i] = { halign: "right" }
+  if (cfg.table) {
+    const head = [result.columns.map((c) => c.label)]
+    const body = result.rows.map((row) => result.columns.map((c) => fmt(row[c.key], c.format)))
+    const columnStyles: Record<number, { halign: "right" }> = {}
+    result.columns.forEach((c, i) => { if (c.kind === "measure") columnStyles[i] = { halign: "right" } })
+    autoTable(doc, {
+      head,
+      body,
+      startY: y,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8.5, cellPadding: 2.2, textColor: [INK.r, INK.g, INK.b], lineColor: [226, 232, 240], lineWidth: 0.1 },
+      headStyles: { fillColor: [cfg.accent.r, cfg.accent.g, cfg.accent.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles,
+    })
+  }
 
-  autoTable(doc, {
-    head,
-    body,
-    startY: y,
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 8.5, cellPadding: 2.2, textColor: [INK.r, INK.g, INK.b], lineColor: [226, 232, 240], lineWidth: 0.1 },
-    headStyles: { fillColor: [BRAND.r, BRAND.g, BRAND.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
-    columnStyles,
-  })
-
-  // ── Footer on every page (page total is known only after the table lays out) ──
+  // ── Footer on every page ──────────────────────────────────────────────────
   const total = doc.getNumberOfPages()
   const ph = doc.internal.pageSize.getHeight()
   for (let p = 1; p <= total; p++) {
@@ -165,9 +344,9 @@ export async function exportReportPdf(result: ReportResult, meta: ReportPdfMeta,
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
     doc.setFont("helvetica", "normal")
     doc.text(`Page ${p} of ${total}`, margin, ph - 8)
-    doc.text("HBCField", pageW - margin, ph - 8, { align: "right" })
+    doc.text(branding.name || "HBCField", pageW - margin, ph - 8, { align: "right" })
   }
 
-  const safe = (meta.title || "report").replace(/[^\w-]+/g, "-").replace(/-+/g, "-").toLowerCase()
+  const safe = (cfg.heading || meta.title || "report").replace(/[^\w-]+/g, "-").replace(/-+/g, "-").toLowerCase()
   doc.save(`${safe}-${new Date().toISOString().slice(0, 10)}.pdf`)
 }
