@@ -352,6 +352,9 @@ model Organization {
   // Service reports
   serviceReports ServiceReport[]
 
+  // Customers (first-class entity for customer-scoped work + reporting)
+  customers Customer[]
+
   // Company locations for full-time technician attendance
   companyLocations CompanyLocation[]
 
@@ -670,6 +673,10 @@ model Task {
   assetId String?
   asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
+  // Optional link to a customer (for customer-scoped reporting)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
   // Subtask hierarchy
   parentId String?
   parent   Task?   @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
@@ -717,6 +724,7 @@ model Task {
   @@index([epicId]) // epic filtering
   @@index([workflowId]) // workflow filtering
   @@index([spaceId]) // space filtering
+  @@index([customerId]) // customer-scoped reporting
   @@index([organizationId, spaceId, status]) // space + status filtering
   @@map("tasks")
 }
@@ -922,6 +930,32 @@ model Asset {
 }
 
 // Service report created when technician completes a task
+// First-class customer entity — the party work is done for. Tasks and service
+// reports link here so reporting can group reliably by customer (vs free text).
+model Customer {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name         String
+  contactName  String?
+  email        String?
+  phone        String?
+  address      String?
+  notes        String?
+  isActive     Boolean  @default(true)
+
+  tasks          Task[]
+  serviceReports ServiceReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, name])
+  @@map("customers")
+}
+
 model ServiceReport {
   id String @id @default(cuid())
 
@@ -941,7 +975,11 @@ model ServiceReport {
   // Signatures (base64 encoded PNG or URL)
   technicianSignature String? @db.Text
   customerSignature   String? @db.Text
-  customerName        String? // Who signed
+  customerName        String? // Who signed (free text)
+
+  // Optional link to a customer entity (customer-scoped reporting)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   // Metadata
   completedAt   DateTime
@@ -964,6 +1002,7 @@ model ServiceReport {
   @@index([completedAt])
   @@index([organizationId])
   @@index([completedById])
+  @@index([customerId])
   @@index([organizationId, completedAt])
   @@map("service_reports")
 }

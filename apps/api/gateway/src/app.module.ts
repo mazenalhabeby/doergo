@@ -20,6 +20,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
 import { EmployeesModule } from './modules/technicians/technicians.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
+import { CustomersModule } from './modules/customers/customers.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
@@ -87,6 +88,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     OvertimeModule,
     EmployeesModule,
     InvitationsModule,
+    CustomersModule,
     OnboardingModule,
     JoinRequestsModule,
     OrganizationsModule,

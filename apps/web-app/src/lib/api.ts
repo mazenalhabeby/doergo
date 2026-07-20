@@ -3980,3 +3980,50 @@ export const chatApi = {
     await api.post(`/chat/conversations/${conversationId}/read`, {});
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Customers — first-class entity for customer-scoped work + reporting.
+// ─────────────────────────────────────────────────────────────────────────────
+export interface Customer {
+  id: string;
+  name: string;
+  contactName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
+
+export const customersApi = {
+  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; page?: number; limit?: number }) => {
+    const qs = buildUrlWithQuery("/customers", params || {});
+    const res = await api.get<{ data: Customer[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(qs);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  get: async (id: string) => {
+    const res = await api.get<{ data: Customer }>(`/customers/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  create: async (dto: CustomerInput) => {
+    const res = await api.post<{ data: Customer }>("/customers", dto);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  update: async (id: string, dto: CustomerInput) => {
+    const res = await api.patch<{ data: Customer }>(`/customers/${id}`, dto);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  remove: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/customers/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+};

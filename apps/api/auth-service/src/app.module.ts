@@ -10,6 +10,7 @@ import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { InvoiceModule } from './modules/invoices/invoice.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { CustomersModule } from './modules/customers/customers.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { BillingModule } from './modules/billing/billing.module';
     AuditLogModule,
     InvoiceModule,
     BillingModule,
+    CustomersModule,
   ],
 })
 export class AppModule {}
