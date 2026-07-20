@@ -4056,6 +4056,18 @@ export interface DatasetMeta {
   measures: Array<{ key: string; label: string; format: string }>;
 }
 
+export interface SavedReport {
+  id: string;
+  name: string;
+  description?: string | null;
+  dataset: string;
+  config: ReportDefinition;
+  isShared: boolean;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const analyticsApi = {
   catalog: async () => {
     const res = await api.get<{ data: { datasets: DatasetMeta[]; templates: ReportTemplate[] } }>("/analytics/catalog");
@@ -4066,5 +4078,25 @@ export const analyticsApi = {
     const res = await api.post<{ data: ReportResult }>("/analytics/run", { definition });
     if (res.error) throw new Error(res.error);
     return res.data!.data;
+  },
+  listSaved: async () => {
+    const res = await api.get<{ data: SavedReport[] }>("/analytics/reports");
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  createSaved: async (input: { name: string; description?: string; config: ReportDefinition; isShared?: boolean }) => {
+    const res = await api.post<{ data: SavedReport }>("/analytics/reports", input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  updateSaved: async (id: string, input: { name?: string; description?: string; config?: ReportDefinition; isShared?: boolean }) => {
+    const res = await api.patch<{ data: SavedReport }>(`/analytics/reports/${id}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  deleteSaved: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/analytics/reports/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
   },
 };

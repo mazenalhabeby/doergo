@@ -355,6 +355,9 @@ model Organization {
   // Customers (first-class entity for customer-scoped work + reporting)
   customers Customer[]
 
+  // Saved report definitions (custom report builder)
+  reportDefinitions ReportDefinition[]
+
   // Company locations for full-time technician attendance
   companyLocations CompanyLocation[]
 
@@ -517,6 +520,7 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   serviceReports      ServiceReport[]
+  reportDefinitions   ReportDefinition[]     @relation("ReportCreator") // saved reports created
   assignments         TechnicianAssignment[] // Technician location assignments
   timeEntries         TimeEntry[] // Clock-in/clock-out records
   approvedTimeEntries TimeEntry[]            @relation("ApprovedTimeEntries") // Time entries approved by this user
@@ -954,6 +958,30 @@ model Customer {
   @@index([organizationId, isActive])
   @@index([organizationId, name])
   @@map("customers")
+}
+
+// Saved report — a named, reusable report definition (config = the query spec:
+// dataset + measures/dimensions/filters/granularity/dateRange). Built via the
+// custom report builder (Pro+). Shared org-wide by default, or creator-private.
+model ReportDefinition {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  dataset     String
+  config      Json // ReportDefinition query spec (client-safe, validated by the engine)
+  isShared    Boolean @default(true) // visible org-wide vs creator-only
+
+  createdById String
+  createdBy   User   @relation("ReportCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@map("report_definitions")
 }
 
 model ServiceReport {

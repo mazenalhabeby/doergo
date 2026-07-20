@@ -1,43 +1,36 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { BarChart3, Download, Play, Clock, Users, Building2, ClipboardList } from "lucide-react"
+import { BarChart3, Download, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock } from "lucide-react"
 
 import {
   analyticsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
-  type ReportDatePreset, type ReportGranularity,
+  type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
 } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 const TEMPLATE_ICON: Record<string, typeof Clock> = {
-  timesheet: Clock,
-  customer_report: Building2,
-  technician_performance: Users,
-  task_summary: ClipboardList,
+  timesheet: Clock, customer_report: Building2, technician_performance: Users, task_summary: ClipboardList,
 }
 
 const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
-  { value: "last_7d", label: "Last 7 days" },
-  { value: "last_30d", label: "Last 30 days" },
-  { value: "last_90d", label: "Last 90 days" },
-  { value: "this_month", label: "This month" },
-  { value: "last_month", label: "Last month" },
-  { value: "this_year", label: "This year" },
-  { value: "all", label: "All time" },
+  { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
+  { value: "last_90d", label: "Last 90 days" }, { value: "this_month", label: "This month" },
+  { value: "last_month", label: "Last month" }, { value: "this_year", label: "This year" }, { value: "all", label: "All time" },
 ]
-
 const GRANULARITIES: { value: ReportGranularity; label: string }[] = [
-  { value: "day", label: "Daily" },
-  { value: "week", label: "Weekly" },
-  { value: "month", label: "Monthly" },
-  { value: "none", label: "No time split" },
+  { value: "none", label: "No time split" }, { value: "day", label: "Daily" },
+  { value: "week", label: "Weekly" }, { value: "month", label: "Monthly" },
 ]
 
 function fmt(value: unknown, format?: string): string {
@@ -46,70 +39,110 @@ function fmt(value: unknown, format?: string): string {
   if (format === "currency") return `€${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
   if (format === "percent") return `${Number(value)}%`
   if (format === "number") return Number(value).toLocaleString()
-  // period (date) or dimension
   const s = String(value)
   const d = new Date(s)
   if (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(s)) return d.toLocaleDateString()
   return s
 }
-
 function toCSV(result: ReportResult): string {
   const head = result.columns.map((c) => `"${c.label}"`).join(",")
-  const lines = result.rows.map((r) =>
-    result.columns.map((c) => `"${String(r[c.key] ?? "").replace(/"/g, '""')}"`).join(","),
-  )
+  const lines = result.rows.map((r) => result.columns.map((c) => `"${String(r[c.key] ?? "").replace(/"/g, '""')}"`).join(","))
   return [head, ...lines].join("\n")
+}
+
+interface ActiveReport {
+  def: ReportDefinition
+  name: string
+  builder: boolean // editable measures/dimensions/dataset
+  savedId?: string
 }
 
 export default function ReportsPage() {
   const { t } = useTranslation()
-  const [selected, setSelected] = useState<ReportTemplate | null>(null)
-  const [preset, setPreset] = useState<ReportDatePreset>("last_30d")
-  const [granularity, setGranularity] = useState<ReportGranularity>("week")
-  const [result, setResult] = useState<ReportResult | null>(null)
+  const { hasPlanFeature } = useAuth()
+  const qc = useQueryClient()
+  const canBuild = hasPlanFeature("reports_builder")
 
-  const { data: catalog, isLoading } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
+  const [active, setActive] = useState<ActiveReport | null>(null)
+  const [result, setResult] = useState<ReportResult | null>(null)
+  const [saveOpen, setSaveOpen] = useState(false)
+  const [saveMeta, setSaveMeta] = useState({ name: "", description: "", isShared: true })
+
+  const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
+  const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
   const templates = catalog?.templates || []
+  const datasets = catalog?.datasets || []
+  const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
 
   const run = useMutation({
     mutationFn: (def: ReportDefinition) => analyticsApi.run(def),
-    onSuccess: (r) => setResult(r),
+    onSuccess: setResult,
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to run report"),
   })
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!active) return
+      const input = { name: saveMeta.name, description: saveMeta.description, config: active.def, isShared: saveMeta.isShared }
+      return active.savedId ? analyticsApi.updateSaved(active.savedId, input) : analyticsApi.createSaved(input)
+    },
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["savedReports"] })
+      setSaveOpen(false)
+      if (r) setActive({ def: r.config, name: r.name, builder: canBuild, savedId: r.id })
+      notify.success(t("reports.saved", "Report saved"))
+    },
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to save"),
+  })
+  const del = useMutation({
+    mutationFn: (id: string) => analyticsApi.deleteSaved(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["savedReports"] }); setActive(null); setResult(null); notify.success(t("reports.deleted", "Report deleted")) },
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to delete"),
+  })
 
-  const supportsTime = selected?.def.granularity !== undefined && selected?.def.granularity !== "none"
-
-  const currentDef: ReportDefinition | null = useMemo(() => {
-    if (!selected) return null
-    return {
-      ...selected.def,
-      dateRange: { preset },
-      granularity: supportsTime ? granularity : (selected.def.granularity ?? "none"),
-    }
-  }, [selected, preset, granularity, supportsTime])
-
-  const pick = (tpl: ReportTemplate) => {
-    setSelected(tpl)
+  const pickTemplate = (tpl: ReportTemplate) => { setResult(null); setActive({ def: { ...tpl.def }, name: tpl.name, builder: false }) }
+  const pickSaved = (r: SavedReport) => { setResult(null); setActive({ def: r.config, name: r.name, builder: false, savedId: r.id }) }
+  const newReport = () => {
     setResult(null)
-    setGranularity((tpl.def.granularity as ReportGranularity) || "none")
-    setPreset((tpl.def.dateRange?.preset as ReportDatePreset) || "last_30d")
+    const ds = datasets[0]
+    if (!ds) return
+    setActive({ def: { dataset: ds.key, measures: ds.measures[0] ? [ds.measures[0].key] : [], dimensions: [], granularity: "none", dateRange: { preset: "last_30d" } }, name: "Untitled report", builder: true })
   }
 
+  const patchDef = (p: Partial<ReportDefinition>) => setActive((a) => (a ? { ...a, def: { ...a.def, ...p } } : a))
+  const toggleArr = (key: "measures" | "dimensions", val: string) =>
+    setActive((a) => {
+      if (!a) return a
+      const cur = a.def[key] || []
+      const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]
+      return { ...a, def: { ...a.def, [key]: next } }
+    })
+
+  const openSave = () => { setSaveMeta({ name: active?.savedId ? active.name : "", description: "", isShared: true }); setSaveOpen(true) }
   const download = () => {
-    if (!result || !selected) return
+    if (!result || !active) return
     const blob = new Blob([toCSV(result)], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
-    a.href = url
-    a.download = `${selected.key}-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
+    a.href = url; a.download = `${active.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
+  const supportsTime = active && (active.def.granularity !== undefined)
   const measureCols = result?.columns.filter((c) => c.kind === "measure") || []
   const labelCol = result?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
   const chartMeasure = measureCols[0]
   const maxVal = chartMeasure ? Math.max(...(result?.rows.map((r) => Number(r[chartMeasure.key]) || 0) || [1]), 1) : 1
+
+  const NavBtn = ({ activeKey, onClick, icon: Icon, label, desc, onDelete }: { activeKey: boolean; onClick: () => void; icon: typeof Clock; label: string; desc?: string; onDelete?: () => void }) => (
+    <div className={cn("group/nav w-full rounded-xl border px-3 py-2.5 transition-colors cursor-pointer flex items-start gap-2", activeKey ? "border-primary bg-primary/[0.06]" : "border-border hover:bg-accent/40")} onClick={onClick}>
+      <Icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-foreground truncate">{label}</div>
+        {desc && <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">{desc}</p>}
+      </div>
+      {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete() }} className="opacity-0 group-hover/nav:opacity-100 text-muted-foreground hover:text-red-600 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>}
+    </div>
+  )
 
   return (
     <div className="min-h-full bg-background">
@@ -122,65 +155,103 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          {/* Templates */}
-          <div className="space-y-2">
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground px-1">{t("common.loading", "Loading…")}</p>
-            ) : templates.map((tpl) => {
-              const Icon = TEMPLATE_ICON[tpl.key] || BarChart3
-              return (
-                <button
-                  key={tpl.key}
-                  onClick={() => pick(tpl)}
-                  className={cn(
-                    "w-full text-left rounded-xl border px-4 py-3 transition-colors",
-                    selected?.key === tpl.key ? "border-primary bg-primary/[0.06]" : "border-border hover:bg-accent/40",
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-sm font-medium text-foreground">{tpl.name}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-snug">{tpl.description}</p>
-                </button>
-              )
-            })}
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+          {/* Left: templates + saved + new */}
+          <div className="space-y-4">
+            {canBuild && (
+              <Button onClick={newReport} className="w-full gap-1.5"><Plus className="h-4 w-4" />{t("reports.new", "New custom report")}</Button>
+            )}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-1">{t("reports.templates", "Templates")}</p>
+              <div className="space-y-1.5">
+                {templates.map((tpl) => (
+                  <NavBtn key={tpl.key} activeKey={active?.name === tpl.name && !active?.savedId && !active?.builder} onClick={() => pickTemplate(tpl)} icon={TEMPLATE_ICON[tpl.key] || BarChart3} label={tpl.name} desc={tpl.description} />
+                ))}
+              </div>
+            </div>
+            {(saved && saved.length > 0) && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-1">{t("reports.saved", "Saved reports")}</p>
+                <div className="space-y-1.5">
+                  {saved.map((r) => (
+                    <NavBtn key={r.id} activeKey={active?.savedId === r.id} onClick={() => pickSaved(r)} icon={BarChart3} label={r.name} desc={r.description || undefined} onDelete={canBuild ? () => del.mutate(r.id) : undefined} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Runner + results */}
+          {/* Right: builder/runner + results */}
           <div className="space-y-4">
-            {!selected ? (
+            {!active ? (
               <div className="rounded-2xl border border-dashed border-border p-16 text-center text-sm text-muted-foreground">
-                {t("reports.pickOne", "Pick a report on the left to get started.")}
+                {t("reports.pickOne", "Pick a report on the left, or build a custom one.")}
               </div>
             ) : (
               <>
+                {/* Builder fields (Pro+ custom reports) */}
+                {active.builder && dsMeta && (
+                  <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
+                      <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); patchDef({ dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [] }) }}>
+                        <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{d.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dsMeta.measures.map((m) => {
+                          const on = (active.def.measures || []).includes(m.key)
+                          return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{m.label}</button>
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dsMeta.dimensions.map((dim) => {
+                          const on = (active.def.dimensions || []).includes(dim.key)
+                          return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{dim.label}</button>
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Run controls */}
                 <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card p-4">
                   <div className="space-y-1.5">
                     <label className="text-xs text-muted-foreground">{t("reports.period", "Period")}</label>
-                    <Select value={preset} onValueChange={(v) => setPreset(v as ReportDatePreset)}>
+                    <Select value={active.def.dateRange?.preset || "last_30d"} onValueChange={(v) => patchDef({ dateRange: { preset: v as ReportDatePreset } })}>
                       <SelectTrigger className="h-9 w-[160px] text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>{DATE_PRESETS.map((p) => <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   {supportsTime && (
                     <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground">{t("reports.groupBy", "Group by")}</label>
-                      <Select value={granularity} onValueChange={(v) => setGranularity(v as ReportGranularity)}>
+                      <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
+                      <Select value={active.def.granularity || "none"} onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}>
                         <SelectTrigger className="h-9 w-[150px] text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>{GRANULARITIES.map((g) => <SelectItem key={g.value} value={g.value} className="text-xs">{g.label}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                   )}
-                  <Button className="gap-1.5 h-9" disabled={run.isPending} onClick={() => currentDef && run.mutate(currentDef)}>
-                    <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
+                  <Button className="gap-1.5 h-9" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
+                    <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run")}
                   </Button>
-                  {result && (
-                    <Button variant="outline" className="gap-1.5 h-9 ml-auto" onClick={download}>
-                      <Download className="h-3.5 w-3.5" />{t("reports.exportCsv", "Export CSV")}
+                  {canBuild && (
+                    <Button variant="outline" className="gap-1.5 h-9" onClick={openSave}>
+                      <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.update", "Update") : t("reports.save", "Save")}
                     </Button>
                   )}
+                  {canBuild && !active.builder && (
+                    <Button variant="ghost" className="gap-1.5 h-9" onClick={() => setActive((a) => a ? { ...a, builder: true } : a)}>
+                      <Pencil className="h-3.5 w-3.5" />{t("reports.customize", "Customize")}
+                    </Button>
+                  )}
+                  {result && <Button variant="outline" className="gap-1.5 h-9 ml-auto" onClick={download}><Download className="h-3.5 w-3.5" />CSV</Button>}
                 </div>
 
                 {result && (
@@ -189,50 +260,52 @@ export default function ReportsPage() {
                       <div className="p-12 text-center text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</div>
                     ) : (
                       <>
-                        {/* Bar chart on the first measure */}
                         {chartMeasure && labelCol && (
                           <div className="p-4 border-b border-border/60 space-y-1.5">
                             {result.rows.slice(0, 12).map((r, i) => (
                               <div key={i} className="flex items-center gap-3">
                                 <span className="w-32 shrink-0 truncate text-xs text-muted-foreground text-right">{fmt(r[labelCol.key], labelCol.format)}</span>
-                                <div className="flex-1 h-5 rounded bg-muted overflow-hidden">
-                                  <div className="h-full bg-primary/70 rounded" style={{ width: `${(Number(r[chartMeasure.key]) / maxVal) * 100}%` }} />
-                                </div>
+                                <div className="flex-1 h-5 rounded bg-muted overflow-hidden"><div className="h-full bg-primary/70 rounded" style={{ width: `${(Number(r[chartMeasure.key]) / maxVal) * 100}%` }} /></div>
                                 <span className="w-20 shrink-0 text-xs font-medium tabular-nums text-right">{fmt(r[chartMeasure.key], chartMeasure.format)}</span>
                               </div>
                             ))}
                           </div>
                         )}
-                        {/* Full table */}
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-border/60 text-left">
-                                {result.columns.map((c) => (
-                                  <th key={c.key} className={cn("px-4 py-2.5 text-xs font-semibold text-muted-foreground", c.kind === "measure" && "text-right")}>{c.label}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {result.rows.map((r, i) => (
-                                <tr key={i} className="border-b border-border/40 hover:bg-accent/20">
-                                  {result.columns.map((c) => (
-                                    <td key={c.key} className={cn("px-4 py-2.5", c.kind === "measure" && "text-right tabular-nums font-medium")}>{fmt(r[c.key], c.format)}</td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
+                            <thead><tr className="border-b border-border/60 text-left">{result.columns.map((c) => <th key={c.key} className={cn("px-4 py-2.5 text-xs font-semibold text-muted-foreground", c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr></thead>
+                            <tbody>{result.rows.map((r, i) => <tr key={i} className="border-b border-border/40 hover:bg-accent/20">{result.columns.map((c) => <td key={c.key} className={cn("px-4 py-2.5", c.kind === "measure" && "text-right tabular-nums font-medium")}>{fmt(r[c.key], c.format)}</td>)}</tr>)}</tbody>
                           </table>
                         </div>
                       </>
                     )}
                   </div>
                 )}
+
+                {!canBuild && (
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{t("reports.builderLocked", "Custom report builder is available on Professional and above.")}</p>
+                )}
               </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Save dialog */}
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{active?.savedId ? t("reports.update", "Update report") : t("reports.save", "Save report")}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5"><Label className="text-xs">{t("reports.name", "Name")} *</Label><Input value={saveMeta.name} onChange={(e) => setSaveMeta({ ...saveMeta, name: e.target.value })} placeholder="Weekly overtime" /></div>
+            <div className="space-y-1.5"><Label className="text-xs">{t("reports.description", "Description")}</Label><Input value={saveMeta.description} onChange={(e) => setSaveMeta({ ...saveMeta, description: e.target.value })} /></div>
+            <div className="flex items-center justify-between"><Label className="text-xs">{t("reports.shareOrg", "Share with the whole organization")}</Label><Switch checked={saveMeta.isShared} onCheckedChange={(v) => setSaveMeta({ ...saveMeta, isShared: v })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveOpen(false)}>{t("common.cancel", "Cancel")}</Button>
+            <Button disabled={!saveMeta.name.trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
