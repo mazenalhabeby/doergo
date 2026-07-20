@@ -3,15 +3,16 @@
 import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { BarChart3, Download, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, Sparkles } from "lucide-react"
+import { BarChart3, Download, FileText, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, Sparkles } from "lucide-react"
 
 import {
-  analyticsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
+  analyticsApi, organizationsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
   type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
   type ReportCadence,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
+import { exportReportPdf, type ReportBranding } from "@/lib/report-pdf"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -76,6 +77,7 @@ export default function ReportsPage() {
 
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
+  const { data: orgProfile } = useQuery({ queryKey: ["orgProfile"], queryFn: () => organizationsApi.getProfile() })
   const templates = catalog?.templates || []
   const datasets = catalog?.datasets || []
   const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
@@ -164,6 +166,16 @@ export default function ReportsPage() {
     const a = document.createElement("a")
     a.href = url; a.download = `${active.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
     URL.revokeObjectURL(url)
+  }
+  const downloadPdf = async () => {
+    if (!result || !active) return
+    const preset = active.def.dateRange?.preset
+    const rangeLabel = DATE_PRESETS.find((p) => p.value === preset)?.label
+    try {
+      await exportReportPdf(result, { title: active.name, subtitle: rangeLabel }, (orgProfile || {}) as ReportBranding)
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : "Failed to export PDF")
+    }
   }
 
   const supportsTime = active && (active.def.granularity !== undefined)
@@ -313,6 +325,7 @@ export default function ReportsPage() {
                     </Button>
                   )}
                   {result && <Button variant="outline" className="gap-1.5 h-9 ml-auto" onClick={download}><Download className="h-3.5 w-3.5" />CSV</Button>}
+                  {result && <Button variant="outline" className="gap-1.5 h-9" onClick={downloadPdf}><FileText className="h-3.5 w-3.5" />PDF</Button>}
                 </div>
 
                 {result && (
