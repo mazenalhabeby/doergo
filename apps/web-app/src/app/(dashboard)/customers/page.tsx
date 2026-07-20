@@ -3,13 +3,16 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Plus, Search, Pencil, Trash2, Building2, Mail, Phone } from "lucide-react"
+import { Plus, Search, Pencil, Trash2, Building2, Mail, Phone, FileText, Loader2 } from "lucide-react"
 
-import { customersApi, type Customer, type CustomerInput } from "@/lib/api"
+import { customersApi, organizationsApi, type Customer, type CustomerInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
+import { exportCustomerStatementPdf } from "@/lib/customer-statement-pdf"
+import { type ReportBranding } from "@/lib/report-pdf"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
@@ -20,6 +23,24 @@ import {
 
 const EMPTY: CustomerInput = { name: "", contactName: "", email: "", phone: "", address: "", notes: "" }
 
+const STMT_PERIODS = [
+  { value: "last_30d", label: "Last 30 days" },
+  { value: "last_90d", label: "Last 90 days" },
+  { value: "this_month", label: "This month" },
+  { value: "this_year", label: "This year" },
+  { value: "all", label: "All time" },
+]
+function presetRange(preset: string): { from?: string; to?: string } {
+  const now = new Date()
+  if (preset === "all") return {}
+  let from: Date
+  if (preset === "this_month") from = new Date(now.getFullYear(), now.getMonth(), 1)
+  else if (preset === "this_year") from = new Date(now.getFullYear(), 0, 1)
+  else if (preset === "last_30d") from = new Date(now.getTime() - 30 * 86400000)
+  else from = new Date(now.getTime() - 90 * 86400000)
+  return { from: from.toISOString(), to: now.toISOString() }
+}
+
 export default function CustomersPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -27,12 +48,30 @@ export default function CustomersPage() {
   const [editing, setEditing] = useState<Customer | null | "new">(null)
   const [removeTarget, setRemoveTarget] = useState<Customer | null>(null)
   const [form, setForm] = useState<CustomerInput>(EMPTY)
+  const [stmtTarget, setStmtTarget] = useState<Customer | null>(null)
+  const [stmtPreset, setStmtPreset] = useState("last_90d")
+  const [stmtBusy, setStmtBusy] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ["customers", search],
     queryFn: () => customersApi.list({ search: search || undefined, limit: 100 }),
   })
   const customers = data?.data || []
+  const { data: orgProfile } = useQuery({ queryKey: ["orgProfile"], queryFn: () => organizationsApi.getProfile() })
+
+  const downloadStatement = async () => {
+    if (!stmtTarget) return
+    setStmtBusy(true)
+    try {
+      const range = presetRange(stmtPreset)
+      const statement = await customersApi.statement(stmtTarget.id, range)
+      const periodLabel = STMT_PERIODS.find((p) => p.value === stmtPreset)?.label
+      await exportCustomerStatementPdf(statement, (orgProfile || {}) as ReportBranding, { periodLabel })
+      setStmtTarget(null)
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong"))
+    } finally { setStmtBusy(false) }
+  }
 
   const openCreate = () => { setForm(EMPTY); setEditing("new") }
   const openEdit = (c: Customer) => {
@@ -102,6 +141,9 @@ export default function CustomersPage() {
                       {c.phone && <span className="flex items-center gap-1 truncate"><Phone className="h-3 w-3" />{c.phone}</span>}
                     </div>
                   </div>
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => { setStmtPreset("last_90d"); setStmtTarget(c) }}>
+                    <FileText className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t("customers.statement", "Statement")}</span>
+                  </Button>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700" onClick={() => setRemoveTarget(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
@@ -145,6 +187,36 @@ export default function CustomersPage() {
             <Button variant="ghost" onClick={() => setEditing(null)}>{t("common.cancel", "Cancel")}</Button>
             <Button onClick={() => save.mutate()} disabled={!form.name?.trim() || save.isPending}>
               {save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Service statement dialog */}
+      <Dialog open={!!stmtTarget} onOpenChange={(o) => !o && !stmtBusy && setStmtTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("customers.statementTitle", "Service statement")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {t("customers.statementDesc", "A branded PDF of completed jobs for {{name}} — ready to send to the customer.", { name: stmtTarget?.name })}
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("customers.statementPeriod", "Period")}</Label>
+              <Select value={stmtPreset} onValueChange={setStmtPreset}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STMT_PERIODS.map((p) => <SelectItem key={p.value} value={p.value}>{t(`customers.period.${p.value}`, p.label)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setStmtTarget(null)} disabled={stmtBusy}>{t("common.cancel", "Cancel")}</Button>
+            <Button className="gap-1.5" onClick={downloadStatement} disabled={stmtBusy}>
+              {stmtBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+              {t("customers.downloadStatement", "Download PDF")}
             </Button>
           </DialogFooter>
         </DialogContent>

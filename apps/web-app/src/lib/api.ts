@@ -4001,6 +4001,13 @@ export interface Customer {
 
 export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
 
+export interface CustomerStatementJob { date: string; title: string; technician: string; hours: number }
+export interface CustomerStatement {
+  customer: Customer;
+  jobs: CustomerStatementJob[];
+  totals: { jobs: number; hours: number };
+}
+
 export const customersApi = {
   list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; page?: number; limit?: number }) => {
     const qs = buildUrlWithQuery("/customers", params || {});
@@ -4027,6 +4034,12 @@ export const customersApi = {
     const res = await api.delete<{ success: boolean }>(`/customers/${id}`);
     if (res.error) throw new Error(res.error);
     return res.data;
+  },
+  statement: async (id: string, params?: { from?: string; to?: string }) => {
+    const qs = buildUrlWithQuery(`/customers/${id}/statement`, params || {});
+    const res = await api.get<{ data: CustomerStatement }>(qs);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
   },
 };
 

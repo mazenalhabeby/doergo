@@ -104,6 +104,46 @@ export class CustomersService {
     return { data: customer };
   }
 
+  /**
+   * Service statement for a single customer — every completed job (service
+   * report) in the period, with technician + work hours. Feeds the branded
+   * "Prepared for {customer}" PDF the office sends to the customer.
+   */
+  async getStatement(data: { id: string; organizationId: string; from?: string; to?: string }) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: customerSelect,
+    });
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const where: Record<string, unknown> = { organizationId: data.organizationId, customerId: data.id };
+    if (data.from || data.to) {
+      const range: Record<string, Date> = {};
+      if (data.from) range.gte = new Date(data.from);
+      if (data.to) range.lte = new Date(data.to);
+      where.completedAt = range;
+    }
+    const reports = await this.prisma.serviceReport.findMany({
+      where,
+      select: {
+        completedAt: true,
+        workDuration: true,
+        summary: true,
+        task: { select: { title: true } },
+        completedBy: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { completedAt: 'asc' },
+    });
+    const jobs = reports.map((r) => ({
+      date: r.completedAt,
+      title: r.task?.title || r.summary || 'Service',
+      technician: `${r.completedBy?.firstName ?? ''} ${r.completedBy?.lastName ?? ''}`.trim() || '—',
+      hours: (r.workDuration || 0) / 3600,
+    }));
+    const totalHours = jobs.reduce((s, j) => s + j.hours, 0);
+    return { data: { customer, jobs, totals: { jobs: jobs.length, hours: totalHours } } };
+  }
+
   /** Soft-delete (deactivate) — preserves history on tasks/reports. */
   async remove(id: string, organizationId: string) {
     const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true } });

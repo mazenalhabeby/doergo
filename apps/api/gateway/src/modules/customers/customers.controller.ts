@@ -52,6 +52,20 @@ export class CustomersController {
     );
   }
 
+  @Get(':id/statement')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Customer service statement (completed jobs + hours) for a period' })
+  async statement(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return firstValueFrom(
+      this.authClient.send({ cmd: 'get_customer_statement' }, { id, organizationId: req.user.organizationId, from, to }),
+    );
+  }
+
   @Get(':id')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a customer' })

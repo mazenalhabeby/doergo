@@ -30,4 +30,9 @@ export class CustomersController {
   async remove(@Payload() data: { id: string; organizationId: string }) {
     return this.customersService.remove(data.id, data.organizationId);
   }
+
+  @MessagePattern({ cmd: 'get_customer_statement' })
+  async statement(@Payload() data: { id: string; organizationId: string; from?: string; to?: string }) {
+    return this.customersService.getStatement(data);
+  }
 }
