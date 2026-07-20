@@ -2518,6 +2518,15 @@
       "showingEntries": "{{start}} bis {{end}} von {{total}} Einträgen"
     },
     "reports": {
+      "pickOneTitle": "Kein Bericht ausgewählt",
+      "badgeCustom": "Individuell",
+      "badgeSaved": "Gespeichert",
+      "badgeTemplate": "Vorlage",
+      "exportCsv": "CSV herunterladen",
+      "exportPdf": "PDF herunterladen",
+      "results": "Ergebnisse",
+      "rowCount_one": "{{count}} Zeile",
+      "rowCount_other": "{{count}} Zeilen",
       "thisWeek": "Diese Woche",
       "lastWeek": "Letzte Woche",
       "thisMonth": "Dieser Monat",

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { BarChart3, Download, FileText, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, Sparkles } from "lucide-react"
+import { BarChart3, Download, FileText, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, Sparkles, ChevronDown, Table2 } from "lucide-react"
 
 import {
   analyticsApi, organizationsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
 const TEMPLATE_ICON: Record<string, typeof Clock> = {
@@ -252,88 +254,128 @@ export default function ReportsPage() {
           {/* Right: builder/runner + results */}
           <div className="space-y-4">
             {!active ? (
-              <div className="rounded-2xl border border-dashed border-border p-16 text-center text-sm text-muted-foreground">
-                {t("reports.pickOne", "Pick a report on the left, or build a custom one.")}
+              <div className="rounded-2xl border border-dashed border-border p-16 text-center">
+                <BarChart3 className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-sm font-medium text-foreground">{t("reports.pickOneTitle", "No report selected")}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t("reports.pickOne", "Pick a report on the left, or build a custom one.")}</p>
               </div>
             ) : (
               <>
-                {/* Builder fields (Pro+ custom reports) */}
-                {active.builder && dsMeta && (
-                  <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
-                      <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); patchDef({ dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [] }) }}>
-                        <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{d.label}</SelectItem>)}</SelectContent>
-                      </Select>
+                {/* ── Report header: identity + meta-actions ──────────────────── */}
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-semibold text-foreground truncate">{active.name}</h2>
+                      <Badge variant="secondary" className="shrink-0 font-normal">
+                        {active.builder ? t("reports.badgeCustom", "Custom") : active.savedId ? t("reports.badgeSaved", "Saved") : t("reports.badgeTemplate", "Template")}
+                      </Badge>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {dsMeta.measures.map((m) => {
-                          const on = (active.def.measures || []).includes(m.key)
-                          return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{m.label}</button>
-                        })}
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {dsMeta.dimensions.map((dim) => {
-                          const on = (active.def.dimensions || []).includes(dim.key)
-                          return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{dim.label}</button>
-                        })}
-                      </div>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {[dsMeta?.label, DATE_PRESETS.find((p) => p.value === (active.def.dateRange?.preset || "last_30d"))?.label].filter(Boolean).join("  ·  ")}
+                    </p>
                   </div>
-                )}
-
-                {/* Run controls */}
-                <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card p-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-muted-foreground">{t("reports.period", "Period")}</label>
-                    <Select value={active.def.dateRange?.preset || "last_30d"} onValueChange={(v) => patchDef({ dateRange: { preset: v as ReportDatePreset } })}>
-                      <SelectTrigger className="h-9 w-[160px] text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>{DATE_PRESETS.map((p) => <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {canBuild && !active.builder && (
+                      <Button variant="ghost" size="sm" className="gap-1.5 h-9" onClick={() => setActive((a) => a ? { ...a, builder: true } : a)}>
+                        <Pencil className="h-3.5 w-3.5" />{t("reports.customize", "Customize")}
+                      </Button>
+                    )}
+                    {canBuild && (
+                      <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={openSave}>
+                        <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.update", "Update") : t("reports.save", "Save")}
+                      </Button>
+                    )}
+                    {canSchedule && active.savedId && (
+                      <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={() => setSchedOpen(true)}>
+                        <CalendarClock className="h-3.5 w-3.5" />{t("reports.schedule", "Schedule")}
+                      </Button>
+                    )}
+                    {result && result.rows.length > 0 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 h-9"><Download className="h-3.5 w-3.5" />{t("reports.export", "Export")}<ChevronDown className="h-3.5 w-3.5 opacity-60" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={download} className="gap-2"><Table2 className="h-4 w-4" />{t("reports.exportCsv", "Download CSV")}</DropdownMenuItem>
+                          <DropdownMenuItem onClick={downloadPdf} className="gap-2"><FileText className="h-4 w-4" />{t("reports.exportPdf", "Download PDF")}</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
-                  {supportsTime && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
-                      <Select value={active.def.granularity || "none"} onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}>
-                        <SelectTrigger className="h-9 w-[150px] text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>{GRANULARITIES.map((g) => <SelectItem key={g.value} value={g.value} className="text-xs">{g.label}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <Button className="gap-1.5 h-9" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
-                    <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run")}
-                  </Button>
-                  {canBuild && (
-                    <Button variant="outline" className="gap-1.5 h-9" onClick={openSave}>
-                      <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.update", "Update") : t("reports.save", "Save")}
-                    </Button>
-                  )}
-                  {canSchedule && active.savedId && (
-                    <Button variant="outline" className="gap-1.5 h-9" onClick={() => setSchedOpen(true)}>
-                      <CalendarClock className="h-3.5 w-3.5" />{t("reports.schedule", "Schedule")}
-                    </Button>
-                  )}
-                  {canBuild && !active.builder && (
-                    <Button variant="ghost" className="gap-1.5 h-9" onClick={() => setActive((a) => a ? { ...a, builder: true } : a)}>
-                      <Pencil className="h-3.5 w-3.5" />{t("reports.customize", "Customize")}
-                    </Button>
-                  )}
-                  {result && <Button variant="outline" className="gap-1.5 h-9 ml-auto" onClick={download}><Download className="h-3.5 w-3.5" />CSV</Button>}
-                  {result && <Button variant="outline" className="gap-1.5 h-9" onClick={downloadPdf}><FileText className="h-3.5 w-3.5" />PDF</Button>}
                 </div>
 
+                {/* ── Configure & run ─────────────────────────────────────────── */}
+                <div className="rounded-2xl border border-border bg-card divide-y divide-border/60">
+                  {/* Builder fields (Pro+ custom reports) */}
+                  {active.builder && dsMeta && (
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
+                        <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); patchDef({ dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [] }) }}>
+                          <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{d.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {dsMeta.measures.map((m) => {
+                            const on = (active.def.measures || []).includes(m.key)
+                            return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{m.label}</button>
+                          })}
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {dsMeta.dimensions.map((dim) => {
+                            const on = (active.def.dimensions || []).includes(dim.key)
+                            return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{dim.label}</button>
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Period / time split + Run */}
+                  <div className="flex flex-wrap items-end gap-3 p-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-muted-foreground">{t("reports.period", "Period")}</label>
+                      <Select value={active.def.dateRange?.preset || "last_30d"} onValueChange={(v) => patchDef({ dateRange: { preset: v as ReportDatePreset } })}>
+                        <SelectTrigger className="h-9 w-[160px] text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{DATE_PRESETS.map((p) => <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    {supportsTime && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
+                        <Select value={active.def.granularity || "none"} onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}>
+                          <SelectTrigger className="h-9 w-[150px] text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>{GRANULARITIES.map((g) => <SelectItem key={g.value} value={g.value} className="text-xs">{g.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <Button className="gap-1.5 h-9 ml-auto" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
+                      <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
+                    </Button>
+                  </div>
+                </div>
+
+                {!canBuild && (
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{t("reports.builderLocked", "Custom report builder is available on Professional and above.")}</p>
+                )}
+
+                {/* ── Results ─────────────────────────────────────────────────── */}
                 {result && (
                   <div className="rounded-2xl border border-border bg-card overflow-hidden">
                     {result.rows.length === 0 ? (
                       <div className="p-12 text-center text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</div>
                     ) : (
                       <>
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60 bg-muted/30">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("reports.results", "Results")}</p>
+                          <p className="text-xs text-muted-foreground">{t("reports.rowCount", "{{count}} rows", { count: result.rows.length })}</p>
+                        </div>
                         {chartMeasure && labelCol && (
                           <div className="p-4 border-b border-border/60 space-y-1.5">
                             {result.rows.slice(0, 12).map((r, i) => (
@@ -354,10 +396,6 @@ export default function ReportsPage() {
                       </>
                     )}
                   </div>
-                )}
-
-                {!canBuild && (
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{t("reports.builderLocked", "Custom report builder is available on Professional and above.")}</p>
                 )}
               </>
             )}
