@@ -25,15 +25,24 @@ export type PdfTemplate = "classic" | "executive" | "data" | "presentation" | "c
 
 interface RGB { r: number; g: number; b: number }
 
+export type PaperSize = "a4" | "letter"
+export type HeaderStyle = "line" | "band" | "minimal"
+export type Density = "comfortable" | "compact"
+
 /** Fully-resolved render config. Templates are presets over this shape. */
 export interface PdfConfig {
   accent: RGB
   orientation: "portrait" | "landscape"
+  paper: PaperSize
+  font: "helvetica" | "times" // jsPDF built-in families (sans / serif)
+  density: Density
+  headerStyle: HeaderStyle
   logo: boolean
-  headerBand: boolean // colored letterhead band (presentation style)
   summary: boolean // KPI totals cards
   chart: boolean // bar chart of the first measure
   table: boolean
+  signature: boolean // signature block at the end
+  pageNumbers: boolean
   heading?: string // overrides the report title in the document
   note?: string // short intro / disclaimer under the title
 }
@@ -42,12 +51,25 @@ export interface PdfConfig {
 export interface CustomPdfOptions {
   accent: string // hex, e.g. "#2563EB"
   orientation: "portrait" | "landscape"
+  paper: PaperSize
+  font: "sans" | "serif"
+  density: Density
+  headerStyle: HeaderStyle
   logo: boolean
   summary: boolean
   chart: boolean
   table: boolean
+  signature: boolean
+  pageNumbers: boolean
   heading?: string
   note?: string
+}
+
+/** Sensible defaults for a fresh custom config. */
+export const DEFAULT_CUSTOM_PDF: CustomPdfOptions = {
+  accent: "#2563EB", orientation: "portrait", paper: "a4", font: "sans", density: "comfortable",
+  headerStyle: "line", logo: true, summary: true, chart: true, table: true, signature: false, pageNumbers: true,
+  heading: "", note: "",
 }
 
 const BLUE: RGB = { r: 37, g: 99, b: 235 } // #2563EB (blue-600)
@@ -81,29 +103,41 @@ function hexToRgb(hex: string): RGB {
   return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) }
 }
 
+function baseCfg(): Omit<PdfConfig, "accent"> {
+  return {
+    orientation: "portrait", paper: "a4", font: "helvetica", density: "comfortable", headerStyle: "line",
+    logo: true, summary: false, chart: true, table: true, signature: false, pageNumbers: true,
+  }
+}
+
 function presetFor(template: PdfTemplate, custom?: CustomPdfOptions): PdfConfig {
   switch (template) {
     case "executive":
-      return { accent: BLUE, orientation: "portrait", logo: true, headerBand: false, summary: true, chart: true, table: true }
+      return { ...baseCfg(), accent: BLUE, summary: true }
     case "data":
-      return { accent: SLATE, orientation: "landscape", logo: true, headerBand: false, summary: false, chart: false, table: true }
+      return { ...baseCfg(), accent: SLATE, orientation: "landscape", headerStyle: "minimal", density: "compact", chart: false, summary: false }
     case "presentation":
-      return { accent: BLUE, orientation: "portrait", logo: true, headerBand: true, summary: true, chart: true, table: true }
+      return { ...baseCfg(), accent: BLUE, headerStyle: "band", summary: true }
     case "custom":
       return {
         accent: custom ? hexToRgb(custom.accent) : BLUE,
         orientation: custom?.orientation ?? "portrait",
+        paper: custom?.paper ?? "a4",
+        font: custom?.font === "serif" ? "times" : "helvetica",
+        density: custom?.density ?? "comfortable",
+        headerStyle: custom?.headerStyle ?? "line",
         logo: custom?.logo ?? true,
-        headerBand: false,
         summary: custom?.summary ?? false,
         chart: custom?.chart ?? true,
         table: custom?.table ?? true,
+        signature: custom?.signature ?? false,
+        pageNumbers: custom?.pageNumbers ?? true,
         heading: custom?.heading?.trim() || undefined,
         note: custom?.note?.trim() || undefined,
       }
     case "classic":
     default:
-      return { accent: BLUE, orientation: "portrait", logo: true, headerBand: false, summary: false, chart: true, table: true }
+      return { ...baseCfg(), accent: BLUE }
   }
 }
 
@@ -189,7 +223,8 @@ async function buildDoc(
   custom?: CustomPdfOptions,
 ): Promise<{ doc: jsPDF; filename: string }> {
   const cfg = presetFor(template, custom)
-  const doc = new jsPDF({ orientation: cfg.orientation, unit: "mm", format: "a4" })
+  const FF = cfg.font // "helvetica" (sans) | "times" (serif)
+  const doc = new jsPDF({ orientation: cfg.orientation, unit: "mm", format: cfg.paper })
   const pageW = doc.internal.pageSize.getWidth()
   const margin = 14
   const contentW = pageW - margin * 2
@@ -198,7 +233,7 @@ async function buildDoc(
   let y = margin
 
   // ── Letterhead ────────────────────────────────────────────────────────────
-  if (cfg.headerBand) {
+  if (cfg.headerStyle === "band") {
     // Colored band: name + address reversed out on the accent color.
     const bandH = 26
     doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
@@ -210,10 +245,10 @@ async function buildDoc(
       bx += Math.min(w, 34) + 4
     }
     doc.setTextColor(255, 255, 255)
-    doc.setFont("helvetica", "bold")
+    doc.setFont(FF, "bold")
     doc.setFontSize(15)
     doc.text(branding.name || "Company", bx, 12)
-    doc.setFont("helvetica", "normal")
+    doc.setFont(FF, "normal")
     doc.setFontSize(8)
     doc.text(addressLines(branding).slice(0, 2).join("   "), bx, 18)
     y = bandH + 8
@@ -227,24 +262,28 @@ async function buildDoc(
       logoW = w + 4
     }
     doc.setTextColor(INK.r, INK.g, INK.b)
-    doc.setFont("helvetica", "bold")
+    doc.setFont(FF, "bold")
     doc.setFontSize(15)
     doc.text(branding.name || "Company", margin + logoW, margin + 5)
-    doc.setFont("helvetica", "normal")
+    doc.setFont(FF, "normal")
     doc.setFontSize(8.5)
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
     let ly = margin + 10
     for (const line of addressLines(branding)) { doc.text(line, margin + logoW, ly); ly += 4 }
     y = Math.max(ly, margin + (logo ? 18 : 12))
-    doc.setDrawColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
-    doc.setLineWidth(0.8)
-    doc.line(margin, y, pageW - margin, y)
-    y += 8
+    if (cfg.headerStyle === "line") {
+      doc.setDrawColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+      doc.setLineWidth(0.8)
+      doc.line(margin, y, pageW - margin, y)
+      y += 8
+    } else {
+      y += 6 // minimal: no rule, a little breathing room
+    }
   }
 
   // Small uppercase accent section label; advances and returns the new y.
   const sectionLabel = (text: string, atY: number): number => {
-    doc.setFont("helvetica", "bold")
+    doc.setFont(FF, "bold")
     doc.setFontSize(7.5)
     doc.setTextColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
     doc.text(text.toUpperCase(), margin, atY, { charSpace: 0.4 })
@@ -252,17 +291,17 @@ async function buildDoc(
   }
 
   // ── Title block ─────────────────────────────────────────────────────────
-  doc.setFont("helvetica", "bold")
+  doc.setFont(FF, "bold")
   doc.setFontSize(7.5)
   doc.setTextColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
   doc.text(meta.preparedFor ? "STATEMENT" : "REPORT", margin, y, { charSpace: 0.4 })
   y += 6
   doc.setTextColor(INK.r, INK.g, INK.b)
-  doc.setFont("helvetica", "bold")
+  doc.setFont(FF, "bold")
   doc.setFontSize(19)
   doc.text(cfg.heading || meta.title, margin, y)
   y += 6.5
-  doc.setFont("helvetica", "normal")
+  doc.setFont(FF, "normal")
   doc.setFontSize(9)
   doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
   const generated = `Generated ${new Date().toLocaleString()}`
@@ -272,7 +311,7 @@ async function buildDoc(
   // ── "Prepared for" block (single-customer scoped reports) ────────────────
   if (meta.preparedFor) {
     y += 2
-    doc.setFont("helvetica", "bold")
+    doc.setFont(FF, "bold")
     doc.setFontSize(7)
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
     doc.text("PREPARED FOR", margin, y, { charSpace: 0.3 })
@@ -281,7 +320,7 @@ async function buildDoc(
     doc.setTextColor(INK.r, INK.g, INK.b)
     doc.text(meta.preparedFor.name, margin, y)
     y += 4.5
-    doc.setFont("helvetica", "normal")
+    doc.setFont(FF, "normal")
     doc.setFontSize(8.5)
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
     for (const line of meta.preparedFor.lines.filter((l) => l && l.trim())) { doc.text(line, margin, y); y += 4 }
@@ -317,11 +356,11 @@ async function buildDoc(
         doc.roundedRect(cx, cy, 1.4, cardH, 0.7, 0.7, "F")
         doc.setFontSize(6.8)
         doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-        doc.setFont("helvetica", "bold")
+        doc.setFont(FF, "bold")
         doc.text(doc.splitTextToSize(card.label.toUpperCase(), cardW - 6)[0], cx + 4, cy + 6, { charSpace: 0.2 })
         doc.setFontSize(13)
         doc.setTextColor(INK.r, INK.g, INK.b)
-        doc.setFont("helvetica", "bold")
+        doc.setFont(FF, "bold")
         doc.text(card.value, cx + 4, cy + 13.5)
       })
       const rows = Math.ceil(cards.length / perRow)
@@ -346,7 +385,7 @@ async function buildDoc(
     for (const r of top) {
       const cy = y + rowH / 2
       doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-      doc.setFont("helvetica", "normal")
+      doc.setFont(FF, "normal")
       doc.text(doc.splitTextToSize(fmt(r[labelCol.key], labelCol.format), labelW - 3)[0], margin, cy + 1)
       doc.setFillColor(241, 245, 249)
       doc.roundedRect(barX, cy - barH / 2, barMaxW, barH, 1, 1, "F")
@@ -354,7 +393,7 @@ async function buildDoc(
       doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
       doc.roundedRect(barX, cy - barH / 2, w, barH, 1, 1, "F")
       doc.setTextColor(INK.r, INK.g, INK.b)
-      doc.setFont("helvetica", "bold")
+      doc.setFont(FF, "bold")
       doc.text(fmt(r[measureCol.key], measureCol.format), pageW - margin, cy + 1, { align: "right" })
       y += rowH
     }
@@ -362,6 +401,8 @@ async function buildDoc(
   }
 
   // ── Data table ────────────────────────────────────────────────────────────
+  const dense = cfg.density === "compact"
+  const pad = dense ? 1.9 : 2.8
   if (cfg.table) {
     if (cfg.chart || cfg.summary) y = sectionLabel("Details", y)
     const head = [result.columns.map((c) => c.label)]
@@ -374,11 +415,31 @@ async function buildDoc(
       startY: y,
       margin: { left: margin, right: margin },
       theme: "plain",
-      styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3, right: 3 }, textColor: [INK.r, INK.g, INK.b], lineColor: [237, 242, 247], lineWidth: { bottom: 0.1, top: 0, left: 0, right: 0 }, valign: "middle" },
-      headStyles: { fillColor: [cfg.accent.r, cfg.accent.g, cfg.accent.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, cellPadding: { top: 3, bottom: 3, left: 3, right: 3 } },
+      styles: { font: FF, fontSize: dense ? 8 : 8.5, cellPadding: { top: pad, bottom: pad, left: 3, right: 3 }, textColor: [INK.r, INK.g, INK.b], lineColor: [237, 242, 247], lineWidth: { bottom: 0.1, top: 0, left: 0, right: 0 }, valign: "middle" },
+      headStyles: { font: FF, fillColor: [cfg.accent.r, cfg.accent.g, cfg.accent.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: dense ? 7.5 : 8, cellPadding: { top: pad + 0.4, bottom: pad + 0.4, left: 3, right: 3 } },
       alternateRowStyles: { fillColor: [250, 251, 253] },
       columnStyles,
     })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+  }
+
+  // ── Signature block ───────────────────────────────────────────────────────
+  if (cfg.signature) {
+    const ph2 = doc.internal.pageSize.getHeight()
+    if (y > ph2 - 40) { doc.addPage(); y = margin }
+    y += 6
+    const colW = (contentW - 12) / 2
+    const sign = (label: string, x: number) => {
+      doc.setDrawColor(203, 213, 225)
+      doc.setLineWidth(0.3)
+      doc.line(x, y + 10, x + colW, y + 10)
+      doc.setFont(FF, "normal")
+      doc.setFontSize(8)
+      doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+      doc.text(label, x, y + 14)
+    }
+    sign("Prepared by / Date", margin)
+    sign("Received by / Date", margin + colW + 12)
   }
 
   // ── Footer on every page ──────────────────────────────────────────────────
@@ -388,8 +449,8 @@ async function buildDoc(
     doc.setPage(p)
     doc.setFontSize(8)
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-    doc.setFont("helvetica", "normal")
-    doc.text(`Page ${p} of ${total}`, margin, ph - 8)
+    doc.setFont(FF, "normal")
+    if (cfg.pageNumbers) doc.text(`Page ${p} of ${total}`, margin, ph - 8)
     doc.text(branding.name || "HBCField", pageW - margin, ph - 8, { align: "right" })
   }
 
