@@ -232,7 +232,7 @@ export default function ReportsPage() {
 
         {/* AI — natural language → report (Business+) */}
         {canAI && (
-          <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3.5 py-3 shadow-sm">
+          <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3.5 py-3 shadow-sm dark:shadow-none dark:border-white/[0.08]">
             <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/10 text-primary shrink-0"><Sparkles className="h-4 w-4" /></div>
             <Input
               value={aiPrompt}
@@ -273,7 +273,7 @@ export default function ReportsPage() {
           {/* Right: builder/runner + results */}
           <div className="space-y-4">
             {!active ? (
-              <div className="rounded-2xl border border-border bg-card shadow-sm p-16 text-center">
+              <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-16 text-center">
                 <div className="grid place-items-center h-12 w-12 rounded-2xl bg-primary/10 text-primary mx-auto mb-4"><BarChart3 className="h-6 w-6" /></div>
                 <p className="text-base font-semibold text-foreground">{t("reports.pickOneTitle", "No report selected")}</p>
                 <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">{t("reports.pickOne", "Pick a report on the left, or build a custom one.")}</p>
@@ -324,7 +324,7 @@ export default function ReportsPage() {
                 </div>
 
                 {/* ── Configure & run ─────────────────────────────────────────── */}
-                <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border/60">
+                <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] divide-y divide-border/60">
                   {/* Builder fields (Pro+ custom reports) */}
                   {active.builder && dsMeta && (
                     <div className="p-4 space-y-3">
@@ -386,7 +386,7 @@ export default function ReportsPage() {
 
                 {/* ── Results ─────────────────────────────────────────────────── */}
                 {result && (result.rows.length === 0 ? (
-                  <div className="rounded-2xl border border-border bg-card shadow-sm p-14 text-center">
+                  <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-14 text-center">
                     <div className="grid place-items-center h-10 w-10 rounded-xl bg-muted mx-auto mb-3"><BarChart3 className="h-5 w-5 text-muted-foreground" /></div>
                     <p className="text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</p>
                   </div>
@@ -396,7 +396,7 @@ export default function ReportsPage() {
                     {statCards(result).length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
                         {statCards(result).map((s, i) => (
-                          <div key={i} className="rounded-2xl border border-border bg-card shadow-sm p-4">
+                          <div key={i} className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-4">
                             <div className="flex items-center gap-2">
                               <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
@@ -409,17 +409,17 @@ export default function ReportsPage() {
 
                     {/* Chart card */}
                     {chartMeasure && labelCol && chartData.length > 0 && (
-                      <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+                      <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-5">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-sm font-semibold text-foreground">{t("reports.topBy", "Top {{measure}}", { measure: chartMeasure.label })}</h3>
                           <span className="text-xs text-muted-foreground">{t("reports.topN", "Top {{n}}", { n: chartData.length })}</span>
                         </div>
                         <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 34)}>
                           <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                            <CartesianGrid horizontal={false} stroke="#eef2f7" />
-                            <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={(v) => fmt(v, chartMeasure.format)} />
-                            <YAxis type="category" dataKey="label" width={132} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                            <RTooltip cursor={{ fill: "#f1f5f9" }} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }} formatter={((v: unknown) => [fmt(Number(v), chartMeasure.format), chartMeasure.label]) as never} />
+                            <CartesianGrid horizontal={false} stroke="hsl(var(--border))" />
+                            <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => fmt(v, chartMeasure.format)} />
+                            <YAxis type="category" dataKey="label" width={132} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                            <RTooltip cursor={{ fill: "hsl(var(--muted))" }} contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--popover))", color: "hsl(var(--popover-foreground))", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.14)" }} labelStyle={{ color: "hsl(var(--popover-foreground))" }} itemStyle={{ color: "hsl(var(--popover-foreground))" }} formatter={((v: unknown) => [fmt(Number(v), chartMeasure.format), chartMeasure.label]) as never} />
                             <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}>
                               {chartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                             </Bar>
@@ -429,7 +429,7 @@ export default function ReportsPage() {
                     )}
 
                     {/* Table card */}
-                    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] overflow-hidden">
                       <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/70">
                         <p className="text-sm font-semibold text-foreground">{t("reports.details", "Details")}</p>
                         <p className="text-xs text-muted-foreground">{t("reports.rowCount", "{{count}} rows", { count: result.rows.length })}</p>
