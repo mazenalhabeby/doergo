@@ -4081,11 +4081,6 @@ export const analyticsApi = {
     if (res.error) throw new Error(res.error);
     return res.data!.data;
   },
-  ai: async (prompt: string) => {
-    const res = await api.post<{ data: { definition: ReportDefinition } }>("/analytics/ai", { prompt });
-    if (res.error) throw new Error(res.error);
-    return res.data!.data.definition;
-  },
   listSaved: async () => {
     const res = await api.get<{ data: SavedReport[] }>("/analytics/reports");
     if (res.error) throw new Error(res.error);
