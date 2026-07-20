@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { BarChart3, Download, FileText, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, Sparkles, ChevronDown, Table2 } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell } from "recharts"
 
 import {
   analyticsApi, organizationsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
@@ -53,6 +54,21 @@ function toCSV(result: ReportResult): string {
   const head = result.columns.map((c) => `"${c.label}"`).join(",")
   const lines = result.rows.map((r) => result.columns.map((c) => `"${String(r[c.key] ?? "").replace(/"/g, '""')}"`).join(","))
   return [head, ...lines].join("\n")
+}
+
+// Tasteful, colorful chart palette (Stripe-ish).
+const CHART_COLORS = ["#6366f1", "#3b82f6", "#0ea5e9", "#14b8a6", "#22c55e", "#f59e0b", "#f43f5e", "#a855f7"]
+
+/** KPI totals for the measure columns — sum, or average for percentages. */
+function statCards(result: ReportResult): { label: string; value: string; format?: string }[] {
+  return result.columns
+    .filter((c) => c.kind === "measure")
+    .map((c) => {
+      const nums = result.rows.map((r) => Number(r[c.key]) || 0)
+      const total = nums.reduce((a, b) => a + b, 0)
+      const v = c.format === "percent" && nums.length ? total / nums.length : total
+      return { label: c.label, value: fmt(v, c.format), format: c.format }
+    })
 }
 
 interface ActiveReport {
@@ -179,56 +195,64 @@ export default function ReportsPage() {
   const measureCols = result?.columns.filter((c) => c.kind === "measure") || []
   const labelCol = result?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
   const chartMeasure = measureCols[0]
-  const maxVal = chartMeasure ? Math.max(...(result?.rows.map((r) => Number(r[chartMeasure.key]) || 0) || [1]), 1) : 1
+  const chartData = chartMeasure && labelCol
+    ? (result?.rows.slice(0, 12).map((r) => ({ label: String(fmt(r[labelCol.key], labelCol.format)), value: Number(r[chartMeasure.key]) || 0 })) || [])
+    : []
 
   const NavBtn = ({ activeKey, onClick, icon: Icon, label, desc, onDelete }: { activeKey: boolean; onClick: () => void; icon: typeof Clock; label: string; desc?: string; onDelete?: () => void }) => (
-    <div className={cn("group/nav w-full rounded-xl border px-3 py-2.5 transition-colors cursor-pointer flex items-start gap-2", activeKey ? "border-primary bg-primary/[0.06]" : "border-border hover:bg-accent/40")} onClick={onClick}>
-      <Icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-      <div className="min-w-0 flex-1">
+    <div className={cn("group/nav w-full rounded-xl border px-2.5 py-2.5 transition-all cursor-pointer flex items-start gap-2.5", activeKey ? "border-primary/50 bg-primary/[0.05] shadow-sm" : "border-transparent hover:bg-accent/50")} onClick={onClick}>
+      <div className={cn("grid place-items-center h-8 w-8 rounded-lg shrink-0 transition-colors", activeKey ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover/nav:text-foreground")}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1 pt-0.5">
         <div className="text-sm font-medium text-foreground truncate">{label}</div>
         {desc && <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">{desc}</p>}
       </div>
-      {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete() }} className="opacity-0 group-hover/nav:opacity-100 text-muted-foreground hover:text-red-600 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>}
+      {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete() }} className="opacity-0 group-hover/nav:opacity-100 text-muted-foreground hover:text-red-600 shrink-0 pt-0.5"><Trash2 className="h-3.5 w-3.5" /></button>}
     </div>
   )
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-[1200px] mx-auto px-6 py-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("reports.title", "Reports")}</h1>
-            <p className="text-sm text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
+      <div className="max-w-[1280px] mx-auto px-6 py-8 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid place-items-center h-11 w-11 rounded-xl bg-primary/10 text-primary shrink-0">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-[22px] font-bold tracking-tight text-foreground leading-tight">{t("reports.title", "Reports")}</h1>
+              <p className="text-sm text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
+            </div>
           </div>
+          {canBuild && (
+            <Button onClick={newReport} className="gap-1.5 shadow-sm"><Plus className="h-4 w-4" />{t("reports.new", "New report")}</Button>
+          )}
         </div>
 
         {/* AI — natural language → report (Business+) */}
         {canAI && (
-          <div className="flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/[0.04] px-3 py-2.5">
-            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+          <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3.5 py-3 shadow-sm">
+            <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/10 text-primary shrink-0"><Sparkles className="h-4 w-4" /></div>
             <Input
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && aiPrompt.trim()) ai.mutate(aiPrompt.trim()) }}
               placeholder={t("reports.aiPlaceholder", "Ask for a report — e.g. “overtime hours per technician last month”")}
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 h-9 px-1"
             />
-            <Button size="sm" className="gap-1.5 shrink-0" disabled={!aiPrompt.trim() || ai.isPending} onClick={() => ai.mutate(aiPrompt.trim())}>
+            <Button size="sm" className="gap-1.5 shrink-0 shadow-sm" disabled={!aiPrompt.trim() || ai.isPending} onClick={() => ai.mutate(aiPrompt.trim())}>
               <Sparkles className="h-3.5 w-3.5" />{ai.isPending ? t("reports.generating", "Generating…") : t("reports.generate", "Generate")}
             </Button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
-          {/* Left: templates + saved + new */}
-          <div className="space-y-4">
-            {canBuild && (
-              <Button onClick={newReport} className="w-full gap-1.5"><Plus className="h-4 w-4" />{t("reports.new", "New custom report")}</Button>
-            )}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          {/* Left: templates + saved */}
+          <div className="space-y-5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-1">{t("reports.templates", "Templates")}</p>
-              <div className="space-y-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{t("reports.templates", "Templates")}</p>
+              <div className="space-y-1">
                 {templates.map((tpl) => (
                   <NavBtn key={tpl.key} activeKey={active?.name === tpl.name && !active?.savedId && !active?.builder} onClick={() => pickTemplate(tpl)} icon={TEMPLATE_ICON[tpl.key] || BarChart3} label={tpl.name} desc={tpl.description} />
                 ))}
@@ -236,8 +260,8 @@ export default function ReportsPage() {
             </div>
             {(saved && saved.length > 0) && (
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-1">{t("reports.saved", "Saved reports")}</p>
-                <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{t("reports.saved", "Saved reports")}</p>
+                <div className="space-y-1">
                   {saved.map((r) => (
                     <NavBtn key={r.id} activeKey={active?.savedId === r.id} onClick={() => pickSaved(r)} icon={BarChart3} label={r.name} desc={r.description || undefined} onDelete={canBuild ? () => del.mutate(r.id) : undefined} />
                   ))}
@@ -249,10 +273,10 @@ export default function ReportsPage() {
           {/* Right: builder/runner + results */}
           <div className="space-y-4">
             {!active ? (
-              <div className="rounded-2xl border border-dashed border-border p-16 text-center">
-                <BarChart3 className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm font-medium text-foreground">{t("reports.pickOneTitle", "No report selected")}</p>
-                <p className="text-sm text-muted-foreground mt-1">{t("reports.pickOne", "Pick a report on the left, or build a custom one.")}</p>
+              <div className="rounded-2xl border border-border bg-card shadow-sm p-16 text-center">
+                <div className="grid place-items-center h-12 w-12 rounded-2xl bg-primary/10 text-primary mx-auto mb-4"><BarChart3 className="h-6 w-6" /></div>
+                <p className="text-base font-semibold text-foreground">{t("reports.pickOneTitle", "No report selected")}</p>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">{t("reports.pickOne", "Pick a report on the left, or build a custom one.")}</p>
               </div>
             ) : (
               <>
@@ -300,7 +324,7 @@ export default function ReportsPage() {
                 </div>
 
                 {/* ── Configure & run ─────────────────────────────────────────── */}
-                <div className="rounded-2xl border border-border bg-card divide-y divide-border/60">
+                <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border/60">
                   {/* Builder fields (Pro+ custom reports) */}
                   {active.builder && dsMeta && (
                     <div className="p-4 space-y-3">
@@ -361,37 +385,64 @@ export default function ReportsPage() {
                 )}
 
                 {/* ── Results ─────────────────────────────────────────────────── */}
-                {result && (
-                  <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                    {result.rows.length === 0 ? (
-                      <div className="p-12 text-center text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</div>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60 bg-muted/30">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("reports.results", "Results")}</p>
-                          <p className="text-xs text-muted-foreground">{t("reports.rowCount", "{{count}} rows", { count: result.rows.length })}</p>
-                        </div>
-                        {chartMeasure && labelCol && (
-                          <div className="p-4 border-b border-border/60 space-y-1.5">
-                            {result.rows.slice(0, 12).map((r, i) => (
-                              <div key={i} className="flex items-center gap-3">
-                                <span className="w-32 shrink-0 truncate text-xs text-muted-foreground text-right">{fmt(r[labelCol.key], labelCol.format)}</span>
-                                <div className="flex-1 h-5 rounded bg-muted overflow-hidden"><div className="h-full bg-primary/70 rounded" style={{ width: `${(Number(r[chartMeasure.key]) / maxVal) * 100}%` }} /></div>
-                                <span className="w-20 shrink-0 text-xs font-medium tabular-nums text-right">{fmt(r[chartMeasure.key], chartMeasure.format)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead><tr className="border-b border-border/60 text-left">{result.columns.map((c) => <th key={c.key} className={cn("px-4 py-2.5 text-xs font-semibold text-muted-foreground", c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr></thead>
-                            <tbody>{result.rows.map((r, i) => <tr key={i} className="border-b border-border/40 hover:bg-accent/20">{result.columns.map((c) => <td key={c.key} className={cn("px-4 py-2.5", c.kind === "measure" && "text-right tabular-nums font-medium")}>{fmt(r[c.key], c.format)}</td>)}</tr>)}</tbody>
-                          </table>
-                        </div>
-                      </>
-                    )}
+                {result && (result.rows.length === 0 ? (
+                  <div className="rounded-2xl border border-border bg-card shadow-sm p-14 text-center">
+                    <div className="grid place-items-center h-10 w-10 rounded-xl bg-muted mx-auto mb-3"><BarChart3 className="h-5 w-5 text-muted-foreground" /></div>
+                    <p className="text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</p>
                   </div>
-                )}
+                ) : (
+                  <div className="space-y-5">
+                    {/* KPI stat cards */}
+                    {statCards(result).length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {statCards(result).map((s, i) => (
+                          <div key={i} className="rounded-2xl border border-border bg-card shadow-sm p-4">
+                            <div className="flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
+                            </div>
+                            <p className="text-2xl font-bold tabular-nums text-foreground mt-1.5">{s.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chart card */}
+                    {chartMeasure && labelCol && chartData.length > 0 && (
+                      <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-semibold text-foreground">{t("reports.topBy", "Top {{measure}}", { measure: chartMeasure.label })}</h3>
+                          <span className="text-xs text-muted-foreground">{t("reports.topN", "Top {{n}}", { n: chartData.length })}</span>
+                        </div>
+                        <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 34)}>
+                          <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                            <CartesianGrid horizontal={false} stroke="#eef2f7" />
+                            <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={(v) => fmt(v, chartMeasure.format)} />
+                            <YAxis type="category" dataKey="label" width={132} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                            <RTooltip cursor={{ fill: "#f1f5f9" }} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }} formatter={((v: unknown) => [fmt(Number(v), chartMeasure.format), chartMeasure.label]) as never} />
+                            <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}>
+                              {chartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Table card */}
+                    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/70">
+                        <p className="text-sm font-semibold text-foreground">{t("reports.details", "Details")}</p>
+                        <p className="text-xs text-muted-foreground">{t("reports.rowCount", "{{count}} rows", { count: result.rows.length })}</p>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead><tr className="text-left">{result.columns.map((c) => <th key={c.key} className={cn("px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40", c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr></thead>
+                          <tbody>{result.rows.map((r, i) => <tr key={i} className="border-t border-border/50 hover:bg-accent/30 transition-colors">{result.columns.map((c) => <td key={c.key} className={cn("px-5 py-3 text-foreground", c.kind === "measure" && "text-right tabular-nums font-semibold")}>{fmt(r[c.key], c.format)}</td>)}</tr>)}</tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </>
             )}
           </div>
