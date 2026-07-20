@@ -7,7 +7,7 @@ import { BarChart3, Download, FileText, Play, Clock, Users, Building2, Clipboard
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell } from "recharts"
 
 import {
-  analyticsApi, organizationsApi, type ReportTemplate, type ReportDefinition, type ReportResult,
+  analyticsApi, organizationsApi, customersApi, type ReportTemplate, type ReportDefinition, type ReportResult,
   type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
   type ReportCadence,
 } from "@/lib/api"
@@ -96,9 +96,14 @@ export default function ReportsPage() {
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
   const { data: orgProfile } = useQuery({ queryKey: ["orgProfile"], queryFn: () => organizationsApi.getProfile() })
+  const { data: customersData } = useQuery({ queryKey: ["customersAll"], queryFn: () => customersApi.list({ limit: 200 }) })
+  const customers = customersData?.data || []
   const templates = catalog?.templates || []
   const datasets = catalog?.datasets || []
   const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
+  const hasCustomerDim = !!dsMeta?.dimensions.some((d) => d.key === "customer")
+  // Current single-customer "eq" filter value (customer dimension is name-based).
+  const customerFilter = active?.def.filters?.find((f) => f.field === "customer" && f.op === "eq")?.value as string | undefined
 
   const run = useMutation({
     mutationFn: (def: ReportDefinition) => analyticsApi.run(def),
@@ -157,6 +162,15 @@ export default function ReportsPage() {
   }
 
   const patchDef = (p: Partial<ReportDefinition>) => setActive((a) => (a ? { ...a, def: { ...a.def, ...p } } : a))
+  // Scope the report to a single customer (or clear). Uses the name-based
+  // customer dimension so it works on any dataset that has one.
+  const setCustomerFilter = (name: string | undefined) =>
+    setActive((a) => {
+      if (!a) return a
+      const others = (a.def.filters || []).filter((f) => f.field !== "customer")
+      const filters = name ? [...others, { field: "customer", op: "eq" as const, value: name }] : others
+      return { ...a, def: { ...a.def, filters } }
+    })
   const toggleArr = (key: "measures" | "dimensions", val: string) =>
     setActive((a) => {
       if (!a) return a
@@ -174,9 +188,31 @@ export default function ReportsPage() {
     a.href = url; a.download = `${active.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
+  // Human range label for the export subtitle (preset OR custom from–to).
+  const rangeLabel = (() => {
+    const dr = active?.def.dateRange
+    if (!dr) return undefined
+    if (dr.from || dr.to) {
+      const f = dr.from ? new Date(dr.from).toLocaleDateString() : "…"
+      const to = dr.to ? new Date(dr.to).toLocaleDateString() : "now"
+      return `${f} – ${to}`
+    }
+    return DATE_PRESETS.find((p) => p.value === dr.preset)?.label
+  })()
+  // When scoped to one customer, feed their details into the PDF header.
+  const preparedFor = (() => {
+    if (!customerFilter) return undefined
+    const c = customers.find((x) => x.name === customerFilter)
+    if (!c) return { name: customerFilter, lines: [] as string[] }
+    return { name: c.name, lines: [c.contactName || "", c.address || "", [c.phone, c.email].filter(Boolean).join("  •  ")].filter(Boolean) as string[] }
+  })()
   const pdfMeta = active
-    ? { title: active.name, subtitle: DATE_PRESETS.find((p) => p.value === active.def.dateRange?.preset)?.label }
+    ? { title: active.name, subtitle: rangeLabel, preparedFor }
     : { title: "" }
+
+  // Period control: "custom" when an explicit from/to range is set.
+  const isCustomRange = !!(active?.def.dateRange?.from || active?.def.dateRange?.to)
+  const toDateInput = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : "")
 
   const supportsTime = active && (active.def.granularity !== undefined)
   const measureCols = result?.columns.filter((c) => c.kind === "measure") || []
@@ -260,7 +296,7 @@ export default function ReportsPage() {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {[dsMeta?.label, DATE_PRESETS.find((p) => p.value === (active.def.dateRange?.preset || "last_30d"))?.label].filter(Boolean).join("  ·  ")}
+                      {[dsMeta?.label, rangeLabel, customerFilter].filter(Boolean).join("  ·  ")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -323,6 +359,20 @@ export default function ReportsPage() {
                           })}
                         </div>
                       </div>
+                      {/* Scope to one customer → the export becomes their statement. */}
+                      {hasCustomerDim && (
+                        <div className="flex items-center gap-3">
+                          <Label className="text-xs w-20 shrink-0">{t("reports.customer", "Customer")}</Label>
+                          <Select value={customerFilter ?? "__all__"} onValueChange={(v) => setCustomerFilter(v === "__all__" ? undefined : v)}>
+                            <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue placeholder={t("reports.allCustomers", "All customers")} /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__all__" className="text-xs">{t("reports.allCustomers", "All customers")}</SelectItem>
+                              {customers.map((c) => <SelectItem key={c.id} value={c.name} className="text-xs">{c.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          {customerFilter && <span className="text-[11px] text-muted-foreground">{t("reports.customerScoped", "Export shows this customer's details")}</span>}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -330,11 +380,38 @@ export default function ReportsPage() {
                   <div className="flex flex-wrap items-end gap-3 p-4">
                     <div className="space-y-1.5">
                       <label className="text-xs text-muted-foreground">{t("reports.period", "Period")}</label>
-                      <Select value={active.def.dateRange?.preset || "last_30d"} onValueChange={(v) => patchDef({ dateRange: { preset: v as ReportDatePreset } })}>
+                      <Select
+                        value={isCustomRange ? "__custom__" : (active.def.dateRange?.preset || "last_30d")}
+                        onValueChange={(v) => {
+                          if (v === "__custom__") {
+                            const to = new Date(); const from = new Date(to.getTime() - 30 * 86400000)
+                            patchDef({ dateRange: { from: from.toISOString(), to: to.toISOString() } })
+                          } else patchDef({ dateRange: { preset: v as ReportDatePreset } })
+                        }}
+                      >
                         <SelectTrigger className="h-9 w-[160px] text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>{DATE_PRESETS.map((p) => <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>)}</SelectContent>
+                        <SelectContent>
+                          {DATE_PRESETS.map((p) => <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>)}
+                          <SelectItem value="__custom__" className="text-xs">{t("reports.customRange", "Custom range…")}</SelectItem>
+                        </SelectContent>
                       </Select>
                     </div>
+                    {isCustomRange && (
+                      <>
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">{t("reports.from", "From")}</label>
+                          <Input type="date" value={toDateInput(active.def.dateRange?.from)} max={toDateInput(active.def.dateRange?.to) || undefined}
+                            onChange={(e) => patchDef({ dateRange: { ...active.def.dateRange, from: e.target.value ? new Date(e.target.value).toISOString() : undefined } })}
+                            className="h-9 w-[150px] text-xs" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">{t("reports.to", "To")}</label>
+                          <Input type="date" value={toDateInput(active.def.dateRange?.to)} min={toDateInput(active.def.dateRange?.from) || undefined}
+                            onChange={(e) => patchDef({ dateRange: { ...active.def.dateRange, to: e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : undefined } })}
+                            className="h-9 w-[150px] text-xs" />
+                        </div>
+                      </>
+                    )}
                     {supportsTime && (
                       <div className="space-y-1.5">
                         <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>

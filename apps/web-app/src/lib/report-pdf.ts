@@ -170,6 +170,9 @@ function addressLines(b: ReportBranding): string[] {
 export interface ReportPdfMeta {
   title: string
   subtitle?: string // e.g. date-range label
+  // When a report is scoped to a single customer, their details render as a
+  // "Prepared for" block under the title (turns any report into a statement).
+  preparedFor?: { name: string; lines: string[] }
 }
 
 /**
@@ -252,7 +255,7 @@ async function buildDoc(
   doc.setFont("helvetica", "bold")
   doc.setFontSize(7.5)
   doc.setTextColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
-  doc.text("REPORT", margin, y, { charSpace: 0.4 })
+  doc.text(meta.preparedFor ? "STATEMENT" : "REPORT", margin, y, { charSpace: 0.4 })
   y += 6
   doc.setTextColor(INK.r, INK.g, INK.b)
   doc.setFont("helvetica", "bold")
@@ -265,6 +268,25 @@ async function buildDoc(
   const generated = `Generated ${new Date().toLocaleString()}`
   doc.text(meta.subtitle ? `${meta.subtitle}   •   ${generated}` : generated, margin, y)
   y += 4
+
+  // ── "Prepared for" block (single-customer scoped reports) ────────────────
+  if (meta.preparedFor) {
+    y += 2
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(7)
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+    doc.text("PREPARED FOR", margin, y, { charSpace: 0.3 })
+    y += 4.5
+    doc.setFontSize(11)
+    doc.setTextColor(INK.r, INK.g, INK.b)
+    doc.text(meta.preparedFor.name, margin, y)
+    y += 4.5
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+    for (const line of meta.preparedFor.lines.filter((l) => l && l.trim())) { doc.text(line, margin, y); y += 4 }
+    y += 2
+  }
   if (cfg.note) {
     doc.setFontSize(8.5)
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
