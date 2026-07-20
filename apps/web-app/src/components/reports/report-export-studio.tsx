@@ -76,16 +76,26 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
   const { t } = useTranslation()
   const [template, setTemplate] = useState<PdfTemplate>("classic")
   const [custom, setCustom] = useState<CustomPdfOptions>({ accent: "#2563EB", orientation: "portrait", logo: true, summary: true, chart: true, table: true, heading: "", note: "" })
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  // Double-buffered preview: the new PDF loads into the hidden iframe and is
+  // promoted only once it has painted — so switching templates never flashes.
+  const [slotA, setSlotA] = useState<string | null>(null)
+  const [slotB, setSlotB] = useState<string | null>(null)
+  const [front, setFront] = useState<"a" | "b">("a")
   const [busy, setBusy] = useState(false)
   const [downloading, setDownloading] = useState(false)
-  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const frontRef = useRef<"a" | "b">("a")
+  const pendingRef = useRef<string | null>(null)
+  const aRef = useRef<HTMLIFrameElement>(null)
+  const bRef = useRef<HTMLIFrameElement>(null)
+  const frontUrl = front === "a" ? slotA : slotB
+  const hasPreview = !!frontUrl
 
   const templates = [...PDF_TEMPLATES, ...(canCustom ? [CUSTOM_PDF_TEMPLATE] : [])]
   const accent = template === "custom" ? custom.accent : "#2563EB"
   const custEmpty = template === "custom" && !(custom.table || custom.chart || custom.summary)
 
-  // Live preview — regenerate (debounced) as template/options change.
+  // Live preview — regenerate (debounced) as template/options change, loading
+  // into the hidden buffer. Promotion happens in the iframe onLoad handler.
   useEffect(() => {
     if (!open || !result) return
     let cancelled = false
@@ -94,16 +104,36 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
       try {
         const url = await renderReportPdfPreview(result, meta, branding, template, template === "custom" ? custom : undefined)
         if (cancelled) { URL.revokeObjectURL(url); return }
-        setPreviewUrl((old) => { if (old) URL.revokeObjectURL(old); return url })
+        pendingRef.current = url
+        const hidden = frontRef.current === "a" ? "b" : "a"
+        const setter = hidden === "a" ? setSlotA : setSlotB
+        setter((old) => { if (old) URL.revokeObjectURL(old); return url })
       } catch { /* preview is best-effort */ } finally { if (!cancelled) setBusy(false) }
     }, 250)
     return () => { cancelled = true; clearTimeout(handle) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, template, custom, result])
 
-  // Free the preview blob when the studio closes.
+  // Once the hidden buffer has painted the new PDF, swap it to the front.
+  const promote = (slot: "a" | "b") => {
+    const url = slot === "a" ? slotA : slotB
+    if (!url || url !== pendingRef.current) return
+    pendingRef.current = null
+    const prev = frontRef.current
+    if (prev === slot) return
+    frontRef.current = slot
+    setFront(slot)
+    const clear = prev === "a" ? setSlotA : setSlotB
+    clear((old) => { if (old) URL.revokeObjectURL(old); return null })
+  }
+
+  // Free both blobs and reset when the studio closes.
   useEffect(() => {
-    if (!open) setPreviewUrl((old) => { if (old) URL.revokeObjectURL(old); return null })
+    if (!open) {
+      setSlotA((old) => { if (old) URL.revokeObjectURL(old); return null })
+      setSlotB((old) => { if (old) URL.revokeObjectURL(old); return null })
+      frontRef.current = "a"; pendingRef.current = null; setFront("a")
+    }
   }, [open])
 
   // Esc closes.
@@ -126,8 +156,8 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
     } finally { setDownloading(false) }
   }
   const print = () => {
-    const w = iframeRef.current?.contentWindow
-    try { w?.focus(); w?.print() } catch { if (previewUrl) window.open(previewUrl, "_blank") }
+    const w = (front === "a" ? aRef : bRef).current?.contentWindow
+    try { w?.focus(); w?.print() } catch { if (frontUrl) window.open(frontUrl, "_blank") }
   }
 
   return (
@@ -142,7 +172,7 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={print} disabled={!previewUrl}><Printer className="h-3.5 w-3.5" />{t("reports.print", "Print")}</Button>
+          <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={print} disabled={!hasPreview}><Printer className="h-3.5 w-3.5" />{t("reports.print", "Print")}</Button>
           <Button size="sm" className="gap-1.5 h-9" onClick={download} disabled={!result || custEmpty || downloading}>
             {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}{t("reports.downloadPdf", "Download PDF")}
           </Button>
@@ -218,13 +248,25 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
           )}
         </div>
 
-        {/* Right: preview stage */}
+        {/* Right: preview stage — two stacked iframes, crossfaded (no flash) */}
         <div className="relative bg-muted/40 min-h-0">
-          {previewUrl ? (
-            <iframe ref={iframeRef} key={template} title={t("reports.pdfPreview", "PDF preview")} src={`${previewUrl}#view=FitH`} className="w-full h-full" />
-          ) : (
+          <iframe
+            ref={aRef}
+            title={t("reports.pdfPreview", "PDF preview")}
+            src={slotA ? `${slotA}#view=FitH` : undefined}
+            onLoad={() => promote("a")}
+            className={cn("absolute inset-0 w-full h-full transition-opacity duration-200", front === "a" && slotA ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
+          />
+          <iframe
+            ref={bRef}
+            title={t("reports.pdfPreview", "PDF preview")}
+            src={slotB ? `${slotB}#view=FitH` : undefined}
+            onLoad={() => promote("b")}
+            className={cn("absolute inset-0 w-full h-full transition-opacity duration-200", front === "b" && slotB ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
+          />
+          {!hasPreview && (
             // Skeleton page while the first preview builds.
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center z-20">
               <div className="w-[420px] max-w-[80%] aspect-[1/1.414] rounded-lg bg-white ring-1 ring-border shadow-sm p-6 space-y-3">
                 <div className="h-3 w-24 rounded bg-muted animate-pulse" />
                 <div className="h-6 w-2/3 rounded bg-muted animate-pulse" />
@@ -234,8 +276,8 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
               </div>
             </div>
           )}
-          {busy && previewUrl && (
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-md bg-background/90 border border-border px-2.5 py-1.5 text-[11px] text-muted-foreground shadow-sm">
+          {busy && hasPreview && (
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md bg-background/90 border border-border px-2.5 py-1.5 text-[11px] text-muted-foreground shadow-sm">
               <Loader2 className="h-3 w-3 animate-spin" />{t("reports.pdfUpdating", "Updating…")}
             </div>
           )}
