@@ -2541,6 +2541,8 @@
       "pdfHeading": "Individuelle Überschrift (optional)",
       "pdfNote": "Hinweis / Haftungsausschluss (optional)",
       "pdfNotePlaceholder": "z. B. Vertraulich — nur zum internen Gebrauch",
+      "pdfBuilding": "Vorschau wird erstellt…",
+      "pdfUpdating": "Wird aktualisiert…",
       "pdfTpl": {
         "classic": { "name": "Klassisch", "desc": "Briefkopf, Diagrammvorschau und vollständige Datentabelle." },
         "executive": { "name": "Management-Zusammenfassung", "desc": "KPI-Summen oben, Diagramm und kompakte Tabelle." },

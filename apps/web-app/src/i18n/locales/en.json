@@ -2541,6 +2541,8 @@
       "pdfHeading": "Custom heading (optional)",
       "pdfNote": "Note / disclaimer (optional)",
       "pdfNotePlaceholder": "e.g. Confidential — internal use only",
+      "pdfBuilding": "Building preview…",
+      "pdfUpdating": "Updating…",
       "pdfTpl": {
         "classic": { "name": "Classic", "desc": "Letterhead, chart preview, and full data table." },
         "executive": { "name": "Executive summary", "desc": "KPI totals up top, chart, and a compact table." },

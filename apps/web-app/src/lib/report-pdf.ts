@@ -173,17 +173,18 @@ export interface ReportPdfMeta {
 }
 
 /**
- * Build and download a branded PDF of a report result using one of four
- * templates (or a fully custom config). Renders company letterhead, optional
- * KPI summary + chart, the data table, and a paginated footer.
+ * Build a branded PDF of a report result using one of four templates (or a
+ * fully custom config). Renders company letterhead, optional KPI summary +
+ * chart, the data table, and a paginated footer. Returns the jsPDF doc plus a
+ * suggested filename — callers save it or render a preview.
  */
-export async function exportReportPdf(
+async function buildDoc(
   result: ReportResult,
   meta: ReportPdfMeta,
   branding: ReportBranding,
-  template: PdfTemplate = "classic",
+  template: PdfTemplate,
   custom?: CustomPdfOptions,
-): Promise<void> {
+): Promise<{ doc: jsPDF; filename: string }> {
   const cfg = presetFor(template, custom)
   const doc = new jsPDF({ orientation: cfg.orientation, unit: "mm", format: "a4" })
   const pageW = doc.internal.pageSize.getWidth()
@@ -238,53 +239,71 @@ export async function exportReportPdf(
     y += 8
   }
 
+  // Small uppercase accent section label; advances and returns the new y.
+  const sectionLabel = (text: string, atY: number): number => {
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(7.5)
+    doc.setTextColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+    doc.text(text.toUpperCase(), margin, atY, { charSpace: 0.4 })
+    return atY + 4.5
+  }
+
   // ── Title block ─────────────────────────────────────────────────────────
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(7.5)
+  doc.setTextColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+  doc.text("REPORT", margin, y, { charSpace: 0.4 })
+  y += 6
   doc.setTextColor(INK.r, INK.g, INK.b)
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(16)
+  doc.setFontSize(19)
   doc.text(cfg.heading || meta.title, margin, y)
-  y += 6
+  y += 6.5
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
   doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
   const generated = `Generated ${new Date().toLocaleString()}`
   doc.text(meta.subtitle ? `${meta.subtitle}   •   ${generated}` : generated, margin, y)
-  y += 5
+  y += 4
   if (cfg.note) {
     doc.setFontSize(8.5)
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
     const wrapped = doc.splitTextToSize(cfg.note, contentW)
-    doc.text(wrapped, margin, y)
+    doc.text(wrapped, margin, y + 2)
     y += wrapped.length * 4 + 2
   }
+  y += 4
 
   // ── KPI summary cards ─────────────────────────────────────────────────────
   if (cfg.summary) {
     const cards = summarize(result)
     if (cards.length) {
+      y = sectionLabel("Summary", y)
       const gap = 3
       const perRow = Math.min(cards.length, cfg.orientation === "landscape" ? 5 : 4)
       const cardW = (contentW - gap * (perRow - 1)) / perRow
-      const cardH = 16
+      const cardH = 18
       cards.forEach((card, i) => {
         const col = i % perRow
         const row = Math.floor(i / perRow)
         const cx = margin + col * (cardW + gap)
         const cy = y + row * (cardH + gap)
+        // Light card, no border, with an accent left bar.
         doc.setFillColor(248, 250, 252)
-        doc.setDrawColor(226, 232, 240)
-        doc.setLineWidth(0.2)
-        doc.roundedRect(cx, cy, cardW, cardH, 1.5, 1.5, "FD")
-        doc.setFontSize(7)
+        doc.roundedRect(cx, cy, cardW, cardH, 1.8, 1.8, "F")
+        doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+        doc.roundedRect(cx, cy, 1.4, cardH, 0.7, 0.7, "F")
+        doc.setFontSize(6.8)
         doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-        doc.setFont("helvetica", "normal")
-        doc.text(doc.splitTextToSize(card.label, cardW - 4)[0], cx + 2.5, cy + 5)
-        doc.setFontSize(12)
-        doc.setTextColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
         doc.setFont("helvetica", "bold")
-        doc.text(card.value, cx + 2.5, cy + 12)
+        doc.text(doc.splitTextToSize(card.label.toUpperCase(), cardW - 6)[0], cx + 4, cy + 6, { charSpace: 0.2 })
+        doc.setFontSize(13)
+        doc.setTextColor(INK.r, INK.g, INK.b)
+        doc.setFont("helvetica", "bold")
+        doc.text(card.value, cx + 4, cy + 13.5)
       })
       const rows = Math.ceil(cards.length / perRow)
-      y += rows * (cardH + gap) + 4
+      y += rows * (cardH + gap) + 5
     }
   }
 
@@ -292,33 +311,37 @@ export async function exportReportPdf(
   const measureCol = result.columns.find((c) => c.kind === "measure")
   const labelCol = result.columns.find((c) => c.kind === "period" || c.kind === "dimension")
   if (cfg.chart && measureCol && labelCol && result.rows.length) {
+    y = sectionLabel(`Top ${measureCol.label}`, y)
     const maxVal = Math.max(...result.rows.map((r) => Number(r[measureCol.key]) || 0), 1)
     const top = result.rows.slice(0, 10)
-    const labelW = 42
-    const valW = 24
+    const labelW = 44
+    const valW = 26
     const barX = margin + labelW
     const barMaxW = contentW - labelW - valW
-    const rowH = 6
+    const rowH = 7.2
+    const barH = 4.4
     doc.setFontSize(8)
     for (const r of top) {
+      const cy = y + rowH / 2
       doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
       doc.setFont("helvetica", "normal")
-      doc.text(doc.splitTextToSize(fmt(r[labelCol.key], labelCol.format), labelW - 2)[0], margin, y + 4)
-      doc.setFillColor(226, 232, 240)
-      doc.roundedRect(barX, y + 1, barMaxW, rowH - 2, 0.6, 0.6, "F")
-      const w = Math.max(((Number(r[measureCol.key]) || 0) / maxVal) * barMaxW, 0.5)
+      doc.text(doc.splitTextToSize(fmt(r[labelCol.key], labelCol.format), labelW - 3)[0], margin, cy + 1)
+      doc.setFillColor(241, 245, 249)
+      doc.roundedRect(barX, cy - barH / 2, barMaxW, barH, 1, 1, "F")
+      const w = Math.max(((Number(r[measureCol.key]) || 0) / maxVal) * barMaxW, 0.8)
       doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
-      doc.roundedRect(barX, y + 1, w, rowH - 2, 0.6, 0.6, "F")
+      doc.roundedRect(barX, cy - barH / 2, w, barH, 1, 1, "F")
       doc.setTextColor(INK.r, INK.g, INK.b)
       doc.setFont("helvetica", "bold")
-      doc.text(fmt(r[measureCol.key], measureCol.format), pageW - margin, y + 4, { align: "right" })
+      doc.text(fmt(r[measureCol.key], measureCol.format), pageW - margin, cy + 1, { align: "right" })
       y += rowH
     }
-    y += 4
+    y += 5
   }
 
   // ── Data table ────────────────────────────────────────────────────────────
   if (cfg.table) {
+    if (cfg.chart || cfg.summary) y = sectionLabel("Details", y)
     const head = [result.columns.map((c) => c.label)]
     const body = result.rows.map((row) => result.columns.map((c) => fmt(row[c.key], c.format)))
     const columnStyles: Record<number, { halign: "right" }> = {}
@@ -328,9 +351,10 @@ export async function exportReportPdf(
       body,
       startY: y,
       margin: { left: margin, right: margin },
-      styles: { fontSize: 8.5, cellPadding: 2.2, textColor: [INK.r, INK.g, INK.b], lineColor: [226, 232, 240], lineWidth: 0.1 },
-      headStyles: { fillColor: [cfg.accent.r, cfg.accent.g, cfg.accent.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
+      theme: "plain",
+      styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3, right: 3 }, textColor: [INK.r, INK.g, INK.b], lineColor: [237, 242, 247], lineWidth: { bottom: 0.1, top: 0, left: 0, right: 0 }, valign: "middle" },
+      headStyles: { fillColor: [cfg.accent.r, cfg.accent.g, cfg.accent.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, cellPadding: { top: 3, bottom: 3, left: 3, right: 3 } },
+      alternateRowStyles: { fillColor: [250, 251, 253] },
       columnStyles,
     })
   }
@@ -348,5 +372,30 @@ export async function exportReportPdf(
   }
 
   const safe = (cfg.heading || meta.title || "report").replace(/[^\w-]+/g, "-").replace(/-+/g, "-").toLowerCase()
-  doc.save(`${safe}-${new Date().toISOString().slice(0, 10)}.pdf`)
+  return { doc, filename: `${safe}-${new Date().toISOString().slice(0, 10)}.pdf` }
+}
+
+/** Build and download the PDF. */
+export async function exportReportPdf(
+  result: ReportResult,
+  meta: ReportPdfMeta,
+  branding: ReportBranding,
+  template: PdfTemplate = "classic",
+  custom?: CustomPdfOptions,
+): Promise<void> {
+  const { doc, filename } = await buildDoc(result, meta, branding, template, custom)
+  doc.save(filename)
+}
+
+/** Build the PDF and return an object URL for an <iframe> preview. Revoke it when done. */
+export async function renderReportPdfPreview(
+  result: ReportResult,
+  meta: ReportPdfMeta,
+  branding: ReportBranding,
+  template: PdfTemplate = "classic",
+  custom?: CustomPdfOptions,
+): Promise<string> {
+  const { doc } = await buildDoc(result, meta, branding, template, custom)
+  const blob = doc.output("blob")
+  return URL.createObjectURL(blob)
 }

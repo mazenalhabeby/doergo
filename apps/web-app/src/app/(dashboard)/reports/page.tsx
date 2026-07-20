@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { BarChart3, Download, FileText, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, Sparkles, ChevronDown, Table2 } from "lucide-react"
@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import {
-  exportReportPdf, PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE,
+  exportReportPdf, renderReportPdfPreview, PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE,
   type ReportBranding, type PdfTemplate, type CustomPdfOptions,
 } from "@/lib/report-pdf"
 import { Button } from "@/components/ui/button"
@@ -82,6 +82,8 @@ export default function ReportsPage() {
   const [pdfOpen, setPdfOpen] = useState(false)
   const [pdfTemplate, setPdfTemplate] = useState<PdfTemplate>("classic")
   const [pdfCustom, setPdfCustom] = useState<CustomPdfOptions>({ accent: "#2563EB", orientation: "portrait", logo: true, summary: true, chart: true, table: true, heading: "", note: "" })
+  const [pdfPreview, setPdfPreview] = useState<string | null>(null)
+  const [pdfBusy, setPdfBusy] = useState(false)
 
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
@@ -192,6 +194,34 @@ export default function ReportsPage() {
       notify.error(e instanceof Error ? e.message : "Failed to export PDF")
     }
   }
+
+  // Live PDF preview — regenerates (debounced) as the template/options change.
+  useEffect(() => {
+    if (!pdfOpen || !result || !active) return
+    let cancelled = false
+    setPdfBusy(true)
+    const rangeLabel = DATE_PRESETS.find((p) => p.value === active.def.dateRange?.preset)?.label
+    const handle = setTimeout(async () => {
+      try {
+        const url = await renderReportPdfPreview(
+          result,
+          { title: active.name, subtitle: rangeLabel },
+          (orgProfile || {}) as ReportBranding,
+          pdfTemplate,
+          pdfTemplate === "custom" ? pdfCustom : undefined,
+        )
+        if (cancelled) { URL.revokeObjectURL(url); return }
+        setPdfPreview((old) => { if (old) URL.revokeObjectURL(old); return url })
+      } catch { /* preview is best-effort */ } finally { if (!cancelled) setPdfBusy(false) }
+    }, 250)
+    return () => { cancelled = true; clearTimeout(handle) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfOpen, pdfTemplate, pdfCustom, result, active, orgProfile])
+
+  // Free the preview blob when the dialog closes.
+  useEffect(() => {
+    if (!pdfOpen) setPdfPreview((old) => { if (old) URL.revokeObjectURL(old); return null })
+  }, [pdfOpen])
 
   const supportsTime = active && (active.def.granularity !== undefined)
   const measureCols = result?.columns.filter((c) => c.kind === "measure") || []
@@ -499,20 +529,21 @@ export default function ReportsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* PDF export dialog — template picker (+ custom for Pro+) */}
+      {/* PDF export dialog — template picker + live preview (+ custom for Pro+) */}
       <Dialog open={pdfOpen} onOpenChange={setPdfOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-5xl">
           <DialogHeader><DialogTitle>{t("reports.exportPdfTitle", "Export PDF")}</DialogTitle></DialogHeader>
 
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4">
+            {/* Left: template picker + custom options */}
+            <div className="space-y-2 md:max-h-[62vh] md:overflow-y-auto md:pr-1">
               {[...PDF_TEMPLATES, ...(canBuild ? [CUSTOM_PDF_TEMPLATE] : [])].map((tpl) => {
                 const on = pdfTemplate === tpl.key
                 return (
                   <button
                     key={tpl.key}
                     onClick={() => setPdfTemplate(tpl.key)}
-                    className={cn("text-left rounded-xl border p-3 transition-colors", on ? "border-primary bg-primary/[0.06]" : "border-border hover:bg-accent/40")}
+                    className={cn("w-full text-left rounded-xl border p-3 transition-colors", on ? "border-primary bg-primary/[0.06]" : "border-border hover:bg-accent/40")}
                   >
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-medium text-foreground">{t(`reports.pdfTpl.${tpl.key}.name`, tpl.name)}</span>
@@ -522,45 +553,57 @@ export default function ReportsPage() {
                   </button>
                 )
               })}
+
+              {/* Custom controls (Pro+) */}
+              {pdfTemplate === "custom" && canBuild && (
+                <div className="rounded-xl border border-border p-3 space-y-3 mt-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-xs">{t("reports.pdfAccent", "Accent color")}</Label>
+                    <div className="flex items-center gap-1.5">
+                      {["#2563EB", "#334155", "#059669", "#7C3AED", "#E11D48", "#D97706"].map((hex) => (
+                        <button key={hex} onClick={() => setPdfCustom((c) => ({ ...c, accent: hex }))} className={cn("h-6 w-6 rounded-full border-2", pdfCustom.accent === hex ? "border-foreground" : "border-transparent")} style={{ backgroundColor: hex }} aria-label={hex} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-xs">{t("reports.pdfOrientation", "Orientation")}</Label>
+                    <div className="flex gap-1">
+                      {(["portrait", "landscape"] as const).map((o) => (
+                        <button key={o} onClick={() => setPdfCustom((c) => ({ ...c, orientation: o }))} className={cn("rounded-lg border px-2.5 py-1 text-xs capitalize", pdfCustom.orientation === o ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>{t(`reports.pdf_${o}`, o)}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                    {([["logo", "Company logo"], ["summary", "KPI summary"], ["chart", "Chart"], ["table", "Data table"]] as const).map(([key, label]) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <Label className="text-xs">{t(`reports.pdfInc_${key}`, label)}</Label>
+                        <Switch checked={pdfCustom[key]} onCheckedChange={(v) => setPdfCustom((c) => ({ ...c, [key]: v }))} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t("reports.pdfHeading", "Custom heading (optional)")}</Label>
+                    <Input value={pdfCustom.heading} onChange={(e) => setPdfCustom((c) => ({ ...c, heading: e.target.value }))} placeholder={active?.name} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{t("reports.pdfNote", "Note / disclaimer (optional)")}</Label>
+                    <Input value={pdfCustom.note} onChange={(e) => setPdfCustom((c) => ({ ...c, note: e.target.value }))} placeholder={t("reports.pdfNotePlaceholder", "e.g. Confidential — internal use only")} />
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Custom controls (Pro+) */}
-            {pdfTemplate === "custom" && canBuild && (
-              <div className="rounded-xl border border-border p-3 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Label className="text-xs">{t("reports.pdfAccent", "Accent color")}</Label>
-                  <div className="flex items-center gap-1.5">
-                    {["#2563EB", "#334155", "#059669", "#7C3AED", "#E11D48", "#D97706"].map((hex) => (
-                      <button key={hex} onClick={() => setPdfCustom((c) => ({ ...c, accent: hex }))} className={cn("h-6 w-6 rounded-full border-2", pdfCustom.accent === hex ? "border-foreground" : "border-transparent")} style={{ backgroundColor: hex }} aria-label={hex} />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <Label className="text-xs">{t("reports.pdfOrientation", "Orientation")}</Label>
-                  <div className="flex gap-1">
-                    {(["portrait", "landscape"] as const).map((o) => (
-                      <button key={o} onClick={() => setPdfCustom((c) => ({ ...c, orientation: o }))} className={cn("rounded-lg border px-2.5 py-1 text-xs capitalize", pdfCustom.orientation === o ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>{t(`reports.pdf_${o}`, o)}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
-                  {([["logo", "Company logo"], ["summary", "KPI summary"], ["chart", "Chart"], ["table", "Data table"]] as const).map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <Label className="text-xs">{t(`reports.pdfInc_${key}`, label)}</Label>
-                      <Switch checked={pdfCustom[key]} onCheckedChange={(v) => setPdfCustom((c) => ({ ...c, [key]: v }))} />
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">{t("reports.pdfHeading", "Custom heading (optional)")}</Label>
-                  <Input value={pdfCustom.heading} onChange={(e) => setPdfCustom((c) => ({ ...c, heading: e.target.value }))} placeholder={active?.name} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">{t("reports.pdfNote", "Note / disclaimer (optional)")}</Label>
-                  <Input value={pdfCustom.note} onChange={(e) => setPdfCustom((c) => ({ ...c, note: e.target.value }))} placeholder={t("reports.pdfNotePlaceholder", "e.g. Confidential — internal use only")} />
-                </div>
-              </div>
-            )}
+            {/* Right: live preview */}
+            <div className="relative rounded-xl border border-border bg-muted/30 overflow-hidden h-[52vh] md:h-[62vh]">
+              {pdfPreview ? (
+                <iframe key={pdfTemplate} title="PDF preview" src={`${pdfPreview}#toolbar=0&navpanes=0&view=FitH`} className="w-full h-full" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">{t("reports.pdfBuilding", "Building preview…")}</div>
+              )}
+              {pdfBusy && pdfPreview && (
+                <div className="absolute top-2 right-2 rounded-md bg-background/90 border border-border px-2 py-1 text-[11px] text-muted-foreground shadow-sm">{t("reports.pdfUpdating", "Updating…")}</div>
+              )}
+            </div>
           </div>
 
           <DialogFooter>
