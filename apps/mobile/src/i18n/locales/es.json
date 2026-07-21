@@ -1,0 +1,1092 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar",
+    "search": "Buscar",
+    "loading": "Cargando",
+    "error": "Error",
+    "success": "Listo",
+    "retry": "Reintentar",
+    "done": "Listo",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "clear": "Limpiar",
+    "edit": "Editar",
+    "remove": "Quitar",
+    "add": "Agregar",
+    "view": "Ver",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "revoke": "Revocar",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "all": "Todas",
+    "none": "Ninguna",
+    "today": "Hoy",
+    "required": "Obligatorio",
+    "optional": "Opcional",
+    "uploading": "Subiendo...",
+    "signOut": "Cerrar sesión",
+    "signIn": "Iniciar sesión",
+    "logOut": "Cerrar sesión",
+    "getStarted": "Empezar",
+    "verify": "Verificar",
+    "unassigned": "Sin asignar",
+    "unknown": "Desconocido",
+    "unknownLocation": "Ubicación desconocida",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "pending": "Pendiente",
+    "expired": "Expirado",
+    "member": "miembro",
+    "members": "miembros",
+    "task": "tarea",
+    "tasks": "tareas",
+    "day": "día",
+    "days": "días",
+    "characters": "caracteres",
+    "more": "+{{count}} más",
+    "version": "Versión {{version}}",
+    "appName": "HBCField",
+    "copyrightYear": "© {{year}} HBCField. Todos los derechos reservados.",
+    "greeting": {
+      "morning": "Buenos días,",
+      "afternoon": "Buenas tardes,",
+      "evening": "Buenas noches,"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Accede a tu panel y gestiona las operaciones",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "tu@empresa.com",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "Ingresa tu contraseña",
+      "submitButton": "Iniciar sesión",
+      "enterpriseProtected": "Protección empresarial",
+      "secure": "Seguro",
+      "noAccount": "¿No tienes una cuenta? ",
+      "createOne": "Crea una",
+      "needHelp": "¿Necesitas ayuda? ",
+      "contactSupport": "Contactar a soporte",
+      "loginFailed": "Error al iniciar sesión",
+      "forgotPassword": "¿Olvidaste tu contraseña?"
+    },
+    "forgotPassword": {
+      "title": "Restablecer contraseña",
+      "subtitle": "Te enviaremos un enlace para restablecerla",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "tu@empresa.com",
+      "submitButton": "Enviar enlace",
+      "rememberPassword": "¿Recuerdas tu contraseña? ",
+      "signIn": "Iniciar sesión",
+      "sentTitle": "Revisa tu correo",
+      "sentMessage": "Si existe una cuenta con ese correo, te enviamos un enlace para restablecer la contraseña. Revisa tu bandeja de entrada y la carpeta de spam.",
+      "backToLogin": "Volver a iniciar sesión"
+    },
+    "register": {
+      "title": "Crea tu cuenta",
+      "subtitle": "Empieza con HBCField",
+      "firstNameLabel": "Nombre",
+      "firstNamePlaceholder": "Juan",
+      "lastNameLabel": "Apellido",
+      "lastNamePlaceholder": "Pérez",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "Mín. 8 caracteres",
+      "confirmPasswordLabel": "Confirmar contraseña",
+      "confirmPasswordPlaceholder": "Vuelve a ingresar la contraseña",
+      "submitButton": "Crear cuenta",
+      "termsText": "Al crear una cuenta, aceptas nuestros ",
+      "termsOfService": "Términos del servicio",
+      "and": " y la ",
+      "privacyPolicy": "Política de privacidad",
+      "hasAccount": "¿Ya tienes una cuenta? ",
+      "signIn": "Iniciar sesión",
+      "registrationFailed": "Error al registrarse",
+      "passwordChecks": {
+        "minChars": "8+ caracteres",
+        "uppercase": "Mayúscula",
+        "lowercase": "Minúscula",
+        "number": "Número"
+      }
+    }
+  },
+  "onboarding": {
+    "choosePath": {
+      "welcome": "¡Hola, {{name}}!",
+      "subtitle": "Elige cómo quieres empezar",
+      "createOrg": {
+        "title": "Crear organización",
+        "description": "Configura el espacio de trabajo de tu empresa e invita a tu equipo a colaborar",
+        "tag": "Para administradores"
+      },
+      "joinOrg": {
+        "title": "Unirse a una organización",
+        "description": "Ingresa el código de tu organización para solicitar acceso como miembro del equipo",
+        "tag": "Tengo un código"
+      },
+      "useInvitation": {
+        "title": "Usar invitación",
+        "description": "Acepta un código de invitación personal de tu empleador o líder de equipo",
+        "tag": "Invitado"
+      },
+      "signOut": "Cerrar sesión"
+    },
+    "createOrg": {
+      "title": "Crear organización",
+      "subtitle": "Configura tu empresa en HBCField",
+      "nameLabel": "Nombre de la organización *",
+      "namePlaceholder": "Acme Inc.",
+      "addressLabel": "Dirección (opcional)",
+      "addressPlaceholder": "Av. Comercial 123",
+      "submitButton": "Crear organización",
+      "failedToCreate": "No se pudo crear la organización",
+      "firstSpaceLabel": "Tu primer espacio",
+      "firstSpacePlaceholder": "Ej. Oficina principal",
+      "firstSpaceHint": "Puedes renombrarlo o agregar más espacios después.",
+      "typeLabel": "Tipo",
+      "typeWorkspace": "Espacio de trabajo",
+      "typeWorkspaceDesc": "Un equipo o proyecto",
+      "typePhysical": "Ubicación física",
+      "typePhysicalDesc": "Un sitio para asistencia",
+      "locationLabel": "Ubicación"
+    },
+    "joinOrg": {
+      "title": "Unirse a una organización",
+      "subtitle": "Ingresa el código de organización que te compartió tu empleador",
+      "codeLabel": "Código de organización",
+      "codePlaceholder": "ABCD1234",
+      "messageLabel": "Mensaje (opcional)",
+      "messagePlaceholder": "Preséntate...",
+      "submitButton": "Solicitar acceso",
+      "codeMustBe8Chars": "El código debe tener 8 caracteres",
+      "invalidCode": "Código no válido",
+      "failedToValidate": "No se pudo validar el código",
+      "failedToSubmit": "No se pudo enviar la solicitud"
+    },
+    "useInvitation": {
+      "title": "Usar código de invitación",
+      "subtitle": "Ingresa el código que te compartió el administrador de tu organización",
+      "codeLabel": "Código de invitación",
+      "codePlaceholder": "XK7M2P",
+      "submitButton": "Aceptar y unirse",
+      "joiningAs": "Te unes como {{role}}",
+      "codeMustBe6Chars": "El código debe tener al menos 6 caracteres",
+      "invalidOrExpired": "Código no válido o vencido",
+      "failedToValidate": "No se pudo validar el código",
+      "failedToAccept": "No se pudo aceptar la invitación"
+    },
+    "pendingApproval": {
+      "waitingTitle": "Esperando aprobación",
+      "rejectedTitle": "Solicitud rechazada",
+      "waitingSubtitle": "Tu solicitud de acceso se envió",
+      "rejectedSubtitle": "Tu solicitud de acceso fue rechazada",
+      "yourMessage": "Tu mensaje:",
+      "checkingEvery30Seconds": "Comprobando cada 30 segundos...",
+      "cancelRequest": "Cancelar solicitud",
+      "cancelRequestConfirmTitle": "Cancelar solicitud",
+      "cancelRequestConfirmMessage": "¿Seguro que quieres cancelar tu solicitud de acceso?",
+      "cancelRequestConfirmYes": "Sí, cancelar",
+      "tryDifferentPath": "Probar otra opción",
+      "failedToCancel": "No se pudo cancelar la solicitud",
+      "approvedToast": "¡Solicitud aprobada!",
+      "rejectedToast": "Solicitud rechazada"
+    }
+  },
+  "tabs": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "tasks": "Tareas",
+    "createTask": "Crear tarea",
+    "manage": "Gestionar",
+    "attendance": "Asistencia",
+    "timeOff": "Ausencias",
+    "team": "Equipo",
+    "profile": "Perfil"
+  },
+  "home": {
+    "admin": {
+      "welcomeBack": "Hola de nuevo, {{name}}",
+      "statsTotal": "Total",
+      "statsActive": "Activas",
+      "statsDone": "Listas",
+      "statsPending": "Pendientes",
+      "todaysTasks": "Tareas de hoy",
+      "noTasksScheduled": "No hay tareas programadas",
+      "recentTasks": "Tareas recientes",
+      "noTasksYet": "Aún no hay tareas. ¡Crea una para empezar!",
+      "setUpWorkspace": "Configura tu espacio de trabajo",
+      "setUpWorkspaceSub": "Crea espacios y asigna a tu equipo para dar seguimiento a todos en tiempo real.",
+      "activity": "Actividad"
+    },
+    "fullTime": {
+      "clockedIn": "Entrada registrada",
+      "clockedOut": "Salida registrada",
+      "startedAt": "Empezó a las {{time}}",
+      "onBreak": "En descanso",
+      "clockIn": "Registrar entrada",
+      "clockOut": "Registrar salida",
+      "clockOutConfirmTitle": "Registrar salida",
+      "clockOutConfirmMessage": "¿Seguro que quieres registrar tu salida?",
+      "shiftNotesLabel": "¿Qué hiciste hoy?",
+      "shiftNotesPlaceholder": "Describe el trabajo que completaste durante este turno...",
+      "netWork": "Trabajo neto",
+      "breakTime": "Tiempo de descanso",
+      "thisWeek": "Esta semana",
+      "yourLocations": "Tus ubicaciones",
+      "recentActivity": "Actividad reciente",
+      "withinRange": "(dentro del rango)",
+      "awayMeters": "a {{distance}} m",
+      "awayKm": "a {{distance}} km",
+      "loadingAttendance": "Cargando asistencia...",
+      "failedToLoadAttendance": "No se pudieron cargar los datos de asistencia",
+      "permissionDenied": "Permiso denegado",
+      "locationPermissionRequired": "Se requiere permiso de ubicación para el registro de asistencia.",
+      "locationError": "Error de ubicación",
+      "failedToGetLocation": "No se pudo obtener tu ubicación actual.",
+      "failedToClockIn": "No se pudo registrar la entrada",
+      "failedToClockOut": "No se pudo registrar la salida"
+    },
+    "hybrid": {
+      "tapToStartShift": "Toca para empezar tu turno"
+    },
+    "freelancer": {
+      "todaysTasks": "Tareas de hoy",
+      "urgentTasks": "Tareas urgentes",
+      "completed": "Completadas",
+      "pending": "Pendientes",
+      "todaysJobs": "Trabajos de hoy",
+      "noJobsScheduled": "No hay trabajos programados para este día"
+    }
+  },
+  "tasks": {
+    "searchPlaceholder": "Buscar tareas...",
+    "tabs": {
+      "current": "Actuales",
+      "upcoming": "Próximas",
+      "history": "Historial"
+    },
+    "filters": {
+      "all": "Todas",
+      "active": "Activas",
+      "completed": "Completadas",
+      "blocked": "Bloqueadas",
+      "new": "Nuevas",
+      "assigned": "Asignadas",
+      "inProgress": "Activas",
+      "done": "Listas"
+    },
+    "sort": {
+      "title": "Ordenar por",
+      "dueDate": "Fecha de vencimiento",
+      "priority": "Prioridad",
+      "status": "Estado",
+      "name": "Nombre",
+      "created": "Creación"
+    },
+    "taskCount": "{{count}} tarea",
+    "taskCountPlural": "{{count}} tareas",
+    "blockedBanner": {
+      "title": "{{count}} tarea bloqueada",
+      "titlePlural": "{{count}} tareas bloqueadas"
+    },
+    "empty": {
+      "current": "No hay tareas este mes",
+      "upcoming": "No hay tareas próximas",
+      "history": "No hay tareas pasadas"
+    },
+    "failedToLoad": "No se pudieron cargar las tareas"
+  },
+  "taskDetail": {
+    "title": "Detalles de la tarea",
+    "jobId": "TRABAJO #{{id}}",
+    "progress": "PROGRESO",
+    "details": "DETALLES",
+    "description": "DESCRIPCIÓN",
+    "location": "UBICACIÓN",
+    "attachments": "ADJUNTOS",
+    "attachmentsCount": "ADJUNTOS ({{count}})",
+    "comments": "COMENTARIOS",
+    "commentsCount": "COMENTARIOS ({{count}})",
+    "taskNotFound": "No se encontró la tarea",
+    "goBack": "Volver",
+    "infoLabels": {
+      "createdBy": "Creado por",
+      "assignedTo": "Asignado a",
+      "location": "Ubicación"
+    },
+    "openInMaps": "Abrir en Maps",
+    "startNavigation": "Iniciar navegación",
+    "statusActions": {
+      "acceptJob": "Aceptar trabajo",
+      "startDriving": "Empezar a conducir",
+      "arrived": "Ya llegué",
+      "startWork": "Empezar trabajo",
+      "finishJob": "Finalizar trabajo",
+      "resumeJob": "Reanudar trabajo",
+      "scheduledForLater": "Programada para después",
+      "notYetAvailable": "Aún no disponible",
+      "declineJob": "Rechazar"
+    },
+    "progressSteps": {
+      "assigned": "Asignada",
+      "accepted": "Aceptada",
+      "onTheWay": "En camino",
+      "arrived": "En sitio",
+      "inProgress": "En curso",
+      "completed": "Completada"
+    },
+    "updateStatus": {
+      "confirmTitle": "Actualizar estado",
+      "confirmMessage": "¿Cambiar el estado a {{status}}?"
+    },
+    "blockTask": {
+      "title": "Reportar problema",
+      "subtitle": "¿Qué está bloqueando esta tarea? (opcional)",
+      "placeholder": "Ej: Esperando repuestos, cliente no disponible...",
+      "submitButton": "Reportar problema"
+    },
+    "declineTask": {
+      "title": "Rechazar trabajo",
+      "message": "¿Seguro que quieres rechazar este trabajo? Se devolverá al coordinador para reasignarlo.",
+      "confirmButton": "Rechazar",
+      "successTitle": "Trabajo rechazado",
+      "successMessage": "El trabajo se devolvió para reasignarlo."
+    },
+    "cancelTask": {
+      "title": "Cancelar tarea",
+      "message": "¿Seguro que quieres cancelar esta tarea?",
+      "confirmButton": "Cancelar tarea"
+    },
+    "completeTask": {
+      "title": "Completar trabajo",
+      "workDuration": "Duración del trabajo",
+      "summaryLabel": "Resumen *",
+      "summaryPlaceholder": "Resumen breve del trabajo realizado...",
+      "workDetailsLabel": "Detalles del trabajo",
+      "workDetailsPlaceholder": "Descripción detallada del trabajo realizado...",
+      "photosLabel": "Fotos",
+      "signaturesLabel": "Firmas",
+      "technicianSignature": "Firma del empleado *",
+      "customerSignature": "Firma del cliente *",
+      "customerNameLabel": "Nombre del cliente *",
+      "customerNamePlaceholder": "Nombre del cliente...",
+      "submitButton": "Completar trabajo",
+      "successMessage": "¡Trabajo completado!",
+      "summaryRequired": "Escribe un resumen del trabajo realizado.",
+      "techSignatureRequired": "La firma del empleado es obligatoria.",
+      "customerSignatureRequired": "La firma del cliente es obligatoria.",
+      "customerNameRequired": "Escribe el nombre del cliente."
+    },
+    "editTask": {
+      "title": "Editar tarea",
+      "titleLabel": "Título *",
+      "titlePlaceholder": "Título de la tarea",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Descripción de la tarea",
+      "priorityLabel": "Prioridad",
+      "locationLabel": "Ubicación",
+      "locationPlaceholder": "Dirección",
+      "saveButton": "Guardar cambios"
+    },
+    "adminActions": {
+      "assign": "Asignar",
+      "reassign": "Reasignar",
+      "edit": "Editar",
+      "cancel": "Cancelar"
+    },
+    "attachmentActions": {
+      "noAttachments": "Aún no hay adjuntos",
+      "tapToAdd": "Toca la cámara o la galería para agregar",
+      "deleteTitle": "Eliminar adjunto",
+      "deleteMessage": "¿Eliminar \"{{fileName}}\"?"
+    },
+    "commentInput": {
+      "placeholder": "Agrega un comentario...",
+      "noComments": "Aún no hay comentarios"
+    },
+    "tracking": {
+      "locationTrackingActive": "Seguimiento de ubicación activo",
+      "startingTracking": "Iniciando seguimiento..."
+    },
+    "futureTask": {
+      "scheduledFor": "Esta tarea está programada para el {{date}}.",
+      "canAcceptOnDueDate": "Podrás aceptarla en la fecha de vencimiento.",
+      "canStartOnDueDate": "Podrás iniciarla en la fecha de vencimiento."
+    },
+    "assignedSuccess": "Asignada a {{firstName}} {{lastName}}",
+    "titleRequired": "El título es obligatorio.",
+    "failedToLoad": "No se pudo cargar la tarea",
+    "failedToUpdateStatus": "No se pudo actualizar el estado",
+    "failedToReportIssue": "No se pudo reportar el problema",
+    "failedToDecline": "No se pudo rechazar el trabajo",
+    "failedToCancel": "No se pudo cancelar",
+    "failedToUpdate": "No se pudo actualizar",
+    "failedToAssign": "No se pudo asignar",
+    "failedToComplete": "No se pudo completar la tarea",
+    "failedToAddComment": "No se pudo agregar el comentario",
+    "failedToDelete": "No se pudo eliminar",
+    "thisStep": {
+      "title": "Este paso",
+      "noChecklistItems": "Sin elementos de la lista.",
+      "visitNotesPlaceholder": "Notas de la visita…",
+      "saveNote": "Guardar nota",
+      "savingNote": "Guardando…",
+      "signature": "Firma"
+    }
+  },
+  "createTask": {
+    "titleLabel": "Título *",
+    "titlePlaceholder": "¿Qué hay que hacer?",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Agrega detalles sobre la tarea...",
+    "priorityLabel": "Prioridad",
+    "dueDateLabel": "Fecha de vencimiento",
+    "dueDatePlaceholder": "Selecciona la fecha de vencimiento",
+    "locationLabel": "Ubicación",
+    "photosLabel": "Fotos",
+    "assignTechnicianLabel": "Asignar empleado",
+    "technicianPlaceholder": "Selecciona un empleado (opcional)",
+    "submitButton": "Crear tarea",
+    "titleRequired": "Ingresa un título para la tarea.",
+    "successMessage": "¡Tarea creada correctamente!",
+    "failedToCreate": "No se pudo crear la tarea",
+    "spaceLabel": "Espacio"
+  },
+  "attendance": {
+    "clockedIn": "Entrada registrada",
+    "clockedOut": "Salida registrada",
+    "startedAt": "Iniciada a las {{time}}",
+    "timeOnShift": "Tiempo en turno",
+    "clockIn": "Registrar entrada",
+    "clockOut": "Registrar salida",
+    "clockOutConfirmTitle": "Registrar salida",
+    "clockOutConfirmMessage": "¿Seguro que quieres registrar tu salida?",
+    "shiftNotesLabel": "¿Qué hiciste hoy?",
+    "shiftNotesPlaceholder": "Describe el trabajo que completaste en este turno...",
+    "clockedInAt": "Entrada registrada en {{location}}",
+    "clockedOutSuccess": "Salida registrada correctamente",
+    "locationRequired": "Ubicación obligatoria",
+    "enableLocationServices": "Activa los servicios de ubicación para registrar tu entrada.",
+    "locationPermissionDenied": "Permiso de ubicación denegado",
+    "failedToGetLocation": "No se pudo obtener la ubicación",
+    "failedToClockIn": "No se pudo registrar la entrada",
+    "failedToClockOut": "No se pudo registrar la salida",
+    "loadingAttendance": "Cargando asistencia...",
+    "failedToLoadAttendance": "No se pudieron cargar los datos de asistencia",
+    "notAvailable": {
+      "title": "No disponible",
+      "message": "El registro de entrada/salida solo está disponible para empleados de tiempo completo."
+    },
+    "breaks": {
+      "takeABreak": "Tomar un descanso",
+      "lunch": "Almuerzo",
+      "short": "Corto",
+      "other": "Otro",
+      "endBreak": "Terminar descanso",
+      "startBreak": "Iniciar descanso",
+      "onBreak": "En descanso de {{type}}",
+      "breakDuration": "Duración del descanso",
+      "totalBreakTime": "Tiempo total de descanso: {{duration}}",
+      "totalBreakTimeToday": "Tiempo total de descanso hoy",
+      "breakStarted": "Descanso iniciado",
+      "breakStartedMessage": "Tu descanso de {{type}} ha comenzado.",
+      "breakEnded": "Descanso terminado",
+      "breakEndedMessage": "Tu descanso ha terminado. ¡De vuelta al trabajo!",
+      "failedToStartBreak": "No se pudo iniciar el descanso",
+      "failedToEndBreak": "No se pudo terminar el descanso",
+      "notesTitle": "Terminar descanso",
+      "startBreakTitle": "Iniciar descanso de {{type}}",
+      "notesSubtitle": "Agrega notas sobre tu descanso (opcional)",
+      "notesPlaceholder": "Escribe notas (opcional)...",
+      "charCount": "{{count}}/500 caracteres"
+    },
+    "assignedLocations": "Ubicaciones asignadas",
+    "away": "a {{distance}}",
+    "withinRange": "(dentro del rango)",
+    "clockedInOutsideGeofence": "Entrada registrada fuera de la zona",
+    "outsideGeofence": "Estás fuera del área de trabajo",
+    "outsideGeofenceDistance": "Estás a {{distance}}m de tu ubicación",
+    "autoClockOutTitle": "Salida automática",
+    "autoClockOutDistance": "Se registró tu salida automáticamente porque estás a {{distance}}m de tu lugar de trabajo.",
+    "todaysBreaks": "Descansos de hoy",
+    "history": {
+      "title": "Historial reciente",
+      "noRecords": "Aún no hay registros de asistencia",
+      "in": "Entrada",
+      "out": "Salida",
+      "total": "Total",
+      "statusActive": "Activo",
+      "statusAuto": "Auto",
+      "statusDone": "Listo"
+    }
+  },
+  "overtime": {
+    "title": "Horas extra",
+    "noActiveRequest": "No hay solicitud de horas extra activa",
+    "shiftEnded": "Tu turno ha terminado",
+    "promptTitle": "¿Necesitas horas extra?",
+    "promptSubtitle": "Tu turno ha terminado. ¿Quieres solicitar horas extra?",
+    "reasonPlaceholder": "¿Por qué necesitas horas extra? (opcional)",
+    "yes": "Sí, necesito horas extra",
+    "no": "No, registra mi salida",
+    "requestSent": "Solicitud de horas extra enviada para aprobación",
+    "declined": "Horas extra rechazadas, se registró tu salida",
+    "failedToRespond": "No se pudo responder a la solicitud de horas extra",
+    "waitingApproval": "Esperando aprobación",
+    "waitingApprovalSub": "Se notificó a tu jefe de equipo. También puedes obtener su firma en este dispositivo.",
+    "getLeaderSignature": "Obtener firma del jefe",
+    "getLeaderSignatureSub": "El jefe de equipo puede firmar en este dispositivo para aprobar",
+    "approved": "Horas extra aprobadas",
+    "approvedFor": "Aprobadas por {{minutes}} minutos",
+    "remaining": "restante",
+    "rejected": "Horas extra rechazadas",
+    "expired": "Solicitud expirada",
+    "expiredSub": "La solicitud de horas extra expiró. Se registró tu salida.",
+    "overtimeActive": "Horas extra activas",
+    "tapToView": "Toca para ver los detalles",
+    "leaderApproval": "Aprobación del jefe",
+    "signatureInstructions": "Entrega este dispositivo a tu jefe de equipo para aprobar las horas extra. Seleccionará su nombre, definirá la duración y firmará.",
+    "selectLeaderTitle": "Seleccionar jefe de equipo",
+    "selectLeader": "Selecciona un jefe de equipo",
+    "noLeaders": "No se encontraron administradores ni coordinadores",
+    "selectDuration": "Duración de las horas extra",
+    "notesOptional": "Notas (opcional)",
+    "notesPlaceholder": "Notas adicionales sobre estas horas extra...",
+    "leaderSignature": "Firma del jefe",
+    "signatureRequired": "La firma del jefe es obligatoria",
+    "approveOvertime": "Aprobar horas extra",
+    "approvedSuccess": "Horas extra aprobadas correctamente",
+    "failedToApprove": "No se pudieron aprobar las horas extra"
+  },
+  "timeOff": {
+    "stats": {
+      "daysUsed": "Días usados",
+      "upcoming": "Próximas",
+      "pending": "Pendientes",
+      "rejected": "Rechazadas"
+    },
+    "scheduleNotSet": "Horario sin configurar — contacta a tu administrador para configurar tu horario de trabajo.",
+    "calendar": {
+      "legend": {
+        "approved": "Aprobada",
+        "pending": "Pendiente",
+        "offDay": "Día libre"
+      },
+      "selectionHint": "Toca otra fecha para completar el rango"
+    },
+    "teamAvailability": {
+      "title": "Disponibilidad del equipo",
+      "unableToLoad": "No se pudo cargar la disponibilidad del equipo",
+      "techsAvailable": "{{available}} de {{total}} empleados disponibles",
+      "worst": "(peor: {{date}})",
+      "lowCoverage": "Poca cobertura el {{date}}",
+      "notScheduled": "No tienes turno el {{count}} día seleccionado",
+      "notScheduledPlural": "No tienes turno en {{count}} días seleccionados",
+      "alsoOnTimeOff": "También de ausencia:"
+    },
+    "requestForm": {
+      "title": "Solicitar ausencia",
+      "reasonLabel": "Motivo",
+      "notesLabel": "Notas (opcional)",
+      "notesPlaceholder": "Detalles adicionales...",
+      "clearSelection": "Borrar selección",
+      "submitRequest": "Enviar solicitud",
+      "successMessage": "Solicitud de ausencia enviada.",
+      "failedToSubmit": "No se pudo enviar la solicitud"
+    },
+    "reasonTypes": {
+      "vacation": "Vacaciones",
+      "sickLeave": "Baja por enfermedad",
+      "personal": "Personal",
+      "other": "Otro"
+    },
+    "myRequests": "Mis solicitudes",
+    "filters": {
+      "upcoming": "Próximas",
+      "past": "Pasadas",
+      "all": "Todas"
+    },
+    "empty": {
+      "upcoming": "No hay solicitudes de ausencias próximas",
+      "past": "No hay solicitudes de ausencias pasadas",
+      "all": "Aún no hay solicitudes de ausencias",
+      "hint": "Toca fechas en el calendario de arriba para solicitar una ausencia"
+    },
+    "approvedBy": "Aprobada por {{firstName}} {{lastName}}",
+    "cancelRequest": "Cancelar solicitud",
+    "cancelConfirmTitle": "Cancelar solicitud",
+    "cancelConfirmMessage": "¿Seguro que quieres cancelar esta solicitud de ausencia?",
+    "failedToCancel": "No se pudo cancelar la solicitud",
+    "typeLabels": {
+      "vacation": "Vacaciones",
+      "sickLeave": "Baja por enfermedad",
+      "personal": "Personal",
+      "timeOff": "Ausencia"
+    }
+  },
+  "profile": {
+    "profilePhoto": "Foto de perfil",
+    "chooseOption": "Elige una opción",
+    "takePhoto": "Tomar foto",
+    "chooseFromGallery": "Elegir de la galería",
+    "removePhoto": "Quitar foto",
+    "uploadFailed": "Error al subir",
+    "couldNotUpload": "No se pudo subir la foto. Inténtalo de nuevo.",
+    "couldNotRemove": "No se pudo quitar la foto.",
+    "menu": {
+      "general": "GENERAL",
+      "support": "SOPORTE",
+      "legal": "LEGAL",
+      "notifications": "Notificaciones",
+      "appearance": "Apariencia",
+      "accountSecurity": "Cuenta y seguridad",
+      "helpCenter": "Centro de ayuda",
+      "contactSupport": "Contactar con soporte",
+      "rateApp": "Calificar la app",
+      "termsOfService": "Términos del servicio",
+      "privacyPolicy": "Política de privacidad",
+      "about": "Acerca de",
+      "language": "Idioma"
+    },
+    "language": {
+      "choosePreferred": "Elige tu idioma preferido",
+      "appliedImmediately": "Los cambios de idioma se aplican al instante en toda la app."
+    },
+    "theme": {
+      "title": "Apariencia",
+      "chooseTheme": "Elige tu tema preferido",
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "appliedImmediately": "Los cambios de tema se aplican al instante en toda la app."
+    },
+    "signOutConfirmTitle": "Cerrar sesión",
+    "signOutConfirmMessage": "¿Seguro que quieres cerrar sesión?",
+    "signOutButton": "Cerrar sesión",
+    "versionFooter": "HBCField v{{version}}",
+    "account": {
+      "title": "Cuenta y seguridad",
+      "accountInfo": "Información de la cuenta",
+      "nameLabel": "Nombre",
+      "emailLabel": "Correo electrónico",
+      "changePassword": "Cambiar contraseña",
+      "currentPasswordLabel": "Contraseña actual",
+      "currentPasswordPlaceholder": "Ingresa tu contraseña actual",
+      "newPasswordLabel": "Nueva contraseña",
+      "newPasswordPlaceholder": "Mín. 8 caracteres",
+      "confirmPasswordLabel": "Confirmar nueva contraseña",
+      "confirmPasswordPlaceholder": "Vuelve a ingresar la nueva contraseña",
+      "submitButton": "Cambiar contraseña",
+      "currentPasswordRequired": "Ingresa tu contraseña actual.",
+      "newPasswordTooShort": "La nueva contraseña debe tener al menos 8 caracteres.",
+      "passwordsMismatch": "Las nuevas contraseñas no coinciden.",
+      "passwordChanged": "Contraseña cambiada correctamente.",
+      "failedToChange": "No se pudo cambiar la contraseña",
+      "deleteAccount": "Eliminar cuenta",
+      "deleteWarning": "Elimina de forma permanente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.",
+      "deleteButton": "Eliminar mi cuenta",
+      "deletePasswordLabel": "Confirmar contraseña",
+      "deletePasswordPlaceholder": "Ingresa tu contraseña para confirmar",
+      "deletePasswordRequired": "Ingresa tu contraseña para confirmar la eliminación.",
+      "deleteConfirmTitle": "¿Eliminar cuenta?",
+      "deleteConfirmMessage": "Esto eliminará de forma permanente tu cuenta, anonimizará tus datos y cerrará tu sesión. Esto no se puede deshacer.",
+      "deleteConfirmButton": "Eliminar cuenta",
+      "deleteFailed": "No se pudo eliminar la cuenta"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "pushNotifications": "Notificaciones push",
+      "enabled": "Activado",
+      "disabled": "Desactivado",
+      "settings": "Ajustes",
+      "categories": "Categorías",
+      "tasks": "Tareas",
+      "tasksDescription": "Nuevas asignaciones, cambios de estado, comentarios",
+      "attendance": "Asistencia",
+      "attendanceDescription": "Recordatorios de entrada/salida",
+      "timeOff": "Ausencias",
+      "timeOffDescription": "Aprobaciones de solicitudes y novedades",
+      "footerNote": "Las preferencias de notificación se guardan en el dispositivo. Los permisos de notificaciones push se administran en los ajustes de tu dispositivo."
+    },
+    "about": {
+      "title": "Acerca de",
+      "tagline": "Despacha · Rastrea · Entrega",
+      "description": "HBCField es una plataforma de gestión de servicios en campo que ayuda a los equipos a despachar tareas, seguir el progreso en tiempo real y ofrecer un servicio excepcional."
+    },
+    "status": {
+      "title": "Disponibilidad",
+      "available": "Disponible",
+      "busy": "Ocupado",
+      "away": "Ausente",
+      "auto": "Auto",
+      "failed": "No se pudo actualizar el estado"
+    }
+  },
+  "manage": {
+    "timeOff": {
+      "label": "Ausencias",
+      "desc": "Aprobar solicitudes"
+    },
+    "members": {
+      "label": "Miembros",
+      "desc": "Gestionar equipo"
+    },
+    "joinRequests": {
+      "label": "Solicitudes de acceso",
+      "desc": "Revisar y aprobar"
+    },
+    "invitations": {
+      "label": "Invitaciones",
+      "desc": "Crear códigos de invitación"
+    },
+    "schedules": {
+      "label": "Horarios",
+      "desc": "Horarios de trabajo"
+    },
+    "membersScreen": {
+      "filterAll": "Todos",
+      "filterAdmin": "Administrador",
+      "filterDispatcher": "Coordinador",
+      "filterTechnician": "Empleado",
+      "memberCount": "{{count}} miembro",
+      "memberCountPlural": "{{count}} miembros",
+      "you": "(tú)",
+      "removeTitle": "Quitar miembro",
+      "removeMessage": "¿Quitar a {{firstName}} {{lastName}} de la organización?",
+      "cannotRemoveSelf": "No puedes quitarte a ti mismo.",
+      "failedToLoad": "No se pudieron cargar los miembros",
+      "failedToRemove": "No se pudo quitar al miembro",
+      "noMembers": "No se encontraron miembros",
+      "roleLabels": {
+        "admin": "Administrador",
+        "dispatcher": "Coordinador",
+        "technician": "Empleado"
+      }
+    },
+    "invitationsScreen": {
+      "createButton": "Crear invitación",
+      "noInvitations": "Aún no hay invitaciones",
+      "revokeTitle": "Revocar invitación",
+      "revokeMessage": "Esta invitación ya no se podrá usar.",
+      "failedToLoad": "No se pudieron cargar las invitaciones",
+      "failedToRevoke": "No se pudo revocar",
+      "failedToCreate": "No se pudo crear la invitación",
+      "created": "Creada el {{date}}",
+      "expires": "Vence el {{date}}",
+      "acceptedBy": "Aceptada por {{firstName}} {{lastName}}",
+      "createModal": {
+        "title": "Nueva invitación",
+        "successTitle": "Invitación creada",
+        "employee": "Empleado",
+        "jobTitleLabel": "Puesto (opcional)",
+        "jobTitlePlaceholder": "Ej. Electricista",
+        "spaceLabel": "Espacio (opcional)",
+        "noSpace": "Sin espacio",
+        "generateButton": "Generar código",
+        "tapToCopy": "Toca para copiar · Vence en 3 días",
+        "shareMessage": "Únete con el código de invitación: {{code}}"
+      }
+    },
+    "joinRequestsScreen": {
+      "approveTitle": "Aprobar solicitud",
+      "approveMessage": "¿Aprobar a {{firstName}} {{lastName}} como empleado?",
+      "rejectTitle": "Rechazar solicitud",
+      "rejectMessage": "¿Rechazar a {{firstName}} {{lastName}}?",
+      "requested": "Solicitada el {{date}}",
+      "failedToLoad": "No se pudieron cargar las solicitudes de acceso",
+      "failedToApprove": "No se pudo aprobar",
+      "failedToReject": "No se pudo rechazar",
+      "allCaughtUp": "Todo al día",
+      "noPendingRequests": "No hay solicitudes de acceso pendientes"
+    },
+    "schedulesScreen": {
+      "noTechnicians": "No se encontraron empleados",
+      "failedToLoad": "No se pudieron cargar los horarios"
+    },
+    "timeOffRequestsScreen": {
+      "filters": {
+        "pending": "Pendientes",
+        "approved": "Aprobadas",
+        "rejected": "Rechazadas",
+        "all": "Todas"
+      },
+      "rejectReasonPrompt": "Motivo (opcional):",
+      "rejectConfirmTitle": "Rechazar solicitud",
+      "rejectConfirmMessage": "¿Rechazar esta solicitud de ausencia?",
+      "failedToLoad": "No se pudieron cargar las solicitudes de ausencias",
+      "failedToApprove": "No se pudo aprobar",
+      "failedToReject": "No se pudo rechazar",
+      "noRequests": "No hay solicitudes {{filter}}",
+      "noRequestsAll": "No hay solicitudes"
+    },
+    "titles": {
+      "timeOffRequests": "Solicitudes de ausencias"
+    }
+  },
+  "components": {
+    "taskCard": {
+      "unassigned": "Sin asignar"
+    },
+    "datePicker": {
+      "selectDate": "Seleccionar fecha",
+      "today": "Hoy",
+      "clear": "Borrar"
+    },
+    "locationPicker": {
+      "searchPlaceholder": "Busca una dirección...",
+      "useCurrentLocation": "Usar ubicación actual"
+    },
+    "technicianPicker": {
+      "title": "Seleccionar empleado",
+      "searchPlaceholder": "Busca por nombre...",
+      "activeTasks": "{{count}} tareas activas",
+      "noFieldTechnicians": "No hay empleados de campo disponibles (a los trabajadores en sitio no se les pueden asignar tareas)",
+      "noTechnicians": "No se encontraron empleados en tu organización",
+      "noMatch": "Ningún empleado coincide con tu búsqueda",
+      "noAvailable": "No hay empleados disponibles",
+      "failedToLoad": "No se pudieron cargar los empleados"
+    },
+    "signatureCapture": {
+      "tapToOpen": "Toca para abrir el panel de firma",
+      "signing": "Firmando...",
+      "useFingerToSign": "Usa tu dedo para firmar abajo",
+      "clear": "Borrar",
+      "confirmSignature": "Confirmar firma",
+      "technician": "Empleado",
+      "customer": "Cliente"
+    },
+    "photoGrid": {
+      "beforePhotos": "Fotos de antes",
+      "afterPhotos": "Fotos de después",
+      "removeTitle": "Quitar foto",
+      "removeMessage": "¿Quitar esta foto?",
+      "addTitle": "Agregar foto",
+      "addChooseSource": "Elige el origen",
+      "camera": "Cámara",
+      "gallery": "Galería",
+      "add": "Agregar"
+    },
+    "screenStates": {
+      "retry": "Reintentar"
+    },
+    "confirmSheet": {},
+    "customFieldsCard": {
+      "title": "Campos personalizados",
+      "savedTitle": "Guardado",
+      "savedMessage": "Campos personalizados actualizados",
+      "couldNotSave": "No se pudo guardar",
+      "enterField": "Ingresa {{field}}"
+    },
+    "workspaceCard": {
+      "activeCount": "{{active}} de {{total}} activos",
+      "inField": "En campo",
+      "offSite": "Fuera de sitio",
+      "offShift": "Fuera de turno",
+      "offDuty": "Sin servicio",
+      "noneAssigned": "Aún no hay nadie asignado",
+      "assign": "Asignar",
+      "tasks": "Tareas"
+    },
+    "assignMemberSheet": {
+      "title": "Asignar miembro",
+      "toLocation": "a {{location}}",
+      "searchPlaceholder": "Buscar miembros",
+      "noMembers": "No se encontraron miembros",
+      "allAssigned": "Todos ya están asignados aquí"
+    },
+    "memberDetailSheet": {
+      "working": "Trabajando",
+      "onSite": "En sitio",
+      "comingSoon": "{{feature}} muy pronto",
+      "messaging": "Mensajes",
+      "calls": "Llamadas",
+      "completed": "Completadas",
+      "hrsWeek": "Hrs/semana",
+      "onTime": "A tiempo",
+      "activeTasks": "TAREAS ACTIVAS",
+      "viewAll": "Ver todo ›",
+      "noActiveTasks": "No hay tareas activas",
+      "tasks": "Tareas"
+    },
+    "activitySheet": {
+      "liveActivity": "ACTIVIDAD EN VIVO",
+      "eventsCount": "{{count}} eventos",
+      "noRecentActivity": "No hay actividad reciente",
+      "pendingActions": "ACCIONES PENDIENTES"
+    }
+  },
+  "validation": {
+    "emailRequired": "El correo electrónico es obligatorio",
+    "emailInvalid": "Ingresa un correo electrónico válido",
+    "passwordRequired": "La contraseña es obligatoria",
+    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+    "passwordUppercase": "Debe contener una letra mayúscula",
+    "passwordLowercase": "Debe contener una letra minúscula",
+    "passwordNumber": "Debe contener un número",
+    "confirmPasswordRequired": "Confirma tu contraseña",
+    "passwordsMismatch": "Las contraseñas no coinciden",
+    "firstNameRequired": "El nombre es obligatorio",
+    "lastNameRequired": "El apellido es obligatorio",
+    "organizationNameRequired": "El nombre de la organización es obligatorio",
+    "organizationNameMinLength": "El nombre debe tener al menos 2 caracteres"
+  },
+  "status": {
+    "DRAFT": "Borrador",
+    "NEW": "Nueva",
+    "ASSIGNED": "Asignada",
+    "ACCEPTED": "Aceptada",
+    "EN_ROUTE": "En camino",
+    "ARRIVED": "En sitio",
+    "IN_PROGRESS": "En curso",
+    "BLOCKED": "Bloqueada",
+    "COMPLETED": "Completada",
+    "CANCELED": "Cancelada",
+    "CLOSED": "Cerrada"
+  },
+  "priority": {
+    "LOW": "Baja",
+    "MEDIUM": "Media",
+    "HIGH": "Alta",
+    "URGENT": "Urgente"
+  },
+  "roles": {
+    "ADMIN": "Administrador",
+    "DISPATCHER": "Coordinador",
+    "TECHNICIAN": "Empleado",
+    "EMPLOYEE": "Empleado"
+  },
+  "invitationStatus": {
+    "PENDING": "Pendiente",
+    "ACCEPTED": "Aceptada",
+    "EXPIRED": "Expirada",
+    "REVOKED": "Revocada"
+  },
+  "timeOffStatus": {
+    "PENDING": "Pendiente",
+    "APPROVED": "Aprobada",
+    "REJECTED": "Rechazada",
+    "CANCELED": "Cancelada"
+  },
+  "dayNames": {
+    "short": [
+      "Lun",
+      "Mar",
+      "Mié",
+      "Jue",
+      "Vie",
+      "Sáb",
+      "Dom"
+    ],
+    "headers": [
+      "Lu",
+      "Ma",
+      "Mi",
+      "Ju",
+      "Vi",
+      "Sá",
+      "Do"
+    ]
+  },
+  "monthNames": [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre"
+  ],
+  "team": {
+    "title": "Equipo",
+    "subtitle": "Compañeros en tus espacios.",
+    "empty": "Aún no hay compañeros en tus espacios.",
+    "managers": "Responsables",
+    "members": "Equipo",
+    "messagingSoon": "Mensajería próximamente",
+    "callsSoon": "Llamadas próximamente"
+  },
+  "navTitles": {
+    "taskDetails": "Detalles de la tarea",
+    "notifications": "Notificaciones",
+    "account": "Cuenta",
+    "about": "Acerca de"
+  },
+  "errors": {
+    "somethingWentWrong": "Algo salió mal",
+    "unexpectedError": "Ocurrió un error inesperado",
+    "tryAgain": "Volver a intentar"
+  },
+  "support": {
+    "title": "Soporte",
+    "agentOnline": "Chat en vivo — agente en línea",
+    "leaveMessage": "Deja un mensaje",
+    "typicalReply": "Respuesta habitual en",
+    "empty": "Aún no hay tickets.",
+    "newTicket": "Nueva solicitud",
+    "subjectPlaceholder": "Asunto",
+    "bodyPlaceholder": "¿Cómo podemos ayudarte?",
+    "send": "Enviar",
+    "replyPlaceholder": "Escribe una respuesta…",
+    "status": {
+      "OPEN": "Abierto",
+      "PENDING_AGENT": "Esperando a soporte",
+      "PENDING_CUSTOMER": "Esperando tu respuesta",
+      "RESOLVED": "Resuelto",
+      "CLOSED": "Cerrado"
+    },
+    "loadError": "No se pudo cargar el soporte. Revisa tu conexión.",
+    "sendError": "No se pudo enviar. Vuelve a intentarlo."
+  },
+  "chat": {
+    "title": "Mensajes",
+    "newMessage": "Nuevo mensaje",
+    "empty": "Aún no hay conversaciones.",
+    "noMessages": "Aún no hay mensajes",
+    "messagePlaceholder": "Escribe un mensaje…",
+    "noContacts": "No hay nadie a quien escribir.",
+    "loadError": "No se pudieron cargar los mensajes.",
+    "sendError": "No se pudo enviar. Vuelve a intentarlo.",
+    "cannotContact": "No puedes escribir a este miembro.",
+    "typing": "está escribiendo…",
+    "threadEmpty": "Aún no hay mensajes. Saluda 👋",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "presence": {
+      "active": "Activo ahora",
+      "busy": "Ocupado",
+      "away": "Ausente",
+      "offline": "Sin conexión"
+    }
+  },
+  "locationConsent": {
+    "title": "Ubicación en segundo plano",
+    "introPre": "Para funcionar, ",
+    "introBold": "HBCField recopila tu ubicación en segundo plano, incluso cuando la app está cerrada o no la estás usando",
+    "introPost": ", en dos casos:",
+    "drivePre": "Mientras ",
+    "driveBold": "vas en camino a un trabajo",
+    "drivePost": ", para registrar tu ruta hasta el sitio.",
+    "clockPre": "Mientras ",
+    "clockBold": "tienes la entrada registrada",
+    "clockPost": ", para confirmar que estás en tu lugar de trabajo.",
+    "privacyPre": "El seguimiento se detiene automáticamente cuando llegas o registras tu salida. Tu ubicación solo es visible para tu organización y nunca se vende. Consulta nuestra ",
+    "privacyLink": "Política de privacidad",
+    "privacyPost": " para más detalles.",
+    "allow": "Permitir ubicación en segundo plano",
+    "deny": "Ahora no"
+  }
+}

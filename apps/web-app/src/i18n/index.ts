@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import de from './locales/de.json';
+import es from './locales/es.json';
 
 const LANGUAGE_KEY = 'hbcfield_language';
 
@@ -14,6 +15,7 @@ i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     de: { translation: de },
+    es: { translation: es },
   },
   lng: getStoredLanguage(),
   fallbackLng: 'en',
@@ -36,6 +38,7 @@ export function getCurrentLanguage(): string {
 export const supportedLanguages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
 ] as const;
 
 export default i18n;

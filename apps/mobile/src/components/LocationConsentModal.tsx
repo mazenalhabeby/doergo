@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { registerConsentUI, resolveBackgroundLocationConsent } from '../services/location-consent';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
@@ -17,6 +18,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constant
 export function LocationConsentModal() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => registerConsentUI(setVisible), []);
@@ -42,38 +44,37 @@ export function LocationConsentModal() {
           </View>
 
           <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Location in the background
+            {t('locationConsent.title')}
           </Text>
 
           <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.body}>
             <Text style={[styles.text, { color: colors.textSecondary }]}>
-              To do its job, <Text style={{ fontWeight: FONT_WEIGHT.bold, color: colors.textPrimary }}>HBCField collects your location in the background — even when the app is closed or not in use</Text> — in two cases:
+              {t('locationConsent.introPre')}<Text style={{ fontWeight: FONT_WEIGHT.bold, color: colors.textPrimary }}>{t('locationConsent.introBold')}</Text>{t('locationConsent.introPost')}
             </Text>
 
             <View style={styles.bullet}>
               <Ionicons name="car-outline" size={18} color={COLORS.primary} style={styles.bulletIcon} />
               <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
-                While you're <Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>driving to a job</Text>, to record your route to the site.
+                {t('locationConsent.drivePre')}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{t('locationConsent.driveBold')}</Text>{t('locationConsent.drivePost')}
               </Text>
             </View>
             <View style={styles.bullet}>
               <Ionicons name="time-outline" size={18} color={COLORS.primary} style={styles.bulletIcon} />
               <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
-                While you're <Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>clocked in</Text>, to confirm you're at your work site.
+                {t('locationConsent.clockPre')}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{t('locationConsent.clockBold')}</Text>{t('locationConsent.clockPost')}
               </Text>
             </View>
 
             <Text style={[styles.text, { color: colors.textSecondary, marginTop: SPACING.sm }]}>
-              Tracking stops automatically when you arrive or clock out. Your location is only visible to your organization and is never sold. See our{' '}
-              <Text style={{ color: COLORS.primary }}>Privacy Policy</Text> for details.
+              {t('locationConsent.privacyPre')}<Text style={{ color: COLORS.primary }}>{t('locationConsent.privacyLink')}</Text>{t('locationConsent.privacyPost')}
             </Text>
           </ScrollView>
 
           <TouchableOpacity style={styles.allowBtn} onPress={() => decide(true)} activeOpacity={0.9}>
-            <Text style={styles.allowText}>Allow background location</Text>
+            <Text style={styles.allowText}>{t('locationConsent.allow')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.denyBtn} onPress={() => decide(false)} activeOpacity={0.7}>
-            <Text style={[styles.denyText, { color: colors.textMuted }]}>Not now</Text>
+            <Text style={[styles.denyText, { color: colors.textMuted }]}>{t('locationConsent.deny')}</Text>
           </TouchableOpacity>
         </View>
       </View>

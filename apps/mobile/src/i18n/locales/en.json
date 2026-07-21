@@ -1071,5 +1071,22 @@
       "away": "Away",
       "offline": "Offline"
     }
+  },
+  "locationConsent": {
+    "title": "Location in the background",
+    "introPre": "To do its job, ",
+    "introBold": "HBCField collects your location in the background — even when the app is closed or not in use",
+    "introPost": " — in two cases:",
+    "drivePre": "While you're ",
+    "driveBold": "driving to a job",
+    "drivePost": ", to record your route to the site.",
+    "clockPre": "While you're ",
+    "clockBold": "clocked in",
+    "clockPost": ", to confirm you're at your work site.",
+    "privacyPre": "Tracking stops automatically when you arrive or clock out. Your location is only visible to your organization and is never sold. See our ",
+    "privacyLink": "Privacy Policy",
+    "privacyPost": " for details.",
+    "allow": "Allow background location",
+    "deny": "Not now"
   }
 }

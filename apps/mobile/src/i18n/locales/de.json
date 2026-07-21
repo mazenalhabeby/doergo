@@ -1071,5 +1071,22 @@
       "away": "Abwesend",
       "offline": "Offline"
     }
+  },
+  "locationConsent": {
+    "title": "Standort im Hintergrund",
+    "introPre": "Damit die App funktioniert, ",
+    "introBold": "erfasst HBCField Ihren Standort im Hintergrund – auch wenn die App geschlossen oder nicht in Gebrauch ist",
+    "introPost": " – in zwei Fällen:",
+    "drivePre": "Während Sie ",
+    "driveBold": "zu einem Auftrag fahren",
+    "drivePost": ", um Ihre Route zum Einsatzort aufzuzeichnen.",
+    "clockPre": "Während Sie ",
+    "clockBold": "eingestempelt sind",
+    "clockPost": ", um zu bestätigen, dass Sie am Einsatzort sind.",
+    "privacyPre": "Die Aufzeichnung stoppt automatisch, sobald Sie ankommen oder ausstempeln. Ihr Standort ist nur für Ihre Organisation sichtbar und wird niemals verkauft. Weitere Informationen finden Sie in unserer ",
+    "privacyLink": "Datenschutzerklärung",
+    "privacyPost": ".",
+    "allow": "Standort im Hintergrund erlauben",
+    "deny": "Jetzt nicht"
   }
 }
