@@ -72,7 +72,7 @@ interface ActiveReport {
   name: string
   builder: boolean // editable measures/dimensions/dataset
   savedId?: string
-  kind?: "timesheet" // special report types (not the aggregation builder)
+  detail?: boolean // attendance "Detailed" view (day-by-day per user) instead of aggregate
   userId?: string // for the detailed timesheet
 }
 
@@ -100,8 +100,10 @@ export default function ReportsPage() {
   const employees = employeesData?.data || []
   const datasets = catalog?.datasets || []
   const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
-  const isTimesheet = active?.kind === "timesheet"
-  const hasCustomerDim = !isTimesheet && !!dsMeta?.dimensions.some((d) => d.key === "customer")
+  // "Detailed" attendance view (day-by-day per user) — only for the attendance dataset.
+  const isAttendance = active?.def.dataset === "attendance"
+  const isDetail = !!active?.detail && isAttendance
+  const hasCustomerDim = !isDetail && !!dsMeta?.dimensions.some((d) => d.key === "customer")
   // Current single-customer "eq" filter value (customer dimension is name-based).
   const customerFilter = active?.def.filters?.find((f) => f.field === "customer" && f.op === "eq")?.value as string | undefined
 
@@ -172,11 +174,6 @@ export default function ReportsPage() {
     if (!active && datasets.length) newReport()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datasets.length])
-  // Detailed daily timesheet for one user (special report kind).
-  const pickTimesheet = () => {
-    setResult(null)
-    setActive({ kind: "timesheet", name: t("reports.timesheetDetail", "Detailed timesheet"), builder: false, userId: undefined, def: { dataset: "attendance", measures: [], dateRange: { preset: "last_30d" } } })
-  }
   const resolveRange = (dr?: ReportDefinition["dateRange"]): { from?: string; to?: string } => {
     if (!dr) return {}
     if (dr.from || dr.to) return { from: dr.from, to: dr.to }
@@ -286,7 +283,6 @@ export default function ReportsPage() {
           <div className="space-y-5">
             <div className="space-y-1">
               <NavBtn activeKey={!!active?.builder} onClick={newReport} icon={SlidersHorizontal} label={t("reports.builderNav", "Report builder")} desc={t("reports.builderNavDesc", "Pick a dataset, measures and grouping")} />
-              <NavBtn activeKey={isTimesheet} onClick={pickTimesheet} icon={Clock} label={t("reports.timesheetDetail", "Detailed timesheet")} desc={t("reports.timesheetNavDesc", "Day-by-day clock-in/out per user")} />
             </div>
             {(saved && saved.length > 0) && (
               <div>
@@ -321,25 +317,25 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-semibold text-foreground truncate">{active.name}</h2>
                       <Badge variant="secondary" className="shrink-0 font-normal">
-                        {isTimesheet ? t("reports.badgeTimesheet", "Timesheet") : active.builder ? t("reports.badgeCustom", "Custom") : active.savedId ? t("reports.badgeSaved", "Saved") : t("reports.badgeTemplate", "Template")}
+                        {isDetail ? t("reports.badgeTimesheet", "Timesheet") : active.builder ? t("reports.badgeCustom", "Custom") : active.savedId ? t("reports.badgeSaved", "Saved") : t("reports.badgeTemplate", "Template")}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {(isTimesheet ? [rangeLabel] : [dsMeta?.label, rangeLabel, customerFilter]).filter(Boolean).join("  ·  ")}
+                      {(isDetail ? [rangeLabel] : [dsMeta?.label, rangeLabel, customerFilter]).filter(Boolean).join("  ·  ")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {!isTimesheet && canBuild && !active.builder && (
+                    {!isDetail && canBuild && !active.builder && (
                       <Button variant="ghost" size="sm" className="gap-1.5 h-9" onClick={() => setActive((a) => a ? { ...a, builder: true } : a)}>
                         <Pencil className="h-3.5 w-3.5" />{t("reports.customize", "Customize")}
                       </Button>
                     )}
-                    {!isTimesheet && canBuild && (
+                    {!isDetail && canBuild && (
                       <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={openSave}>
                         <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.updateTemplate", "Update template") : t("reports.saveTemplate", "Save as template")}
                       </Button>
                     )}
-                    {!isTimesheet && canSchedule && active.savedId && (
+                    {!isDetail && canSchedule && active.savedId && (
                       <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={() => setSchedOpen(true)}>
                         <CalendarClock className="h-3.5 w-3.5" />{t("reports.schedule", "Schedule")}
                       </Button>
@@ -360,60 +356,78 @@ export default function ReportsPage() {
 
                 {/* ── Configure & run ─────────────────────────────────────────── */}
                 <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] divide-y divide-border/60">
-                  {/* Detailed timesheet: pick a user */}
-                  {isTimesheet && (
-                    <div className="flex items-center gap-3 p-4">
-                      <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
-                      <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
-                        <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
-                        <SelectContent>
-                          {employees.map((e) => <SelectItem key={e.id} value={e.id} className="text-xs">{e.firstName} {e.lastName}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* Builder fields (dataset / measures / group by) */}
-                  {!isTimesheet && active.builder && dsMeta && (
+                  {/* Builder fields */}
+                  {active.builder && dsMeta && (
                     <div className="p-4 space-y-3">
+                      {/* Dataset */}
                       <div className="flex items-center gap-3">
                         <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
-                        <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); patchDef({ dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [] }) }}>
+                        <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); setActive((a) => (a ? { ...a, detail: false, def: { ...a.def, dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [], filters: [] } } : a)) }}>
                           <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{d.label}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                      <div className="flex items-start gap-3">
-                        <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {dsMeta.measures.map((m) => {
-                            const on = (active.def.measures || []).includes(m.key)
-                            return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{m.label}</button>
-                          })}
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {dsMeta.dimensions.map((dim) => {
-                            const on = (active.def.dimensions || []).includes(dim.key)
-                            return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{dim.label}</button>
-                          })}
-                        </div>
-                      </div>
-                      {/* Scope to one customer → the export becomes their statement. */}
-                      {hasCustomerDim && (
+
+                      {/* Attendance-only: Summary vs Detailed (day-by-day per user) */}
+                      {isAttendance && (
                         <div className="flex items-center gap-3">
-                          <Label className="text-xs w-20 shrink-0">{t("reports.customer", "Customer")}</Label>
-                          <Select value={customerFilter ?? "__all__"} onValueChange={(v) => setCustomerFilter(v === "__all__" ? undefined : v)}>
-                            <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue placeholder={t("reports.allCustomers", "All customers")} /></SelectTrigger>
+                          <Label className="text-xs w-20 shrink-0">{t("reports.view", "View")}</Label>
+                          <div className="flex gap-1">
+                            {([["summary", "Summary"], ["detail", "Detailed"]] as const).map(([v, label]) => {
+                              const on = (v === "detail") === isDetail
+                              return <button key={v} onClick={() => setActive((a) => (a ? { ...a, detail: v === "detail" } : a))} className={cn("rounded-lg border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{t(`reports.view_${v}`, label)}</button>
+                            })}
+                          </div>
+                          {isDetail && <span className="text-[11px] text-muted-foreground">{t("reports.detailHint", "Day-by-day clock-in/out for one person")}</span>}
+                        </div>
+                      )}
+
+                      {isDetail ? (
+                        /* Detailed timesheet: pick the user */
+                        <div className="flex items-center gap-3">
+                          <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
+                          <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
+                            <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="__all__" className="text-xs">{t("reports.allCustomers", "All customers")}</SelectItem>
-                              {customers.map((c) => <SelectItem key={c.id} value={c.name} className="text-xs">{c.name}</SelectItem>)}
+                              {employees.map((e) => <SelectItem key={e.id} value={e.id} className="text-xs">{e.firstName} {e.lastName}</SelectItem>)}
                             </SelectContent>
                           </Select>
-                          {customerFilter && <span className="text-[11px] text-muted-foreground">{t("reports.customerScoped", "Export shows this customer's details")}</span>}
                         </div>
+                      ) : (
+                        <>
+                          <div className="flex items-start gap-3">
+                            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {dsMeta.measures.map((m) => {
+                                const on = (active.def.measures || []).includes(m.key)
+                                return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{m.label}</button>
+                              })}
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {dsMeta.dimensions.map((dim) => {
+                                const on = (active.def.dimensions || []).includes(dim.key)
+                                return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{dim.label}</button>
+                              })}
+                            </div>
+                          </div>
+                          {/* Scope to one customer → the export becomes their statement. */}
+                          {hasCustomerDim && (
+                            <div className="flex items-center gap-3">
+                              <Label className="text-xs w-20 shrink-0">{t("reports.customer", "Customer")}</Label>
+                              <Select value={customerFilter ?? "__all__"} onValueChange={(v) => setCustomerFilter(v === "__all__" ? undefined : v)}>
+                                <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue placeholder={t("reports.allCustomers", "All customers")} /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__all__" className="text-xs">{t("reports.allCustomers", "All customers")}</SelectItem>
+                                  {customers.map((c) => <SelectItem key={c.id} value={c.name} className="text-xs">{c.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              {customerFilter && <span className="text-[11px] text-muted-foreground">{t("reports.customerScoped", "Export shows this customer's details")}</span>}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -454,7 +468,7 @@ export default function ReportsPage() {
                         </div>
                       </>
                     )}
-                    {!isTimesheet && supportsTime && (
+                    {!isDetail && supportsTime && (
                       <div className="space-y-1.5">
                         <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
                         <Select value={active.def.granularity || "none"} onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}>
@@ -463,7 +477,7 @@ export default function ReportsPage() {
                         </Select>
                       </div>
                     )}
-                    {isTimesheet ? (
+                    {isDetail ? (
                       <Button className="gap-1.5 h-9 ml-auto" disabled={timesheet.isPending || !active.userId} onClick={runTimesheet}>
                         <Play className="h-3.5 w-3.5" />{timesheet.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
                       </Button>
@@ -503,7 +517,7 @@ export default function ReportsPage() {
                     )}
 
                     {/* Chart card (hidden for the day-by-day timesheet) */}
-                    {!isTimesheet && chartMeasure && labelCol && chartData.length > 0 && (
+                    {!isDetail && chartMeasure && labelCol && chartData.length > 0 && (
                       <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-5">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-sm font-semibold text-foreground">{t("reports.topBy", "Top {{measure}}", { measure: chartMeasure.label })}</h3>
