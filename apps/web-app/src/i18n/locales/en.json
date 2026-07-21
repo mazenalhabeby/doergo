@@ -2546,6 +2546,13 @@
       "view_summary": "Summary",
       "view_detail": "Detailed",
       "detailHint": "Day-by-day clock-in/out for one person",
+      "columns": "Columns",
+      "tsCol": {
+        "date": "Date", "day": "Day", "clockIn": "Clock in", "clockOut": "Clock out",
+        "hours": "Hours", "break": "Break", "overtime": "Overtime", "jobs": "Jobs",
+        "leaveReason": "Leave reason", "location": "Location", "remote": "Remote",
+        "note": "Note", "status": "Status"
+      },
       "timesheetDetail": "Detailed timesheet",
       "timesheetNavDesc": "Day-by-day clock-in/out per user",
       "timesheetFor": "Timesheet",

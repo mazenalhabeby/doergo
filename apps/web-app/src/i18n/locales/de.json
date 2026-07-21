@@ -2546,6 +2546,13 @@
       "view_summary": "Zusammenfassung",
       "view_detail": "Detailliert",
       "detailHint": "Tag-für-Tag Ein-/Ausstempeln für eine Person",
+      "columns": "Spalten",
+      "tsCol": {
+        "date": "Datum", "day": "Tag", "clockIn": "Einstempeln", "clockOut": "Ausstempeln",
+        "hours": "Stunden", "break": "Pause", "overtime": "Überstunden", "jobs": "Aufträge",
+        "leaveReason": "Abwesenheitsgrund", "location": "Standort", "remote": "Remote",
+        "note": "Notiz", "status": "Status"
+      },
       "timesheetDetail": "Detaillierter Stundenzettel",
       "timesheetNavDesc": "Tag-für-Tag Ein-/Ausstempeln pro Nutzer",
       "timesheetFor": "Stundenzettel",

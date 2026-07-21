@@ -55,6 +55,24 @@ function toCSV(result: ReportResult): string {
 // Tasteful, colorful chart palette (Stripe-ish).
 const CHART_COLORS = ["#6366f1", "#3b82f6", "#0ea5e9", "#14b8a6", "#22c55e", "#f59e0b", "#f43f5e", "#a855f7"]
 
+// Selectable columns for the detailed timesheet (Date/Day/Status are always on).
+const TIMESHEET_COLS: { key: string; label: string; always?: boolean }[] = [
+  { key: "date", label: "Date", always: true },
+  { key: "day", label: "Day", always: true },
+  { key: "clockIn", label: "Clock in" },
+  { key: "clockOut", label: "Clock out" },
+  { key: "hours", label: "Hours" },
+  { key: "break", label: "Break" },
+  { key: "overtime", label: "Overtime" },
+  { key: "jobs", label: "Jobs" },
+  { key: "leaveReason", label: "Leave reason" },
+  { key: "location", label: "Location" },
+  { key: "remote", label: "Remote" },
+  { key: "note", label: "Note" },
+  { key: "status", label: "Status", always: true },
+]
+const TIMESHEET_DEFAULT = ["date", "day", "clockIn", "clockOut", "hours", "status"]
+
 /** KPI totals for the measure columns — sum, or average for percentages. */
 function statCards(result: ReportResult): { label: string; value: string; format?: string }[] {
   return result.columns
@@ -90,6 +108,7 @@ export default function ReportsPage() {
   const [schedOpen, setSchedOpen] = useState(false)
   const [schedForm, setSchedForm] = useState<{ cadence: ReportCadence; hour: number; dayOfWeek: number; dayOfMonth: number; recipients: string }>({ cadence: "weekly", hour: 7, dayOfWeek: 1, dayOfMonth: 1, recipients: "" })
   const [pdfOpen, setPdfOpen] = useState(false)
+  const [tsCols, setTsCols] = useState<string[]>(TIMESHEET_DEFAULT)
 
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
@@ -213,8 +232,8 @@ export default function ReportsPage() {
 
   const openSave = () => { setSaveMeta({ name: active?.savedId ? active.name : "", description: "", isShared: true }); setSaveOpen(true) }
   const download = () => {
-    if (!result || !active) return
-    const blob = new Blob([toCSV(result)], { type: "text/csv;charset=utf-8;" })
+    if (!displayResult || !active) return
+    const blob = new Blob([toCSV(displayResult)], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url; a.download = `${active.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
@@ -247,11 +266,18 @@ export default function ReportsPage() {
   const toDateInput = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : "")
 
   const supportsTime = active && (active.def.granularity !== undefined)
-  const measureCols = result?.columns.filter((c) => c.kind === "measure") || []
-  const labelCol = result?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
+  // For the detailed timesheet, show only the user-selected columns (Date/Day/Status always).
+  const displayResult = useMemo<ReportResult | null>(() => {
+    if (!result) return null
+    if (!isDetail) return result
+    const keep = new Set(tsCols)
+    return { columns: result.columns.filter((c) => keep.has(c.key)), rows: result.rows }
+  }, [result, isDetail, tsCols])
+  const measureCols = displayResult?.columns.filter((c) => c.kind === "measure") || []
+  const labelCol = displayResult?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
   const chartMeasure = measureCols[0]
   const chartData = chartMeasure && labelCol
-    ? (result?.rows.slice(0, 12).map((r) => ({ label: String(fmt(r[labelCol.key], labelCol.format)), value: Number(r[chartMeasure.key]) || 0 })) || [])
+    ? (displayResult?.rows.slice(0, 12).map((r) => ({ label: String(fmt(r[labelCol.key], labelCol.format)), value: Number(r[chartMeasure.key]) || 0 })) || [])
     : []
 
   const NavBtn = ({ activeKey, onClick, icon: Icon, label, desc, onDelete }: { activeKey: boolean; onClick: () => void; icon: typeof Clock; label: string; desc?: string; onDelete?: () => void }) => (
@@ -340,7 +366,7 @@ export default function ReportsPage() {
                         <CalendarClock className="h-3.5 w-3.5" />{t("reports.schedule", "Schedule")}
                       </Button>
                     )}
-                    {result && result.rows.length > 0 && (
+                    {displayResult && displayResult.rows.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm" className="gap-1.5 h-9"><Download className="h-3.5 w-3.5" />{t("reports.export", "Export")}<ChevronDown className="h-3.5 w-3.5 opacity-60" /></Button>
@@ -383,16 +409,36 @@ export default function ReportsPage() {
                       )}
 
                       {isDetail ? (
-                        /* Detailed timesheet: pick the user */
-                        <div className="flex items-center gap-3">
-                          <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
-                          <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
-                            <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
-                            <SelectContent>
-                              {members.map((m) => <SelectItem key={m.id} value={m.id} className="text-xs">{m.firstName} {m.lastName}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        /* Detailed timesheet: pick the user + columns */
+                        <>
+                          <div className="flex items-center gap-3">
+                            <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
+                            <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
+                              <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
+                              <SelectContent>
+                                {members.map((m) => <SelectItem key={m.id} value={m.id} className="text-xs">{m.firstName} {m.lastName}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.columns", "Columns")}</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {TIMESHEET_COLS.map((col) => {
+                                const on = tsCols.includes(col.key)
+                                return (
+                                  <button
+                                    key={col.key}
+                                    disabled={col.always}
+                                    onClick={() => setTsCols((cur) => (cur.includes(col.key) ? cur.filter((k) => k !== col.key) : [...cur, col.key]))}
+                                    className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground", col.always && "opacity-60 cursor-default")}
+                                  >
+                                    {t(`reports.tsCol.${col.key}`, col.label)}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </>
                       ) : (
                         <>
                           <div className="flex items-start gap-3">
@@ -494,7 +540,7 @@ export default function ReportsPage() {
                 )}
 
                 {/* ── Results ─────────────────────────────────────────────────── */}
-                {result && (result.rows.length === 0 ? (
+                {displayResult && (displayResult.rows.length === 0 ? (
                   <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-14 text-center">
                     <div className="grid place-items-center h-10 w-10 rounded-xl bg-muted mx-auto mb-3"><BarChart3 className="h-5 w-5 text-muted-foreground" /></div>
                     <p className="text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</p>
@@ -502,9 +548,9 @@ export default function ReportsPage() {
                 ) : (
                   <div className="space-y-5">
                     {/* KPI stat cards */}
-                    {statCards(result).length > 0 && (
+                    {statCards(displayResult).length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-                        {statCards(result).map((s, i) => (
+                        {statCards(displayResult).map((s, i) => (
                           <div key={i} className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-4">
                             <div className="flex items-center gap-2">
                               <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
@@ -541,12 +587,12 @@ export default function ReportsPage() {
                     <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] overflow-hidden">
                       <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/70">
                         <p className="text-sm font-semibold text-foreground">{t("reports.details", "Details")}</p>
-                        <p className="text-xs text-muted-foreground">{t("reports.rowCount", "{{count}} rows", { count: result.rows.length })}</p>
+                        <p className="text-xs text-muted-foreground">{t("reports.rowCount", "{{count}} rows", { count: displayResult.rows.length })}</p>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead><tr className="text-left">{result.columns.map((c) => <th key={c.key} className={cn("px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40", c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr></thead>
-                          <tbody>{result.rows.map((r, i) => <tr key={i} className="border-t border-border/50 hover:bg-accent/30 transition-colors">{result.columns.map((c) => <td key={c.key} className={cn("px-5 py-3 text-foreground", c.kind === "measure" && "text-right tabular-nums font-semibold")}>{fmt(r[c.key], c.format)}</td>)}</tr>)}</tbody>
+                          <thead><tr className="text-left">{displayResult.columns.map((c) => <th key={c.key} className={cn("px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40", c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr></thead>
+                          <tbody>{displayResult.rows.map((r, i) => <tr key={i} className="border-t border-border/50 hover:bg-accent/30 transition-colors">{displayResult.columns.map((c) => <td key={c.key} className={cn("px-5 py-3 text-foreground", c.kind === "measure" && "text-right tabular-nums font-semibold")}>{fmt(r[c.key], c.format)}</td>)}</tr>)}</tbody>
                         </table>
                       </div>
                     </div>
@@ -645,7 +691,7 @@ export default function ReportsPage() {
       <ReportExportStudio
         open={pdfOpen}
         onOpenChange={setPdfOpen}
-        result={result}
+        result={displayResult}
         meta={pdfMeta}
         branding={(orgProfile || {}) as ReportBranding}
         canCustom={canBuild}

@@ -100,6 +100,86 @@ export const DATASETS: Record<string, Dataset> = {
       distanceKm: { label: 'Route distance (km)', agg: 'sum', sql: 'COALESCE(t."routeDistance", 0) / 1000.0', format: 'number' },
     },
   },
+
+  leave: {
+    key: 'leave',
+    label: 'Leave & absence',
+    from: `"time_off_requests" t JOIN "users" u ON u.id = t."technicianId"`,
+    orgColumn: 'u."organizationId"', // time_off has no org column; scope via the user
+    dateColumn: 't."startDate"',
+    dimensions: {
+      technician: { label: 'Technician', sql: `(u."firstName" || ' ' || u."lastName")`, type: 'string' },
+      reason: { label: 'Reason', sql: `COALESCE(NULLIF(t.reason, ''), '—')`, type: 'string' },
+      status: { label: 'Status', sql: 't.status', type: 'string' },
+    },
+    measures: {
+      requests: { label: 'Requests', agg: 'count', sql: 't.id', format: 'number' },
+      days: { label: 'Days off', agg: 'sum', sql: `(t."endDate" - t."startDate" + 1)`, format: 'number' },
+      people: { label: 'People', agg: 'countDistinct', sql: 't."technicianId"', format: 'number' },
+    },
+  },
+
+  parts: {
+    key: 'parts',
+    label: 'Parts & materials',
+    from: `"parts_used" p
+      JOIN "service_reports" sr ON sr.id = p."reportId"
+      JOIN "users" u ON u.id = sr."completedById"
+      LEFT JOIN "customers" c ON c.id = sr."customerId"`,
+    orgColumn: 'sr."organizationId"',
+    dateColumn: 'sr."completedAt"',
+    dimensions: {
+      part: { label: 'Part', sql: 'p.name', type: 'string' },
+      customer: { label: 'Customer', sql: `COALESCE(c.name, sr."customerName", 'Unassigned')`, type: 'string' },
+      technician: { label: 'Technician', sql: `(u."firstName" || ' ' || u."lastName")`, type: 'string' },
+    },
+    measures: {
+      quantity: { label: 'Quantity', agg: 'sum', sql: 'p.quantity', format: 'number' },
+      cost: { label: 'Cost', agg: 'sum', sql: `p.quantity * COALESCE(p."unitCost", 0)`, format: 'currency' },
+      lines: { label: 'Line items', agg: 'count', sql: 'p.id', format: 'number' },
+    },
+  },
+
+  asset_maintenance: {
+    key: 'asset_maintenance',
+    label: 'Asset maintenance',
+    from: `"service_reports" sr
+      JOIN "assets" a ON a.id = sr."assetId"
+      JOIN "users" u ON u.id = sr."completedById"`,
+    orgColumn: 'sr."organizationId"',
+    dateColumn: 'sr."completedAt"',
+    dimensions: {
+      asset: { label: 'Asset', sql: 'a.name', type: 'string' },
+      technician: { label: 'Technician', sql: `(u."firstName" || ' ' || u."lastName")`, type: 'string' },
+    },
+    measures: {
+      services: { label: 'Services', agg: 'count', sql: 'sr.id', format: 'number' },
+      workHours: { label: 'Work hours', agg: 'sum', sql: 'sr."workDuration" / 3600.0', format: 'hours' },
+      assets: { label: 'Assets', agg: 'countDistinct', sql: 'sr."assetId"', format: 'number' },
+    },
+  },
+
+  task_cycle: {
+    key: 'task_cycle',
+    label: 'Task cycle time',
+    // Cycle = completion (service report) minus task creation.
+    from: `"service_reports" sr
+      JOIN "tasks" t ON t.id = sr."taskId"
+      LEFT JOIN "users" u ON u.id = t."assignedToId"
+      LEFT JOIN "customers" c ON c.id = t."customerId"`,
+    orgColumn: 'sr."organizationId"',
+    dateColumn: 'sr."completedAt"',
+    dimensions: {
+      priority: { label: 'Priority', sql: 't.priority::text', type: 'string' },
+      technician: { label: 'Assignee', sql: `COALESCE(u."firstName" || ' ' || u."lastName", 'Unassigned')`, type: 'string' },
+      customer: { label: 'Customer', sql: `COALESCE(c.name, '—')`, type: 'string' },
+    },
+    measures: {
+      jobs: { label: 'Completed', agg: 'count', sql: 't.id', format: 'number' },
+      avgHours: { label: 'Avg cycle (h)', agg: 'avg', sql: `EXTRACT(EPOCH FROM (sr."completedAt" - t."createdAt")) / 3600.0`, format: 'number' },
+      avgDays: { label: 'Avg cycle (days)', agg: 'avg', sql: `EXTRACT(EPOCH FROM (sr."completedAt" - t."createdAt")) / 86400.0`, format: 'number' },
+    },
+  },
 };
 
 /** Client-safe catalog (no SQL) for the report builder UI. */

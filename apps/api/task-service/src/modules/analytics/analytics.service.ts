@@ -63,14 +63,26 @@ export class AnalyticsService {
                MIN(te."clockInAt") AS clock_in,
                MAX(te."clockOutAt") AS clock_out,
                SUM(COALESCE(te."totalMinutes", 0)) AS minutes,
+               SUM(COALESCE(te."breakMinutes", 0)) AS break_minutes,
+               SUM(CASE WHEN 'OVERTIME' = ANY(te."flagReasons") THEN COALESCE(te."totalMinutes", 0) ELSE 0 END) AS ot_minutes,
+               bool_or(te."isRemote") AS remote,
+               NULLIF(string_agg(DISTINCT COALESCE(cl.name, te."clockInPlace"), ', '), '') AS location,
                NULLIF(string_agg(NULLIF(te.notes, ''), ' · '), '') AS note
         FROM "time_entries" te
+        LEFT JOIN "company_locations" cl ON cl.id = te."locationId"
         WHERE te."userId" = $1 AND te."organizationId" = $4
           AND te."clockInAt" >= $2::date AND te."clockInAt" < ($3::date + 1)
         GROUP BY 1
       ),
+      jobs AS (
+        SELECT (sr."completedAt")::date AS day, COUNT(*) AS n
+        FROM "service_reports" sr
+        WHERE sr."completedById" = $1 AND sr."organizationId" = $4
+          AND sr."completedAt" >= $2::date AND sr."completedAt" < ($3::date + 1)
+        GROUP BY 1
+      ),
       leave AS (
-        SELECT gd::date AS day, MIN(COALESCE(t.reason, 'Time off')) AS reason
+        SELECT gd::date AS day, MIN(COALESCE(NULLIF(t.reason, ''), 'Time off')) AS reason
         FROM "time_off_requests" t
         CROSS JOIN LATERAL generate_series(t."startDate", t."endDate", interval '1 day') gd
         WHERE t."technicianId" = $1 AND t.status = 'APPROVED'
@@ -88,6 +100,12 @@ export class AnalyticsService {
         to_char(e.clock_in, 'HH24:MI') AS "clockIn",
         to_char(e.clock_out, 'HH24:MI') AS "clockOut",
         ROUND(COALESCE(e.minutes, 0) / 60.0, 2) AS "hours",
+        ROUND(COALESCE(e.break_minutes, 0) / 60.0, 2) AS "break",
+        ROUND(COALESCE(e.ot_minutes, 0) / 60.0, 2) AS "overtime",
+        COALESCE(j.n, 0) AS "jobs",
+        COALESCE(l.reason, '') AS "leaveReason",
+        COALESCE(e.location, '') AS "location",
+        CASE WHEN e.remote THEN 'Yes' WHEN e.day IS NOT NULL THEN 'No' ELSE '' END AS "remote",
         COALESCE(e.note, '') AS "note",
         CASE
           WHEN l.reason IS NOT NULL THEN l.reason
@@ -97,13 +115,19 @@ export class AnalyticsService {
         END AS "status"
       FROM days d
       LEFT JOIN entries e ON e.day = d.day
+      LEFT JOIN jobs j ON j.day = d.day
       LEFT JOIN leave l ON l.day = d.day
       LEFT JOIN sched sc ON sc.dow = EXTRACT(DOW FROM d.day)
       ORDER BY d.day ASC
     `;
 
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, data.userId, fromStr, toStr, data.organizationId);
-    const normalized = rows.map((r) => ({ ...r, hours: r.hours == null ? 0 : Number(r.hours) }));
+    const numKeys = ['hours', 'break', 'overtime', 'jobs'];
+    const normalized = rows.map((r) => {
+      const o = { ...r };
+      for (const k of numKeys) o[k] = o[k] == null ? 0 : Number(o[k]);
+      return o;
+    });
 
     const columns = [
       { key: 'date', label: 'Date', kind: 'dimension' as const },
@@ -111,6 +135,12 @@ export class AnalyticsService {
       { key: 'clockIn', label: 'Clock in', kind: 'dimension' as const },
       { key: 'clockOut', label: 'Clock out', kind: 'dimension' as const },
       { key: 'hours', label: 'Hours', kind: 'measure' as const, format: 'hours' },
+      { key: 'break', label: 'Break', kind: 'measure' as const, format: 'hours' },
+      { key: 'overtime', label: 'Overtime', kind: 'measure' as const, format: 'hours' },
+      { key: 'jobs', label: 'Jobs', kind: 'measure' as const, format: 'number' },
+      { key: 'leaveReason', label: 'Leave reason', kind: 'dimension' as const },
+      { key: 'location', label: 'Location', kind: 'dimension' as const },
+      { key: 'remote', label: 'Remote', kind: 'dimension' as const },
       { key: 'note', label: 'Note', kind: 'dimension' as const },
       { key: 'status', label: 'Status', kind: 'dimension' as const },
     ];
