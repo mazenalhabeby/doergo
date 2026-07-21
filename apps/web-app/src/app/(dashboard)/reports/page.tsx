@@ -7,7 +7,7 @@ import { BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock,
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell } from "recharts"
 
 import {
-  analyticsApi, organizationsApi, customersApi, employeesApi, type ReportDefinition, type ReportResult,
+  analyticsApi, organizationsApi, customersApi, type ReportDefinition, type ReportResult,
   type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
   type ReportCadence,
 } from "@/lib/api"
@@ -96,8 +96,8 @@ export default function ReportsPage() {
   const { data: orgProfile } = useQuery({ queryKey: ["orgProfile"], queryFn: () => organizationsApi.getProfile() })
   const { data: customersData } = useQuery({ queryKey: ["customersAll"], queryFn: () => customersApi.list({ limit: 200 }) })
   const customers = customersData?.data || []
-  const { data: employeesData } = useQuery({ queryKey: ["employeesAll"], queryFn: () => employeesApi.list({ limit: 200, status: "all" }) })
-  const employees = employeesData?.data || []
+  const { data: membersData } = useQuery({ queryKey: ["reportMembers"], queryFn: () => organizationsApi.getMembers({ limit: 200 }) })
+  const members = membersData?.data || []
   const datasets = catalog?.datasets || []
   const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
   // "Detailed" attendance view (day-by-day per user) — only for the attendance dataset.
@@ -389,7 +389,7 @@ export default function ReportsPage() {
                           <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
                             <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
                             <SelectContent>
-                              {employees.map((e) => <SelectItem key={e.id} value={e.id} className="text-xs">{e.firstName} {e.lastName}</SelectItem>)}
+                              {members.map((m) => <SelectItem key={m.id} value={m.id} className="text-xs">{m.firstName} {m.lastName}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
