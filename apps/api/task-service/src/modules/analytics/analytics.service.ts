@@ -31,6 +31,93 @@ export class AnalyticsService {
     return { data: { columns, rows: normalized } };
   }
 
+  /**
+   * Detailed timesheet for ONE user: a calendar (one row per day) over the
+   * period, overlaying clock-in/out + hours (time_entries), approved leave
+   * (time_off), and the weekly schedule (technician_schedules) to derive a
+   * per-day status: Worked · <leave reason> · Absent (scheduled, no clock-in) ·
+   * Off (not scheduled). All values are bound parameters; org scope enforced.
+   */
+  async timesheetDetail(data: { organizationId: string; userId: string; from?: string; to?: string }) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: data.userId, organizationId: data.organizationId },
+      select: { firstName: true, lastName: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Resolve + clamp the range (default last 30 days; hard-cap ~400 days).
+    const toDate = data.to ? new Date(data.to) : new Date();
+    let fromDate = data.from ? new Date(data.from) : new Date(toDate.getTime() - 29 * 864e5);
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) throw new BadRequestException('Invalid date range');
+    const maxSpan = 400 * 864e5;
+    if (toDate.getTime() - fromDate.getTime() > maxSpan) fromDate = new Date(toDate.getTime() - maxSpan);
+    const fromStr = fromDate.toISOString().slice(0, 10);
+    const toStr = toDate.toISOString().slice(0, 10);
+
+    const sql = `
+      WITH days AS (
+        SELECT gs::date AS day FROM generate_series($2::date, $3::date, interval '1 day') gs
+      ),
+      entries AS (
+        SELECT (te."clockInAt")::date AS day,
+               MIN(te."clockInAt") AS clock_in,
+               MAX(te."clockOutAt") AS clock_out,
+               SUM(COALESCE(te."totalMinutes", 0)) AS minutes,
+               NULLIF(string_agg(NULLIF(te.notes, ''), ' · '), '') AS note
+        FROM "time_entries" te
+        WHERE te."userId" = $1 AND te."organizationId" = $4
+          AND te."clockInAt" >= $2::date AND te."clockInAt" < ($3::date + 1)
+        GROUP BY 1
+      ),
+      leave AS (
+        SELECT gd::date AS day, MIN(COALESCE(t.reason, 'Time off')) AS reason
+        FROM "time_off" t
+        CROSS JOIN LATERAL generate_series(t."startDate", t."endDate", interval '1 day') gd
+        WHERE t."technicianId" = $1 AND t.status = 'APPROVED'
+          AND t."endDate" >= $2::date AND t."startDate" <= $3::date
+        GROUP BY 1
+      ),
+      sched AS (
+        SELECT DISTINCT s."dayOfWeek" AS dow
+        FROM "technician_schedules" s
+        WHERE s."technicianId" = $1 AND s."isActive" = TRUE
+      )
+      SELECT
+        to_char(d.day, 'YYYY-MM-DD') AS "date",
+        trim(to_char(d.day, 'Dy')) AS "day",
+        to_char(e.clock_in, 'HH24:MI') AS "clockIn",
+        to_char(e.clock_out, 'HH24:MI') AS "clockOut",
+        ROUND(COALESCE(e.minutes, 0) / 60.0, 2) AS "hours",
+        COALESCE(e.note, '') AS "note",
+        CASE
+          WHEN l.reason IS NOT NULL THEN l.reason
+          WHEN e.day IS NOT NULL THEN 'Worked'
+          WHEN sc.dow IS NOT NULL THEN 'Absent'
+          ELSE 'Off'
+        END AS "status"
+      FROM days d
+      LEFT JOIN entries e ON e.day = d.day
+      LEFT JOIN leave l ON l.day = d.day
+      LEFT JOIN sched sc ON sc.dow = EXTRACT(DOW FROM d.day)
+      ORDER BY d.day ASC
+    `;
+
+    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, data.userId, fromStr, toStr, data.organizationId);
+    const normalized = rows.map((r) => ({ ...r, hours: r.hours == null ? 0 : Number(r.hours) }));
+
+    const columns = [
+      { key: 'date', label: 'Date', kind: 'dimension' as const },
+      { key: 'day', label: 'Day', kind: 'dimension' as const },
+      { key: 'clockIn', label: 'Clock in', kind: 'dimension' as const },
+      { key: 'clockOut', label: 'Clock out', kind: 'dimension' as const },
+      { key: 'hours', label: 'Hours', kind: 'measure' as const, format: 'hours' },
+      { key: 'note', label: 'Note', kind: 'dimension' as const },
+      { key: 'status', label: 'Status', kind: 'dimension' as const },
+    ];
+    const userName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+    return { data: { columns, rows: normalized, userName } };
+  }
+
   // ── Saved reports (custom builder, Pro+) ────────────────────────────────────
   private savedSelect = {
     id: true, name: true, description: true, dataset: true, config: true,

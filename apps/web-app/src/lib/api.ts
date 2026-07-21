@@ -4081,6 +4081,12 @@ export const analyticsApi = {
     if (res.error) throw new Error(res.error);
     return res.data!.data;
   },
+  timesheet: async (userId: string, params?: { from?: string; to?: string }) => {
+    const qs = buildUrlWithQuery("/analytics/timesheet", { userId, ...(params || {}) });
+    const res = await api.get<{ data: ReportResult & { userName: string } }>(qs);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
   listSaved: async () => {
     const res = await api.get<{ data: SavedReport[] }>("/analytics/reports");
     if (res.error) throw new Error(res.error);

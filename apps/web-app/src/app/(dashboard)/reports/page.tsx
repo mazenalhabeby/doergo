@@ -1,13 +1,13 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { BarChart3, Download, FileText, Play, Clock, Users, Building2, ClipboardList, Plus, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2 } from "lucide-react"
+import { BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2, SlidersHorizontal } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell } from "recharts"
 
 import {
-  analyticsApi, organizationsApi, customersApi, type ReportTemplate, type ReportDefinition, type ReportResult,
+  analyticsApi, organizationsApi, customersApi, employeesApi, type ReportDefinition, type ReportResult,
   type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
   type ReportCadence,
 } from "@/lib/api"
@@ -24,10 +24,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-
-const TEMPLATE_ICON: Record<string, typeof Clock> = {
-  timesheet: Clock, customer_report: Building2, technician_performance: Users, task_summary: ClipboardList,
-}
 
 const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
   { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
@@ -76,6 +72,8 @@ interface ActiveReport {
   name: string
   builder: boolean // editable measures/dimensions/dataset
   savedId?: string
+  kind?: "timesheet" // special report types (not the aggregation builder)
+  userId?: string // for the detailed timesheet
 }
 
 export default function ReportsPage() {
@@ -98,10 +96,12 @@ export default function ReportsPage() {
   const { data: orgProfile } = useQuery({ queryKey: ["orgProfile"], queryFn: () => organizationsApi.getProfile() })
   const { data: customersData } = useQuery({ queryKey: ["customersAll"], queryFn: () => customersApi.list({ limit: 200 }) })
   const customers = customersData?.data || []
-  const templates = catalog?.templates || []
+  const { data: employeesData } = useQuery({ queryKey: ["employeesAll"], queryFn: () => employeesApi.list({ limit: 200, status: "all" }) })
+  const employees = employeesData?.data || []
   const datasets = catalog?.datasets || []
   const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
-  const hasCustomerDim = !!dsMeta?.dimensions.some((d) => d.key === "customer")
+  const isTimesheet = active?.kind === "timesheet"
+  const hasCustomerDim = !isTimesheet && !!dsMeta?.dimensions.some((d) => d.key === "customer")
   // Current single-customer "eq" filter value (customer dimension is name-based).
   const customerFilter = active?.def.filters?.find((f) => f.field === "customer" && f.op === "eq")?.value as string | undefined
 
@@ -109,6 +109,14 @@ export default function ReportsPage() {
     mutationFn: (def: ReportDefinition) => analyticsApi.run(def),
     onSuccess: setResult,
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to run report"),
+  })
+  const timesheet = useMutation({
+    mutationFn: (p: { userId: string; from?: string; to?: string }) => analyticsApi.timesheet(p.userId, { from: p.from, to: p.to }),
+    onSuccess: (data) => {
+      setResult({ columns: data.columns, rows: data.rows })
+      setActive((a) => (a ? { ...a, name: `${t("reports.timesheetFor", "Timesheet")} — ${data.userName}` } : a))
+    },
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to load timesheet"),
   })
   const save = useMutation({
     mutationFn: async () => {
@@ -152,13 +160,40 @@ export default function ReportsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reportSchedules"] }),
   })
 
-  const pickTemplate = (tpl: ReportTemplate) => { setResult(null); setActive({ def: { ...tpl.def }, name: tpl.name, builder: false }) }
   const pickSaved = (r: SavedReport) => { setResult(null); setActive({ def: r.config, name: r.name, builder: false, savedId: r.id }) }
   const newReport = () => {
     setResult(null)
     const ds = datasets[0]
     if (!ds) return
-    setActive({ def: { dataset: ds.key, measures: ds.measures[0] ? [ds.measures[0].key] : [], dimensions: [], granularity: "none", dateRange: { preset: "last_30d" } }, name: "Untitled report", builder: true })
+    setActive({ def: { dataset: ds.key, measures: ds.measures[0] ? [ds.measures[0].key] : [], dimensions: [], granularity: "none", dateRange: { preset: "last_30d" } }, name: t("reports.untitled", "Untitled report"), builder: true })
+  }
+  // Default to the builder on first load (no templates — the dataset selector is always the entry point).
+  useEffect(() => {
+    if (!active && datasets.length) newReport()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datasets.length])
+  // Detailed daily timesheet for one user (special report kind).
+  const pickTimesheet = () => {
+    setResult(null)
+    setActive({ kind: "timesheet", name: t("reports.timesheetDetail", "Detailed timesheet"), builder: false, userId: undefined, def: { dataset: "attendance", measures: [], dateRange: { preset: "last_30d" } } })
+  }
+  const resolveRange = (dr?: ReportDefinition["dateRange"]): { from?: string; to?: string } => {
+    if (!dr) return {}
+    if (dr.from || dr.to) return { from: dr.from, to: dr.to }
+    const now = new Date(); const iso = (d: Date) => d.toISOString()
+    switch (dr.preset) {
+      case "last_7d": return { from: iso(new Date(now.getTime() - 6 * 864e5)), to: iso(now) }
+      case "last_90d": return { from: iso(new Date(now.getTime() - 89 * 864e5)), to: iso(now) }
+      case "this_month": return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to: iso(now) }
+      case "last_month": return { from: iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)), to: iso(new Date(now.getFullYear(), now.getMonth(), 0)) }
+      case "this_year": return { from: iso(new Date(now.getFullYear(), 0, 1)), to: iso(now) }
+      case "last_30d": default: return { from: iso(new Date(now.getTime() - 29 * 864e5)), to: iso(now) }
+    }
+  }
+  const runTimesheet = () => {
+    if (!active?.userId) return
+    const { from, to } = resolveRange(active.def.dateRange)
+    timesheet.mutate({ userId: active.userId, from, to })
   }
 
   const patchDef = (p: Partial<ReportDefinition>) => setActive((a) => (a ? { ...a, def: { ...a.def, ...p } } : a))
@@ -244,31 +279,29 @@ export default function ReportsPage() {
             <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("reports.title", "Reports")}</h1>
             <p className="mt-1.5 text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
           </div>
-          {canBuild && (
-            <Button onClick={newReport} className="h-11 rounded-xl shadow-sm gap-1.5"><Plus className="h-4 w-4" />{t("reports.new", "New report")}</Button>
-          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          {/* Left: templates + saved */}
+          {/* Left: report modes + saved */}
           <div className="space-y-5">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{t("reports.templates", "Templates")}</p>
-              <div className="space-y-1">
-                {templates.map((tpl) => (
-                  <NavBtn key={tpl.key} activeKey={active?.name === tpl.name && !active?.savedId && !active?.builder} onClick={() => pickTemplate(tpl)} icon={TEMPLATE_ICON[tpl.key] || BarChart3} label={tpl.name} desc={tpl.description} />
-                ))}
-              </div>
+            <div className="space-y-1">
+              <NavBtn activeKey={!!active?.builder} onClick={newReport} icon={SlidersHorizontal} label={t("reports.builderNav", "Report builder")} desc={t("reports.builderNavDesc", "Pick a dataset, measures and grouping")} />
+              <NavBtn activeKey={isTimesheet} onClick={pickTimesheet} icon={Clock} label={t("reports.timesheetDetail", "Detailed timesheet")} desc={t("reports.timesheetNavDesc", "Day-by-day clock-in/out per user")} />
             </div>
             {(saved && saved.length > 0) && (
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{t("reports.saved", "Saved reports")}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{t("reports.myTemplates", "My templates")}</p>
                 <div className="space-y-1">
                   {saved.map((r) => (
                     <NavBtn key={r.id} activeKey={active?.savedId === r.id} onClick={() => pickSaved(r)} icon={BarChart3} label={r.name} desc={r.description || undefined} onDelete={canBuild ? () => del.mutate(r.id) : undefined} />
                   ))}
                 </div>
               </div>
+            )}
+            {canBuild && (!saved || saved.length === 0) && (
+              <p className="text-[11px] text-muted-foreground px-1 leading-snug">
+                {t("reports.templatesHint", "Build a report, then “Save as template” to reuse it here.")}
+              </p>
             )}
           </div>
 
@@ -288,25 +321,25 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-semibold text-foreground truncate">{active.name}</h2>
                       <Badge variant="secondary" className="shrink-0 font-normal">
-                        {active.builder ? t("reports.badgeCustom", "Custom") : active.savedId ? t("reports.badgeSaved", "Saved") : t("reports.badgeTemplate", "Template")}
+                        {isTimesheet ? t("reports.badgeTimesheet", "Timesheet") : active.builder ? t("reports.badgeCustom", "Custom") : active.savedId ? t("reports.badgeSaved", "Saved") : t("reports.badgeTemplate", "Template")}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {[dsMeta?.label, rangeLabel, customerFilter].filter(Boolean).join("  ·  ")}
+                      {(isTimesheet ? [rangeLabel] : [dsMeta?.label, rangeLabel, customerFilter]).filter(Boolean).join("  ·  ")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {canBuild && !active.builder && (
+                    {!isTimesheet && canBuild && !active.builder && (
                       <Button variant="ghost" size="sm" className="gap-1.5 h-9" onClick={() => setActive((a) => a ? { ...a, builder: true } : a)}>
                         <Pencil className="h-3.5 w-3.5" />{t("reports.customize", "Customize")}
                       </Button>
                     )}
-                    {canBuild && (
+                    {!isTimesheet && canBuild && (
                       <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={openSave}>
-                        <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.update", "Update") : t("reports.save", "Save")}
+                        <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.updateTemplate", "Update template") : t("reports.saveTemplate", "Save as template")}
                       </Button>
                     )}
-                    {canSchedule && active.savedId && (
+                    {!isTimesheet && canSchedule && active.savedId && (
                       <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={() => setSchedOpen(true)}>
                         <CalendarClock className="h-3.5 w-3.5" />{t("reports.schedule", "Schedule")}
                       </Button>
@@ -327,8 +360,21 @@ export default function ReportsPage() {
 
                 {/* ── Configure & run ─────────────────────────────────────────── */}
                 <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] divide-y divide-border/60">
-                  {/* Builder fields (Pro+ custom reports) */}
-                  {active.builder && dsMeta && (
+                  {/* Detailed timesheet: pick a user */}
+                  {isTimesheet && (
+                    <div className="flex items-center gap-3 p-4">
+                      <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
+                      <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
+                        <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
+                        <SelectContent>
+                          {employees.map((e) => <SelectItem key={e.id} value={e.id} className="text-xs">{e.firstName} {e.lastName}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Builder fields (dataset / measures / group by) */}
+                  {!isTimesheet && active.builder && dsMeta && (
                     <div className="p-4 space-y-3">
                       <div className="flex items-center gap-3">
                         <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
@@ -408,7 +454,7 @@ export default function ReportsPage() {
                         </div>
                       </>
                     )}
-                    {supportsTime && (
+                    {!isTimesheet && supportsTime && (
                       <div className="space-y-1.5">
                         <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
                         <Select value={active.def.granularity || "none"} onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}>
@@ -417,9 +463,15 @@ export default function ReportsPage() {
                         </Select>
                       </div>
                     )}
-                    <Button className="gap-1.5 h-9 ml-auto" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
-                      <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
-                    </Button>
+                    {isTimesheet ? (
+                      <Button className="gap-1.5 h-9 ml-auto" disabled={timesheet.isPending || !active.userId} onClick={runTimesheet}>
+                        <Play className="h-3.5 w-3.5" />{timesheet.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
+                      </Button>
+                    ) : (
+                      <Button className="gap-1.5 h-9 ml-auto" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
+                        <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -450,8 +502,8 @@ export default function ReportsPage() {
                       </div>
                     )}
 
-                    {/* Chart card */}
-                    {chartMeasure && labelCol && chartData.length > 0 && (
+                    {/* Chart card (hidden for the day-by-day timesheet) */}
+                    {!isTimesheet && chartMeasure && labelCol && chartData.length > 0 && (
                       <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-5">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-sm font-semibold text-foreground">{t("reports.topBy", "Top {{measure}}", { measure: chartMeasure.label })}</h3>
@@ -495,7 +547,7 @@ export default function ReportsPage() {
       {/* Save dialog */}
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>{active?.savedId ? t("reports.update", "Update report") : t("reports.save", "Save report")}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{active?.savedId ? t("reports.updateTemplateTitle", "Update template") : t("reports.saveTemplateTitle", "Save as template")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5"><Label className="text-xs">{t("reports.name", "Name")} *</Label><Input value={saveMeta.name} onChange={(e) => setSaveMeta({ ...saveMeta, name: e.target.value })} placeholder="Weekly overtime" /></div>
             <div className="space-y-1.5"><Label className="text-xs">{t("reports.description", "Description")}</Label><Input value={saveMeta.description} onChange={(e) => setSaveMeta({ ...saveMeta, description: e.target.value })} /></div>

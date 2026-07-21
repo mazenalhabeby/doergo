@@ -21,6 +21,11 @@ export class AnalyticsController {
     return this.analytics.run(data);
   }
 
+  @MessagePattern({ cmd: 'analytics_timesheet' })
+  timesheet(@Payload() data: { organizationId: string; userId: string; from?: string; to?: string }) {
+    return this.analytics.timesheetDetail(data);
+  }
+
   @MessagePattern({ cmd: 'analytics_list_saved' })
   listSaved(@Payload() data: { organizationId: string; userId: string }) {
     return this.analytics.listSaved(data);

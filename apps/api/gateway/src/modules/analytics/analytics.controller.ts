@@ -30,6 +30,14 @@ export class AnalyticsController {
     );
   }
 
+  @Get('timesheet')
+  @ApiOperation({ summary: 'Detailed daily timesheet for one user (calendar with clock-in/out, leave, days off)' })
+  async timesheet(@Request() req: any, @Query('userId') userId: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'analytics_timesheet' }, { organizationId: req.user.organizationId, userId, from, to }),
+    );
+  }
+
   // ── Saved reports (custom builder). View = all tiers; build = Pro+. ──────────
   @Get('reports')
   @ApiOperation({ summary: 'List saved reports (org-shared + your own)' })
