@@ -6,9 +6,9 @@ import {
   Animated,
   Easing,
   Dimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, LinearGradient as SvgGradient, Stop, G, Polygon } from 'react-native-svg';
 
 import { COLORS } from '../lib/constants';
 
@@ -158,32 +158,13 @@ function BurstParticle({ delay, angle, distance, size, color, duration }: {
   );
 }
 
-/* ── Large arrow SVG for splash ── */
+/* ── Brand mark for splash (new faceted logo) ── */
 function SplashArrowIcon({ size }: { size: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48">
-      <Defs>
-        <SvgGradient id="splash-at" x1="0" y1="0" x2="0.5" y2="1">
-          <Stop offset="0%" stopColor="#059669" />
-          <Stop offset="100%" stopColor="#10b981" />
-        </SvgGradient>
-        <SvgGradient id="splash-ab" x1="0" y1="0" x2="0.5" y2="1">
-          <Stop offset="0%" stopColor="#3b82f6" />
-          <Stop offset="100%" stopColor="#60a5fa" />
-        </SvgGradient>
-        <SvgGradient id="splash-ac" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor="#047857" />
-          <Stop offset="100%" stopColor="#1e40af" />
-        </SvgGradient>
-      </Defs>
-      <G transform="translate(24,24)">
-        <Polygon points="18,-2 -10,-20 -2,-2" fill="url(#splash-at)" />
-        <Polygon points="18,2 -10,20 -2,2" fill="url(#splash-ab)" />
-        <Polygon points="-2,-2 18,0 -2,2 -16,0" fill="url(#splash-ac)" opacity="0.8" />
-        <Polygon points="-10,-20 -16,0 -2,-2" fill="#047857" opacity="0.45" />
-        <Polygon points="-10,20 -16,0 -2,2" fill="#1e3a8a" opacity="0.25" />
-      </G>
-    </Svg>
+    <Image
+      source={require('../../assets/logo_HBCFIELD.png')}
+      style={{ width: size, height: size, resizeMode: 'contain' }}
+    />
   );
 }
 
