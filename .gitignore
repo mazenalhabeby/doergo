@@ -59,3 +59,6 @@ dashboard-*.html
 # Claude Code agent worktrees (accidentally committed as gitlinks)
 .claude/worktrees/
 worker-status-preview.png
+
+# Local Android build artifacts (uploaded to Play via eas submit)
+android-build/
