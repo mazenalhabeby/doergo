@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: 'HBCField',
   description: 'Dispatch · Track · Deliver',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.png',
   },
 };
 

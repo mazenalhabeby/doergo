@@ -84,7 +84,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#1e293b',
+        backgroundColor: '#ffffff',
       },
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
       package: 'com.hbcfield.app',
