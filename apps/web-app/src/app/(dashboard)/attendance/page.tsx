@@ -2,13 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
-import { Clock, XCircle, BarChart3, ClipboardCheck, Coffee } from "lucide-react"
+import { Clock, XCircle, ClipboardCheck, Coffee } from "lucide-react"
 import { format } from "date-fns"
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi, locationsApi, type TimeEntry, type TimeEntryStatus, type Break, type BreakType } from "@/lib/api"
-import { ReportsTab } from "./_components/reports-tab"
 import { ApprovalsTab } from "./_components/approvals-tab"
 import { BreaksTab } from "./_components/breaks-tab"
 import { TrackingTab } from "./_components/tracking-tab"
@@ -21,13 +20,13 @@ export default function AttendancePage() {
   const queryClient = useQueryClient()
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"tracking" | "reports" | "approvals" | "breaks">("tracking")
+  const [activeTab, setActiveTab] = useState<"tracking" | "approvals" | "breaks">("tracking")
 
   // Honor a ?tab= deep-link (e.g. the dashboard's "Pending Actions" reject link
   // → /attendance?tab=approvals). Read after mount to avoid a hydration mismatch.
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab")
-    if (tab === "approvals" || tab === "reports" || tab === "breaks" || tab === "tracking") {
+    if (tab === "approvals" || tab === "breaks" || tab === "tracking") {
       setActiveTab(tab)
     }
   }, [])
@@ -291,13 +290,6 @@ export default function AttendancePage() {
               {t('attendance.tabs.tracking')}
             </TabsTrigger>
             <TabsTrigger
-              value="reports"
-              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
-            >
-              <BarChart3 className="size-3.5 mr-1.5" />
-              {t('attendance.tabs.reports')}
-            </TabsTrigger>
-            <TabsTrigger
               value="approvals"
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
@@ -337,11 +329,6 @@ export default function AttendancePage() {
               page={page} setPage={setPage} limit={limit} locations={locations}
               schedulerInfo={schedulerInfo} triggerAutoClockOut={triggerAutoClockOut} isAdmin={isAdmin}
             />
-          </TabsContent>
-
-          {/* Reports Tab */}
-          <TabsContent value="reports" className="mt-6">
-            <ReportsTab locations={locations} canAccess={canAccess} />
           </TabsContent>
 
           {/* Approvals Tab */}
