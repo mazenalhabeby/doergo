@@ -1,6 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { FieldArrowIcon } from './field-arrow-icon';
+import { View, Text, StyleSheet, Image } from 'react-native';
+
+// New faceted brand mark (replaces the old FieldArrowIcon in the wordmark logo).
+const LOGO = require('../../assets/logo_HBCFIELD.png');
+const LogoMark = ({ size }: { size: number }) => (
+  <Image source={LOGO} style={{ width: size, height: size, resizeMode: 'contain' }} />
+);
 
 export interface AnimatedLogoProps {
   size?: 'small' | 'default' | 'large';
@@ -28,12 +33,12 @@ export function AnimatedLogo({
   const taglineColor = variant === 'light' ? '#52525b' : '#a1a1aa';
 
   if (iconOnly) {
-    return <FieldArrowIcon size={s.icon} variant="color" />;
+    return <LogoMark size={s.icon} />;
   }
 
   return (
     <View style={[styles.container, { gap: s.gap }]}>
-      <FieldArrowIcon size={s.icon} variant="color" />
+      <LogoMark size={s.icon} />
       <View>
         <Text
           style={[

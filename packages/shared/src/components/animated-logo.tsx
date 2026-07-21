@@ -68,9 +68,13 @@ export function AnimatedLogo({
 
   return (
     <div className={`flex items-center ${className}`} style={{ gap: s.gap }}>
-      {/* On dark backgrounds (variant="light") render the icon in white so the
-          blue half of the arrow doesn't disappear into the background. */}
-      <FieldArrowIcon size={s.icon} variant={isLight ? 'white' : 'color'} />
+      {/* Brand mark (faceted logo). Colorful on both light and dark backgrounds. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo_HBCFIELD.png"
+        alt="HBCField"
+        style={{ height: s.icon, width: 'auto', display: 'block', objectFit: 'contain' }}
+      />
       <div className="flex flex-col">
         <span
           style={{
