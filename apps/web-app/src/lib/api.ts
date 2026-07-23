@@ -1995,6 +1995,41 @@ export const attendanceApi = {
     return response.data?.data || [];
   },
 
+  // Admin: add/back-date attendance for an employee (single day or a
+  // weekday-filtered date-range backfill). Server builds one CLOCKED_OUT,
+  // pre-approved TimeEntry per matching day (skips days that already have one).
+  addManualEntries: async (input: {
+    userId: string;
+    locationId: string;
+    startDate: string; // YYYY-MM-DD
+    endDate: string; // YYYY-MM-DD (== startDate for a single day)
+    weekdays?: number[]; // 0=Sun..6=Sat, only for a date range
+    startTime: string; // HH:MM
+    endTime: string; // HH:MM
+    breakMinutes?: number;
+    notes?: string;
+    reason?: string;
+  }) => {
+    const response = await api.post<{
+      success: boolean;
+      data: { created: number; skipped: number };
+      message?: string;
+    }>('/attendance/entries/manual', input);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    const body = response.data as {
+      data?: { created: number; skipped: number };
+      message?: string;
+    };
+    return {
+      ...(body?.data ?? { created: 0, skipped: 0 }),
+      message: body?.message,
+    };
+  },
+
   // Get all time entries for the organization (admin view)
   getAllEntries: async (params?: AttendanceQueryParams) => {
     const endpoint = buildUrlWithQuery('/attendance/all-entries', params ?? {});

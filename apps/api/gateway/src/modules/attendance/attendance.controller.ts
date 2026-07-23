@@ -470,6 +470,44 @@ export class AttendanceController {
     });
   }
 
+  @Post('entries/manual')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({
+    summary:
+      'Admin: add/back-date attendance for an employee (single day, or a weekday-filtered date-range backfill)',
+  })
+  async addManualEntries(
+    @Body()
+    body: {
+      userId: string;
+      locationId: string;
+      startDate: string;
+      endDate: string;
+      weekdays?: number[];
+      startTime: string;
+      endTime: string;
+      breakMinutes?: number;
+      notes?: string;
+      reason?: string;
+    },
+    @Request() req?: any,
+  ) {
+    return this.attendanceService.addManualEntries({
+      userId: body.userId,
+      locationId: body.locationId,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      weekdays: body.weekdays,
+      startTime: body.startTime,
+      endTime: body.endTime,
+      breakMinutes: body.breakMinutes,
+      notes: body.notes,
+      reason: body.reason,
+      editorId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Post('approvals/bulk-approve')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Bulk approve multiple time entries' })

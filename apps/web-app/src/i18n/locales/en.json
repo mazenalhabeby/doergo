@@ -1777,6 +1777,45 @@
         "timeOff": "Time Off",
         "notScheduled": "Not Scheduled"
       }
+    },
+    "addAttendance": {
+      "button": "Add attendance",
+      "title": "Add attendance record",
+      "description": "Manually add or back-date attendance.",
+      "descriptionNamed": "Manually add or back-date attendance for {{name}}.",
+      "employee": "Employee",
+      "employeePlaceholder": "Select an employee",
+      "modeSingle": "Single day",
+      "modeRange": "Date range (backfill)",
+      "location": "Work site",
+      "locationPlaceholder": "Select a work site",
+      "date": "Date",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "weekdaysLabel": "Days of the week",
+      "weekdaysHint": "An entry is created for each selected weekday in the range.",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "breakMinutes": "Break (minutes)",
+      "notes": "Note (optional)",
+      "notesPlaceholder": "e.g. Backfilled from paper timesheet",
+      "submit": "Add",
+      "success": "Added {{count}} attendance record(s).",
+      "successWithSkipped": "Added {{created}} record(s), skipped {{skipped}} that already existed.",
+      "noneCreated": "Nothing added — {{skipped}} day(s) already had a record.",
+      "error": "Could not add attendance.",
+      "weekdays": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      },
+      "preview": "This will add {{count}} day(s) (existing days are skipped).",
+      "submitCount": "Add {{count}} days",
+      "tooLarge": "Date range is too large — back-fill at most one year at a time."
     }
   },
   "members": {

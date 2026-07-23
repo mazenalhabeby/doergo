@@ -295,6 +295,27 @@ export class AttendanceController {
     return this.approvalService.editEntry(data);
   }
 
+  @MessagePattern({ cmd: 'add_manual_entries' })
+  async addManualEntries(
+    @Payload()
+    data: {
+      editorId: string;
+      organizationId: string;
+      userId: string;
+      locationId: string;
+      startDate: string;
+      endDate: string;
+      weekdays?: number[];
+      startTime: string;
+      endTime: string;
+      breakMinutes?: number;
+      notes?: string;
+      reason?: string;
+    },
+  ) {
+    return this.approvalService.addManualEntries(data);
+  }
+
   @MessagePattern({ cmd: 'bulk_approve_entries' })
   async bulkApprove(
     @Payload()

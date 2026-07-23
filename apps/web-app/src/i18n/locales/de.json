@@ -1777,6 +1777,45 @@
         "timeOff": "Abwesend",
         "notScheduled": "Nicht eingeplant"
       }
+    },
+    "addAttendance": {
+      "button": "Anwesenheit hinzufügen",
+      "title": "Anwesenheit erfassen",
+      "description": "Anwesenheit manuell hinzufügen oder nachtragen.",
+      "descriptionNamed": "Anwesenheit für {{name}} manuell hinzufügen oder nachtragen.",
+      "employee": "Mitarbeiter",
+      "employeePlaceholder": "Mitarbeiter auswählen",
+      "modeSingle": "Einzelner Tag",
+      "modeRange": "Zeitraum (Nachtrag)",
+      "location": "Arbeitsort",
+      "locationPlaceholder": "Arbeitsort auswählen",
+      "date": "Datum",
+      "startDate": "Startdatum",
+      "endDate": "Enddatum",
+      "weekdaysLabel": "Wochentage",
+      "weekdaysHint": "Für jeden ausgewählten Wochentag im Zeitraum wird ein Eintrag erstellt.",
+      "startTime": "Startzeit",
+      "endTime": "Endzeit",
+      "breakMinutes": "Pause (Minuten)",
+      "notes": "Notiz (optional)",
+      "notesPlaceholder": "z. B. Aus Papier-Zeiterfassung nachgetragen",
+      "submit": "Hinzufügen",
+      "success": "{{count}} Anwesenheitseintrag/-einträge hinzugefügt.",
+      "successWithSkipped": "{{created}} Eintrag/Einträge hinzugefügt, {{skipped}} bereits vorhandene übersprungen.",
+      "noneCreated": "Nichts hinzugefügt – {{skipped}} Tag(e) hatten bereits einen Eintrag.",
+      "error": "Anwesenheit konnte nicht hinzugefügt werden.",
+      "weekdays": {
+        "sun": "So",
+        "mon": "Mo",
+        "tue": "Di",
+        "wed": "Mi",
+        "thu": "Do",
+        "fri": "Fr",
+        "sat": "Sa"
+      },
+      "preview": "Dies erstellt {{count}} Tag(e) (vorhandene Tage werden übersprungen).",
+      "submitCount": "{{count}} Tage hinzufügen",
+      "tooLarge": "Zeitraum zu groß – höchstens ein Jahr auf einmal nachtragen."
     }
   },
   "members": {

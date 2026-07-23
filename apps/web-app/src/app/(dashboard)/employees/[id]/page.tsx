@@ -461,7 +461,12 @@ export default function EmployeeDetailPage() {
           </TabsContent>
 
           <TabsContent value="attendance">
-            <AttendanceTab attendance={attendance} />
+            <AttendanceTab
+              attendance={attendance}
+              employeeId={employeeId}
+              employeeName={`${employee.firstName} ${employee.lastName}`.trim()}
+              canManage={!!user?.canManageUsers}
+            />
           </TabsContent>
 
           <TabsContent value="locations">

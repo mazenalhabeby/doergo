@@ -21,21 +21,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { AddAttendanceDialog } from "./add-attendance-dialog"
 
 interface AttendanceTabProps {
   attendance: TimeEntry[] | undefined
+  employeeId: string
+  employeeName?: string
+  canManage?: boolean
 }
 
-export function AttendanceTab({ attendance }: AttendanceTabProps) {
+export function AttendanceTab({
+  attendance,
+  employeeId,
+  employeeName,
+  canManage,
+}: AttendanceTabProps) {
   const { t } = useTranslation()
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t('technicians.attendanceTab.title')}</CardTitle>
-        <CardDescription>
-          {t('technicians.attendanceTab.description')}
-        </CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div className="space-y-1.5">
+          <CardTitle>{t('technicians.attendanceTab.title')}</CardTitle>
+          <CardDescription>
+            {t('technicians.attendanceTab.description')}
+          </CardDescription>
+        </div>
+        {canManage && (
+          <AddAttendanceDialog
+            employeeId={employeeId}
+            employeeName={employeeName}
+          />
+        )}
       </CardHeader>
       <CardContent>
         {attendance && attendance.length > 0 ? (

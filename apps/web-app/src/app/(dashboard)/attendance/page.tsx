@@ -11,6 +11,7 @@ import { attendanceApi, locationsApi, type TimeEntry, type TimeEntryStatus, type
 import { ApprovalsTab } from "./_components/approvals-tab"
 import { BreaksTab } from "./_components/breaks-tab"
 import { TrackingTab } from "./_components/tracking-tab"
+import { AddAttendanceDialog } from "../employees/[id]/_components/add-attendance-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
 
@@ -267,7 +268,7 @@ export default function AttendancePage() {
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {t('attendance.management.title')}
@@ -276,6 +277,7 @@ export default function AttendancePage() {
                 {t('attendance.management.subtitle')}
               </p>
             </div>
+            {isAdmin && <AddAttendanceDialog />}
           </div>
         </div>
 

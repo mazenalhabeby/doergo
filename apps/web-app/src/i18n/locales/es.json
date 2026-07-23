@@ -1777,6 +1777,45 @@
         "timeOff": "Ausencia",
         "notScheduled": "Sin horario"
       }
+    },
+    "addAttendance": {
+      "button": "Añadir asistencia",
+      "title": "Añadir registro de asistencia",
+      "description": "Añade o registra asistencia de forma manual.",
+      "descriptionNamed": "Añade o registra asistencia de forma manual para {{name}}.",
+      "employee": "Empleado",
+      "employeePlaceholder": "Selecciona un empleado",
+      "modeSingle": "Un solo día",
+      "modeRange": "Rango de fechas (retroactivo)",
+      "location": "Lugar de trabajo",
+      "locationPlaceholder": "Selecciona un lugar de trabajo",
+      "date": "Fecha",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha de fin",
+      "weekdaysLabel": "Días de la semana",
+      "weekdaysHint": "Se crea un registro por cada día de la semana seleccionado dentro del rango.",
+      "startTime": "Hora de inicio",
+      "endTime": "Hora de fin",
+      "breakMinutes": "Descanso (minutos)",
+      "notes": "Nota (opcional)",
+      "notesPlaceholder": "p. ej. Registrado desde la hoja de horas en papel",
+      "submit": "Añadir",
+      "success": "Se añadieron {{count}} registro(s) de asistencia.",
+      "successWithSkipped": "Se añadieron {{created}} registro(s); se omitieron {{skipped}} que ya existían.",
+      "noneCreated": "No se añadió nada: {{skipped}} día(s) ya tenían un registro.",
+      "error": "No se pudo añadir la asistencia.",
+      "weekdays": {
+        "sun": "Dom",
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mié",
+        "thu": "Jue",
+        "fri": "Vie",
+        "sat": "Sáb"
+      },
+      "preview": "Se añadirán {{count}} día(s) (se omiten los días existentes).",
+      "submitCount": "Añadir {{count}} días",
+      "tooLarge": "El rango de fechas es demasiado grande: registra como máximo un año a la vez."
     }
   },
   "members": {

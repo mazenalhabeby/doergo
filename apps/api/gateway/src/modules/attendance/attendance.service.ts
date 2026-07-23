@@ -262,6 +262,23 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'edit_entry' }, data);
   }
 
+  async addManualEntries(data: {
+    editorId: string;
+    organizationId: string;
+    userId: string;
+    locationId: string;
+    startDate: string;
+    endDate: string;
+    weekdays?: number[];
+    startTime: string;
+    endTime: string;
+    breakMinutes?: number;
+    notes?: string;
+    reason?: string;
+  }) {
+    return this.send({ cmd: 'add_manual_entries' }, data);
+  }
+
   /**
    * Bulk approve entries
    */
