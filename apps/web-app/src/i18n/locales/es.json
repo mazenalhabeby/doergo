@@ -19,7 +19,7 @@
         "vigilancia",
         "revisión"
       ],
-      "requestDemo": "Solicitar una demo",
+      "requestDemo": "Prueba gratis",
       "scroll": "Desplázate",
       "hint": "Toca las líneas para encender el terreno",
       "meta": "HBCField — Plataforma de servicio de campo",
@@ -134,7 +134,12 @@
           "desc": "El técnico y el cliente firman en el dispositivo para cerrar el trabajo en el sitio."
         }
       ],
-      "getApp": "Descarga la app — iOS y Android"
+      "getApp": "Descarga la app — iOS y Android",
+      "getItOn": "Disponible en",
+      "downloadOnThe": "Descárgalo en el",
+      "comingSoon": "Muy pronto",
+      "getOnGooglePlay": "Disponible en Google Play",
+      "appStoreComingSoon": "App Store — muy pronto"
     },
     "app": {
       "label": "La app del técnico",
@@ -169,7 +174,9 @@
         "por escrito."
       ],
       "emailPlaceholder": "Correo del trabajo",
-      "requestDemo": "Solicitar una demo"
+      "requestDemo": "Prueba gratis",
+      "talkToSales": "Hablar con ventas",
+      "trialNote": "14 días gratis — sin tarjeta de crédito"
     },
     "footer": {
       "tagline": "Despacha, rastrea y demuestra cada trabajo: la oficina y el terreno, en una sola plataforma.",

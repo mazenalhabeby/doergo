@@ -20,7 +20,12 @@ function AuthPageContent() {
   const { t } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [isLogin, setIsLogin] = useState(true);
+  // ?mode=register (or signup) opens the "Create account" tab straight away
+  // (used by the marketing site's "Start free trial" CTAs).
+  const [isLogin, setIsLogin] = useState(() => {
+    const m = searchParams?.get('mode');
+    return m !== 'register' && m !== 'signup';
+  });
 
   // "Account created" → switch to sign-in
   useEffect(() => {

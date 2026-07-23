@@ -19,7 +19,7 @@
         "Beobachtung",
         "Prüfung"
       ],
-      "requestDemo": "Demo anfragen",
+      "requestDemo": "Kostenlos testen",
       "scroll": "Scrollen",
       "hint": "Berühren Sie die Linien, um das Feld zu beleben",
       "meta": "HBCField — Plattform für den Außendienst",
@@ -134,7 +134,12 @@
           "desc": "Techniker und Kunde unterschreiben auf dem Gerät, um den Einsatz vor Ort abzuschließen."
         }
       ],
-      "getApp": "App holen — iOS & Android"
+      "getApp": "App holen — iOS & Android",
+      "getItOn": "Jetzt bei",
+      "downloadOnThe": "Laden im",
+      "comingSoon": "Bald verfügbar",
+      "getOnGooglePlay": "Jetzt bei Google Play",
+      "appStoreComingSoon": "App Store — bald verfügbar"
     },
     "app": {
       "label": "Die Techniker-App",
@@ -169,7 +174,9 @@
         "zu Protokoll."
       ],
       "emailPlaceholder": "Geschäftliche E-Mail",
-      "requestDemo": "Demo anfragen"
+      "requestDemo": "Kostenlos testen",
+      "talkToSales": "Vertrieb kontaktieren",
+      "trialNote": "14 Tage kostenlos — keine Kreditkarte nötig"
     },
     "footer": {
       "tagline": "Jeden Einsatz disponieren, verfolgen und belegen — das Büro und das Feld, auf einer Plattform.",
@@ -2548,10 +2555,19 @@
       "detailHint": "Tag-für-Tag Ein-/Ausstempeln für eine Person",
       "columns": "Spalten",
       "tsCol": {
-        "date": "Datum", "day": "Tag", "clockIn": "Einstempeln", "clockOut": "Ausstempeln",
-        "hours": "Stunden", "break": "Pause", "overtime": "Überstunden", "jobs": "Aufträge",
-        "leaveReason": "Abwesenheitsgrund", "location": "Standort", "remote": "Remote",
-        "note": "Notiz", "status": "Status"
+        "date": "Datum",
+        "day": "Tag",
+        "clockIn": "Einstempeln",
+        "clockOut": "Ausstempeln",
+        "hours": "Stunden",
+        "break": "Pause",
+        "overtime": "Überstunden",
+        "jobs": "Aufträge",
+        "leaveReason": "Abwesenheitsgrund",
+        "location": "Standort",
+        "remote": "Remote",
+        "note": "Notiz",
+        "status": "Status"
       },
       "timesheetDetail": "Detaillierter Stundenzettel",
       "timesheetNavDesc": "Tag-für-Tag Ein-/Ausstempeln pro Nutzer",
@@ -2613,11 +2629,26 @@
       "print": "Drucken",
       "pdfPreview": "PDF-Vorschau",
       "pdfTpl": {
-        "classic": { "name": "Klassisch", "desc": "Briefkopf, Diagrammvorschau und vollständige Datentabelle." },
-        "executive": { "name": "Management-Zusammenfassung", "desc": "KPI-Summen oben, Diagramm und kompakte Tabelle." },
-        "data": { "name": "Datentabelle", "desc": "Dichte Querformat-Tabelle — ohne Diagramm, ideal für breite Berichte." },
-        "presentation": { "name": "Präsentation", "desc": "Kräftiges farbiges Kopfband, KPIs, großes Diagramm und Tabelle." },
-        "custom": { "name": "Individuell", "desc": "Farben, Ausrichtung und enthaltene Abschnitte selbst wählen." }
+        "classic": {
+          "name": "Klassisch",
+          "desc": "Briefkopf, Diagrammvorschau und vollständige Datentabelle."
+        },
+        "executive": {
+          "name": "Management-Zusammenfassung",
+          "desc": "KPI-Summen oben, Diagramm und kompakte Tabelle."
+        },
+        "data": {
+          "name": "Datentabelle",
+          "desc": "Dichte Querformat-Tabelle — ohne Diagramm, ideal für breite Berichte."
+        },
+        "presentation": {
+          "name": "Präsentation",
+          "desc": "Kräftiges farbiges Kopfband, KPIs, großes Diagramm und Tabelle."
+        },
+        "custom": {
+          "name": "Individuell",
+          "desc": "Farben, Ausrichtung und enthaltene Abschnitte selbst wählen."
+        }
       },
       "thisWeek": "Diese Woche",
       "lastWeek": "Letzte Woche",

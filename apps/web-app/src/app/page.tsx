@@ -14,6 +14,7 @@ import { HeroCanvas } from './_home/HeroCanvas';
 import { IntroVideo } from './_home/IntroVideo';
 import { LaptopShowcase } from './_home/LaptopShowcase';
 import { PhoneShowcase } from './_home/PhoneShowcase';
+import { StoreBadges } from './_home/StoreBadges';
 import { FeatureMatrix } from './_home/FeatureMatrix';
 import { usePrefersReducedMotion } from './_home/use-reduced-motion';
 import { useLenis } from './_home/use-lenis';
@@ -161,15 +162,6 @@ export default function Home() {
     e.preventDefault();
     scrollToHash('#top', 0);
   };
-  // Demo request → open a prefilled email to the office inbox (no backend needed).
-  const handleDemoRequest = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const email = String(new FormData(e.currentTarget).get('email') || '').trim();
-    const subject = encodeURIComponent('Demo request — HBCField');
-    const body = encodeURIComponent(`Hi HBCField team,\n\nI'd like to see a demo of HBCField.\n\nWork email: ${email}\n`);
-    window.location.href = `mailto:office@hbcfield.com?subject=${subject}&body=${body}`;
-  };
-
 
   const steps = asArray<{ key: string; desc: string }>(t('home.process.steps', { returnObjects: true }));
 
@@ -277,16 +269,17 @@ export default function Home() {
               </Reveal>
               {/* desktop/tablet: CTA sits under the headline. On mobile it moves to the bottom-right (below) */}
               <Reveal delay={0.15} className="pointer-events-auto mt-8 hidden sm:block">
-                <Link href="/login" className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+                <Link href="/login?mode=register" className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
                   {t('home.hero.requestDemo')}
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                 </Link>
+                <StoreBadges size="sm" className="mt-7" />
               </Reveal>
             </div>
 
             {/* mobile-only CTA — pinned bottom-right, balancing the scroll cue on the left */}
             <div className="pointer-events-none absolute inset-x-6 bottom-8 flex justify-end sm:hidden">
-              <Link href="/login" className={`${MONO} group pointer-events-auto inline-flex items-center gap-2.5 whitespace-nowrap border-b border-white/25 pb-1 text-[11px] uppercase tracking-[0.18em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+              <Link href="/login?mode=register" className={`${MONO} group pointer-events-auto inline-flex items-center gap-2.5 whitespace-nowrap border-b border-white/25 pb-1 text-[11px] uppercase tracking-[0.18em] text-white/80 transition-colors hover:border-white hover:text-white`}>
                 {t('home.hero.requestDemo')}
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
               </Link>
@@ -409,10 +402,7 @@ export default function Home() {
                 ))}
               </div>
               <Reveal delay={0.1} className="mt-14">
-                <Link href="/download" className={`${MONO} group inline-flex items-center gap-3 border-b border-foreground/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-foreground/80 transition-colors hover:border-foreground hover:text-foreground`}>
-                  {t('home.field.getApp')}
-                  <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </Link>
+                <StoreBadges />
               </Reveal>
             </div>
           </section>
@@ -605,21 +595,18 @@ export default function Home() {
               <h2 className={`${DISPLAY} text-[clamp(2.4rem,8vw,6.5rem)] font-normal leading-[0.95] tracking-[-0.02em] text-foreground`}>
                 <LineReveal nowrap lines={asArray<string>(t('home.cta.lines', { returnObjects: true }))} />
               </h2>
-              <Reveal delay={0.2} className="mt-14 max-w-xl">
-                <form className="flex flex-col gap-4 sm:flex-row sm:items-center" onSubmit={handleDemoRequest}>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    placeholder={t('home.cta.emailPlaceholder')}
-                    aria-label={t('home.cta.emailPlaceholder')}
-                    className={`${MONO} w-full border-b border-foreground/25 bg-transparent pb-3 text-sm text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-foreground`}
-                  />
-                  <button type="submit" className={`${MONO} group inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-foreground px-6 py-3 text-[11px] uppercase tracking-[0.2em] text-background transition-colors hover:bg-foreground/90`}>
+              <Reveal delay={0.2} className="mt-14">
+                <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
+                  <Link href="/login?mode=register" className={`${MONO} group inline-flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full bg-foreground px-9 py-4 text-[12px] uppercase tracking-[0.2em] text-background shadow-lg shadow-foreground/10 transition-all hover:scale-[1.02] hover:bg-foreground/90`}>
                     {t('home.cta.requestDemo')}
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </button>
-                </form>
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                  <a href="mailto:office@hbcfield.com?subject=HBCField%20enquiry" className={`${MONO} group inline-flex items-center gap-2 border-b border-foreground/25 pb-1 text-[12px] uppercase tracking-[0.16em] text-foreground/70 transition-colors hover:border-foreground hover:text-foreground`}>
+                    {t('home.cta.talkToSales')}
+                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </a>
+                </div>
+                <p className={`${MONO} mt-6 text-[11px] uppercase tracking-[0.18em] text-foreground/35`}>{t('home.cta.trialNote')}</p>
               </Reveal>
             </div>
           </section>
@@ -655,7 +642,6 @@ export default function Home() {
                   ]} />
                   <FooterCol title={t('home.footer.company')} links={[
                     { label: t('home.footer.linkSignIn'), href: '/login' },
-                    { label: t('home.footer.linkGetApp'), href: '/download' },
                     { label: t('home.footer.linkHelp', 'Help Center'), href: '/help' },
                   ]} />
                   <FooterCol title={t('home.footer.legal')} links={[
@@ -665,11 +651,15 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* oversized brand accent */}
-              <div aria-hidden className="pointer-events-none mt-14 select-none">
-                <span className={`${DISPLAY} block whitespace-nowrap text-[clamp(4rem,17vw,15rem)] font-normal leading-[0.78] tracking-[-0.04em] text-foreground/[0.045]`}>
+              {/* oversized brand accent + app badges on one line */}
+              <div className="mt-14 flex flex-wrap items-end justify-between gap-x-10 gap-y-8">
+                <span aria-hidden className={`${DISPLAY} pointer-events-none select-none whitespace-nowrap text-[clamp(4rem,17vw,15rem)] font-normal leading-[0.78] tracking-[-0.04em] text-foreground/[0.045]`}>
                   HBCField
                 </span>
+                <div className="shrink-0 pb-2">
+                  <div className={`${MONO} mb-3 text-[10px] uppercase tracking-[0.28em] text-foreground/30`}>{t('home.footer.linkGetApp')}</div>
+                  <StoreBadges />
+                </div>
               </div>
 
               {/* bottom bar */}

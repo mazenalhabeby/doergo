@@ -19,7 +19,7 @@
         "watch",
         "review"
       ],
-      "requestDemo": "Request a demo",
+      "requestDemo": "Start free trial",
       "scroll": "Scroll",
       "hint": "Touch the lines to spark the field",
       "meta": "HBCField — Field service platform",
@@ -134,7 +134,12 @@
           "desc": "Technician and customer sign on-device to close the job on site."
         }
       ],
-      "getApp": "Get the app — iOS & Android"
+      "getApp": "Get the app — iOS & Android",
+      "getItOn": "Get it on",
+      "downloadOnThe": "Download on the",
+      "comingSoon": "Coming soon",
+      "getOnGooglePlay": "Get it on Google Play",
+      "appStoreComingSoon": "App Store — coming soon"
     },
     "app": {
       "label": "The technician app",
@@ -169,7 +174,9 @@
         "on the record."
       ],
       "emailPlaceholder": "Work email",
-      "requestDemo": "Request a demo"
+      "requestDemo": "Start free trial",
+      "talkToSales": "Talk to sales",
+      "trialNote": "14 days free — no credit card required"
     },
     "footer": {
       "tagline": "Dispatch, track and prove every job — the office and the field, on one platform.",
@@ -2548,10 +2555,19 @@
       "detailHint": "Day-by-day clock-in/out for one person",
       "columns": "Columns",
       "tsCol": {
-        "date": "Date", "day": "Day", "clockIn": "Clock in", "clockOut": "Clock out",
-        "hours": "Hours", "break": "Break", "overtime": "Overtime", "jobs": "Jobs",
-        "leaveReason": "Leave reason", "location": "Location", "remote": "Remote",
-        "note": "Note", "status": "Status"
+        "date": "Date",
+        "day": "Day",
+        "clockIn": "Clock in",
+        "clockOut": "Clock out",
+        "hours": "Hours",
+        "break": "Break",
+        "overtime": "Overtime",
+        "jobs": "Jobs",
+        "leaveReason": "Leave reason",
+        "location": "Location",
+        "remote": "Remote",
+        "note": "Note",
+        "status": "Status"
       },
       "timesheetDetail": "Detailed timesheet",
       "timesheetNavDesc": "Day-by-day clock-in/out per user",
@@ -2613,11 +2629,26 @@
       "print": "Print",
       "pdfPreview": "PDF preview",
       "pdfTpl": {
-        "classic": { "name": "Classic", "desc": "Letterhead, chart preview, and full data table." },
-        "executive": { "name": "Executive summary", "desc": "KPI totals up top, chart, and a compact table." },
-        "data": { "name": "Data table", "desc": "Dense landscape table — no chart, best for wide reports." },
-        "presentation": { "name": "Presentation", "desc": "Bold colored header band, KPIs, big chart and table." },
-        "custom": { "name": "Custom", "desc": "Choose colors, orientation, and which sections to include." }
+        "classic": {
+          "name": "Classic",
+          "desc": "Letterhead, chart preview, and full data table."
+        },
+        "executive": {
+          "name": "Executive summary",
+          "desc": "KPI totals up top, chart, and a compact table."
+        },
+        "data": {
+          "name": "Data table",
+          "desc": "Dense landscape table — no chart, best for wide reports."
+        },
+        "presentation": {
+          "name": "Presentation",
+          "desc": "Bold colored header band, KPIs, big chart and table."
+        },
+        "custom": {
+          "name": "Custom",
+          "desc": "Choose colors, orientation, and which sections to include."
+        }
       },
       "thisWeek": "This Week",
       "lastWeek": "Last Week",
