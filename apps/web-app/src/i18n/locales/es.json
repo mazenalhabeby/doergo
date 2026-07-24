@@ -2574,7 +2574,13 @@
       "autoApproved": "Aprobado automáticamente",
       "showingEntries": "Mostrando {{start}} a {{end}} de {{total}} registros",
       "fromDate": "Fecha desde",
-      "toDate": "Fecha hasta"
+      "toDate": "Fecha hasta",
+      "presets": {
+        "today": "Hoy",
+        "last7": "Últimos 7 días",
+        "thisWeek": "Esta semana",
+        "thisMonth": "Este mes"
+      }
     },
     "reports": {
       "pickOneTitle": "Ningún informe seleccionado",

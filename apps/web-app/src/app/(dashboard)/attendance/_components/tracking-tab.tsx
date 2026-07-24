@@ -1,5 +1,5 @@
 import React from "react"
-import { format } from "date-fns"
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns"
 import { cn, formatDurationMinutes } from "@/lib/utils"
 import { type TimeEntry, type CompanyLocation } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users } from "lucide-react"
+import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
 
@@ -89,6 +89,25 @@ export function TrackingTab({
   page, setPage, limit, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
 }: TrackingTabProps) {
   const { t } = useTranslation()
+
+  // Quick date-range presets (computed once on mount).
+  const presets = React.useMemo(() => {
+    const now = new Date()
+    const f = (d: Date) => format(d, "yyyy-MM-dd")
+    return [
+      { key: "today", from: f(now), to: f(now) },
+      { key: "last7", from: f(subDays(now, 6)), to: f(now) },
+      { key: "thisWeek", from: f(startOfWeek(now, { weekStartsOn: 1 })), to: f(endOfWeek(now, { weekStartsOn: 1 })) },
+      { key: "thisMonth", from: f(startOfMonth(now)), to: f(endOfMonth(now)) },
+    ]
+  }, [])
+
+  const applyRange = (from: string, to: string) => {
+    setSelectedDate(from)
+    setEndDate(to)
+    setPage(1)
+  }
+
   return (
     <>
 
@@ -330,39 +349,34 @@ export function TrackingTab({
             </SelectContent>
           </Select>
 
-          {/* Date range filter (From – To) */}
-          <div className="flex items-center gap-1.5">
-            <div className="relative">
-              <Calendar className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <Input
-                type="date"
-                aria-label={t("attendance.tracking.fromDate")}
-                title={t("attendance.tracking.fromDate")}
-                value={selectedDate}
-                max={endDate || undefined}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value)
-                  setPage(1)
-                }}
-                className="pl-10 w-[160px] h-11 bg-card/80 border-border/80 rounded-xl shadow-sm"
-              />
-            </div>
-            <span className="text-muted-foreground text-sm">–</span>
-            <div className="relative">
-              <Calendar className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <Input
-                type="date"
-                aria-label={t("attendance.tracking.toDate")}
-                title={t("attendance.tracking.toDate")}
-                value={endDate}
-                min={selectedDate || undefined}
-                onChange={(e) => {
-                  setEndDate(e.target.value)
-                  setPage(1)
-                }}
-                className="pl-10 w-[160px] h-11 bg-card/80 border-border/80 rounded-xl shadow-sm"
-              />
-            </div>
+          {/* Date range — unified From → To pill */}
+          <div className="group inline-flex items-center h-11 gap-1 rounded-xl border border-border/80 bg-card/80 px-3 shadow-sm transition-colors focus-within:border-foreground/30 focus-within:ring-2 focus-within:ring-foreground/10">
+            <Calendar className="size-4 shrink-0 text-muted-foreground" />
+            <Input
+              type="date"
+              aria-label={t("attendance.tracking.fromDate")}
+              title={t("attendance.tracking.fromDate")}
+              value={selectedDate}
+              max={endDate || undefined}
+              onChange={(e) => {
+                setSelectedDate(e.target.value)
+                setPage(1)
+              }}
+              className="h-9 w-[124px] border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+            <ArrowRight className="size-3.5 shrink-0 text-muted-foreground/50" />
+            <Input
+              type="date"
+              aria-label={t("attendance.tracking.toDate")}
+              title={t("attendance.tracking.toDate")}
+              value={endDate}
+              min={selectedDate || undefined}
+              onChange={(e) => {
+                setEndDate(e.target.value)
+                setPage(1)
+              }}
+              className="h-9 w-[124px] border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
           </div>
 
           {/* Refresh Button */}
@@ -374,6 +388,28 @@ export function TrackingTab({
           >
             <RefreshCw className="size-4 text-muted-foreground" />
           </Button>
+
+          {/* Quick range presets */}
+          <div className="inline-flex items-center gap-1 rounded-xl border border-border/70 bg-muted/40 p-1 shadow-sm">
+            {presets.map((p) => {
+              const active = selectedDate === p.from && endDate === p.to
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => applyRange(p.from, p.to)}
+                  className={cn(
+                    "h-9 rounded-lg px-3 text-xs font-medium transition-all",
+                    active
+                      ? "bg-foreground text-background shadow-sm"
+                      : "text-muted-foreground hover:bg-background hover:text-foreground"
+                  )}
+                >
+                  {t(`attendance.tracking.presets.${p.key}`)}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Table */}
