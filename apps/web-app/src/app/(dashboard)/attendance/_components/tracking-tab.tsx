@@ -68,6 +68,8 @@ interface TrackingTabProps {
   setSelectedStatus: (v: string) => void
   selectedDate: string
   setSelectedDate: (v: string) => void
+  endDate: string
+  setEndDate: (v: string) => void
   searchQuery: string
   setSearchQuery: (v: string) => void
   page: number
@@ -83,7 +85,7 @@ export function TrackingTab({
   stats, entries, geofenceViolations, filteredEntries, loadingEntries, loadingLocations,
   isError, error, refetch, meta,
   selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus,
-  selectedDate, setSelectedDate, searchQuery, setSearchQuery,
+  selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
   page, setPage, limit, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
 }: TrackingTabProps) {
   const { t } = useTranslation()
@@ -328,18 +330,39 @@ export function TrackingTab({
             </SelectContent>
           </Select>
 
-          {/* Date Filter */}
-          <div className="relative">
-            <Calendar className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value)
-                setPage(1)
-              }}
-              className="pl-10 w-[180px] h-11 bg-card/80 border-border/80 rounded-xl shadow-sm"
-            />
+          {/* Date range filter (From – To) */}
+          <div className="flex items-center gap-1.5">
+            <div className="relative">
+              <Calendar className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input
+                type="date"
+                aria-label={t("attendance.tracking.fromDate")}
+                title={t("attendance.tracking.fromDate")}
+                value={selectedDate}
+                max={endDate || undefined}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value)
+                  setPage(1)
+                }}
+                className="pl-10 w-[160px] h-11 bg-card/80 border-border/80 rounded-xl shadow-sm"
+              />
+            </div>
+            <span className="text-muted-foreground text-sm">–</span>
+            <div className="relative">
+              <Calendar className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input
+                type="date"
+                aria-label={t("attendance.tracking.toDate")}
+                title={t("attendance.tracking.toDate")}
+                value={endDate}
+                min={selectedDate || undefined}
+                onChange={(e) => {
+                  setEndDate(e.target.value)
+                  setPage(1)
+                }}
+                className="pl-10 w-[160px] h-11 bg-card/80 border-border/80 rounded-xl shadow-sm"
+              />
+            </div>
           </div>
 
           {/* Refresh Button */}

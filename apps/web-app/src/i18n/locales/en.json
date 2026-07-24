@@ -2572,7 +2572,9 @@
       "selectLocationHint": "Select a location to view attendance",
       "noEntriesHint": "No entries found for this date and location",
       "autoApproved": "Auto-Approved",
-      "showingEntries": "Showing {{start}} to {{end}} of {{total}} entries"
+      "showingEntries": "Showing {{start}} to {{end}} of {{total}} entries",
+      "fromDate": "From date",
+      "toDate": "To date"
     },
     "reports": {
       "pickOneTitle": "No report selected",

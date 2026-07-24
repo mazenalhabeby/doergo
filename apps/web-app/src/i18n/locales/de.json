@@ -2572,7 +2572,9 @@
       "selectLocationHint": "Wählen Sie einen Standort, um die Anwesenheit anzuzeigen",
       "noEntriesHint": "Keine Einträge für dieses Datum und diesen Standort gefunden",
       "autoApproved": "Automatisch genehmigt",
-      "showingEntries": "{{start}} bis {{end}} von {{total}} Einträgen"
+      "showingEntries": "{{start}} bis {{end}} von {{total}} Einträgen",
+      "fromDate": "Von Datum",
+      "toDate": "Bis Datum"
     },
     "reports": {
       "pickOneTitle": "Kein Bericht ausgewählt",

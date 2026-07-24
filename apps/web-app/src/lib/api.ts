@@ -1970,6 +1970,8 @@ export const attendanceApi = {
   getLocationEntries: async (locationId: string, params?: AttendanceQueryParams) => {
     const endpoint = buildUrlWithQuery(`/attendance/locations/${locationId}/entries`, {
       date: params?.date,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
       search: params?.search,
       page: params?.page,
       limit: params?.limit,

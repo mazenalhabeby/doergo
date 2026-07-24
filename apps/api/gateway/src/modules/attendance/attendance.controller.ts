@@ -119,12 +119,16 @@ export class AttendanceController {
   @Get('locations/:id/entries')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get time entries for a location (admins, or members of that space)' })
-  @ApiQuery({ name: 'date', required: false, type: String, description: 'Date in ISO format (defaults to today)' })
+  @ApiQuery({ name: 'date', required: false, type: String, description: 'Single day (defaults to today) — ignored when startDate/endDate given' })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Range start (yyyy-MM-dd)' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: 'Range end (yyyy-MM-dd)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getLocationEntries(
     @Param('id') locationId: string,
     @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -136,6 +140,8 @@ export class AttendanceController {
       locationId,
       organizationId: req.user.organizationId,
       date,
+      startDate,
+      endDate,
       search,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -171,12 +177,16 @@ export class AttendanceController {
   @Get('all-entries')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get all time entries for the organization' })
-  @ApiQuery({ name: 'date', required: false, type: String, description: 'Date in ISO format (defaults to today)' })
+  @ApiQuery({ name: 'date', required: false, type: String, description: 'Single day (defaults to today) — ignored when startDate/endDate given' })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Range start (yyyy-MM-dd)' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: 'Range end (yyyy-MM-dd)' })
   @ApiQuery({ name: 'status', required: false, enum: ['CLOCKED_IN', 'CLOCKED_OUT', 'AUTO_OUT'] })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getAllEntries(
     @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
     @Query('page') page?: number,
@@ -188,6 +198,8 @@ export class AttendanceController {
     return this.attendanceService.getAllEntries({
       organizationId: req.user.organizationId,
       date,
+      startDate,
+      endDate,
       status,
       search,
       page: parsedPage,

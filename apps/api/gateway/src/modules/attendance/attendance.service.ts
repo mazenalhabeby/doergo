@@ -38,6 +38,8 @@ export class AttendanceService extends BaseGatewayService {
     locationId: string;
     organizationId: string;
     date?: string;
+    startDate?: string;
+    endDate?: string;
     search?: string;
     page?: number;
     limit?: number;
@@ -63,6 +65,8 @@ export class AttendanceService extends BaseGatewayService {
   async getAllEntries(data: {
     organizationId: string;
     date?: string;
+    startDate?: string;
+    endDate?: string;
     status?: string;
     search?: string;
     page?: number;

@@ -21,6 +21,7 @@ import {
   QUEUE_NAMES,
   OVERTIME_JOB_TYPES,
   buildSingleDayFilter,
+  buildDateRangeFilter,
   tierAllows,
   type PlanTier,
 } from '@hbcfield/shared';
@@ -612,6 +613,8 @@ export class AttendanceService {
     locationId: string;
     organizationId: string;
     date?: Date | string;
+    startDate?: Date | string;
+    endDate?: Date | string;
     search?: string;
     page?: number;
     limit?: number;
@@ -646,12 +649,12 @@ export class AttendanceService {
     const limit = data.limit ?? 50;
     const skip = (page - 1) * limit;
 
-    // Default to today if no date provided
-    const targetDate = data.date || new Date().toISOString();
-
+    // A startDate/endDate range takes precedence; otherwise a single day
+    // (defaulting to today when nothing is provided).
+    const range = buildDateRangeFilter(data.startDate, data.endDate);
     const where: any = {
       locationId: data.locationId,
-      clockInAt: buildSingleDayFilter(targetDate),
+      clockInAt: range ?? buildSingleDayFilter(data.date || new Date().toISOString()),
     };
 
     // Name / email search
@@ -995,6 +998,8 @@ export class AttendanceService {
   async getAllEntries(data: {
     organizationId: string;
     date?: Date | string;
+    startDate?: Date | string;
+    endDate?: Date | string;
     status?: string;
     search?: string;
     page?: number;
@@ -1008,8 +1013,11 @@ export class AttendanceService {
       organizationId: data.organizationId,
     };
 
-    // Date filter
-    if (data.date) {
+    // Date filter — a startDate/endDate range takes precedence over a single day.
+    const range = buildDateRangeFilter(data.startDate, data.endDate);
+    if (range) {
+      where.clockInAt = range;
+    } else if (data.date) {
       where.clockInAt = buildSingleDayFilter(data.date);
     }
 

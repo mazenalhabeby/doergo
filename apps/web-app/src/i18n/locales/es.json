@@ -2572,7 +2572,9 @@
       "selectLocationHint": "Selecciona una ubicación para ver la asistencia",
       "noEntriesHint": "No se encontraron registros para esta fecha y ubicación",
       "autoApproved": "Aprobado automáticamente",
-      "showingEntries": "Mostrando {{start}} a {{end}} de {{total}} registros"
+      "showingEntries": "Mostrando {{start}} a {{end}} de {{total}} registros",
+      "fromDate": "Fecha desde",
+      "toDate": "Fecha hasta"
     },
     "reports": {
       "pickOneTitle": "Ningún informe seleccionado",

@@ -36,7 +36,11 @@ export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedLocationId, setSelectedLocationId] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  // Date filter is a From–To range (defaults to a single day: today→today).
   const [selectedDate, setSelectedDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd")
+  )
+  const [endDate, setEndDate] = useState<string>(
     format(new Date(), "yyyy-MM-dd")
   )
   const [page, setPage] = useState(1)
@@ -77,12 +81,16 @@ export default function AttendancePage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["attendance", selectedLocationId, selectedStatus, selectedDate, debouncedSearch, page, limit],
+    queryKey: ["attendance", selectedLocationId, selectedStatus, selectedDate, endDate, debouncedSearch, page, limit],
     queryFn: () => {
+      // Guard against an inverted range (To before From).
+      const rangeStart = endDate < selectedDate ? endDate : selectedDate
+      const rangeEnd = endDate < selectedDate ? selectedDate : endDate
       if (selectedLocationId === "all") {
         // Use getAllEntries for organization-wide view
         return attendanceApi.getAllEntries({
-          date: selectedDate,
+          startDate: rangeStart,
+          endDate: rangeEnd,
           status: selectedStatus !== "all" ? selectedStatus as TimeEntryStatus : undefined,
           search: debouncedSearch || undefined,
           page,
@@ -90,7 +98,8 @@ export default function AttendancePage() {
         })
       }
       return attendanceApi.getLocationEntries(selectedLocationId, {
-        date: selectedDate,
+        startDate: rangeStart,
+        endDate: rangeEnd,
         search: debouncedSearch || undefined,
         page,
         limit,
@@ -327,6 +336,7 @@ export default function AttendancePage() {
               selectedLocationId={selectedLocationId} setSelectedLocationId={setSelectedLocationId}
               selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus}
               selectedDate={selectedDate} setSelectedDate={setSelectedDate}
+              endDate={endDate} setEndDate={setEndDate}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               page={page} setPage={setPage} limit={limit} locations={locations}
               schedulerInfo={schedulerInfo} triggerAutoClockOut={triggerAutoClockOut} isAdmin={isAdmin}
