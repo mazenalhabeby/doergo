@@ -114,14 +114,17 @@ export function TaskProgressCard({
     return null
   })()
 
-  // Resolve the primary person: lead from assignees, or single assignee, or assignedTo
+  // Resolve the primary person: the lead, else the first assignee, else the
+  // legacy single assignee (assignedTo).
   const lead = assignees.find(a => a.role === "LEAD")
-  const members = assignees.filter(a => a.role === "MEMBER")
-  const primaryUser: AssignedUser | null = lead
-    ? { id: lead.user.id, firstName: lead.user.firstName, lastName: lead.user.lastName, avatarUrl: lead.user.avatarUrl, email: (assignedTo?.id === lead.user.id ? assignedTo?.email : undefined), phone: (assignedTo?.id === lead.user.id ? assignedTo?.phone : undefined) }
-    : assignees.length === 1
-      ? { id: assignees[0]!.user.id, firstName: assignees[0]!.user.firstName, lastName: assignees[0]!.user.lastName, avatarUrl: assignees[0]!.user.avatarUrl, email: assignedTo?.email, phone: assignedTo?.phone }
-      : assignedTo
+  const primary = lead ?? assignees[0]
+  const primaryUser: AssignedUser | null = primary
+    ? { id: primary.user.id, firstName: primary.user.firstName, lastName: primary.user.lastName, avatarUrl: primary.user.avatarUrl, email: (assignedTo?.id === primary.user.id ? assignedTo?.email : undefined), phone: (assignedTo?.id === primary.user.id ? assignedTo?.phone : undefined) }
+    : assignedTo
+  // Everyone else shown as stacked avatars — EXCLUDE the primary so the same
+  // person is never drawn twice (the bug: a lone MEMBER was both the primary
+  // avatar and a stacked avatar).
+  const members = assignees.filter(a => a.user.id !== primary?.user.id)
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden mb-4">

@@ -80,8 +80,17 @@ export class ReportsService {
       throw new NotFoundException('Task not found');
     }
 
-    // Only assigned technician can complete
-    if (task.assignedToId !== data.userId) {
+    // Only an assigned user can complete. Recognise BOTH the LEAD (legacy
+    // assignedToId) and multi-assignee MEMBER rows (task_assignees) — mirrors
+    // the authorization in TasksService.updateStatus. Without the second check,
+    // a member assigned via the multi-assignee system is wrongly rejected.
+    const isAssignedUser =
+      task.assignedToId === data.userId ||
+      !!(await this.prisma.taskAssignee.findFirst({
+        where: { taskId: task.id, userId: data.userId },
+        select: { id: true },
+      }));
+    if (!isAssignedUser) {
       throw new ForbiddenException('You can only complete tasks assigned to you');
     }
 
@@ -194,7 +203,7 @@ export class ReportsService {
     }
 
     // Authorization check
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
 
     const report = await this.prisma.serviceReport.findUnique({
       where: { taskId: data.taskId },
@@ -614,7 +623,7 @@ export class ReportsService {
   /**
    * Check if user has access to a task
    */
-  private checkTaskAccess(
+  private async checkTaskAccess(
     task: any,
     userId: string,
     userRole: string,
@@ -635,8 +644,16 @@ export class ReportsService {
       }
       return;
     }
-    // Otherwise: only tasks in their org assigned to them.
-    if (task.organizationId !== organizationId || task.assignedToId !== userId) {
+    // Otherwise: only tasks in their org assigned to them — recognise BOTH the
+    // LEAD (legacy assignedToId) and multi-assignee MEMBER rows (task_assignees),
+    // so a member who completed the task can still edit its report/parts.
+    const isAssignedUser =
+      task.assignedToId === userId ||
+      !!(await this.prisma.taskAssignee.findFirst({
+        where: { taskId: task.id, userId },
+        select: { id: true },
+      }));
+    if (task.organizationId !== organizationId || !isAssignedUser) {
       throw new ForbiddenException('Access denied');
     }
   }
