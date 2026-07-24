@@ -47,28 +47,6 @@ function ButtonSkeleton({ className }: SkeletonProps) {
   return <Shimmer className={cn('w-full h-11 rounded-lg', className)} />;
 }
 
-function DividerSkeleton() {
-  return (
-    <div className="relative my-5">
-      <div className="absolute inset-0 flex items-center">
-        <Shimmer className="w-full h-px" />
-      </div>
-      <div className="relative flex justify-center">
-        <Shimmer className="w-28 h-4 rounded bg-white" />
-      </div>
-    </div>
-  );
-}
-
-function SocialButtonsSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      <Shimmer className="h-11 rounded-lg" />
-      <Shimmer className="h-11 rounded-lg" />
-    </div>
-  );
-}
-
 function TabSwitcherSkeleton() {
   return (
     <div className="flex md:hidden bg-slate-100 p-1 rounded-xl mb-6">
@@ -95,8 +73,6 @@ function MobileAuthSkeleton() {
           <FormFieldSkeleton />
 
           <ButtonSkeleton />
-          <DividerSkeleton />
-          <SocialButtonsSkeleton />
         </div>
       </div>
     </div>
@@ -153,8 +129,6 @@ function FormSkeleton() {
         </div>
 
         <ButtonSkeleton />
-        <DividerSkeleton />
-        <SocialButtonsSkeleton />
       </div>
     </div>
   );

@@ -7,4 +7,3 @@ export { MobileHeader } from './mobile-header';
 export { MobileTabSwitcher } from './mobile-tab-switcher';
 export { OverlayPanel } from './overlay-panel';
 export { RegisterForm } from './register-form';
-export { SocialLoginButtons } from './social-login-buttons';

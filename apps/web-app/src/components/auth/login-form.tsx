@@ -10,7 +10,6 @@ import { Button, Input, Label, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import { loginSchema } from '@/lib/validation';
-import { SocialLoginButtons } from './social-login-buttons';
 
 interface LoginFormProps {
   isActive: boolean;
@@ -135,14 +134,6 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
             {isLoading ? <Spinner size="sm" /> : t('auth.login.submitButton')}
           </Button>
         </div>
-
-        {/* Social Login */}
-        <SocialLoginButtons
-          isLoading={isLoading}
-          isActive={isActive}
-          isMobile={isMobile}
-          transitionDelay={getTransitionDelay(0.35)}
-        />
       </form>
     </div>
   );

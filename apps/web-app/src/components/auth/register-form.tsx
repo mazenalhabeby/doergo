@@ -11,7 +11,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { authApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { registerSchema, passwordRequirements, type RegisterFormData } from '@/lib/validation';
-import { SocialLoginButtons } from './social-login-buttons';
 
 interface RegisterFormProps {
   isActive: boolean;
@@ -221,14 +220,6 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
             {isLoading ? <Spinner size="sm" /> : t('auth.register.submitButton')}
           </Button>
         </div>
-
-        {/* Social Login */}
-        <SocialLoginButtons
-          isLoading={isLoading}
-          isActive={isActive}
-          isMobile={isMobile}
-          transitionDelay={getTransitionDelay(0.4)}
-        />
       </form>
     </div>
   );
