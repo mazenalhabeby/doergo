@@ -2,8 +2,9 @@
 
 import { useTranslation } from 'react-i18next';
 
-// The app is live on Google Play; Apple is in review ("coming soon").
+// The app is live on both stores.
 const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.hbcfield.app';
+const APP_STORE_URL = 'https://apps.apple.com/app/id6762745260';
 
 /** Official multi-colour Google Play triangle. */
 function GooglePlayGlyph({ className = '' }: { className?: string }) {
@@ -54,25 +55,22 @@ export function StoreBadges({ className = '', size = 'md' }: { className?: strin
         </span>
       </a>
 
-      {/* App Store — coming soon */}
-      <div className="relative">
-        <span
-          aria-disabled="true"
-          aria-label={t('home.field.appStoreComingSoon', 'App Store — coming soon')}
-          className={`${badge} cursor-default select-none opacity-55`}
-        >
-          <AppleGlyph className={glyph} />
-          <span className="flex flex-col leading-none">
-            <span className={`${smallTxt} font-medium uppercase tracking-[0.06em] text-white/75`}>
-              {t('home.field.downloadOnThe', 'Download on the')}
-            </span>
-            <span className={`${nameTxt} font-semibold leading-none`}>App Store</span>
+      {/* App Store — live */}
+      <a
+        href={APP_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={t('home.field.getOnAppStore', 'Download on the App Store')}
+        className={`${badge} transition-transform duration-200 hover:-translate-y-0.5 hover:border-white/30`}
+      >
+        <AppleGlyph className={glyph} />
+        <span className="flex flex-col leading-none">
+          <span className={`${smallTxt} font-medium uppercase tracking-[0.06em] text-white/75`}>
+            {t('home.field.downloadOnThe', 'Download on the')}
           </span>
+          <span className={`${nameTxt} font-semibold leading-none`}>App Store</span>
         </span>
-        <span className={`absolute -right-2 -top-2 rounded-full bg-emerald-500 px-2 py-[3px] font-semibold uppercase tracking-[0.08em] text-white shadow-md ${sm ? 'text-[8px]' : 'text-[9px]'}`}>
-          {t('home.field.comingSoon', 'Coming soon')}
-        </span>
-      </div>
+      </a>
     </div>
   );
 }

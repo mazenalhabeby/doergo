@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
-import { AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowDown, ArrowUpRight, ArrowUp, Check, Zap, Sun, Moon } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
 import { LanguageSwitcher } from '@/components/language-switcher';
@@ -20,7 +19,6 @@ import { usePrefersReducedMotion } from './_home/use-reduced-motion';
 import { useLenis } from './_home/use-lenis';
 import { scrollToHash } from './_home/lenis-bus';
 import { useReveal } from './_home/use-reveal';
-import { LoadingScreen } from './_home/LoadingScreen';
 import { asArray } from './_home/i18n-array';
 
 /* ═══════════════════════════════════════════════════════════
@@ -132,17 +130,6 @@ export default function Home() {
     if (!isLoading && isAuthenticated) router.push('/dashboard');
   }, [isLoading, isAuthenticated, router]);
 
-  const [showIntro, setShowIntro] = useState(true);
-  const introDecided = useRef(false);
-  useEffect(() => {
-    // guard against React StrictMode running this effect twice in dev — without
-    // it, the 1st run sets the flag and the 2nd run sees it and hides the loader.
-    if (introDecided.current) return;
-    introDecided.current = true;
-    if (sessionStorage.getItem('hbc_intro_seen')) { setShowIntro(false); return; }
-    sessionStorage.setItem('hbc_intro_seen', '1');
-  }, []);
-
   // Navbar gets a frosted background once you scroll off the hero, so the links
   // stay legible over content instead of floating on nothing.
   const [scrolled, setScrolled] = useState(false);
@@ -198,10 +185,6 @@ export default function Home() {
         }
       `}</style>
       <noscript><style>{`.reveal{opacity:1!important;transform:none!important}.lr-in{transform:none!important}`}</style></noscript>
-
-      <AnimatePresence>
-        {showIntro && <LoadingScreen reduced={reduced} onDone={() => setShowIntro(false)} />}
-      </AnimatePresence>
 
       {isLoading ? (
         <div className="flex min-h-screen items-center justify-center bg-background">
