@@ -2853,6 +2853,20 @@
       "approveFailed": "Genehmigung fehlgeschlagen",
       "entryRejected": "Eintrag abgelehnt",
       "rejectFailed": "Ablehnung fehlgeschlagen"
+    },
+    "editEntry": {
+      "button": "Eintrag bearbeiten",
+      "title": "Anwesenheitseintrag bearbeiten",
+      "description": "Ein-/Ausstempeln für {{name}} korrigieren. Die ursprünglichen Werte bleiben zur Prüfung erhalten.",
+      "notes": "Notizen",
+      "notesPlaceholder": "Optionale Notizen",
+      "reason": "Grund der Änderung",
+      "reasonPlaceholder": "z. B. Ausstempeln vergessen",
+      "reasonHint": "Erforderlich – wird im Prüfprotokoll erfasst.",
+      "clockOutBeforeIn": "Ausstempeln muss nach dem Einstempeln liegen.",
+      "save": "Änderungen speichern",
+      "success": "Anwesenheitseintrag aktualisiert.",
+      "error": "Eintrag konnte nicht aktualisiert werden."
     }
   },
   "auditLog": {

@@ -2853,6 +2853,20 @@
       "approveFailed": "Failed to approve",
       "entryRejected": "Entry rejected",
       "rejectFailed": "Failed to reject"
+    },
+    "editEntry": {
+      "button": "Edit entry",
+      "title": "Edit attendance entry",
+      "description": "Correct the clock-in/out for {{name}}. The original values are kept for audit.",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes",
+      "reason": "Reason for change",
+      "reasonPlaceholder": "e.g. Forgot to clock out",
+      "reasonHint": "Required — recorded in the audit trail.",
+      "clockOutBeforeIn": "Clock-out must be after clock-in.",
+      "save": "Save changes",
+      "success": "Attendance entry updated.",
+      "error": "Could not update the entry."
     }
   },
   "auditLog": {

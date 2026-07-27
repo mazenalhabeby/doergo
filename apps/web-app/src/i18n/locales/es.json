@@ -2853,6 +2853,20 @@
       "approveFailed": "No se pudo aprobar",
       "entryRejected": "Registro rechazado",
       "rejectFailed": "No se pudo rechazar"
+    },
+    "editEntry": {
+      "button": "Editar registro",
+      "title": "Editar registro de asistencia",
+      "description": "Corrige la entrada/salida de {{name}}. Se conservan los valores originales para auditoría.",
+      "notes": "Notas",
+      "notesPlaceholder": "Notas opcionales",
+      "reason": "Motivo del cambio",
+      "reasonPlaceholder": "p. ej. Olvidó fichar la salida",
+      "reasonHint": "Obligatorio: se registra en el historial de auditoría.",
+      "clockOutBeforeIn": "La salida debe ser posterior a la entrada.",
+      "save": "Guardar cambios",
+      "success": "Registro de asistencia actualizado.",
+      "error": "No se pudo actualizar el registro."
     }
   },
   "auditLog": {

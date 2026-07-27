@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
+import { EditEntryDialog } from "./edit-entry-dialog"
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation()
@@ -469,6 +470,7 @@ export function TrackingTab({
                     <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
+                    {isAdmin && <TableHead className="w-10 text-right" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -563,6 +565,11 @@ export function TrackingTab({
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <EditEntryDialog entry={entry} />
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

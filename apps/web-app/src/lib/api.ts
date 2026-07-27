@@ -2032,6 +2032,22 @@ export const attendanceApi = {
     };
   },
 
+  // Admin: correct a time entry (clock-in/out and/or notes). A reason is
+  // required and the original values are preserved for audit server-side.
+  editEntry: async (
+    entryId: string,
+    input: { clockInAt?: string; clockOutAt?: string; notes?: string; reason: string }
+  ) => {
+    const response = await api.put<{ success: boolean; data: unknown }>(
+      `/attendance/entries/${entryId}/edit`,
+      input
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
   // Get all time entries for the organization (admin view)
   getAllEntries: async (params?: AttendanceQueryParams) => {
     const endpoint = buildUrlWithQuery('/attendance/all-entries', params ?? {});
