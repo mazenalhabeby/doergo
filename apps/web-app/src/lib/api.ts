@@ -2577,6 +2577,26 @@ export const employeesApi = {
     return response.data?.data;
   },
 
+  // Admin: add an already-approved day off for an employee (any date, no
+  // separate approval step).
+  addTimeOff: async (data: {
+    technicianId: string;
+    startDate: string;
+    endDate: string;
+    reason?: string;
+  }) => {
+    const response = await api.post<{
+      success: boolean;
+      data: TimeOffRequest;
+    }>('/employees/time-off/manual', data);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data;
+  },
+
   // Approve or reject time-off request
   approveTimeOff: async (timeOffId: string, approved: boolean, rejectionReason?: string) => {
     const response = await api.patch<{

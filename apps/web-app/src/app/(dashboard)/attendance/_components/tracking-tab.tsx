@@ -8,10 +8,19 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight } from "lucide-react"
+import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
 import { EditEntryDialog } from "./edit-entry-dialog"
+
+// Approved time-off shown inline as a "day off" row in the tracking table.
+export type DayOffRow = {
+  id: string
+  startDate: string
+  endDate: string
+  reason?: string | null
+  technician?: { id: string; firstName: string; lastName: string } | null
+}
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation()
@@ -76,6 +85,7 @@ interface TrackingTabProps {
   page: number
   setPage: React.Dispatch<React.SetStateAction<number>>
   limit: number
+  daysOff: DayOffRow[]
   locations: CompanyLocation[]
   schedulerInfo?: any
   triggerAutoClockOut: { mutate: (type: "hourly" | "midnight") => void; isPending: boolean }
@@ -87,7 +97,7 @@ export function TrackingTab({
   isError, error, refetch, meta,
   selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus,
   selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
-  page, setPage, limit, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
+  page, setPage, limit, daysOff, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
 }: TrackingTabProps) {
   const { t } = useTranslation()
 
@@ -446,7 +456,7 @@ export function TrackingTab({
                 {t("common.retry")}
               </Button>
             </div>
-          ) : filteredEntries.length === 0 ? (
+          ) : filteredEntries.length === 0 && daysOff.length === 0 ? (
             <div className="p-12 text-center">
               <Clock className="size-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground">
@@ -474,6 +484,68 @@ export function TrackingTab({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* Approved days off in range — rendered inline above clock entries */}
+                  {daysOff.map((off) => {
+                    const rs = toDate(off.startDate)
+                    const re = toDate(off.endDate)
+                    const single = format(rs, "yyyy-MM-dd") === format(re, "yyyy-MM-dd")
+                    const days = Math.max(1, Math.round((re.getTime() - rs.getTime()) / 86_400_000) + 1)
+                    return (
+                      <TableRow key={`off-${off.id}`} className="bg-violet-500/[0.06] hover:bg-violet-500/10">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <UserAvatar
+                              firstName={off.technician?.firstName}
+                              lastName={off.technician?.lastName}
+                              seed={off.technician?.id}
+                              size="sm"
+                            />
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {off.technician?.firstName} {off.technician?.lastName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{t("attendance.dayOff.label")}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-600 dark:text-violet-300">
+                            <CalendarOff className="size-3.5" />
+                            {t("attendance.dayOff.label")}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-foreground">
+                            {single ? format(rs, "MMM d") : `${format(rs, "MMM d")} – ${format(re, "MMM d")}`}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground">—</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {days} {days === 1 ? t("attendance.dayOff.day") : t("attendance.dayOff.days")}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
+                            <CheckCircle2 className="size-3.5" />
+                            {t("common.approved")}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {off.reason ? (
+                            <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={off.reason}>
+                              {off.reason}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        {isAdmin && <TableCell />}
+                      </TableRow>
+                    )
+                  })}
                   {filteredEntries.map((entry: TimeEntry) => (
                     <TableRow key={entry.id} className="hover:bg-accent/50">
                       <TableCell>

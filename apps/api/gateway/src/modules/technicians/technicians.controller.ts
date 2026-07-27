@@ -164,6 +164,28 @@ export class EmployeesController {
     );
   }
 
+  @Post('time-off/manual')
+  @ApiOperation({ summary: 'Admin: add an already-approved day off for an employee' })
+  @RequirePermission('canManageUsers')
+  async addTimeOff(
+    @Body() body: { technicianId: string; startDate: string; endDate: string; reason?: string },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'add_time_off' },
+        {
+          editorId: user.id,
+          organizationId: user.organizationId,
+          technicianId: body.technicianId,
+          startDate: body.startDate,
+          endDate: body.endDate,
+          reason: body.reason,
+        },
+      ),
+    );
+  }
+
   @Post('time-off/bulk-approve')
   @ApiOperation({ summary: 'Bulk approve or reject time-off requests' })
   @RequirePermission('canManageUsers')

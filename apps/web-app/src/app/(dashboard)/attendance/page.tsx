@@ -7,11 +7,12 @@ import { format } from "date-fns"
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
-import { attendanceApi, locationsApi, type TimeEntry, type TimeEntryStatus, type Break, type BreakType } from "@/lib/api"
+import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEntryStatus, type Break, type BreakType } from "@/lib/api"
 import { ApprovalsTab } from "./_components/approvals-tab"
 import { BreaksTab } from "./_components/breaks-tab"
 import { TrackingTab } from "./_components/tracking-tab"
 import { AddAttendanceDialog } from "../employees/[id]/_components/add-attendance-dialog"
+import { AddDayOffDialog } from "./_components/add-dayoff-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
 
@@ -57,6 +58,10 @@ export default function AttendancePage() {
   }, [searchQuery])
   const limit = 20
 
+  // Normalized date range (guards against an inverted To < From).
+  const rangeStart = endDate < selectedDate ? endDate : selectedDate
+  const rangeEnd = endDate < selectedDate ? selectedDate : endDate
+
   // Reports states
   // reportType and reportLocationId moved to ReportsTab component
 
@@ -83,9 +88,6 @@ export default function AttendancePage() {
   } = useQuery({
     queryKey: ["attendance", selectedLocationId, selectedStatus, selectedDate, endDate, debouncedSearch, page, limit],
     queryFn: () => {
-      // Guard against an inverted range (To before From).
-      const rangeStart = endDate < selectedDate ? endDate : selectedDate
-      const rangeEnd = endDate < selectedDate ? selectedDate : endDate
       if (selectedLocationId === "all") {
         // Use getAllEntries for organization-wide view
         return attendanceApi.getAllEntries({
@@ -110,6 +112,40 @@ export default function AttendancePage() {
     staleTime: 30_000,
     refetchInterval: activeTab === "tracking" ? 30_000 : false, // live refresh on the Tracking tab
   })
+
+  // Approved time-off, shown as inline "day off" rows in the tracking table.
+  const { data: orgTimeOff } = useQuery({
+    queryKey: ["orgTimeOff", "APPROVED"],
+    queryFn: () => employeesApi.getOrgTimeOff("APPROVED"),
+    enabled: canAccess && activeTab === "tracking",
+    staleTime: 60_000,
+  })
+
+  // Day-off rows for the current view: overlapping the selected range, matching
+  // the name search. Only in the org-wide view (time off isn't site-scoped) and
+  // only on page 1 so they aren't repeated across paginated clock entries.
+  const daysOff = useMemo(() => {
+    if (selectedLocationId !== "all" || page !== 1) return []
+    const q = debouncedSearch.trim().toLowerCase()
+    return (orgTimeOff ?? [])
+      .filter((r) => {
+        const rs = r.startDate.slice(0, 10)
+        const re = r.endDate.slice(0, 10)
+        if (!(rs <= rangeEnd && re >= rangeStart)) return false
+        if (q) {
+          const name = `${r.technician?.firstName ?? ""} ${r.technician?.lastName ?? ""}`.toLowerCase()
+          if (!name.includes(q)) return false
+        }
+        return true
+      })
+      .map((r) => ({
+        id: r.id,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        reason: r.reason,
+        technician: r.technician,
+      }))
+  }, [orgTimeOff, selectedLocationId, page, rangeStart, rangeEnd, debouncedSearch])
 
   // Fetch scheduler info (ADMIN only)
   const { data: schedulerInfo } = useQuery({
@@ -286,7 +322,12 @@ export default function AttendancePage() {
                 {t('attendance.management.subtitle')}
               </p>
             </div>
-            {isAdmin && <AddAttendanceDialog />}
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                <AddDayOffDialog />
+                <AddAttendanceDialog />
+              </div>
+            )}
           </div>
         </div>
 
@@ -338,7 +379,7 @@ export default function AttendancePage() {
               selectedDate={selectedDate} setSelectedDate={setSelectedDate}
               endDate={endDate} setEndDate={setEndDate}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-              page={page} setPage={setPage} limit={limit} locations={locations}
+              page={page} setPage={setPage} limit={limit} daysOff={daysOff} locations={locations}
               schedulerInfo={schedulerInfo} triggerAutoClockOut={triggerAutoClockOut} isAdmin={isAdmin}
             />
           </TabsContent>

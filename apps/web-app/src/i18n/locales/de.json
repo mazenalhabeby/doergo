@@ -2867,6 +2867,33 @@
       "save": "Änderungen speichern",
       "success": "Anwesenheitseintrag aktualisiert.",
       "error": "Eintrag konnte nicht aktualisiert werden."
+    },
+    "addDayOff": {
+      "button": "Freien Tag hinzufügen",
+      "title": "Freien Tag hinzufügen",
+      "description": "Einen Mitarbeiter für einen Tag oder Zeitraum als abwesend (genehmigt) markieren.",
+      "employee": "Mitarbeiter",
+      "employeePlaceholder": "Mitarbeiter auswählen",
+      "startDate": "Von",
+      "endDate": "Bis",
+      "datesHint": "„Bis“ leer lassen für einen einzelnen Tag.",
+      "reason": "Grund",
+      "reasonPlaceholder": "z. B. Urlaub",
+      "reasons": {
+        "vacation": "Urlaub",
+        "sick": "Krankheit",
+        "personal": "Persönlich",
+        "holiday": "Feiertag",
+        "unpaid": "Unbezahlter Urlaub"
+      },
+      "save": "Freien Tag hinzufügen",
+      "success": "Freier Tag hinzugefügt.",
+      "error": "Freier Tag konnte nicht hinzugefügt werden."
+    },
+    "dayOff": {
+      "label": "Frei",
+      "day": "Tag",
+      "days": "Tage"
     }
   },
   "auditLog": {

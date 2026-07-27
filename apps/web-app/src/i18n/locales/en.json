@@ -2867,6 +2867,33 @@
       "save": "Save changes",
       "success": "Attendance entry updated.",
       "error": "Could not update the entry."
+    },
+    "addDayOff": {
+      "button": "Add day off",
+      "title": "Add a day off",
+      "description": "Mark an employee as off (approved) for a day or a range.",
+      "employee": "Employee",
+      "employeePlaceholder": "Select an employee",
+      "startDate": "From",
+      "endDate": "To",
+      "datesHint": "Leave 'To' empty for a single day.",
+      "reason": "Reason",
+      "reasonPlaceholder": "e.g. Vacation",
+      "reasons": {
+        "vacation": "Vacation",
+        "sick": "Sick leave",
+        "personal": "Personal",
+        "holiday": "Public holiday",
+        "unpaid": "Unpaid leave"
+      },
+      "save": "Add day off",
+      "success": "Day off added.",
+      "error": "Could not add the day off."
+    },
+    "dayOff": {
+      "label": "Day off",
+      "day": "day",
+      "days": "days"
     }
   },
   "auditLog": {

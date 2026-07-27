@@ -2867,6 +2867,33 @@
       "save": "Guardar cambios",
       "success": "Registro de asistencia actualizado.",
       "error": "No se pudo actualizar el registro."
+    },
+    "addDayOff": {
+      "button": "Añadir día libre",
+      "title": "Añadir un día libre",
+      "description": "Marca a un empleado como ausente (aprobado) por un día o un rango.",
+      "employee": "Empleado",
+      "employeePlaceholder": "Selecciona un empleado",
+      "startDate": "Desde",
+      "endDate": "Hasta",
+      "datesHint": "Deja 'Hasta' vacío para un solo día.",
+      "reason": "Motivo",
+      "reasonPlaceholder": "p. ej. Vacaciones",
+      "reasons": {
+        "vacation": "Vacaciones",
+        "sick": "Baja por enfermedad",
+        "personal": "Personal",
+        "holiday": "Festivo",
+        "unpaid": "Permiso sin sueldo"
+      },
+      "save": "Añadir día libre",
+      "success": "Día libre añadido.",
+      "error": "No se pudo añadir el día libre."
+    },
+    "dayOff": {
+      "label": "Día libre",
+      "day": "día",
+      "days": "días"
     }
   },
   "auditLog": {

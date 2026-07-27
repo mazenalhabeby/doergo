@@ -487,6 +487,64 @@ export class TechniciansService {
   }
 
   /**
+   * Admin: add an already-APPROVED day off for an employee. Unlike
+   * requestTimeOff (employee self-service), this allows any date (incl. past,
+   * for corrections/backfill) and needs no separate approval step.
+   */
+  async addTimeOff(data: {
+    editorId: string;
+    organizationId: string;
+    technicianId: string;
+    startDate: string; // "YYYY-MM-DD"
+    endDate: string; // "YYYY-MM-DD" (inclusive)
+    reason?: string;
+  }) {
+    const technician = await this.prisma.user.findFirst({
+      where: { id: data.technicianId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!technician) {
+      throw new NotFoundException('Employee not found in organization');
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)) {
+      throw new BadRequestException('Invalid date');
+    }
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    if (start > end) {
+      throw new BadRequestException('Start date must be before or equal to end date');
+    }
+
+    // Block overlapping the same employee's existing time off.
+    const overlap = await this.prisma.timeOff.findFirst({
+      where: {
+        technicianId: data.technicianId,
+        status: { in: ['PENDING', 'APPROVED'] },
+        startDate: { lte: end },
+        endDate: { gte: start },
+      },
+      select: { id: true },
+    });
+    if (overlap) {
+      throw new BadRequestException('This overlaps an existing time-off entry for the employee');
+    }
+
+    const timeOff = await this.prisma.timeOff.create({
+      data: {
+        technicianId: data.technicianId,
+        startDate: start,
+        endDate: end,
+        reason: data.reason?.trim() || null,
+        status: 'APPROVED',
+        approvedById: data.editorId,
+        approvedAt: new Date(),
+      },
+    });
+
+    return success(timeOff, 'Day off added');
+  }
+
+  /**
    * Get time-off requests for a technician
    */
   async getTimeOff(dto: GetTimeOffDto) {

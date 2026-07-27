@@ -81,6 +81,21 @@ export class TechniciansController {
     return this.techniciansService.cancelTimeOff(data);
   }
 
+  @MessagePattern({ cmd: 'add_time_off' })
+  async addTimeOff(
+    @Payload()
+    data: {
+      editorId: string;
+      organizationId: string;
+      technicianId: string;
+      startDate: string;
+      endDate: string;
+      reason?: string;
+    },
+  ) {
+    return this.techniciansService.addTimeOff(data);
+  }
+
   // ========================================================================
   // AVAILABILITY QUERIES
   // ========================================================================
