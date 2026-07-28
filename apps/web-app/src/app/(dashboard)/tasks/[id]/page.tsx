@@ -237,6 +237,7 @@ export default function TaskDetailPage({
 
       <div className="p-8 max-w-7xl mx-auto">
         {/* ─── Header ────────────────────────────────────────────────── */}
+        <div data-tour="task-header">
         <TaskDetailHeader
           task={task}
           user={user}
@@ -255,8 +256,10 @@ export default function TaskDetailPage({
           onCancelTask={() => deleteMutation.mutate()}
           isStatusChanging={statusChangeMutation.isPending}
         />
+        </div>
 
         {/* ─── Progress Card — always visible ─────────────────────── */}
+        <div data-tour="task-progress">
         <TaskProgressCard
           taskId={id}
           assignees={task.assignees || []}
@@ -269,50 +272,62 @@ export default function TaskDetailPage({
           routeDistance={task.routeDistance}
           workflowStatuses={hasWorkflow ? workflowStatuses : undefined}
         />
+        </div>
 
         {/* ─── Two-panel layout ──────────────────────────────────────── */}
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Left panel — scrollable main content */}
           <div className="flex-1 min-w-0 space-y-4">
             {/* Description — always visible */}
+            <div data-tour="task-description">
             <DescriptionSection
               description={task.description}
               canEdit={canEdit}
               onSave={(v) => handleFieldSave("description", v)}
             />
+            </div>
 
             {/* Subtasks — module: subtasks */}
             {hasModule("subtasks") && (
+              <div data-tour="task-subtasks">
               <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={task.subtasks?.length || task._count?.subtasks || 0}>
                 <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} />
               </CollapsibleSection>
+              </div>
             )}
 
             {/* Checklist — module: checklists */}
             {hasModule("checklists") && (checklistTotal > 0 || !isCanceled) && (
+              <div data-tour="task-checklist">
               <CollapsibleSection id="checklist" icon={ListChecks} title={t("tasks.sections.checklist")} count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : 0}>
                 <ChecklistSection taskId={id} items={task.checklistItems || []} />
               </CollapsibleSection>
+              </div>
             )}
 
             {/* Attachments — module: attachments */}
             {hasModule("attachments") && (
+              <div data-tour="task-attachments">
               <CollapsibleSection id="attachments" icon={Paperclip} title={t("tasks.sections.attachments")}>
                 <AttachmentsSection taskId={id} />
               </CollapsibleSection>
+              </div>
             )}
 
             {/* Dependencies — module: dependencies */}
             {hasModule("dependencies") && (
+              <div data-tour="task-dependencies">
               <CollapsibleSection id="dependencies" icon={Link2} title={t("tasks.sections.dependencies")} count={depCount || undefined}>
                 <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} />
               </CollapsibleSection>
+              </div>
             )}
 
             {/* Custom Fields — type-scoped; self-hides when the task type has none */}
             <CustomFieldsSection taskId={id} />
 
             {/* Comments — always visible */}
+            <div data-tour="task-comments">
             <CollapsibleSection id="comments" icon={MessageCircle} title={t("tasks.comments.title")} count={comments.length || undefined}>
               <CommentsSection
                 comments={comments}
@@ -322,29 +337,36 @@ export default function TaskDetailPage({
                 isSubmitting={commentMutation.isPending}
               />
             </CollapsibleSection>
+            </div>
 
             {/* Activity — always visible */}
+            <div data-tour="task-activity">
             <CollapsibleSection id="activity" icon={Clock} title={t("tasks.sections.activity")}>
               <ActivitySection taskId={id} />
             </CollapsibleSection>
+            </div>
 
             {/* Service Report — module: service_reports + must be completed */}
             {hasModule("service_reports") && (isCompleted || task.status === "CLOSED") && (
+              <div data-tour="task-service-report">
               <CollapsibleSection id="service-report" icon={FileText} title={t("tasks.sections.serviceReport")}>
                 <ServiceReportSection taskId={id} taskStatus={task.status} />
               </CollapsibleSection>
+              </div>
             )}
 
             {/* Route Tracking — module: tracking + role-gated */}
             {hasModule("tracking") && (isAdmin || isDispatcher) && (
+              <div data-tour="task-route-tracking">
               <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>
                 <RouteTrackingSection routeData={routeData} isLoading={loadingRoute} hasAssignee={hasAssignee} />
               </CollapsibleSection>
+              </div>
             )}
           </div>
 
           {/* Right sidebar — sticky */}
-          <div className="w-full lg:w-[35%] lg:shrink-0 lg:sticky lg:top-6">
+          <div data-tour="task-sidebar" className="w-full lg:w-[35%] lg:shrink-0 lg:sticky lg:top-6">
             <TaskDetailSidebar
               task={task}
               canEdit={canEdit}

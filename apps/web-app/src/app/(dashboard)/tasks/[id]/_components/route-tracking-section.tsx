@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useTimeFormat } from "@/hooks"
 import dynamic from "next/dynamic"
 import {
   Route,
@@ -106,6 +107,7 @@ export function RouteTrackingSection({
   hasAssignee,
 }: RouteTrackingSectionProps) {
   const { t } = useTranslation()
+  const { formatTime } = useTimeFormat()
   const [showMap, setShowMap] = useState(true)
   const isLive = routeData?.status === "EN_ROUTE"
   const liveElapsed = useLiveElapsedTime(routeData?.startTime || null, isLive)
@@ -222,12 +224,7 @@ export function RouteTrackingSection({
               </div>
               <p className="text-[10px] font-medium text-muted-foreground mt-1.5">{t("tasks.route.start")}</p>
               <p className="text-[10px] text-muted-foreground">
-                {routeData.startTime
-                  ? new Date(routeData.startTime).toLocaleString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })
-                  : "—"}
+                {routeData.startTime ? formatTime(routeData.startTime) : "—"}
               </p>
             </div>
 
@@ -293,10 +290,7 @@ export function RouteTrackingSection({
               </p>
               <p className="text-[10px] text-muted-foreground">
                 {routeData.endTime
-                  ? new Date(routeData.endTime).toLocaleString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })
+                  ? formatTime(routeData.endTime)
                   : isLive ? t("tasks.route.inTransit") : "—"}
               </p>
             </div>
@@ -308,12 +302,7 @@ export function RouteTrackingSection({
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
             <span>{t("tasks.route.liveTrackingActive")}</span>
             <span>
-              {t("tasks.route.lastUpdate", { time: new Date(routeData.points[routeData.points.length - 1].timestamp).toLocaleString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true,
-              }) })}
+              {t("tasks.route.lastUpdate", { time: formatTime(routeData.points[routeData.points.length - 1].timestamp) })}
             </span>
           </div>
         )}

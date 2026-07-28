@@ -89,6 +89,8 @@ export interface CurrentUserData {
     showType: boolean;
     showSpecialty: boolean;
   };
+  // Per-user clock display preference ("12h" | "24h"); display-only.
+  timeFormat?: string;
 }
 
 /**

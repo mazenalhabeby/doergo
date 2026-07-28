@@ -315,7 +315,7 @@ export default function AttendancePage() {
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              <h1 data-tour="attendance-header" className="text-3xl font-bold text-foreground tracking-tight">
                 {t('attendance.management.title')}
               </h1>
               <p className="mt-1.5 text-muted-foreground">
@@ -333,7 +333,7 @@ export default function AttendancePage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as typeof activeTab)} className="mb-6">
-          <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
+          <TabsList data-tour="attendance-tabs" className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
             <TabsTrigger
               value="tracking"
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
@@ -343,6 +343,8 @@ export default function AttendancePage() {
             </TabsTrigger>
             <TabsTrigger
               value="approvals"
+              data-tour="attendance-tab-approvals"
+              onClick={() => setActiveTab("approvals")}
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <ClipboardCheck className="size-3.5 mr-1.5" />
@@ -355,6 +357,8 @@ export default function AttendancePage() {
             </TabsTrigger>
             <TabsTrigger
               value="breaks"
+              data-tour="attendance-tab-breaks"
+              onClick={() => setActiveTab("breaks")}
               className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
             >
               <Coffee className="size-3.5 mr-1.5" />

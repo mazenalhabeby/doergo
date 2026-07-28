@@ -605,6 +605,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
           {/* Title */}
           <Input
+            data-tour="tasks-dialog-title"
             placeholder={t("tasks.create.taskTitlePlaceholder")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -1118,6 +1119,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
           {/* Submit */}
           <Button
+            data-tour="tasks-dialog-save"
             type="submit"
             disabled={!isFormValid || isSubmitting || requiredCustomFieldsMissing}
             className="w-full h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium text-white transition-colors duration-150 mt-2"

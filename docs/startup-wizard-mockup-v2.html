@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HBCField — Guided Setup (Mockup)</title>
+<style>
+  :root{
+    --brand:#2563EB; --brand-700:#1D4ED8; --brand-100:#DBEAFE; --brand-50:#eff6ff;
+    --ink:#1e293b; --sec:#64748b; --muted:#94a3b8;
+    --bg:#f8fafc; --surface:#ffffff; --border:#e2e8f0; --border-soft:#eef2f7;
+    --green:#16A34A; --green-50:#f0fdf4; --green-100:#dcfce7; --green-700:#15803d;
+    --r-panel:24px; --r-card:14px; --r-ctl:11px;
+    --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+    --shadow-md:0 4px 14px rgba(16,24,40,.06);
+    --shadow-panel:0 1px 2px rgba(16,24,40,.04),0 24px 60px -18px rgba(16,24,40,.18);
+    --ease:cubic-bezier(.2,.7,.3,1);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--ink);
+    background:var(--bg);
+    background-image:radial-gradient(900px 500px at 12% -8%,#eef4ff 0,transparent 60%),
+                     radial-gradient(800px 460px at 108% 0%,#f0fdf6 0,transparent 55%);
+    -webkit-font-smoothing:antialiased}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px}
+  svg{display:block}
+
+  .panel{width:100%;max-width:680px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r-panel);box-shadow:var(--shadow-panel);overflow:hidden;position:relative}
+  .progress{height:4px;background:var(--border-soft)}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),#3b82f6);border-radius:0 99px 99px 0;transition:width .4s var(--ease)}
+  .phead{display:flex;align-items:center;justify-content:space-between;padding:15px 22px;border-bottom:1px solid var(--border-soft)}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15.5px;letter-spacing:-.01em}
+  .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+  .steppill{font-size:12.5px;font-weight:650;color:var(--sec);background:var(--bg);border:1px solid var(--border);padding:5px 12px;border-radius:99px}
+  .steppill.hide{visibility:hidden}
+  .pbody{padding:38px 40px 30px;min-height:430px;display:flex;flex-direction:column;justify-content:center}
+  .pfoot{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-top:1px solid var(--border-soft);background:#fcfdfe}
+  .pfoot.hide{display:none}
+  .lnk{background:none;border:none;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;padding:6px 8px;border-radius:8px}
+  .lnk:hover{color:var(--sec);background:var(--border-soft)}
+  .lnk:disabled{opacity:0;pointer-events:none}
+
+  .screen{display:none;text-align:center;animation:pop .28s var(--ease)}
+  .screen.show{display:block}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .kicker{display:inline-flex;align-items:center;gap:7px;background:var(--brand-50);color:var(--brand);
+    border:1px solid var(--brand-100);font-size:12px;font-weight:700;letter-spacing:.02em;padding:6px 12px 6px 10px;border-radius:99px;margin-bottom:16px}
+  .kicker svg{width:14px;height:14px}
+  h1{font-size:28px;line-height:1.18;letter-spacing:-.02em;margin:0 0 8px;font-weight:800}
+  .sub{font-size:15px;color:var(--sec);margin:0 auto 26px;max-width:520px;line-height:1.55}
+
+  .hero{width:72px;height:72px;border-radius:20px;margin:0 auto 18px;display:grid;place-items:center;color:#fff;
+    background:linear-gradient(135deg,var(--brand),#3b82f6);box-shadow:0 12px 28px rgba(37,99,235,.30)}
+  .hero.green{background:linear-gradient(135deg,var(--green),#22c55e);box-shadow:0 12px 28px rgba(22,163,74,.28)}
+  .hero svg{width:34px;height:34px}
+
+  .cards{display:grid;gap:12px;max-width:600px;margin:0 auto;text-align:left}
+  .c2{grid-template-columns:1fr 1fr}
+  .c3{grid-template-columns:1fr 1fr 1fr}
+  .opt{position:relative;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-card);
+    padding:16px;cursor:pointer;transition:transform .16s var(--ease),border-color .16s,box-shadow .16s;display:flex;flex-direction:column;gap:10px}
+  .opt:hover{border-color:#c3d4f5;transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .opt.sel{border-color:var(--brand);background:var(--brand-50);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+  .opt .tile{width:42px;height:42px;border-radius:11px;background:var(--brand-50);display:grid;place-items:center;color:var(--brand)}
+  .opt .tile svg{width:21px;height:21px}
+  .opt.sel .tile{background:#fff}
+  .opt .lab{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+  .opt .hint{font-size:12.5px;color:var(--sec);line-height:1.4;margin-top:-4px}
+  .opt .tick{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;display:none;place-items:center}
+  .opt .tick svg{width:13px;height:13px}
+  .opt.sel .tick{display:grid}
+  .opt.reco{border-color:#bbf0cd;background:linear-gradient(180deg,var(--green-50),#fff)}
+  .opt.reco .tile{background:var(--green-100);color:var(--green)}
+  .opt.reco .badge{position:absolute;top:-10px;left:16px;background:var(--green);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.03em;padding:3px 10px;border-radius:99px}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-weight:700;font-size:15px;
+    padding:13px 26px;border-radius:var(--r-ctl);cursor:pointer;border:1px solid var(--brand);
+    background:var(--brand);color:#fff;box-shadow:0 6px 16px rgba(37,99,235,.24);transition:.15s var(--ease)}
+  .btn:hover{background:var(--brand-700);border-color:var(--brand-700);transform:translateY(-1px)}
+  .btn svg{width:17px;height:17px}
+  .btn.lg{font-size:16px;padding:15px 32px}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--sec);box-shadow:none}
+  .btn.ghost:hover{background:var(--bg);color:var(--ink)}
+
+  .typebox{max-width:560px;margin:0 auto}
+  .field{position:relative}
+  .field .fico{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted);display:grid}
+  .field .fico svg{width:18px;height:18px}
+  .bigtype{width:100%;padding:16px 18px 16px 44px;border:1.5px solid var(--border);border-radius:var(--r-card);
+    font-size:16px;font-family:inherit;background:#fff;box-shadow:var(--shadow-sm);transition:.15s}
+  .bigtype::placeholder{color:var(--muted)}
+  .bigtype:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  .orline{max-width:520px;margin:22px auto 14px;position:relative;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .orline::before,.orline::after{content:"";position:absolute;top:50%;width:34%;height:1px;background:var(--border)}
+  .orline::before{left:0}.orline::after{right:0}
+
+  .interp{max-height:0;overflow:hidden;opacity:0;transition:.34s var(--ease)}
+  .interp.show{max-height:600px;opacity:1;margin-top:16px}
+  .ucard{background:var(--surface);border:1px solid var(--green-100);border-left:4px solid var(--green);
+    border-radius:var(--r-card);padding:20px 22px;box-shadow:var(--shadow-md);text-align:left}
+  .ueyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--green-700);font-weight:800;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px}
+  .ueyebrow svg{width:14px;height:14px}
+  .uhead{font-size:17px;font-weight:750;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .uhead .em{width:36px;height:36px;border-radius:10px;background:var(--green-50);display:grid;place-items:center;color:var(--green)}
+  .uhead .em svg{width:19px;height:19px}
+  .usub{font-size:13px;color:var(--sec);margin:6px 0 4px}
+  .ulbl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 9px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--brand-50);border:1px solid var(--brand-100);color:var(--brand-700);font-weight:650;font-size:13px;padding:7px 12px;border-radius:9px}
+  .chip svg{width:15px;height:15px}
+  .chip.tool{background:var(--bg);border-color:var(--border);color:var(--sec)}
+  .uactions{display:flex;gap:8px;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft)}
+
+  .reassure{margin-top:22px;font-size:13px;color:var(--muted)}
+  .reassure b{color:var(--sec)}
+
+  .buildwrap{max-width:440px;margin:0 auto;text-align:left}
+  .brow{display:flex;align-items:center;gap:13px;padding:14px 16px;background:#fff;border:1px solid var(--border);border-radius:var(--r-card);margin-bottom:10px;box-shadow:var(--shadow-sm);opacity:.4;transition:.3s var(--ease)}
+  .brow.on{opacity:1}
+  .brow .bi{width:26px;height:26px;border-radius:50%;border:2.5px solid var(--border);border-top-color:var(--brand);animation:spin .7s linear infinite;flex:0 0 auto}
+  .brow.ok .bi{border:none;background:var(--green);display:grid;place-items:center;animation:none;color:#fff}
+  .brow.ok .bi svg{width:15px;height:15px}
+  .brow .bt{font-size:14.5px;font-weight:650}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .donerows{max-width:500px;margin:6px auto 22px;text-align:left}
+  .dr{display:flex;align-items:flex-start;gap:13px;padding:15px 16px;background:#fff;border:1px solid var(--border);border-radius:var(--r-card);margin-bottom:10px;box-shadow:var(--shadow-sm)}
+  .dr .de{width:40px;height:40px;border-radius:10px;background:var(--brand-50);display:grid;place-items:center;color:var(--brand);flex:0 0 auto}
+  .dr .de svg{width:19px;height:19px}
+  .dr .dv{font-weight:750;font-size:14.5px}
+  .dr .dl{font-size:12.5px;color:var(--sec);margin-top:3px;line-height:1.45}
+  .doneflag{display:inline-flex;align-items:center;gap:8px;background:var(--green-50);color:var(--green-700);border:1px solid var(--green-100);font-weight:650;font-size:13px;padding:7px 15px;border-radius:99px;margin:2px auto 20px}
+  .doneflag svg{width:15px;height:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="progress"><i id="prog"></i></div>
+    <div class="phead">
+      <div class="brand"><span class="mark" id="brandMark"></span> HBCField</div>
+      <div class="steppill" id="steppill">Step 1 of 3</div>
+    </div>
+
+    <div class="pbody">
+
+      <section class="screen show" data-i="0">
+        <div class="hero" id="heroWelcome"></div>
+        <h1>Welcome, Andreas</h1>
+        <p class="sub">Let's get <b>HBC Group</b> ready. Just tell me what your team does — I'll understand it and set everything up for you. About a minute, and you can change anything later.</p>
+        <button class="btn lg" onclick="next()">Get started <span id="a1"></span></button>
+        <div class="reassure">No forms. No settings to figure out.</div>
+      </section>
+
+      <section class="screen" data-i="1">
+        <div class="kicker"><span id="k1"></span> Tell me about your work</div>
+        <h1>What does your team do?</h1>
+        <p class="sub">Describe it in your own words — a sentence is plenty. I'll read it and figure out how to set you up.</p>
+        <div class="typebox">
+          <div class="field">
+            <span class="fico" id="fico"></span>
+            <input id="whatInput" class="bigtype" autocomplete="off"
+                   placeholder="e.g. we install and service AC units and do emergency callouts"
+                   oninput="interpret()" onkeydown="if(event.key==='Enter')confirmType()">
+          </div>
+          <div id="interp" class="interp"></div>
+        </div>
+        <div class="orline">or pick a starting point</div>
+        <div class="cards c3" id="industry"></div>
+      </section>
+
+      <section class="screen" data-i="2"><div id="areasBody"></div></section>
+
+      <section class="screen" data-i="3">
+        <div class="kicker"><span id="k3"></span> Your team</div>
+        <h1>Who's using this with you?</h1>
+        <p class="sub">So I know whether to prepare invites. You can always add people later.</p>
+        <div class="cards c3" id="team"></div>
+      </section>
+
+      <section class="screen" data-i="4">
+        <div class="hero" id="heroBuild"></div>
+        <h1>Setting everything up…</h1>
+        <p class="sub">Just a few seconds — I'm building it all for you.</p>
+        <div class="buildwrap" id="buildwrap"></div>
+      </section>
+
+      <section class="screen" data-i="5">
+        <div class="hero green" id="heroDone"></div>
+        <h1>All set — you're ready</h1>
+        <div class="doneflag"><span id="df"></span> HBC Group is built and ready to use</div>
+        <div class="donerows" id="donerows"></div>
+        <button class="btn lg" onclick="alert('Would roll into a short interactive tour, then the dashboard.')">Show me around <span id="a2"></span></button>
+      </section>
+
+    </div>
+
+    <div class="pfoot" id="pfoot">
+      <button class="lnk" id="backBtn" onclick="prev()">← Back</button>
+      <button class="lnk" onclick="alert('Skips setup — drops them into the app with a friendly checklist to finish anytime.')">Skip for now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Lucide icon set (stroke paths) ---------------- */
+const P={
+  gear:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  checkCircle:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  sparkles:'<path d="M9.94 14.06A2 2 0 0 0 8.5 12.6L2.4 11a.5.5 0 0 1 0-1l6.1-1.6A2 2 0 0 0 9.94 6.9L11.5.8a.5.5 0 0 1 1 0l1.56 6.1a2 2 0 0 0 1.44 1.44L21.6 10a.5.5 0 0 1 0 1l-6.1 1.56a2 2 0 0 0-1.44 1.44L12.5 20.1a.5.5 0 0 1-1 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+  penLine:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  factory:'<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/>',
+  building:'<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+  spray:'<path d="M3 3h.01"/><path d="M7 5h.01"/><path d="M11 7h.01"/><path d="M3 7h.01"/><path d="M7 9h.01"/><path d="M3 11h.01"/><rect width="4" height="4" x="15" y="5"/><path d="m19 9 2 2v10c0 .6-.4 1-1 1h-6c-.6 0-1-.4-1-1V11l2-2"/><path d="M13 14h8"/>',
+  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  trees:'<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/>',
+  hardhat:'<path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><path d="M14 6a6 6 0 0 1 6 6v3"/>',
+  server:'<rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  truck:'<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+  bug:'<path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>',
+  package:'<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  inbox:'<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  ticket:'<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+  ruler:'<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
+  clipboard:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  door:'<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/>',
+  grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  mappin:'<path d="M20 10c0 4.4-5.6 9.3-7.4 10.8a1 1 0 0 1-1.3 0C9.6 19.3 4 14.4 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  folder:'<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  settings:'<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>'
+};
+function I(name,cls){ return `<svg class="${cls||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[name]||''}</svg>`; }
+
+/* ---------------- data ---------------- */
+const INDUSTRY=[
+  ["wrench","Repairs & trades"],["factory","Machines & maintenance"],["building","Buildings & facilities"],
+  ["spray","Cleaning"],["shield","Security"],["trees","Gardens & grounds"],
+  ["hardhat","Construction"],["server","IT & telecom"],["sun","Solar & energy"],
+];
+const CATS=[
+  {ic:"wrench",lab:"Repairs & trades",kw:["hvac","air condition","aircon"," ac ","heat","cool","plumb","electric","boiler","furnace","refriger","gas","pipe","wiring","appliance","trade"]},
+  {ic:"factory",lab:"Machines & maintenance",kw:["machine","industr","factory","plant","equipment","mechanic","cnc","production","elevator","lift","conveyor"]},
+  {ic:"spray",lab:"Cleaning",kw:["clean","janitor","housekeep","pool","carpet","window clean","sanit","disinfect","laundry"]},
+  {ic:"shield",lab:"Security & guarding",kw:["security","guard","patrol","surveil","alarm","cctv","doorman"]},
+  {ic:"trees",lab:"Gardens & grounds",kw:["landscap","garden","lawn","grounds","tree","irrigation","mow","hedge"]},
+  {ic:"building",lab:"Buildings & facilities",kw:["facilit","building","property","tenant","caretaker","real estate","office manage"]},
+  {ic:"hardhat",lab:"Construction",kw:["construct","builder","contractor","renov","carpen","roof","paint","concrete","scaffold"]},
+  {ic:"server",lab:"IT & telecom",kw:["network","telecom","fiber","fibre","cabl","server","computer","antenna","router","tech support"]},
+  {ic:"sun",lab:"Solar & energy",kw:["solar","photovolt"," pv ","renewable","panel","ev charg","heat pump","battery"]},
+  {ic:"truck",lab:"Delivery & logistics",kw:["deliver","logistic","courier","transport","fleet","haul","route"]},
+  {ic:"bug",lab:"Pest control",kw:["pest","exterminat","rodent","insect","fumigat","termite"]},
+];
+const DEFAULT_AREAS={
+  "Repairs & trades":[["package","Installations"],["refresh","Maintenance"],["wrench","Repairs"]],
+  "Machines & maintenance":[["refresh","Preventive maintenance"],["alert","Breakdowns"],["search","Inspections"]],
+  "Buildings & facilities":[["inbox","Requests"],["refresh","Maintenance"],["search","Inspections"]],
+  "Cleaning":[["refresh","Regular cleans"],["spray","Deep cleans"],["sparkles","One-off jobs"]],
+  "Security & guarding":[["shield","Patrols"],["alert","Alarm callouts"],["door","Static guarding"]],
+  "Gardens & grounds":[["refresh","Regular visits"],["trees","One-off projects"]],
+  "Construction":[["ruler","Projects"],["wrench","Snagging"],["refresh","Callbacks"]],
+  "IT & telecom":[["package","Installs"],["ticket","Support tickets"],["refresh","Maintenance"]],
+  "Solar & energy":[["package","Installations"],["refresh","Servicing"],["alert","Callouts"]],
+  "Delivery & logistics":[["mappin","Routes"],["package","Pickups"],["truck","Deliveries"]],
+  "Pest control":[["spray","Treatments"],["search","Inspections"],["refresh","Follow-ups"]],
+  "A bit of everything":[["clipboard","Jobs"],["refresh","Maintenance"]],
+};
+const ORGANIZE=[
+  ["grid","By type of job","installs, repairs, maintenance…",false],
+  ["mappin","By place","one group per site or area",false],
+  ["users","By team","one group per crew",false],
+  ["sparkles","Not sure? I'll pick","I'll choose the best setup",true],
+];
+const TEAM=[
+  ["user","Just me for now","I'll add people later"],
+  ["users","A small team","Around 2–10 people"],
+  ["building","A bigger team","More than 10"],
+];
+const TOTAL=3;
+let cur=0, ans={ind:null, plan:null, team:null, fromText:false};
+
+/* ---------------- engine ---------------- */
+function matchCat(v){ let best=null,score=0; for(const c of CATS){ let s=0; for(const k of c.kw){ if(v.includes(k)) s++; } if(s>score){score=s;best=c;} } return best||{ic:"clipboard",lab:"A bit of everything"}; }
+function understand(text){
+  const v=' '+text.toLowerCase().replace(/[^a-z0-9 ]/g,' ')+' ';
+  const cat=matchCat(v);
+  const A=[]; const add=(re,ic,name)=>{ if(re.test(v)&&!A.find(x=>x[1]===name)) A.push([ic,name]); };
+  add(/instal|fit|mount|set ?up|new build|deploy/,'package','Installations');
+  add(/repair|fix|broke|fault|breakdown|emergenc|callout|call out|urgent|24 ?7/,'wrench','Repairs & callouts');
+  add(/maintain|maintenance|servic|preventive|annual|regular|check ?up/,'refresh','Maintenance');
+  add(/inspect|survey|audit|assess|test/,'search','Inspections');
+  add(/clean|wash|janitor|housekeep/,'spray','Cleaning jobs');
+  add(/patrol|guard|surveil/,'shield','Patrols');
+  add(/deliver|courier|transport|haul|route|pick ?up/,'truck','Deliveries');
+  add(/renov|project|construct|build ?out/,'ruler','Projects');
+  add(/garden|landscap|lawn|grounds|mow/,'trees','Grounds');
+  let areas=A.slice(0,4);
+  if(areas.length===0) areas=DEFAULT_AREAS[cat.lab]||[["clipboard","Jobs"]];
+  const T=[["clipboard","Jobs & scheduling"],["folder","Service reports"],["package","Photos & signatures"]];
+  if(/route|deliver|drive|site|field|map|track|gps|mobile|on the road/.test(v)) T.push(["mappin","Live GPS tracking"]);
+  if(/clock|attendance|shift|hours|on ?site|office|timesheet/.test(v)) T.push(["refresh","Clock in / out"]);
+  if(/maintain|servic|clean|inspect|patrol|recurring|weekly|monthly|preventive|regular/.test(v)) T.push(["refresh","Recurring / preventive jobs"]);
+  if(/invoice|bill|quote|estimate|charge|payment|price/.test(v)) T.push(["ticket","Invoicing"]);
+  return {ic:cat.ic,lab:cat.lab,areas,tools:T};
+}
+
+/* ---------------- Q1 ---------------- */
+function interpret(){
+  const raw=document.getElementById('whatInput').value.trim();
+  const box=document.getElementById('interp');
+  if(raw.length<3){ box.className='interp'; box.innerHTML=''; ans.plan=null; return; }
+  const p=understand(raw); ans.plan=p; ans.fromText=true; ans.ind={ic:p.ic,lab:p.lab};
+  box.className='interp show';
+  box.innerHTML=`
+    <div class="ucard">
+      <div class="ueyebrow">${I('sparkles')} Here's what I understood</div>
+      <div class="uhead"><span class="em">${I(p.ic)}</span><span>You're in <u>${p.lab}</u></span></div>
+      <div class="usub">From what you wrote, here's how I'll set you up.</div>
+      <div class="ulbl">Work areas I'll create</div>
+      <div class="chips">${p.areas.map(a=>`<span class="chip">${I(a[0])}${a[1]}</span>`).join('')}</div>
+      <div class="ulbl">Tools I'll switch on</div>
+      <div class="chips">${p.tools.map(t=>`<span class="chip tool">${I(t[0])}${t[1]}</span>`).join('')}</div>
+      <div class="uactions">
+        <button class="btn" onclick="next()">Perfect, continue ${I('arrow')}</button>
+        <button class="btn ghost" onclick="document.getElementById('whatInput').focus()">${I('penLine')} Add more detail</button>
+      </div>
+    </div>`;
+}
+function confirmType(){ const raw=document.getElementById('whatInput').value.trim(); if(raw.length<3){document.getElementById('whatInput').focus();return;} if(!ans.plan) interpret(); next(); }
+function pickIndustry(i){
+  ans.ind={ic:INDUSTRY[i][0],lab:INDUSTRY[i][1]}; ans.fromText=false; ans.plan=null;
+  const inp=document.getElementById('whatInput'); if(inp) inp.value='';
+  const box=document.getElementById('interp'); if(box){box.className='interp';box.innerHTML='';}
+  render(); setTimeout(next,280);
+}
+
+/* ---------------- Q2 ---------------- */
+function areasScreen(){
+  const body=document.getElementById('areasBody');
+  if(ans.fromText && ans.plan){
+    body.innerHTML=`
+      <div class="kicker">${I('folder')} Your work areas</div>
+      <h1>Here's how I'll organise your work</h1>
+      <p class="sub">Based on what you told me. These become your groups for jobs, people and reports — all editable later.</p>
+      <div class="cards c3" style="max-width:600px">${ans.plan.areas.map(a=>
+        `<div class="opt" style="cursor:default"><div class="tile">${I(a[0])}</div><div class="lab">${a[1]}</div></div>`).join('')}</div>
+      <div style="margin-top:26px"><button class="btn lg" onclick="next()">Looks good ${I('arrow')}</button></div>
+      <button class="btn ghost" style="margin-top:10px" onclick="ans.fromText=false;areasScreen()">Group it differently instead</button>`;
+  } else {
+    body.innerHTML=`
+      <div class="kicker">${I('folder')} Your work areas</div>
+      <h1>How should I group your jobs?</h1>
+      <p class="sub">Not sure? Tap the recommended one and I'll pick the best setup for ${ans.ind?ans.ind.lab.toLowerCase():'you'}.</p>
+      <div class="cards c2" style="max-width:600px" id="organize"></div>`;
+    document.getElementById('organize').innerHTML=ORGANIZE.map((x,i)=>
+      `<div class="opt ${x[3]?'reco':''}" onclick="pickOrganize(${i})">${x[3]?'<div class="badge">RECOMMENDED</div>':''}<div class="tile">${I(x[0])}</div><div class="lab">${x[1]}</div><div class="hint">${x[2]}</div></div>`).join('');
+  }
+}
+function pickOrganize(i){
+  const base=DEFAULT_AREAS[ans.ind?ans.ind.lab:'A bit of everything']||DEFAULT_AREAS["A bit of everything"];
+  let areas;
+  if(i===1) areas=[["mappin","Main Office"],["mappin","North"],["mappin","South"]];
+  else if(i===2) areas=[["users","Field Team"],["users","Office"]];
+  else areas=base;
+  ans.plan={ic:ans.ind?ans.ind.ic:"clipboard",lab:ans.ind?ans.ind.lab:"A bit of everything",areas,
+    tools:[["clipboard","Jobs & scheduling"],["folder","Service reports"],["package","Photos & signatures"],["refresh","Clock in / out"],["refresh","Recurring / preventive jobs"]]};
+  setTimeout(()=>go(3),240);
+}
+
+/* ---------------- Q3 ---------------- */
+function teamScreen(){
+  document.getElementById('team').innerHTML=TEAM.map((x,i)=>
+    `<div class="opt ${ans.team===i?'sel':''}" onclick="pickTeam(${i})"><div class="tick">${I('check')}</div><div class="tile">${I(x[0])}</div><div class="lab">${x[1]}</div><div class="hint">${x[2]}</div></div>`).join('');
+}
+function pickTeam(i){ ans.team=i; teamScreen(); setTimeout(()=>go(4),300); }
+
+/* ---------------- build + done ---------------- */
+function build(){
+  const w=document.getElementById('buildwrap');
+  const n=ans.plan?ans.plan.areas.length:3;
+  const steps=["Creating your company",`Setting up your ${n} work areas`,"Turning on the tools you need",(ans.team>0?"Preparing your team invites":"Preparing your home screen")];
+  w.innerHTML=steps.map((s,i)=>`<div class="brow" id="br${i}"><div class="bi"></div><div class="bt">${s}</div></div>`).join('');
+  document.getElementById('br0').classList.add('on');
+  steps.forEach((s,i)=>{
+    setTimeout(()=>document.getElementById('br'+i).classList.add('on'),60+720*i);
+    setTimeout(()=>{ const r=document.getElementById('br'+i); r.classList.add('ok'); r.querySelector('.bi').innerHTML=I('check');
+      const nx=document.getElementById('br'+(i+1)); if(nx) nx.classList.add('on');
+      if(i===steps.length-1) setTimeout(()=>go(5),650);
+    },720*i+640);
+  });
+}
+function doneScreen(){
+  const p=ans.plan||{lab:'your work',areas:[["clipboard","Jobs"]],tools:[["clipboard","Jobs"]]};
+  const areaNames=p.areas.map(a=>a[1]).join(', ');
+  const toolNames=p.tools.map(t=>t[1]).join(' · ');
+  const teamLine=ans.team===0?"Just you for now — add people anytime":ans.team===1?"Invites ready for your small team":"Invites ready for your team";
+  document.getElementById('donerows').innerHTML=`
+    <div class="dr"><div class="de">${I('folder')}</div><div><div class="dv">Your work areas are ready</div><div class="dl">${areaNames}</div></div></div>
+    <div class="dr"><div class="de">${I('wrench')}</div><div><div class="dv">The right tools are switched on</div><div class="dl">${toolNames}</div></div></div>
+    <div class="dr"><div class="de">${I('mail')}</div><div><div class="dv">${ans.team>0?'Team invites prepared':'Just you for now'}</div><div class="dl">${teamLine}</div></div></div>`;
+}
+
+/* ---------------- chrome / nav ---------------- */
+function chrome(){
+  const isQ=cur>=1&&cur<=3;
+  document.getElementById('prog').style.width=(cur>=1?Math.min(cur,TOTAL)/TOTAL*100:0)+'%';
+  const pill=document.getElementById('steppill');
+  pill.textContent=isQ?`Step ${cur} of ${TOTAL}`:''; pill.classList.toggle('hide',!isQ);
+  document.getElementById('pfoot').classList.toggle('hide',!isQ);
+  document.getElementById('backBtn').disabled=(cur<=1);
+}
+function render(){
+  document.getElementById('industry').innerHTML=INDUSTRY.map((x,i)=>
+    `<div class="opt ${ans.ind&&ans.ind.lab===x[1]?'sel':''}" onclick="pickIndustry(${i})"><div class="tick">${I('check')}</div><div class="tile">${I(x[0])}</div><div class="lab">${x[1]}</div></div>`).join('');
+}
+function go(n){
+  cur=n;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',+s.dataset.i===n));
+  chrome();
+  if(n===2) areasScreen();
+  if(n===3) teamScreen();
+  if(n===4) build();
+  if(n===5) doneScreen();
+}
+function next(){ go(Math.min(5,cur+1)); }
+function prev(){ go(Math.max(0,cur-1)); }
+
+/* static icons */
+document.getElementById('brandMark').innerHTML=I('gear');
+document.getElementById('heroWelcome').innerHTML=I('sparkles');
+document.getElementById('heroBuild').innerHTML=I('settings');
+document.getElementById('heroDone').innerHTML=I('checkCircle');
+document.getElementById('a1').innerHTML=I('arrow');
+document.getElementById('a2').innerHTML=I('arrow');
+document.getElementById('k1').innerHTML=I('sparkles');
+document.getElementById('k3').innerHTML=I('users');
+document.getElementById('fico').innerHTML=I('penLine');
+document.getElementById('df').innerHTML=I('check');
+render(); go(0);
+</script>
+</body>
+</html>

@@ -290,6 +290,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
           <Button
             onClick={handleSubmit}
             disabled={createMutation.isPending || (mode === "email" && !email.trim())}
+            data-tour="members-invite-send"
             className="rounded-lg"
           >
             {createMutation.isPending

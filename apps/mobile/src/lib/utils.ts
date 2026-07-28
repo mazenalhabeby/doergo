@@ -11,36 +11,49 @@
  * Format a date as a time range (e.g., "9:00 AM - 10:00 AM")
  * Used for displaying task time slots
  */
-export function formatTimeRange(dueDate: string | Date, durationHours: number = 1): string {
+export function formatTimeRange(dueDate: string | Date, durationHours: number = 1, hour12: boolean = false): string {
   const date = new Date(dueDate);
   const hours = date.getHours();
   const minutes = date.getMinutes();
 
-  const formatTime = (h: number, m: number): string => {
-    const period = h >= 12 ? 'PM' : 'AM';
-    const displayHour = h % 12 || 12;
-    const displayMinute = m.toString().padStart(2, '0');
-    return `${displayHour}:${displayMinute} ${period}`;
-  };
-
-  const startTime = formatTime(hours, minutes);
+  const startTime = formatClock(hours, minutes, hour12);
   const endHours = hours + durationHours;
-  const endTime = formatTime(endHours, minutes);
+  const endTime = formatClock(endHours, minutes, hour12);
 
   return `${startTime} - ${endTime}`;
 }
 
-/**
- * Format a time (e.g., "9:00 AM")
- */
-export function formatTime(date: string | Date): string {
-  const d = new Date(date);
-  const hours = d.getHours();
-  const minutes = d.getMinutes();
-  const period = hours >= 12 ? 'PM' : 'AM';
-  const displayHour = hours % 12 || 12;
-  const displayMinute = minutes.toString().padStart(2, '0');
+/** Format hour+minute honoring the 12h/24h preference. */
+function formatClock(h: number, m: number, hour12: boolean): string {
+  const hh = ((h % 24) + 24) % 24;
+  const displayMinute = m.toString().padStart(2, '0');
+  if (!hour12) {
+    return `${hh.toString().padStart(2, '0')}:${displayMinute}`;
+  }
+  const period = hh >= 12 ? 'PM' : 'AM';
+  const displayHour = hh % 12 || 12;
   return `${displayHour}:${displayMinute} ${period}`;
+}
+
+/**
+ * Format a time (e.g., "9:00 AM" or "09:00"), honoring the 12h/24h preference.
+ */
+export function formatTime(date: string | Date, hour12: boolean = false): string {
+  const d = new Date(date);
+  return formatClock(d.getHours(), d.getMinutes(), hour12);
+}
+
+/**
+ * Format a raw "HH:MM" schedule string honoring the 12h/24h preference.
+ * "17:30" -> "5:30 PM" (12h) or "17:30" (24h).
+ */
+export function formatClockString(hhmm: string | null | undefined, hour12: boolean = false): string {
+  if (!hhmm) return '';
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  return formatClock(h, m, hour12);
 }
 
 /**
@@ -189,12 +202,12 @@ export function formatDurationMinutes(minutes: number): string {
 /**
  * Format a date as time (e.g., "02:30 PM")
  */
-export function formatTimeString(dateString: string | Date): string {
+export function formatTimeString(dateString: string | Date, hour12: boolean = false): string {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
+  return date.toLocaleTimeString(hour12 ? 'en-US' : 'en-GB', {
+    hour: hour12 ? 'numeric' : '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12,
   });
 }
 

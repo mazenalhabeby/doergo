@@ -58,7 +58,15 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
   // are visible without a click. The user can still collapse it.
   useEffect(() => {
     const only = filteredBoxes.length === 1 ? filteredBoxes[0] : null
-    if (autoExpandSingle && only) setExpandedTitle(only.title)
+    if (autoExpandSingle && only) {
+      setExpandedTitle(only.title)
+      return
+    }
+    // Drop a stale expanded title that no longer matches any current box. Without
+    // this, swapping the boxes out (e.g. the guide's example space reverting to the
+    // real spaces) leaves the grid "expanded" on a title that no box has — so every
+    // real box collapses into a tiny chip and the expanded area renders empty.
+    setExpandedTitle((prev) => (prev && !filteredBoxes.some((b) => b.title === prev) ? null : prev))
   }, [autoExpandSingle, filteredBoxes])
 
   const isAnyExpanded = visualExpanded !== null

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HBCField — Interactive Guide (Mockup)</title>
+<style>
+  :root{
+    --brand:#2563EB; --brand-700:#1D4ED8; --brand-50:#eff6ff; --brand-100:#DBEAFE;
+    --ink:#1e293b; --sec:#64748b; --muted:#94a3b8;
+    --bg:#f8fafc; --surface:#fff; --border:#e2e8f0; --line:#eef2f7;
+    --green:#16A34A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);height:100vh;overflow:hidden}
+  svg{display:block}
+  .app{display:flex;height:100vh}
+
+  /* sidebar */
+  .side{width:236px;background:#0b1220;color:#cbd5e1;padding:18px 14px;display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:800;color:#fff;font-size:16px;padding:6px 8px 16px}
+  .logo .m{width:26px;height:26px;border-radius:7px;background:var(--brand);display:grid;place-items:center;color:#fff}
+  .nav{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;font-size:13.5px;font-weight:600;color:#94a3b8;cursor:pointer}
+  .nav svg{width:18px;height:18px}
+  .nav.active{background:rgba(37,99,235,.18);color:#fff}
+  .nav:hover:not(.active){background:rgba(255,255,255,.05);color:#e2e8f0}
+
+  /* main */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .top{height:60px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:14px;padding:0 22px;flex:0 0 auto}
+  .search{flex:1;max-width:360px;display:flex;align-items:center;gap:9px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 13px;color:var(--muted);font-size:13.5px}
+  .search svg{width:16px;height:16px}
+  .spacer{flex:1}
+  .ic-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--sec);cursor:pointer;border:1px solid transparent}
+  .ic-btn:hover{background:var(--bg);border-color:var(--border)}
+  .ic-btn svg{width:19px;height:19px}
+  .help{display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--sec);font-weight:650;font-size:13px;cursor:pointer}
+  .help svg{width:16px;height:16px}
+  .ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#22c55e);display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+
+  .content{flex:1;overflow:auto;padding:26px 30px}
+  .h-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+  h1{font-size:22px;margin:0 0 3px;letter-spacing:-.02em}
+  .h-row p{margin:0;color:var(--sec);font-size:13.5px}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--brand);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:14px;padding:11px 18px;border-radius:11px;cursor:pointer;box-shadow:0 6px 16px rgba(37,99,235,.22)}
+  .btn:hover{background:var(--brand-700)}
+  .btn svg{width:17px;height:17px}
+  .btn.soft{background:#fff;color:var(--ink);border:1px solid var(--border);box-shadow:none}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
+  .stat .k{font-size:12px;color:var(--muted);font-weight:600}
+  .stat .v{font-size:24px;font-weight:800;margin-top:4px}
+  .stat .ic{width:34px;height:34px;border-radius:9px;background:var(--brand-50);color:var(--brand);display:grid;place-items:center;float:right}
+  .stat .ic svg{width:18px;height:18px}
+
+  .card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .card h3{font-size:14px;margin:0;padding:15px 18px;border-bottom:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:10px 18px;background:#fafbfc}
+  td{padding:12px 18px;border-top:1px solid var(--line);font-size:13.5px}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
+  .b-new{background:#dbeafe;color:#1e40af}
+  .b-empty{color:var(--muted);font-style:italic}
+  tr.fresh{animation:flash 1.6s ease}
+  @keyframes flash{0%{background:#eff6ff}100%{background:transparent}}
+
+  /* create panel */
+  .scrim{position:fixed;inset:0;background:rgba(15,23,42,.28);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+  .scrim.show{opacity:1;pointer-events:auto}
+  .panel{position:fixed;top:0;right:0;height:100vh;width:420px;background:#fff;box-shadow:-12px 0 40px rgba(15,23,42,.15);transform:translateX(100%);transition:transform .25s cubic-bezier(.2,.7,.3,1);z-index:41;display:flex;flex-direction:column}
+  .panel.show{transform:none}
+  .panel .ph{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+  .panel .ph h2{font-size:16px;margin:0}
+  .panel .pb{padding:20px;flex:1;overflow:auto}
+  .fld{margin-bottom:16px}
+  .fld label{display:block;font-size:12px;font-weight:650;color:var(--sec);margin-bottom:6px}
+  .inp{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit}
+  .inp:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  .picker{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:14px;text-align:left;background:#fff;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:10px}
+  .picker.filled{color:var(--ink)}
+  .picker .a{width:26px;height:26px;border-radius:50%;background:#e2e8f0;display:grid;place-items:center;font-size:11px;font-weight:700;color:#475569}
+  .panel .pf{padding:16px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+
+  /* ---- TOUR overlay ---- */
+  #spot{position:fixed;z-index:60;border-radius:12px;box-shadow:0 0 0 4px rgba(37,99,235,.5),0 0 0 9999px rgba(15,23,42,.62);pointer-events:none;transition:all .28s cubic-bezier(.2,.7,.3,1);display:none}
+  #spotClick{position:fixed;z-index:61;cursor:pointer;display:none}
+  #tip{position:fixed;z-index:62;width:300px;background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(15,23,42,.28);padding:18px;display:none;animation:tipin .25s ease}
+  @keyframes tipin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  #tip .step{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--brand);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  #tip .step svg{width:14px;height:14px}
+  #tip h4{font-size:16px;margin:0 0 5px;letter-spacing:-.01em}
+  #tip p{margin:0;font-size:13px;color:var(--sec);line-height:1.5}
+  #tip .row{display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+  #tip .dots{display:flex;gap:5px}
+  #tip .dots i{width:6px;height:6px;border-radius:50%;background:#d5deeb}
+  #tip .dots i.on{background:var(--brand);width:16px;border-radius:99px}
+  #tip .go{display:inline-flex;align-items:center;gap:6px;background:var(--brand);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:13px;padding:8px 15px;border-radius:9px;cursor:pointer}
+  #tip .go svg{width:15px;height:15px}
+  #tip .skip{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;padding:6px}
+  #tip .hint{margin-top:12px;font-size:11.5px;color:var(--brand);font-weight:650;display:flex;align-items:center;gap:6px}
+  #tip .hint svg{width:14px;height:14px;animation:point 1s infinite}
+  @keyframes point{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+
+  /* center modal (intro/done) */
+  #modal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.55)}
+  #modal .box{width:440px;background:#fff;border-radius:20px;padding:30px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:tipin .3s ease}
+  #modal .hero{width:66px;height:66px;border-radius:18px;margin:0 auto 14px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#2563EB,#3b82f6)}
+  #modal .hero.green{background:linear-gradient(135deg,#16A34A,#22c55e)}
+  #modal .hero svg{width:32px;height:32px}
+  #modal h2{font-size:22px;margin:0 0 6px}
+  #modal p{color:var(--sec);font-size:14px;margin:0 0 20px;line-height:1.55}
+  #modal .actions{display:flex;gap:10px;justify-content:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- sidebar -->
+  <aside class="side">
+    <div class="logo"><span class="m" id="i-logo"></span> HBCField</div>
+    <div class="nav active"><span id="i-grid"></span> Dashboard</div>
+    <div class="nav"><span id="i-tasks"></span> Tasks</div>
+    <div class="nav"><span id="i-team"></span> Team</div>
+    <div class="nav"><span id="i-map"></span> Live Map</div>
+    <div class="nav"><span id="i-chart"></span> Reports</div>
+    <div class="nav"><span id="i-users"></span> Members</div>
+    <div class="nav"><span id="i-settings"></span> Settings</div>
+  </aside>
+
+  <!-- main -->
+  <div class="main">
+    <div class="top">
+      <div class="search"><span id="i-search"></span> Search jobs, people…</div>
+      <div class="spacer"></div>
+      <button class="help" id="helpBtn"><span id="i-help"></span> Help &amp; tour</button>
+      <div class="ic-btn"><span id="i-bell"></span></div>
+      <div class="ava">A</div>
+    </div>
+
+    <div class="content">
+      <div class="h-row">
+        <div>
+          <h1>Good morning, Andreas</h1>
+          <p>Here's what's happening across your team today.</p>
+        </div>
+        <button class="btn" id="createBtn"><span id="i-plus"></span> Create Task</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span class="ic" id="i-s1"></span><div class="k">Active jobs</div><div class="v">0</div></div>
+        <div class="stat"><span class="ic" id="i-s2"></span><div class="k">In progress</div><div class="v">0</div></div>
+        <div class="stat"><span class="ic" id="i-s3"></span><div class="k">Completed</div><div class="v">0</div></div>
+        <div class="stat"><span class="ic" id="i-s4"></span><div class="k">Technicians</div><div class="v">4</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Recent jobs</h3>
+        <table>
+          <thead><tr><th>Job</th><th>Assignee</th><th>Status</th><th>Due</th></tr></thead>
+          <tbody id="tbody">
+            <tr id="emptyRow"><td colspan="4" class="b-empty">No jobs yet — create your first one.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- create panel -->
+<div class="scrim" id="scrim"></div>
+<div class="panel" id="panel">
+  <div class="ph"><h2>New job</h2><div class="ic-btn" onclick="closePanel()"><span id="i-x"></span></div></div>
+  <div class="pb">
+    <div class="fld">
+      <label>Job title</label>
+      <input class="inp" id="titleInput" placeholder="e.g. Fix water leak — 738 G">
+    </div>
+    <div class="fld">
+      <label>Assign to</label>
+      <button class="picker" id="assignBtn"><span class="a" id="assignAv">?</span><span id="assignTxt">Choose a technician…</span></button>
+    </div>
+    <div class="fld">
+      <label>Due date</label>
+      <input class="inp" value="Tomorrow, 09:00" readonly>
+    </div>
+  </div>
+  <div class="pf">
+    <button class="btn soft" onclick="closePanel()">Cancel</button>
+    <button class="btn" id="saveBtn"><span id="i-check"></span> Save job</button>
+  </div>
+</div>
+
+<!-- tour -->
+<div id="spot"></div>
+<div id="spotClick" onclick="advance()"></div>
+<div id="tip"></div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+/* ---- tiny Lucide set ---- */
+const P={
+  gear:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  tasks:'<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+  team:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  map:'<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
+  chart:'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  users:'<path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>',
+  settings:'<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  bell:'<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  briefcase:'<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  checkc:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
+  hand:'<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  party:'<path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>',
+};
+const I=(n,cls)=>`<svg class="${cls||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n]||''}</svg>`;
+// paint static icons
+const put=(id,n)=>{const e=document.getElementById(id); if(e) e.innerHTML=I(n);};
+put('i-logo','gear');put('i-grid','grid');put('i-tasks','tasks');put('i-team','team');put('i-map','map');put('i-chart','chart');put('i-users','users');put('i-settings','settings');
+put('i-search','search');put('i-help','help');put('i-bell','bell');put('i-plus','plus');put('i-x','x');put('i-check','check');
+put('i-s1','briefcase');put('i-s2','clock');put('i-s3','checkc');put('i-s4','team');
+
+/* ---- the tour (data-driven) ---- */
+const STEPS=[
+  { key:'intro' },
+  { key:'create', target:'#createBtn', kicker:'Step 1', title:'Create your first job', body:'Everything starts here. Click <b>Create Task</b> to open the new-job form.', click:true, onEnter:()=>closePanel() },
+  { key:'title', target:'#titleInput', kicker:'Step 2', title:'Give it a name', body:'Type what needs doing — e.g. the address and the problem. I filled one in for you.', next:true, onEnter:()=>{openPanel(); prefillTitle();} },
+  { key:'assign', target:'#assignBtn', kicker:'Step 3', title:'Assign a technician', body:'Pick who does the job. Click the field to choose someone.', click:true, onEnter:()=>openPanel() },
+  { key:'save', target:'#saveBtn', kicker:'Step 4', title:'Save the job', body:'Looks good? Click <b>Save job</b> to create it.', click:true, onEnter:()=>{openPanel(); pickTech();} },
+  { key:'result', target:'#tbody tr:first-child', kicker:'Nice!', title:'There it is', body:'Your new job now appears in <b>Recent jobs</b>. This list is your day at a glance.', next:true, onEnter:()=>{closePanel(); addRow();} },
+  { key:'help', target:'#helpBtn', kicker:'Anytime', title:'Replay whenever', body:'Stuck later? Reopen this guide from <b>Help &amp; tour</b> — for any screen.', next:true },
+  { key:'done' },
+];
+let idx=0;
+const $=(s)=>document.querySelector(s);
+
+function openPanel(){ $('#panel').classList.add('show'); $('#scrim').classList.add('show'); }
+function closePanel(){ $('#panel').classList.remove('show'); $('#scrim').classList.remove('show'); }
+function prefillTitle(){ $('#titleInput').value='Fix water leak — Apartment 738 G'; }
+function pickTech(){ const b=$('#assignBtn'); b.classList.add('filled'); $('#assignAv').textContent='AM'; $('#assignTxt').textContent='Ahmed Mazen'; }
+function addRow(){
+  const e=$('#emptyRow'); if(e) e.remove();
+  if($('#tbody').dataset.added) return;
+  $('#tbody').dataset.added='1';
+  const tr=document.createElement('tr'); tr.className='fresh';
+  tr.innerHTML=`<td><b>Fix water leak — Apartment 738 G</b></td><td>Ahmed Mazen</td><td><span class="badge b-new">New</span></td><td>Tomorrow, 09:00</td>`;
+  $('#tbody').prepend(tr);
+}
+
+function positionFor(sel){
+  const el=$(sel); if(!el) return null;
+  return el.getBoundingClientRect();
+}
+function render(){
+  const step=STEPS[idx];
+  const spot=$('#spot'), click=$('#spotClick'), tip=$('#tip'), modal=$('#modal');
+
+  if(step.key==='intro'||step.key==='done'){
+    spot.style.display='none'; click.style.display='none'; tip.style.display='none';
+    modal.style.display='flex';
+    if(step.key==='intro'){
+      $('#modalBox').innerHTML=`
+        <div class="hero">${I('hand')}</div>
+        <h2>Let's learn by doing</h2>
+        <p>I'll walk you through <b>creating your first job</b> — just follow the highlights and click along. Takes 30 seconds.</p>
+        <div class="actions">
+          <button class="btn soft" onclick="endTour()">Skip</button>
+          <button class="btn" onclick="advance()">Start ${I('arrow')}</button>
+        </div>`;
+    } else {
+      $('#modalBox').innerHTML=`
+        <div class="hero green">${I('party')}</div>
+        <h2>You did it! 🎉</h2>
+        <p>That's the core loop — create, assign, save. You can replay this or start other walkthroughs from <b>Help &amp; tour</b> anytime.</p>
+        <div class="actions"><button class="btn" onclick="endTour()">Finish ${I('check')}</button></div>`;
+    }
+    return;
+  }
+
+  modal.style.display='none';
+  if(step.onEnter) step.onEnter();
+
+  // position after any layout change
+  setTimeout(()=>{
+    const r=positionFor(step.target);
+    if(!r){ return; }
+    const pad=8;
+    spot.style.display='block';
+    spot.style.left=(r.left-pad)+'px'; spot.style.top=(r.top-pad)+'px';
+    spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
+    // clickable hotspot only when the step wants a click
+    if(step.click){
+      click.style.display='block';
+      click.style.left=(r.left-pad)+'px'; click.style.top=(r.top-pad)+'px';
+      click.style.width=(r.width+pad*2)+'px'; click.style.height=(r.height+pad*2)+'px';
+    } else click.style.display='none';
+
+    // tooltip placement: prefer below, else above; clamp horizontally
+    const tipW=300, gap=16;
+    let tx=r.left, ty=r.top+r.height+gap;
+    tip.style.display='block';
+    tip.innerHTML=tipHTML(step);
+    const tipH=tip.offsetHeight;
+    if(ty+tipH>window.innerHeight-10) ty=r.top-tipH-gap;
+    if(ty<10) ty=10;
+    tx=Math.min(Math.max(10,tx), window.innerWidth-tipW-10);
+    tip.style.left=tx+'px'; tip.style.top=ty+'px';
+  },60);
+}
+function tipHTML(step){
+  const qStep=STEPS.filter(s=>s.target).length;
+  const cur=STEPS.filter(s=>s.target).indexOf(step)+1;
+  const dots=STEPS.filter(s=>s.target).map((s)=>`<i class="${STEPS.indexOf(s)<=idx?'on':''}"></i>`).join('');
+  return `
+    <div class="step">${I('grid')} ${step.kicker}</div>
+    <h4>${step.title}</h4>
+    <p>${step.body}</p>
+    ${step.click ? `<div class="hint">${I('arrow')} Click the highlighted button to continue</div>` : ''}
+    <div class="row">
+      <div class="dots">${dots}</div>
+      ${step.next ? `<button class="go" onclick="advance()">Next ${I('arrow')}</button>` : `<button class="skip" onclick="endTour()">Skip tour</button>`}
+    </div>`;
+}
+function advance(){ idx++; if(idx>=STEPS.length){ endTour(); return;} render(); }
+function endTour(){
+  $('#spot').style.display='none'; $('#spotClick').style.display='none'; $('#tip').style.display='none'; $('#modal').style.display='none';
+  closePanel();
+  // reset so the Help button can replay
+  idx=0;
+}
+function startTour(){ idx=0; render(); }
+
+$('#helpBtn').addEventListener('click', startTour);
+window.addEventListener('resize', ()=>{ if($('#tip').style.display==='block') render(); });
+
+// auto-start on first load (simulating first login)
+startTour();
+</script>
+</body>
+</html>

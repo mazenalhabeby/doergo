@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useTranslation } from "react-i18next"
 import { Check, X, MessageCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -42,6 +43,7 @@ const DOT_COLORS = {
 } as const
 
 export function ActivityPanel({ events, pending, className }: ActivityPanelProps) {
+  const { t } = useTranslation()
   const { isOpen } = useActivityPanel()
   useRegisterActivityPanel() // tell the support button a panel is docked here
 
@@ -56,21 +58,21 @@ export function ActivityPanel({ events, pending, className }: ActivityPanelProps
       )}
     >
         {/* Recent Activity — 2/3 */}
-        <div className="flex-[2] flex flex-col overflow-hidden min-h-0">
+        <div data-tour="dash-activity" className="flex-[2] flex flex-col overflow-hidden min-h-0">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 bg-foreground/[0.03]">
             <span className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider">
-              Recent Activity
+              {t("dashboard.recentActivity", "Recent Activity")}
             </span>
             {events.length > 0 && (
               <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                {events.length} events
+                {t("dashboard.eventsCount", "{{count}} events", { count: events.length })}
               </span>
             )}
           </div>
           <div className="flex-1 overflow-y-auto">
             {events.length === 0 ? (
               <div className="flex items-center justify-center h-20 text-xs text-muted-foreground/50">
-                No recent activity
+                {t("dashboard.noRecentActivity", "No recent activity")}
               </div>
             ) : (
               events.map((event) => (
@@ -93,10 +95,10 @@ export function ActivityPanel({ events, pending, className }: ActivityPanelProps
 
         {/* Pending Actions — 1/3 */}
         {pending.length > 0 && (
-          <div className="flex-1 flex flex-col overflow-hidden min-h-0 border-t border-border">
+          <div data-tour="dash-pending" className="flex-1 flex flex-col overflow-hidden min-h-0 border-t border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 bg-foreground/[0.03]">
               <span className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider">
-                Pending Actions
+                {t("dashboard.pendingActions", "Pending Actions")}
               </span>
               <span className="text-[10px] font-semibold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full">
                 {pending.length}

@@ -878,6 +878,9 @@ function ProfileSection() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [avatarRemoving, setAvatarRemoving] = useState(false)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+  const [savingTimeFormat, setSavingTimeFormat] = useState(false)
+
+  const timeFormat: "12h" | "24h" = user?.timeFormat === "12h" ? "12h" : "24h"
 
   useEffect(() => {
     if (user) {
@@ -885,6 +888,20 @@ function ProfileSection() {
       setLastName(user.lastName || "")
     }
   }, [user])
+
+  const handleTimeFormatChange = async (next: "12h" | "24h") => {
+    if (next === timeFormat || savingTimeFormat) return
+    setSavingTimeFormat(true)
+    try {
+      await usersApi.updateMe({ timeFormat: next })
+      await refreshUser()
+      notify.success(t("settings.profile.timeFormatUpdated"))
+    } catch (e: any) {
+      notify.error(e.message || t("settings.profile.failed"))
+    } finally {
+      setSavingTimeFormat(false)
+    }
+  }
 
   const dirty =
     firstName.trim() !== (user?.firstName || "") || lastName.trim() !== (user?.lastName || "")
@@ -1024,6 +1041,41 @@ function ProfileSection() {
             {t("settings.profile.emailLoginNote")}
           </p>
         </div>
+
+        {/* Clock format — per-user 12h / 24h display preference (saves instantly) */}
+        <div>
+          <Label className="text-xs text-muted-foreground">{t("settings.profile.timeFormat")}</Label>
+          <div className="mt-1 inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+            {([
+              { value: "24h" as const, label: t("settings.profile.timeFormat24"), sample: "14:30" },
+              { value: "12h" as const, label: t("settings.profile.timeFormat12"), sample: "2:30 PM" },
+            ]).map((opt) => {
+              const active = timeFormat === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleTimeFormatChange(opt.value)}
+                  disabled={savingTimeFormat}
+                  className={cn(
+                    "relative flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-60",
+                    active
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <span>{opt.label}</span>
+                  <span className="text-[11px] tabular-nums text-muted-foreground">{opt.sample}</span>
+                  {active && savingTimeFormat && <Loader2 className="size-3 animate-spin" />}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {t("settings.profile.timeFormatNote")}
+          </p>
+        </div>
+
         <div className="flex justify-end pt-2">
           <Button onClick={handleSave} disabled={!canSave} size="sm">
             {saving ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Save className="size-4 mr-1.5" />}
@@ -1163,7 +1215,7 @@ export default function SettingsPage() {
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+          <h1 data-tour="page-settings" className="text-2xl font-bold text-foreground tracking-tight">
             {isPersonalSection ? t("settings.personalTitle") : t("settings.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -1179,7 +1231,7 @@ export default function SettingsPage() {
               {/* Organization section — only for admins */}
               {canManage && (
                 <>
-                  <p className="px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p data-tour="settings-org-group" className="px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("settings.nav.organizationGroup")}
                   </p>
                   {orgNavItems.map(item => {
@@ -1187,6 +1239,7 @@ export default function SettingsPage() {
                     return (
                       <button
                         key={item.key}
+                        data-tour={`settings-nav-${item.key}`}
                         onClick={() => selectSection(item.key)}
                         className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                           isActive
@@ -1203,7 +1256,7 @@ export default function SettingsPage() {
               )}
 
               {/* Personal section */}
-              <div className={canManage ? "pt-5 pb-1.5" : "pb-1.5"}>
+              <div data-tour="settings-personal-group" className={canManage ? "pt-5 pb-1.5" : "pb-1.5"}>
                 <p className="px-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t("settings.nav.personalGroup")}
                 </p>
@@ -1213,6 +1266,7 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={item.key}
+                    data-tour={`settings-nav-${item.key}`}
                     onClick={() => selectSection(item.key)}
                     className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                       isActive
@@ -1250,15 +1304,15 @@ export default function SettingsPage() {
           {/* Content Area */}
           <div className="flex-1 min-w-0">
             {/* Organization sections — inline */}
-            {activeSection === "general" && <GeneralSection />}
-            {activeSection === "members" && <MembersSection />}
-            {activeSection === "notifications" && <NotificationsSection />}
+            {activeSection === "general" && <div data-tour="settings-general"><GeneralSection /></div>}
+            {activeSection === "members" && <div data-tour="settings-members"><MembersSection /></div>}
+            {activeSection === "notifications" && <div data-tour="settings-notifications"><NotificationsSection /></div>}
             {/* Organization sections — lazy loaded from sub-pages */}
-            {activeSection === "workflows" && <LazyWorkflows />}
-            {activeSection === "audit-log" && <LazyAuditLog />}
+            {activeSection === "workflows" && <div data-tour="settings-workflows"><LazyWorkflows /></div>}
+            {activeSection === "audit-log" && <div data-tour="settings-audit"><LazyAuditLog /></div>}
             {/* Personal sections */}
-            {activeSection === "profile" && <ProfileSection />}
-            {activeSection === "security" && <SecuritySection />}
+            {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}
+            {activeSection === "security" && <div data-tour="settings-security"><SecuritySection /></div>}
           </div>
         </div>
       </div>

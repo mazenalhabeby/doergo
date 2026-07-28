@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useTimeFormat } from "@/hooks"
 
 const DAY_NAME_KEYS = [
   "technicians.scheduleTab.days.sunday",
@@ -41,14 +42,6 @@ const DAY_NAME_KEYS = [
   "technicians.scheduleTab.days.friday",
   "technicians.scheduleTab.days.saturday",
 ]
-
-function formatTime12h(time: string): string {
-  const [hours, minutes] = time.split(":")
-  const h = parseInt(hours!, 10)
-  const ampm = h >= 12 ? "PM" : "AM"
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
-  return `${h12}:${minutes} ${ampm}`
-}
 
 interface EditableScheduleRow {
   dayOfWeek: number
@@ -89,6 +82,7 @@ interface ScheduleTabProps {
 
 export function ScheduleTab({ employeeId, canManage }: ScheduleTabProps) {
   const { t } = useTranslation()
+  const { formatSchedule } = useTimeFormat()
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [editRows, setEditRows] = useState<EditableScheduleRow[]>(
@@ -279,7 +273,7 @@ export function ScheduleTab({ employeeId, canManage }: ScheduleTabProps) {
                       <TableCell className="font-medium">{t(nameKey)}</TableCell>
                       <TableCell>
                         {entry && entry.isActive
-                          ? `${formatTime12h(entry.startTime)} - ${formatTime12h(entry.endTime)}`
+                          ? `${formatSchedule(entry.startTime)} - ${formatSchedule(entry.endTime)}`
                           : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">

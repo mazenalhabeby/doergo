@@ -466,17 +466,21 @@ function CalendarTab({
           </div>
         ) : (
           <div className="grid grid-cols-7">
-            {days.map((day) => {
+            {(() => { let tourPicked = false; return days.map((day) => {
               const dateStr = format(day, "yyyy-MM-dd")
               const isCurrentMonth = isSameMonth(day, currentDate)
               const isTodayDate = isToday(day)
               const data = dayDataMap.get(dateStr)!
               const hasData = data.total > 0
               const isSelected = selectedDay && format(selectedDay.date, "yyyy-MM-dd") === dateStr
+              // Tag the first day that has people so the guide can open its detail panel.
+              const isTourDay = hasData && !tourPicked
+              if (isTourDay) tourPicked = true
 
               return (
                 <div
                   key={day.toISOString()}
+                  data-tour={isTourDay ? "avail-day" : undefined}
                   onClick={() => handleDayClick(day, data.employees)}
                   className={cn(
                     "p-3 transition-all duration-150 border-r border-b border-border/60 last:border-r-0",
@@ -539,14 +543,14 @@ function CalendarTab({
                   )}
                 </div>
               )
-            })}
+            }) })()}
           </div>
         )}
       </div>
 
       {/* Day Detail Panel */}
       {selectedDay && (
-        <div className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
+        <div data-tour="avail-daydetail" className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div className="flex items-center gap-3">
               <CalendarDays className="h-5 w-5 text-muted-foreground" />
@@ -781,7 +785,7 @@ export default function ScheduleAndTimeOffPage() {
           <div className="mb-6">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+                <h1 data-tour="page-availability" className="text-2xl font-semibold text-foreground tracking-tight">
                   {t('technicians.availabilityPage.title')}
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -791,7 +795,7 @@ export default function ScheduleAndTimeOffPage() {
               {activeTab === "calendar" && (
                 <div className="flex items-center gap-3">
                   <Select value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                    <SelectTrigger className="w-[120px] h-10 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
+                    <SelectTrigger data-tour="avail-view" className="w-[120px] h-10 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -800,7 +804,7 @@ export default function ScheduleAndTimeOffPage() {
                     </SelectContent>
                   </Select>
                   <Select value={selectedSpace} onValueChange={setSelectedSpace}>
-                    <SelectTrigger className="w-[180px] h-10 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
+                    <SelectTrigger data-tour="avail-space" className="w-[180px] h-10 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
                       <SelectValue placeholder={t('common.allSpaces')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -812,6 +816,7 @@ export default function ScheduleAndTimeOffPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <div data-tour="avail-datenav" className="flex items-center gap-3">
                   <Button variant="outline" size="sm" onClick={handleToday} className="h-10 px-4 rounded-xl bg-card/80 shadow-sm">
                     {t('common.today')}
                   </Button>
@@ -822,13 +827,14 @@ export default function ScheduleAndTimeOffPage() {
                   <Button variant="outline" size="icon" onClick={handleNext} className="h-10 w-10 rounded-xl bg-card/80 shadow-sm">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
           {/* Summary Cards — minimal, monochrome */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div data-tour="avail-summary" className="grid grid-cols-3 gap-3 mb-6">
             <div className="bg-card rounded-xl border border-border p-4">
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('technicians.availabilityPage.totalTechnicians')}</p>
               <div className="flex items-baseline gap-2 mt-1.5">
@@ -863,12 +869,12 @@ export default function ScheduleAndTimeOffPage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-card border border-border/80 shadow-sm mb-6">
+            <TabsList data-tour="avail-tabs" className="bg-card border border-border/80 shadow-sm mb-6">
               <TabsTrigger value="calendar" className="gap-2">
                 <CalendarIcon className="h-4 w-4" />
                 {t('technicians.availabilityPage.calendarTab')}
               </TabsTrigger>
-              <TabsTrigger value="time-off" className="gap-2">
+              <TabsTrigger value="time-off" data-tour="avail-timeoff-tab" onClick={() => setActiveTab("time-off")} className="gap-2">
                 <Umbrella className="h-4 w-4" />
                 {t('technicians.availabilityPage.timeOffTab')}
                 {pendingCount > 0 && (
@@ -880,6 +886,7 @@ export default function ScheduleAndTimeOffPage() {
             </TabsList>
 
             <TabsContent value="calendar">
+              <div data-tour="avail-calendar">
               <CalendarTab
                 currentDate={currentDate}
                 viewMode={viewMode}
@@ -889,8 +896,9 @@ export default function ScheduleAndTimeOffPage() {
                 isFetchingNew={availabilityQuery.isFetching && !availabilityQuery.isLoading}
                 t={t}
               />
+              </div>
               {/* Legend */}
-              <div className="flex items-center justify-center gap-8 text-xs text-muted-foreground py-2">
+              <div data-tour="avail-legend" className="flex items-center justify-center gap-8 text-xs text-muted-foreground py-2">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   <span>{t('technicians.availabilityPage.legend.available')}</span>
@@ -907,7 +915,9 @@ export default function ScheduleAndTimeOffPage() {
             </TabsContent>
 
             <TabsContent value="time-off">
+              <div data-tour="avail-timeoff">
               <TimeOffRequestsTab canManage={canManage} />
+              </div>
             </TabsContent>
           </Tabs>
         </div>

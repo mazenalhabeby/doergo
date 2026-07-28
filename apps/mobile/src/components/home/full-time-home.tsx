@@ -26,13 +26,14 @@ import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenCon
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
-  formatTimeString as formatTime,
   formatDateRelative as formatDate,
 } from '../../lib/utils';
+import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 
 export function FullTimeHome() {
   const { user } = useAuth();
+  const { formatTime } = useTimeFormat();
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();

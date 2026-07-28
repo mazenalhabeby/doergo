@@ -4,6 +4,7 @@ import { PlanGate } from "@/components/plan-gate"
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import { useTimeFormat } from "@/hooks"
 import { notify } from "@/lib/toast"
 import { format, formatDistanceToNow } from "date-fns"
 import {
@@ -144,7 +145,7 @@ function OvertimePageInner() {
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("overtime.title")}</h1>
+              <h1 data-tour="page-overtime" className="text-3xl font-bold text-foreground tracking-tight">{t("overtime.title")}</h1>
               <p className="mt-1.5 text-muted-foreground">
                 {t("overtime.subtitle")}
               </p>
@@ -432,6 +433,7 @@ function OvertimeCard({
 
 function HistoryCard({ request }: { request: OvertimeRequest }) {
   const { t } = useTranslation()
+  const { timeToken } = useTimeFormat()
   const badge = STATUS_BADGES[request.status] || STATUS_BADGES.COMPLETED
   const Icon = badge!.icon
 
@@ -451,7 +453,7 @@ function HistoryCard({ request }: { request: OvertimeRequest }) {
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
               <span>{request.location?.name}</span>
-              <span>{format(new Date(request.createdAt), "MMM d, h:mm a")}</span>
+              <span>{format(new Date(request.createdAt), `MMM d, ${timeToken}`)}</span>
               {request.overtimeMinutes && (
                 <span className="font-medium text-muted-foreground">{t("overtime.minOvertime", { count: request.overtimeMinutes })}</span>
               )}

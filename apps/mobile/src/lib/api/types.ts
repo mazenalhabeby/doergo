@@ -70,6 +70,8 @@ export interface User {
   technicianType?: string | null;
   // Manual availability override (null = auto from task).
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
+  // Per-user clock display preference ("12h" | "24h"); display-only.
+  timeFormat?: '12h' | '24h' | null;
   // Either a legacy string[] (org-level default) or a per-user AccessProfile
   // object ({ modules, platforms, spaceScope, canContact }). Read via the
   // shared getModules/hasModule/getAccessPlatforms helpers — never indexed directly.

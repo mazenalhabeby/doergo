@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { AddAttendanceDialog } from "./add-attendance-dialog"
+import { useTimeFormat } from "@/hooks"
 
 interface AttendanceTabProps {
   attendance: TimeEntry[] | undefined
@@ -37,6 +38,7 @@ export function AttendanceTab({
   canManage,
 }: AttendanceTabProps) {
   const { t } = useTranslation()
+  const { timeToken } = useTimeFormat()
 
   return (
     <Card>
@@ -74,11 +76,11 @@ export function AttendanceTab({
                     {format(new Date(entry.clockInAt), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(entry.clockInAt), "h:mm a")}
+                    {format(new Date(entry.clockInAt), timeToken)}
                   </TableCell>
                   <TableCell>
                     {entry.clockOutAt
-                      ? format(new Date(entry.clockOutAt), "h:mm a")
+                      ? format(new Date(entry.clockOutAt), timeToken)
                       : "—"}
                   </TableCell>
                   <TableCell>

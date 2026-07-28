@@ -93,7 +93,7 @@ export default function AssetsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t("assets.title")}</h1>
+            <h1 data-tour="page-assets" className="text-2xl font-semibold text-foreground">{t("assets.title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t("assets.subtitle")}</p>
           </div>
           {isAdmin && (

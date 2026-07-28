@@ -445,6 +445,8 @@ export class AuthService {
             specialty: user.specialty,
             // Profile badge visibility
             profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
+            // Per-user clock display preference ("24h" | "12h") — display-only.
+            timeFormat: user.timeFormat ?? '24h',
             // Access Profile (mobile tabs / web screens) — per-user overrides org.
             enabledModules: (user.enabledModules ?? user.organization?.enabledModules) || [],
             // Org FEATURE modules (sprints, checklists, tracking…) — always the
@@ -971,6 +973,8 @@ export class AuthService {
           specialty: true,
           // Badge config
           profileBadges: true,
+          // Per-user clock display preference ("24h" | "12h")
+          timeFormat: true,
           enabledModules: true,
           organization: { select: { profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
           // Custom role

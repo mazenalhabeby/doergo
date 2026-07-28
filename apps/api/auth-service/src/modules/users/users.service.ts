@@ -1068,13 +1068,15 @@ export class UsersService {
    */
   async updateOwnProfile(
     userId: string,
-    dto: { firstName?: string; lastName?: string; presence?: string | null },
+    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string },
   ) {
-    const data: { firstName?: string; lastName?: string; presence?: string | null } = {};
+    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string } = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
     if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
     // presence: a value sets the manual override; null clears it back to auto.
     if (dto.presence !== undefined) data.presence = dto.presence;
+    // timeFormat: per-user clock display ("12h" | "24h"); ignore anything else.
+    if (dto.timeFormat === '12h' || dto.timeFormat === '24h') data.timeFormat = dto.timeFormat;
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
@@ -1087,6 +1089,7 @@ export class UsersService {
         avatarUrl: true,
         role: true,
         presence: true,
+        timeFormat: true,
       },
     });
 

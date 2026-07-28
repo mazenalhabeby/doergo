@@ -264,6 +264,7 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
   }
 
   return (
+    <div data-tour="task-custom-fields">
     <CollapsibleSection id="custom-fields" icon={Settings2} title={t("tasks.sections.customFields")}>
       <div>
         {saveMutation.isPending && (
@@ -297,6 +298,7 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
         </div>
       </div>
     </CollapsibleSection>
+    </div>
   )
 }
 

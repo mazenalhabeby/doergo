@@ -655,7 +655,8 @@
       "termsOfService": "Terms of Service",
       "privacyPolicy": "Privacy Policy",
       "about": "About",
-      "language": "Language"
+      "language": "Language",
+      "timeFormat": "Time format"
     },
     "language": {
       "choosePreferred": "Choose your preferred language",
@@ -668,6 +669,15 @@
       "light": "Light",
       "dark": "Dark",
       "appliedImmediately": "Theme changes are applied immediately across the app."
+    },
+    "timeFormat": {
+      "title": "Time format",
+      "subtitle": "Choose how times are shown across the app",
+      "24h": "24-hour",
+      "12h": "12-hour",
+      "note": "Applies only to your account, on every device you sign in to.",
+      "updated": "Time format updated",
+      "failed": "Could not update time format"
     },
     "signOutConfirmTitle": "Sign Out",
     "signOutConfirmMessage": "Are you sure you want to sign out?",

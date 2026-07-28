@@ -1018,7 +1018,7 @@ export default function TasksPage() {
 
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative" data-tour="tasks-search">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={searchInputRef}
@@ -1034,11 +1034,12 @@ export default function TasksPage() {
           </div>
 
           {/* View mode toggle buttons */}
-          <div className="flex items-center rounded-lg border border-border/60 overflow-hidden">
+          <div className="flex items-center rounded-lg border border-border/60 overflow-hidden" data-tour="tasks-views">
             {VIEW_OPTIONS.map(({ mode, icon: Icon }) => (
               <button
                 key={mode}
                 onClick={() => handleViewModeChange(mode)}
+                data-tour={`tasks-view-${mode}`}
                 title={t(`tasks.view.${mode}`)}
                 className={cn(
                   "h-8 w-8 flex items-center justify-center transition-colors duration-150",
@@ -1073,6 +1074,7 @@ export default function TasksPage() {
             <Button
               size="sm"
               onClick={() => setCreateDialogOpen(true)}
+              data-tour="tasks-create"
               className="h-8 px-3.5 rounded-lg font-medium text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-150"
             >
               <Plus className="size-4 mr-1.5" />
@@ -1361,7 +1363,7 @@ export default function TasksPage() {
 
         {/* List View — flat table */}
         {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "table" && groupBy === "none" && (
-          <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
+          <div data-tour="tasks-list" className="bg-card rounded-xl border border-border/50 overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-[24px_1fr_100px_160px_110px_110px_40px] items-center px-3 py-2 border-b border-border/40">
               <div />
@@ -1413,6 +1415,7 @@ export default function TasksPage() {
 
         {/* Board View — always flat kanban */}
         {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "board" && (
+          <div data-tour="tasks-board">
           <KanbanBoard
             tasks={filteredTasks}
             columns={spaceKanbanColumns}
@@ -1426,12 +1429,13 @@ export default function TasksPage() {
             spaces={spaces}
             recentAssignees={recentAssignees}
           />
+          </div>
         )}
 
 
         {/* Schedule View — Roadmap + Timeline + Calendar */}
         {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "schedule" && (
-          <div className="space-y-6">
+          <div data-tour="tasks-schedule" className="space-y-6">
             {/* Roadmap section — only when space has epics module */}
             {effectiveHasModule('epics') && (() => {
               // Use unfiltered tasks so roadmap stays visible when epic filter is active

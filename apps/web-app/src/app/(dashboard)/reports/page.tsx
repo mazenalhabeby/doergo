@@ -280,8 +280,8 @@ export default function ReportsPage() {
     ? (displayResult?.rows.slice(0, 12).map((r) => ({ label: String(fmt(r[labelCol.key], labelCol.format)), value: Number(r[chartMeasure.key]) || 0 })) || [])
     : []
 
-  const NavBtn = ({ activeKey, onClick, icon: Icon, label, desc, onDelete }: { activeKey: boolean; onClick: () => void; icon: typeof Clock; label: string; desc?: string; onDelete?: () => void }) => (
-    <div className={cn("group/nav w-full rounded-xl border px-2.5 py-2.5 transition-all cursor-pointer flex items-start gap-2.5", activeKey ? "border-primary/50 bg-primary/[0.05] shadow-sm" : "border-transparent hover:bg-accent/50")} onClick={onClick}>
+  const NavBtn = ({ activeKey, onClick, icon: Icon, label, desc, onDelete, dataTour }: { activeKey: boolean; onClick: () => void; icon: typeof Clock; label: string; desc?: string; onDelete?: () => void; dataTour?: string }) => (
+    <div data-tour={dataTour} className={cn("group/nav w-full rounded-xl border px-2.5 py-2.5 transition-all cursor-pointer flex items-start gap-2.5", activeKey ? "border-primary/50 bg-primary/[0.05] shadow-sm" : "border-transparent hover:bg-accent/50")} onClick={onClick}>
       <div className={cn("grid place-items-center h-8 w-8 rounded-lg shrink-0 transition-colors", activeKey ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover/nav:text-foreground")}>
         <Icon className="h-4 w-4" />
       </div>
@@ -299,7 +299,7 @@ export default function ReportsPage() {
         {/* Page Header — matches the app's standard page header */}
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("reports.title", "Reports")}</h1>
+            <h1 data-tour="reports-header" className="text-3xl font-bold text-foreground tracking-tight">{t("reports.title", "Reports")}</h1>
             <p className="mt-1.5 text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
           </div>
         </div>
@@ -308,10 +308,10 @@ export default function ReportsPage() {
           {/* Left: report modes + saved */}
           <div className="space-y-5">
             <div className="space-y-1">
-              <NavBtn activeKey={!!active?.builder} onClick={newReport} icon={SlidersHorizontal} label={t("reports.builderNav", "Report builder")} desc={t("reports.builderNavDesc", "Pick a dataset, measures and grouping")} />
+              <NavBtn dataTour="reports-builder" activeKey={!!active?.builder} onClick={newReport} icon={SlidersHorizontal} label={t("reports.builderNav", "Report builder")} desc={t("reports.builderNavDesc", "Pick a dataset, measures and grouping")} />
             </div>
             {(saved && saved.length > 0) && (
-              <div>
+              <div data-tour="reports-saved-list">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{t("reports.myTemplates", "My templates")}</p>
                 <div className="space-y-1">
                   {saved.map((r) => (
@@ -357,7 +357,7 @@ export default function ReportsPage() {
                       </Button>
                     )}
                     {!isDetail && canBuild && (
-                      <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={openSave}>
+                      <Button data-tour="reports-save" variant="outline" size="sm" className="gap-1.5 h-9" onClick={openSave}>
                         <Save className="h-3.5 w-3.5" />{active.savedId ? t("reports.updateTemplate", "Update template") : t("reports.saveTemplate", "Save as template")}
                       </Button>
                     )}
@@ -369,7 +369,7 @@ export default function ReportsPage() {
                     {displayResult && displayResult.rows.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 h-9"><Download className="h-3.5 w-3.5" />{t("reports.export", "Export")}<ChevronDown className="h-3.5 w-3.5 opacity-60" /></Button>
+                          <Button data-tour="reports-export" variant="outline" size="sm" className="gap-1.5 h-9"><Download className="h-3.5 w-3.5" />{t("reports.export", "Export")}<ChevronDown className="h-3.5 w-3.5 opacity-60" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={download} className="gap-2"><Table2 className="h-4 w-4" />{t("reports.exportCsv", "Download CSV")}</DropdownMenuItem>
@@ -386,7 +386,7 @@ export default function ReportsPage() {
                   {active.builder && dsMeta && (
                     <div className="p-4 space-y-3">
                       {/* Dataset */}
-                      <div className="flex items-center gap-3">
+                      <div data-tour="reports-dataset" className="flex items-center gap-3">
                         <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
                         <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); setActive((a) => (a ? { ...a, detail: false, def: { ...a.def, dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [], filters: [] } } : a)) }}>
                           <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
@@ -441,7 +441,7 @@ export default function ReportsPage() {
                         </>
                       ) : (
                         <>
-                          <div className="flex items-start gap-3">
+                          <div data-tour="reports-measures" className="flex items-start gap-3">
                             <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
                             <div className="flex flex-wrap gap-1.5">
                               {dsMeta.measures.map((m) => {
@@ -450,7 +450,7 @@ export default function ReportsPage() {
                               })}
                             </div>
                           </div>
-                          <div className="flex items-start gap-3">
+                          <div data-tour="reports-dimensions" className="flex items-start gap-3">
                             <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
                             <div className="flex flex-wrap gap-1.5">
                               {dsMeta.dimensions.map((dim) => {
@@ -479,7 +479,7 @@ export default function ReportsPage() {
                   )}
 
                   {/* Period / time split + Run */}
-                  <div className="flex flex-wrap items-end gap-3 p-4">
+                  <div data-tour="reports-period" className="flex flex-wrap items-end gap-3 p-4">
                     <div className="space-y-1.5">
                       <label className="text-xs text-muted-foreground">{t("reports.period", "Period")}</label>
                       <Select
@@ -524,11 +524,11 @@ export default function ReportsPage() {
                       </div>
                     )}
                     {isDetail ? (
-                      <Button className="gap-1.5 h-9 ml-auto" disabled={timesheet.isPending || !active.userId} onClick={runTimesheet}>
+                      <Button data-tour="reports-run" className="gap-1.5 h-9 ml-auto" disabled={timesheet.isPending || !active.userId} onClick={runTimesheet}>
                         <Play className="h-3.5 w-3.5" />{timesheet.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
                       </Button>
                     ) : (
-                      <Button className="gap-1.5 h-9 ml-auto" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
+                      <Button data-tour="reports-run" className="gap-1.5 h-9 ml-auto" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
                         <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
                       </Button>
                     )}
@@ -546,7 +546,7 @@ export default function ReportsPage() {
                     <p className="text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</p>
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div data-tour="reports-results" className="space-y-5">
                     {/* KPI stat cards */}
                     {statCards(displayResult).length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">

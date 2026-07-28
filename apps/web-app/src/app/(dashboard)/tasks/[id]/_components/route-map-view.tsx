@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useTimeFormat } from "@/hooks"
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import { Navigation, Flag, Clock } from "lucide-react"
@@ -99,6 +100,7 @@ async function snapToRoads(points: RoutePoint[]): Promise<[number, number][]> {
 
 export default function RouteMapView({ points, isLive = false }: RouteMapViewProps) {
   const { t } = useTranslation()
+  const { formatTime } = useTimeFormat()
   const [roadPath, setRoadPath] = useState<[number, number][]>([])
   const [loading, setLoading] = useState(true)
 
@@ -182,11 +184,7 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
                 <p className="font-semibold text-foreground">{t("tasks.route.startPoint")}</p>
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
                   <Clock size={12} />
-                  {new Date(startPoint.timestamp).toLocaleString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
+                  {formatTime(startPoint.timestamp)}
                 </p>
               </div>
             </Popup>
@@ -203,11 +201,7 @@ export default function RouteMapView({ points, isLive = false }: RouteMapViewPro
                 </p>
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
                   <Clock size={12} />
-                  {new Date(endPoint.timestamp).toLocaleString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
+                  {formatTime(endPoint.timestamp)}
                 </p>
               </div>
             </Popup>

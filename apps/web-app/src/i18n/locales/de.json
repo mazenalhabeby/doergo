@@ -256,38 +256,38 @@
         {
           "name": "Immobilien- & Facility-Management",
           "who": "Vermieter, Immobilien- und Facility-Manager mit vielen Gebäuden und Einheiten.",
-          "how": "Mieteranfragen werden zu disponierten Aufgaben, Geozaun-Einstempeln je Gebäude, Foto- und unterschriebene Serviceberichte sowie wiederkehrende Sicherheitsprüfungen — Heizung, Rauchmelder — auf einer Live-Karte mit vollständigem Prüfprotokoll.",
-          "benefit": "Eine Koordinationskraft betreut mehr Einheiten, Stunden sind nachweisbar, Compliance ist dokumentiert und Mieter erhalten schneller eine Antwort."
+          "how": "Jede Anfrage als Auftrag erfassen, den nächsten Techniker disponieren und pro Gebäude eine lückenlose Service-Historie führen.",
+          "benefit": "Ein System für Mieter, Techniker und Dokumentation – nichts geht verloren."
         },
         {
           "name": "HLK-, Sanitär- & Elektrohandwerk",
           "who": "Installations- und Reparaturbetriebe mit mobilen Technikern.",
-          "how": "Aufträge nach Standort und Priorität zugewiesen, klarer Statusfluss von unterwegs über angekommen bis abgeschlossen, Serviceberichte mit verwendeten Teilen und Kundenunterschrift, dann Rechnungsstellung.",
-          "benefit": "Schnellere Auftragsabwicklung, nachweisbare Arbeit und Teile sowie schnellere Abrechnung."
+          "how": "Aufträge ans Team zuweisen, Ankunft und Route auf einer Live-Karte verfolgen und bei Abschluss Material, Fotos und Unterschrift erfassen.",
+          "benefit": "Schnellere Einsätze und ein unterschriebener Servicebericht, bevor der Techniker geht."
+        },
+        {
+          "name": "Industrie & Instandhaltung",
+          "who": "Fabriken, Werke und Industriestandorte mit eigener Instandhaltung für Maschinen und Anlagen.",
+          "how": "Wiederkehrende Wartungen planen, Störungs-Aufträge anlegen und Material sowie Arbeit je Anlage dokumentieren – für eine vollständige Maschinen-Historie.",
+          "benefit": "Weniger ungeplante Ausfälle – geplante Wartung und die komplette Historie jeder Anlage an einem Ort."
         },
         {
           "name": "Reinigung & Hausmeisterservice",
-          "who": "Gebäudereiniger mit wiederkehrenden Runden über mehrere Standorte.",
-          "how": "Wiederkehrende Aufgaben je Standort, Geozaun-Einstempeln als Anwesenheitsnachweis und Checklisten über benutzerdefinierte Felder.",
-          "benefit": "Keine verpassten Runden, verifizierte Anwesenheit und weniger Aufsicht."
+          "who": "Gebäudereiniger mit wiederkehrenden Runden über viele Standorte.",
+          "how": "Wiederkehrende Pläne erstellen, Anwesenheit per Geofence-Stempeln nachweisen und jeden Standort mit Checkliste und Fotos bestätigen.",
+          "benefit": "Automatischer Leistungsnachweis für jeden Standort."
         },
         {
           "name": "Sicherheit & Bewachung",
-          "who": "Sicherheitsdienste mit Streifen und Kontrollen.",
-          "how": "Geplante wiederkehrende Streifenaufgaben, zeitgestempelte Geozaun-Check-ins, GPS-Routennachweis und Foto-Vorfallberichte.",
-          "benefit": "Nachweisbare Abdeckung für Kunden und deutlich weniger Streitfälle."
+          "who": "Sicherheitsdienste mit Streifen und Objektkontrollen.",
+          "how": "Streifen als wiederkehrende Aufträge planen, Wachen per GPS und Stempeln vor Ort verifizieren und jede Kontrolle protokollieren.",
+          "benefit": "Verifizierte, mit Zeitstempel belegte Rundgänge für den Kunden."
         },
         {
           "name": "Garten- & Außenanlagenpflege",
           "who": "Außenteams, die viele Standorte betreuen.",
-          "how": "GPS-routenverfolgte Besuche, wiederkehrende saisonale Pläne und Vorher-/Nachher-Fotos.",
-          "benefit": "Effiziente Routen, dokumentierte Arbeit und klarer Nachweis für Kunden."
-        },
-        {
-          "name": "Geräte- & Anlagenreparatur",
-          "who": "Serviceteams, die Maschinen und Anlagen beim Kunden warten.",
-          "how": "Anlagenbezogene Aufgaben mit vollständiger Wartungshistorie, Serviceberichte mit Teilen, wiederkehrende Wartung und Unterschriften.",
-          "benefit": "Vollständige Historie je Anlage, schnellere Folgebesuche und nachweisbare Garantiearbeiten."
+          "how": "Wiederkehrende Einsätze planen, Teams per GPS-Route und Stempeln nachverfolgen und Arbeiten mit Fotos belegen.",
+          "benefit": "Volle Übersicht über verstreute Standorte und geleistete Arbeit."
         }
       ]
     },
@@ -845,6 +845,11 @@
       "addSpace": "Bereich hinzufügen",
       "inviteTeam": "Team einladen",
       "newSpace": "Neuer Bereich",
+      "exampleLabel": "Beispiel — so sieht ein Bereich aus",
+      "exampleSpaceName": "Hauptbüro",
+      "exampleOnShift": "Im Dienst",
+      "exampleInField": "Im Einsatz",
+      "exampleJob": "Klimaanlage reparieren — Zentrum",
       "noSpacesTitle": "Noch keine Bereiche zugewiesen",
       "noSpacesDescription": "Sie wurden noch keinem Bereich hinzugefügt. Sehen Sie im Aufgaben-Tab nach Ihren zugewiesenen Aufgaben oder bitten Sie Ihren Manager, Sie hinzuzufügen."
     },
@@ -870,6 +875,10 @@
     "activityFeed": {
       "noRecentActivity": "Keine aktuellen Aktivitäten"
     },
+    "recentActivity": "Letzte Aktivität",
+    "pendingActions": "Ausstehende Aktionen",
+    "eventsCount": "{{count}} Ereignisse",
+    "noRecentActivity": "Keine aktuellen Aktivitäten",
     "recentTasksWidget": {
       "noTasks": "Noch keine Aufgaben",
       "willAppear": "Aufgaben erscheinen hier, sobald sie erstellt werden",
@@ -2296,7 +2305,12 @@
       "avatarUpdated": "Avatar aktualisiert",
       "avatarUploadFailed": "Avatar konnte nicht hochgeladen werden",
       "avatarRemoved": "Avatar entfernt",
-      "avatarRemoveFailed": "Avatar konnte nicht entfernt werden"
+      "avatarRemoveFailed": "Avatar konnte nicht entfernt werden",
+      "timeFormat": "Zeitformat",
+      "timeFormat24": "24-Stunden",
+      "timeFormat12": "12-Stunden",
+      "timeFormatNote": "Legt fest, wie Uhrzeiten in der App angezeigt werden. Gilt nur für Ihr Konto.",
+      "timeFormatUpdated": "Zeitformat aktualisiert"
     },
     "security": {
       "title": "Passwort & Sicherheit",
@@ -4023,6 +4037,379 @@
       "tryDifferentPath": "Anderen Weg versuchen",
       "logOut": "Abmelden",
       "failedToCancel": "Die Anfrage konnte nicht abgebrochen werden. Bitte versuchen Sie es erneut."
+    }
+  },
+  "setup": {
+    "stepOf": "Schritt {{step}} von {{total}}",
+    "skip": "Später einrichten",
+    "friend": "da",
+    "yourCompany": "Ihr Unternehmen",
+    "defaultSpace": "Hauptarbeitsbereich",
+    "splash": {
+      "title": "Willkommen, {{name}}",
+      "sub": "Machen wir {{org}} startklar. Sagen Sie mir einfach, was Ihr Team macht — ich verstehe es und richte alles für Sie ein. Dauert etwa eine Minute, und Sie können später alles ändern.",
+      "cta": "Los geht's",
+      "reassure": "Keine Formulare. Keine Einstellungen, die Sie verstehen müssen."
+    },
+    "work": {
+      "kicker": "Erzählen Sie von Ihrer Arbeit",
+      "title": "Was macht Ihr Team?",
+      "sub": "Beschreiben Sie es in eigenen Worten — ein Satz reicht. Ich lese es und richte Sie passend ein.",
+      "placeholder": "z. B. wir installieren und warten Klimaanlagen und übernehmen Notfalleinsätze",
+      "orPick": "oder wählen Sie einen Startpunkt",
+      "understoodEyebrow": "Das habe ich verstanden",
+      "youreIn": "Sie sind im Bereich {{industry}}",
+      "understoodSub": "Basierend auf Ihrer Eingabe richte ich Sie so ein.",
+      "areasLabel": "Arbeitsbereiche, die ich anlege",
+      "toolsLabel": "Funktionen, die ich aktiviere",
+      "continue": "Perfekt, weiter",
+      "addDetail": "Mehr Details hinzufügen"
+    },
+    "group": {
+      "kicker": "Ihre Arbeitsbereiche",
+      "confirmTitle": "So organisiere ich Ihre Arbeit",
+      "confirmSub": "Basierend auf Ihren Angaben. Diese werden Ihre Gruppen für Aufträge, Personen und Berichte — alles später änderbar.",
+      "looksGood": "Passt",
+      "groupDifferently": "Anders gruppieren",
+      "chooseTitle": "Wie soll ich Ihre Aufträge gruppieren?",
+      "chooseSub": "Ich kann das für Sie einrichten — oder Sie wählen selbst, wie Ihre Aufträge gruppiert werden.",
+      "orManual": "oder selbst gruppieren",
+      "byType": "Nach Auftragsart",
+      "byTypeHint": "Installationen, Reparaturen, Wartung…",
+      "byPlace": "Nach Ort",
+      "byPlaceHint": "eine Gruppe pro Standort oder Gebiet",
+      "byTeam": "Nach Team",
+      "byTeamHint": "eine Gruppe pro Trupp",
+      "pickForMe": "Nicht sicher? Ich wähle",
+      "pickForMeHint": "Ich wähle die beste Einrichtung"
+    },
+    "team": {
+      "kicker": "Ihr Team",
+      "title": "Wer nutzt das mit Ihnen?",
+      "sub": "Damit ich weiß, ob ich Einladungen vorbereiten soll. Sie können jederzeit Personen hinzufügen.",
+      "justMe": "Vorerst nur ich",
+      "justMeHint": "Ich füge später Personen hinzu",
+      "small": "Ein kleines Team",
+      "smallHint": "Etwa 2–10 Personen",
+      "big": "Ein größeres Team",
+      "bigHint": "Mehr als 10"
+    },
+    "build": {
+      "title": "Alles wird eingerichtet…",
+      "sub": "Nur ein paar Sekunden — ich baue alles für Sie auf.",
+      "error": "Beim Einrichten ist etwas schiefgelaufen. Versuchen wir es erneut.",
+      "retry": "Erneut versuchen",
+      "steps": {
+        "company": "Ihr Unternehmen wird erstellt",
+        "spaces": "Ihre Arbeitsbereiche werden eingerichtet",
+        "tools": "Die benötigten Funktionen werden aktiviert",
+        "finish": "Ihr Dashboard wird vorbereitet"
+      }
+    },
+    "done": {
+      "title": "Fertig — Sie können loslegen",
+      "flag": "{{org}} ist eingerichtet und einsatzbereit",
+      "areasTitle": "Ihre Arbeitsbereiche sind bereit",
+      "toolsTitle": "Die richtigen Funktionen sind aktiviert",
+      "teamTitle": "Laden Sie Ihr Team ein",
+      "teamReady": "Fügen Sie Ihre Teammitglieder bei Bedarf unter Mitglieder hinzu",
+      "teamSoloTitle": "Vorerst nur Sie",
+      "teamSolo": "Fügen Sie jederzeit Personen unter Mitglieder hinzu",
+      "cta": "Zeigen Sie mir alles"
+    },
+    "badges": { "recommended": "Empfohlen" },
+    "industries": {
+      "repairs": "Reparatur & Handwerk",
+      "machines": "Maschinen & Wartung",
+      "facilities": "Gebäude & Facility",
+      "cleaning": "Reinigung",
+      "security": "Sicherheit & Bewachung",
+      "grounds": "Garten & Außenanlagen",
+      "construction": "Bau",
+      "it": "IT & Telekom",
+      "solar": "Solar & Energie",
+      "other": "Allgemein"
+    },
+    "areaNames": {
+      "installations": "Installationen",
+      "maintenance": "Wartung",
+      "repairs": "Reparaturen & Einsätze",
+      "preventive": "Vorbeugende Wartung",
+      "breakdowns": "Störungen",
+      "inspections": "Inspektionen",
+      "requests": "Anfragen",
+      "regularCleans": "Regelmäßige Reinigung",
+      "deepCleans": "Grundreinigung",
+      "oneOff": "Einmalaufträge",
+      "cleaning": "Reinigungsaufträge",
+      "patrols": "Rundgänge",
+      "alarmCallouts": "Alarmeinsätze",
+      "staticGuarding": "Objektschutz",
+      "regularVisits": "Regelmäßige Besuche",
+      "projects": "Projekte",
+      "snagging": "Mängelbehebung",
+      "callbacks": "Nacharbeiten",
+      "installs": "Installationen",
+      "supportTickets": "Support-Tickets",
+      "servicing": "Wartung",
+      "callouts": "Einsätze",
+      "routes": "Routen",
+      "pickups": "Abholungen",
+      "deliveries": "Lieferungen",
+      "treatments": "Behandlungen",
+      "followUps": "Nachkontrollen",
+      "grounds": "Außenanlagen",
+      "jobs": "Aufträge"
+    },
+    "tools": {
+      "jobs": "Aufträge & Planung",
+      "serviceReports": "Serviceberichte",
+      "photos": "Fotos & Unterschriften",
+      "tracking": "Live-GPS-Tracking",
+      "clock": "Ein-/Ausstempeln",
+      "checklists": "Checklisten",
+      "projects": "Projekte & Phasen"
+    },
+    "seeds": {
+      "mainOffice": "Hauptbüro",
+      "north": "Nord",
+      "south": "Süd",
+      "fieldTeam": "Außendienst",
+      "office": "Büro"
+    }
+  },
+  "tours": {
+    "progress": "Schritt {{current}} von {{total}}",
+    "clickHint": "Klicken Sie auf das hervorgehobene Element, um fortzufahren",
+    "skip": "Überspringen",
+    "next": "Weiter",
+    "finish": "Fertig",
+    "takeTour": "Tour starten",
+    "help": {
+      "button": "Hilfe & Anleitungen",
+      "title": "Hilfe & Anleitungen",
+      "subtitle": "Lernen Sie Schritt für Schritt",
+      "thisPage": "Diese Seite erklären",
+      "noneForPage": "Für diese Seite gibt es noch keine Führung — wählen Sie unten eine Anleitung oder durchsuchen Sie das Hilfecenter.",
+      "allGuides": "Alle Anleitungen",
+      "helpCenter": "Hilfecenter",
+      "helpCenterDesc": "Artikel & FAQs durchsuchen"
+    },
+    "pages": {
+      "employees": { "title": "Ihr Team", "body": "Verwalten Sie Ihre Techniker — suchen, nach Status oder Spezialgebiet filtern und jemanden öffnen, um Aufträge, Anwesenheit und Leistung zu sehen." },
+      "invoices": { "title": "Rechnungen", "body": "Stellen Sie erledigte Arbeit in Rechnung — erstellen, senden und offene/bezahlte Rechnungen verfolgen." },
+      "assets": { "title": "Anlagen", "body": "Verfolgen Sie die von Ihnen gewarteten Geräte und Maschinen — mit vollständiger Wartungshistorie je Anlage." },
+      "payments": { "title": "Zahlungen", "body": "Eine Übersicht der Zahlungen, die Sie auf Ihre Rechnungen erhalten haben." },
+      "myTimeoff": { "title": "Ihre Abwesenheit", "body": "Beantragen Sie Urlaub oder Krankheit und verfolgen Sie Freigaben — Zeitraum wählen, Grund angeben und einreichen." },
+      "myAttendance": { "title": "Ihre Anwesenheit", "body": "Stempeln Sie ein und aus, machen Sie Pausen und sehen Sie Ihre Stunden des Tages." },
+      "invitations": { "title": "Einladungen", "body": "Laden Sie Personen per E-Mail ein oder teilen Sie einen Beitrittscode und sehen Sie, wer angenommen hat oder noch aussteht." },
+      "overtime": { "title": "Überstunden", "body": "Erfassen Sie Überstunden und genehmigen Sie Anfragen Ihres Teams." },
+      "joinRequests": { "title": "Beitrittsanfragen", "body": "Personen, die Ihrer Organisation beitreten möchten — mit einer Rolle genehmigen oder ablehnen." },
+      "manage": { "title": "Verwaltungszentrale", "body": "Schnellzugriff auf alles, was Sie verwalten — Mitglieder, Einladungen, Beitrittsanfragen, Zeitplan, Bereiche und mehr." },
+      "settings": { "title": "Einstellungen", "body": "Verwalten Sie hier Ihre Organisation und Ihre persönlichen Einstellungen — Details, Beitrittscode, Workflows und Ihr Profil." },
+      "availability": { "title": "Verfügbarkeit", "body": "Sehen Sie die Verfügbarkeit jedes Technikers nach Woche oder Monat — Zeitpläne, Abwesenheiten und aktuelle Aufträge auf einen Blick." },
+      "employeeDetail": { "title": "Technikerprofil", "body": "Alles über diese Person — Übersicht, Aufträge, Anwesenheit, Standorte und Leistung in den Tabs." },
+      "memberDetail": { "title": "Mitgliedsprofil", "body": "Rolle, Zugriff und Zeitplan dieses Mitglieds — bearbeiten Sie hier Berechtigungen oder entfernen Sie es." },
+      "customers": { "title": "Kunden", "body": "Die Personen und Firmen, für die Sie arbeiten — halten Sie hier ihre Daten fest, um Aufträge und Rechnungen zuzuordnen.", "createTitle": "Kunde hinzufügen", "createBody": "Klicken Sie, um einen neuen Kunden anzulegen." }
+    },
+    "welcomeAdmin": {
+      "title": "HBCField kennenlernen",
+      "steps": {
+        "dashboard": { "title": "Ihr Dashboard", "body": "Ihre Zentrale — ein Live-Überblick über Aufträge, Ihr Team und die heutige Aktivität." },
+        "yourSpaces": { "title": "Ihre Bereiche", "body": "Jeder Bereich gruppiert seine Aufträge, Personen und Berichte — klicken Sie einen an, um ihn zu öffnen und alles darin zu sehen." },
+        "spaceHeader": { "title": "Live-Personenzahl", "body": "Die Kopfzeile fasst den Bereich auf einen Blick zusammen — wie viele Personen zugewiesen sind und wie viele gerade im Dienst, im Einsatz, außer Haus oder abwesend sind. Sie aktualisiert sich live, sobald sich jemand ein- oder ausstempelt." },
+        "openSpace": { "title": "Jetzt vor Ort", "body": "Der Hauptbereich zeigt, wer gerade physisch in diesem Bereich anwesend ist. Ein grüner Ring bedeutet eingestempelt; das Abzeichen zeigt Stunden oder aktuellen Auftrag." },
+        "member": { "title": "Ein Teammitglied", "body": "Jede Karte ist ein Teammitglied — mit Foto, Name, Live-Status und aktuellem Auftrag. Tippen Sie auf eine, um das Profil zu öffnen und zu schreiben, Aufträge zu sehen oder den Zugriff zu verwalten." },
+        "field": { "title": "Im Einsatz", "body": "Teammitglieder, die gerade unterwegs auf einem Auftrag sind. Tippen Sie auf eine, um zu sehen, woran und wo sie arbeiten." },
+        "offSite": { "title": "Außer Haus", "body": "Personen, die heute remote oder von einem anderen Standort arbeiten — im Dienst, nur nicht in diesem Bereich." },
+        "offDuty": { "title": "Abwesend", "body": "Wer heute nicht arbeitet — und warum (freier Tag, krank, Urlaub). Der Grund ist nur für Manager sichtbar." },
+        "spaceActions": { "title": "Bereichsaktionen", "body": "In einem geöffneten Bereich können Sie die Einstellungen verwalten, ein Mitglied hinzufügen oder direkt zu seinen Aufträgen springen." },
+        "activity": { "title": "Letzte Aktivität", "body": "Ein Live-Feed über alles, was in Ihrem Team passiert — erstellte, zugewiesene, gestartete und abgeschlossene Aufträge — in Echtzeit." },
+        "pending": { "title": "Ausstehende Aktionen", "body": "Was Ihre Aufmerksamkeit braucht: Genehmigungen, verpasste Ausstempelungen, blockierte Aufträge. Erledigen Sie sie direkt hier, ohne das Dashboard zu verlassen." },
+        "tasks": { "title": "Aufträge", "body": "Erstellen, zuweisen und verfolgen Sie hier jeden Auftrag — als Liste, Board oder Zeitplan." },
+        "team": { "title": "Ihr Team", "body": "Personen hinzufügen, Einladungen senden und Rollen sowie Berechtigungen verwalten." },
+        "spaces": { "title": "Arbeitsbereiche", "body": "Die Bereiche, die Ihre Aufträge, Personen und Berichte gruppieren." },
+        "reports": { "title": "Berichte", "body": "Leistung einsehen und exportieren, was Ihr Team erledigt hat." },
+        "command": { "title": "Schnellsuche", "body": "Drücken Sie jederzeit ⌘K / Strg+K, um zu jedem Bildschirm oder Auftrag zu springen." },
+        "notifications": { "title": "Benachrichtigungen", "body": "Neue Zuweisungen, Kommentare und Freigaben erscheinen hier." },
+        "help": { "title": "Hilfe & Support", "body": "Erreichen Sie uns jederzeit — und starten Sie jede Tour über Ihr Profilmenü erneut." },
+        "profile": { "title": "Sie & Einstellungen", "body": "Ihre Verfügbarkeit, Einstellungen, Abrechnung und Abmeldung finden Sie hier." }
+      }
+    },
+    "welcomeManager": {
+      "title": "HBCField kennenlernen",
+      "steps": {
+        "dashboard": { "title": "Ihr Dashboard", "body": "Live-Betrieb — aktive Aufträge, wer online ist und was ansteht." },
+        "tasks": { "title": "Aufträge", "body": "Sehen Sie jeden Auftrag, filtern Sie nach Status und weisen Sie den passenden Techniker zu." },
+        "schedule": { "title": "Zeitplan", "body": "Prüfen Sie die Verfügbarkeit jedes Technikers, bevor Sie zuweisen." },
+        "attendance": { "title": "Anwesenheit", "body": "Sehen Sie live auf der Karte, wer eingestempelt ist und wo." },
+        "reports": { "title": "Berichte", "body": "Überprüfen Sie erledigte Arbeit und Teamleistung." },
+        "command": { "title": "Schnellsuche", "body": "Drücken Sie ⌘K / Strg+K, um zu jedem Bildschirm oder Auftrag zu springen." },
+        "help": { "title": "Hilfe & Support", "body": "Erreichen Sie uns jederzeit — und starten Sie jede Tour über Ihr Profilmenü erneut." },
+        "profile": { "title": "Sie & Einstellungen", "body": "Ihre Verfügbarkeit, Einstellungen und Abmeldung finden Sie hier." }
+      }
+    },
+    "welcomeEmployee": {
+      "title": "HBCField kennenlernen",
+      "steps": {
+        "dashboard": { "title": "Ihre Startseite", "body": "Eine kurze Übersicht über Ihren Tag — Ihre Aufträge und Ihren Status." },
+        "yourSpaces": { "title": "Ihre Bereiche", "body": "Ihre Arbeitsbereiche — öffnen Sie einen, um seine Aufträge und die Personen darin zu sehen." },
+        "openSpace": { "title": "In Ihrem Bereich", "body": "Sehen Sie Ihre Kollegen und deren Status — wer im Dienst, im Einsatz oder abwesend ist — direkt hier." },
+        "member": { "title": "Ein Teammitglied", "body": "Jede Karte ist ein Teammitglied — mit Status und aktuellem Auftrag. Tippen Sie auf eine, um das Profil zu öffnen und Kontakt aufzunehmen." },
+        "tasks": { "title": "Ihre Aufträge", "body": "Die Ihnen zugewiesenen Aufträge — öffnen Sie einen, um die Details zu sehen." },
+        "command": { "title": "Schnellsuche", "body": "Drücken Sie ⌘K / Strg+K, um schnell überallhin zu springen." },
+        "help": { "title": "Hilfe & Support", "body": "Erreichen Sie uns jederzeit — und starten Sie diese Tour über Ihr Profilmenü erneut." },
+        "profile": { "title": "Sie & Einstellungen", "body": "Legen Sie Verfügbarkeit und Einstellungen fest oder melden Sie sich hier ab." }
+      }
+    },
+    "tasksTour": {
+      "title": "Ihren ersten Auftrag erstellen",
+      "steps": {
+        "search": { "title": "Alles finden", "body": "Suchen Sie Aufträge nach Titel oder Details, wenn Ihre Liste wächst." },
+        "board": { "title": "Board-Ansicht", "body": "Aufträge stehen in Spalten nach Status. Ziehen Sie eine Karte in eine andere Spalte, um den Status zu ändern." },
+        "list": { "title": "Listenansicht", "body": "Eine kompakte Tabelle zum Durchsehen, Sortieren und Gruppieren — klicken Sie auf eine Zeile, um sie zu öffnen." },
+        "schedule": { "title": "Zeitplan-Ansicht", "body": "Ihre Aufträge auf Zeitachse und Kalender nach Fälligkeit — ideal für die Wochenplanung." },
+        "views": { "title": "Jederzeit umschalten", "body": "Mit diesen Schaltflächen wechseln Sie jederzeit zwischen Liste, Board und Zeitplan." },
+        "create": { "title": "Auftrag erstellen", "body": "Erstellen wir einen — klicken Sie auf Neuer Auftrag, um das Formular zu öffnen." },
+        "title": { "title": "Auftrag benennen", "body": "Geben Sie einen klaren Titel, z. B. Adresse und Problem." },
+        "save": { "title": "Speichern", "body": "Fügen Sie einen Techniker und Details hinzu und speichern Sie, um den Auftrag zu erstellen." }
+      }
+    },
+    "membersTour": {
+      "title": "Ihr Team vergrößern",
+      "steps": {
+        "search": { "title": "Personen finden", "body": "Suchen Sie Mitglieder nach Name oder E-Mail." },
+        "invite": { "title": "Teammitglied einladen", "body": "Klicken Sie auf Einladen, um jemandem einen Beitrittslink mit der passenden Rolle zu senden." },
+        "send": { "title": "Einladung senden", "body": "Legen Sie E-Mail und Rolle fest und senden Sie — die Person erhält einen Beitrittslink." }
+      }
+    },
+    "spacesTour": {
+      "title": "Ihre Bereiche einrichten",
+      "steps": {
+        "intro": { "title": "Ihre Bereiche", "body": "Bereiche gruppieren Ihre Aufträge, Personen und Berichte — z. B. einen Standort, eine Abteilung oder ein Projekt. Alles in einem Bereich ist darauf beschränkt." },
+        "card": { "title": "Ein Bereich auf einen Blick", "body": "Jede Karte zeigt Name, ob aktiv, Mitgliederzahl, Adresse und die aktivierten Funktionen (Module) des Bereichs." },
+        "configure": { "title": "Konfigurieren", "body": "Öffnen Sie die vollständigen Einstellungen eines Bereichs — allgemeine Details & Karte, genutzte Module, Auftrags-Workflow und zugewiesene Personen." },
+        "viewTasks": { "title": "Aufträge ansehen", "body": "Springen Sie direkt zu allen Aufträgen dieses Bereichs." },
+        "actions": { "title": "Weitere Aktionen", "body": "Deaktivieren Sie einen Bereich (er wird nie endgültig gelöscht) oder reaktivieren Sie ihn später hier." },
+        "create": { "title": "Bereich hinzufügen", "body": "Klicken Sie auf Neuer Bereich — gehen wir das Formular durch." },
+        "name": { "title": "Benennen", "body": "Geben Sie dem Bereich einen klaren Namen — Standort, Team oder Projekt." },
+        "type": { "title": "Arbeitsbereich oder physisch", "body": "Ein Arbeitsbereich ist eine logische Gruppe (Team oder Projekt). Ein physischer Bereich ist ein echter Standort mit Adresse und Geofence — wählen Sie diesen für die Vor-Ort-Anwesenheit." },
+        "physical": { "title": "Standort & Geofence", "body": "Für einen physischen Bereich: Adresse festlegen, Pin auf der Karte setzen und den Geofence-Radius bestimmen — die Zone, in der Mitglieder sein müssen, um vor Ort einzustempeln." },
+        "workflow": { "title": "Auftrags-Workflow", "body": "Wählen Sie den Statusablauf für Aufträge dieses Bereichs (Neu → In Arbeit → Fertig …) — oder erstellen Sie hier einen eigenen." },
+        "modules": { "title": "Funktionen (Module)", "body": "Aufklappen, um Funktionen für diesen Bereich ein- oder auszuschalten — Unteraufgaben, Checklisten, Anhänge, Tracking und mehr, oder ein Preset anwenden." },
+        "submit": { "title": "Erstellen", "body": "Erstellen Sie den Bereich — alles lässt sich später über Konfigurieren ändern." }
+      }
+    },
+    "attendanceTour": {
+      "title": "Anwesenheit verfolgen",
+      "steps": {
+        "intro": { "title": "Anwesenheit", "body": "Alles rund um Arbeitszeiten ist hier — wer eingestempelt ist, die Einträge, Genehmigungen und Pausen." },
+        "addDayOff": { "title": "Freien Tag hinzufügen", "body": "Tragen Sie jemanden für einen Tag oder Zeitraum ab (Urlaub, krank, Feiertag …), damit Zeitplan und Lohn stimmen." },
+        "addAttendance": { "title": "Anwesenheit hinzufügen", "body": "Erfassen Sie manuell oder nachträglich eine Schicht. Einen Tag oder einen ganzen Zeitraum, gefiltert auf bestimmte Wochentage." },
+        "tabs": { "title": "Drei Ansichten", "body": "Tracking (die Einträge), Genehmigungen (Einträge, die ein Ja/Nein brauchen) und Pausen. Die Abzeichen zeigen, was Ihre Aufmerksamkeit braucht." },
+        "trackingStats": { "title": "Heutige Summen", "body": "Ein schneller Überblick: wer aktiv ist, abgeschlossene Schichten, automatische Ausstempelungen und Gesamtstunden." },
+        "trackingFilters": { "title": "Einträge finden", "body": "Nach Namen suchen und nach Standort, Status oder Zeitraum filtern — oder ein Preset wie Heute oder Diese Woche nutzen." },
+        "trackingTable": { "title": "Die Einträge", "body": "Jede Schicht: Mitarbeiter, Status, Ein-/Ausstempeln, Stunden, Genehmigungsstatus und Markierungen (Überstunden, verpasstes Ausstempeln, außerhalb Geofence …). Admins können jeden Eintrag mit dem Stift bearbeiten." },
+        "approvalsTab": { "title": "Genehmigungen", "body": "Markierte Einträge warten hier auf eine Entscheidung — das Abzeichen zählt die offenen." },
+        "approvals": { "title": "Genehmigen oder ablehnen", "body": "Prüfen Sie jede markierte Schicht — Mitarbeiter, Zeiten, Stunden und den Grund — und genehmigen Sie sie oder lehnen Sie mit Begründung ab." },
+        "breaksTab": { "title": "Pausen", "body": "Verfolgen Sie die Pausenzeiten im Team — das Abzeichen zeigt, wer gerade Pause macht." },
+        "breaks": { "title": "Pausenübersicht", "body": "Pausensummen nach Typ, wer gerade Pause macht (Admins können sie beenden) und die vollständige Pausenhistorie mit Filtern." }
+      }
+    },
+    "reportsTour": {
+      "title": "Bericht erstellen",
+      "steps": {
+        "intro": { "title": "Berichte", "body": "Beantworten Sie jede Frage zu Team, Aufträgen, Aufgaben und Kunden — erstellen Sie einen Bericht, führen Sie ihn aus und exportieren oder planen Sie ihn." },
+        "saved": { "title": "Ihre Vorlagen", "body": "Gespeicherte Berichte liegen hier — ein Klick lädt sie sofort neu. Einmal erstellen, immer wiederverwenden." },
+        "builder": { "title": "Berichts-Builder", "body": "Starten Sie hier einen neuen Bericht. Öffnen wir ihn und erstellen einen Schritt für Schritt." },
+        "dataset": { "title": "Datensatz wählen", "body": "Wählen Sie, worüber Sie berichten — Anwesenheit, Aufträge, Aufgaben, Kunden… Jeder Datensatz bietet eigene Kennzahlen und Gruppierungen." },
+        "measures": { "title": "Kennzahlen", "body": "Die zu berechnenden Zahlen — Stunden, Anzahl, Summen. Wählen Sie eine oder mehrere; sie werden zu Ihren Spalten und KPIs." },
+        "dimensions": { "title": "Gruppieren nach", "body": "Schlüsseln Sie die Zahlen auf — nach Person, Bereich, Kunde, Status… Leer lassen für eine Gesamtsumme." },
+        "period": { "title": "Zeitraum", "body": "Wählen Sie den Datumsbereich (Preset oder eigener Zeitraum) und teilen Sie ihn optional nach Tag, Woche oder Monat auf." },
+        "run": { "title": "Ausführen", "body": "Führen Sie den Bericht aus — die Ergebnisse erscheinen direkt darunter als KPI-Karten, Diagramm und vollständige Tabelle." },
+        "results": { "title": "Ergebnisse", "body": "Ihre Antwort auf einen Blick: KPI-Summen oben, ein sortiertes Diagramm und die vollständige Datentabelle darunter." },
+        "save": { "title": "Als Vorlage speichern", "body": "Speichern Sie diese Konfiguration als wiederverwendbare Vorlage (optional mit dem Team geteilt), damit Sie sie nie neu erstellen müssen." },
+        "export": { "title": "Exportieren", "body": "Als CSV herunterladen oder das PDF-Studio öffnen, um ein poliertes, gebrandetes Dokument mit Ihrem Logo zu erstellen — und in höheren Tarifen automatisch per E-Mail planen." }
+      }
+    },
+    "taskDetailTour": {
+      "title": "Einen Auftrag bearbeiten",
+      "steps": {
+        "header": { "title": "Der Auftrag", "body": "Titel, Live-Status und Workflow-Schaltflächen stehen ganz oben — benennen Sie den Auftrag um, verschieben Sie ihn in die nächste Phase, weisen Sie ihn neu zu oder nutzen Sie das ⋯-Menü zum Bearbeiten oder Abbrechen." },
+        "progress": { "title": "Fortschritt & Zuständige", "body": "Sehen Sie den Auftrag durch jede Phase laufen, wer ihn leitet und wie lange er gedauert hat — rufen Sie die Person an oder schreiben Sie ihr direkt hier." },
+        "description": { "title": "Beschreibung", "body": "Der vollständige Auftrag — was zu tun ist. Zum Bearbeiten anklicken." },
+        "subtasks": { "title": "Unteraufgaben", "body": "Teilen Sie den Auftrag in kleinere Teile auf, jeweils mit eigener Zuweisung und Checkliste." },
+        "checklist": { "title": "Checkliste", "body": "Eine einfache To-do-Liste für diesen Auftrag — haken Sie Punkte ab und sehen Sie den Fortschrittsbalken wachsen." },
+        "attachments": { "title": "Anhänge", "body": "Fotos und Dokumente zum Auftrag — Dateien hineinziehen oder hochladen, jederzeit öffnen oder löschen." },
+        "dependencies": { "title": "Abhängigkeiten", "body": "Verknüpfen Sie diesen Auftrag mit anderen — was ihn blockiert und was er blockiert — damit der Zeitplan stimmt." },
+        "customFields": { "title": "Benutzerdefinierte Felder", "body": "Zusätzliche Felder, die Ihr Team für diesen Auftragstyp definiert hat — sie werden beim Tippen automatisch gespeichert." },
+        "comments": { "title": "Besprechen", "body": "Hinterlassen Sie Notizen und Fragen für die zuständige Person. Umschalt+Enter für eine neue Zeile." },
+        "activity": { "title": "Vollständige Historie", "body": "Jede Änderung wird hier protokolliert — Statuswechsel, Zuweisungen, Uploads — wer was und wann getan hat." },
+        "serviceReport": { "title": "Servicebericht", "body": "Sobald der Auftrag abgeschlossen ist, erscheint hier der Feldbericht — geleistete Arbeit, Dauer, Vorher-/Nachher-Fotos, verwendete Teile und Unterschriften." },
+        "routeTracking": { "title": "Route & GPS", "body": "Bei Aufträgen im Außendienst verfolgen Sie die Live-Route und Fahrtdetails des Technikers auf der Karte." },
+        "sidebar": { "title": "Details", "body": "Alle wichtigen Fakten rechts — Zuständige, Fälligkeits- und Startdatum, Standort, geschätzte Stunden und wer ihn erstellt hat. Zum Bearbeiten auf einen Wert klicken." },
+        "agile": { "title": "Agile", "body": "Sprint, Phase, Epic und Story Points — hier festlegen, wenn Ihr Team agil arbeitet." }
+      }
+    },
+    "memberDetailTour": {
+      "title": "Mitglied & Zugriff",
+      "steps": {
+        "profile": { "title": "Mitgliedsprofil", "body": "Name, Rolle, Status, E-Mail und die Bereiche dieser Person. Über Bearbeiten ändern Sie Profil und Arbeitszeitplan oder setzen das Passwort zurück." },
+        "tasks": { "title": "Ihre Arbeit", "body": "Woran dieses Mitglied arbeitet — aktuelle Aufträge, Zeitplan und Aktivität auf einen Blick." },
+        "accessTab": { "title": "Zugriff", "body": "Hier steuern Sie genau, was dieses Mitglied sehen und tun darf. Öffnen wir es und gehen es durch." },
+        "platform": { "title": "Plattformzugriff", "body": "Wo sie sich anmelden können — nur Web (Büro), nur Mobil (Außendienst) oder beides." },
+        "permissions": { "title": "Berechtigungen", "body": "Die zentralen, durchgesetzten Berechtigungen: ob sie Aufträge erstellen dürfen (und für wen), Aufträge zuweisen, alle Aufträge sehen und Personen verwalten. Diese gelten überall — Oberfläche und Server." },
+        "features": { "title": "Funktions-Tabs", "body": "Welche App-Tabs dieses Mitglied erhält — Aufträge, Zeiterfassung und Abwesenheit." },
+        "attendance": { "title": "Remote-Einstempeln", "body": "Erlauben Sie das Einstempeln von überall, ohne an einem Standort-Geofence zu stehen (Homeoffice / unterwegs). Erfordert den aktivierten Zeiterfassungs-Tab oben." },
+        "spaces": { "title": "Bereichssichtbarkeit", "body": "Wie viel sie sehen — nur ihre zugewiesenen Bereiche, diese plus Bereiche aus ihren Aufträgen oder alle Bereiche der Organisation." },
+        "collaboration": { "title": "Nachrichten", "body": "Aktivieren, damit dieses Mitglied mit Kollegen chatten kann — und erreichbar ist. Ein Schalter für beide Richtungen." },
+        "contact": { "title": "Kontaktzugriff", "body": "Legen Sie genau fest, wen sie erreichen dürfen: niemanden, alle oder eine bestimmte Auswahl." },
+        "management": { "title": "Management-Verzeichnis", "body": "Diese Person auflisten, damit Kollegen sie von überall erreichen können — und optional Berichte erstellen lassen." },
+        "watchers": { "title": "Benachrichtigungen", "body": "Wählen Sie, wer über dieses Mitglied benachrichtigt wird — Genehmigungen, Geofence-Ereignisse und mehr. Leer lassen für die Standard-Weiterleitung." },
+        "save": { "title": "Änderungen speichern", "body": "Nichts ändert sich, bis Sie speichern — dann wird der Zugriff überall sofort aktualisiert." }
+      }
+    },
+    "availabilityTour": {
+      "title": "Zeitplan & Verfügbarkeit",
+      "steps": {
+        "intro": { "title": "Zeitplan", "body": "Sehen Sie die Verfügbarkeit Ihres gesamten Teams auf einen Blick — wer arbeitet, wer abwesend ist und wann — nach Woche oder Monat." },
+        "summary": { "title": "Heute auf einen Blick", "body": "Ein schneller Überblick für heute: wie viele Personen eingeplant sind, wie viele verfügbar sind und wie viele abwesend sind." },
+        "view": { "title": "Woche oder Monat", "body": "Wechseln Sie zwischen Wochenansicht (Tag für Tag) und Monatsansicht (der ganze Monat auf einmal)." },
+        "space": { "title": "Nach Bereich filtern", "body": "Grenzen Sie den Kalender auf einen einzelnen Bereich ein oder zeigen Sie alle an." },
+        "dateNav": { "title": "Durch die Zeit navigieren", "body": "Springen Sie zu Heute oder gehen Sie mit den Pfeilen eine Woche bzw. einen Monat vor und zurück." },
+        "tabs": { "title": "Kalender & Abwesenheit", "body": "Wechseln Sie zwischen dem Verfügbarkeitskalender und den zu genehmigenden Abwesenheitsanträgen." },
+        "calendar": { "title": "Der Kalender", "body": "Jeder Tag zeigt einen Balken für verfügbar, abwesend und nicht eingeplant. Klicken Sie auf einen Tag, um genau zu sehen, wer — nach Bereich gruppiert, mit Arbeitszeiten." },
+        "dayDetail": { "title": "Wer an diesem Tag da ist", "body": "Beim Öffnen eines Tages werden alle nach Bereich gruppiert aufgelistet — mit Schichtzeiten, Abwesenheitsgrund und Status. Klicken Sie auf einen Namen, um das Profil zu öffnen." },
+        "legend": { "title": "Farbschlüssel", "body": "Grün = verfügbar, Bernstein = abwesend, Grau = nicht eingeplant. Dieselben Farben werden überall im Kalender verwendet." },
+        "timeoffTab": { "title": "Abwesenheitsanträge", "body": "Dieser Tab listet jeden Abwesenheitsantrag — das Abzeichen zeigt, wie viele noch auf Sie warten." },
+        "timeoff": { "title": "Abwesenheit genehmigen", "body": "Prüfen Sie jeden Antrag — wer, wann, wie lange und warum — und genehmigen oder lehnen Sie ihn direkt hier ab. Filtern Sie nach Status." }
+      }
+    },
+    "myTimeoffTour": {
+      "title": "Abwesenheit beantragen",
+      "steps": {
+        "intro": { "title": "Abwesenheit", "body": "Beantragen Sie freie Tage und verfolgen Sie den Stand jedes Antrags — alles von hier aus." },
+        "form": { "title": "Neuer Antrag", "body": "Füllen Sie dies aus, um Urlaub, Krankheit oder einen freien Tag zu beantragen. Er geht zur Genehmigung an Ihre Führungskraft." },
+        "dates": { "title": "Daten wählen", "body": "Wählen Sie den ersten und letzten Tag Ihrer Abwesenheit. Für einen einzelnen Tag setzen Sie beide auf dasselbe Datum." },
+        "reason": { "title": "Grund angeben", "body": "Optional den Grund nennen (Urlaub, Arzt, Familie …) — das hilft Ihrer Führungskraft, schneller zu entscheiden." },
+        "submit": { "title": "Absenden", "body": "Antrag absenden. Ihre Führungskraft wird benachrichtigt und er erscheint unten als „Ausstehend“." },
+        "requests": { "title": "Ihre Anträge", "body": "Jeder Antrag mit Status — Ausstehend, Genehmigt, Abgelehnt (mit Grund) oder Storniert. Solange er ausstehend ist, können Sie ihn stornieren." }
+      }
+    },
+    "settingsTour": {
+      "title": "Einstellungen",
+      "steps": {
+        "intro": { "title": "Einstellungen", "body": "Alles Konfigurierbare finden Sie hier — oben Ihre Organisation (nur für Admins) und darunter Ihre persönlichen Einstellungen." },
+        "orgGroup": { "title": "Organisation", "body": "Diese Einstellungen gelten für Ihr gesamtes Unternehmen — Profil, Beitritt, Auftrags-Workflows, Benachrichtigungen und Audit-Log. Nur für Admins." },
+        "general": { "title": "Organisationsprofil", "body": "Name, Branche, Adresse und Kontaktdaten Ihres Unternehmens — plus das Logo für Berichts- und Abrechnungs-PDFs. Sofort gespeichert." },
+        "members": { "title": "Beitrittscode & Richtlinie", "body": "Teilen (oder erneuern) Sie den Code zum Beitreten und legen Sie fest, ob der Beitritt offen, nur per Einladung oder geschlossen ist." },
+        "notifications": { "title": "Benachrichtigungen", "body": "Wählen Sie, welche organisationsweiten E-Mails und Push-Benachrichtigungen versendet werden — bei neuen Aufgaben, Abschlüssen und Beitrittsanfragen." },
+        "workflows": { "title": "Auftragstypen & Workflows", "body": "Definieren Sie die Statusabläufe und benutzerdefinierten Felder Ihrer Aufträge — Auftragstypen erstellen, Status festlegen und Felder hinzufügen." },
+        "audit": { "title": "Audit-Log", "body": "Eine vollständige Aufzeichnung, wer was und wann getan hat — nach Ereignis, Person oder Datum filtern. Jede Änderung ist nachvollziehbar." },
+        "personalGroup": { "title": "Persönlich", "body": "Nur für Sie — diese Einstellungen betreffen nur Ihr eigenes Konto, nicht die Organisation." },
+        "profile": { "title": "Ihr Profil", "body": "Name, Foto und E-Mail — und ob Zeiten in der App als 24- oder 12-Stunden angezeigt werden." },
+        "security": { "title": "Passwort", "body": "Ändern Sie hier Ihr Passwort — Sie benötigen Ihr aktuelles, und das neue muss stark sein." }
+      }
     }
   },
   "welcome": {

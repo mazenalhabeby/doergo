@@ -80,7 +80,7 @@ export function AddDayOffDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : resetAndClose())}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button data-tour="add-dayoff-button" variant="outline" size="sm" className="gap-2">
           <CalendarOff className="h-4 w-4" />
           {t("attendance.addDayOff.button")}
         </Button>

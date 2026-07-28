@@ -105,6 +105,7 @@ export function SpaceForm({
         <Label htmlFor="space-name">{t("locations.name")} <span className="text-red-500">*</span></Label>
         <Input
           id="space-name"
+          data-tour="spaces-dialog-name"
           placeholder={t("locations.form.namePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -113,7 +114,7 @@ export function SpaceForm({
       </div>
 
       {/* Type — workspace vs physical */}
-      <div className="space-y-2">
+      <div className="space-y-2" data-tour="spaces-form-type">
         <Label>{t("locations.form.type")}</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
@@ -133,6 +134,7 @@ export function SpaceForm({
           </button>
           <button
             type="button"
+            data-tour="spaces-form-type-physical"
             onClick={() => setType("physical")}
             className={cn(
               "rounded-xl border p-4 text-left transition-all",
@@ -151,7 +153,7 @@ export function SpaceForm({
 
       {/* Physical-only: address + map + geofence */}
       {isPhysical && (
-        <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
+        <div data-tour="spaces-form-physical" className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
           <div className="space-y-2">
             <Label htmlFor="space-address">{t("locations.address")}</Label>
             <Input
@@ -197,15 +199,17 @@ export function SpaceForm({
       )}
 
       {/* Workflow */}
+      <div data-tour="spaces-form-workflow">
       <WorkflowSelector
         value={workflowId || defaultWorkflow?.id || ""}
         onChange={setWorkflowId}
         workflows={workflows}
         allowCreate
       />
+      </div>
 
       {/* Advanced — modules (collapsed; sensible defaults already set) */}
-      <div className="rounded-xl border border-border">
+      <div className="rounded-xl border border-border" data-tour="spaces-form-modules">
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
@@ -285,7 +289,7 @@ export function SpaceForm({
         {onCancel && (
           <Button variant="outline" onClick={onCancel} disabled={mutation.isPending}>{t("common.cancel")}</Button>
         )}
-        <Button onClick={handleSubmit} disabled={mutation.isPending}>
+        <Button data-tour="spaces-form-submit" onClick={handleSubmit} disabled={mutation.isPending}>
           {mutation.isPending ? t("common.creating") : resolvedSubmitLabel}
         </Button>
       </div>

@@ -78,16 +78,16 @@ export default function MyTimeOffPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">{t("timeOff.my.title")}</h1>
+        <h1 data-tour="page-my-timeoff" className="text-2xl font-semibold text-foreground">{t("timeOff.my.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("timeOff.my.subtitle")}</p>
       </div>
 
       {/* Request form */}
-      <div className="rounded-2xl border border-border bg-card p-5 mb-8">
+      <div data-tour="timeoff-form" className="rounded-2xl border border-border bg-card p-5 mb-8">
         <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
           <CalendarPlus className="h-4 w-4 text-primary" /> {t("timeOff.my.newRequest")}
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div data-tour="timeoff-dates" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="text-xs font-medium text-muted-foreground">
             {t("timeOff.my.from")}
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
@@ -99,9 +99,9 @@ export default function MyTimeOffPage() {
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" />
           </label>
         </div>
-        <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("timeOff.my.reasonPlaceholder")}
+        <textarea data-tour="timeoff-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("timeOff.my.reasonPlaceholder")}
           className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" rows={2} />
-        <div className="mt-3 flex justify-end">
+        <div data-tour="timeoff-submit" className="mt-3 flex justify-end">
           <Button size="sm" disabled={!validRange || createMut.isPending} onClick={() => createMut.mutate()}>
             {createMut.isPending ? t("common.submitting") : t("timeOff.my.requestButton")}
           </Button>
@@ -109,6 +109,7 @@ export default function MyTimeOffPage() {
       </div>
 
       {/* My requests */}
+      <div data-tour="timeoff-requests">
       <h2 className="text-sm font-semibold text-foreground mb-3">{t("timeOff.my.myRequests")}</h2>
       {isLoading ? (
         <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</div>
@@ -138,6 +139,7 @@ export default function MyTimeOffPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }

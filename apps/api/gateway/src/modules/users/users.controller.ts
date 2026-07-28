@@ -56,6 +56,11 @@ class UpdateMeDto {
   @ValidateIf((o) => o.presence !== null)
   @IsIn(['AVAILABLE', 'BUSY', 'AWAY'])
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
+
+  // Per-user clock display preference ("12h" | "24h"); display-only.
+  @IsOptional()
+  @IsIn(['12h', '24h'])
+  timeFormat?: '12h' | '24h';
 }
 
 class UpdateMyEmailDto {

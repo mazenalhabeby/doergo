@@ -12,6 +12,7 @@ import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPi
 import { useTranslation } from "react-i18next"
 import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
 import { EditEntryDialog } from "./edit-entry-dialog"
+import { useTimeFormat } from "@/hooks"
 
 // Approved time-off shown inline as a "day off" row in the tracking table.
 export type DayOffRow = {
@@ -100,6 +101,7 @@ export function TrackingTab({
   page, setPage, limit, daysOff, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
 }: TrackingTabProps) {
   const { t } = useTranslation()
+  const { hour12, timeToken } = useTimeFormat()
 
   // Quick date-range presets (computed once on mount).
   const presets = React.useMemo(() => {
@@ -124,7 +126,7 @@ export function TrackingTab({
 
         {/* Stats Cards — only show when there's data */}
         {entries.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div data-tour="tracking-stats" className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard
               title={t("attendance.tracking.currentlyActive")}
               value={stats.active}
@@ -193,8 +195,8 @@ export function TrackingTab({
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-sm font-medium text-foreground">
-                        {formatTime(entry.clockInAt)}
-                        {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt)}`}
+                        {formatTime(entry.clockInAt, hour12)}
+                        {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt, hour12)}`}
                       </p>
                       <div className="flex items-center gap-2 justify-end">
                         {!entry.clockInWithinGeofence && (
@@ -296,7 +298,7 @@ export function TrackingTab({
                     >
                       <Clock className="size-3" />
                       {job.next
-                        ? format(new Date(job.next), "MMM d, h:mm a")
+                        ? format(new Date(job.next), `MMM d, ${timeToken}`)
                         : job.pattern || t("attendance.tracking.everyMinutes", { minutes: Math.round((job.every || 0) / 60000) })}
                     </span>
                   ))}
@@ -307,7 +309,7 @@ export function TrackingTab({
         )}
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div data-tour="tracking-filters" className="flex flex-wrap items-center gap-3 mb-6">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -424,7 +426,7 @@ export function TrackingTab({
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
+        <div data-tour="tracking-table" className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
           {loadingEntries || loadingLocations ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -573,7 +575,7 @@ export function TrackingTab({
                       <TableCell>
                         <div>
                           <p className="font-medium text-foreground">
-                            {formatTime(entry.clockInAt)}
+                            {formatTime(entry.clockInAt, hour12)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {format(toDate(entry.clockInAt), "MMM d")}
@@ -584,7 +586,7 @@ export function TrackingTab({
                         {entry.clockOutAt ? (
                           <div>
                             <p className="font-medium text-foreground">
-                              {formatTime(entry.clockOutAt)}
+                              {formatTime(entry.clockOutAt, hour12)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {format(toDate(entry.clockOutAt), "MMM d")}

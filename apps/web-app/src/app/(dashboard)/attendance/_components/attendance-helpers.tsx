@@ -41,10 +41,13 @@ export function toDate(dateInput: Date | string): Date {
   return dateInput instanceof Date ? dateInput : parseISO(dateInput)
 }
 
-/** Format a time as "h:mm a", or "-" when null. */
-export function formatTime(dateInput: Date | string | null): string {
+/**
+ * Format a time honoring the user's 12h/24h preference, or "-" when null.
+ * Pass `hour12` from the `useTimeFormat()` hook. Defaults to 24h.
+ */
+export function formatTime(dateInput: Date | string | null, hour12 = false): string {
   if (!dateInput) return "-"
-  return format(toDate(dateInput), "h:mm a")
+  return format(toDate(dateInput), hour12 ? "h:mm a" : "HH:mm")
 }
 
 /** Stat card used across the attendance tabs. */

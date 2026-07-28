@@ -72,6 +72,75 @@ export function formatDateTime(dateString: string | Date): string {
   })
 }
 
+// =============================================================================
+// CLOCK FORMAT (per-user 12h / 24h preference — see useTimeFormat hook)
+// =============================================================================
+
+export type TimeFormatPref = "12h" | "24h"
+
+/**
+ * Format a time-of-day honoring the user's 12h/24h preference.
+ * `hour12=true`  -> "2:30 PM"   `hour12=false` -> "14:30"
+ * The explicit hour12 overrides the locale default, so the user's choice wins.
+ */
+export function formatTimeOfDay(
+  input: string | number | Date,
+  hour12: boolean,
+  locale?: string,
+): string {
+  const d = input instanceof Date ? input : new Date(input)
+  if (isNaN(d.getTime())) return ""
+  return d.toLocaleTimeString(locale || undefined, {
+    hour: hour12 ? "numeric" : "2-digit",
+    minute: "2-digit",
+    hour12,
+  })
+}
+
+/**
+ * Format a date + time-of-day honoring the 12h/24h preference.
+ * e.g. hour12 -> "Jan 15, 2:30 PM"   24h -> "Jan 15, 14:30"
+ */
+export function formatDateTimeOf(
+  input: string | number | Date,
+  hour12: boolean,
+  locale?: string,
+): string {
+  const d = input instanceof Date ? input : new Date(input)
+  if (isNaN(d.getTime())) return ""
+  return d.toLocaleString(locale || undefined, {
+    month: "short",
+    day: "numeric",
+    hour: hour12 ? "numeric" : "2-digit",
+    minute: "2-digit",
+    hour12,
+  })
+}
+
+/** date-fns time token for the current preference: "h:mm a" (12h) or "HH:mm" (24h). */
+export function clockToken(hour12: boolean): string {
+  return hour12 ? "h:mm a" : "HH:mm"
+}
+
+/**
+ * Format a raw "HH:MM" (or "HH:MM:SS") schedule string for display, honoring the
+ * 12h/24h preference. Schedules are stored as plain wall-clock strings, not dates.
+ * "17:30" -> "5:30 PM" (12h) or "17:30" (24h).
+ */
+export function formatClockString(hhmm: string | null | undefined, hour12: boolean): string {
+  if (!hhmm) return ""
+  const [hStr, mStr] = hhmm.split(":")
+  const h = Number(hStr)
+  const m = Number(mStr)
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm
+  if (!hour12) {
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+  }
+  const period = h >= 12 ? "PM" : "AM"
+  const displayHour = h % 12 || 12
+  return `${displayHour}:${String(m).padStart(2, "0")} ${period}`
+}
+
 /**
  * Format duration in seconds to human-readable format
  * e.g., 3665 -> "1h 1m 5s", 125 -> "2m 5s", 45 -> "45s"

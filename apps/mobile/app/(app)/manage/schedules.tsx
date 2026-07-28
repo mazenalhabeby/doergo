@@ -12,6 +12,7 @@ import { techniciansApi, scheduleApi } from '../../../src/lib/api';
 import type { TechnicianListItem, ScheduleEntry } from '../../../src/lib/api/types';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 import { Skeleton, ScreenContainer } from '../../../src/components';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 
 // DAY_NAMES will be resolved via t() inside the component
 
@@ -23,6 +24,7 @@ interface TechSchedule {
 export default function SchedulesScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatSchedule } = useTimeFormat();
   const toast = useToast();
   const dayNames = t('dayNames.short', { returnObjects: true }) as string[];
   const [data, setData] = useState<TechSchedule[]>([]);
@@ -96,7 +98,7 @@ export default function SchedulesScreen() {
                 <Text style={[s.dayLabel, { color: isActive ? COLORS.primary : colors.textMuted }]}>{day}</Text>
                 {isActive && entry ? (
                   <Text style={[s.dayTime, { color: colors.textSecondary }]}>
-                    {entry.startTime?.slice(0, 5)}{'\n'}{entry.endTime?.slice(0, 5)}
+                    {formatSchedule(entry.startTime)}{'\n'}{formatSchedule(entry.endTime)}
                   </Text>
                 ) : (
                   <Text style={[s.dayOff, { color: colors.borderLight }]}>—</Text>

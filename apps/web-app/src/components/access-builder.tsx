@@ -224,7 +224,7 @@ export function AccessBuilder({
               : t("accessBuilder.subtitle", { name: member.firstName })}
           </p>
         </div>
-        <Button size="sm" className="gap-1.5" disabled={saving || (!isBulk && !dirty)} onClick={save}>
+        <Button data-tour="access-save" size="sm" className="gap-1.5" disabled={saving || (!isBulk && !dirty)} onClick={save}>
           <Save className="h-3.5 w-3.5" />
           {saving ? t("common.saving") : (isBulk ? t("accessBuilder.applyToAll", "Apply to all") : t("common.save"))}
         </Button>
@@ -232,7 +232,7 @@ export function AccessBuilder({
 
       <div className="p-5 space-y-6">
         {/* Platform */}
-        <Field label={t("accessBuilder.platformAccess")}>
+        <Field dataTour="access-platform" label={t("accessBuilder.platformAccess")}>
           <div className="inline-flex rounded-lg bg-muted p-1">
             {PLATFORMS.map((p) => (
               <button
@@ -251,7 +251,7 @@ export function AccessBuilder({
         </Field>
 
         {/* Permissions — the enforced authorization toggles */}
-        <Field label={t("accessBuilder.permissions")}>
+        <Field dataTour="access-permissions" label={t("accessBuilder.permissions")}>
           <div className="space-y-2">
             <PermissionRow
               title={t("accessBuilder.perms.create.title")}
@@ -296,7 +296,7 @@ export function AccessBuilder({
         </Field>
 
         {/* Feature tabs */}
-        <Field label={t("accessBuilder.featureTabsLabel")}>
+        <Field dataTour="access-features" label={t("accessBuilder.featureTabsLabel")}>
           <div className="flex flex-wrap gap-2">
             {FEATURE_TABS.map((m) => {
               const on = modules.includes(m.key)
@@ -318,7 +318,7 @@ export function AccessBuilder({
 
         {/* Attendance — remote clock-in. Always shown; disabled with a hint when
             the Clock module is off (remote clock-in needs clock access). */}
-        <Field label={t("accessBuilder.attendance", "Attendance")}>
+        <Field dataTour="access-attendance" label={t("accessBuilder.attendance", "Attendance")}>
           <div className={cn(
             "flex items-center justify-between rounded-xl border border-border px-4 py-3",
             !modules.includes("clock") && "opacity-70",
@@ -336,7 +336,7 @@ export function AccessBuilder({
         </Field>
 
         {/* Space scope */}
-        <Field label={t("accessBuilder.spaceVisibility")}>
+        <Field dataTour="access-spaces" label={t("accessBuilder.spaceVisibility")}>
           <div className="space-y-2">
             {SCOPES.map((s) => (
               <button
@@ -363,7 +363,7 @@ export function AccessBuilder({
         {/* Messaging — ONE symmetric switch: being able to reach teammates and
             being reachable by them are the same capability. Drives both
             canContact (outbound) and contactable (inbound) together. */}
-        <Field label={t("accessBuilder.collaboration")}>
+        <Field dataTour="access-collaboration" label={t("accessBuilder.collaboration")}>
           <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4 text-muted-foreground" />
@@ -381,7 +381,7 @@ export function AccessBuilder({
 
         {/* Contact management — a SEPARATE control: scopes WHO this member may
             reach (No one / All / Specific). Independent of the on/off above. */}
-        <Field label={t("accessBuilder.contactAccess", "Contact access")}>
+        <Field dataTour="access-contact" label={t("accessBuilder.contactAccess", "Contact access")}>
           <div className="space-y-2">
             <div className="space-y-2.5 rounded-xl border border-border px-4 py-3">
               <div className="flex items-center justify-between gap-3">
@@ -431,7 +431,7 @@ export function AccessBuilder({
             independent of chat contactable. A single admin is always shown (toggle
             locked ON) — but NOT in bulk mode, where the template may be an admin
             yet the switch must stay editable for the whole selection. */}
-        <Field label={t("accessBuilder.managementLabel", "Management directory")}>
+        <Field dataTour="access-management" label={t("accessBuilder.managementLabel", "Management directory")}>
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
               <div className="min-w-0">
@@ -468,7 +468,7 @@ export function AccessBuilder({
         {/* Notifications about — who is alerted ABOUT this member (approvals,
             geofence, …). Selection is held locally and persisted on Save/Apply,
             NOT per-toggle. Empty = default routing (org admins + space managers). */}
-        <Field label={t("members.watchers.title", "Notifications about {{name}}", { name: isBulk ? t("accessBuilder.selectedMembers", "selected members") : member.firstName })}>
+        <Field dataTour="access-watchers" label={t("members.watchers.title", "Notifications about {{name}}", { name: isBulk ? t("accessBuilder.selectedMembers", "selected members") : member.firstName })}>
           <div className="rounded-xl border border-border overflow-hidden">
             <div className="flex items-start gap-2 px-4 py-2.5 border-b border-border/60">
               <Bell className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -531,9 +531,9 @@ function PermissionRow({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, dataTour }: { label: string; children: React.ReactNode; dataTour?: string }) {
   return (
-    <div>
+    <div data-tour={dataTour}>
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       {children}
     </div>

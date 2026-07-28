@@ -501,6 +501,10 @@ model User {
   // JSON: { showRole, showWorkMode, showType, showSpecialty }
   profileBadges Json?
 
+  // Per-user clock display preference: "24h" (default) or "12h" (AM/PM).
+  // Display-only; does not affect stored timestamps or any server logic.
+  timeFormat String? @default("24h")
+
   // Onboarding flag (false = orphan user needs to complete onboarding wizard)
   onboardingCompleted Boolean @default(true)
 

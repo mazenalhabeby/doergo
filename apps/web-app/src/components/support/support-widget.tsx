@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LifeBuoy, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
+import { Headset, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
 import { SocketEvents, isSupportOpen, type SupportTicket } from '@hbcfield/shared/client';
 import { supportApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
@@ -92,7 +92,7 @@ export function SupportButton() {
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setActiveId(null); setComposing(false); } }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative rounded-lg" aria-label={t('support.title', 'Support')}>
-          <LifeBuoy className="h-5 w-5 text-muted-foreground" />
+          <Headset className="h-5 w-5 text-muted-foreground" />
           {unreadTotal > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
               {unreadTotal > 9 ? '9+' : unreadTotal}

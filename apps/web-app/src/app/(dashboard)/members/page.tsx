@@ -619,7 +619,7 @@ export default function MembersPage() {
 
             <div className="flex items-center gap-3">
             {/* Search */}
-            <div className="relative">
+            <div className="relative" data-tour="members-search">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t("members.searchPlaceholder")}
@@ -655,6 +655,7 @@ export default function MembersPage() {
               <Button
                 onClick={() => setInviteOpen(true)}
                 size="sm"
+                data-tour="members-invite"
                 className="h-9 px-4 rounded-lg font-medium"
               >
                 <UserPlus className="h-4 w-4 mr-1.5" />

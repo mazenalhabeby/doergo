@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
+import { useTimeFormat } from "@/hooks"
 
 interface ApprovalsTabProps {
   loading: boolean
@@ -32,6 +33,7 @@ interface ApprovalsTabProps {
 
 export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, approving, rejecting }: ApprovalsTabProps) {
   const { t } = useTranslation()
+  const { hour12 } = useTimeFormat()
   const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
 
@@ -41,7 +43,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
   }
 
   return (
-    <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
+    <div data-tour="approvals-content" className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-border/60">
         <div className="flex items-center justify-between">
           <div>
@@ -103,8 +105,8 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                 </TableCell>
                 <TableCell className="text-muted-foreground">{entry.location?.name || t("attendance.approvals.unknown")}</TableCell>
                 <TableCell className="text-muted-foreground">{format(toDate(entry.clockInAt), "MMM d, yyyy")}</TableCell>
-                <TableCell>{formatTime(entry.clockInAt)}</TableCell>
-                <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt) : "-"}</TableCell>
+                <TableCell>{formatTime(entry.clockInAt, hour12)}</TableCell>
+                <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt, hour12) : "-"}</TableCell>
                 <TableCell className="font-medium tabular-nums">{formatDurationMinutes(entry.totalMinutes)}</TableCell>
                 <TableCell>
                   <FlagReasonBadges reasons={entry.flagReasons} />

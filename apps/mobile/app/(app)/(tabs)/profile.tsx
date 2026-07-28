@@ -188,6 +188,10 @@ export default function ProfileScreen() {
     router.push('/profile/appearance' as Href);
   }, []);
 
+  const handleTimeFormatPress = useCallback(() => {
+    router.push('/profile/time-format' as Href);
+  }, []);
+
   const handleLogout = () => {
     setShowSignOutConfirm(true);
   };
@@ -331,6 +335,23 @@ export default function ProfileScreen() {
             trailing={
               <View style={styles.menuTrailingRow}>
                 <Text style={[styles.menuTrailingText, { color: colors.textMuted }]}>{t(THEME_MODE_I18N[mode])}</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </View>
+            }
+            themeColors={colors}
+          />
+          <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+          <MenuItem
+            icon="time-outline"
+            iconColor="#6366f1"
+            iconBg={isDark ? '#312e81' : '#e0e7ff'}
+            label={t('profile.menu.timeFormat')}
+            onPress={handleTimeFormatPress}
+            trailing={
+              <View style={styles.menuTrailingRow}>
+                <Text style={[styles.menuTrailingText, { color: colors.textMuted }]}>
+                  {t(`profile.timeFormat.${user?.timeFormat === '12h' ? '12h' : '24h'}`)}
+                </Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
             }

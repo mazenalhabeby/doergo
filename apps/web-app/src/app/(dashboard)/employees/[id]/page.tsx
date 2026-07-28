@@ -421,7 +421,7 @@ export default function EmployeeDetailPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-card border border-border/80 shadow-sm">
+          <TabsList data-tour="employee-detail-tabs" className="bg-card border border-border/80 shadow-sm">
             <TabsTrigger value="overview" className="gap-2">
               <Activity className="h-4 w-4" />
               {t('technicians.detail.tabs.overview')}

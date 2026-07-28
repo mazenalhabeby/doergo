@@ -189,7 +189,7 @@ export function AddAttendanceDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : resetAndClose())}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
+        <Button data-tour="add-attendance-button" size="sm" className="gap-2">
           <CalendarPlus className="h-4 w-4" />
           {t("technicians.addAttendance.button")}
         </Button>

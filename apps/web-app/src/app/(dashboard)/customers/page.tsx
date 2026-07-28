@@ -69,10 +69,10 @@ export default function CustomersPage() {
         {/* Page Header — matches the app's standard page header */}
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("customers.title", "Customers")}</h1>
+            <h1 data-tour="page-customers" className="text-3xl font-bold text-foreground tracking-tight">{t("customers.title", "Customers")}</h1>
             <p className="mt-1.5 text-muted-foreground">{t("customers.subtitle", "The people and companies you do work for.")}</p>
           </div>
-          <Button onClick={openCreate} className="h-11 rounded-xl shadow-sm gap-1.5"><Plus className="h-4 w-4" />{t("customers.add", "Add customer")}</Button>
+          <Button onClick={openCreate} data-tour="customers-create" className="h-11 rounded-xl shadow-sm gap-1.5"><Plus className="h-4 w-4" />{t("customers.add", "Add customer")}</Button>
         </div>
 
         <div className="mb-6 relative max-w-sm">

@@ -255,39 +255,39 @@
       "fields": [
         {
           "name": "Gestión de inmuebles e instalaciones",
-          "who": "Propietarios, administradores de fincas e instalaciones que gestionan muchos edificios y unidades.",
-          "how": "Las solicitudes de inquilinos se convierten en tareas despachadas, registro de entrada geolocalizado por edificio, informes de servicio con fotos y firma, además de revisiones de seguridad recurrentes (calefacción, detectores de humo) en un mapa en vivo con un registro de auditoría completo.",
-          "benefit": "Un coordinador supervisa más unidades, las horas quedan verificadas, el cumplimiento queda documentado y los inquilinos reciben una respuesta más rápida."
+          "who": "Propietarios y gestores de inmuebles e instalaciones con muchos edificios y unidades.",
+          "how": "Registra cada solicitud como una orden, asigna al técnico más cercano y mantén un historial de servicio por edificio.",
+          "benefit": "Un solo sistema para inquilinos, técnicos y documentación: nada se pierde."
         },
         {
           "name": "Climatización, fontanería y electricidad",
-          "who": "Contratistas de instalación y reparación con técnicos móviles.",
-          "how": "Trabajos asignados por ubicación y prioridad, un flujo de estados claro de en camino a en sitio a completado, informes de servicio con piezas usadas y firma del cliente, y luego la facturación.",
-          "benefit": "Trabajos resueltos más rápido, mano de obra y piezas demostrables, y facturación más ágil."
+          "who": "Empresas de instalación y reparación con técnicos móviles.",
+          "how": "Asigna trabajos al campo, sigue la llegada y la ruta en un mapa en vivo y captura piezas, fotos y firma al finalizar.",
+          "benefit": "Salidas más rápidas y un informe de servicio firmado antes de que el técnico se vaya."
+        },
+        {
+          "name": "Industria y mantenimiento",
+          "who": "Fábricas, plantas y sitios industriales con equipos de mantenimiento propios para máquinas y equipos.",
+          "how": "Programa mantenimiento preventivo recurrente, crea órdenes por avería y registra piezas y trabajo en cada activo para un historial completo de la máquina.",
+          "benefit": "Menos paradas imprevistas: mantenimiento planificado e historial completo de cada activo en un solo lugar."
         },
         {
           "name": "Limpieza y servicios de conserjería",
-          "who": "Empresas de limpieza comercial que hacen rondas recurrentes en varios sitios.",
-          "how": "Tareas recurrentes por sitio, registro de entrada geolocalizado que prueba la asistencia y listas de verificación mediante campos personalizados.",
-          "benefit": "Sin rondas olvidadas, presencia verificada y menos supervisión."
+          "who": "Empresas de limpieza con rondas recurrentes en muchos sitios.",
+          "how": "Crea planes recurrentes, demuestra la asistencia con fichaje por geovalla y confirma cada sitio con una lista de control y fotos.",
+          "benefit": "Prueba de servicio en cada sitio, de forma automática."
         },
         {
           "name": "Seguridad y vigilancia",
-          "who": "Empresas de seguridad que realizan patrullas e inspecciones.",
-          "how": "Tareas de patrulla recurrentes programadas, fichajes geolocalizados con marca de tiempo, prueba de ruta por GPS e informes de incidentes con fotos.",
-          "benefit": "Cobertura verificable para los clientes y muchas menos disputas."
+          "who": "Empresas de seguridad con patrullas e inspecciones.",
+          "how": "Planifica patrullas como trabajos recurrentes, verifica a los vigilantes en el sitio con GPS y fichaje, y registra cada control.",
+          "benefit": "Rondas verificadas y con marca de tiempo para mostrar al cliente."
         },
         {
           "name": "Jardinería y mantenimiento de terrenos",
-          "who": "Cuadrillas de exterior que atienden muchos sitios.",
-          "how": "Visitas con ruta rastreada por GPS, calendarios estacionales recurrentes y fotos de antes y después.",
-          "benefit": "Rutas eficientes, trabajo documentado y prueba clara para los clientes."
-        },
-        {
-          "name": "Reparación de equipos y electrodomésticos",
-          "who": "Equipos de campo que mantienen máquinas y activos en las instalaciones del cliente.",
-          "how": "Tareas vinculadas a activos con un historial de mantenimiento completo, informes de servicio con piezas, mantenimiento recurrente y firmas.",
-          "benefit": "Un historial completo por activo, visitas de repetición más rápidas y trabajo de garantía demostrable."
+          "who": "Equipos de exterior que atienden muchos sitios.",
+          "how": "Planifica trabajos recurrentes, sigue a los equipos por ruta GPS y fichaje, y documenta el trabajo con fotos.",
+          "benefit": "Visión completa de sitios dispersos y del trabajo realizado."
         }
       ]
     },
@@ -845,6 +845,11 @@
       "addSpace": "Agregar espacio",
       "inviteTeam": "Invitar al equipo",
       "newSpace": "Nuevo espacio",
+      "exampleLabel": "Ejemplo — así se ve un área",
+      "exampleSpaceName": "Oficina principal",
+      "exampleOnShift": "En turno",
+      "exampleInField": "En campo",
+      "exampleJob": "Reparar aire acondicionado — Centro",
       "noSpacesTitle": "Aún no tienes espacios asignados",
       "noSpacesDescription": "Todavía no te han agregado a un espacio. Revisa la pestaña Tareas para ver tu trabajo asignado o pide a tu responsable que te agregue."
     },
@@ -870,6 +875,10 @@
     "activityFeed": {
       "noRecentActivity": "Sin actividad reciente"
     },
+    "recentActivity": "Actividad reciente",
+    "pendingActions": "Acciones pendientes",
+    "eventsCount": "{{count}} eventos",
+    "noRecentActivity": "Sin actividad reciente",
     "recentTasksWidget": {
       "noTasks": "Aún no hay tareas",
       "willAppear": "Las tareas aparecerán aquí una vez creadas",
@@ -2296,7 +2305,12 @@
       "avatarUpdated": "Foto de perfil actualizada",
       "avatarUploadFailed": "No se pudo subir la foto de perfil",
       "avatarRemoved": "Foto de perfil quitada",
-      "avatarRemoveFailed": "No se pudo quitar la foto de perfil"
+      "avatarRemoveFailed": "No se pudo quitar la foto de perfil",
+      "timeFormat": "Formato de hora",
+      "timeFormat24": "24 horas",
+      "timeFormat12": "12 horas",
+      "timeFormatNote": "Elige cómo se muestran las horas en la app. Solo afecta a tu cuenta.",
+      "timeFormatUpdated": "Formato de hora actualizado"
     },
     "security": {
       "title": "Contraseña y seguridad",
@@ -4023,6 +4037,379 @@
       "tryDifferentPath": "Probar otra opción",
       "logOut": "Cerrar sesión",
       "failedToCancel": "No se pudo cancelar la solicitud. Vuelve a intentarlo."
+    }
+  },
+  "setup": {
+    "stepOf": "Paso {{step}} de {{total}}",
+    "skip": "Configurar más tarde",
+    "friend": "por aquí",
+    "yourCompany": "tu empresa",
+    "defaultSpace": "Espacio principal",
+    "splash": {
+      "title": "Hola, {{name}}",
+      "sub": "Vamos a dejar {{org}} listo. Solo dime qué hace tu equipo — lo entenderé y te lo configuraré todo. Un minuto aproximadamente, y puedes cambiar cualquier cosa después.",
+      "cta": "Empezar",
+      "reassure": "Sin formularios. Sin ajustes que descifrar."
+    },
+    "work": {
+      "kicker": "Cuéntame sobre tu trabajo",
+      "title": "¿Qué hace tu equipo?",
+      "sub": "Descríbelo con tus palabras — una frase basta. Lo leeré y te configuraré a medida.",
+      "placeholder": "p. ej. instalamos y mantenemos equipos de aire acondicionado y hacemos urgencias",
+      "orPick": "o elige un punto de partida",
+      "understoodEyebrow": "Esto es lo que entendí",
+      "youreIn": "Te dedicas a {{industry}}",
+      "understoodSub": "Con lo que escribiste, así te voy a configurar.",
+      "areasLabel": "Áreas de trabajo que crearé",
+      "toolsLabel": "Herramientas que activaré",
+      "continue": "Perfecto, continuar",
+      "addDetail": "Añadir más detalle"
+    },
+    "group": {
+      "kicker": "Tus áreas de trabajo",
+      "confirmTitle": "Así organizaré tu trabajo",
+      "confirmSub": "Según lo que me contaste. Estas serán tus grupos para trabajos, personas e informes — todo editable después.",
+      "looksGood": "Se ve bien",
+      "groupDifferently": "Agruparlo de otra forma",
+      "chooseTitle": "¿Cómo agrupo tus trabajos?",
+      "chooseSub": "Puedo configurarlo por ti — o elige cómo agrupar tus trabajos tú mismo.",
+      "orManual": "o organízalo tú",
+      "byType": "Por tipo de trabajo",
+      "byTypeHint": "instalaciones, reparaciones, mantenimiento…",
+      "byPlace": "Por lugar",
+      "byPlaceHint": "un grupo por sede o zona",
+      "byTeam": "Por equipo",
+      "byTeamHint": "un grupo por cuadrilla",
+      "pickForMe": "¿No sabes? Yo elijo",
+      "pickForMeHint": "Elegiré la mejor configuración"
+    },
+    "team": {
+      "kicker": "Tu equipo",
+      "title": "¿Quién lo usará contigo?",
+      "sub": "Para saber si preparo invitaciones. Siempre puedes añadir personas después.",
+      "justMe": "Solo yo por ahora",
+      "justMeHint": "Añadiré personas después",
+      "small": "Un equipo pequeño",
+      "smallHint": "Entre 2 y 10 personas",
+      "big": "Un equipo más grande",
+      "bigHint": "Más de 10"
+    },
+    "build": {
+      "title": "Configurando todo…",
+      "sub": "Solo unos segundos — lo estoy construyendo todo por ti.",
+      "error": "Algo salió mal al construir tu espacio. Vamos a intentarlo de nuevo.",
+      "retry": "Reintentar",
+      "steps": {
+        "company": "Creando tu empresa",
+        "spaces": "Configurando tus áreas de trabajo",
+        "tools": "Activando las herramientas que necesitas",
+        "finish": "Preparando tu panel"
+      }
+    },
+    "done": {
+      "title": "Listo — ya puedes empezar",
+      "flag": "{{org}} está construido y listo para usar",
+      "areasTitle": "Tus áreas de trabajo están listas",
+      "toolsTitle": "Las herramientas correctas están activadas",
+      "teamTitle": "Invita a tu equipo",
+      "teamReady": "Añade a tus compañeros desde Miembros cuando quieras",
+      "teamSoloTitle": "Solo tú por ahora",
+      "teamSolo": "Añade personas cuando quieras desde Miembros",
+      "cta": "Muéstrame todo"
+    },
+    "badges": { "recommended": "Recomendado" },
+    "industries": {
+      "repairs": "Reparaciones y oficios",
+      "machines": "Máquinas y mantenimiento",
+      "facilities": "Edificios e instalaciones",
+      "cleaning": "Limpieza",
+      "security": "Seguridad y vigilancia",
+      "grounds": "Jardines y exteriores",
+      "construction": "Construcción",
+      "it": "TI y telecom",
+      "solar": "Solar y energía",
+      "other": "General"
+    },
+    "areaNames": {
+      "installations": "Instalaciones",
+      "maintenance": "Mantenimiento",
+      "repairs": "Reparaciones y urgencias",
+      "preventive": "Mantenimiento preventivo",
+      "breakdowns": "Averías",
+      "inspections": "Inspecciones",
+      "requests": "Solicitudes",
+      "regularCleans": "Limpiezas regulares",
+      "deepCleans": "Limpiezas a fondo",
+      "oneOff": "Trabajos puntuales",
+      "cleaning": "Trabajos de limpieza",
+      "patrols": "Rondas",
+      "alarmCallouts": "Avisos de alarma",
+      "staticGuarding": "Vigilancia fija",
+      "regularVisits": "Visitas regulares",
+      "projects": "Proyectos",
+      "snagging": "Repasos",
+      "callbacks": "Retornos",
+      "installs": "Instalaciones",
+      "supportTickets": "Tickets de soporte",
+      "servicing": "Servicio",
+      "callouts": "Avisos",
+      "routes": "Rutas",
+      "pickups": "Recogidas",
+      "deliveries": "Entregas",
+      "treatments": "Tratamientos",
+      "followUps": "Seguimientos",
+      "grounds": "Exteriores",
+      "jobs": "Trabajos"
+    },
+    "tools": {
+      "jobs": "Trabajos y planificación",
+      "serviceReports": "Informes de servicio",
+      "photos": "Fotos y firmas",
+      "tracking": "GPS en vivo",
+      "clock": "Fichar entrada/salida",
+      "checklists": "Listas de control",
+      "projects": "Proyectos y fases"
+    },
+    "seeds": {
+      "mainOffice": "Oficina principal",
+      "north": "Norte",
+      "south": "Sur",
+      "fieldTeam": "Equipo de campo",
+      "office": "Oficina"
+    }
+  },
+  "tours": {
+    "progress": "Paso {{current}} de {{total}}",
+    "clickHint": "Toca el elemento resaltado para continuar",
+    "skip": "Omitir",
+    "next": "Siguiente",
+    "finish": "Listo",
+    "takeTour": "Hacer un recorrido",
+    "help": {
+      "button": "Ayuda y guías",
+      "title": "Ayuda y guías",
+      "subtitle": "Aprende sobre la marcha",
+      "thisPage": "Explícame esta página",
+      "noneForPage": "Aún no hay recorrido para esta página — elige una guía abajo o busca en el Centro de ayuda.",
+      "allGuides": "Todas las guías",
+      "helpCenter": "Centro de ayuda",
+      "helpCenterDesc": "Busca artículos y preguntas frecuentes"
+    },
+    "pages": {
+      "employees": { "title": "Tu equipo", "body": "Gestiona a tus técnicos — busca, filtra por estado o especialidad, y abre a cualquiera para ver sus trabajos, asistencia y rendimiento." },
+      "invoices": { "title": "Facturas", "body": "Factura el trabajo completado — crea, envía y controla facturas pagadas y pendientes." },
+      "assets": { "title": "Activos", "body": "Controla los equipos y máquinas que mantienes, con un historial de mantenimiento completo por activo." },
+      "payments": { "title": "Pagos", "body": "Un registro de los pagos recibidos por tus facturas." },
+      "myTimeoff": { "title": "Tus ausencias", "body": "Solicita vacaciones o baja y sigue las aprobaciones — elige fechas, añade un motivo y envía." },
+      "myAttendance": { "title": "Tu asistencia", "body": "Ficha entrada y salida, toma descansos y consulta tus horas del día." },
+      "invitations": { "title": "Invitaciones", "body": "Invita a personas por correo o comparte un código de acceso, y ve quién ha aceptado o está pendiente." },
+      "overtime": { "title": "Horas extra", "body": "Registra horas extra y aprueba las solicitudes de tu equipo aquí." },
+      "joinRequests": { "title": "Solicitudes de acceso", "body": "Personas que pidieron unirse a tu organización — apruébalas con un rol o recházalas." },
+      "manage": { "title": "Centro de gestión", "body": "Accesos rápidos a todo lo que gestionas — miembros, invitaciones, solicitudes, agenda, áreas y más." },
+      "settings": { "title": "Ajustes", "body": "Gestiona aquí tu organización y tus preferencias personales — datos, código de acceso, flujos y tu perfil." },
+      "availability": { "title": "Disponibilidad", "body": "Consulta la disponibilidad de cada técnico por semana o mes — horarios, ausencias y trabajos actuales de un vistazo." },
+      "employeeDetail": { "title": "Perfil del técnico", "body": "Todo sobre esta persona — resumen, trabajos, asistencia, ubicaciones y rendimiento en las pestañas." },
+      "memberDetail": { "title": "Perfil del miembro", "body": "El rol, acceso y agenda de este miembro — edita sus permisos o quítalo desde aquí." },
+      "customers": { "title": "Clientes", "body": "Las personas y empresas para las que trabajas — guarda aquí sus datos para asociar trabajos y facturas.", "createTitle": "Añadir cliente", "createBody": "Toca para añadir un nuevo cliente." }
+    },
+    "welcomeAdmin": {
+      "title": "Conoce HBCField",
+      "steps": {
+        "dashboard": { "title": "Tu panel", "body": "Tu base — un resumen en vivo de trabajos, tu equipo y la actividad de hoy." },
+        "yourSpaces": { "title": "Tus áreas", "body": "Cada área agrupa sus trabajos, personas e informes — toca una para abrirla y ver todo lo que contiene." },
+        "spaceHeader": { "title": "Recuento en vivo", "body": "La cabecera resume el área de un vistazo — cuántas personas están asignadas y, ahora mismo, cuántas están en el sitio, en campo, fuera o ausentes. Se actualiza en vivo a medida que la gente ficha y se mueve." },
+        "openSpace": { "title": "En el sitio ahora", "body": "El área principal muestra quién está físicamente presente en esta área ahora mismo. Un anillo verde significa que ha fichado; la insignia muestra sus horas o trabajo actual." },
+        "member": { "title": "Un compañero", "body": "Cada tarjeta es un miembro del equipo — su foto, nombre, estado en vivo y trabajo actual. Toca uno para abrir su perfil y escribirle, ver sus trabajos o gestionar su acceso." },
+        "field": { "title": "En campo", "body": "Compañeros que están fuera en un trabajo ahora mismo. Toca uno para ver en qué y dónde está trabajando." },
+        "offSite": { "title": "Fuera", "body": "Personas que hoy trabajan en remoto o desde otra ubicación — fichadas, solo que no en esta área." },
+        "offDuty": { "title": "Ausente", "body": "Quién no trabaja hoy — y por qué (día libre, enfermo, vacaciones). El motivo solo lo ven los gerentes." },
+        "spaceActions": { "title": "Acciones del área", "body": "Con un área abierta puedes gestionar sus ajustes, añadir un miembro o ir directamente a sus trabajos." },
+        "activity": { "title": "Actividad reciente", "body": "Un feed en vivo de todo lo que pasa en tu equipo — trabajos creados, asignados, iniciados y completados — al momento." },
+        "pending": { "title": "Acciones pendientes", "body": "Lo que necesita tu atención: aprobaciones, fichajes de salida perdidos, trabajos bloqueados. Resuélvelos aquí mismo sin salir del panel." },
+        "tasks": { "title": "Trabajos", "body": "Crea, asigna y sigue cada trabajo aquí — como lista, tablero o agenda." },
+        "team": { "title": "Tu equipo", "body": "Añade personas, envía invitaciones y gestiona roles y permisos." },
+        "spaces": { "title": "Áreas de trabajo", "body": "Los espacios que agrupan tus trabajos, personas e informes." },
+        "reports": { "title": "Informes", "body": "Consulta el rendimiento y exporta lo que tu equipo completó." },
+        "command": { "title": "Búsqueda rápida", "body": "Pulsa ⌘K / Ctrl+K en cualquier momento para saltar a cualquier pantalla o trabajo." },
+        "notifications": { "title": "Notificaciones", "body": "Las nuevas asignaciones, comentarios y aprobaciones llegan aquí." },
+        "help": { "title": "Ayuda y soporte", "body": "Contáctanos cuando quieras — y repite cualquier recorrido desde el menú de tu perfil." },
+        "profile": { "title": "Tú y ajustes", "body": "Tu disponibilidad, ajustes, facturación y cierre de sesión están aquí." }
+      }
+    },
+    "welcomeManager": {
+      "title": "Conoce HBCField",
+      "steps": {
+        "dashboard": { "title": "Tu panel", "body": "Operación en vivo — trabajos activos, quién está en línea y qué está pendiente." },
+        "tasks": { "title": "Trabajos", "body": "Ve cada trabajo, filtra por estado y asigna al técnico adecuado." },
+        "schedule": { "title": "Agenda", "body": "Consulta la disponibilidad de cada técnico antes de asignar." },
+        "attendance": { "title": "Asistencia", "body": "Ve en vivo en el mapa quién ha fichado y dónde." },
+        "reports": { "title": "Informes", "body": "Revisa el trabajo completado y el rendimiento del equipo." },
+        "command": { "title": "Búsqueda rápida", "body": "Pulsa ⌘K / Ctrl+K para saltar a cualquier pantalla o trabajo." },
+        "help": { "title": "Ayuda y soporte", "body": "Contáctanos cuando quieras — y repite cualquier recorrido desde el menú de tu perfil." },
+        "profile": { "title": "Tú y ajustes", "body": "Tu disponibilidad, ajustes y cierre de sesión están aquí." }
+      }
+    },
+    "welcomeEmployee": {
+      "title": "Conoce HBCField",
+      "steps": {
+        "dashboard": { "title": "Tu inicio", "body": "Un resumen rápido de tu día — tus trabajos y tu estado." },
+        "yourSpaces": { "title": "Tus áreas", "body": "Tus áreas de trabajo — abre una para ver sus trabajos y las personas que hay en ella." },
+        "openSpace": { "title": "Dentro de tu área", "body": "Ve a tus compañeros y su estado — quién está en turno, en campo o fuera — aquí mismo." },
+        "member": { "title": "Un compañero", "body": "Cada tarjeta es un miembro del equipo — su estado y trabajo actual. Toca uno para abrir su perfil y ponerte en contacto." },
+        "tasks": { "title": "Tus trabajos", "body": "Los trabajos asignados a ti — abre uno para ver los detalles." },
+        "command": { "title": "Búsqueda rápida", "body": "Pulsa ⌘K / Ctrl+K para saltar a cualquier sitio rápido." },
+        "help": { "title": "Ayuda y soporte", "body": "Contáctanos cuando quieras — y repite este recorrido desde el menú de tu perfil." },
+        "profile": { "title": "Tú y ajustes", "body": "Configura tu disponibilidad y preferencias, o cierra sesión aquí." }
+      }
+    },
+    "tasksTour": {
+      "title": "Crea tu primer trabajo",
+      "steps": {
+        "search": { "title": "Encuentra cualquier cosa", "body": "Busca trabajos por título o detalles a medida que crece tu lista." },
+        "board": { "title": "Vista de tablero", "body": "Los trabajos se organizan en columnas por estado. Arrastra una tarjeta a otra columna para cambiar su estado." },
+        "list": { "title": "Vista de lista", "body": "Una tabla compacta para revisar, ordenar y agrupar — toca cualquier fila para abrirla." },
+        "schedule": { "title": "Vista de agenda", "body": "Tus trabajos en una línea de tiempo y calendario, por fecha de vencimiento — ideal para planificar la semana." },
+        "views": { "title": "Cambia de vista cuando quieras", "body": "Usa estos botones para saltar entre lista, tablero y agenda cuando quieras." },
+        "create": { "title": "Crear un trabajo", "body": "Vamos a crear uno — toca Nuevo trabajo para abrir el formulario." },
+        "title": { "title": "Nombra el trabajo", "body": "Ponle un título claro, como la dirección y el problema." },
+        "save": { "title": "Guárdalo", "body": "Añade un técnico y detalles, y toca Guardar para crear el trabajo." }
+      }
+    },
+    "membersTour": {
+      "title": "Haz crecer tu equipo",
+      "steps": {
+        "search": { "title": "Encuentra personas", "body": "Busca a tus miembros por nombre o correo." },
+        "invite": { "title": "Invita a un compañero", "body": "Toca Invitar para enviar a alguien un enlace de acceso con el rol adecuado." },
+        "send": { "title": "Envía la invitación", "body": "Indica el correo y el rol, y envía — recibirá un enlace de acceso." }
+      }
+    },
+    "spacesTour": {
+      "title": "Configura tus áreas",
+      "steps": {
+        "intro": { "title": "Tus áreas", "body": "Las áreas agrupan tus trabajos, personas e informes — como una sede, un departamento o un proyecto. Todo lo de un área está acotado a ella." },
+        "card": { "title": "Un área de un vistazo", "body": "Cada tarjeta muestra el nombre del área, si está activa, cuántos miembros tiene, su dirección y las funciones (módulos) activadas." },
+        "configure": { "title": "Configurar", "body": "Abre los ajustes completos de un área — detalles generales y mapa, los módulos que usa, su flujo de trabajos y las personas asignadas." },
+        "viewTasks": { "title": "Ver sus trabajos", "body": "Salta directamente a todos los trabajos que pertenecen a esta área." },
+        "actions": { "title": "Más acciones", "body": "Desactiva un área (nunca se elimina del todo) o reactívala más tarde desde aquí." },
+        "create": { "title": "Añadir un área", "body": "Toca Nueva área para crear una — recorramos el formulario." },
+        "name": { "title": "Nómbrala", "body": "Ponle un nombre claro al área — una sede, equipo o proyecto." },
+        "type": { "title": "Espacio de trabajo o físico", "body": "Un Espacio de trabajo es un grupo lógico (un equipo o proyecto). Un área Física es una ubicación real con dirección y geocerco — elige esa para la asistencia en el sitio." },
+        "physical": { "title": "Ubicación y geocerco", "body": "Para un área física: pon la dirección, coloca el pin en el mapa y ajusta el radio del geocerco — la zona donde deben estar los miembros para fichar en el sitio." },
+        "workflow": { "title": "Flujo de trabajos", "body": "Elige el flujo de estados que siguen los trabajos de esta área (Nuevo → En curso → Hecho…) — o crea uno propio aquí mismo." },
+        "modules": { "title": "Funciones (módulos)", "body": "Despliega para activar o desactivar funciones de esta área — subtareas, listas, adjuntos, seguimiento y más, o aplica un preset." },
+        "submit": { "title": "Créala", "body": "Crea el área — puedes cambiar todo más tarde desde Configurar." }
+      }
+    },
+    "attendanceTour": {
+      "title": "Controla la asistencia",
+      "steps": {
+        "intro": { "title": "Asistencia", "body": "Todo sobre las horas trabajadas está aquí — quién ha fichado, los registros, las aprobaciones y los descansos." },
+        "addDayOff": { "title": "Añadir día libre", "body": "Marca a alguien como ausente por un día o un rango de fechas (vacaciones, enfermedad, festivo…) para que la agenda y la nómina cuadren." },
+        "addAttendance": { "title": "Añadir asistencia", "body": "Registra manualmente o con fecha retroactiva un turno. Un día, o rellena todo un rango filtrado por ciertos días de la semana." },
+        "tabs": { "title": "Tres vistas", "body": "Seguimiento (los registros), Aprobaciones (entradas que necesitan un sí/no) y Descansos. Las insignias muestran qué necesita tu atención." },
+        "trackingStats": { "title": "Totales de hoy", "body": "Un vistazo rápido a ahora — quién está activo, turnos completados, fichajes automáticos de salida y horas totales." },
+        "trackingFilters": { "title": "Buscar registros", "body": "Busca por nombre y filtra por ubicación, estado o rango de fechas — o usa un preajuste como Hoy o Esta semana." },
+        "trackingTable": { "title": "Los registros", "body": "Cada turno: trabajador, estado, entrada/salida, horas, estado de aprobación y marcas (horas extra, salida no fichada, fuera del geocerco…). Los administradores pueden editar cualquier entrada con el lápiz." },
+        "approvalsTab": { "title": "Aprobaciones", "body": "Las entradas marcadas esperan aquí una decisión — la insignia cuenta las pendientes." },
+        "approvals": { "title": "Aprobar o rechazar", "body": "Revisa cada turno marcado — trabajador, horas y por qué se marcó — y apruébalo, o recházalo con un motivo." },
+        "breaksTab": { "title": "Descansos", "body": "Controla el tiempo de descanso del equipo — la insignia muestra quién está de descanso ahora." },
+        "breaks": { "title": "Resumen de descansos", "body": "Totales de descanso por tipo, quién está de descanso ahora (los administradores pueden terminarlo) y el historial completo con filtros." }
+      }
+    },
+    "reportsTour": {
+      "title": "Crea un informe",
+      "steps": {
+        "intro": { "title": "Informes", "body": "Responde cualquier pregunta sobre tu equipo, trabajos, tareas y clientes — crea un informe, ejecútalo y expórtalo o prográmalo." },
+        "saved": { "title": "Tus plantillas", "body": "Los informes que guardaste están aquí — toca uno para recargarlo al instante. Créalo una vez, reutilízalo siempre." },
+        "builder": { "title": "Generador de informes", "body": "Empieza un informe nuevo aquí. Vamos a abrirlo y crear uno paso a paso." },
+        "dataset": { "title": "Elige un conjunto de datos", "body": "Elige sobre qué informas — asistencia, trabajos, tareas, clientes… Cada conjunto ofrece sus propias medidas y agrupaciones." },
+        "measures": { "title": "Medidas", "body": "Los números a calcular — horas, recuentos, totales. Elige una o varias; se convierten en tus columnas y KPIs." },
+        "dimensions": { "title": "Agrupar por", "body": "Desglosa los números — por persona, área, cliente, estado… Déjalo vacío para un total único." },
+        "period": { "title": "Periodo", "body": "Elige el rango de fechas (un preajuste o un periodo personalizado) y, opcionalmente, divídelo por día, semana o mes." },
+        "run": { "title": "Ejecútalo", "body": "Ejecuta el informe — los resultados aparecen justo debajo como tarjetas KPI, un gráfico y una tabla completa." },
+        "results": { "title": "Resultados", "body": "Tu respuesta de un vistazo: totales KPI arriba, un gráfico ordenado y la tabla de datos completa debajo." },
+        "save": { "title": "Guardar como plantilla", "body": "Guarda esta configuración como plantilla reutilizable (opcionalmente compartida con el equipo) para no rehacerla nunca." },
+        "export": { "title": "Exportar", "body": "Descarga como CSV, o abre el estudio PDF para producir un documento pulido y con tu marca y logo — y en planes superiores, prográmalo para enviarse por correo automáticamente." }
+      }
+    },
+    "taskDetailTour": {
+      "title": "Gestionar un trabajo",
+      "steps": {
+        "header": { "title": "El trabajo", "body": "El título, el estado en vivo y los botones de flujo están arriba — renombra el trabajo, pásalo a la siguiente etapa, reasígnalo o usa el menú ⋯ para editar o cancelar." },
+        "progress": { "title": "Progreso y responsable", "body": "Ve el trabajo avanzar por cada etapa, quién lo lidera y cuánto ha tardado — llámale o escríbele aquí mismo." },
+        "description": { "title": "Descripción", "body": "El detalle completo del trabajo — qué hay que hacer. Toca para editarlo en línea." },
+        "subtasks": { "title": "Subtareas", "body": "Divide el trabajo en partes más pequeñas, cada una con su responsable y lista de tareas." },
+        "checklist": { "title": "Lista de tareas", "body": "Una lista simple para este trabajo — marca los puntos hechos y verás llenarse la barra de progreso." },
+        "attachments": { "title": "Adjuntos", "body": "Fotos y documentos del trabajo — arrastra archivos o súbelos, y ábrelos o elimínalos cuando quieras." },
+        "dependencies": { "title": "Dependencias", "body": "Vincula este trabajo con otros — qué lo bloquea y qué bloquea él — para mantener el orden del calendario." },
+        "customFields": { "title": "Campos personalizados", "body": "Campos extra que tu equipo definió para este tipo de trabajo — se guardan automáticamente al escribir." },
+        "comments": { "title": "Coméntalo", "body": "Deja notas y preguntas para quien esté en el trabajo. Mayús+Enter para una nueva línea." },
+        "activity": { "title": "Historial completo", "body": "Cada cambio se registra aquí — cambios de estado, asignaciones, subidas — quién hizo qué y cuándo." },
+        "serviceReport": { "title": "Informe de servicio", "body": "Cuando el trabajo se completa, el informe de campo aparece aquí — trabajo realizado, duración, fotos antes/después, piezas usadas y firmas." },
+        "routeTracking": { "title": "Ruta y GPS", "body": "Para trabajos en campo, sigue la ruta en vivo y los detalles del viaje del técnico en el mapa." },
+        "sidebar": { "title": "Detalles", "body": "Todos los datos clave a la derecha — responsables, fechas de vencimiento e inicio, ubicación, horas estimadas y quién lo creó. Toca cualquier valor para editarlo." },
+        "agile": { "title": "Agile", "body": "Sprint, fase, epic y story points — configúralos aquí si tu equipo trabaja con agile." }
+      }
+    },
+    "memberDetailTour": {
+      "title": "Miembro y acceso",
+      "steps": {
+        "profile": { "title": "Perfil del miembro", "body": "Su nombre, rol, estado, correo y las áreas a las que pertenece. Usa Editar para cambiar su perfil, horario de trabajo o restablecer su contraseña." },
+        "tasks": { "title": "Su trabajo", "body": "En qué está trabajando este miembro — trabajos recientes, horario y actividad de un vistazo." },
+        "accessTab": { "title": "Acceso", "body": "Aquí controlas exactamente qué puede ver y hacer este miembro. Vamos a abrirlo y recorrerlo." },
+        "platform": { "title": "Acceso por plataforma", "body": "Dónde pueden iniciar sesión — solo web (oficina), solo móvil (campo) o ambos." },
+        "permissions": { "title": "Permisos", "body": "Los permisos centrales y aplicados: si pueden crear trabajos (y para quién), asignar trabajos a otros, ver todos los trabajos y gestionar personas. Se aplican en todas partes — interfaz y servidor." },
+        "features": { "title": "Pestañas de funciones", "body": "Qué pestañas de la app recibe este miembro — Trabajos, Fichaje (asistencia) y Ausencias." },
+        "attendance": { "title": "Fichaje remoto", "body": "Permíteles fichar desde cualquier lugar sin estar en el geocerco de un sitio (teletrabajo / en ruta). Requiere la pestaña Fichaje activada arriba." },
+        "spaces": { "title": "Visibilidad de áreas", "body": "Cuánto pueden ver — solo sus áreas asignadas, esas más las áreas de sus trabajos, o todas las áreas de la organización." },
+        "collaboration": { "title": "Mensajería", "body": "Actívalo para que este miembro pueda chatear con compañeros — y ser contactado. Un interruptor para ambas direcciones." },
+        "contact": { "title": "Acceso de contacto", "body": "Define exactamente a quién pueden contactar: a nadie, a todos o a una lista específica que elijas." },
+        "management": { "title": "Directorio de gestión", "body": "Incluye a esta persona para que los compañeros puedan contactarla desde cualquier lugar — y opcionalmente permítele crear y ejecutar informes." },
+        "watchers": { "title": "Notificaciones", "body": "Elige quién recibe alertas sobre este miembro — aprobaciones, eventos de geocerco y más. Déjalo vacío para usar el enrutamiento predeterminado." },
+        "save": { "title": "Guardar cambios", "body": "Nada cambia hasta que Guardas — entonces su acceso se actualiza en todas partes al instante." }
+      }
+    },
+    "availabilityTour": {
+      "title": "Agenda y disponibilidad",
+      "steps": {
+        "intro": { "title": "Agenda", "body": "Ve la disponibilidad de todo tu equipo de un vistazo — quién trabaja, quién está fuera y cuándo — por semana o mes." },
+        "summary": { "title": "Hoy de un vistazo", "body": "Un resumen rápido de hoy: cuántas personas están programadas, cuántas disponibles y cuántas de ausencia." },
+        "view": { "title": "Semana o mes", "body": "Cambia entre la vista semanal (detalle día a día) y la vista mensual (todo el mes a la vez)." },
+        "space": { "title": "Filtrar por área", "body": "Acota el calendario a una sola área o muestra a todos." },
+        "dateNav": { "title": "Moverte en el tiempo", "body": "Salta a Hoy, o avanza y retrocede una semana o un mes con las flechas." },
+        "tabs": { "title": "Calendario y ausencias", "body": "Cambia entre el calendario de disponibilidad y las solicitudes de ausencia por aprobar." },
+        "calendar": { "title": "El calendario", "body": "Cada día muestra una barra de disponible, de ausencia y no programado. Toca un día para ver exactamente quién — agrupado por área, con sus horas." },
+        "dayDetail": { "title": "Quién está ese día", "body": "Al abrir un día se lista a todos agrupados por área — sus horas de turno, motivo de ausencia y estado. Toca un nombre para abrir su perfil." },
+        "legend": { "title": "Clave de colores", "body": "Verde = disponible, ámbar = de ausencia, gris = no programado. Los mismos colores se usan en todo el calendario." },
+        "timeoffTab": { "title": "Solicitudes de ausencia", "body": "Esta pestaña lista cada solicitud de ausencia — la insignia muestra cuántas siguen esperándote." },
+        "timeoff": { "title": "Aprobar ausencias", "body": "Revisa cada solicitud — quién, cuándo, cuánto y por qué — y apruébala o recházala aquí mismo. Filtra por estado." }
+      }
+    },
+    "myTimeoffTour": {
+      "title": "Solicitar ausencia",
+      "steps": {
+        "intro": { "title": "Ausencias", "body": "Solicita días libres y sigue el estado de cada solicitud — todo desde aquí." },
+        "form": { "title": "Nueva solicitud", "body": "Rellena esto para solicitar vacaciones, baja por enfermedad o un día libre. Va a tu responsable para su aprobación." },
+        "dates": { "title": "Elige las fechas", "body": "Elige el primer y último día de tu ausencia. Para un solo día, pon ambas en la misma fecha." },
+        "reason": { "title": "Añade un motivo", "body": "Opcionalmente indica el motivo (vacaciones, médico, familia…) — ayuda a tu responsable a decidir más rápido." },
+        "submit": { "title": "Envíala", "body": "Envía la solicitud. Tu responsable recibe una notificación y aparece abajo como Pendiente." },
+        "requests": { "title": "Tus solicitudes", "body": "Cada solicitud con su estado — Pendiente, Aprobada, Rechazada (con el motivo) o Cancelada. Puedes cancelar una solicitud mientras siga pendiente." }
+      }
+    },
+    "settingsTour": {
+      "title": "Ajustes",
+      "steps": {
+        "intro": { "title": "Ajustes", "body": "Todo lo configurable está aquí — tu organización arriba (solo administradores) y tus preferencias personales debajo." },
+        "orgGroup": { "title": "Organización", "body": "Estos ajustes afectan a toda tu empresa — su perfil, cómo se une la gente, los flujos de trabajos, las notificaciones y el registro de auditoría. Solo administradores." },
+        "general": { "title": "Perfil de la organización", "body": "El nombre, sector, dirección y datos de contacto de tu empresa — más el logo que aparece en los PDF de informes y estados. Se guarda al instante." },
+        "members": { "title": "Código y política de acceso", "body": "Comparte (o regenera) el código para unirse y elige si unirse es abierto, solo por invitación o cerrado." },
+        "notifications": { "title": "Notificaciones", "body": "Elige qué correos y alertas push de toda la organización se envían — al crear tareas, completarlas y en solicitudes de acceso." },
+        "workflows": { "title": "Tipos de trabajo y flujos", "body": "Define los flujos de estado y los campos personalizados de tus trabajos — crea tipos, define sus estados y añade campos." },
+        "audit": { "title": "Registro de auditoría", "body": "Un rastro completo de quién hizo qué y cuándo — filtra por evento, persona o fecha. Cada cambio es rastreable." },
+        "personalGroup": { "title": "Personal", "body": "Solo para ti — estos ajustes solo afectan a tu propia cuenta, no a la organización." },
+        "profile": { "title": "Tu perfil", "body": "Tu nombre, foto y correo — y si las horas se muestran en formato 24h o 12h en toda la app." },
+        "security": { "title": "Contraseña", "body": "Cambia tu contraseña aquí — necesitarás la actual, y la nueva debe ser segura." }
+      }
     }
   },
   "welcome": {

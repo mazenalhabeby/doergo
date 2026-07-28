@@ -256,38 +256,38 @@
         {
           "name": "Property & facility management",
           "who": "Landlords, property and facility managers running many buildings and units.",
-          "how": "Tenant requests become dispatched tasks, geofenced clock-in per building, photo and signed service reports, plus recurring safety checks — heating, smoke detectors — on a live map with a full audit log.",
-          "benefit": "One coordinator oversees more units, hours are verified, compliance is documented, and tenants get a faster response."
+          "how": "Log every request as a job, dispatch the nearest technician, and keep a full service history per building.",
+          "benefit": "One system for tenants, technicians and paperwork — nothing slips."
         },
         {
           "name": "HVAC, plumbing & electrical trades",
           "who": "Installation and repair contractors with mobile technicians.",
-          "how": "Jobs assigned by location and priority, a clear status flow from en route to arrived to completed, service reports with parts used and a customer signature, then invoicing.",
-          "benefit": "Faster job turnaround, provable labour and parts, and quicker billing."
+          "how": "Assign jobs to the field, track arrival and route on a live map, and capture parts, photos and a signature on completion.",
+          "benefit": "Faster call-outs and a signed service report before the technician leaves."
+        },
+        {
+          "name": "Industry & maintenance",
+          "who": "Factories, plants and industrial sites with in-house maintenance teams servicing machines and equipment.",
+          "how": "Schedule recurring preventive maintenance, raise breakdown work orders, and log parts and labour against each asset for a complete machine history.",
+          "benefit": "Less unplanned downtime — planned upkeep and every asset's full history in one place."
         },
         {
           "name": "Cleaning & janitorial services",
-          "who": "Commercial cleaning firms running recurring rounds across sites.",
-          "how": "Recurring tasks per site, geofenced clock-in that proves attendance, and checklists via custom fields.",
-          "benefit": "No missed rounds, verified presence, and less supervision."
+          "who": "Commercial cleaning firms running recurring rounds across many sites.",
+          "how": "Build recurring schedules, prove attendance with geofenced clock-in, and confirm each site with a checklist and photos.",
+          "benefit": "Proof of service on every site, automatically."
         },
         {
           "name": "Security & guarding",
-          "who": "Security firms running patrols and inspections.",
-          "how": "Scheduled recurring patrol tasks, timestamped geofenced check-ins, GPS route proof, and photo incident reports.",
-          "benefit": "Verifiable coverage for clients and far fewer disputes."
+          "who": "Security firms running patrols and site inspections.",
+          "how": "Plan patrols as recurring jobs, verify guards on site with GPS and clock-in, and log every check.",
+          "benefit": "Verified, timestamped patrols you can show the client."
         },
         {
           "name": "Landscaping & grounds maintenance",
           "who": "Outdoor crews servicing many sites.",
-          "how": "GPS route-tracked visits, recurring seasonal schedules, and before/after photos.",
-          "benefit": "Efficient routing, documented work, and clear proof for clients."
-        },
-        {
-          "name": "Equipment & appliance repair",
-          "who": "Field teams maintaining machines and assets on customer sites.",
-          "how": "Asset-linked tasks with a full maintenance history, service reports with parts, recurring maintenance and signatures.",
-          "benefit": "A complete history per asset, faster repeat visits, and provable warranty work."
+          "how": "Plan recurring visits, follow crews by GPS route and clock-in, and back up work with photos.",
+          "benefit": "Full visibility across scattered sites and the work done."
         }
       ]
     },
@@ -845,6 +845,11 @@
       "addSpace": "Add Space",
       "inviteTeam": "Invite Team",
       "newSpace": "New Space",
+      "exampleLabel": "Example — this is how a space looks",
+      "exampleSpaceName": "Main Office",
+      "exampleOnShift": "On shift",
+      "exampleInField": "In field",
+      "exampleJob": "AC unit repair — Downtown",
       "noSpacesTitle": "No spaces assigned yet",
       "noSpacesDescription": "You haven't been added to a space. Check the Tasks tab for your assigned work, or ask your manager to add you."
     },
@@ -870,6 +875,10 @@
     "activityFeed": {
       "noRecentActivity": "No recent activity"
     },
+    "recentActivity": "Recent Activity",
+    "pendingActions": "Pending Actions",
+    "eventsCount": "{{count}} events",
+    "noRecentActivity": "No recent activity",
     "recentTasksWidget": {
       "noTasks": "No tasks yet",
       "willAppear": "Tasks will appear here once created",
@@ -2296,7 +2305,12 @@
       "avatarUpdated": "Avatar updated",
       "avatarUploadFailed": "Failed to upload avatar",
       "avatarRemoved": "Avatar removed",
-      "avatarRemoveFailed": "Failed to remove avatar"
+      "avatarRemoveFailed": "Failed to remove avatar",
+      "timeFormat": "Time format",
+      "timeFormat24": "24-hour",
+      "timeFormat12": "12-hour",
+      "timeFormatNote": "Choose how times are shown across the app. Only affects your account.",
+      "timeFormatUpdated": "Time format updated"
     },
     "security": {
       "title": "Password & Security",
@@ -4023,6 +4037,379 @@
       "tryDifferentPath": "Try a different path",
       "logOut": "Log out",
       "failedToCancel": "Couldn't cancel the request. Please try again."
+    }
+  },
+  "setup": {
+    "stepOf": "Step {{step}} of {{total}}",
+    "skip": "Skip for now",
+    "friend": "there",
+    "yourCompany": "your company",
+    "defaultSpace": "Main workspace",
+    "splash": {
+      "title": "Welcome, {{name}}",
+      "sub": "Let's get {{org}} ready. Just tell me what your team does — I'll understand it and set everything up for you. About a minute, and you can change anything later.",
+      "cta": "Get started",
+      "reassure": "No forms. No settings to figure out."
+    },
+    "work": {
+      "kicker": "Tell me about your work",
+      "title": "What does your team do?",
+      "sub": "Describe it in your own words — a sentence is plenty. I'll read it and figure out how to set you up.",
+      "placeholder": "e.g. we install and service AC units and do emergency callouts",
+      "orPick": "or pick a starting point",
+      "understoodEyebrow": "Here's what I understood",
+      "youreIn": "You're in {{industry}}",
+      "understoodSub": "From what you wrote, here's how I'll set you up.",
+      "areasLabel": "Work areas I'll create",
+      "toolsLabel": "Tools I'll switch on",
+      "continue": "Perfect, continue",
+      "addDetail": "Add more detail"
+    },
+    "group": {
+      "kicker": "Your work areas",
+      "confirmTitle": "Here's how I'll organise your work",
+      "confirmSub": "Based on what you told me. These become your groups for jobs, people and reports — all editable later.",
+      "looksGood": "Looks good",
+      "groupDifferently": "Group it differently instead",
+      "chooseTitle": "How should I group your jobs?",
+      "chooseSub": "I can set this up for you — or choose how to group your jobs yourself.",
+      "orManual": "or organise it yourself",
+      "byType": "By type of job",
+      "byTypeHint": "installs, repairs, maintenance…",
+      "byPlace": "By place",
+      "byPlaceHint": "one group per site or area",
+      "byTeam": "By team",
+      "byTeamHint": "one group per crew",
+      "pickForMe": "Not sure? I'll pick",
+      "pickForMeHint": "I'll choose the best setup"
+    },
+    "team": {
+      "kicker": "Your team",
+      "title": "Who's using this with you?",
+      "sub": "So I know whether to prepare invites. You can always add people later.",
+      "justMe": "Just me for now",
+      "justMeHint": "I'll add people later",
+      "small": "A small team",
+      "smallHint": "Around 2–10 people",
+      "big": "A bigger team",
+      "bigHint": "More than 10"
+    },
+    "build": {
+      "title": "Setting everything up…",
+      "sub": "Just a few seconds — I'm building it all for you.",
+      "error": "Something went wrong while building your workspace. Let's try that again.",
+      "retry": "Try again",
+      "steps": {
+        "company": "Creating your company",
+        "spaces": "Setting up your work areas",
+        "tools": "Turning on the tools you need",
+        "finish": "Preparing your dashboard"
+      }
+    },
+    "done": {
+      "title": "All set — you're ready",
+      "flag": "{{org}} is built and ready to use",
+      "areasTitle": "Your work areas are ready",
+      "toolsTitle": "The right tools are switched on",
+      "teamTitle": "Invite your team",
+      "teamReady": "Add your teammates from Members when you're ready",
+      "teamSoloTitle": "Just you for now",
+      "teamSolo": "Add people anytime from Members",
+      "cta": "Show me around"
+    },
+    "badges": { "recommended": "Recommended" },
+    "industries": {
+      "repairs": "Repairs & trades",
+      "machines": "Machines & maintenance",
+      "facilities": "Buildings & facilities",
+      "cleaning": "Cleaning",
+      "security": "Security & guarding",
+      "grounds": "Gardens & grounds",
+      "construction": "Construction",
+      "it": "IT & telecom",
+      "solar": "Solar & energy",
+      "other": "General"
+    },
+    "areaNames": {
+      "installations": "Installations",
+      "maintenance": "Maintenance",
+      "repairs": "Repairs & callouts",
+      "preventive": "Preventive maintenance",
+      "breakdowns": "Breakdowns",
+      "inspections": "Inspections",
+      "requests": "Requests",
+      "regularCleans": "Regular cleans",
+      "deepCleans": "Deep cleans",
+      "oneOff": "One-off jobs",
+      "cleaning": "Cleaning jobs",
+      "patrols": "Patrols",
+      "alarmCallouts": "Alarm callouts",
+      "staticGuarding": "Static guarding",
+      "regularVisits": "Regular visits",
+      "projects": "Projects",
+      "snagging": "Snagging",
+      "callbacks": "Callbacks",
+      "installs": "Installs",
+      "supportTickets": "Support tickets",
+      "servicing": "Servicing",
+      "callouts": "Callouts",
+      "routes": "Routes",
+      "pickups": "Pickups",
+      "deliveries": "Deliveries",
+      "treatments": "Treatments",
+      "followUps": "Follow-ups",
+      "grounds": "Grounds",
+      "jobs": "Jobs"
+    },
+    "tools": {
+      "jobs": "Jobs & scheduling",
+      "serviceReports": "Service reports",
+      "photos": "Photos & signatures",
+      "tracking": "Live GPS tracking",
+      "clock": "Clock in / out",
+      "checklists": "Checklists",
+      "projects": "Projects & phases"
+    },
+    "seeds": {
+      "mainOffice": "Main Office",
+      "north": "North",
+      "south": "South",
+      "fieldTeam": "Field Team",
+      "office": "Office"
+    }
+  },
+  "tours": {
+    "progress": "Step {{current}} of {{total}}",
+    "clickHint": "Click the highlighted item to continue",
+    "skip": "Skip",
+    "next": "Next",
+    "finish": "Done",
+    "takeTour": "Take a tour",
+    "help": {
+      "button": "Help & guides",
+      "title": "Help & guides",
+      "subtitle": "Learn as you go",
+      "thisPage": "Show me around this page",
+      "noneForPage": "No walkthrough for this page yet — pick a guide below or search the Help center.",
+      "allGuides": "All guides",
+      "helpCenter": "Help center",
+      "helpCenterDesc": "Search articles & FAQs"
+    },
+    "pages": {
+      "employees": { "title": "Your team roster", "body": "Manage your technicians — search, filter by status or specialty, and open anyone to see their tasks, attendance and performance." },
+      "invoices": { "title": "Invoices", "body": "Bill your customers for completed work — create, send, and track paid vs unpaid invoices." },
+      "assets": { "title": "Assets", "body": "Track the equipment and machines you service, with a full maintenance history per asset." },
+      "payments": { "title": "Payments", "body": "A record of the payments you've received against your invoices." },
+      "myTimeoff": { "title": "Your time off", "body": "Request vacation or sick leave and track approvals — pick dates, add a reason, and submit." },
+      "myAttendance": { "title": "Your attendance", "body": "Clock in and out, take breaks, and see your hours for the day." },
+      "invitations": { "title": "Invitations", "body": "Invite people by email or share a join code, and see who's accepted or is still pending." },
+      "overtime": { "title": "Overtime", "body": "Log overtime hours and approve requests from your team here." },
+      "joinRequests": { "title": "Join requests", "body": "People who asked to join your organization — approve them with a role, or reject." },
+      "manage": { "title": "Management hub", "body": "Quick links to everything you manage — members, invitations, join requests, schedule, spaces and more." },
+      "settings": { "title": "Settings", "body": "Manage your organization and personal preferences here — details, join code, workflows and your profile." },
+      "availability": { "title": "Availability", "body": "See every technician's availability by week or month — schedules, time off and current jobs at a glance." },
+      "employeeDetail": { "title": "Technician profile", "body": "Everything about this person — overview, tasks, attendance, locations and performance across the tabs." },
+      "memberDetail": { "title": "Member profile", "body": "This member's role, access and schedule — edit their permissions or remove them from here." },
+      "customers": { "title": "Customers", "body": "The people and companies you do work for — keep their details here to attach jobs and invoices.", "createTitle": "Add a customer", "createBody": "Click to add a new customer." }
+    },
+    "welcomeAdmin": {
+      "title": "Get to know HBCField",
+      "steps": {
+        "dashboard": { "title": "Your dashboard", "body": "Your home base — a live overview of jobs, your team and today's activity." },
+        "yourSpaces": { "title": "Your spaces", "body": "Each space groups its jobs, people and reports — click one to open it and see everything inside." },
+        "spaceHeader": { "title": "Live headcount", "body": "The header sums up the space at a glance — how many people are assigned, and right now how many are on site, in the field, off-site or off duty. It updates live as people clock in and move." },
+        "openSpace": { "title": "On site now", "body": "The main area shows who's physically present at this space right now. A green ring means they're clocked in; the badge shows their hours or current job." },
+        "member": { "title": "A teammate", "body": "Each card is a team member — their photo, name, live status and current job. Tap one to open their profile and message them, view their jobs, or manage their access." },
+        "field": { "title": "Out in the field", "body": "Teammates who are away on a job right now. Tap one to see what they're working on and where." },
+        "offSite": { "title": "Off-site", "body": "People working remotely or from another location today — still on the clock, just not at this space." },
+        "offDuty": { "title": "Off duty", "body": "Who isn't working today — and why (day off, sick, vacation). The reason is visible to managers only." },
+        "spaceActions": { "title": "Space actions", "body": "From an open space you can manage its settings, add a member, or jump straight to its jobs." },
+        "activity": { "title": "Recent activity", "body": "A live feed of everything happening across your team — jobs created, assigned, started and completed — as it happens." },
+        "pending": { "title": "Pending actions", "body": "Things that need you: approvals, missed clock-outs, blocked jobs. Handle them right here without leaving the dashboard." },
+        "tasks": { "title": "Jobs", "body": "Create, assign and track every job here — as a list, board or schedule." },
+        "team": { "title": "Your team", "body": "Add people, send invites, and manage roles and permissions." },
+        "spaces": { "title": "Work areas", "body": "The spaces that group your jobs, people and reports." },
+        "reports": { "title": "Reports", "body": "See performance and export what your team completed." },
+        "command": { "title": "Quick search", "body": "Press ⌘K / Ctrl+K anytime to jump to any screen or job." },
+        "notifications": { "title": "Notifications", "body": "New assignments, comments and approvals land here." },
+        "help": { "title": "Help & support", "body": "Reach us anytime — and replay any tour from your profile menu." },
+        "profile": { "title": "You & settings", "body": "Your availability, settings, billing and sign-out live here." }
+      }
+    },
+    "welcomeManager": {
+      "title": "Get to know HBCField",
+      "steps": {
+        "dashboard": { "title": "Your dashboard", "body": "Live operations — active jobs, who's online and what's pending." },
+        "tasks": { "title": "Jobs", "body": "See every job, filter by status, and assign the right technician." },
+        "schedule": { "title": "Schedule", "body": "Check each technician's availability before you assign." },
+        "attendance": { "title": "Attendance", "body": "Track who's clocked in and where, live on the map." },
+        "reports": { "title": "Reports", "body": "Review completed work and team performance." },
+        "command": { "title": "Quick search", "body": "Press ⌘K / Ctrl+K to jump to any screen or job." },
+        "help": { "title": "Help & support", "body": "Reach us anytime — and replay any tour from your profile menu." },
+        "profile": { "title": "You & settings", "body": "Your availability, settings and sign-out live here." }
+      }
+    },
+    "welcomeEmployee": {
+      "title": "Get to know HBCField",
+      "steps": {
+        "dashboard": { "title": "Your home", "body": "A quick summary of your day — your jobs and status." },
+        "yourSpaces": { "title": "Your spaces", "body": "Your work areas — open one to see its jobs and the people in it." },
+        "openSpace": { "title": "Inside your space", "body": "See your teammates and their status — who's on shift, in the field or off — right here." },
+        "member": { "title": "A teammate", "body": "Each card is a team member — their status and current job. Tap one to open their profile and get in touch." },
+        "tasks": { "title": "Your jobs", "body": "The jobs assigned to you — open one to see the details." },
+        "command": { "title": "Quick search", "body": "Press ⌘K / Ctrl+K to jump anywhere fast." },
+        "help": { "title": "Help & support", "body": "Reach us anytime — and replay this tour from your profile menu." },
+        "profile": { "title": "You & settings", "body": "Set your availability and preferences, or sign out here." }
+      }
+    },
+    "tasksTour": {
+      "title": "Create your first job",
+      "steps": {
+        "search": { "title": "Find anything", "body": "Search jobs by title or details as your list grows." },
+        "board": { "title": "Board view", "body": "Jobs sit in columns by status. Drag a card to another column to change its status." },
+        "list": { "title": "List view", "body": "A compact table to scan, sort and group your jobs — click any row to open it." },
+        "schedule": { "title": "Schedule view", "body": "Your jobs on a timeline and calendar, by due date — great for planning the week." },
+        "views": { "title": "Switch views anytime", "body": "Use these buttons to jump between the list, board and schedule whenever you like." },
+        "create": { "title": "Create a job", "body": "Let's make one — click New Task to open the form." },
+        "title": { "title": "Name the job", "body": "Give it a clear title, like the address and the problem." },
+        "save": { "title": "Save it", "body": "Add a technician and details, then Save to create the job." }
+      }
+    },
+    "membersTour": {
+      "title": "Grow your team",
+      "steps": {
+        "search": { "title": "Find people", "body": "Search your members by name or email." },
+        "invite": { "title": "Invite a teammate", "body": "Click Invite to send someone a join link with the right role." },
+        "send": { "title": "Send the invite", "body": "Set the email and role, then send — they'll get a join link." }
+      }
+    },
+    "spacesTour": {
+      "title": "Set up your spaces",
+      "steps": {
+        "intro": { "title": "Your spaces", "body": "Spaces group your jobs, people and reports — like a site, a department or a project. Everything on a space is scoped to it." },
+        "card": { "title": "A space at a glance", "body": "Each card shows the space's name, whether it's active, how many members it has, its address, and the features (modules) it has turned on." },
+        "configure": { "title": "Configure", "body": "Open the full settings for a space — general details & map, the modules it uses, its job workflow, and the people assigned to it." },
+        "viewTasks": { "title": "View its jobs", "body": "Jump straight to every job that belongs to this space." },
+        "actions": { "title": "More actions", "body": "Deactivate a space (it's never hard-deleted) or reactivate it later from here." },
+        "create": { "title": "Add a space", "body": "Click New Space to create one — let's walk through the form." },
+        "name": { "title": "Name it", "body": "Give the space a clear name — a site, team or project." },
+        "type": { "title": "Workspace or physical", "body": "A Workspace is a logical group (a team or project). A Physical space is a real location with an address and geofence — pick that for on-site attendance." },
+        "physical": { "title": "Location & geofence", "body": "For a physical space: set the address, drop the pin on the map, and size the geofence radius — the zone members must be inside to clock in on site." },
+        "workflow": { "title": "Job workflow", "body": "Choose the status flow jobs in this space follow (New → In Progress → Done…) — or build a custom one right here." },
+        "modules": { "title": "Features (modules)", "body": "Expand to turn features on or off for this space — subtasks, checklists, attachments, tracking and more, or apply a preset bundle." },
+        "submit": { "title": "Create it", "body": "Create the space — you can change everything later from Configure." }
+      }
+    },
+    "attendanceTour": {
+      "title": "Track attendance",
+      "steps": {
+        "intro": { "title": "Attendance", "body": "Everything about hours worked lives here — who's clocked in, the records, approvals and breaks." },
+        "addDayOff": { "title": "Add a day off", "body": "Mark someone off for a day or a date range (vacation, sick, holiday…) so the schedule and payroll stay right." },
+        "addAttendance": { "title": "Add attendance", "body": "Manually log or back-date a shift for someone. One day, or backfill a whole date range filtered to certain weekdays." },
+        "tabs": { "title": "Three views", "body": "Tracking (the records), Approvals (entries that need a yes/no) and Breaks. The badges show how many need your attention." },
+        "trackingStats": { "title": "Today's totals", "body": "A quick read on right now — who's active, completed shifts, auto clock-outs and total hours." },
+        "trackingFilters": { "title": "Find records", "body": "Search by name and filter by location, status or date range — or use a quick preset like Today or This Week." },
+        "trackingTable": { "title": "The records", "body": "Every shift: worker, status, clock in/out, hours, approval state and flags (overtime, missed clock-out, outside geofence…). Admins can edit any entry with the pencil." },
+        "approvalsTab": { "title": "Approvals", "body": "Flagged entries wait here for a decision — the badge counts how many are pending." },
+        "approvals": { "title": "Approve or reject", "body": "Review each flagged shift — worker, times, hours and why it was flagged — then approve it, or reject with a reason." },
+        "breaksTab": { "title": "Breaks", "body": "Track break time across the team — the badge shows who's on a break right now." },
+        "breaks": { "title": "Breaks overview", "body": "Break totals by type, who's currently on break (admins can end one), and the full break history with filters." }
+      }
+    },
+    "reportsTour": {
+      "title": "Build a report",
+      "steps": {
+        "intro": { "title": "Reports", "body": "Answer any question about your team, jobs, tasks and customers — build a report, run it, and export or schedule it." },
+        "saved": { "title": "Your templates", "body": "Reports you've saved live here — click one to reload it instantly. Build once, reuse forever." },
+        "builder": { "title": "Report builder", "body": "Start a fresh report here. Let's open it and walk through building one." },
+        "dataset": { "title": "Pick a dataset", "body": "Choose what you're reporting on — attendance, jobs, tasks, customers… Each dataset offers its own measures and groupings." },
+        "measures": { "title": "Measures", "body": "The numbers to calculate — hours, counts, totals. Pick one or more; these become your columns and KPIs." },
+        "dimensions": { "title": "Group by", "body": "Break the numbers down — by person, space, customer, status… Leave empty for a single grand total." },
+        "period": { "title": "Period", "body": "Choose the date range (a preset or a custom span), and optionally split it by day, week or month." },
+        "run": { "title": "Run it", "body": "Run the report — the results appear just below as KPI cards, a chart and a full table." },
+        "results": { "title": "Results", "body": "Your answer at a glance: KPI totals up top, a ranked chart, and the full data table beneath." },
+        "save": { "title": "Save as template", "body": "Save this setup as a reusable template (optionally shared with the team) so you never rebuild it." },
+        "export": { "title": "Export", "body": "Download as CSV, or open the PDF studio to produce a polished, branded document with your logo — and on higher plans, schedule it to email automatically." }
+      }
+    },
+    "taskDetailTour": {
+      "title": "Working a job",
+      "steps": {
+        "header": { "title": "The job", "body": "The title, live status and workflow buttons are up top — rename the job, move it to the next stage, reassign it, or use the ⋯ menu to edit or cancel." },
+        "progress": { "title": "Progress & assignee", "body": "See the job move through each stage from new to completed, who's leading it, and how long it's taken — call or message them right here." },
+        "description": { "title": "Description", "body": "The full brief for the job — what needs doing. Click to edit it inline." },
+        "subtasks": { "title": "Subtasks", "body": "Break the job into smaller pieces, each with its own assignee and checklist." },
+        "checklist": { "title": "Checklist", "body": "A simple to-do list for this job — tick items off as they're done and watch the progress bar fill." },
+        "attachments": { "title": "Attachments", "body": "Photos and documents for the job — drag files in or upload, and open or delete them anytime." },
+        "dependencies": { "title": "Dependencies", "body": "Link this job to others — what blocks it and what it blocks — so the schedule stays in the right order." },
+        "customFields": { "title": "Custom fields", "body": "Extra fields your team defined for this type of job — they save automatically as you type." },
+        "comments": { "title": "Discuss it", "body": "Leave notes and questions for whoever's on the job. Shift+Enter for a new line." },
+        "activity": { "title": "Full history", "body": "Every change is logged here — status changes, assignments, uploads — who did what, and when." },
+        "serviceReport": { "title": "Service report", "body": "Once the job is completed, the field report lands here — work performed, duration, before/after photos, parts used and signatures." },
+        "routeTracking": { "title": "Route & GPS", "body": "For jobs in the field, follow the technician's live route and travel details on the map." },
+        "sidebar": { "title": "Details", "body": "All the key facts on the right — assignees, due and start dates, location, estimated hours and who created it. Click any value to edit it." },
+        "agile": { "title": "Agile", "body": "Sprint, phase, epic and story points — set them here if your team runs agile." }
+      }
+    },
+    "memberDetailTour": {
+      "title": "Member & access",
+      "steps": {
+        "profile": { "title": "Member profile", "body": "Their name, role, status, email and the spaces they belong to. Use Edit to change their profile, work schedule or reset their password." },
+        "tasks": { "title": "Their work", "body": "What this member is working on — recent jobs, schedule and activity at a glance." },
+        "accessTab": { "title": "Access", "body": "This is where you control exactly what this member can see and do. Let's open it and go through it." },
+        "platform": { "title": "Platform access", "body": "Where they can sign in — web only (office), mobile only (field), or both." },
+        "permissions": { "title": "Permissions", "body": "The core, enforced permissions: whether they can create jobs (and for whom), assign jobs to others, see all jobs, and manage people. These apply everywhere — UI and server." },
+        "features": { "title": "Feature tabs", "body": "Which app tabs this member gets — Jobs, Clock (attendance) and Time Off." },
+        "attendance": { "title": "Remote clock-in", "body": "Let them clock in from anywhere without standing at a site geofence (WFH / on the road). Needs the Clock tab enabled above." },
+        "spaces": { "title": "Space visibility", "body": "How much they can see — only their assigned spaces, those plus spaces from their jobs, or every space in the org." },
+        "collaboration": { "title": "Messaging", "body": "Turn on so this member can chat with teammates — and be reached back. One switch for both directions." },
+        "contact": { "title": "Contact access", "body": "Scope exactly who they may reach: no one, everyone, or a specific list of people you pick." },
+        "management": { "title": "Management directory", "body": "List this person so teammates can reach them from anywhere — and optionally let them build and run reports." },
+        "watchers": { "title": "Notifications", "body": "Choose who gets alerted about this member — approvals, geofence events and more. Leave empty to fall back to default routing." },
+        "save": { "title": "Save changes", "body": "Nothing changes until you Save — then their access updates everywhere instantly." }
+      }
+    },
+    "availabilityTour": {
+      "title": "Schedule & availability",
+      "steps": {
+        "intro": { "title": "Schedule", "body": "See your whole team's availability at a glance — who's working, who's off, and when — by week or month." },
+        "summary": { "title": "Today at a glance", "body": "A quick snapshot for today: how many people are scheduled, how many are available, and how many are on time off." },
+        "view": { "title": "Week or month", "body": "Switch between a week view (day-by-day detail) and a month view (the whole month at once)." },
+        "space": { "title": "Filter by space", "body": "Narrow the calendar to a single space, or show everyone across all of them." },
+        "dateNav": { "title": "Move through time", "body": "Jump to Today, or step back and forward a week or month with the arrows." },
+        "tabs": { "title": "Calendar & time off", "body": "Switch between the availability calendar and the time-off requests to approve." },
+        "calendar": { "title": "The calendar", "body": "Each day shows a bar for available, on time off and not scheduled. Click a day to see exactly who — grouped by space, with their hours." },
+        "dayDetail": { "title": "Who's on that day", "body": "Opening a day lists everyone grouped by space — their shift hours, time-off reason and status. Click a name to open their profile." },
+        "legend": { "title": "Colour key", "body": "Green = available, amber = on time off, grey = not scheduled. The same colours are used everywhere on the calendar." },
+        "timeoffTab": { "title": "Time-off requests", "body": "This tab lists every time-off request — the badge shows how many are still waiting for you." },
+        "timeoff": { "title": "Approve time off", "body": "Review each request — who, when, how long and why — then approve or reject it right here. Filter by status to find what you need." }
+      }
+    },
+    "myTimeoffTour": {
+      "title": "Request time off",
+      "steps": {
+        "intro": { "title": "Time off", "body": "Ask for time off and track where each request stands — all from here." },
+        "form": { "title": "New request", "body": "Fill this in to request vacation, sick leave or any day off. It goes to your manager for approval." },
+        "dates": { "title": "Pick your dates", "body": "Choose the first and last day you'll be away. For a single day, set both to the same date." },
+        "reason": { "title": "Add a reason", "body": "Optionally say why (vacation, doctor, family…) — it helps your manager decide faster." },
+        "submit": { "title": "Send it", "body": "Submit the request. Your manager gets notified and it appears below as Pending." },
+        "requests": { "title": "Your requests", "body": "Every request with its status — Pending, Approved, Rejected (with the reason) or Canceled. You can cancel a request while it's still pending." }
+      }
+    },
+    "settingsTour": {
+      "title": "Settings",
+      "steps": {
+        "intro": { "title": "Settings", "body": "Everything you can configure lives here — your organization on top (admins only), and your personal preferences below." },
+        "orgGroup": { "title": "Organization", "body": "These settings apply to your whole company — its profile, how people join, task workflows, notifications and the audit log. Admins only." },
+        "general": { "title": "Organization profile", "body": "Your company's name, industry, address and contact details — plus the logo that appears on report and statement PDFs. Saved instantly." },
+        "members": { "title": "Join code & policy", "body": "Share (or regenerate) the code people use to join, and choose whether joining is open, invite-only or closed." },
+        "notifications": { "title": "Notifications", "body": "Choose which org-wide emails and push alerts go out — on new tasks, completions and join requests." },
+        "workflows": { "title": "Task types & workflows", "body": "Define the status flows and custom fields your jobs use — create task types, set their statuses, and add fields." },
+        "audit": { "title": "Audit log", "body": "A full trail of who did what and when — filter by event, person or date. Every change is traceable." },
+        "personalGroup": { "title": "Personal", "body": "Just for you — these settings only affect your own account, not the organization." },
+        "profile": { "title": "Your profile", "body": "Your name, photo and email, and whether times show as 24-hour or 12-hour across the app." },
+        "security": { "title": "Password", "body": "Change your password here — you'll need your current one, and the new one must be strong." }
+      }
     }
   },
   "welcome": {

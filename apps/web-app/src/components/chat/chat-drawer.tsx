@@ -9,6 +9,7 @@ import { SocketEvents, conversationTitle, type ChatConversation, type ChatMessag
 import { chatApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';
+import { useTimeFormat } from '@/hooks';
 
 // ── imperative API for the rest of the app (contact "message" buttons) ────────
 interface ChatContextValue {
@@ -35,8 +36,12 @@ function presenceLabel(p: string | null | undefined, t: import('i18next').TFunct
   if (p === 'AWAY') return t('chat.presence.away', 'Away');
   return t('chat.presence.offline', 'Offline');
 }
-function timeHM(iso: string, lang: string) {
-  return new Date(iso).toLocaleTimeString(lang?.startsWith('de') ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+function timeHM(iso: string, lang: string, hour12?: boolean) {
+  return new Date(iso).toLocaleTimeString(lang?.startsWith('de') ? 'de-DE' : 'en-US', {
+    hour: hour12 ? 'numeric' : '2-digit',
+    minute: '2-digit',
+    ...(hour12 === undefined ? {} : { hour12 }),
+  });
 }
 function relTime(iso: string | null, lang: string) {
   if (!iso) return '';
@@ -366,6 +371,7 @@ function ContactsPicker({ onPick, picking }: { onPick: (userId: string) => void;
 
 function Thread({ conversation, meId }: { conversation: ChatConversation; meId: string }) {
   const { t, i18n } = useTranslation();
+  const { hour12 } = useTimeFormat();
   const qc = useQueryClient();
   const { subscribe, emit, isConnected } = useSocketContext();
   const [text, setText] = useState('');
@@ -485,7 +491,7 @@ function Thread({ conversation, meId }: { conversation: ChatConversation; meId: 
                     {m.body}
                   </div>
                   {isLastOfGroup && (
-                    <span className="mt-1 px-1 text-[10px] text-muted-foreground">{timeHM(m.createdAt, i18n.language)}</span>
+                    <span className="mt-1 px-1 text-[10px] text-muted-foreground">{timeHM(m.createdAt, i18n.language, hour12)}</span>
                   )}
                 </div>
               </div>

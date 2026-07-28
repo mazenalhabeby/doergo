@@ -655,7 +655,8 @@
       "termsOfService": "Nutzungsbedingungen",
       "privacyPolicy": "Datenschutzerklärung",
       "about": "Über",
-      "language": "Sprache"
+      "language": "Sprache",
+      "timeFormat": "Zeitformat"
     },
     "language": {
       "choosePreferred": "Wählen Sie Ihre bevorzugte Sprache",
@@ -668,6 +669,15 @@
       "light": "Hell",
       "dark": "Dunkel",
       "appliedImmediately": "Designänderungen werden sofort in der gesamten App übernommen."
+    },
+    "timeFormat": {
+      "title": "Zeitformat",
+      "subtitle": "Legen Sie fest, wie Uhrzeiten in der App angezeigt werden",
+      "24h": "24-Stunden",
+      "12h": "12-Stunden",
+      "note": "Gilt nur für Ihr Konto, auf jedem Gerät, an dem Sie sich anmelden.",
+      "updated": "Zeitformat aktualisiert",
+      "failed": "Zeitformat konnte nicht aktualisiert werden"
     },
     "signOutConfirmTitle": "Abmelden",
     "signOutConfirmMessage": "Sind Sie sicher, dass Sie sich abmelden möchten?",

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import { useTimeFormat } from "@/hooks"
 import { toast } from "sonner"
 import { Clock, MapPin, CircleDot, LogIn, LogOut, Loader2, Home } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
@@ -29,9 +30,13 @@ function fmtDate(iso?: string | null): string {
   if (!iso) return "—"
   return new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
 }
-function fmtTime(iso?: string | null): string {
+function fmtTime(iso?: string | null, hour12 = false): string {
   if (!iso) return "—"
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: hour12 ? "numeric" : "2-digit",
+    minute: "2-digit",
+    hour12,
+  })
 }
 
 function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
@@ -51,6 +56,7 @@ function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
 
 export default function MyAttendancePage() {
   const { t } = useTranslation()
+  const { hour12 } = useTimeFormat()
   const { user } = useAuth()
   const qc = useQueryClient()
   const canSee = !user || hasAccessModule(user, "clock")
@@ -150,7 +156,7 @@ export default function MyAttendancePage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">{t("attendance.my.title")}</h1>
+        <h1 data-tour="page-my-attendance" className="text-2xl font-semibold text-foreground">{t("attendance.my.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("attendance.my.subtitle")}</p>
       </div>
 
@@ -163,7 +169,7 @@ export default function MyAttendancePage() {
           </div>
           <p className="mt-2 text-lg font-semibold text-foreground">{clockedIn ? t("attendance.my.clockedIn") : t("attendance.my.clockedOut")}</p>
           {clockedIn && activeEntry?.clockInAt && (
-            <p className="text-xs text-muted-foreground">{t("attendance.my.since", { time: fmtTime(activeEntry.clockInAt), duration: duration(activeEntry.clockInAt) })}</p>
+            <p className="text-xs text-muted-foreground">{t("attendance.my.since", { time: fmtTime(activeEntry.clockInAt, hour12), duration: duration(activeEntry.clockInAt) })}</p>
           )}
 
           {clockedIn ? (
@@ -225,7 +231,7 @@ export default function MyAttendancePage() {
             <div key={e.id} className={`flex items-center gap-4 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
               <div className="w-28 shrink-0 text-sm font-medium text-foreground">{fmtDate(e.clockInAt)}</div>
               <div className="flex-1 text-sm text-muted-foreground">
-                {fmtTime(e.clockInAt)} → {e.clockOutAt ? fmtTime(e.clockOutAt) : <span className="text-green-600">{t("attendance.my.active")}</span>}
+                {fmtTime(e.clockInAt, hour12)} → {e.clockOutAt ? fmtTime(e.clockOutAt, hour12) : <span className="text-green-600">{t("attendance.my.active")}</span>}
                 {e.isRemote ? (
                   <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Home className="h-3 w-3" />{t("attendance.my.remote", "Remote")}

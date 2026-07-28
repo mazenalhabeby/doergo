@@ -202,7 +202,7 @@ export default function EmployeesPage() {
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              <h1 data-tour="page-employees" className="text-3xl font-bold text-foreground tracking-tight">
                 {t('technicians.list.title')}
               </h1>
               <p className="mt-1.5 text-muted-foreground">

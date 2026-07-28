@@ -170,14 +170,14 @@ export default function SpacesPage() {
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
-            <div>
+            <div data-tour="spaces-intro">
               <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("locations.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("locations.subtitle")}
               </p>
             </div>
             {isAdmin && (
-              <Button onClick={() => setCreateOpen(true)} className="h-10 gap-2 rounded-xl shadow-sm">
+              <Button onClick={() => setCreateOpen(true)} data-tour="spaces-create" className="h-10 gap-2 rounded-xl shadow-sm">
                 <Plus className="h-4 w-4" />
                 {t("locations.newSpace")}
               </Button>
@@ -345,6 +345,7 @@ const SpaceCard = memo(function SpaceCard({
 
   return (
     <div
+      data-tour={index === 0 ? "spaces-card" : undefined}
       className={`rounded-xl border bg-card p-5 transition-all duration-200 hover:shadow-md ${
         !space.isActive ? "opacity-60" : ""
       }`}
@@ -414,6 +415,7 @@ const SpaceCard = memo(function SpaceCard({
           {space.isActive && (
             <>
               <Button
+                data-tour={index === 0 ? "spaces-card-configure" : undefined}
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 text-xs rounded-lg"
@@ -423,6 +425,7 @@ const SpaceCard = memo(function SpaceCard({
                 {t("locations.configure")}
               </Button>
               <Button
+                data-tour={index === 0 ? "spaces-card-viewtasks" : undefined}
                 variant="ghost"
                 size="sm"
                 className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground rounded-lg"
@@ -436,7 +439,7 @@ const SpaceCard = memo(function SpaceCard({
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button data-tour={index === 0 ? "spaces-card-actions" : undefined} variant="ghost" size="icon" className="h-8 w-8">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

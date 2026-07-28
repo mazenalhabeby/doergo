@@ -19,6 +19,7 @@ import { SocketEvents, conversationTitle, type ChatConversation, type ChatMessag
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useSocketContext } from '../../src/contexts/socket-context';
+import { useTimeFormat } from '../../src/hooks/useTimeFormat';
 import { ScreenContainer } from '../../src/components';
 import { chatApi, resolveMediaUrl } from '../../src/lib/api';
 import { activeChat } from '../../src/lib/active-chat';
@@ -39,8 +40,12 @@ function presenceLabel(p: string | null | undefined, t: import('i18next').TFunct
   if (p === 'AWAY') return t('chat.presence.away', 'Away');
   return t('chat.presence.offline', 'Offline');
 }
-function timeHM(iso: string, lang: string) {
-  return new Date(iso).toLocaleTimeString(lang?.startsWith('de') ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+function timeHM(iso: string, lang: string, hour12?: boolean) {
+  return new Date(iso).toLocaleTimeString(lang?.startsWith('de') ? 'de-DE' : 'en-US', {
+    hour: hour12 ? 'numeric' : '2-digit',
+    minute: '2-digit',
+    ...(hour12 === undefined ? {} : { hour12 }),
+  });
 }
 function dayKey(iso: string) {
   return new Date(iso).toDateString();
@@ -58,6 +63,7 @@ function dayLabel(iso: string, lang: string, t: import('i18next').TFunction) {
 export default function ChatScreen() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const { hour12 } = useTimeFormat();
   const { colors } = useTheme();
   const { subscribe, isAuthenticated, emit } = useSocketContext();
   const params = useLocalSearchParams<{ conversationId?: string; userId?: string }>();
@@ -335,7 +341,7 @@ export default function ChatScreen() {
                       <View style={[styles.bubble, mine ? { backgroundColor: COLORS.primary } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }, m.id.startsWith('tmp-') && { opacity: 0.7 }]}>
                         <Text style={{ color: mine ? '#fff' : colors.textPrimary, fontSize: FONT_SIZE.sm }}>{m.body}</Text>
                       </View>
-                      {isLastOfGroup && <Text style={[styles.msgTime, { color: colors.textSecondary }]}>{timeHM(m.createdAt, i18n.language)}</Text>}
+                      {isLastOfGroup && <Text style={[styles.msgTime, { color: colors.textSecondary }]}>{timeHM(m.createdAt, i18n.language, hour12)}</Text>}
                     </View>
                   </View>
                 </View>

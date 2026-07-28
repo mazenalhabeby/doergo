@@ -31,7 +31,6 @@ import { ROUTES } from '../../lib/constants';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
-  formatTimeString as formatTime,
   isSameDay,
 } from '../../lib/utils';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';

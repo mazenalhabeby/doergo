@@ -9,7 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../lib/constants';
 import { getStatusStyle, getPriorityStyle } from '../lib/styles';
-import { formatTimeRange, formatRelativeDate } from '../lib/utils';
+import { formatRelativeDate } from '../lib/utils';
+import { useTimeFormat } from '../hooks/useTimeFormat';
 import { useTheme } from '../contexts/theme-context';
 
 // Task type definition
@@ -62,6 +63,7 @@ export function TaskCard({
 }: TaskCardProps) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatTimeRange } = useTimeFormat();
   const statusStyle = getStatusStyle(task.status);
   const priorityStyle = task.priority ? getPriorityStyle(task.priority) : null;
 

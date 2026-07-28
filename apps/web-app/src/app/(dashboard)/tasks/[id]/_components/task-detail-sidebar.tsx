@@ -258,7 +258,7 @@ export function TaskDetailSidebar({
 
       {/* ─── Agile Card ───────────────────────────────────────────────── */}
       {hasAgile && (
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+        <div data-tour="task-agile" className="bg-card rounded-2xl border border-border shadow-sm p-5">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("tasks.sidebar.agile")}</h3>
 
           <div className="divide-y divide-border/50">

@@ -69,6 +69,13 @@ export const userApi = {
       body: JSON.stringify({ presence }),
     });
   },
+  // Set the per-user clock display preference ("12h" | "24h"); display-only.
+  setTimeFormat: async (timeFormat: '12h' | '24h'): Promise<void> => {
+    return fetchWithAuth<void>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ timeFormat }),
+    });
+  },
 };
 
 // Password API

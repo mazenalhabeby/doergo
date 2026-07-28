@@ -47,12 +47,13 @@ import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
-  formatTimeString as formatTime,
   formatDateRelative as formatDate,
 } from '../../../src/lib/utils';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
+  const { formatTime } = useTimeFormat();
   const router = useRouter();
   const toast = useToast();
   const { colors, isDark } = useTheme();

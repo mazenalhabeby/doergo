@@ -34,6 +34,8 @@ export interface User {
   canViewReports?: boolean;
   allowRemote?: boolean;
   presence?: "AVAILABLE" | "BUSY" | "AWAY" | null;
+  // Per-user clock display preference ("12h" | "24h"); display-only.
+  timeFormat?: "12h" | "24h";
   // Access Profile (mobile tabs / web screens) — array or object form.
   enabledModules: string[] | Record<string, unknown>;
   // Org FEATURE modules (sprints, checklists, tracking…) — drives hasModule().

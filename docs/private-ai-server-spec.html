@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Private AI Server — Build Specification</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif; color: #1e293b; margin: 0; font-size: 12px; line-height: 1.5; }
+  .head { border-bottom: 3px solid #2563EB; padding-bottom: 12px; margin-bottom: 18px; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:800; color:#2563EB; font-size:13px; letter-spacing:.02em; }
+  .brand .dot { width:18px; height:18px; border-radius:5px; background:#2563EB; display:inline-block; }
+  h1 { font-size: 22px; margin: 8px 0 2px; letter-spacing:-.02em; }
+  .sub { color:#64748b; font-size:12.5px; margin:0; }
+  .meta { color:#94a3b8; font-size:11px; margin-top:6px; }
+  h2 { font-size: 14px; margin: 22px 0 8px; color:#0f172a; border-left:3px solid #2563EB; padding-left:8px; }
+  .goal { background:#eff6ff; border:1px solid #dbeafe; border-radius:8px; padding:10px 12px; font-size:12px; color:#1e40af; margin-bottom:6px; }
+  table { width:100%; border-collapse: collapse; margin: 4px 0 6px; }
+  th { text-align:left; background:#f1f5f9; color:#475569; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; padding:7px 9px; border-bottom:1px solid #e2e8f0; }
+  td { padding:7px 9px; border-bottom:1px solid #eef2f7; font-size:11.5px; vertical-align:top; }
+  tr.total td { font-weight:800; background:#f8fafc; border-top:2px solid #2563EB; font-size:12px; }
+  .tag { display:inline-block; background:#dcfce7; color:#15803d; font-weight:700; font-size:10px; padding:2px 8px; border-radius:99px; }
+  .muted { color:#64748b; }
+  ul { margin:4px 0 0; padding-left:18px; }
+  li { margin-bottom:3px; font-size:11.5px; }
+  .two { display:flex; gap:14px; }
+  .two > div { flex:1; }
+  .foot { margin-top:20px; border-top:1px solid #e2e8f0; padding-top:8px; color:#94a3b8; font-size:10px; }
+  b { color:#0f172a; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="brand"><span class="dot"></span> HBCFIELD</div>
+    <h1>Private AI Server — Build Specification</h1>
+    <p class="sub">Fully on-premise AI · no data leaves your servers · runs a 32B model (covers all planned AI features)</p>
+    <p class="meta">Prepared 2026-07-28 · Colocation-ready</p>
+  </div>
+
+  <div class="goal">
+    <b>Why 32B and not 96B:</b> a 96B model needs far more GPU hardware. A <b>32B model</b> handles every planned feature —
+    because the "intelligence" comes from your data + code (analytics, ranking, retrieval), while the model does the language
+    (summarise, extract, draft, explain). You can upgrade the GPU later with no software changes.
+  </div>
+
+  <h2>Recommended build — 48 GB VRAM <span class="tag">BEST VALUE</span></h2>
+  <table>
+    <thead><tr><th style="width:24%">Part</th><th>Specification</th></tr></thead>
+    <tbody>
+      <tr><td><b>GPU</b></td><td><b>2× NVIDIA RTX 3090 24 GB (used)</b> — 48 GB VRAM total. Best price/VRAM for local AI; NVLink-capable.</td></tr>
+      <tr><td>CPU</td><td>AMD Ryzen 9 (e.g. 5900X / 7900) — enough PCIe lanes for 2 GPUs at x8/x8 (fine for inference)</td></tr>
+      <tr><td>Motherboard</td><td>X570 / B650 with two PCIe x16 slots (runs x8/x8), good slot spacing</td></tr>
+      <tr><td>Memory</td><td>64 GB DDR4/DDR5</td></tr>
+      <tr><td>Storage</td><td>2 TB NVMe Gen4 SSD (OS + model weights + vector data)</td></tr>
+      <tr><td>Power supply</td><td>1000–1200 W, 80+ Gold or better (quality unit for 24/7)</td></tr>
+      <tr><td>Case &amp; cooling</td><td>High-airflow case, extra fans; ensure clearance for 2 GPUs</td></tr>
+      <tr class="total"><td>Result</td><td>48 GB VRAM · runs a 32B model comfortably (70B 4-bit possible, tight)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Leaner start — validate first</h2>
+  <table>
+    <thead><tr><th style="width:24%">Part</th><th>Specification</th></tr></thead>
+    <tbody>
+      <tr><td><b>GPU</b></td><td><b>1× NVIDIA RTX 3090 24 GB (used)</b> — runs 14B–32B models</td></tr>
+      <tr><td>Rest of system</td><td>Same CPU / board / 32 GB RAM / 1 TB NVMe / 850 W PSU / case</td></tr>
+      <tr class="total"><td>Result</td><td>24 GB VRAM · prove the product, then add a 2nd 3090 for 48 GB</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What this machine runs &amp; enables</h2>
+  <div class="two">
+    <div>
+      <b>Models</b>
+      <ul>
+        <li>32B instruct model (e.g. Qwen2.5-32B) — multilingual EN/DE/ES</li>
+        <li>14B model for high-volume cheap tasks</li>
+        <li>Embeddings model (bge-m3) for semantic search</li>
+        <li>Whisper for voice → text (field techs)</li>
+      </ul>
+    </div>
+    <div>
+      <b>Features it powers</b>
+      <ul>
+        <li>Org analyst digests · smart dispatch suggestions</li>
+        <li>Service-report auto-draft · NL → task / report / analytics</li>
+        <li>Member coach · role-aware assistant · risk alerts</li>
+        <li>Semantic search across jobs / assets / customers</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Notes</h2>
+  <ul>
+    <li><b>Software (no licence cost):</b> Ubuntu + vLLM or Ollama (private, OpenAI-compatible endpoint) + pgvector on your existing PostgreSQL. Nothing leaves your network.</li>
+    <li><b>Upgrade path:</b> swap to bigger GPUs later (RTX 6000 Ada / A100 / H100) with <b>zero software changes</b> — the model sits behind an interface.</li>
+    <li><b>Longevity:</b> used consumer 3090s aren't ECC/datacenter-grade, but run reliably for years with good cooling.</li>
+    <li><b>Colocation:</b> a tower or 4U case in an EU datacenter keeps it GDPR-clean and always-on.</li>
+  </ul>
+
+  <div class="foot">HBCField — Private AI initiative · Build spec (Step 1: Hardware). Next: Step 2 — pick the model.</div>
+</body>
+</html>

@@ -37,7 +37,7 @@ export default function ManagePage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">{t('manage.title')}</h1>
+        <h1 data-tour="page-manage" className="text-2xl font-semibold text-foreground">{t('manage.title')}</h1>
         <p className="text-sm text-muted-foreground">{t('manage.subtitle')}</p>
       </div>
 

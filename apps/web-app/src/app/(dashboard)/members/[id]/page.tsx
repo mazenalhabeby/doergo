@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
+import { useTimeFormat } from "@/hooks"
 import { AccessBuilder } from "@/components/access-builder"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { EditMemberDialog } from "../_components/edit-member-dialog"
@@ -60,14 +61,6 @@ const ROLE_CONFIG: Record<string, { labelKey: string; className: string; gradien
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
 
-function formatTime12h(time: string): string {
-  const [hours, minutes] = time.split(":")
-  const h = parseInt(hours!, 10)
-  const ampm = h >= 12 ? "PM" : "AM"
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
-  return `${h12}:${minutes} ${ampm}`
-}
-
 function formatRelativeDate(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr)
   const now = new Date()
@@ -91,10 +84,14 @@ export default function MemberProfilePage({
 }) {
   const { id: memberId } = use(params)
   const { t } = useTranslation()
+  const { formatSchedule } = useTimeFormat()
   const router = useRouter()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
   const [editOpen, setEditOpen] = useState(false)
+  // Controlled so the guided tour can open the Access tab: Radix tabs don't switch
+  // on a synthetic .click(), but a plain onClick on the trigger (below) does fire.
+  const [activeTab, setActiveTab] = useState("overview")
 
   // Fetch member info from org members list
   const { data: memberData, isLoading: memberLoading, refetch: refetchMember } = useQuery({
@@ -241,7 +238,7 @@ export default function MemberProfilePage({
 
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  <h1 data-tour="page-member" className="text-2xl font-bold tracking-tight text-foreground">
                     {member.firstName} {member.lastName}
                   </h1>
                   {member.isActive && (
@@ -383,7 +380,7 @@ export default function MemberProfilePage({
 
           const overview = (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div data-tour="member-tasks" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ── Recent Tasks ─────────────────────────────────────────── */}
           <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-border/60">
@@ -477,7 +474,7 @@ export default function MemberProfilePage({
                         <span className="text-sm font-medium text-foreground w-10">{t(`common.weekdaysShort.${dayKey}`)}</span>
                         <span className="text-sm text-muted-foreground">
                           {isActive
-                            ? `${formatTime12h(entry!.startTime)} - ${formatTime12h(entry!.endTime)}`
+                            ? `${formatSchedule(entry!.startTime)} - ${formatSchedule(entry!.endTime)}`
                             : t("members.detail.off")
                           }
                         </span>
@@ -498,7 +495,7 @@ export default function MemberProfilePage({
           if (!showAccessTab) return overview
 
           return (
-            <Tabs defaultValue="overview" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
                 <TabsTrigger
                   value="overview"
@@ -508,7 +505,9 @@ export default function MemberProfilePage({
                   {t("members.detail.overview")}
                 </TabsTrigger>
                 <TabsTrigger
+                  data-tour="access-tab"
                   value="access"
+                  onClick={() => setActiveTab("access")}
                   className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
                 >
                   <ShieldCheck className="size-3.5 mr-1.5" />

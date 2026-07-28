@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause, RefreshCw, CheckCircle2, Calendar } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, formatTime } from "./attendance-helpers"
+import { useTimeFormat } from "@/hooks"
 
 interface BreaksTabProps {
   isAdmin: boolean
@@ -44,9 +45,10 @@ export function BreaksTab({
   endBreakManually,
 }: BreaksTabProps) {
   const { t } = useTranslation()
+  const { hour12 } = useTimeFormat()
   const breakTypeKey = (type: string) => type.toLowerCase()
   return (
-    <>
+    <div data-tour="breaks-content">
             {/* Break Statistics */}
             {!loadingBreakSummary && breakSummary && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -211,7 +213,7 @@ export function BreaksTab({
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{t(`attendance.breaks.typeBreak.${breakTypeKey(breakItem.type)}`)}</span>
                             <span>•</span>
-                            <span>{t("attendance.breaks.startedAt", { time: formatTime(breakItem.startedAt) })}</span>
+                            <span>{t("attendance.breaks.startedAt", { time: formatTime(breakItem.startedAt, hour12) })}</span>
                           </div>
                         </div>
                       </div>
@@ -353,9 +355,9 @@ export function BreaksTab({
                             {t(`attendance.breaks.types.${breakTypeKey(breakItem.type)}`)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-foreground">{formatTime(breakItem.startedAt)}</TableCell>
+                        <TableCell className="text-foreground">{formatTime(breakItem.startedAt, hour12)}</TableCell>
                         <TableCell className="text-foreground">
-                          {breakItem.endedAt ? formatTime(breakItem.endedAt) : (
+                          {breakItem.endedAt ? formatTime(breakItem.endedAt, hour12) : (
                             <span className="text-orange-600">{t("attendance.breaks.onBreak")}</span>
                           )}
                         </TableCell>
@@ -377,6 +379,6 @@ export function BreaksTab({
                 </Table>
               )}
             </div>
-    </>
+    </div>
   )
 }

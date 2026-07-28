@@ -139,6 +139,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
       ref={ref}
       role="button"
       tabIndex={0}
+      data-tour="dash-space-box"
       aria-label={t("workspace.ariaLabel", { title, count: visibleCount })}
       aria-expanded={isExpanded}
       onKeyDown={onKeyDown}
@@ -185,7 +186,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
           </span>
         )}
         {isExpanded && (
-          <div className="flex items-center gap-3 ml-3">
+          <div data-tour="dash-space-header" className="flex items-center gap-3 ml-3">
             {totalAssigned != null && totalAssigned > 0 && (
               <span className="text-xs text-foreground/80 font-bold tabular-nums">
                 {activeCount ?? people.length}/{totalAssigned}
@@ -232,6 +233,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
       {/* ═══ EXPANDED — worker cells + off duty box on right ═══ */}
       {mode === "expanded" && (<>
         <div
+          data-tour="dash-space-members"
           className="flex-1 overflow-auto flex gap-[5px] p-[5px]"
           style={{
             opacity: isClosing ? 0 : 1,
@@ -279,7 +281,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
                   ) : activeGroup && activeGroup.people.length > 0 ? (
                     <div className="flex-1 grid grid-cols-[repeat(auto-fill,minmax(140px,160px))] gap-[5px] content-start">
                       {activeGroup.people.map((person, i) => (
-                        <ExpandedWorkerCell key={`${person.name}-${i}`} person={person} delay={i * 0.04} onPersonClick={onPersonClick} />
+                        <ExpandedWorkerCell key={`${person.name}-${i}`} person={person} delay={i * 0.04} onPersonClick={onPersonClick} dataTour={i === 0 ? "dash-space-member" : undefined} />
                       ))}
                     </div>
                   ) : (
@@ -316,6 +318,12 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
                         people={g.people}
                         variant={g.variant === "offduty" ? "dots" : "cells"}
                         onClick={() => handleSubPanelClick(g.key)}
+                        dataTour={
+                          g.key === "inField" ? "dash-space-field" :
+                          g.key === "offSite" ? "dash-space-offsite" :
+                          g.key === "offDuty" ? "dash-space-offduty" :
+                          g.key === "offShift" ? "dash-space-offshift" : undefined
+                        }
                       />
                     ))}
                   </div>
@@ -327,6 +335,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
 
         {/* Bottom action buttons */}
         <div
+          data-tour="dash-space-actions"
           className="shrink-0 flex items-center justify-center gap-2 px-4 pb-3 pt-1"
           style={{ animation: `fadeIn 0.5s ${APPLE_EASE} 0.3s both` }}
         >
@@ -454,10 +463,11 @@ const StatusIcon = React.memo(function StatusIcon({ status }: { status: string }
   }
 })
 
-const SideStatusBox = React.memo(function SideStatusBox({ label, people, variant = "cells", onClick }: { label: string; people: PersonNodeProps[]; variant?: "cells" | "dots"; onClick?: () => void }) {
+const SideStatusBox = React.memo(function SideStatusBox({ label, people, variant = "cells", onClick, dataTour }: { label: string; people: PersonNodeProps[]; variant?: "cells" | "dots"; onClick?: () => void; dataTour?: string }) {
   if (people.length === 0) return null
   return (
     <div
+      data-tour={dataTour}
       className={cn(
         "rounded-lg bg-secondary border border-border/60 dark:bg-background/20 dark:border-border/20 p-2.5 flex-1 flex flex-col min-h-0 overflow-auto",
         onClick && "cursor-pointer hover:border-primary/30 hover:bg-secondary/80 dark:hover:bg-background/30 transition-colors",
@@ -582,10 +592,13 @@ const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
   person,
   delay = 0,
   onPersonClick,
+  dataTour,
 }: {
   person: PersonNodeProps
   delay?: number
   onPersonClick?: (userId: string) => void
+  /** Optional `data-tour` anchor so the guide can spotlight a single teammate. */
+  dataTour?: string
 }) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = React.useState(false)
@@ -594,6 +607,7 @@ const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <div
+          data-tour={dataTour}
           role="button"
           tabIndex={0}
           className={cn(

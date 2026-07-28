@@ -37,6 +37,7 @@ import { SupportButton } from "@/components/support/support-widget"
 import { ClockWidget } from "@/components/clock-widget"
 import { usePresence, PRESENCE_OPTS, presenceRingClass } from "@/components/presence-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { TourLauncherMenuItem, HelpButton } from "@/components/tour"
 import { cn } from "@/lib/utils"
 import {
   tasksApi,
@@ -186,6 +187,7 @@ export function TopNavbar() {
         {/* Dashboard */}
         <Link
           href="/dashboard"
+          data-tour="nav-dashboard"
           onMouseEnter={prefetch.prefetchDashboard}
           className={cn(
             navItemBase,
@@ -200,6 +202,7 @@ export function TopNavbar() {
         {/* Tasks — direct link (sprints merged into tasks page) */}
         <Link
           href="/tasks"
+          data-tour="nav-tasks"
           onMouseEnter={prefetch.prefetchTasks}
           className={cn(
             navItemBase,
@@ -218,6 +221,7 @@ export function TopNavbar() {
         {showSpaces && (
           <Link
             href="/locations"
+            data-tour="nav-spaces"
             onMouseEnter={prefetch.prefetchSpaces}
             className={cn(
               navItemBase,
@@ -234,6 +238,7 @@ export function TopNavbar() {
         {showSchedule && (
           <Link
             href="/schedule"
+            data-tour="nav-schedule"
             className={cn(
               navItemBase,
               isActive(pathname, "/schedule") || isActive(pathname, "/employees/availability")
@@ -249,6 +254,7 @@ export function TopNavbar() {
         {showAttendance && (
           <Link
             href="/attendance"
+            data-tour="nav-attendance"
             onMouseEnter={prefetch.prefetchAttendance}
             className={cn(
               navItemBase,
@@ -280,6 +286,7 @@ export function TopNavbar() {
         {showReports && (
           <Link
             href="/reports"
+            data-tour="nav-reports"
             className={cn(
               navItemBase,
               isActive(pathname, "/reports")
@@ -293,12 +300,12 @@ export function TopNavbar() {
 
         {/* Employee module-driven items */}
         {showMyTimeOff && (
-          <Link href="/my/time-off" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+          <Link href="/my/time-off" data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.timeOff")}
           </Link>
         )}
         {showMyAttendance && (
-          <Link href="/my/attendance" className={cn(navItemBase, isActive(pathname, "/my/attendance") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+          <Link href="/my/attendance" data-tour="nav-my-attendance" className={cn(navItemBase, isActive(pathname, "/my/attendance") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.sidebar.attendance")}
           </Link>
         )}
@@ -317,9 +324,10 @@ export function TopNavbar() {
         <CommandPaletteButton />
         <ClockWidget />
         <LanguageSwitcher />
-        <NotificationBell />
-        <SupportButton />
-        <UserDropdown
+        <span data-tour="nav-notifications" className="inline-flex"><NotificationBell /></span>
+        <span data-tour="nav-help" className="inline-flex"><HelpButton /></span>
+        <span data-tour="nav-support" className="inline-flex"><SupportButton /></span>
+        <span data-tour="nav-profile" className="inline-flex"><UserDropdown
           user={user}
           initials={initials}
           fullName={fullName}
@@ -327,7 +335,7 @@ export function TopNavbar() {
           canManageUsers={user.canManageUsers}
           canInvoice={user.canManageUsers && hasPlanFeature('invoicing')}
           onLogout={logout}
-        />
+        /></span>
       </div>
       </div>
     </header>
@@ -347,6 +355,7 @@ function CommandPaletteButton() {
   return (
     <button
       onClick={() => setOpen(true)}
+      data-tour="nav-command"
       className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-xs"
     >
       <Search className="size-3.5" />
@@ -369,6 +378,7 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
   return (
     <DropdownMenu onOpenChange={(open) => { if (open && onOpen) onOpen() }}>
       <DropdownMenuTrigger
+        data-tour="nav-team"
         className={cn(
           navItemBase,
           "cursor-pointer select-none outline-none",
@@ -742,6 +752,9 @@ function UserDropdown({
               {t("nav.userMenu.settings")}
             </Link>
           </DropdownMenuItem>
+
+          {/* Replay the role-appropriate guided tour */}
+          <TourLauncherMenuItem />
 
           {/* Subscription & billing (this org's plan/payment) — admins only */}
           {canManageUsers && (

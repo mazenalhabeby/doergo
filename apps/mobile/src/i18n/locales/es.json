@@ -655,7 +655,8 @@
       "termsOfService": "Términos del servicio",
       "privacyPolicy": "Política de privacidad",
       "about": "Acerca de",
-      "language": "Idioma"
+      "language": "Idioma",
+      "timeFormat": "Formato de hora"
     },
     "language": {
       "choosePreferred": "Elige tu idioma preferido",
@@ -668,6 +669,15 @@
       "light": "Claro",
       "dark": "Oscuro",
       "appliedImmediately": "Los cambios de tema se aplican al instante en toda la app."
+    },
+    "timeFormat": {
+      "title": "Formato de hora",
+      "subtitle": "Elige cómo se muestran las horas en la app",
+      "24h": "24 horas",
+      "12h": "12 horas",
+      "note": "Solo afecta a tu cuenta, en todos los dispositivos donde inicies sesión.",
+      "updated": "Formato de hora actualizado",
+      "failed": "No se pudo actualizar el formato de hora"
     },
     "signOutConfirmTitle": "Cerrar sesión",
     "signOutConfirmMessage": "¿Seguro que quieres cerrar sesión?",

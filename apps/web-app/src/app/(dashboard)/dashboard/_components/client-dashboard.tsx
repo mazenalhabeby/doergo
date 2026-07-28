@@ -35,6 +35,7 @@ import {
 } from "@/components/dashboard"
 import { ActivityPanelToggle } from "@/components/activity-panel-toggle"
 import { useActivityPanel } from "@/contexts/activity-panel-context"
+import { useTour } from "@/components/tour"
 import {
   getGreeting,
   getInitials,
@@ -136,6 +137,8 @@ export function ClientDashboard() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { isOpen: panelOpen } = useActivityPanel()
+  // Drives the guide example team (see below).
+  const { activeTourId, isTourCompleted } = useTour()
   const isAdminOrDispatcher = user?.role === "ADMIN" || !!user?.canViewAllTasks
 
   const handleEditLocation = useCallback((locationId: string) => {
@@ -665,6 +668,66 @@ export function ClientDashboard() {
     [tasks, router, pendingApprovals, handleApproveEntry],
   )
 
+  // ── Guide example team ───────────────────────────────────────────────────────
+  // A brand-new dashboard is empty, so the guide would have no members to point at.
+  // Until the user has completed their welcome guide (and only while their team is
+  // still empty), we show an example space with example teammates so the guide —
+  // and the onboarding dashboard itself — demonstrates how spaces, member statuses
+  // and per-member actions work. It shows from the very first (empty) visit, and
+  // disappears once the guide is finished OR real members exist. Nothing persisted.
+  const welcomeTourId =
+    user?.role === "ADMIN" ? "welcomeAdmin" : user?.canViewAllTasks ? "welcomeManager" : "welcomeEmployee"
+  const guideActive = activeTourId === welcomeTourId
+  const welcomeGuidePending = guideActive || !isTourCompleted(welcomeTourId)
+  // The guide walks the SPACES and opens one to show its team. The open-space view
+  // prominently shows the ACTIVE members (present on-site + in the field); off-duty /
+  // off-shift only appear as a small side list. So the guide has "nobody to point at"
+  // whenever no space has an active member — a brand-new org, members not yet assigned
+  // to a space, OR a space whose whole team is currently off. In those cases we show
+  // an example team so every guide step (open space → a teammate → actions) has real
+  // content. Two gates so we never hide the user's own data outside the guide:
+  //  • on a truly empty dashboard (no spaces) we show the example as an onboarding
+  //    preview until the guide is completed;
+  //  • on a dashboard that HAS spaces we only swap them for the example WHILE the
+  //    guide is actively running, reverting the instant it ends.
+  const spacesHaveActiveMembers = workspaceBoxes.some(
+    (b) => (b.people?.length ?? 0) + (b.onRoadPeople?.length ?? 0) > 0,
+  )
+  const showExampleOnEmpty = welcomeGuidePending && !spacesHaveActiveMembers
+  const showExampleInSpaces = guideActive && !spacesHaveActiveMembers
+  const exampleSpace: WorkspaceBoxProps = {
+    title: t("dashboard.client.exampleSpaceName"),
+    type: "fixed",
+    activeCount: 7,
+    totalAssigned: 12,
+    people: [
+      { initials: "AM", color: "#2563EB", status: "on", clockedIn: true, name: "Ahmed M.", role: "Admin", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
+      { initials: "SW", color: "#7c3aed", status: "on", clockedIn: true, name: "Sara W.", role: "Employee", currentTask: t("dashboard.client.exampleJob"), tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
+      { initials: "OF", color: "#0891b2", status: "on", clockedIn: true, name: "Omar F.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
+      { initials: "ER", color: "#16a34a", status: "on", clockedIn: true, name: "Emma R.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
+      { initials: "LK", color: "#ea580c", status: "on", clockedIn: true, name: "Leo K.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
+    ],
+    onRoadPeople: [
+      { initials: "MB", color: "#CA8A04", status: "busy", name: "Mike B.", role: "Employee", currentTask: t("dashboard.client.exampleJob"), tag: { text: t("dashboard.client.exampleInField"), variant: "task" } },
+      { initials: "JP", color: "#db2777", status: "busy", name: "Jonas P.", role: "Employee", tag: { text: t("dashboard.client.exampleInField"), variant: "task" } },
+    ],
+    remotePeople: [
+      { initials: "NK", color: "#0ea5e9", status: "away", name: "Nora K.", role: "Employee" },
+      { initials: "YT", color: "#6366f1", status: "away", name: "Yuki T.", role: "Employee" },
+    ],
+    offDutyPeople: [
+      { initials: "LA", color: "#64748b", status: "off", name: "Lisa A.", role: "Employee" },
+      { initials: "TH", color: "#78716c", status: "off", name: "Tom H.", role: "Employee" },
+      { initials: "AS", color: "#94a3b8", status: "off", name: "Anna S.", role: "Employee" },
+    ],
+    onEdit: () => router.push("/locations"),
+    onAssign: () => router.push("/members"),
+    onViewTasks: () => router.push("/tasks"),
+    onPersonClick: () => router.push("/members"),
+  }
+  /** Boxes to render in a live dashboard: example teammates while the guide runs on an empty team. */
+  const displayBoxes = showExampleInSpaces ? [exampleSpace] : workspaceBoxes
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const greeting = getGreeting()
@@ -702,8 +765,9 @@ export function ClientDashboard() {
         </div>
       )
     }
+
     return (
-      <div className="flex flex-1 items-center justify-center relative overflow-hidden min-h-[calc(100vh-4rem)]">
+      <div className="flex flex-1 flex-col items-center justify-center gap-12 py-16 relative overflow-x-hidden min-h-[calc(100vh-4rem)]">
         {/* Layer 1: Gradient blobs */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.07]">
           {[
@@ -830,6 +894,19 @@ export function ClientDashboard() {
             </div>
           )}
         </div>
+
+        {/* Onboarding preview: on a brand-new dashboard (no spaces yet) show an
+            example space with example teammates so the guide has something real to
+            demonstrate (statuses, tap-a-teammate, space actions). Shown until the
+            welcome guide is completed, then it's gone — nothing is persisted. */}
+        {showExampleOnEmpty && (
+          <div className="relative z-10 w-full max-w-sm px-6" data-tour="dash-spaces">
+            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("dashboard.client.exampleLabel")}
+            </p>
+            <WorkspaceGrid boxes={[exampleSpace]} autoExpandSingle />
+          </div>
+        )}
       </div>
     )
   }
@@ -859,9 +936,11 @@ export function ClientDashboard() {
           <div className="max-w-[1440px] mx-auto px-6 py-6">
             <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
               {/* Spaces — a single space opens automatically */}
-              <section>
-                <h2 className="mb-3 text-sm font-semibold text-foreground">{t("dashboard.client.mySpaces")}</h2>
-                <WorkspaceGrid boxes={workspaceBoxes} autoExpandSingle canSeeAbsenceReason={isAdminOrDispatcher} />
+              <section data-tour="dash-spaces">
+                <h2 className="mb-3 text-sm font-semibold text-foreground">
+                  {showExampleInSpaces ? t("dashboard.client.exampleLabel") : t("dashboard.client.mySpaces")}
+                </h2>
+                <WorkspaceGrid boxes={displayBoxes} autoExpandSingle canSeeAbsenceReason={isAdminOrDispatcher} />
               </section>
 
               {/* Right column: management contacts (top, always visible) + my tasks */}
@@ -914,9 +993,16 @@ export function ClientDashboard() {
           </div>
         </div>
 
-        {/* Workspace Grid — contained */}
-        <div className="max-w-[1440px] mx-auto px-6 py-6">
-          <WorkspaceGrid boxes={workspaceBoxes} canSeeAbsenceReason={isAdminOrDispatcher} />
+        {/* Workspace Grid — contained. While the welcome guide runs on an empty
+            team, `displayBoxes` becomes an example space so the tour has real
+            teammates to demonstrate; it reverts the instant the guide ends. */}
+        <div data-tour="dash-spaces" className="max-w-[1440px] mx-auto px-6 py-6">
+          {showExampleInSpaces && (
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("dashboard.client.exampleLabel")}
+            </p>
+          )}
+          <WorkspaceGrid boxes={displayBoxes} autoExpandSingle={showExampleInSpaces} canSeeAbsenceReason={isAdminOrDispatcher} />
         </div>
       </div>
 
