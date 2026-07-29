@@ -211,7 +211,7 @@ export default function Home() {
                   <AnimatedLogo size="small" variant="light" />
                 )}
               </a>
-              <div className="flex items-center gap-7">
+              <div className="flex items-center gap-3 sm:gap-7">
                 <a href="#work" onClick={navTo('#work')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.platform')}</a>
                 <a href="#how" onClick={navTo('#how')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.process')}</a>
                 <a href="#field" onClick={navTo('#field')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors sm:block ${navTone}`}>{t('home.nav.app')}</a>
@@ -235,7 +235,7 @@ export default function Home() {
                 <span className={navLsTone}>
                   <LanguageSwitcher />
                 </span>
-                <Link href="/login" className={`${MONO} inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.2em] transition-colors ${navBtnTone}`}>
+                <Link href="/login" className={`${MONO} inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.2em] transition-colors ${navBtnTone}`}>
                   {t('home.nav.signIn')}
                 </Link>
               </div>
