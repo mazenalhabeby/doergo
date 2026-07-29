@@ -32,6 +32,19 @@ interface NominatimResult {
   display_name: string;
   lat: string;
   lon: string;
+  // Google placeId — when set, coordinates are resolved on selection via
+  // /geo/place (session-token pattern). Absent for fallback rows with lat/lon.
+  gid?: string;
+}
+
+// Any unique string works as a Places session token; group as-you-type
+// autocomplete calls with the one Place Details call on selection.
+function genSessionToken(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 interface LocationSearchPickerProps {
@@ -52,6 +65,7 @@ export function LocationSearchPicker({
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionRef = useRef<string>('');
   const mapRef = useRef<MapView>(null);
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -83,15 +97,18 @@ export function LocationSearchPicker({
         // Primary: our self-hosted Photon (full-planet) via the gateway — no public
         // OSM rate limits. Falls back to Nominatim if it returns nothing.
         try {
-          const gr = await fetch(`${API_URL}/geo/search?q=${encodeURIComponent(q)}&limit=6`);
+          if (!sessionRef.current) sessionRef.current = genSessionToken();
+          const sess = `&session=${encodeURIComponent(sessionRef.current)}`;
+          const gr = await fetch(`${API_URL}/geo/search?q=${encodeURIComponent(q)}&limit=6${sess}`);
           if (gr.ok) {
             const gd = await gr.json();
             const mapped: NominatimResult[] = (gd?.results || []).map(
-              (r: { label: string; lat: number; lon: number }, i: number) => ({
+              (r: { id?: string; label: string; lat?: number; lon?: number }, i: number) => ({
                 place_id: i,
                 display_name: r.label,
-                lat: String(r.lat),
-                lon: String(r.lon),
+                lat: r.lat != null ? String(r.lat) : '',
+                lon: r.lon != null ? String(r.lon) : '',
+                gid: r.id || undefined,
               })
             );
             if (mapped.length > 0) {
@@ -140,17 +157,45 @@ export function LocationSearchPicker({
   );
 
   // Select from autocomplete
-  const handleSelect = (result: NominatimResult) => {
-    const sLat = parseFloat(result.lat);
-    const sLng = parseFloat(result.lon);
-    onLocationChange(result.display_name, sLat, sLng);
-    setQuery(result.display_name);
+  const handleSelect = async (result: NominatimResult) => {
     setShowResults(false);
     Keyboard.dismiss();
-    mapRef.current?.animateToRegion(
-      { latitude: sLat, longitude: sLng, latitudeDelta: 0.01, longitudeDelta: 0.01 },
-      500
-    );
+
+    const applyCoords = (label: string, la: number, ln: number) => {
+      onLocationChange(label, la, ln);
+      setQuery(label);
+      mapRef.current?.animateToRegion(
+        { latitude: la, longitude: ln, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+        500
+      );
+    };
+
+    // Google row: resolve coordinates now (this closes the billed session).
+    if (result.gid) {
+      try {
+        const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : '';
+        const res = await fetch(`${API_URL}/geo/place?id=${encodeURIComponent(result.gid)}${sess}`);
+        if (res.ok) {
+          const data = await res.json();
+          const r = data?.result;
+          if (r && typeof r.lat === 'number' && typeof r.lon === 'number') {
+            applyCoords(r.label || result.display_name, r.lat, r.lon);
+            sessionRef.current = '';
+            return;
+          }
+        }
+      } catch {
+        /* fall through */
+      }
+      sessionRef.current = '';
+    }
+
+    // Fallback row (Nominatim) already carries coordinates.
+    const sLat = parseFloat(result.lat);
+    const sLng = parseFloat(result.lon);
+    if (!Number.isNaN(sLat) && !Number.isNaN(sLng)) {
+      applyCoords(result.display_name, sLat, sLng);
+    }
   };
 
   // Use current location

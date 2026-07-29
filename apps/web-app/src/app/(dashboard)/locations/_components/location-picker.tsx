@@ -28,6 +28,10 @@ interface GeoResult {
   display_name: string
   lat: string
   lon: string
+  // Google placeId — when set, coordinates are resolved on selection via
+  // /geo/place (session-token pattern). Empty for fallback rows that already
+  // carry lat/lon.
+  place_id?: string
 }
 
 interface LocationPickerProps {
@@ -74,6 +78,10 @@ export default function LocationPicker({
   const [locating, setLocating] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  // Google Places session token: groups the as-you-type autocomplete calls with
+  // the one Place Details call on selection, so the whole search bills as a
+  // single (cheap) session. Reset after each selection.
+  const sessionRef = useRef<string>("")
 
   // Sync manual inputs when lat/lng change from map click or search
   useEffect(() => {
@@ -104,14 +112,22 @@ export default function LocationPicker({
       // returns nothing (e.g. before the index finished loading, or a coverage gap).
       try {
         const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
-        const gr = await fetch(`${geoBase}/geo/search?q=${encodeURIComponent(query)}&limit=6`, { signal: AbortSignal.timeout(5000) })
+        // One session token per search; reused across keystrokes until a pick.
+        if (!sessionRef.current && typeof crypto !== "undefined" && crypto.randomUUID) {
+          sessionRef.current = crypto.randomUUID()
+        }
+        const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : ""
+        const gr = await fetch(`${geoBase}/geo/search?q=${encodeURIComponent(query)}&limit=6${sess}`, { signal: AbortSignal.timeout(5000) })
         if (gr.ok) {
           const gd = await gr.json()
-          const geoResults: GeoResult[] = (gd?.results || []).map((r: { label: string; lat: number; lon: number }) => ({
-            display_name: r.label,
-            lat: String(r.lat),
-            lon: String(r.lon),
-          }))
+          const geoResults: GeoResult[] = (gd?.results || []).map(
+            (r: { id?: string; label: string; lat?: number; lon?: number }) => ({
+              display_name: r.label,
+              lat: r.lat != null ? String(r.lat) : "",
+              lon: r.lon != null ? String(r.lon) : "",
+              place_id: r.id || undefined,
+            })
+          )
           if (geoResults.length > 0) {
             setResults(geoResults.slice(0, 5))
             setShowResults(true)
@@ -178,14 +194,44 @@ export default function LocationPicker({
     debounceRef.current = setTimeout(() => searchAddress(value), 400)
   }
 
-  const selectResult = (result: GeoResult) => {
-    const newLat = parseFloat(result.lat)
-    const newLng = parseFloat(result.lon)
-    onLocationChange(newLat, newLng)
-    onAddressChange(result.display_name)
-    setSearchQuery("")
+  const selectResult = async (result: GeoResult) => {
     setShowResults(false)
     setResults([])
+    setSearchQuery("")
+
+    // Google row: resolve coordinates now (this closes the billed session).
+    if (result.place_id) {
+      try {
+        const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+        const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : ""
+        const res = await fetch(
+          `${geoBase}/geo/place?id=${encodeURIComponent(result.place_id)}${sess}`,
+          { signal: AbortSignal.timeout(5000) }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          const r = data?.result
+          if (r && typeof r.lat === "number" && typeof r.lon === "number") {
+            onLocationChange(r.lat, r.lon)
+            onAddressChange(r.label || result.display_name)
+            sessionRef.current = "" // fresh token for the next search
+            return
+          }
+        }
+      } catch {
+        /* fall through to whatever coords the row carried */
+      } finally {
+        sessionRef.current = ""
+      }
+    }
+
+    // Fallback row (Photon/Nominatim) already carries coordinates.
+    const newLat = parseFloat(result.lat)
+    const newLng = parseFloat(result.lon)
+    if (!Number.isNaN(newLat) && !Number.isNaN(newLng)) {
+      onLocationChange(newLat, newLng)
+      onAddressChange(result.display_name)
+    }
   }
 
   const handleMapClick = useCallback(
