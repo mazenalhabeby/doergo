@@ -575,7 +575,13 @@
     "add": "Aggiungi",
     "searching": "Ricerca in corso...",
     "mobileOnlyAccount": "Account solo mobile",
-    "mobileOnlyAccountBody": "Il suo account è configurato per l'app mobile. Utilizzi l'app HBCField sul suo telefono per continuare."
+    "mobileOnlyAccountBody": "Il suo account è configurato per l'app mobile. Utilizzi l'app HBCField sul suo telefono per continuare.",
+    "timeAgo": {
+      "justNow": "proprio ora",
+      "minutes": "{{count}} min fa",
+      "hours": "{{count}} h fa",
+      "days": "{{count}} g fa"
+    }
   },
   "auth": {
     "login": {
@@ -888,6 +894,58 @@
     },
     "management": {
       "title": "Gestione"
+    },
+    "greeting": {
+      "morning": "Buongiorno",
+      "afternoon": "Buon pomeriggio",
+      "evening": "Buonasera"
+    },
+    "presence": {
+      "onBreak": "In pausa",
+      "busy": "Occupato",
+      "away": "Assente",
+      "inField": "Sul campo",
+      "remote": "Da remoto",
+      "onShift": "In turno",
+      "available": "Disponibile",
+      "onTheClock": "Timbrato",
+      "offDuty": "Fuori servizio",
+      "onTask": "In attività",
+      "offShift": "Fuori turno"
+    },
+    "pending": {
+      "worker": "Lavoratore",
+      "needsApproval": "Richiede approvazione",
+      "unassigned": "Non assegnato",
+      "blocked": "Bloccato",
+      "unassignedNewTask": "Non assegnato — Nuova attività"
+    },
+    "activity": {
+      "someone": "Qualcuno",
+      "aLocation": "una sede",
+      "clockedInAt": "ha timbrato l'entrata a",
+      "clockedOutFrom": "ha timbrato l'uscita da",
+      "actions": {
+        "IN_PROGRESS": "ha iniziato a lavorare su",
+        "EN_ROUTE": "è in viaggio verso",
+        "ARRIVED": "è arrivato a",
+        "COMPLETED": "ha completato",
+        "BLOCKED": "ha bloccato",
+        "ASSIGNED": "è stato assegnato a",
+        "ACCEPTED": "ha accettato",
+        "NEW": "ha creato",
+        "CANCELED": "ha annullato",
+        "updated": "ha aggiornato"
+      },
+      "flags": {
+        "overtime": "Straordinario",
+        "missedClockOut": "Uscita non timbrata",
+        "outsideGeofence": "Fuori dal geofence",
+        "lateArrival": "Arrivo in ritardo",
+        "earlyDeparture": "Uscita anticipata",
+        "unscheduledDay": "Giorno non pianificato",
+        "needsReview": "Da verificare"
+      }
     }
   },
   "tasks": {

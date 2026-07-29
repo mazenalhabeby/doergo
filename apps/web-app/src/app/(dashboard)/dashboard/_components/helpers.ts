@@ -1,13 +1,14 @@
 import type { TimeEntry } from "@hbcfield/shared"
+import i18n from "@/i18n"
 
 /**
  * Helper function to get greeting based on time of day
  */
 export function getGreeting(): string {
   const hour = new Date().getHours()
-  if (hour < 12) return "Good morning"
-  if (hour < 17) return "Good afternoon"
-  return "Good evening"
+  if (hour < 12) return i18n.t("dashboard.greeting.morning")
+  if (hour < 17) return i18n.t("dashboard.greeting.afternoon")
+  return i18n.t("dashboard.greeting.evening")
 }
 
 /**
@@ -63,9 +64,9 @@ export function getTodayString(): string {
 export function timeAgo(dateStr: string | number | Date): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "just now"
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return i18n.t("common.timeAgo.justNow")
+  if (mins < 60) return i18n.t("common.timeAgo.minutes", { count: mins })
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return i18n.t("common.timeAgo.hours", { count: hrs })
+  return i18n.t("common.timeAgo.days", { count: Math.floor(hrs / 24) })
 }

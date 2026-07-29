@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { Plus, Users } from "lucide-react"
 
 import { getSpaceScope } from "@hbcfield/shared/client"
+import i18n from "@/i18n"
 import { useAuth } from "@/contexts/auth-context"
 import {
   tasksApi,
@@ -69,24 +70,24 @@ function getEmployeeStatus(opts: {
   }
   // Attendance exceptions first (only while on the clock).
   if (opts.isClockedIn && opts.isOnBreak) {
-    return { status: "on", tag: { text: "On Break", variant: "hrs" } }
+    return { status: "on", tag: { text: i18n.t("dashboard.presence.onBreak"), variant: "hrs" } }
   }
   // Availability the user DELIBERATELY set overrides the default clock label.
   if (opts.presence === "BUSY") {
-    return { status: "busy", tag: { text: "Busy", variant: "task" } }
+    return { status: "busy", tag: { text: i18n.t("dashboard.presence.busy"), variant: "task" } }
   }
   if (opts.presence === "AWAY") {
-    return { status: "away", tag: { text: "Away", variant: "hrs" } }
+    return { status: "away", tag: { text: i18n.t("dashboard.presence.away"), variant: "hrs" } }
   }
   // On the clock with default availability → label by HOW/WHERE they're working,
   // so it reads differently from a plain logged-in "Available".
   if (opts.isClockedIn) {
-    if (opts.isOnRoad) return { status: "on", tag: { text: "In Field", variant: "task" } }
-    if (opts.isRemote) return { status: "on", tag: { text: "Remote", variant: "task" } }
-    return { status: "on", tag: { text: "On Shift", variant: "hrs" } }
+    if (opts.isOnRoad) return { status: "on", tag: { text: i18n.t("dashboard.presence.inField"), variant: "task" } }
+    if (opts.isRemote) return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
+    return { status: "on", tag: { text: i18n.t("dashboard.presence.onShift"), variant: "hrs" } }
   }
   // Logged in / online but not clocked in.
-  return { status: "on", tag: { text: "Available", variant: "hrs" } }
+  return { status: "on", tag: { text: i18n.t("dashboard.presence.available"), variant: "hrs" } }
 }
 
 /** App-active within the last 3 minutes → show the green "online" ring. */
@@ -133,7 +134,7 @@ function toRecentTask(tk: Task): RecentTask {
 
 export function ClientDashboard() {
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
   const { isOpen: panelOpen } = useActivityPanel()
@@ -551,7 +552,7 @@ export function ClientDashboard() {
 
     if (onTaskPeople.length > 0) {
       boxes.push({
-        title: "On Task",
+        title: i18n.t("dashboard.presence.onTask"),
         type: "dynamic",
         people: onTaskPeople,
         onPersonClick: handleNavigateToProfile,
@@ -597,7 +598,7 @@ export function ClientDashboard() {
 
     if (onClockPeople.length > 0) {
       boxes.push({
-        title: "On the Clock",
+        title: i18n.t("dashboard.presence.onTheClock"),
         type: "dynamic",
         people: onClockPeople,
         onPersonClick: handleNavigateToProfile,
@@ -605,7 +606,7 @@ export function ClientDashboard() {
     }
     if (offShiftPeople.length > 0) {
       boxes.push({
-        title: "Off-shift",
+        title: i18n.t("dashboard.presence.offShift"),
         type: "dynamic",
         people: offShiftPeople,
         onPersonClick: handleNavigateToProfile,
@@ -613,7 +614,7 @@ export function ClientDashboard() {
     }
     if (offDutyPeople.length > 0) {
       boxes.push({
-        title: "Off Duty",
+        title: i18n.t("dashboard.presence.offDuty"),
         type: "dynamic",
         people: offDutyPeople,
         onPersonClick: handleNavigateToProfile,
@@ -625,14 +626,14 @@ export function ClientDashboard() {
     locations, tasks, members, assignmentsPerLocation,
     memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, attendanceRemoteMap, activeTaskMap, rosterActiveTaskMap,
     handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
-    isAdminOrDispatcher, user?.id,
+    isAdminOrDispatcher, user?.id, i18n.language,
   ])
 
   // ── Live Events ────────────────────────────────────────────────────────────
 
   const liveEvents: LiveEvent[] = useMemo(
     () => buildRecentActivity({ tasks, todayEntries, memberMap }),
-    [tasks, todayEntries, memberMap],
+    [tasks, todayEntries, memberMap, i18n.language],
   )
 
   // ── Pending Actions ────────────────────────────────────────────────────────
@@ -665,7 +666,7 @@ export function ClientDashboard() {
         // Reject needs a reason → send them to the Approvals tab's reject dialog.
         onReviewApproval: () => router.push("/attendance?tab=approvals"),
       }),
-    [tasks, router, pendingApprovals, handleApproveEntry],
+    [tasks, router, pendingApprovals, handleApproveEntry, i18n.language],
   )
 
   // ── Guide example team ───────────────────────────────────────────────────────

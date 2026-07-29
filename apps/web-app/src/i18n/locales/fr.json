@@ -575,7 +575,13 @@
     "add": "Ajouter",
     "searching": "Recherche…",
     "mobileOnlyAccount": "Compte mobile uniquement",
-    "mobileOnlyAccountBody": "Votre compte est configuré pour l’application mobile. Veuillez utiliser l’application HBCField sur votre téléphone pour continuer."
+    "mobileOnlyAccountBody": "Votre compte est configuré pour l’application mobile. Veuillez utiliser l’application HBCField sur votre téléphone pour continuer.",
+    "timeAgo": {
+      "justNow": "à l'instant",
+      "minutes": "il y a {{count}} min",
+      "hours": "il y a {{count}} h",
+      "days": "il y a {{count}} j"
+    }
   },
   "auth": {
     "login": {
@@ -888,6 +894,58 @@
     },
     "management": {
       "title": "Gestion"
+    },
+    "greeting": {
+      "morning": "Bonjour",
+      "afternoon": "Bon après-midi",
+      "evening": "Bonsoir"
+    },
+    "presence": {
+      "onBreak": "En pause",
+      "busy": "Occupé",
+      "away": "Absent",
+      "inField": "Sur le terrain",
+      "remote": "À distance",
+      "onShift": "En service",
+      "available": "Disponible",
+      "onTheClock": "Pointé",
+      "offDuty": "Hors service",
+      "onTask": "En mission",
+      "offShift": "Hors service"
+    },
+    "pending": {
+      "worker": "Employé",
+      "needsApproval": "Approbation requise",
+      "unassigned": "Non affecté",
+      "blocked": "Bloqué",
+      "unassignedNewTask": "Non affecté — Nouvelle tâche"
+    },
+    "activity": {
+      "someone": "Quelqu'un",
+      "aLocation": "un site",
+      "clockedInAt": "a pointé l'arrivée à",
+      "clockedOutFrom": "a pointé le départ de",
+      "actions": {
+        "IN_PROGRESS": "a commencé à travailler sur",
+        "EN_ROUTE": "est en route vers",
+        "ARRIVED": "est arrivé à",
+        "COMPLETED": "a terminé",
+        "BLOCKED": "a bloqué",
+        "ASSIGNED": "a été affecté à",
+        "ACCEPTED": "a accepté",
+        "NEW": "a créé",
+        "CANCELED": "a annulé",
+        "updated": "a mis à jour"
+      },
+      "flags": {
+        "overtime": "Heures supplémentaires",
+        "missedClockOut": "Départ non pointé",
+        "outsideGeofence": "Hors géorepère",
+        "lateArrival": "Arrivée tardive",
+        "earlyDeparture": "Départ anticipé",
+        "unscheduledDay": "Jour non planifié",
+        "needsReview": "À vérifier"
+      }
     }
   },
   "tasks": {

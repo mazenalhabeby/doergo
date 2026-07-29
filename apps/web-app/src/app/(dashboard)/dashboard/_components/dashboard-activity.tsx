@@ -1,4 +1,5 @@
 import React from "react"
+import i18n from "@/i18n"
 import type { Task, OrgMember } from "@/lib/api"
 import type { TimeEntry } from "@hbcfield/shared"
 import type { LiveEvent, PendingAction } from "@/components/dashboard"
@@ -17,17 +18,15 @@ const STATUS_DOT: Record<string, LiveEvent["dot"]> = {
   CANCELED: "red",
 }
 
-const STATUS_ACTION: Record<string, string> = {
-  IN_PROGRESS: "started working on",
-  EN_ROUTE: "en route to",
-  ARRIVED: "arrived at",
-  COMPLETED: "completed",
-  BLOCKED: "blocked on",
-  ASSIGNED: "was assigned to",
-  ACCEPTED: "accepted",
-  NEW: "created",
-  CANCELED: "canceled",
-}
+// Statuses that have a dedicated action verb. Resolved via i18n at call time so
+// the verb follows the active language (and recomputes on language change).
+const STATUS_ACTION_KEYS = new Set([
+  "IN_PROGRESS", "EN_ROUTE", "ARRIVED", "COMPLETED", "BLOCKED", "ASSIGNED", "ACCEPTED", "NEW", "CANCELED",
+])
+const statusAction = (status: string): string =>
+  STATUS_ACTION_KEYS.has(status)
+    ? i18n.t(`dashboard.activity.actions.${status}`)
+    : i18n.t("dashboard.activity.actions.updated")
 
 const shortName = (first?: string, last?: string) => `${first ?? ""} ${last?.[0] ?? ""}.`.trim()
 
@@ -48,7 +47,7 @@ export function buildRecentActivity(opts: {
 
   for (const task of tasks) {
     const a = task.assignedTo
-    const name = a ? shortName(a.firstName, a.lastName) : "Someone"
+    const name = a ? shortName(a.firstName, a.lastName) : i18n.t("dashboard.activity.someone")
     items.push({
       ts: new Date(task.updatedAt).getTime(),
       event: {
@@ -56,7 +55,7 @@ export function buildRecentActivity(opts: {
         dot: STATUS_DOT[task.status] || "blue",
         message: (
           <>
-            <strong>{name}</strong> {STATUS_ACTION[task.status] || "updated"} <strong>{task.title}</strong>
+            <strong>{name}</strong> {statusAction(task.status)} <strong>{task.title}</strong>
           </>
         ),
         time: timeAgo(task.updatedAt),
@@ -70,8 +69,8 @@ export function buildRecentActivity(opts: {
       ? shortName(member.firstName, member.lastName)
       : entry.user
         ? shortName(entry.user.firstName, entry.user.lastName)
-        : "Someone"
-    const locationName = entry.location?.name || "a location"
+        : i18n.t("dashboard.activity.someone")
+    const locationName = entry.location?.name || i18n.t("dashboard.activity.aLocation")
 
     if (isClockedIn(entry)) {
       items.push({
@@ -79,7 +78,7 @@ export function buildRecentActivity(opts: {
         event: {
           id: `clock-in-${entry.id}`,
           dot: "green",
-          message: (<><strong>{name}</strong> clocked in at <strong>{locationName}</strong></>),
+          message: (<><strong>{name}</strong> {i18n.t("dashboard.activity.clockedInAt")} <strong>{locationName}</strong></>),
           time: timeAgo(entry.clockInAt),
         },
       })
@@ -89,7 +88,7 @@ export function buildRecentActivity(opts: {
         event: {
           id: `clock-out-${entry.id}`,
           dot: "blue",
-          message: (<><strong>{name}</strong> clocked out from <strong>{locationName}</strong></>),
+          message: (<><strong>{name}</strong> {i18n.t("dashboard.activity.clockedOutFrom")} <strong>{locationName}</strong></>),
           time: timeAgo(entry.clockOutAt),
         },
       })
@@ -102,21 +101,28 @@ export function buildRecentActivity(opts: {
     .map((i) => i.event)
 }
 
-// Friendly one-line summary for an attendance entry's flag reasons.
-const FLAG_LABELS: Record<string, string> = {
-  OVERTIME: "Overtime",
-  MISSED_CLOCK_OUT: "Missed clock-out",
-  OUTSIDE_GEOFENCE_IN: "Out of geofence",
-  OUTSIDE_GEOFENCE_OUT: "Out of geofence",
-  LATE_ARRIVAL: "Late arrival",
-  EARLY_DEPARTURE: "Early departure",
-  UNSCHEDULED_DAY: "Unscheduled day",
+// Friendly one-line summary for an attendance entry's flag reasons. Reason →
+// i18n key; resolved at call time so labels follow the active language.
+const FLAG_LABEL_KEYS: Record<string, string> = {
+  OVERTIME: "overtime",
+  MISSED_CLOCK_OUT: "missedClockOut",
+  OUTSIDE_GEOFENCE_IN: "outsideGeofence",
+  OUTSIDE_GEOFENCE_OUT: "outsideGeofence",
+  LATE_ARRIVAL: "lateArrival",
+  EARLY_DEPARTURE: "earlyDeparture",
+  UNSCHEDULED_DAY: "unscheduledDay",
 }
 
 const flagSummary = (reasons?: string[]) =>
   reasons && reasons.length
-    ? reasons.map((r) => FLAG_LABELS[r] || r.replace(/_/g, " ").toLowerCase()).join(", ")
-    : "Needs review"
+    ? reasons
+        .map((r) =>
+          FLAG_LABEL_KEYS[r]
+            ? i18n.t(`dashboard.activity.flags.${FLAG_LABEL_KEYS[r]}`)
+            : r.replace(/_/g, " ").toLowerCase(),
+        )
+        .join(", ")
+    : i18n.t("dashboard.activity.flags.needsReview")
 
 /**
  * Things needing attention, most time-sensitive first:
@@ -137,12 +143,12 @@ export function buildPendingActions(opts: {
 
   for (const entry of approvals.slice(0, 3)) {
     const u = entry.user
-    const name = u ? shortName(u.firstName, u.lastName) : "Worker"
+    const name = u ? shortName(u.firstName, u.lastName) : i18n.t("dashboard.pending.worker")
     actions.push({
       id: `approval-${entry.id}`,
       initials: u ? getInitials(u.firstName, u.lastName) : "?",
       color: getAvatarColor(entry.userId || "x"),
-      title: `${name} — Needs Approval`,
+      title: `${name} — ${i18n.t("dashboard.pending.needsApproval")}`,
       description: flagSummary(entry.flagReasons),
       onApprove: onApproveEntry ? () => onApproveEntry(entry.id) : undefined,
       onReject: onReviewApproval ? () => onReviewApproval(entry.id) : undefined,
@@ -156,7 +162,7 @@ export function buildPendingActions(opts: {
       initials: a ? getInitials(a.firstName, a.lastName) : "?",
       color: getAvatarColor(a?.id || "x"),
       imageUrl: a?.avatarUrl || undefined,
-      title: `${a ? shortName(a.firstName, a.lastName) : "Unassigned"} — Blocked`,
+      title: `${a ? shortName(a.firstName, a.lastName) : i18n.t("dashboard.pending.unassigned")} — ${i18n.t("dashboard.pending.blocked")}`,
       description: task.title,
       onApprove: () => onView(task.id),
     })
@@ -167,7 +173,7 @@ export function buildPendingActions(opts: {
       id: `new-${task.id}`,
       initials: "?",
       color: AVATAR_COLORS[4]!,
-      title: "Unassigned — New Task",
+      title: i18n.t("dashboard.pending.unassignedNewTask"),
       description: task.title,
       onApprove: () => onView(task.id),
     })
