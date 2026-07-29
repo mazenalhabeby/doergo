@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { API_URL } from '../lib/api/client';
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 import {
@@ -79,6 +80,29 @@ export function LocationSearchPicker({
     debounceRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
+        // Primary: our self-hosted Photon (full-planet) via the gateway — no public
+        // OSM rate limits. Falls back to Nominatim if it returns nothing.
+        try {
+          const gr = await fetch(`${API_URL}/geo/search?q=${encodeURIComponent(q)}&limit=6`);
+          if (gr.ok) {
+            const gd = await gr.json();
+            const mapped: NominatimResult[] = (gd?.results || []).map(
+              (r: { label: string; lat: number; lon: number }, i: number) => ({
+                place_id: i,
+                display_name: r.label,
+                lat: String(r.lat),
+                lon: String(r.lon),
+              })
+            );
+            if (mapped.length > 0) {
+              setResults(mapped);
+              setShowResults(true);
+              return;
+            }
+          }
+        } catch {
+          /* fall through to Nominatim */
+        }
         const res = await fetch(
           `${NOMINATIM_BASE}/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
           { headers: { 'Accept-Language': 'en', 'User-Agent': 'HBCField/1.0 (hbcfield.com)' } }

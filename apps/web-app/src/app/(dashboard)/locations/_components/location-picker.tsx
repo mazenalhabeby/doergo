@@ -99,7 +99,30 @@ export default function LocationPicker({
     }
     setIsSearching(true)
     try {
-      // Run Photon and Nominatim in parallel
+      // Primary: our self-hosted Photon (full-planet) via the gateway — no public
+      // rate limits, no exposed key. Falls back to the public geocoders below if it
+      // returns nothing (e.g. before the index finished loading, or a coverage gap).
+      try {
+        const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+        const gr = await fetch(`${geoBase}/geo/search?q=${encodeURIComponent(query)}&limit=6`, { signal: AbortSignal.timeout(5000) })
+        if (gr.ok) {
+          const gd = await gr.json()
+          const geoResults: GeoResult[] = (gd?.results || []).map((r: { label: string; lat: number; lon: number }) => ({
+            display_name: r.label,
+            lat: String(r.lat),
+            lon: String(r.lon),
+          }))
+          if (geoResults.length > 0) {
+            setResults(geoResults.slice(0, 5))
+            setShowResults(true)
+            return
+          }
+        }
+      } catch {
+        /* fall through to the public geocoders */
+      }
+
+      // Fallback: public Photon + Nominatim (wider coverage / used until self-hosted is ready)
       const [photonRes, nominatimRes] = await Promise.allSettled([
         fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=3`)
           .then((r) => r.json())

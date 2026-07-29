@@ -1,0 +1,20 @@
+# Self-hosted Photon geocoder (full-planet index) for location search.
+# Long-lived, manually managed (the ~150 GB index is downloaded once, not rebuilt
+# on every deploy). Start/refresh with:
+#   docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.photon.yml --env-file .env.production up -d photon
+# The gateway reaches it in-network at http://photon:2322 (PHOTON_URL default).
+services:
+  photon:
+    image: rtuszik/photon-docker:latest
+    container_name: hbcfield-photon
+    restart: unless-stopped
+    environment:
+      REGION: "planet"           # full-planet prebuilt index
+      UPDATE_STRATEGY: "DISABLED" # don't auto-refresh the huge index
+      LOG_LEVEL: "INFO"
+    volumes:
+      - photon_data:/photon/data
+    ports:
+      - "127.0.0.1:2322:2322"    # localhost only; gateway uses the docker network
+volumes:
+  photon_data:

@@ -23,6 +23,7 @@ import { InvitationsModule } from './modules/invitations/invitations.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
+import { GeoModule } from './modules/geo/geo.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { BillingModule } from './modules/billing/billing.module';
@@ -104,6 +105,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     CustomFieldsModule,
     RecurringTasksModule,
     InvoicesModule,
+    GeoModule,
   ],
   controllers: [AppController],
   providers: [
