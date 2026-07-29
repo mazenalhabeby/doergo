@@ -32,6 +32,8 @@ export function useTimeFormat() {
     const lang = i18n.language || "en"
     if (lang.startsWith("de")) return "de-DE"
     if (lang.startsWith("es")) return "es-ES"
+    if (lang.startsWith("it")) return "it-IT"
+    if (lang.startsWith("fr")) return "fr-FR"
     return "en-US"
   }, [i18n.language])
 

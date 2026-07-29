@@ -1,0 +1,1102 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "confirm": "Confirmer",
+    "search": "Rechercher",
+    "loading": "Chargement",
+    "error": "Erreur",
+    "success": "Succès",
+    "retry": "Réessayer",
+    "done": "Terminé",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Envoyer",
+    "clear": "Effacer",
+    "edit": "Modifier",
+    "remove": "Retirer",
+    "add": "Ajouter",
+    "view": "Voir",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "revoke": "Révoquer",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "all": "Tout",
+    "none": "Aucun",
+    "today": "Aujourd'hui",
+    "required": "Obligatoire",
+    "optional": "Facultatif",
+    "uploading": "Téléversement...",
+    "signOut": "Se déconnecter",
+    "signIn": "Se connecter",
+    "logOut": "Se déconnecter",
+    "getStarted": "Commencer",
+    "verify": "Vérifier",
+    "unassigned": "Non attribué",
+    "unknown": "Inconnu",
+    "unknownLocation": "Lieu inconnu",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "pending": "En attente",
+    "expired": "Expiré",
+    "member": "membre",
+    "members": "membres",
+    "task": "tâche",
+    "tasks": "tâches",
+    "day": "jour",
+    "days": "jours",
+    "characters": "caractères",
+    "more": "+{{count}} de plus",
+    "version": "Version {{version}}",
+    "appName": "HBCField",
+    "copyrightYear": "© {{year}} HBCField. Tous droits réservés.",
+    "greeting": {
+      "morning": "Bonjour,",
+      "afternoon": "Bon après-midi,",
+      "evening": "Bonsoir,"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Se connecter",
+      "subtitle": "Accédez à votre tableau de bord et gérez vos opérations",
+      "emailLabel": "Adresse e-mail",
+      "emailPlaceholder": "vous@entreprise.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Saisissez votre mot de passe",
+      "submitButton": "Se connecter",
+      "enterpriseProtected": "Protégé pour les entreprises",
+      "secure": "Sécurisé",
+      "noAccount": "Vous n'avez pas de compte ? ",
+      "createOne": "Créez-en un",
+      "needHelp": "Besoin d'aide ? ",
+      "contactSupport": "Contacter l'assistance",
+      "loginFailed": "Échec de la connexion",
+      "forgotPassword": "Mot de passe oublié ?"
+    },
+    "forgotPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Nous vous enverrons un lien de réinitialisation",
+      "emailLabel": "Adresse e-mail",
+      "emailPlaceholder": "vous@entreprise.com",
+      "submitButton": "Envoyer le lien de réinitialisation",
+      "rememberPassword": "Vous vous souvenez de votre mot de passe ? ",
+      "signIn": "Se connecter",
+      "sentTitle": "Vérifiez votre e-mail",
+      "sentMessage": "Si un compte existe avec cette adresse e-mail, nous avons envoyé un lien de réinitialisation du mot de passe. Veuillez vérifier votre boîte de réception et vos courriers indésirables.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "register": {
+      "title": "Créez votre compte",
+      "subtitle": "Démarrez avec HBCField",
+      "firstNameLabel": "Prénom",
+      "firstNamePlaceholder": "Jean",
+      "lastNameLabel": "Nom",
+      "lastNamePlaceholder": "Dupont",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "vous@exemple.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "8 caractères min.",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Saisissez à nouveau le mot de passe",
+      "submitButton": "Créer un compte",
+      "termsText": "En créant un compte, vous acceptez nos ",
+      "termsOfService": "Conditions d'utilisation",
+      "and": " et notre ",
+      "privacyPolicy": "Politique de confidentialité",
+      "hasAccount": "Vous avez déjà un compte ? ",
+      "signIn": "Se connecter",
+      "registrationFailed": "Échec de l'inscription",
+      "passwordChecks": {
+        "minChars": "8+ caractères",
+        "uppercase": "Majuscule",
+        "lowercase": "Minuscule",
+        "number": "Chiffre"
+      }
+    }
+  },
+  "onboarding": {
+    "choosePath": {
+      "welcome": "Bienvenue, {{name}} !",
+      "subtitle": "Choisissez comment vous souhaitez commencer",
+      "createOrg": {
+        "title": "Créer une organisation",
+        "description": "Configurez l'espace de travail de votre entreprise et invitez votre équipe à collaborer",
+        "tag": "Pour les administrateurs"
+      },
+      "joinOrg": {
+        "title": "Rejoindre une organisation",
+        "description": "Saisissez le code de votre organisation pour demander l'accès en tant que membre de l'équipe",
+        "tag": "Vous avez un code"
+      },
+      "useInvitation": {
+        "title": "Utiliser une invitation",
+        "description": "Acceptez un code d'invitation personnel de votre employeur ou de votre chef d'équipe",
+        "tag": "Invité"
+      },
+      "signOut": "Se déconnecter"
+    },
+    "createOrg": {
+      "title": "Créer une organisation",
+      "subtitle": "Configurez votre entreprise sur HBCField",
+      "nameLabel": "Nom de l'organisation *",
+      "namePlaceholder": "Acme Inc.",
+      "addressLabel": "Adresse (facultatif)",
+      "addressPlaceholder": "123 avenue des Affaires",
+      "submitButton": "Créer une organisation",
+      "failedToCreate": "Échec de la création de l'organisation",
+      "firstSpaceLabel": "Votre premier espace",
+      "firstSpacePlaceholder": "ex. Bureau principal",
+      "firstSpaceHint": "Renommez-le ou ajoutez d'autres espaces plus tard.",
+      "typeLabel": "Type",
+      "typeWorkspace": "Espace de travail",
+      "typeWorkspaceDesc": "Une équipe ou un projet",
+      "typePhysical": "Lieu physique",
+      "typePhysicalDesc": "Un site pour le pointage",
+      "locationLabel": "Lieu"
+    },
+    "joinOrg": {
+      "title": "Rejoindre une organisation",
+      "subtitle": "Saisissez le code de l'organisation communiqué par votre employeur",
+      "codeLabel": "Code de l'organisation",
+      "codePlaceholder": "ABCD1234",
+      "messageLabel": "Message (facultatif)",
+      "messagePlaceholder": "Présentez-vous...",
+      "submitButton": "Demander à rejoindre",
+      "codeMustBe8Chars": "Le code doit comporter 8 caractères",
+      "invalidCode": "Code invalide",
+      "failedToValidate": "Échec de la validation du code",
+      "failedToSubmit": "Échec de l'envoi de la demande"
+    },
+    "useInvitation": {
+      "title": "Utiliser un code d'invitation",
+      "subtitle": "Saisissez le code communiqué par l'administrateur de votre organisation",
+      "codeLabel": "Code d'invitation",
+      "codePlaceholder": "XK7M2P",
+      "submitButton": "Accepter et rejoindre",
+      "joiningAs": "Vous rejoignez en tant que {{role}}",
+      "codeMustBe6Chars": "Le code doit comporter au moins 6 caractères",
+      "invalidOrExpired": "Code invalide ou expiré",
+      "failedToValidate": "Échec de la validation du code",
+      "failedToAccept": "Échec de l'acceptation de l'invitation"
+    },
+    "pendingApproval": {
+      "waitingTitle": "En attente d'approbation",
+      "rejectedTitle": "Demande refusée",
+      "waitingSubtitle": "Votre demande d'adhésion a été envoyée",
+      "rejectedSubtitle": "Votre demande d'adhésion a été refusée",
+      "yourMessage": "Votre message :",
+      "checkingEvery30Seconds": "Vérification toutes les 30 secondes...",
+      "cancelRequest": "Annuler la demande",
+      "cancelRequestConfirmTitle": "Annuler la demande",
+      "cancelRequestConfirmMessage": "Êtes-vous sûr de vouloir annuler votre demande d'adhésion ?",
+      "cancelRequestConfirmYes": "Oui, annuler",
+      "tryDifferentPath": "Essayer une autre méthode",
+      "failedToCancel": "Échec de l'annulation de la demande",
+      "approvedToast": "Demande approuvée !",
+      "rejectedToast": "Demande refusée"
+    }
+  },
+  "tabs": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "tasks": "Tâches",
+    "createTask": "Créer une tâche",
+    "manage": "Gérer",
+    "attendance": "Présences",
+    "timeOff": "Congés",
+    "team": "Équipe",
+    "profile": "Profil"
+  },
+  "home": {
+    "admin": {
+      "welcomeBack": "Bon retour, {{name}}",
+      "statsTotal": "Total",
+      "statsActive": "Actives",
+      "statsDone": "Terminées",
+      "statsPending": "En attente",
+      "todaysTasks": "Tâches du jour",
+      "noTasksScheduled": "Aucune tâche planifiée",
+      "recentTasks": "Tâches récentes",
+      "noTasksYet": "Aucune tâche pour l'instant. Créez-en une pour commencer !",
+      "setUpWorkspace": "Configurez votre espace de travail",
+      "setUpWorkspaceSub": "Créez des espaces et affectez votre équipe pour suivre chacun en temps réel.",
+      "activity": "Activité"
+    },
+    "fullTime": {
+      "clockedIn": "Pointage d'arrivée effectué",
+      "clockedOut": "Pointage de départ effectué",
+      "startedAt": "Commencé à {{time}}",
+      "onBreak": "En pause",
+      "clockIn": "Pointer l'arrivée",
+      "clockOut": "Pointer le départ",
+      "clockOutConfirmTitle": "Pointer le départ",
+      "clockOutConfirmMessage": "Êtes-vous sûr de vouloir pointer votre départ ?",
+      "shiftNotesLabel": "Qu'avez-vous fait aujourd'hui ?",
+      "shiftNotesPlaceholder": "Décrivez le travail que vous avez accompli durant ce quart...",
+      "netWork": "Travail net",
+      "breakTime": "Temps de pause",
+      "thisWeek": "Cette semaine",
+      "yourLocations": "Vos lieux",
+      "recentActivity": "Activité récente",
+      "withinRange": "(dans la zone)",
+      "awayMeters": "à {{distance}} m",
+      "awayKm": "à {{distance}} km",
+      "loadingAttendance": "Chargement des présences...",
+      "failedToLoadAttendance": "Échec du chargement des données de présence",
+      "permissionDenied": "Autorisation refusée",
+      "locationPermissionRequired": "L'autorisation de localisation est requise pour le suivi des présences.",
+      "locationError": "Erreur de localisation",
+      "failedToGetLocation": "Impossible d'obtenir votre position actuelle.",
+      "failedToClockIn": "Échec du pointage d'arrivée",
+      "failedToClockOut": "Échec du pointage de départ"
+    },
+    "hybrid": {
+      "tapToStartShift": "Appuyez pour commencer votre quart"
+    },
+    "freelancer": {
+      "todaysTasks": "Tâches du jour",
+      "urgentTasks": "Tâches urgentes",
+      "completed": "Terminées",
+      "pending": "En attente",
+      "todaysJobs": "Interventions du jour",
+      "noJobsScheduled": "Aucune intervention planifiée pour ce jour"
+    }
+  },
+  "tasks": {
+    "searchPlaceholder": "Rechercher des tâches...",
+    "tabs": {
+      "current": "En cours",
+      "upcoming": "À venir",
+      "history": "Historique"
+    },
+    "filters": {
+      "all": "Toutes",
+      "active": "Actives",
+      "completed": "Terminées",
+      "blocked": "Bloquées",
+      "new": "Nouvelles",
+      "assigned": "Attribuées",
+      "inProgress": "Actives",
+      "done": "Terminées"
+    },
+    "sort": {
+      "title": "Trier par",
+      "dueDate": "Date d'échéance",
+      "priority": "Priorité",
+      "status": "Statut",
+      "name": "Nom",
+      "created": "Date de création"
+    },
+    "taskCount": "{{count}} tâche",
+    "taskCountPlural": "{{count}} tâches",
+    "blockedBanner": {
+      "title": "{{count}} tâche bloquée",
+      "titlePlural": "{{count}} tâches bloquées"
+    },
+    "empty": {
+      "current": "Aucune tâche ce mois-ci",
+      "upcoming": "Aucune tâche à venir",
+      "history": "Aucune tâche passée"
+    },
+    "failedToLoad": "Échec du chargement des tâches"
+  },
+  "taskDetail": {
+    "title": "Détails de la tâche",
+    "jobId": "INTERVENTION N°{{id}}",
+    "progress": "PROGRESSION",
+    "details": "DÉTAILS",
+    "description": "DESCRIPTION",
+    "location": "LIEU",
+    "attachments": "PIÈCES JOINTES",
+    "attachmentsCount": "PIÈCES JOINTES ({{count}})",
+    "comments": "COMMENTAIRES",
+    "commentsCount": "COMMENTAIRES ({{count}})",
+    "taskNotFound": "Tâche introuvable",
+    "goBack": "Retour",
+    "infoLabels": {
+      "createdBy": "Créée par",
+      "assignedTo": "Attribuée à",
+      "location": "Lieu"
+    },
+    "openInMaps": "Ouvrir dans Maps",
+    "startNavigation": "Démarrer la navigation",
+    "statusActions": {
+      "acceptJob": "Accepter l'intervention",
+      "startDriving": "Commencer le trajet",
+      "arrived": "Je suis arrivé",
+      "startWork": "Commencer le travail",
+      "finishJob": "Terminer l'intervention",
+      "resumeJob": "Reprendre l'intervention",
+      "scheduledForLater": "Planifié pour plus tard",
+      "notYetAvailable": "Pas encore disponible",
+      "declineJob": "Refuser"
+    },
+    "progressSteps": {
+      "assigned": "Attribuée",
+      "accepted": "Acceptée",
+      "onTheWay": "En route",
+      "arrived": "Arrivé",
+      "inProgress": "En cours",
+      "completed": "Terminée"
+    },
+    "updateStatus": {
+      "confirmTitle": "Mettre à jour le statut",
+      "confirmMessage": "Changer le statut en {{status}} ?"
+    },
+    "blockTask": {
+      "title": "Signaler un problème",
+      "subtitle": "Qu'est-ce qui bloque cette tâche ? (facultatif)",
+      "placeholder": "ex. En attente de pièces, Client indisponible...",
+      "submitButton": "Signaler un problème"
+    },
+    "declineTask": {
+      "title": "Refuser l'intervention",
+      "message": "Êtes-vous sûr de vouloir refuser cette intervention ? Elle sera renvoyée au répartiteur pour être réattribuée.",
+      "confirmButton": "Refuser",
+      "successTitle": "Intervention refusée",
+      "successMessage": "L'intervention a été renvoyée pour réattribution."
+    },
+    "cancelTask": {
+      "title": "Annuler la tâche",
+      "message": "Êtes-vous sûr de vouloir annuler cette tâche ?",
+      "confirmButton": "Annuler la tâche"
+    },
+    "completeTask": {
+      "title": "Terminer l'intervention",
+      "workDuration": "Durée du travail",
+      "summaryLabel": "Résumé *",
+      "summaryPlaceholder": "Bref résumé du travail effectué...",
+      "workDetailsLabel": "Détails du travail",
+      "workDetailsPlaceholder": "Description détaillée du travail effectué...",
+      "photosLabel": "Photos",
+      "signaturesLabel": "Signatures",
+      "technicianSignature": "Signature de l'employé *",
+      "customerSignature": "Signature du client *",
+      "customerNameLabel": "Nom du client *",
+      "customerNamePlaceholder": "Nom du client...",
+      "submitButton": "Terminer l'intervention",
+      "successMessage": "Intervention terminée avec succès !",
+      "summaryRequired": "Veuillez saisir un résumé du travail effectué.",
+      "techSignatureRequired": "La signature de l'employé est requise.",
+      "customerSignatureRequired": "La signature du client est requise.",
+      "customerNameRequired": "Veuillez saisir le nom du client."
+    },
+    "editTask": {
+      "title": "Modifier la tâche",
+      "titleLabel": "Titre *",
+      "titlePlaceholder": "Titre de la tâche",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Description de la tâche",
+      "priorityLabel": "Priorité",
+      "locationLabel": "Lieu",
+      "locationPlaceholder": "Adresse",
+      "saveButton": "Enregistrer les modifications"
+    },
+    "adminActions": {
+      "assign": "Attribuer",
+      "reassign": "Réattribuer",
+      "edit": "Modifier",
+      "cancel": "Annuler"
+    },
+    "attachmentActions": {
+      "noAttachments": "Aucune pièce jointe pour l'instant",
+      "tapToAdd": "Appuyez sur l'appareil photo ou la galerie pour ajouter",
+      "deleteTitle": "Supprimer la pièce jointe",
+      "deleteMessage": "Supprimer « {{fileName}} » ?"
+    },
+    "commentInput": {
+      "placeholder": "Ajouter un commentaire...",
+      "noComments": "Aucun commentaire pour l'instant"
+    },
+    "tracking": {
+      "locationTrackingActive": "Suivi de localisation actif",
+      "startingTracking": "Démarrage du suivi..."
+    },
+    "futureTask": {
+      "scheduledFor": "Cette tâche est planifiée pour le {{date}}.",
+      "canAcceptOnDueDate": "Vous pourrez l'accepter à la date d'échéance.",
+      "canStartOnDueDate": "Vous pourrez la commencer à la date d'échéance."
+    },
+    "assignedSuccess": "Attribuée à {{firstName}} {{lastName}}",
+    "titleRequired": "Le titre est obligatoire.",
+    "failedToLoad": "Échec du chargement de la tâche",
+    "failedToUpdateStatus": "Échec de la mise à jour du statut",
+    "failedToReportIssue": "Échec du signalement du problème",
+    "failedToDecline": "Échec du refus de l'intervention",
+    "failedToCancel": "Échec de l'annulation",
+    "failedToUpdate": "Échec de la mise à jour",
+    "failedToAssign": "Échec de l'attribution",
+    "failedToComplete": "Échec de la finalisation de la tâche",
+    "failedToAddComment": "Échec de l'ajout du commentaire",
+    "failedToDelete": "Échec de la suppression",
+    "thisStep": {
+      "title": "Cette étape",
+      "noChecklistItems": "Aucun élément de liste de contrôle.",
+      "visitNotesPlaceholder": "Notes de visite…",
+      "saveNote": "Enregistrer la note",
+      "savingNote": "Enregistrement…",
+      "signature": "Signature"
+    }
+  },
+  "createTask": {
+    "titleLabel": "Titre *",
+    "titlePlaceholder": "Que faut-il faire ?",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Ajoutez des détails sur la tâche...",
+    "priorityLabel": "Priorité",
+    "dueDateLabel": "Date d'échéance",
+    "dueDatePlaceholder": "Sélectionner la date d'échéance",
+    "locationLabel": "Lieu",
+    "photosLabel": "Photos",
+    "assignTechnicianLabel": "Attribuer à un employé",
+    "technicianPlaceholder": "Sélectionner un employé (facultatif)",
+    "submitButton": "Créer la tâche",
+    "titleRequired": "Veuillez saisir un titre de tâche.",
+    "successMessage": "Tâche créée avec succès !",
+    "failedToCreate": "Échec de la création de la tâche",
+    "spaceLabel": "Espace"
+  },
+  "attendance": {
+    "clockedIn": "Pointage d'arrivée effectué",
+    "clockedOut": "Pointage de départ effectué",
+    "startedAt": "Commencé à {{time}}",
+    "timeOnShift": "Temps de quart",
+    "clockIn": "Pointer l'arrivée",
+    "clockOut": "Pointer le départ",
+    "clockOutConfirmTitle": "Pointer le départ",
+    "clockOutConfirmMessage": "Êtes-vous sûr de vouloir pointer votre départ ?",
+    "shiftNotesLabel": "Qu'avez-vous fait aujourd'hui ?",
+    "shiftNotesPlaceholder": "Décrivez le travail que vous avez accompli durant ce quart...",
+    "clockedInAt": "Arrivée pointée à {{location}}",
+    "clockedOutSuccess": "Départ pointé avec succès",
+    "locationRequired": "Localisation requise",
+    "enableLocationServices": "Veuillez activer les services de localisation pour pointer votre arrivée.",
+    "locationPermissionDenied": "Autorisation de localisation refusée",
+    "failedToGetLocation": "Échec de l'obtention de la localisation",
+    "failedToClockIn": "Échec du pointage d'arrivée",
+    "failedToClockOut": "Échec du pointage de départ",
+    "loadingAttendance": "Chargement des présences...",
+    "failedToLoadAttendance": "Échec du chargement des données de présence",
+    "notAvailable": {
+      "title": "Non disponible",
+      "message": "Le pointage d'arrivée/départ n'est disponible que pour les employés à temps plein."
+    },
+    "breaks": {
+      "takeABreak": "Faire une pause",
+      "lunch": "Déjeuner",
+      "short": "Courte",
+      "other": "Autre",
+      "endBreak": "Terminer la pause",
+      "startBreak": "Commencer la pause",
+      "onBreak": "En pause {{type}}",
+      "breakDuration": "Durée de la pause",
+      "totalBreakTime": "Temps de pause total : {{duration}}",
+      "totalBreakTimeToday": "Temps de pause total aujourd'hui",
+      "breakStarted": "Pause commencée",
+      "breakStartedMessage": "Votre pause {{type}} a commencé.",
+      "breakEnded": "Pause terminée",
+      "breakEndedMessage": "Votre pause est terminée. Au travail !",
+      "failedToStartBreak": "Échec du démarrage de la pause",
+      "failedToEndBreak": "Échec de la fin de la pause",
+      "notesTitle": "Terminer la pause",
+      "startBreakTitle": "Commencer la pause {{type}}",
+      "notesSubtitle": "Ajoutez des notes sur votre pause (facultatif)",
+      "notesPlaceholder": "Saisir des notes (facultatif)...",
+      "charCount": "{{count}}/500 caractères"
+    },
+    "assignedLocations": "Lieux attribués",
+    "away": "à {{distance}}",
+    "withinRange": "(dans la zone)",
+    "clockedInOutsideGeofence": "Arrivée pointée hors de la zone géographique",
+    "outsideGeofence": "Vous êtes en dehors de la zone de travail",
+    "outsideGeofenceDistance": "Vous êtes à {{distance}} m de votre lieu",
+    "autoClockOutTitle": "Pointage de départ automatique",
+    "autoClockOutDistance": "Votre départ a été pointé automatiquement car vous êtes à {{distance}} m de votre lieu de travail.",
+    "todaysBreaks": "Pauses du jour",
+    "history": {
+      "title": "Historique récent",
+      "noRecords": "Aucun enregistrement de présence pour l'instant",
+      "in": "Arrivée",
+      "out": "Départ",
+      "total": "Total",
+      "statusActive": "Actif",
+      "statusAuto": "Auto",
+      "statusDone": "Terminé"
+    }
+  },
+  "overtime": {
+    "title": "Heures supplémentaires",
+    "noActiveRequest": "Aucune demande d'heures supplémentaires active",
+    "shiftEnded": "Votre quart est terminé",
+    "promptTitle": "Besoin d'heures supplémentaires ?",
+    "promptSubtitle": "Votre quart est terminé. Souhaitez-vous demander des heures supplémentaires ?",
+    "reasonPlaceholder": "Pourquoi avez-vous besoin d'heures supplémentaires ? (facultatif)",
+    "yes": "Oui, j'ai besoin d'heures supplémentaires",
+    "no": "Non, pointer mon départ",
+    "requestSent": "Demande d'heures supplémentaires envoyée pour approbation",
+    "declined": "Heures supplémentaires refusées, votre départ a été pointé",
+    "failedToRespond": "Échec de la réponse à la demande d'heures supplémentaires",
+    "waitingApproval": "En attente d'approbation",
+    "waitingApprovalSub": "Votre chef d'équipe a été notifié. Vous pouvez aussi obtenir sa signature sur cet appareil.",
+    "getLeaderSignature": "Obtenir la signature du chef",
+    "getLeaderSignatureSub": "Le chef d'équipe peut signer sur cet appareil pour approuver",
+    "approved": "Heures supplémentaires approuvées",
+    "approvedFor": "Approuvées pour {{minutes}} minutes",
+    "remaining": "restantes",
+    "rejected": "Heures supplémentaires refusées",
+    "expired": "Demande expirée",
+    "expiredSub": "La demande d'heures supplémentaires a expiré. Votre départ a été pointé.",
+    "overtimeActive": "Heures supplémentaires actives",
+    "tapToView": "Appuyez pour voir les détails",
+    "leaderApproval": "Approbation du chef",
+    "signatureInstructions": "Remettez cet appareil à votre chef d'équipe pour approuver les heures supplémentaires. Il sélectionnera son nom, définira la durée et signera.",
+    "selectLeaderTitle": "Sélectionner le chef d'équipe",
+    "selectLeader": "Veuillez sélectionner un chef d'équipe",
+    "noLeaders": "Aucun administrateur ou répartiteur trouvé",
+    "selectDuration": "Durée des heures supplémentaires",
+    "notesOptional": "Notes (facultatif)",
+    "notesPlaceholder": "Notes complémentaires pour ces heures supplémentaires...",
+    "leaderSignature": "Signature du chef",
+    "signatureRequired": "La signature du chef est requise",
+    "approveOvertime": "Approuver les heures supplémentaires",
+    "approvedSuccess": "Heures supplémentaires approuvées avec succès",
+    "failedToApprove": "Échec de l'approbation des heures supplémentaires"
+  },
+  "timeOff": {
+    "stats": {
+      "daysUsed": "Jours utilisés",
+      "upcoming": "À venir",
+      "pending": "En attente",
+      "rejected": "Refusés"
+    },
+    "scheduleNotSet": "Planning non configuré — contactez votre administrateur pour configurer votre planning de travail.",
+    "calendar": {
+      "legend": {
+        "approved": "Approuvé",
+        "pending": "En attente",
+        "offDay": "Jour de repos"
+      },
+      "selectionHint": "Appuyez sur une autre date pour compléter la plage"
+    },
+    "teamAvailability": {
+      "title": "Disponibilité de l'équipe",
+      "unableToLoad": "Impossible de charger la disponibilité de l'équipe",
+      "techsAvailable": "{{available}} employés disponibles sur {{total}}",
+      "worst": "(le pire : {{date}})",
+      "lowCoverage": "Faible couverture le {{date}}",
+      "notScheduled": "Vous n'êtes pas planifié sur {{count}} jour sélectionné",
+      "notScheduledPlural": "Vous n'êtes pas planifié sur {{count}} jours sélectionnés",
+      "alsoOnTimeOff": "Également en congé :"
+    },
+    "requestForm": {
+      "title": "Demander un congé",
+      "reasonLabel": "Motif",
+      "notesLabel": "Notes (facultatif)",
+      "notesPlaceholder": "Détails complémentaires...",
+      "clearSelection": "Effacer la sélection",
+      "submitRequest": "Envoyer la demande",
+      "successMessage": "Demande de congé envoyée.",
+      "failedToSubmit": "Échec de l'envoi de la demande"
+    },
+    "reasonTypes": {
+      "vacation": "Vacances",
+      "sickLeave": "Congé maladie",
+      "personal": "Personnel",
+      "other": "Autre"
+    },
+    "myRequests": "Mes demandes",
+    "filters": {
+      "upcoming": "À venir",
+      "past": "Passées",
+      "all": "Toutes"
+    },
+    "empty": {
+      "upcoming": "Aucune demande de congé à venir",
+      "past": "Aucune demande de congé passée",
+      "all": "Aucune demande de congé pour l'instant",
+      "hint": "Appuyez sur les dates du calendrier ci-dessus pour demander un congé"
+    },
+    "approvedBy": "Approuvé par {{firstName}} {{lastName}}",
+    "cancelRequest": "Annuler la demande",
+    "cancelConfirmTitle": "Annuler la demande",
+    "cancelConfirmMessage": "Êtes-vous sûr de vouloir annuler cette demande de congé ?",
+    "failedToCancel": "Échec de l'annulation de la demande",
+    "typeLabels": {
+      "vacation": "Vacances",
+      "sickLeave": "Congé maladie",
+      "personal": "Personnel",
+      "timeOff": "Congé"
+    }
+  },
+  "profile": {
+    "profilePhoto": "Photo de profil",
+    "chooseOption": "Choisissez une option",
+    "takePhoto": "Prendre une photo",
+    "chooseFromGallery": "Choisir depuis la galerie",
+    "removePhoto": "Supprimer la photo",
+    "uploadFailed": "Échec du téléversement",
+    "couldNotUpload": "Impossible de téléverser la photo. Veuillez réessayer.",
+    "couldNotRemove": "Impossible de supprimer la photo.",
+    "menu": {
+      "general": "GÉNÉRAL",
+      "support": "ASSISTANCE",
+      "legal": "MENTIONS LÉGALES",
+      "notifications": "Notifications",
+      "appearance": "Apparence",
+      "accountSecurity": "Compte et sécurité",
+      "helpCenter": "Centre d'aide",
+      "contactSupport": "Contacter l'assistance",
+      "rateApp": "Noter l'application",
+      "termsOfService": "Conditions d'utilisation",
+      "privacyPolicy": "Politique de confidentialité",
+      "about": "À propos",
+      "language": "Langue",
+      "timeFormat": "Format de l'heure"
+    },
+    "language": {
+      "choosePreferred": "Choisissez votre langue préférée",
+      "appliedImmediately": "Les changements de langue sont appliqués immédiatement dans toute l'application."
+    },
+    "theme": {
+      "title": "Apparence",
+      "chooseTheme": "Choisissez votre thème préféré",
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre",
+      "appliedImmediately": "Les changements de thème sont appliqués immédiatement dans toute l'application."
+    },
+    "timeFormat": {
+      "title": "Format de l'heure",
+      "subtitle": "Choisissez comment les heures sont affichées dans l'application",
+      "24h": "24 heures",
+      "12h": "12 heures",
+      "note": "S'applique uniquement à votre compte, sur chaque appareil sur lequel vous vous connectez.",
+      "updated": "Format de l'heure mis à jour",
+      "failed": "Impossible de mettre à jour le format de l'heure"
+    },
+    "signOutConfirmTitle": "Se déconnecter",
+    "signOutConfirmMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "signOutButton": "Se déconnecter",
+    "versionFooter": "HBCField v{{version}}",
+    "account": {
+      "title": "Compte et sécurité",
+      "accountInfo": "Informations du compte",
+      "nameLabel": "Nom",
+      "emailLabel": "E-mail",
+      "changePassword": "Changer le mot de passe",
+      "currentPasswordLabel": "Mot de passe actuel",
+      "currentPasswordPlaceholder": "Saisissez le mot de passe actuel",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "8 caractères min.",
+      "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
+      "confirmPasswordPlaceholder": "Saisissez à nouveau le nouveau mot de passe",
+      "submitButton": "Changer le mot de passe",
+      "currentPasswordRequired": "Veuillez saisir votre mot de passe actuel.",
+      "newPasswordTooShort": "Le nouveau mot de passe doit comporter au moins 8 caractères.",
+      "passwordsMismatch": "Les nouveaux mots de passe ne correspondent pas.",
+      "passwordChanged": "Mot de passe changé avec succès.",
+      "failedToChange": "Échec du changement de mot de passe",
+      "deleteAccount": "Supprimer le compte",
+      "deleteWarning": "Supprimez définitivement votre compte et toutes les données associées. Cette action est irréversible.",
+      "deleteButton": "Supprimer mon compte",
+      "deletePasswordLabel": "Confirmer le mot de passe",
+      "deletePasswordPlaceholder": "Saisissez votre mot de passe pour confirmer",
+      "deletePasswordRequired": "Veuillez saisir votre mot de passe pour confirmer la suppression.",
+      "deleteConfirmTitle": "Supprimer le compte ?",
+      "deleteConfirmMessage": "Cela supprimera définitivement votre compte, anonymisera vos données et vous déconnectera. Cette action est irréversible.",
+      "deleteConfirmButton": "Supprimer le compte",
+      "deleteFailed": "Échec de la suppression du compte"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "pushNotifications": "Notifications push",
+      "enabled": "Activées",
+      "disabled": "Désactivées",
+      "settings": "Paramètres",
+      "categories": "Catégories",
+      "tasks": "Tâches",
+      "tasksDescription": "Nouvelles attributions, changements de statut, commentaires",
+      "attendance": "Présences",
+      "attendanceDescription": "Rappels de pointage d'arrivée/départ",
+      "timeOff": "Congés",
+      "timeOffDescription": "Approbations et mises à jour des demandes",
+      "footerNote": "Les préférences de notification sont stockées localement. Les autorisations de notifications push sont gérées dans les paramètres de votre appareil."
+    },
+    "about": {
+      "title": "À propos",
+      "tagline": "Répartir · Suivre · Livrer",
+      "description": "HBCField est une plateforme de gestion des interventions terrain qui aide les équipes à répartir les tâches, à suivre l'avancement en temps réel et à fournir un service exceptionnel."
+    },
+    "status": {
+      "title": "Disponibilité",
+      "available": "Disponible",
+      "busy": "Occupé",
+      "away": "Absent",
+      "auto": "Auto",
+      "failed": "Impossible de mettre à jour le statut"
+    }
+  },
+  "manage": {
+    "timeOff": {
+      "label": "Congés",
+      "desc": "Approuver les demandes"
+    },
+    "members": {
+      "label": "Membres",
+      "desc": "Gérer l'équipe"
+    },
+    "joinRequests": {
+      "label": "Demandes d'adhésion",
+      "desc": "Examiner et approuver"
+    },
+    "invitations": {
+      "label": "Invitations",
+      "desc": "Créer des codes d'invitation"
+    },
+    "schedules": {
+      "label": "Plannings",
+      "desc": "Plannings de travail"
+    },
+    "membersScreen": {
+      "filterAll": "Tous",
+      "filterAdmin": "Administrateur",
+      "filterDispatcher": "Répartiteur",
+      "filterTechnician": "Employé",
+      "memberCount": "{{count}} membre",
+      "memberCountPlural": "{{count}} membres",
+      "you": "(vous)",
+      "removeTitle": "Retirer le membre",
+      "removeMessage": "Retirer {{firstName}} {{lastName}} de l'organisation ?",
+      "cannotRemoveSelf": "Vous ne pouvez pas vous retirer vous-même.",
+      "failedToLoad": "Échec du chargement des membres",
+      "failedToRemove": "Échec du retrait du membre",
+      "noMembers": "Aucun membre trouvé",
+      "roleLabels": {
+        "admin": "Administrateur",
+        "dispatcher": "Répartiteur",
+        "technician": "Employé"
+      }
+    },
+    "invitationsScreen": {
+      "createButton": "Créer une invitation",
+      "noInvitations": "Aucune invitation pour l'instant",
+      "revokeTitle": "Révoquer l'invitation",
+      "revokeMessage": "Cette invitation ne sera plus utilisable.",
+      "failedToLoad": "Échec du chargement des invitations",
+      "failedToRevoke": "Échec de la révocation",
+      "failedToCreate": "Échec de la création de l'invitation",
+      "created": "Créée le {{date}}",
+      "expires": "Expire le {{date}}",
+      "acceptedBy": "Acceptée par {{firstName}} {{lastName}}",
+      "createModal": {
+        "title": "Nouvelle invitation",
+        "successTitle": "Invitation créée",
+        "employee": "Employé",
+        "jobTitleLabel": "Intitulé du poste (facultatif)",
+        "jobTitlePlaceholder": "ex. Électricien",
+        "spaceLabel": "Espace (facultatif)",
+        "noSpace": "Aucun espace",
+        "generateButton": "Générer le code",
+        "tapToCopy": "Appuyez pour copier · Expire dans 3 jours",
+        "shareMessage": "Rejoignez avec le code d'invitation : {{code}}"
+      }
+    },
+    "joinRequestsScreen": {
+      "approveTitle": "Approuver la demande",
+      "approveMessage": "Approuver {{firstName}} {{lastName}} en tant qu'employé ?",
+      "rejectTitle": "Refuser la demande",
+      "rejectMessage": "Refuser {{firstName}} {{lastName}} ?",
+      "requested": "Demandée le {{date}}",
+      "failedToLoad": "Échec du chargement des demandes d'adhésion",
+      "failedToApprove": "Échec de l'approbation",
+      "failedToReject": "Échec du refus",
+      "allCaughtUp": "Tout est à jour",
+      "noPendingRequests": "Aucune demande d'adhésion en attente"
+    },
+    "schedulesScreen": {
+      "noTechnicians": "Aucun employé trouvé",
+      "failedToLoad": "Échec du chargement des plannings"
+    },
+    "timeOffRequestsScreen": {
+      "filters": {
+        "pending": "En attente",
+        "approved": "Approuvées",
+        "rejected": "Refusées",
+        "all": "Toutes"
+      },
+      "rejectReasonPrompt": "Motif (facultatif) :",
+      "rejectConfirmTitle": "Refuser la demande",
+      "rejectConfirmMessage": "Refuser cette demande de congé ?",
+      "failedToLoad": "Échec du chargement des demandes de congé",
+      "failedToApprove": "Échec de l'approbation",
+      "failedToReject": "Échec du refus",
+      "noRequests": "Aucune demande {{filter}}",
+      "noRequestsAll": "Aucune demande"
+    },
+    "titles": {
+      "timeOffRequests": "Demandes de congé"
+    }
+  },
+  "components": {
+    "taskCard": {
+      "unassigned": "Non attribuée"
+    },
+    "datePicker": {
+      "selectDate": "Sélectionner une date",
+      "today": "Aujourd'hui",
+      "clear": "Effacer"
+    },
+    "locationPicker": {
+      "searchPlaceholder": "Rechercher une adresse...",
+      "useCurrentLocation": "Utiliser la position actuelle"
+    },
+    "technicianPicker": {
+      "title": "Sélectionner un employé",
+      "searchPlaceholder": "Rechercher par nom...",
+      "activeTasks": "{{count}} tâches actives",
+      "noFieldTechnicians": "Aucun employé de terrain disponible (les employés sur site ne peuvent pas se voir attribuer de tâches)",
+      "noTechnicians": "Aucun employé trouvé dans votre organisation",
+      "noMatch": "Aucun employé ne correspond à votre recherche",
+      "noAvailable": "Aucun employé disponible",
+      "failedToLoad": "Échec du chargement des employés"
+    },
+    "signatureCapture": {
+      "tapToOpen": "Appuyez pour ouvrir le pavé de signature",
+      "signing": "Signature...",
+      "useFingerToSign": "Utilisez votre doigt pour signer ci-dessous",
+      "clear": "Effacer",
+      "confirmSignature": "Confirmer la signature",
+      "technician": "Employé",
+      "customer": "Client"
+    },
+    "photoGrid": {
+      "beforePhotos": "Photos avant",
+      "afterPhotos": "Photos après",
+      "removeTitle": "Supprimer la photo",
+      "removeMessage": "Supprimer cette photo ?",
+      "addTitle": "Ajouter une photo",
+      "addChooseSource": "Choisir la source",
+      "camera": "Appareil photo",
+      "gallery": "Galerie",
+      "add": "Ajouter"
+    },
+    "screenStates": {
+      "retry": "Réessayer"
+    },
+    "confirmSheet": {},
+    "customFieldsCard": {
+      "title": "Champs personnalisés",
+      "savedTitle": "Enregistré",
+      "savedMessage": "Champs personnalisés mis à jour",
+      "couldNotSave": "Impossible d'enregistrer",
+      "enterField": "Saisir {{field}}"
+    },
+    "workspaceCard": {
+      "activeCount": "{{active}} actifs sur {{total}}",
+      "inField": "Sur le terrain",
+      "offSite": "Hors site",
+      "offShift": "Hors quart",
+      "offDuty": "Hors service",
+      "noneAssigned": "Personne n'est encore affecté",
+      "assign": "Affecter",
+      "tasks": "Tâches"
+    },
+    "assignMemberSheet": {
+      "title": "Affecter un membre",
+      "toLocation": "à {{location}}",
+      "searchPlaceholder": "Rechercher des membres",
+      "noMembers": "Aucun membre trouvé",
+      "allAssigned": "Tout le monde est déjà affecté ici"
+    },
+    "memberDetailSheet": {
+      "working": "Au travail",
+      "onSite": "Sur site",
+      "comingSoon": "{{feature}} bientôt disponible",
+      "messaging": "Messagerie",
+      "calls": "Appels",
+      "completed": "Terminées",
+      "hrsWeek": "Heures/semaine",
+      "onTime": "Ponctualité",
+      "activeTasks": "TÂCHES ACTIVES",
+      "viewAll": "Tout voir ›",
+      "noActiveTasks": "Aucune tâche active",
+      "tasks": "Tâches"
+    },
+    "activitySheet": {
+      "liveActivity": "ACTIVITÉ EN DIRECT",
+      "eventsCount": "{{count}} événements",
+      "noRecentActivity": "Aucune activité récente",
+      "pendingActions": "ACTIONS EN ATTENTE"
+    }
+  },
+  "validation": {
+    "emailRequired": "L'e-mail est obligatoire",
+    "emailInvalid": "Veuillez saisir un e-mail valide",
+    "passwordRequired": "Le mot de passe est obligatoire",
+    "passwordMinLength": "Le mot de passe doit comporter au moins 8 caractères",
+    "passwordUppercase": "Doit contenir une lettre majuscule",
+    "passwordLowercase": "Doit contenir une lettre minuscule",
+    "passwordNumber": "Doit contenir un chiffre",
+    "confirmPasswordRequired": "Veuillez confirmer votre mot de passe",
+    "passwordsMismatch": "Les mots de passe ne correspondent pas",
+    "firstNameRequired": "Le prénom est obligatoire",
+    "lastNameRequired": "Le nom est obligatoire",
+    "organizationNameRequired": "Le nom de l'organisation est obligatoire",
+    "organizationNameMinLength": "Le nom doit comporter au moins 2 caractères"
+  },
+  "status": {
+    "DRAFT": "Brouillon",
+    "NEW": "Nouvelle",
+    "ASSIGNED": "Attribuée",
+    "ACCEPTED": "Acceptée",
+    "EN_ROUTE": "En route",
+    "ARRIVED": "Arrivé",
+    "IN_PROGRESS": "En cours",
+    "BLOCKED": "Bloquée",
+    "COMPLETED": "Terminée",
+    "CANCELED": "Annulée",
+    "CLOSED": "Clôturée"
+  },
+  "priority": {
+    "LOW": "Faible",
+    "MEDIUM": "Moyenne",
+    "HIGH": "Élevée",
+    "URGENT": "Urgente"
+  },
+  "roles": {
+    "ADMIN": "Administrateur",
+    "DISPATCHER": "Répartiteur",
+    "TECHNICIAN": "Employé",
+    "EMPLOYEE": "Employé"
+  },
+  "invitationStatus": {
+    "PENDING": "En attente",
+    "ACCEPTED": "Acceptée",
+    "EXPIRED": "Expirée",
+    "REVOKED": "Révoquée"
+  },
+  "timeOffStatus": {
+    "PENDING": "En attente",
+    "APPROVED": "Approuvée",
+    "REJECTED": "Refusée",
+    "CANCELED": "Annulée"
+  },
+  "dayNames": {
+    "short": [
+      "Lun",
+      "Mar",
+      "Mer",
+      "Jeu",
+      "Ven",
+      "Sam",
+      "Dim"
+    ],
+    "headers": [
+      "Lu",
+      "Ma",
+      "Me",
+      "Je",
+      "Ve",
+      "Sa",
+      "Di"
+    ]
+  },
+  "monthNames": [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre"
+  ],
+  "team": {
+    "title": "Équipe",
+    "subtitle": "Coéquipiers dans vos espaces.",
+    "empty": "Aucun coéquipier dans vos espaces pour l'instant.",
+    "managers": "Responsables",
+    "members": "Équipe",
+    "messagingSoon": "Messagerie bientôt disponible",
+    "callsSoon": "Appels bientôt disponibles"
+  },
+  "navTitles": {
+    "taskDetails": "Détails de la tâche",
+    "notifications": "Notifications",
+    "account": "Compte",
+    "about": "À propos"
+  },
+  "errors": {
+    "somethingWentWrong": "Une erreur s'est produite",
+    "unexpectedError": "Une erreur inattendue s'est produite",
+    "tryAgain": "Réessayer"
+  },
+  "support": {
+    "title": "Assistance",
+    "agentOnline": "Chat en direct — agent en ligne",
+    "leaveMessage": "Laisser un message",
+    "typicalReply": "Réponse habituelle sous",
+    "empty": "Aucun ticket pour l'instant.",
+    "newTicket": "Nouvelle demande",
+    "subjectPlaceholder": "Objet",
+    "bodyPlaceholder": "Comment pouvons-nous vous aider ?",
+    "send": "Envoyer",
+    "replyPlaceholder": "Rédigez une réponse…",
+    "status": {
+      "OPEN": "Ouvert",
+      "PENDING_AGENT": "En attente de l'assistance",
+      "PENDING_CUSTOMER": "En attente de votre réponse",
+      "RESOLVED": "Résolu",
+      "CLOSED": "Fermé"
+    },
+    "loadError": "Impossible de charger l'assistance. Vérifiez votre connexion.",
+    "sendError": "Envoi impossible. Veuillez réessayer."
+  },
+  "chat": {
+    "title": "Messages",
+    "newMessage": "Nouveau message",
+    "empty": "Aucune conversation pour l'instant.",
+    "noMessages": "Aucun message pour l'instant",
+    "messagePlaceholder": "Rédigez un message…",
+    "noContacts": "Personne à qui écrire.",
+    "loadError": "Impossible de charger les messages.",
+    "sendError": "Envoi impossible. Veuillez réessayer.",
+    "cannotContact": "Vous ne pouvez pas écrire à ce membre.",
+    "typing": "est en train d'écrire…",
+    "threadEmpty": "Aucun message pour l'instant. Dites bonjour 👋",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "presence": {
+      "active": "Actif maintenant",
+      "busy": "Occupé",
+      "away": "Absent",
+      "offline": "Hors ligne"
+    }
+  },
+  "locationConsent": {
+    "title": "Localisation en arrière-plan",
+    "introPre": "Pour fonctionner, ",
+    "introBold": "HBCField collecte votre position en arrière-plan — même lorsque l'application est fermée ou inactive",
+    "introPost": " — dans deux cas :",
+    "drivePre": "Pendant que vous ",
+    "driveBold": "vous rendez sur une intervention",
+    "drivePost": ", pour enregistrer votre itinéraire jusqu'au site.",
+    "clockPre": "Pendant que vous êtes ",
+    "clockBold": "pointé à l'arrivée",
+    "clockPost": ", pour confirmer que vous êtes sur votre site de travail.",
+    "privacyPre": "Le suivi s'arrête automatiquement à votre arrivée ou lorsque vous pointez votre départ. Votre position n'est visible que par votre organisation et n'est jamais vendue. Consultez notre ",
+    "privacyLink": "Politique de confidentialité",
+    "privacyPost": " pour plus de détails.",
+    "allow": "Autoriser la localisation en arrière-plan",
+    "deny": "Pas maintenant"
+  }
+}
