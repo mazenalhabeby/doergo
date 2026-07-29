@@ -58,6 +58,12 @@
       "morning": "Guten Morgen,",
       "afternoon": "Guten Tag,",
       "evening": "Guten Abend,"
+    },
+    "timeAgo": {
+      "justNow": "gerade eben",
+      "minutes": "vor {{count}} Min.",
+      "hours": "vor {{count}} Std.",
+      "days": "vor {{count}} T."
     }
   },
   "auth": {
@@ -225,7 +231,44 @@
       "noTasksYet": "Noch keine Aufgaben vorhanden. Erstellen Sie eine, um zu beginnen!",
       "setUpWorkspace": "Richten Sie Ihren Arbeitsbereich ein",
       "setUpWorkspaceSub": "Erstellen Sie Bereiche und weisen Sie Ihr Team zu, um alle in Echtzeit zu verfolgen.",
-      "activity": "Aktivität"
+      "activity": {
+        "actions": {
+          "IN_PROGRESS": "bearbeitet",
+          "EN_ROUTE": "ist unterwegs zu",
+          "ARRIVED": "ist angekommen bei",
+          "COMPLETED": "hat abgeschlossen:",
+          "BLOCKED": "hat blockiert:",
+          "ASSIGNED": "wurde zugewiesen:",
+          "ACCEPTED": "hat angenommen:",
+          "NEW": "hat erstellt:",
+          "CANCELED": "hat storniert:",
+          "updated": "hat aktualisiert:"
+        },
+        "someone": "Jemand",
+        "aLocation": "einem Standort",
+        "clockedInAt": "hat eingestempelt bei",
+        "clockedOutFrom": "hat ausgestempelt bei"
+      },
+      "presence": {
+        "onBreak": "In Pause",
+        "busy": "Beschäftigt",
+        "away": "Abwesend",
+        "inField": "Im Einsatz",
+        "remote": "Remote",
+        "onShift": "Im Dienst",
+        "available": "Verfügbar",
+        "onTask": "In Bearbeitung",
+        "onTheClock": "Eingestempelt",
+        "offShift": "Nicht im Dienst",
+        "offDuty": "Außer Dienst",
+        "working": "In Arbeit"
+      },
+      "activityLabel": "Aktivität",
+      "pending": {
+        "unassigned": "Nicht zugewiesen",
+        "blocked": "Blockiert",
+        "unassignedNewTask": "Nicht zugewiesen — Neue Aufgabe"
+      }
     },
     "fullTime": {
       "clockedIn": "Eingestempelt",

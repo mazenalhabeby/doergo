@@ -58,6 +58,12 @@
       "morning": "Bonjour,",
       "afternoon": "Bon après-midi,",
       "evening": "Bonsoir,"
+    },
+    "timeAgo": {
+      "justNow": "à l'instant",
+      "minutes": "il y a {{count}} min",
+      "hours": "il y a {{count}} h",
+      "days": "il y a {{count}} j"
     }
   },
   "auth": {
@@ -225,7 +231,44 @@
       "noTasksYet": "Aucune tâche pour l'instant. Créez-en une pour commencer !",
       "setUpWorkspace": "Configurez votre espace de travail",
       "setUpWorkspaceSub": "Créez des espaces et affectez votre équipe pour suivre chacun en temps réel.",
-      "activity": "Activité"
+      "activity": {
+        "actions": {
+          "IN_PROGRESS": "a commencé à travailler sur",
+          "EN_ROUTE": "est en route vers",
+          "ARRIVED": "est arrivé à",
+          "COMPLETED": "a terminé",
+          "BLOCKED": "a bloqué",
+          "ASSIGNED": "a été affecté à",
+          "ACCEPTED": "a accepté",
+          "NEW": "a créé",
+          "CANCELED": "a annulé",
+          "updated": "a mis à jour"
+        },
+        "someone": "Quelqu'un",
+        "aLocation": "un site",
+        "clockedInAt": "a pointé l'arrivée à",
+        "clockedOutFrom": "a pointé le départ de"
+      },
+      "presence": {
+        "onBreak": "En pause",
+        "busy": "Occupé",
+        "away": "Absent",
+        "inField": "Sur le terrain",
+        "remote": "À distance",
+        "onShift": "En service",
+        "available": "Disponible",
+        "onTask": "En mission",
+        "onTheClock": "Pointé",
+        "offShift": "Hors service",
+        "offDuty": "Hors service",
+        "working": "Au travail"
+      },
+      "activityLabel": "Activité",
+      "pending": {
+        "unassigned": "Non affecté",
+        "blocked": "Bloqué",
+        "unassignedNewTask": "Non affecté — Nouvelle tâche"
+      }
     },
     "fullTime": {
       "clockedIn": "Pointage d'arrivée effectué",

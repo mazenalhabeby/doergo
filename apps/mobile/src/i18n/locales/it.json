@@ -58,6 +58,12 @@
       "morning": "Buongiorno,",
       "afternoon": "Buon pomeriggio,",
       "evening": "Buonasera,"
+    },
+    "timeAgo": {
+      "justNow": "proprio ora",
+      "minutes": "{{count}} min fa",
+      "hours": "{{count}} h fa",
+      "days": "{{count}} g fa"
     }
   },
   "auth": {
@@ -225,7 +231,44 @@
       "noTasksYet": "Nessuna attività ancora. Creane una per iniziare!",
       "setUpWorkspace": "Configura il tuo spazio di lavoro",
       "setUpWorkspaceSub": "Crea spazi e assegna il tuo team per monitorare tutti in tempo reale.",
-      "activity": "Attività"
+      "activity": {
+        "actions": {
+          "IN_PROGRESS": "ha iniziato a lavorare su",
+          "EN_ROUTE": "è in viaggio verso",
+          "ARRIVED": "è arrivato a",
+          "COMPLETED": "ha completato",
+          "BLOCKED": "ha bloccato",
+          "ASSIGNED": "è stato assegnato a",
+          "ACCEPTED": "ha accettato",
+          "NEW": "ha creato",
+          "CANCELED": "ha annullato",
+          "updated": "ha aggiornato"
+        },
+        "someone": "Qualcuno",
+        "aLocation": "una sede",
+        "clockedInAt": "ha timbrato l'entrata a",
+        "clockedOutFrom": "ha timbrato l'uscita da"
+      },
+      "presence": {
+        "onBreak": "In pausa",
+        "busy": "Occupato",
+        "away": "Assente",
+        "inField": "Sul campo",
+        "remote": "Da remoto",
+        "onShift": "In turno",
+        "available": "Disponibile",
+        "onTask": "In attività",
+        "onTheClock": "Timbrato",
+        "offShift": "Fuori turno",
+        "offDuty": "Fuori servizio",
+        "working": "Al lavoro"
+      },
+      "activityLabel": "Attività",
+      "pending": {
+        "unassigned": "Non assegnato",
+        "blocked": "Bloccato",
+        "unassignedNewTask": "Non assegnato — Nuova attività"
+      }
     },
     "fullTime": {
       "clockedIn": "Entrata timbrata",

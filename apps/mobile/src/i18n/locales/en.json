@@ -58,6 +58,12 @@
       "morning": "Good morning,",
       "afternoon": "Good afternoon,",
       "evening": "Good evening,"
+    },
+    "timeAgo": {
+      "justNow": "just now",
+      "minutes": "{{count}}m ago",
+      "hours": "{{count}}h ago",
+      "days": "{{count}}d ago"
     }
   },
   "auth": {
@@ -225,7 +231,44 @@
       "noTasksYet": "No tasks yet. Create one to get started!",
       "setUpWorkspace": "Set up your workspace",
       "setUpWorkspaceSub": "Create spaces and assign your team to track everyone in real time.",
-      "activity": "Activity"
+      "activity": {
+        "actions": {
+          "IN_PROGRESS": "started working on",
+          "EN_ROUTE": "en route to",
+          "ARRIVED": "arrived at",
+          "COMPLETED": "completed",
+          "BLOCKED": "blocked on",
+          "ASSIGNED": "was assigned to",
+          "ACCEPTED": "accepted",
+          "NEW": "created",
+          "CANCELED": "canceled",
+          "updated": "updated"
+        },
+        "someone": "Someone",
+        "aLocation": "a location",
+        "clockedInAt": "clocked in at",
+        "clockedOutFrom": "clocked out from"
+      },
+      "presence": {
+        "onBreak": "On Break",
+        "busy": "Busy",
+        "away": "Away",
+        "inField": "In Field",
+        "remote": "Remote",
+        "onShift": "On Shift",
+        "available": "Available",
+        "onTask": "On Task",
+        "onTheClock": "On the Clock",
+        "offShift": "Off-shift",
+        "offDuty": "Off Duty",
+        "working": "Working"
+      },
+      "activityLabel": "Activity",
+      "pending": {
+        "unassigned": "Unassigned",
+        "blocked": "Blocked",
+        "unassignedNewTask": "Unassigned — New Task"
+      }
     },
     "fullTime": {
       "clockedIn": "Clocked In",

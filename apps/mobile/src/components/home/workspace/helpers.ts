@@ -3,6 +3,7 @@
  * (apps/web-app/src/app/(dashboard)/dashboard/_components/client-dashboard.tsx).
  * Pure functions: avatar colors, status derivation, time formatting.
  */
+import i18n from '../../../i18n';
 import type { Task } from '../../../lib/api';
 import type { TimeEntry } from '../../../lib/api/types';
 
@@ -59,18 +60,18 @@ export function getEmployeeStatus(opts: {
 }): { status: WorkerStatus; tag?: PersonTag } {
   // Genuinely offline: not app-active AND not on the clock.
   if (!opts.isOnline && !opts.isClockedIn) return { status: 'off' };
-  if (opts.isClockedIn && opts.isOnBreak) return { status: 'on', tag: { text: 'On Break', variant: 'hrs' } };
+  if (opts.isClockedIn && opts.isOnBreak) return { status: 'on', tag: { text: i18n.t('home.admin.presence.onBreak'), variant: 'hrs' } };
   // Availability the user deliberately set overrides the default clock label.
-  if (opts.presence === 'BUSY') return { status: 'busy', tag: { text: 'Busy', variant: 'task' } };
-  if (opts.presence === 'AWAY') return { status: 'away', tag: { text: 'Away', variant: 'hrs' } };
+  if (opts.presence === 'BUSY') return { status: 'busy', tag: { text: i18n.t('home.admin.presence.busy'), variant: 'task' } };
+  if (opts.presence === 'AWAY') return { status: 'away', tag: { text: i18n.t('home.admin.presence.away'), variant: 'hrs' } };
   // On the clock → label by how/where they're working.
   if (opts.isClockedIn) {
-    if (opts.isOnRoad) return { status: 'on', tag: { text: 'In Field', variant: 'task' } };
-    if (opts.isRemote) return { status: 'on', tag: { text: 'Remote', variant: 'task' } };
-    return { status: 'on', tag: { text: 'On Shift', variant: 'hrs' } };
+    if (opts.isOnRoad) return { status: 'on', tag: { text: i18n.t('home.admin.presence.inField'), variant: 'task' } };
+    if (opts.isRemote) return { status: 'on', tag: { text: i18n.t('home.admin.presence.remote'), variant: 'task' } };
+    return { status: 'on', tag: { text: i18n.t('home.admin.presence.onShift'), variant: 'hrs' } };
   }
   // Logged in / online but not clocked in.
-  return { status: 'on', tag: { text: 'Available', variant: 'hrs' } };
+  return { status: 'on', tag: { text: i18n.t('home.admin.presence.available'), variant: 'hrs' } };
 }
 
 /** App-active within the last 3 minutes → treated as online (matches web). */
@@ -92,11 +93,11 @@ export function getTodayString(): string {
 export function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return i18n.t('common.timeAgo.justNow');
+  if (mins < 60) return i18n.t('common.timeAgo.minutes', { count: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24) return i18n.t('common.timeAgo.hours', { count: hrs });
+  return i18n.t('common.timeAgo.days', { count: Math.floor(hrs / 24) });
 }
 
 /** Short display name: "Mike W." */
@@ -117,17 +118,20 @@ export const STATUS_DOT: Record<string, DotColor> = {
   CANCELED: 'red',
 };
 
-/** Map task status → activity verb. */
+/**
+ * Map task status → i18n KEY for the activity verb. Values are resolved via
+ * i18n.t() at the CALL SITE (not module load) so language switches take effect.
+ */
 export const STATUS_ACTION: Record<string, string> = {
-  IN_PROGRESS: 'started working on',
-  EN_ROUTE: 'en route to',
-  ARRIVED: 'arrived at',
-  COMPLETED: 'completed',
-  BLOCKED: 'blocked on',
-  ASSIGNED: 'was assigned to',
-  ACCEPTED: 'accepted',
-  NEW: 'created',
-  CANCELED: 'canceled',
+  IN_PROGRESS: 'home.admin.activity.actions.IN_PROGRESS',
+  EN_ROUTE: 'home.admin.activity.actions.EN_ROUTE',
+  ARRIVED: 'home.admin.activity.actions.ARRIVED',
+  COMPLETED: 'home.admin.activity.actions.COMPLETED',
+  BLOCKED: 'home.admin.activity.actions.BLOCKED',
+  ASSIGNED: 'home.admin.activity.actions.ASSIGNED',
+  ACCEPTED: 'home.admin.activity.actions.ACCEPTED',
+  NEW: 'home.admin.activity.actions.NEW',
+  CANCELED: 'home.admin.activity.actions.CANCELED',
 };
 
 /** Priority ranking used to pick a worker's single "active" task. */

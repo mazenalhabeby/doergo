@@ -58,6 +58,12 @@
       "morning": "Buenos días,",
       "afternoon": "Buenas tardes,",
       "evening": "Buenas noches,"
+    },
+    "timeAgo": {
+      "justNow": "ahora mismo",
+      "minutes": "hace {{count}} min",
+      "hours": "hace {{count}} h",
+      "days": "hace {{count}} d"
     }
   },
   "auth": {
@@ -225,7 +231,44 @@
       "noTasksYet": "Aún no hay tareas. ¡Crea una para empezar!",
       "setUpWorkspace": "Configura tu espacio de trabajo",
       "setUpWorkspaceSub": "Crea espacios y asigna a tu equipo para dar seguimiento a todos en tiempo real.",
-      "activity": "Actividad"
+      "activity": {
+        "actions": {
+          "IN_PROGRESS": "empezó a trabajar en",
+          "EN_ROUTE": "va de camino a",
+          "ARRIVED": "llegó a",
+          "COMPLETED": "completó",
+          "BLOCKED": "bloqueó",
+          "ASSIGNED": "fue asignado a",
+          "ACCEPTED": "aceptó",
+          "NEW": "creó",
+          "CANCELED": "canceló",
+          "updated": "actualizó"
+        },
+        "someone": "Alguien",
+        "aLocation": "una ubicación",
+        "clockedInAt": "fichó la entrada en",
+        "clockedOutFrom": "fichó la salida de"
+      },
+      "presence": {
+        "onBreak": "En descanso",
+        "busy": "Ocupado",
+        "away": "Ausente",
+        "inField": "En campo",
+        "remote": "Remoto",
+        "onShift": "En turno",
+        "available": "Disponible",
+        "onTask": "En tarea",
+        "onTheClock": "Fichado",
+        "offShift": "Fuera de turno",
+        "offDuty": "Fuera de servicio",
+        "working": "Trabajando"
+      },
+      "activityLabel": "Actividad",
+      "pending": {
+        "unassigned": "Sin asignar",
+        "blocked": "Bloqueado",
+        "unassignedNewTask": "Sin asignar — Nueva tarea"
+      }
     },
     "fullTime": {
       "clockedIn": "Entrada registrada",

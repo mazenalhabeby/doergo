@@ -79,7 +79,7 @@ function splitColumns(boxes: WorkspaceBoxData[]): [WorkspaceBoxData[], Workspace
 export function AdminDashboard() {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // The viewer is online by definition (they're on this screen right now) — never
   // let their own lastActiveAt lag drop them into "Off Duty".
@@ -312,12 +312,12 @@ export function AdminDashboard() {
           name: shortName(task.assignedTo.firstName, task.assignedTo.lastName),
           status: 'busy',
           imageUrl: task.assignedTo.avatarUrl || undefined,
-          tag: { text: 'Working', variant: 'task' },
+          tag: { text: i18n.t('home.admin.presence.working'), variant: 'task' },
         });
       }
     }
     if (onTask.length > 0) {
-      result.push({ locationId: 'on-task', title: 'On Task', type: 'dynamic', people: onTask });
+      result.push({ locationId: 'on-task', title: i18n.t('home.admin.presence.onTask'), type: 'dynamic', people: onTask });
     }
 
     // Catch-all for anyone NOT already placed:
@@ -355,19 +355,20 @@ export function AdminDashboard() {
       }
     }
     if (onClock.length > 0) {
-      result.push({ locationId: 'on-clock', title: 'On the Clock', type: 'dynamic', people: onClock });
+      result.push({ locationId: 'on-clock', title: i18n.t('home.admin.presence.onTheClock'), type: 'dynamic', people: onClock });
     }
     if (offShiftDyn.length > 0) {
-      result.push({ locationId: 'off-shift', title: 'Off-shift', type: 'dynamic', people: offShiftDyn });
+      result.push({ locationId: 'off-shift', title: i18n.t('home.admin.presence.offShift'), type: 'dynamic', people: offShiftDyn });
     }
     if (offDutyDyn.length > 0) {
-      result.push({ locationId: 'off-duty', title: 'Off Duty', type: 'dynamic', people: offDutyDyn });
+      result.push({ locationId: 'off-duty', title: i18n.t('home.admin.presence.offDuty'), type: 'dynamic', people: offDutyDyn });
     }
 
     return result;
   }, [
     locations, assignments, tasks, memberMap,
     clockedInUserIds, onBreakUserIds, attendanceLocationMap, attendanceRemoteMap, activeTaskMap, memberOnline,
+    i18n.language,
   ]);
 
   // ── Live events ──────────────────────────────────────────────────────────
@@ -381,8 +382,8 @@ export function AdminDashboard() {
       events.push({
         id: `task-${task.id}`,
         dot: STATUS_DOT[task.status] || 'blue',
-        name: a ? shortName(a.firstName, a.lastName) : 'Someone',
-        action: STATUS_ACTION[task.status] || 'updated',
+        name: a ? shortName(a.firstName, a.lastName) : i18n.t('home.admin.activity.someone'),
+        action: i18n.t(STATUS_ACTION[task.status] || 'home.admin.activity.actions.updated'),
         subject: task.title,
         time: timeAgo(task.updatedAt),
       });
@@ -392,16 +393,16 @@ export function AdminDashboard() {
       .slice(0, 5);
     for (const e of recentClockIns) {
       const m = memberMap.get(e.userId);
-      const name = m ? shortName(m.firstName, m.lastName) : 'Someone';
-      const locName = (e as any).location?.name || 'a location';
+      const name = m ? shortName(m.firstName, m.lastName) : i18n.t('home.admin.activity.someone');
+      const locName = (e as any).location?.name || i18n.t('home.admin.activity.aLocation');
       if (isClockedIn(e)) {
-        events.push({ id: `in-${e.id}`, dot: 'green', name, action: 'clocked in at', subject: locName, time: timeAgo(e.clockInAt) });
+        events.push({ id: `in-${e.id}`, dot: 'green', name, action: i18n.t('home.admin.activity.clockedInAt'), subject: locName, time: timeAgo(e.clockInAt) });
       } else if (e.clockOutAt) {
-        events.push({ id: `out-${e.id}`, dot: 'blue', name, action: 'clocked out from', subject: locName, time: timeAgo(e.clockOutAt) });
+        events.push({ id: `out-${e.id}`, dot: 'blue', name, action: i18n.t('home.admin.activity.clockedOutFrom'), subject: locName, time: timeAgo(e.clockOutAt) });
       }
     }
     return events.slice(0, 12);
-  }, [tasks, entries, memberMap]);
+  }, [tasks, entries, memberMap, i18n.language]);
 
   // ── Pending actions ──────────────────────────────────────────────────────
   const pending: PendingActionItem[] = useMemo(() => {
@@ -413,7 +414,7 @@ export function AdminDashboard() {
         userId: a?.id,
         initials: a ? getInitials(a.firstName, a.lastName) : '?',
         imageUrl: a?.avatarUrl || undefined,
-        title: `${a ? shortName(a.firstName, a.lastName) : 'Unassigned'} – Blocked`,
+        title: `${a ? shortName(a.firstName, a.lastName) : i18n.t('home.admin.pending.unassigned')} – ${i18n.t('home.admin.pending.blocked')}`,
         description: task.title,
         taskId: task.id,
       });
@@ -422,13 +423,13 @@ export function AdminDashboard() {
       actions.push({
         id: `new-${task.id}`,
         initials: '?',
-        title: 'Unassigned – New Task',
+        title: i18n.t('home.admin.pending.unassignedNewTask'),
         description: task.title,
         taskId: task.id,
       });
     }
     return actions.slice(0, 5);
-  }, [tasks]);
+  }, [tasks, i18n.language]);
 
   const columns = useMemo(() => splitColumns(boxes), [boxes]);
 
@@ -572,7 +573,7 @@ export function AdminDashboard() {
           style={styles.fab}
         >
           <Ionicons name="flash" size={16} color="#fff" />
-          <Text style={styles.fabText}>{t('home.admin.activity')}</Text>
+          <Text style={styles.fabText}>{t('home.admin.activityLabel')}</Text>
           {pending.length > 0 && (
             <View style={styles.fabBadge}>
               <Text style={styles.fabBadgeText}>{pending.length}</Text>
