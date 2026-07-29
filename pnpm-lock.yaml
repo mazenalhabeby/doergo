@@ -714,6 +714,9 @@ importers:
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
+      libphonenumber-js:
+        specifier: ^1.13.9
+        version: 1.13.9
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@19.1.0)
@@ -6713,6 +6716,9 @@ packages:
 
   libphonenumber-js@1.12.39:
     resolution: {integrity: sha512-MW79m7HuOqBk8mwytiXYTMELJiBbV3Zl9Y39dCCn1yC8K+WGNSq1QGvzywbylp5vGShEztMScCWHX/XFOS0rXg==}
+
+  libphonenumber-js@1.13.9:
+    resolution: {integrity: sha512-VNS5vWMM7r0P66BYv+TQJATxExEgLxN+34hfHDVhDkUsGAE4cRg0shCNSLTXNKm7nIUscC7AfB51TjxEeF7msQ==}
 
   lie@3.3.0:
     resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
@@ -16836,6 +16842,8 @@ snapshots:
       type-check: 0.4.0
 
   libphonenumber-js@1.12.39: {}
+
+  libphonenumber-js@1.13.9: {}
 
   lie@3.3.0:
     dependencies:

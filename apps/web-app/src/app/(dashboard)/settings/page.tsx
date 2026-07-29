@@ -508,6 +508,7 @@ function GeneralSection() {
                 value={form.country}
                 onChange={v => set("country", v)}
                 options={countryOptions}
+                maxResults={countryOptions.length}
                 placeholder={t("settings.general.selectCountry", "Select country")}
               />
             </FormField>
