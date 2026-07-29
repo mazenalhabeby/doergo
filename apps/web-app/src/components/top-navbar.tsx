@@ -24,7 +24,11 @@ import {
   Sun,
   Moon,
   Menu,
+  ShoppingBag,
 } from "lucide-react"
+
+// External HBCField shop (separate storefront app).
+const SHOP_URL = "https://shop.hbcfield.com"
 import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 
@@ -315,12 +319,35 @@ export function TopNavbar() {
           </Link>
         )}
 
+        {/* Shop — external storefront (opens in a new tab) */}
+        <a
+          href={SHOP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(navItemBase, navItemInactive, "gap-1.5")}
+        >
+          <ShoppingBag className="size-4" />
+          {t("nav.shop", "Shop")}
+        </a>
+
         {/* More overflow */}
         {hasOverflow && <MoreDropdown items={overflowItems} pathname={pathname} />}
       </nav>
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-1">
+        {/* Shop — visible directly on mobile-web (the desktop nav row is hidden
+            on small screens); kept OUT of the hamburger menu on purpose. */}
+        <a
+          href={SHOP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t("nav.shop", "Shop")}
+          title={t("nav.shop", "Shop")}
+          className="lg:hidden flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+        >
+          <ShoppingBag className="size-5" />
+        </a>
         <CommandPaletteButton />
         <ClockWidget />
         <LanguageSwitcher />
