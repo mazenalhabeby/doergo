@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
-import { ArrowRight, ArrowDown, ArrowUpRight, ArrowUp, Check, Zap, Sun, Moon } from 'lucide-react';
+import { ArrowRight, ArrowDown, ArrowUpRight, ArrowUp, Check, Zap, Sun, Moon, ShoppingBag } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useAuth } from '@/contexts/auth-context';
@@ -219,8 +219,11 @@ export default function Home() {
                 <a href="#pricing" onClick={navTo('#pricing')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.pricing')}</a>
                 <a href="#features" onClick={navTo('#features')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors lg:block ${navTone}`}>{t('home.nav.compare', 'Compare')}</a>
                 {/* Shop — external storefront. Stays visible on mobile (no `hidden`)
-                    unlike the on-page anchors, so it shows without a hamburger. */}
-                <a href="https://shop.hbcfield.com" target="_blank" rel="noopener noreferrer" className={`${MONO} text-[11px] uppercase tracking-[0.2em] transition-colors ${navTone}`}>{t('home.nav.shop', 'Shop')}</a>
+                    unlike the on-page anchors; word on larger screens, icon on small. */}
+                <a href="https://shop.hbcfield.com" target="_blank" rel="noopener noreferrer" aria-label={t('home.nav.shop', 'Shop')} title={t('home.nav.shop', 'Shop')} className={`${MONO} flex items-center text-[11px] uppercase tracking-[0.2em] transition-colors ${navTone}`}>
+                  <ShoppingBag className="h-4 w-4 md:hidden" />
+                  <span className="hidden md:inline">{t('home.nav.shop', 'Shop')}</span>
+                </a>
                 <button
                   type="button"
                   onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
