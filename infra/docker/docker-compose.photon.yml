@@ -16,5 +16,12 @@ services:
       - photon_data:/photon/data
     ports:
       - "127.0.0.1:2322:2322"    # localhost only; gateway uses the docker network
+    networks:
+      hbcfield-network:
+        aliases:
+          - photon               # gateway reaches it at http://photon:2322 (PHOTON_URL default)
 volumes:
   photon_data:
+networks:
+  hbcfield-network:
+    external: true               # the network created by the main compose project
