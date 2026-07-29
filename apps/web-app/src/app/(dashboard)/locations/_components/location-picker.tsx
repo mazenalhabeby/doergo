@@ -237,15 +237,27 @@ export default function LocationPicker({
   const handleMapClick = useCallback(
     async (clickLat: number, clickLng: number) => {
       onLocationChange(clickLat, clickLng)
-      // Reverse geocode with Nominatim — zoom=18 for building-level detail, then
-      // compose a clean address from the structured fields (not display_name).
+      // Reverse geocode: prefer the server-side /geo/reverse proxy (no public
+      // rate limits); fall back to Nominatim (zoom=18 for building-level detail).
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
-          { headers: { "Accept-Language": "en,de" } }
-        )
-        const data = await res.json()
-        const formatted = formatNominatimAddress(data.address, data.display_name)
+        let formatted = ""
+        try {
+          const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+          const gr = await fetch(`${geoBase}/geo/reverse?lat=${clickLat}&lon=${clickLng}`, {
+            signal: AbortSignal.timeout(5000),
+          })
+          if (gr.ok) formatted = (await gr.json())?.result?.label || ""
+        } catch {
+          /* fall through to Nominatim */
+        }
+        if (!formatted) {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
+            { headers: { "Accept-Language": "en,de" } }
+          )
+          const data = await res.json()
+          formatted = formatNominatimAddress(data.address, data.display_name)
+        }
         // Only auto-fill when the field is empty — never clobber an address the
         // user typed/pasted (e.g. a precise house number OSM search can't find).
         if (formatted && !address.trim()) {

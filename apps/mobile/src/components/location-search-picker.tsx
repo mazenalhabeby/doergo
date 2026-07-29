@@ -140,14 +140,25 @@ export function LocationSearchPicker({
     async (rlat: number, rlng: number) => {
       onLocationChange('', rlat, rlng);
       try {
-        const res = await fetch(
-          `${NOMINATIM_BASE}/reverse?format=json&lat=${rlat}&lon=${rlng}&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en', 'User-Agent': 'HBCField/1.0 (hbcfield.com)' } }
-        );
-        const data = await res.json();
-        if (data.display_name) {
-          onLocationChange(data.display_name, rlat, rlng);
-          setQuery(data.display_name);
+        // Prefer the server-side /geo/reverse proxy (no public rate limits);
+        // fall back to public Nominatim.
+        let label = '';
+        try {
+          const gr = await fetch(`${API_URL}/geo/reverse?lat=${rlat}&lon=${rlng}`);
+          if (gr.ok) label = (await gr.json())?.result?.label || '';
+        } catch {
+          /* fall through to Nominatim */
+        }
+        if (!label) {
+          const res = await fetch(
+            `${NOMINATIM_BASE}/reverse?format=json&lat=${rlat}&lon=${rlng}&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en', 'User-Agent': 'HBCField/1.0 (hbcfield.com)' } }
+          );
+          label = (await res.json())?.display_name || '';
+        }
+        if (label) {
+          onLocationChange(label, rlat, rlng);
+          setQuery(label);
         }
       } catch {
         // keep coords

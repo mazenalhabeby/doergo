@@ -25,6 +25,9 @@ interface NominatimResult {
   address?: NominatimAddress
   lat: string
   lon: string
+  // Google placeId — when set, coordinates are resolved on selection via
+  // /geo/place (session-token pattern). Absent for fallback rows with lat/lon.
+  gid?: string
 }
 
 interface LocationPickerProps {
@@ -62,6 +65,9 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
   const [showResults, setShowResults] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  // Google Places session token: groups the as-you-type autocomplete calls with
+  // the one Place Details call on selection (billed as a single cheap session).
+  const sessionRef = useRef<string>("")
 
   // Default center (Berlin if no location)
   const mapCenter: [number, number] = lat && lng ? [lat, lng] : [52.52, 13.405]
@@ -94,6 +100,39 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
       debounceRef.current = setTimeout(async () => {
         setIsSearching(true)
         try {
+          // Primary: Google Places (New) via the gateway /geo proxy — Maps-quality
+          // results incl. businesses. Free autocomplete with a session token.
+          try {
+            const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+            if (!sessionRef.current && typeof crypto !== "undefined" && crypto.randomUUID) {
+              sessionRef.current = crypto.randomUUID()
+            }
+            const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : ""
+            const gr = await fetch(`${geoBase}/geo/search?q=${encodeURIComponent(q)}&limit=6${sess}`, {
+              signal: AbortSignal.timeout(5000),
+            })
+            if (gr.ok) {
+              const gd = await gr.json()
+              const mapped: NominatimResult[] = (gd?.results || []).map(
+                (r: { id?: string; label: string; lat?: number; lon?: number }, i: number) => ({
+                  place_id: i,
+                  display_name: r.label,
+                  lat: r.lat != null ? String(r.lat) : "",
+                  lon: r.lon != null ? String(r.lon) : "",
+                  gid: r.id || undefined,
+                })
+              )
+              if (mapped.length > 0) {
+                setResults(mapped)
+                setShowResults(true)
+                return
+              }
+            }
+          } catch {
+            /* fall through to Nominatim */
+          }
+
+          // Fallback: public Nominatim.
           const res = await fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
             { headers: { "Accept-Language": "en" } }
@@ -118,12 +157,26 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
       // Keep any address the user already typed; just move the pin.
       onLocationChange(address, clickLat, clickLng)
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
-          { headers: { "Accept-Language": "en" } }
-        )
-        const data = await res.json()
-        const formatted = formatNominatimAddress(data.address, data.display_name)
+        // Prefer the server-side /geo/reverse proxy (no public rate limits);
+        // fall back to public Nominatim.
+        let formatted = ""
+        try {
+          const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+          const gr = await fetch(`${geoBase}/geo/reverse?lat=${clickLat}&lon=${clickLng}`, {
+            signal: AbortSignal.timeout(5000),
+          })
+          if (gr.ok) formatted = (await gr.json())?.result?.label || ""
+        } catch {
+          /* fall through to Nominatim */
+        }
+        if (!formatted) {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
+            { headers: { "Accept-Language": "en" } }
+          )
+          const data = await res.json()
+          formatted = formatNominatimAddress(data.address, data.display_name)
+        }
         // Only auto-fill when the field is empty — never clobber a typed address.
         if (formatted && !address.trim()) {
           onLocationChange(formatted, clickLat, clickLng)
@@ -137,13 +190,41 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
   )
 
   // Select from autocomplete
-  const handleSelect = (result: NominatimResult) => {
+  const handleSelect = async (result: NominatimResult) => {
+    setShowResults(false)
+
+    // Google row: resolve coordinates now (this closes the billed session).
+    if (result.gid) {
+      try {
+        const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+        const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : ""
+        const res = await fetch(`${geoBase}/geo/place?id=${encodeURIComponent(result.gid)}${sess}`, {
+          signal: AbortSignal.timeout(5000),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const r = data?.result
+          if (r && typeof r.lat === "number" && typeof r.lon === "number") {
+            onLocationChange(r.label || result.display_name, r.lat, r.lon)
+            setQuery(r.label || result.display_name)
+            sessionRef.current = "" // fresh token for the next search
+            return
+          }
+        }
+      } catch {
+        /* fall through */
+      }
+      sessionRef.current = ""
+    }
+
+    // Fallback row (Nominatim) already carries coordinates.
     const selectedLat = parseFloat(result.lat)
     const selectedLng = parseFloat(result.lon)
-    const formatted = formatNominatimAddress(result.address, result.display_name)
-    onLocationChange(formatted, selectedLat, selectedLng)
-    setQuery(formatted)
-    setShowResults(false)
+    if (!Number.isNaN(selectedLat) && !Number.isNaN(selectedLng)) {
+      const formatted = formatNominatimAddress(result.address, result.display_name)
+      onLocationChange(formatted, selectedLat, selectedLng)
+      setQuery(formatted)
+    }
   }
 
   // Clear location
