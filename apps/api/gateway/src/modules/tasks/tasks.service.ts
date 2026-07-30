@@ -108,4 +108,9 @@ export class TasksService extends BaseGatewayService {
     this.logger.debug(`Re-syncing tasks for space ${data.spaceId} to its workflow`);
     return this.send({ cmd: 'resync_space_workflow' }, data);
   }
+
+  async resyncAllSpaces(organizationId: string) {
+    this.logger.debug(`Re-syncing all spaces for org ${organizationId}`);
+    return this.send({ cmd: 'resync_all_spaces' }, { organizationId });
+  }
 }

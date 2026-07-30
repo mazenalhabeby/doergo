@@ -3130,14 +3130,19 @@
       "memberRemoved": "Membro rimosso",
       "memberRemoveFailed": "Impossibile rimuovere il membro",
       "created": "Spazio creato",
-      "createFailed": "Impossibile creare lo spazio"
+      "createFailed": "Impossibile creare lo spazio",
+      "resyncAllDone": "{{updated}} attività risincronizzate in {{spaces}} spazi"
     },
     "workflowLabel": "Flusso di lavoro",
     "selectWorkflow": "Seleziona flusso di lavoro...",
     "defaultSuffix": " (Predefinito)",
     "statusCount_one": "{{count}} stato",
     "statusCount_other": "{{count}} stati",
-    "createNewWorkflow": "Crea nuovo flusso di lavoro"
+    "createNewWorkflow": "Crea nuovo flusso di lavoro",
+    "resyncAllTasks": "Risincronizza tutti gli spazi",
+    "resyncAllTasksHint": "Allinea le attività di ogni spazio al suo flusso di lavoro",
+    "resyncAllTasksConfirmTitle": "Risincronizzare tutti gli spazi?",
+    "resyncAllTasksConfirmDescription": "Questa operazione risincronizza tutte le attività di ogni spazio con il flusso di lavoro del rispettivo spazio. Gli stati non presenti nel flusso di uno spazio vengono riportati alla sua prima fase; le attività completate e annullate vengono mantenute."
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",

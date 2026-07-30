@@ -119,6 +119,11 @@ export class TasksController {
     return this.tasksService.resyncSpaceWorkflow(data);
   }
 
+  @MessagePattern({ cmd: 'resync_all_spaces' })
+  async resyncAllSpaces(@Payload() data: { organizationId: string }) {
+    return this.tasksService.resyncAllSpaces(data);
+  }
+
   // ============ Subtask READ Operations ============
 
   @MessagePattern({ cmd: 'get_subtasks' })

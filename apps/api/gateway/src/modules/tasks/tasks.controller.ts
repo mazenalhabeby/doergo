@@ -112,6 +112,16 @@ export class TasksController {
     });
   }
 
+  // Literal route registered before the param route so it can't be shadowed.
+  @Post('resync-all')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: "Re-sync EVERY space's existing tasks onto their workflows (ADMIN only)",
+  })
+  async resyncAllSpaces(@Request() req: any) {
+    return this.tasksService.resyncAllSpaces(req.user.organizationId);
+  }
+
   @Post('resync/:spaceId')
   @Roles(Role.ADMIN)
   @ApiOperation({

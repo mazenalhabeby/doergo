@@ -3130,14 +3130,19 @@
       "memberRemoved": "Member removed",
       "memberRemoveFailed": "Failed to remove member",
       "created": "Space created",
-      "createFailed": "Failed to create space"
+      "createFailed": "Failed to create space",
+      "resyncAllDone": "Re-synced {{updated}} task(s) across {{spaces}} space(s)"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Select workflow...",
     "defaultSuffix": " (Default)",
     "statusCount_one": "{{count}} status",
     "statusCount_other": "{{count}} statuses",
-    "createNewWorkflow": "Create new workflow"
+    "createNewWorkflow": "Create new workflow",
+    "resyncAllTasks": "Re-sync all spaces",
+    "resyncAllTasksHint": "Update every space’s tasks to match its workflow",
+    "resyncAllTasksConfirmTitle": "Re-sync all spaces?",
+    "resyncAllTasksConfirmDescription": "This re-syncs every task in every space onto its space’s workflow. Statuses that don’t exist in a space’s workflow are reset to that workflow’s first stage — Completed and Canceled tasks are preserved."
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",

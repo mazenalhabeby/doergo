@@ -134,6 +134,7 @@ export default function SpacesPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [configureTarget, setConfigureTarget] = useState<CompanyLocation | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CompanyLocation | null>(null)
+  const [resyncAllOpen, setResyncAllOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ["locations", "all"],
@@ -166,6 +167,20 @@ export default function SpacesPage() {
     onError: (err: Error) => notify.error(err.message || t("locations.toast.reactivateFailed")),
   })
 
+  // Re-sync EVERY space's tasks onto their workflows in one action.
+  const resyncAllMutation = useMutation({
+    mutationFn: () => locationsApi.resyncAllTasks(),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+      setResyncAllOpen(false)
+      notify.success(
+        t("locations.toast.resyncAllDone", { updated: res?.updated ?? 0, spaces: res?.spacesProcessed ?? 0 }),
+      )
+    },
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.resyncFailed")),
+  })
+
   return (
     <div className="min-h-full bg-background">
       <div className="max-w-[1440px] mx-auto px-6 py-6">
@@ -179,10 +194,22 @@ export default function SpacesPage() {
               </p>
             </div>
             {isAdmin && (
-              <Button onClick={() => setCreateOpen(true)} data-tour="spaces-create" className="h-10 gap-2 rounded-xl shadow-sm">
-                <Plus className="h-4 w-4" />
-                {t("locations.newSpace")}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setResyncAllOpen(true)}
+                  disabled={resyncAllMutation.isPending}
+                  className="h-10 gap-2 rounded-xl"
+                  title={t("locations.resyncAllTasksHint")}
+                >
+                  {resyncAllMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  <span className="hidden sm:inline">{t("locations.resyncAllTasks")}</span>
+                </Button>
+                <Button onClick={() => setCreateOpen(true)} data-tour="spaces-create" className="h-10 gap-2 rounded-xl shadow-sm">
+                  <Plus className="h-4 w-4" />
+                  {t("locations.newSpace")}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -276,6 +303,26 @@ export default function SpacesPage() {
                 onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
               >
                 {t("locations.deactivate")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Re-sync all spaces confirmation */}
+        <AlertDialog open={resyncAllOpen} onOpenChange={setResyncAllOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("locations.resyncAllTasksConfirmTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("locations.resyncAllTasksConfirmDescription")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={resyncAllMutation.isPending}>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); resyncAllMutation.mutate() }}
+                disabled={resyncAllMutation.isPending}
+              >
+                {resyncAllMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t("locations.resyncAllTasks")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

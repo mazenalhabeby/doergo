@@ -330,6 +330,29 @@ export class TasksService {
   }
 
   /**
+   * Re-sync EVERY space in the org onto its own workflow (one-click admin action).
+   * Loops each space that has a workflow and reuses resyncSpaceWorkflow, then
+   * aggregates the totals. Sequential to avoid DB contention (infrequent action).
+   */
+  async resyncAllSpaces(data: { organizationId: string }) {
+    const spaces = await this.prisma.companyLocation.findMany({
+      where: { organizationId: data.organizationId, workflowId: { not: null } },
+      select: { id: true },
+    });
+    let updated = 0;
+    let remapped = 0;
+    let spacesProcessed = 0;
+    for (const space of spaces) {
+      const res = await this.resyncSpaceWorkflow({ spaceId: space.id, organizationId: data.organizationId });
+      const d = (res as { data?: { updated?: number; remapped?: number } })?.data;
+      updated += d?.updated ?? 0;
+      remapped += d?.remapped ?? 0;
+      spacesProcessed += 1;
+    }
+    return success({ spacesProcessed, updated, remapped });
+  }
+
+  /**
    * Find all tasks with role-based filtering
    * - CLIENT: sees tasks created by them in their organization
    * - DISPATCHER: sees all tasks in their organization (and accessible orgs)

@@ -3373,6 +3373,13 @@ export const locationsApi = {
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
+
+  // Re-sync EVERY space's tasks onto their workflows in one action (ADMIN only).
+  resyncAllTasks: async () => {
+    const response = await api.post<{ success: boolean; data: { spacesProcessed: number; updated: number; remapped: number } }>(`/tasks/resync-all`, {});
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
 };
 
 export interface Colleague {

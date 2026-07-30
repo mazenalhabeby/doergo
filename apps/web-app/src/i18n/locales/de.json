@@ -3130,14 +3130,19 @@
       "memberRemoved": "Mitglied entfernt",
       "memberRemoveFailed": "Mitglied konnte nicht entfernt werden",
       "created": "Bereich erstellt",
-      "createFailed": "Bereich konnte nicht erstellt werden"
+      "createFailed": "Bereich konnte nicht erstellt werden",
+      "resyncAllDone": "{{updated}} Aufgabe(n) in {{spaces}} Bereich(en) neu abgeglichen"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Workflow auswählen...",
     "defaultSuffix": " (Standard)",
     "statusCount_one": "{{count}} Status",
     "statusCount_other": "{{count}} Status",
-    "createNewWorkflow": "Neuen Workflow erstellen"
+    "createNewWorkflow": "Neuen Workflow erstellen",
+    "resyncAllTasks": "Alle Bereiche neu abgleichen",
+    "resyncAllTasksHint": "Aufgaben aller Bereiche an deren Workflow anpassen",
+    "resyncAllTasksConfirmTitle": "Alle Bereiche neu abgleichen?",
+    "resyncAllTasksConfirmDescription": "Dadurch werden alle Aufgaben in jedem Bereich an den Workflow des jeweiligen Bereichs angepasst. Status, die im Workflow eines Bereichs nicht existieren, werden auf dessen erste Phase zurückgesetzt – abgeschlossene und stornierte Aufgaben bleiben erhalten."
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

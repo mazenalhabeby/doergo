@@ -3130,14 +3130,19 @@
       "memberRemoved": "Membre retiré",
       "memberRemoveFailed": "Échec du retrait du membre",
       "created": "Espace créé",
-      "createFailed": "Échec de la création de l'espace"
+      "createFailed": "Échec de la création de l'espace",
+      "resyncAllDone": "{{updated}} tâche(s) resynchronisée(s) sur {{spaces}} espace(s)"
     },
     "workflowLabel": "Flux de travail",
     "selectWorkflow": "Sélectionner un flux de travail...",
     "defaultSuffix": " (Par défaut)",
     "statusCount_one": "{{count}} statut",
     "statusCount_other": "{{count}} statuts",
-    "createNewWorkflow": "Créer un nouveau flux de travail"
+    "createNewWorkflow": "Créer un nouveau flux de travail",
+    "resyncAllTasks": "Resynchroniser tous les espaces",
+    "resyncAllTasksHint": "Aligner les tâches de chaque espace sur son flux",
+    "resyncAllTasksConfirmTitle": "Resynchroniser tous les espaces ?",
+    "resyncAllTasksConfirmDescription": "Cette action resynchronise toutes les tâches de chaque espace sur le flux de travail de son espace. Les statuts qui n’existent pas dans le flux d’un espace sont réinitialisés à sa première étape ; les tâches terminées et annulées sont conservées."
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",

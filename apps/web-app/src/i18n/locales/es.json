@@ -3130,14 +3130,19 @@
       "memberRemoved": "Miembro eliminado",
       "memberRemoveFailed": "No se pudo eliminar el miembro",
       "created": "Espacio creado",
-      "createFailed": "No se pudo crear el espacio"
+      "createFailed": "No se pudo crear el espacio",
+      "resyncAllDone": "{{updated}} tarea(s) resincronizada(s) en {{spaces}} espacio(s)"
     },
     "workflowLabel": "Flujo",
     "selectWorkflow": "Selecciona un flujo...",
     "defaultSuffix": " (Predeterminado)",
     "statusCount_one": "{{count}} estado",
     "statusCount_other": "{{count}} estados",
-    "createNewWorkflow": "Crear nuevo flujo"
+    "createNewWorkflow": "Crear nuevo flujo",
+    "resyncAllTasks": "Resincronizar todos los espacios",
+    "resyncAllTasksHint": "Ajusta las tareas de cada espacio a su flujo de trabajo",
+    "resyncAllTasksConfirmTitle": "¿Resincronizar todos los espacios?",
+    "resyncAllTasksConfirmDescription": "Esto resincroniza todas las tareas de cada espacio con el flujo de trabajo de su espacio. Los estados que no existen en el flujo de un espacio se restablecen a su primera etapa; las tareas completadas y canceladas se conservan."
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",
