@@ -3184,6 +3184,7 @@ export const organizationsApi = {
     eventType?: string;
     userId?: string;
     resourceType?: string;
+    resourceId?: string;
     startDate?: string;
     endDate?: string;
     page?: number;

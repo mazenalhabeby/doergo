@@ -11,6 +11,7 @@ import {
   Inject,
   HttpException,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
@@ -395,13 +396,14 @@ export class OrganizationsController {
   // ═══════════════════════════════════════════════════════════════════════
 
   @Get('audit-logs')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get organization audit logs (ADMIN only)' })
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Get audit logs — org-wide (ADMIN) or per-entity (managers with canViewAllTasks)' })
   async getAuditLogs(
     @Query() query: {
       eventType?: string;
       userId?: string;
       resourceType?: string;
+      resourceId?: string;
       startDate?: string;
       endDate?: string;
       page?: string;
@@ -409,6 +411,22 @@ export class OrganizationsController {
     },
     @CurrentUser() user: CurrentUserData,
   ) {
+    const isAdmin = user.role === Role.ADMIN;
+
+    // Access model:
+    // - ADMIN may query anything (org-wide log + per-entity trails).
+    // - Non-admins may read ONLY per-entity trails (resourceId required) AND
+    //   only when they have the canViewAllTasks permission.
+    // The service is always org-scoped via the token's organizationId.
+    if (!isAdmin) {
+      if (!user.canViewAllTasks) {
+        throw new ForbiddenException('You do not have permission to view audit logs.');
+      }
+      if (!query.resourceId) {
+        throw new ForbiddenException('Per-entity access requires a resourceId.');
+      }
+    }
+
     // audit_log is a Business capability. This is a READ (guards pass reads by
     // design), so gate the premium data here explicitly.
     if (!isFeatureEntitled(user as any, 'audit_log')) {
@@ -429,6 +447,7 @@ export class OrganizationsController {
         eventType: query.eventType,
         userId: query.userId,
         resourceType: query.resourceType,
+        resourceId: query.resourceId,
         startDate: query.startDate,
         endDate: query.endDate,
         page: query.page ? Number(query.page) : undefined,

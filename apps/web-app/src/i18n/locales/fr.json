@@ -5044,5 +5044,43 @@
     "videoCall": "Appel vidéo",
     "open": "Ouvrir",
     "typing": "est en train d'écrire…"
+  },
+  "audit": {
+    "history": "Activité",
+    "noActivity": "Aucune activité pour le moment",
+    "createdBy": "Créé par",
+    "updatedBy": "Mis à jour par",
+    "by": "par",
+    "loadMore": "Charger plus",
+    "viewFull": "Voir le journal complet",
+    "verbs": {
+      "created": "créé",
+      "updated": "mis à jour",
+      "deleted": "supprimé",
+      "assigned": "attribué",
+      "unassigned": "désattribué",
+      "removed": "retiré",
+      "changed": "modifié",
+      "approved": "approuvé",
+      "rejected": "rejeté",
+      "revoked": "révoqué",
+      "accepted": "accepté",
+      "generated": "généré",
+      "completed": "terminé",
+      "regenerated": "régénéré",
+      "added": "ajouté",
+      "submitted": "soumis",
+      "canceled": "annulé"
+    },
+    "actions": {
+      "unknown": "Activité",
+      "generic": "{{resource}} {{verb}}",
+      "LOCATIONS_UPDATED": "Emplacement mis à jour",
+      "TASK_UPDATED": "Tâche mise à jour",
+      "MEMBER_UPDATED": "Membre mis à jour",
+      "REPORT_UPDATED": "Rapport mis à jour",
+      "REPORT_CREATED": "Rapport créé"
+    },
+    "updated": "Mis à jour"
   }
 }

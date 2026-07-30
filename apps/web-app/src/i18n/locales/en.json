@@ -5044,5 +5044,43 @@
     "videoCall": "Video call",
     "open": "Open",
     "typing": "is typing…"
+  },
+  "audit": {
+    "history": "Activity",
+    "noActivity": "No activity yet",
+    "createdBy": "Created by",
+    "updatedBy": "Updated by",
+    "by": "by",
+    "loadMore": "Load more",
+    "viewFull": "View full log",
+    "verbs": {
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "assigned": "Assigned",
+      "unassigned": "Unassigned",
+      "removed": "Removed",
+      "changed": "Changed",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "revoked": "Revoked",
+      "accepted": "Accepted",
+      "generated": "Generated",
+      "completed": "Completed",
+      "regenerated": "Regenerated",
+      "added": "Added",
+      "submitted": "Submitted",
+      "canceled": "Canceled"
+    },
+    "actions": {
+      "unknown": "Activity",
+      "generic": "{{resource}} {{verb}}",
+      "LOCATIONS_UPDATED": "Location Updated",
+      "TASK_UPDATED": "Task Updated",
+      "MEMBER_UPDATED": "Member Updated",
+      "REPORT_UPDATED": "Report Updated",
+      "REPORT_CREATED": "Report Created"
+    },
+    "updated": "Updated"
   }
 }

@@ -5044,5 +5044,43 @@
     "videoCall": "Videochiamata",
     "open": "Apri",
     "typing": "sta scrivendo…"
+  },
+  "audit": {
+    "history": "Attività",
+    "noActivity": "Nessuna attività ancora",
+    "createdBy": "Creato da",
+    "updatedBy": "Aggiornato da",
+    "by": "da",
+    "loadMore": "Carica altro",
+    "viewFull": "Visualizza registro completo",
+    "verbs": {
+      "created": "creato",
+      "updated": "aggiornato",
+      "deleted": "eliminato",
+      "assigned": "assegnato",
+      "unassigned": "non assegnato",
+      "removed": "rimosso",
+      "changed": "modificato",
+      "approved": "approvato",
+      "rejected": "rifiutato",
+      "revoked": "revocato",
+      "accepted": "accettato",
+      "generated": "generato",
+      "completed": "completato",
+      "regenerated": "rigenerato",
+      "added": "aggiunto",
+      "submitted": "inviato",
+      "canceled": "annullato"
+    },
+    "actions": {
+      "unknown": "Attività",
+      "generic": "{{resource}} {{verb}}",
+      "LOCATIONS_UPDATED": "Sede aggiornata",
+      "TASK_UPDATED": "Attività aggiornata",
+      "MEMBER_UPDATED": "Membro aggiornato",
+      "REPORT_UPDATED": "Rapporto aggiornato",
+      "REPORT_CREATED": "Rapporto creato"
+    },
+    "updated": "Aggiornato"
   }
 }

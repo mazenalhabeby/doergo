@@ -24,6 +24,7 @@ import { useTimeFormat } from "@/hooks"
 import { AccessBuilder } from "@/components/access-builder"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { EditMemberDialog } from "../_components/edit-member-dialog"
+import { AuditTrail } from "@/components/audit-trail"
 import {
   organizationsApi,
   employeesApi,
@@ -516,7 +517,11 @@ export default function MemberProfilePage({
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
-                {overview}
+                <div className="space-y-6">
+                  {overview}
+                  {/* Full accountability audit trail — managers only (self-gated) */}
+                  <AuditTrail resourceType="members" resourceId={memberId} />
+                </div>
               </TabsContent>
 
               <TabsContent value="access" className="mt-6">

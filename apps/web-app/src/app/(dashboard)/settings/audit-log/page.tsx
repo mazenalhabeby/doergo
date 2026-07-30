@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { organizationsApi } from "@/lib/api"
+import { auditActionLabel } from "@/lib/audit-labels"
 import { cn, formatTimeAgo } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -75,8 +76,9 @@ function AuditLogPageInner() {
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
 
-  // Translated label for an event type, falling back to the raw type.
-  const evtLabel = (type: string) => t(`auditLog.events.${type}`, { defaultValue: type })
+  // Translated label for an event type (shared helper: curated label →
+  // per-entity extras → generic verb decomposition → humanized fallback).
+  const evtLabel = (type: string) => auditActionLabel(type, t)
 
   const [page, setPage] = useState(1)
   const [eventFilter, setEventFilter] = useState<string>("__all__")

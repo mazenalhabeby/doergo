@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { notify } from "@/lib/toast"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
+import { AuditTrail } from "@/components/audit-trail"
 
 import {
   TaskProgressCard,
@@ -345,6 +346,9 @@ export default function TaskDetailPage({
               <ActivitySection taskId={id} />
             </CollapsibleSection>
             </div>
+
+            {/* Full accountability audit trail — managers only (self-gated) */}
+            <AuditTrail resourceType="tasks" resourceId={id} />
 
             {/* Service Report — module: service_reports + must be completed */}
             {hasModule("service_reports") && (isCompleted || task.status === "CLOSED") && (

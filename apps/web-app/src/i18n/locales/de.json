@@ -5044,5 +5044,43 @@
     "videoCall": "Videoanruf",
     "open": "Öffnen",
     "typing": "schreibt…"
+  },
+  "audit": {
+    "history": "Aktivität",
+    "noActivity": "Noch keine Aktivität",
+    "createdBy": "Erstellt von",
+    "updatedBy": "Aktualisiert von",
+    "by": "von",
+    "loadMore": "Mehr laden",
+    "viewFull": "Vollständiges Protokoll ansehen",
+    "verbs": {
+      "created": "erstellt",
+      "updated": "aktualisiert",
+      "deleted": "gelöscht",
+      "assigned": "zugewiesen",
+      "unassigned": "Zuweisung entfernt",
+      "removed": "entfernt",
+      "changed": "geändert",
+      "approved": "genehmigt",
+      "rejected": "abgelehnt",
+      "revoked": "widerrufen",
+      "accepted": "angenommen",
+      "generated": "generiert",
+      "completed": "abgeschlossen",
+      "regenerated": "neu generiert",
+      "added": "hinzugefügt",
+      "submitted": "eingereicht",
+      "canceled": "storniert"
+    },
+    "actions": {
+      "unknown": "Aktivität",
+      "generic": "{{resource}} {{verb}}",
+      "LOCATIONS_UPDATED": "Standort aktualisiert",
+      "TASK_UPDATED": "Aufgabe aktualisiert",
+      "MEMBER_UPDATED": "Mitglied aktualisiert",
+      "REPORT_UPDATED": "Bericht aktualisiert",
+      "REPORT_CREATED": "Bericht erstellt"
+    },
+    "updated": "Aktualisiert"
   }
 }

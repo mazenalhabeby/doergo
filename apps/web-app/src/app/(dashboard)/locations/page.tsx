@@ -63,6 +63,7 @@ import {
 import { WorkflowSelector } from "./_components/workflow-selector"
 import { WorkflowBuilder } from "./_components/workflow-builder"
 import { SpaceForm } from "./_components/space-form"
+import { AuditTrail } from "@/components/audit-trail"
 import {
   Dialog,
   DialogContent,
@@ -535,8 +536,10 @@ function ConfigureSpaceDialog({
             <TabsTrigger value="members">{t("locations.tabs.members")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="mt-4">
+          <TabsContent value="general" className="mt-4 space-y-4">
             <GeneralTab space={space} onSuccess={onSuccess} />
+            {/* Full accountability audit trail — managers only (self-gated) */}
+            <AuditTrail resourceType="locations" resourceId={space.id} />
           </TabsContent>
 
           <TabsContent value="modules" className="mt-4">

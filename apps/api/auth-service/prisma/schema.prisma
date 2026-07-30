@@ -1513,6 +1513,8 @@ model ActivityLog {
   @@index([userId, createdAt])
   @@index([eventType, createdAt])
   @@index([resourceType, resourceId])
+  // Serves the per-entity audit trail: WHERE resourceId = ? ORDER BY createdAt DESC.
+  @@index([resourceId, createdAt])
   @@map("activity_logs")
 }
 
