@@ -220,6 +220,7 @@ export class LocationsService {
         id: true,
         name: true,
         enabledModules: true,
+        workflowId: true,
         organization: {
           select: {
             enabledModules: true,
@@ -241,6 +242,12 @@ export class LocationsService {
       spaceId: location.id,
       spaceName: location.name,
       modules: effectiveModules,
+      // `enabledModules` is what the web hooks read (useSpaceModules); keep
+      // `modules` too for any older caller. Both = the effective set.
+      enabledModules: effectiveModules,
+      // The space's OWN workflow (task type). null → the client falls back to the
+      // org default workflow. Drives the space-aware task board columns + gating.
+      workflowId: location.workflowId ?? null,
       source: location.enabledModules ? 'space' : 'organization',
     });
   }
