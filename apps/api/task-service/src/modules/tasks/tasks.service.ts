@@ -233,6 +233,103 @@ export class TasksService {
   }
 
   /**
+   * Re-sync every task in a space onto that space's workflow.
+   *
+   * Legacy tasks may carry a workflowId/status from before the space's workflow
+   * was set, so they no longer match the space-driven board columns. This points
+   * all of the space's tasks at the space's workflow and remaps any status that
+   * isn't valid in that workflow to a sensible target (keeping final/canceled
+   * intent where we can, otherwise resetting to the workflow's first status).
+   */
+  async resyncSpaceWorkflow(data: { spaceId: string; organizationId: string }) {
+    // 1. Load the space (org-scoped). No workflow → nothing to sync.
+    const space = await this.prisma.companyLocation.findFirst({
+      where: { id: data.spaceId, organizationId: data.organizationId },
+      select: { id: true, workflowId: true },
+    });
+    if (!space) {
+      throw new NotFoundException('Space not found');
+    }
+    if (!space.workflowId) {
+      return success({ updated: 0, remapped: 0, reason: 'space has no workflow' });
+    }
+    const targetWorkflowId = space.workflowId;
+
+    // 2. Load the target workflow's statuses (ordered by position).
+    const statuses = await this.prisma.workflowStatus.findMany({
+      where: { workflowId: targetWorkflowId },
+      orderBy: { position: 'asc' },
+      select: { key: true, position: true, isFinal: true, isCanceled: true },
+    });
+    if (statuses.length === 0) {
+      return success({ updated: 0, remapped: 0, reason: 'workflow has no statuses' });
+    }
+    // First non-canceled status by position (fallback to the very first).
+    const firstKey = (statuses.find((s) => !s.isCanceled) ?? statuses[0]).key;
+    const finalKey = statuses.find((s) => s.isFinal)?.key ?? null;
+    const canceledKey = statuses.find((s) => s.isCanceled)?.key ?? null;
+    const validKeys = new Set(statuses.map((s) => s.key));
+
+    // Canonical fallbacks so pre-workflow tasks (NEW/ASSIGNED/COMPLETED/CANCELED…)
+    // are classified sanely even though those keys aren't in the target workflow.
+    const CANONICAL_FINAL = new Set<string>([
+      TaskStatus.COMPLETED,
+      TaskStatus.CLOSED,
+    ]);
+    const CANONICAL_CANCELED = new Set<string>([TaskStatus.CANCELED]);
+
+    // 3. Load every task in the space (org-scoped).
+    const tasks = await this.prisma.task.findMany({
+      where: { spaceId: space.id, organizationId: data.organizationId },
+      select: { id: true, status: true, workflowId: true },
+    });
+
+    // Compute the target status for each task; group by resulting status so we
+    // can updateMany per bucket instead of one write per task.
+    const remapStatus = (oldStatus: string): string => {
+      // Already valid in the target workflow → keep it.
+      if (validKeys.has(oldStatus)) return oldStatus;
+      // Was a final/canceled state → map to the target's final/canceled if any.
+      if (CANONICAL_FINAL.has(oldStatus) && finalKey) return finalKey;
+      if (CANONICAL_CANCELED.has(oldStatus) && canceledKey) return canceledKey;
+      // Unknown/other → reset to the workflow's first status.
+      return firstKey;
+    };
+
+    // taskIds grouped by the status they should end up with — but only tasks
+    // that actually change (status or workflowId differs).
+    const byTargetStatus = new Map<string, string[]>();
+    let remapped = 0;
+    for (const task of tasks) {
+      const newStatus = remapStatus(task.status);
+      const statusChanged = newStatus !== task.status;
+      const workflowChanged = task.workflowId !== targetWorkflowId;
+      if (!statusChanged && !workflowChanged) continue; // no-op
+      if (statusChanged) remapped++;
+      const bucket = byTargetStatus.get(newStatus);
+      if (bucket) bucket.push(task.id);
+      else byTargetStatus.set(newStatus, [task.id]);
+    }
+
+    let updated = 0;
+    if (byTargetStatus.size > 0) {
+      await this.prisma.$transaction(
+        Array.from(byTargetStatus.entries()).map(([status, ids]) =>
+          this.prisma.task.updateMany({
+            where: { id: { in: ids } },
+            data: { workflowId: targetWorkflowId, status },
+          }),
+        ),
+      );
+      for (const ids of byTargetStatus.values()) updated += ids.length;
+    }
+
+    this.invalidateStatusCountsCache(data.organizationId);
+
+    return success({ updated, remapped });
+  }
+
+  /**
    * Find all tasks with role-based filtering
    * - CLIENT: sees tasks created by them in their organization
    * - DISPATCHER: sees all tasks in their organization (and accessible orgs)

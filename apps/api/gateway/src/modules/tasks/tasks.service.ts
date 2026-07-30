@@ -100,4 +100,12 @@ export class TasksService extends BaseGatewayService {
     this.logger.debug(`Getting checklist for task ${data.taskId} via direct microservice call`);
     return this.send({ cmd: 'get_task_checklist' }, data);
   }
+
+  /**
+   * Re-sync every task in a space onto that space's workflow (admin maintenance).
+   */
+  async resyncSpaceWorkflow(data: { spaceId: string; organizationId: string }) {
+    this.logger.debug(`Re-syncing tasks for space ${data.spaceId} to its workflow`);
+    return this.send({ cmd: 'resync_space_workflow' }, data);
+  }
 }

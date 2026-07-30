@@ -112,6 +112,18 @@ export class TasksController {
     });
   }
 
+  @Post('resync/:spaceId')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: "Re-sync a space's existing tasks onto the space's workflow (ADMIN only)",
+  })
+  async resyncSpaceWorkflow(@Param('spaceId') spaceId: string, @Request() req: any) {
+    return this.tasksService.resyncSpaceWorkflow({
+      spaceId,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all tasks (filtered by role)' })
   @ApiQuery({ name: 'status', required: false })

@@ -19,6 +19,7 @@ import {
   ChevronRight,
   X,
   UserPlus,
+  RefreshCw,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
@@ -788,11 +789,14 @@ function WorkflowTab({
   onSuccess: () => void
 }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const isAdmin = user?.role === "ADMIN"
   const queryClient = useQueryClient()
   const currentWorkflow = workflows.find((w) => w.id === space.workflowId) || workflows.find((w) => w.isDefault)
   const [selectedId, setSelectedId] = useState(currentWorkflow?.id || "")
   const [editMode, setEditMode] = useState(false)
   const [showCreateBuilder, setShowCreateBuilder] = useState(false)
+  const [confirmResync, setConfirmResync] = useState(false)
   const hasChanges = selectedId !== (currentWorkflow?.id || "")
 
   const mutation = useMutation({
@@ -802,6 +806,17 @@ function WorkflowTab({
       onSuccess()
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.workflowUpdateFailed")),
+  })
+
+  // Re-sync legacy tasks onto this space's workflow (admin only).
+  const resyncMutation = useMutation({
+    mutationFn: () => locationsApi.resyncTasks(space.id),
+    onSuccess: (res) => {
+      notify.success(t("locations.toast.resyncDone", { count: res?.updated ?? 0 }))
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+    },
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.resyncFailed")),
   })
 
   const previewWorkflow = workflows.find((w) => w.id === selectedId)
@@ -914,6 +929,47 @@ function WorkflowTab({
           onCancel={() => setShowCreateBuilder(false)}
         />
       )}
+
+      {/* Re-sync existing tasks — admin only. Fixes legacy tasks whose status
+          no longer matches this space's workflow columns. */}
+      {isAdmin && !editMode && !showCreateBuilder && (
+        <div className="border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => setConfirmResync(true)}
+            disabled={resyncMutation.isPending}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            {resyncMutation.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+            {t("locations.resyncTasks")}
+          </button>
+          <p className="mt-1 text-[11px] text-muted-foreground/70">{t("locations.resyncTasksHint")}</p>
+        </div>
+      )}
+
+      <AlertDialog open={confirmResync} onOpenChange={setConfirmResync}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("locations.resyncTasksConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("locations.resyncTasksConfirmDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmResync(false)
+                resyncMutation.mutate()
+              }}
+            >
+              {t("locations.resyncTasks")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

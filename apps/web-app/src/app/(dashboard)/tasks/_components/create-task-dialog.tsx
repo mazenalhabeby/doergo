@@ -36,7 +36,6 @@ import {
   customFieldsApi,
   organizationsApi,
   locationsApi,
-  workflowsApi,
   recurringTasksApi,
   STORY_POINT_OPTIONS,
   type CreateTaskInput,
@@ -309,23 +308,25 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     }
   }, [open, availableSpaces, defaultSpaceId, spaceId])
 
-  // ── Fetch workflows (task types) — "auto" inherits the space's default ──
-  const { data: workflowsList } = useQuery({
-    queryKey: ["workflows"],
-    queryFn: () => workflowsApi.list(),
+  // ── Effective workflow comes from the SELECTED SPACE (task type = space's) ──
+  // The task itself is always created with no explicit workflowId so the backend
+  // inherits the space's; we only need the space's workflowId here to filter
+  // which custom fields apply.
+  const { data: spaceModules } = useQuery({
+    queryKey: ["spaceModules", spaceId],
+    queryFn: () => locationsApi.getEffectiveModules(spaceId),
     staleTime: 300000,
-    enabled: open,
+    enabled: open && spaceId !== "none",
   })
-  const workflows = workflowsList || []
-  const [workflowId, setWorkflowId] = useState<string>("auto")
+  const spaceWorkflowId = spaceId !== "none" ? spaceModules?.workflowId ?? null : null
 
-  // Fields applicable to the chosen Task Type: globals always, plus the selected
-  // type's own fields. ("auto" = type decided at creation → globals only here.)
+  // Fields applicable to the space's Task Type: globals always, plus the space
+  // workflow's own fields. No space / no workflow → globals only.
   const applicableCustomFields = useMemo(
     // Custom Fields is a Professional+ feature — don't render the inputs below tier
     // (the backend also 402s the write; this keeps a downgraded org from seeing them).
-    () => (canCustomFields ? activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === workflowId) : []),
-    [activeCustomFields, workflowId, canCustomFields],
+    () => (canCustomFields ? activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === spaceWorkflowId) : []),
+    [activeCustomFields, spaceWorkflowId, canCustomFields],
   )
 
   // ── Submission state ──
@@ -427,7 +428,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
         description: description.trim() || null,
         priority,
         spaceId: spaceId !== "none" ? spaceId : null,
-        workflowId: workflowId !== "auto" ? workflowId : null,
+        // Task type is always inherited from the space's workflow.
+        workflowId: null,
         frequency,
         customDays: frequency === "CUSTOM" ? customDays : null,
         dayOfWeek: ["WEEKLY", "BIWEEKLY"].includes(frequency) ? dayOfWeek : null,
@@ -458,7 +460,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       epicId: epicId !== "none" ? epicId : undefined,
       parentId: parentTaskId !== "none" ? parentTaskId : undefined,
       spaceId: spaceId !== "none" ? spaceId : undefined,
-      workflowId: workflowId !== "auto" ? workflowId : undefined,
+      // Task type is always inherited from the space's workflow (no explicit id).
       checklistItems: checklistItems.length > 0
         ? checklistItems.map((text) => ({ text }))
         : undefined,
@@ -579,24 +581,6 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         {s.name}
                       </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Type / workflow — "Auto" inherits the selected space's default */}
-          {workflows.length > 0 && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{t("tasks.create.type")}</Label>
-              <Select value={workflowId} onValueChange={setWorkflowId} disabled={isSubmitting}>
-                <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
-                  <SelectValue placeholder={t("tasks.create.auto")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">{t("tasks.create.autoFromSpace")}</SelectItem>
-                  {workflows.map((w: { id: string; name: string }) => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

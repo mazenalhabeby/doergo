@@ -107,6 +107,18 @@ export class TasksController {
     return this.tasksService.getChecklist(data);
   }
 
+  // ============ Space Workflow Re-sync (Admin) ============
+
+  // One-shot admin maintenance op: re-point every task in a space onto the
+  // space's workflow and remap statuses. Not high-frequency, so a direct
+  // microservice call (not BullMQ) is sufficient.
+  @MessagePattern({ cmd: 'resync_space_workflow' })
+  async resyncSpaceWorkflow(
+    @Payload() data: { spaceId: string; organizationId: string },
+  ) {
+    return this.tasksService.resyncSpaceWorkflow(data);
+  }
+
   // ============ Subtask READ Operations ============
 
   @MessagePattern({ cmd: 'get_subtasks' })
