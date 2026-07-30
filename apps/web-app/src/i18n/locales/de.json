@@ -4278,10 +4278,6 @@
         "title": "Ihre Abwesenheit",
         "body": "Beantragen Sie Urlaub oder Krankheit und verfolgen Sie Freigaben — Zeitraum wählen, Grund angeben und einreichen."
       },
-      "myAttendance": {
-        "title": "Ihre Anwesenheit",
-        "body": "Stempeln Sie ein und aus, machen Sie Pausen und sehen Sie Ihre Stunden des Tages."
-      },
       "invitations": {
         "title": "Einladungen",
         "body": "Laden Sie Personen per E-Mail ein oder teilen Sie einen Beitrittscode und sehen Sie, wer angenommen hat oder noch aussteht."
@@ -4444,7 +4440,15 @@
       "steps": {
         "dashboard": {
           "title": "Ihre Startseite",
-          "body": "Eine kurze Übersicht über Ihren Tag — Ihre Aufträge und Ihren Status."
+          "body": "Eine kurze Übersicht über Ihren Tag — Ihre Aufträge und wie Sie Ihr Team erreichen."
+        },
+        "yourWork": {
+          "title": "Ihre Aufträge",
+          "body": "Die Ihnen zugewiesenen Aufträge erscheinen genau hier. Öffnen Sie einen, um die Details zu sehen und loszulegen."
+        },
+        "contacts": {
+          "title": "Ihr Team erreichen",
+          "body": "Sie brauchen etwas? Schreiben Sie Ihrer Führungskraft oder einem Kollegen direkt von hier aus."
         },
         "yourSpaces": {
           "title": "Ihre Bereiche",
@@ -4452,15 +4456,19 @@
         },
         "openSpace": {
           "title": "In Ihrem Bereich",
-          "body": "Sehen Sie Ihre Kollegen und deren Status — wer im Dienst, im Einsatz oder abwesend ist — direkt hier."
-        },
-        "member": {
-          "title": "Ein Teammitglied",
-          "body": "Jede Karte ist ein Teammitglied — mit Status und aktuellem Auftrag. Tippen Sie auf eine, um das Profil zu öffnen und Kontakt aufzunehmen."
+          "body": "Sehen Sie Ihre Kollegen und deren Status — wer im Dienst, im Einsatz oder abwesend ist — und tippen Sie auf eine Person, um Kontakt aufzunehmen."
         },
         "tasks": {
-          "title": "Ihre Aufträge",
-          "body": "Die Ihnen zugewiesenen Aufträge — öffnen Sie einen, um die Details zu sehen."
+          "title": "Aufträge",
+          "body": "Ihre vollständige Auftragsliste finden Sie hier — suchen, sortieren und öffnen Sie jeden Auftrag, um alles dazu zu sehen."
+        },
+        "attendance": {
+          "title": "Ein- & ausstempeln",
+          "body": "Beginnen und beenden Sie Ihre Schicht hier und prüfen Sie die erfassten Stunden."
+        },
+        "timeOff": {
+          "title": "Abwesenheit",
+          "body": "Beantragen Sie Urlaub oder Krankheitstage und verfolgen Sie, ob sie genehmigt wurden."
         },
         "command": {
           "title": "Schnellsuche",
@@ -4473,6 +4481,44 @@
         "profile": {
           "title": "Sie & Einstellungen",
           "body": "Legen Sie Verfügbarkeit und Einstellungen fest oder melden Sie sich hier ab."
+        }
+      }
+    },
+    "tasksEmployeeTour": {
+      "title": "Ihre Aufträge finden",
+      "steps": {
+        "intro": {
+          "title": "Einen Auftrag finden",
+          "body": "Suchen Sie nach Titel oder Details, um schnell den benötigten Auftrag zu finden."
+        },
+        "views": {
+          "title": "Ansichten wechseln",
+          "body": "Wechseln Sie zwischen Liste, Board und Zeitplan, um Ihre Aufträge so zu sehen, wie es Ihnen passt."
+        },
+        "list": {
+          "title": "Ihre Auftragsliste",
+          "body": "Alle Ihnen zugewiesenen Aufträge auf einen Blick — klicken Sie auf eine Zeile, um sie zu öffnen und loszulegen."
+        }
+      }
+    },
+    "myAttendanceTour": {
+      "title": "Ein- & ausstempeln",
+      "steps": {
+        "intro": {
+          "title": "Ihre Anwesenheit",
+          "body": "Stempeln Sie ein und aus, machen Sie Pausen und sehen Sie Ihre Stunden des Tages."
+        },
+        "clock": {
+          "title": "Ihre Schicht beginnen",
+          "body": "Tippen Sie auf Einstempeln, wenn Sie beginnen, und auf Ausstempeln, wenn Sie fertig sind. Der Standort Ihres Geräts bestätigt, dass Sie vor Ort sind."
+        },
+        "status": {
+          "title": "Ihr aktueller Stand",
+          "body": "Sehen Sie, ob Sie eingestempelt sind und wie lange Sie gerade im Dienst sind."
+        },
+        "history": {
+          "title": "Ihre letzten Stunden",
+          "body": "Ihre neuesten Ein- und Ausstempelungen, jeweils mit der geleisteten Arbeitszeit."
         }
       }
     },

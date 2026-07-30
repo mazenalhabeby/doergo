@@ -4278,10 +4278,6 @@
         "title": "Your time off",
         "body": "Request vacation or sick leave and track approvals — pick dates, add a reason, and submit."
       },
-      "myAttendance": {
-        "title": "Your attendance",
-        "body": "Clock in and out, take breaks, and see your hours for the day."
-      },
       "invitations": {
         "title": "Invitations",
         "body": "Invite people by email or share a join code, and see who's accepted or is still pending."
@@ -4444,7 +4440,15 @@
       "steps": {
         "dashboard": {
           "title": "Your home",
-          "body": "A quick summary of your day — your jobs and status."
+          "body": "A quick summary of your day — your jobs and how to reach your team."
+        },
+        "yourWork": {
+          "title": "Your jobs",
+          "body": "The jobs assigned to you show up right here. Open one to see the details and get to work."
+        },
+        "contacts": {
+          "title": "Reach your team",
+          "body": "Need something? Message your manager or a teammate straight from here."
         },
         "yourSpaces": {
           "title": "Your spaces",
@@ -4452,15 +4456,19 @@
         },
         "openSpace": {
           "title": "Inside your space",
-          "body": "See your teammates and their status — who's on shift, in the field or off — right here."
-        },
-        "member": {
-          "title": "A teammate",
-          "body": "Each card is a team member — their status and current job. Tap one to open their profile and get in touch."
+          "body": "See your teammates and their status — who's on shift, in the field or off — and tap anyone to get in touch."
         },
         "tasks": {
-          "title": "Your jobs",
-          "body": "The jobs assigned to you — open one to see the details."
+          "title": "Jobs",
+          "body": "Your full job list lives here — search, sort and open any job to see everything about it."
+        },
+        "attendance": {
+          "title": "Clock in & out",
+          "body": "Start and end your shift here, and check the hours you've logged."
+        },
+        "timeOff": {
+          "title": "Time off",
+          "body": "Request vacation or sick days and track whether they've been approved."
         },
         "command": {
           "title": "Quick search",
@@ -4473,6 +4481,44 @@
         "profile": {
           "title": "You & settings",
           "body": "Set your availability and preferences, or sign out here."
+        }
+      }
+    },
+    "tasksEmployeeTour": {
+      "title": "Find your jobs",
+      "steps": {
+        "intro": {
+          "title": "Find a job",
+          "body": "Search by title or details to quickly find the job you need."
+        },
+        "views": {
+          "title": "Switch views",
+          "body": "Flip between list, board and schedule to see your jobs the way that suits you."
+        },
+        "list": {
+          "title": "Your job list",
+          "body": "Every job assigned to you, at a glance — click any row to open it and start working."
+        }
+      }
+    },
+    "myAttendanceTour": {
+      "title": "Clock in & out",
+      "steps": {
+        "intro": {
+          "title": "Your attendance",
+          "body": "Clock in and out, take breaks, and see your hours for the day."
+        },
+        "clock": {
+          "title": "Start your shift",
+          "body": "Tap Clock In when you start and Clock Out when you finish. It uses your device location to confirm you're on site."
+        },
+        "status": {
+          "title": "Where you stand",
+          "body": "See whether you're clocked in and how long you've been on the clock right now."
+        },
+        "history": {
+          "title": "Your recent hours",
+          "body": "Your latest clock-ins and clock-outs, with the time worked for each."
         }
       }
     },

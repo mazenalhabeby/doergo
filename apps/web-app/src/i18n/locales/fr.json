@@ -4278,10 +4278,6 @@
         "title": "Vos congés",
         "body": "Demandez des congés ou un arrêt maladie et suivez les approbations — choisissez des dates, ajoutez un motif et envoyez."
       },
-      "myAttendance": {
-        "title": "Vos présences",
-        "body": "Pointez à l’entrée et à la sortie, prenez des pauses et consultez vos heures de la journée."
-      },
       "invitations": {
         "title": "Invitations",
         "body": "Invitez des personnes par e-mail ou partagez un code d’adhésion, et voyez qui a accepté ou est encore en attente."
@@ -4444,7 +4440,15 @@
       "steps": {
         "dashboard": {
           "title": "Votre accueil",
-          "body": "Un résumé rapide de votre journée — vos interventions et votre statut."
+          "body": "Un résumé rapide de votre journée — vos interventions et comment joindre votre équipe."
+        },
+        "yourWork": {
+          "title": "Vos interventions",
+          "body": "Les interventions qui vous sont affectées apparaissent ici. Ouvrez-en une pour voir les détails et vous mettre au travail."
+        },
+        "contacts": {
+          "title": "Joindre votre équipe",
+          "body": "Besoin de quelque chose ? Écrivez à votre responsable ou à un collègue directement d’ici."
         },
         "yourSpaces": {
           "title": "Vos espaces",
@@ -4452,15 +4456,19 @@
         },
         "openSpace": {
           "title": "Dans votre espace",
-          "body": "Voyez vos collègues et leur statut — qui est en poste, sur le terrain ou absent — directement ici."
-        },
-        "member": {
-          "title": "Un collègue",
-          "body": "Chaque carte représente un membre de l’équipe — son statut et son intervention en cours. Appuyez sur l’une d’elles pour ouvrir son profil et le contacter."
+          "body": "Voyez vos collègues et leur statut — qui est en poste, sur le terrain ou absent — et appuyez sur l’un d’eux pour le contacter."
         },
         "tasks": {
-          "title": "Vos interventions",
-          "body": "Les interventions qui vous sont affectées — ouvrez-en une pour voir les détails."
+          "title": "Interventions",
+          "body": "Votre liste complète d’interventions se trouve ici — recherchez, triez et ouvrez n’importe quelle intervention pour tout savoir à son sujet."
+        },
+        "attendance": {
+          "title": "Pointage entrée et sortie",
+          "body": "Commencez et terminez votre service ici, et consultez les heures que vous avez enregistrées."
+        },
+        "timeOff": {
+          "title": "Congés",
+          "body": "Demandez des congés ou des arrêts maladie et suivez leur approbation."
         },
         "command": {
           "title": "Recherche rapide",
@@ -4473,6 +4481,44 @@
         "profile": {
           "title": "Vous et vos paramètres",
           "body": "Définissez votre disponibilité et vos préférences, ou déconnectez-vous ici."
+        }
+      }
+    },
+    "tasksEmployeeTour": {
+      "title": "Trouvez vos interventions",
+      "steps": {
+        "intro": {
+          "title": "Trouver une intervention",
+          "body": "Recherchez par titre ou par détails pour trouver rapidement l’intervention qu’il vous faut."
+        },
+        "views": {
+          "title": "Changer de vue",
+          "body": "Basculez entre liste, tableau et planning pour voir vos interventions comme vous le souhaitez."
+        },
+        "list": {
+          "title": "Votre liste d’interventions",
+          "body": "Toutes les interventions qui vous sont affectées, en un coup d’œil — cliquez sur une ligne pour l’ouvrir et vous mettre au travail."
+        }
+      }
+    },
+    "myAttendanceTour": {
+      "title": "Pointage entrée et sortie",
+      "steps": {
+        "intro": {
+          "title": "Vos présences",
+          "body": "Pointez à l’entrée et à la sortie, prenez des pauses et consultez vos heures de la journée."
+        },
+        "clock": {
+          "title": "Commencer votre service",
+          "body": "Appuyez sur Pointer l’entrée lorsque vous commencez et sur Pointer la sortie lorsque vous terminez. La localisation de votre appareil confirme que vous êtes sur place."
+        },
+        "status": {
+          "title": "Votre situation",
+          "body": "Voyez si vous êtes pointé à l’entrée et depuis combien de temps vous êtes en service en ce moment."
+        },
+        "history": {
+          "title": "Vos heures récentes",
+          "body": "Vos derniers pointages d’entrée et de sortie, avec le temps travaillé pour chacun."
         }
       }
     },

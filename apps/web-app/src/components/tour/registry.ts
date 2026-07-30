@@ -88,7 +88,11 @@ export const TOURS: TourDef[] = [
     ],
   },
 
-  // ── EMPLOYEE (web) — their own tasks, attendance & time off ──
+  // ── EMPLOYEE (web) — their own jobs, attendance & time off ──
+  // Two dashboard variants exist: a compact landing (greeting + contacts + my
+  // jobs) for tasks-only/unassigned members, and the spaces grid for
+  // space-assigned members. All variant-specific steps are `optional` so
+  // whichever one renders is covered and the rest skip fast.
   {
     id: "welcomeEmployee",
     titleKey: "tours.welcomeEmployee.title",
@@ -97,10 +101,16 @@ export const TOURS: TourDef[] = [
     gate: (c) => !c.isAdmin && !c.hasPermission("canViewAllTasks"),
     steps: [
       step("welcomeEmployee", "dashboard", "nav-dashboard"),
+      // Compact landing (tasks-only / unassigned member).
+      { ...step("welcomeEmployee", "yourWork", "dash-emp-tasks"), optional: true },
+      { ...step("welcomeEmployee", "contacts", "dash-emp-contacts"), optional: true },
+      // Spaces grid (space-assigned member).
       { ...step("welcomeEmployee", "yourSpaces", "dash-spaces"), optional: true },
       { ...step("welcomeEmployee", "openSpace", "dash-space-members"), enter: "dash-space-box", optional: true },
-      { ...step("welcomeEmployee", "member", "dash-space-member"), optional: true },
+      // Navigation.
       step("welcomeEmployee", "tasks", "nav-tasks"),
+      { ...step("welcomeEmployee", "attendance", "nav-my-attendance"), optional: true },
+      { ...step("welcomeEmployee", "timeOff", "nav-my-timeoff"), optional: true },
       step("welcomeEmployee", "command", "nav-command"),
       step("welcomeEmployee", "help", "nav-support"),
       step("welcomeEmployee", "profile", "nav-profile"),
@@ -126,6 +136,23 @@ export const TOURS: TourDef[] = [
       { ...step("tasksTour", "create", "tasks-create"), action: "click" }, // opens the dialog
       step("tasksTour", "title", "tasks-dialog-title"), // continues INSIDE the modal
       step("tasksTour", "save", "tasks-dialog-save"),
+    ],
+  },
+
+  // ── EMPLOYEE Jobs screen — find & work your assigned jobs ──
+  // Mutually exclusive with tasksTour (which is create-gated); an employee who
+  // can't create tasks gets this lighter list-focused walkthrough instead.
+  {
+    id: "tasksEmployeeTour",
+    titleKey: "tours.tasksEmployeeTour.title",
+    icon: "tasks",
+    autoRunOn: "/tasks",
+    autoRunExact: true,
+    gate: (c) => !c.hasPermission("canCreateTasks"),
+    steps: [
+      step("tasksEmployeeTour", "intro", "tasks-search"),
+      step("tasksEmployeeTour", "views", "tasks-views"),
+      { ...step("tasksEmployeeTour", "list", "tasks-list"), enter: "tasks-view-list", optional: true },
     ],
   },
 
@@ -270,7 +297,20 @@ export const TOURS: TourDef[] = [
       step("myTimeoffTour", "requests", "timeoff-requests"),
     ],
   },
-  ...pageTour("pageMyAttendance", "myAttendance", "attendance", "/my/attendance", "page-my-attendance"),
+  // My Attendance (your own) — clock in/out, current status, recent entries.
+  {
+    id: "myAttendanceTour",
+    titleKey: "tours.myAttendanceTour.title",
+    icon: "attendance",
+    autoRunOn: "/my/attendance",
+    autoRunExact: true,
+    steps: [
+      step("myAttendanceTour", "intro", "page-my-attendance"),
+      step("myAttendanceTour", "clock", "my-attn-clock"),
+      { ...step("myAttendanceTour", "status", "my-attn-status"), optional: true },
+      { ...step("myAttendanceTour", "history", "my-attn-history"), optional: true },
+    ],
+  },
   ...pageTour("pageInvitations", "invitations", "invite", "/invitations", "page-invitations", (c) => c.hasPermission("canManageUsers")),
   ...pageTour("pageOvertime", "overtime", "attendance", "/overtime", "page-overtime", (c) => c.hasPermission("canViewAllTasks")),
   ...pageTour("pageJoinRequests", "joinRequests", "invite", "/join-requests", "page-join-requests", (c) => c.hasPermission("canViewAllTasks")),

@@ -4278,10 +4278,6 @@
         "title": "Tus ausencias",
         "body": "Solicita vacaciones o baja y sigue las aprobaciones — elige fechas, añade un motivo y envía."
       },
-      "myAttendance": {
-        "title": "Tu asistencia",
-        "body": "Ficha entrada y salida, toma descansos y consulta tus horas del día."
-      },
       "invitations": {
         "title": "Invitaciones",
         "body": "Invita a personas por correo o comparte un código de acceso, y ve quién ha aceptado o está pendiente."
@@ -4444,7 +4440,15 @@
       "steps": {
         "dashboard": {
           "title": "Tu inicio",
-          "body": "Un resumen rápido de tu día — tus trabajos y tu estado."
+          "body": "Un resumen rápido de tu día — tus trabajos y cómo contactar con tu equipo."
+        },
+        "yourWork": {
+          "title": "Tus trabajos",
+          "body": "Los trabajos asignados a ti aparecen justo aquí. Abre uno para ver los detalles y ponerte a trabajar."
+        },
+        "contacts": {
+          "title": "Contacta con tu equipo",
+          "body": "¿Necesitas algo? Escribe a tu responsable o a un compañero directamente desde aquí."
         },
         "yourSpaces": {
           "title": "Tus áreas",
@@ -4452,15 +4456,19 @@
         },
         "openSpace": {
           "title": "Dentro de tu área",
-          "body": "Ve a tus compañeros y su estado — quién está en turno, en campo o fuera — aquí mismo."
-        },
-        "member": {
-          "title": "Un compañero",
-          "body": "Cada tarjeta es un miembro del equipo — su estado y trabajo actual. Toca uno para abrir su perfil y ponerte en contacto."
+          "body": "Ve a tus compañeros y su estado — quién está en turno, en campo o fuera — y toca a cualquiera para ponerte en contacto."
         },
         "tasks": {
-          "title": "Tus trabajos",
-          "body": "Los trabajos asignados a ti — abre uno para ver los detalles."
+          "title": "Trabajos",
+          "body": "Aquí está tu lista completa de trabajos — busca, ordena y abre cualquier trabajo para ver todo sobre él."
+        },
+        "attendance": {
+          "title": "Fichar entrada y salida",
+          "body": "Inicia y termina tu turno aquí, y consulta las horas que has registrado."
+        },
+        "timeOff": {
+          "title": "Ausencias",
+          "body": "Solicita vacaciones o días de baja y comprueba si te los han aprobado."
         },
         "command": {
           "title": "Búsqueda rápida",
@@ -4473,6 +4481,44 @@
         "profile": {
           "title": "Tú y ajustes",
           "body": "Configura tu disponibilidad y preferencias, o cierra sesión aquí."
+        }
+      }
+    },
+    "tasksEmployeeTour": {
+      "title": "Encuentra tus trabajos",
+      "steps": {
+        "intro": {
+          "title": "Encuentra un trabajo",
+          "body": "Busca por título o detalles para encontrar rápido el trabajo que necesitas."
+        },
+        "views": {
+          "title": "Cambia de vista",
+          "body": "Alterna entre lista, tablero y calendario para ver tus trabajos como mejor te convenga."
+        },
+        "list": {
+          "title": "Tu lista de trabajos",
+          "body": "Todos los trabajos asignados a ti, de un vistazo — haz clic en cualquier fila para abrirlo y ponerte a trabajar."
+        }
+      }
+    },
+    "myAttendanceTour": {
+      "title": "Fichar entrada y salida",
+      "steps": {
+        "intro": {
+          "title": "Tu asistencia",
+          "body": "Ficha entrada y salida, toma descansos y consulta tus horas del día."
+        },
+        "clock": {
+          "title": "Inicia tu turno",
+          "body": "Toca Fichar entrada cuando empieces y Fichar salida cuando termines. Usa la ubicación de tu dispositivo para confirmar que estás en el sitio."
+        },
+        "status": {
+          "title": "Tu situación",
+          "body": "Comprueba si has fichado entrada y cuánto tiempo llevas trabajando ahora mismo."
+        },
+        "history": {
+          "title": "Tus horas recientes",
+          "body": "Tus últimas entradas y salidas, con el tiempo trabajado en cada una."
         }
       }
     },

@@ -748,19 +748,21 @@ export function ClientDashboard() {
       const myTasks = tasks.filter((tk) => tk.assignedToId === user?.id).slice(0, 6)
       return (
         <div className="mx-auto max-w-2xl px-6 py-8">
-          <p className="text-[13px] font-medium text-muted-foreground">{greeting}</p>
-          <h1 className="text-2xl font-semibold text-foreground mb-6">
-            {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
-          </h1>
+          <div data-tour="dash-emp-header">
+            <p className="text-[13px] font-medium text-muted-foreground">{greeting}</p>
+            <h1 className="text-2xl font-semibold text-foreground mb-6">
+              {t("dashboard.admin.welcomeBack", { name: user?.firstName })}
+            </h1>
+          </div>
           {/* Reach management — visible before tasks */}
-          <div className="mb-6">
+          <div className="mb-6" data-tour="dash-emp-contacts">
             <ManagementContacts />
           </div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
             <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
           </div>
-          <div className="rounded-2xl border border-border bg-card px-4 py-2">
+          <div className="rounded-2xl border border-border bg-card px-4 py-2" data-tour="dash-emp-tasks">
             <RecentTasks tasks={myTasks.map(toRecentTask)} showViewAll={false} />
           </div>
         </div>

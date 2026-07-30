@@ -162,15 +162,17 @@ export default function MyAttendancePage() {
 
       {/* Status + summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <CircleDot className={`h-4 w-4 ${clockedIn ? "text-green-600" : "text-slate-400"}`} />
-            {t("attendance.my.currentStatus")}
+        <div className="rounded-2xl border border-border bg-card p-5" data-tour="my-attn-clock">
+          <div data-tour="my-attn-status">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <CircleDot className={`h-4 w-4 ${clockedIn ? "text-green-600" : "text-slate-400"}`} />
+              {t("attendance.my.currentStatus")}
+            </div>
+            <p className="mt-2 text-lg font-semibold text-foreground">{clockedIn ? t("attendance.my.clockedIn") : t("attendance.my.clockedOut")}</p>
+            {clockedIn && activeEntry?.clockInAt && (
+              <p className="text-xs text-muted-foreground">{t("attendance.my.since", { time: fmtTime(activeEntry.clockInAt, hour12), duration: duration(activeEntry.clockInAt) })}</p>
+            )}
           </div>
-          <p className="mt-2 text-lg font-semibold text-foreground">{clockedIn ? t("attendance.my.clockedIn") : t("attendance.my.clockedOut")}</p>
-          {clockedIn && activeEntry?.clockInAt && (
-            <p className="text-xs text-muted-foreground">{t("attendance.my.since", { time: fmtTime(activeEntry.clockInAt, hour12), duration: duration(activeEntry.clockInAt) })}</p>
-          )}
 
           {clockedIn ? (
             <Button onClick={() => clock.mutate("out")} disabled={pending} variant="outline" className="mt-4 w-full">
@@ -220,7 +222,7 @@ export default function MyAttendancePage() {
       </div>
 
       {/* History */}
-      <h2 className="text-sm font-semibold text-foreground mb-3">{t("attendance.my.recentEntries")}</h2>
+      <h2 data-tour="my-attn-history" className="text-sm font-semibold text-foreground mb-3">{t("attendance.my.recentEntries")}</h2>
       {isLoading ? (
         <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</div>
       ) : entries.length === 0 ? (

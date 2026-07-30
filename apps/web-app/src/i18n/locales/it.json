@@ -4278,10 +4278,6 @@
         "title": "Le sue ferie e permessi",
         "body": "Richieda ferie o congedo per malattia e segua le approvazioni — scelga le date, aggiunga un motivo e invii."
       },
-      "myAttendance": {
-        "title": "Le sue presenze",
-        "body": "Timbri l'entrata e l'uscita, faccia le pause e veda le ore della giornata."
-      },
       "invitations": {
         "title": "Inviti",
         "body": "Inviti persone via email o condivida un codice di adesione, e veda chi ha accettato o è ancora in attesa."
@@ -4444,7 +4440,15 @@
       "steps": {
         "dashboard": {
           "title": "La sua home",
-          "body": "Un riepilogo rapido della sua giornata — i suoi interventi e il suo stato."
+          "body": "Un riepilogo rapido della sua giornata — i suoi interventi e come raggiungere il suo team."
+        },
+        "yourWork": {
+          "title": "I suoi interventi",
+          "body": "Gli interventi assegnati a lei compaiono proprio qui. Ne apra uno per vedere i dettagli e mettersi al lavoro."
+        },
+        "contacts": {
+          "title": "Raggiunga il suo team",
+          "body": "Le serve qualcosa? Scriva al suo responsabile o a un collega direttamente da qui."
         },
         "yourSpaces": {
           "title": "I suoi spazi",
@@ -4452,15 +4456,19 @@
         },
         "openSpace": {
           "title": "All'interno del suo spazio",
-          "body": "Veda i suoi colleghi e il loro stato — chi è in turno, sul campo o assente — proprio qui."
-        },
-        "member": {
-          "title": "Un collega",
-          "body": "Ogni scheda è un membro del team — il suo stato e l'intervento corrente. Ne tocchi uno per aprire il suo profilo e mettersi in contatto."
+          "body": "Veda i suoi colleghi e il loro stato — chi è in turno, sul campo o assente — e tocchi chiunque per mettersi in contatto."
         },
         "tasks": {
-          "title": "I suoi interventi",
-          "body": "Gli interventi assegnati a lei — ne apra uno per vedere i dettagli."
+          "title": "Interventi",
+          "body": "Il suo elenco completo degli interventi è qui — cerchi, ordini e apra qualsiasi intervento per vederne tutti i dettagli."
+        },
+        "attendance": {
+          "title": "Entrata e uscita",
+          "body": "Inizi e concluda il suo turno qui, e controlli le ore registrate."
+        },
+        "timeOff": {
+          "title": "Ferie e permessi",
+          "body": "Richieda ferie o congedo per malattia e verifichi se sono stati approvati."
         },
         "command": {
           "title": "Ricerca rapida",
@@ -4473,6 +4481,44 @@
         "profile": {
           "title": "Lei e le impostazioni",
           "body": "Imposti qui la sua disponibilità e le preferenze, oppure si disconnetta."
+        }
+      }
+    },
+    "tasksEmployeeTour": {
+      "title": "Trovi i suoi interventi",
+      "steps": {
+        "intro": {
+          "title": "Trovi un intervento",
+          "body": "Cerchi per titolo o dettagli per trovare rapidamente l'intervento che le serve."
+        },
+        "views": {
+          "title": "Cambi vista",
+          "body": "Passi tra elenco, bacheca e pianificazione per vedere i suoi interventi come preferisce."
+        },
+        "list": {
+          "title": "Il suo elenco di interventi",
+          "body": "Tutti gli interventi assegnati a lei, in un colpo d'occhio — clicchi su una riga qualsiasi per aprirla e iniziare a lavorare."
+        }
+      }
+    },
+    "myAttendanceTour": {
+      "title": "Entrata e uscita",
+      "steps": {
+        "intro": {
+          "title": "Le sue presenze",
+          "body": "Timbri l'entrata e l'uscita, faccia le pause e veda le ore della giornata."
+        },
+        "clock": {
+          "title": "Inizi il suo turno",
+          "body": "Tocchi Timbra entrata quando inizia e Timbra uscita quando finisce. Usa la posizione del suo dispositivo per confermare che è sul posto."
+        },
+        "status": {
+          "title": "La sua situazione",
+          "body": "Veda se ha timbrato l'entrata e da quanto tempo è in turno in questo momento."
+        },
+        "history": {
+          "title": "Le sue ore recenti",
+          "body": "Le sue ultime entrate e uscite, con il tempo lavorato per ciascuna."
         }
       }
     },
