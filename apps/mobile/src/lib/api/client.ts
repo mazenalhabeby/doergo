@@ -19,8 +19,10 @@ export function getApiUrl(): string {
     return url;
   }
 
-  // Fallback for simulator/emulator
-  return 'http://localhost:4000/api/v1';
+  // No env and no dev host: in a shipped (production) app this must hit the real
+  // API — NEVER localhost (that's how an OTA with an un-inlined EXPO_PUBLIC_API_URL
+  // silently breaks login). Only dev builds fall back to localhost.
+  return __DEV__ ? 'http://localhost:4000/api/v1' : 'https://hbcfield.com/api/v1';
 }
 
 export const API_URL = getApiUrl();
