@@ -16,6 +16,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { activeChat } from '../../src/lib/active-chat';
 import { SocketEvents } from '@hbcfield/shared/client';
 import { SubscriptionGate } from '../../src/components/SubscriptionGate';
+import { TourProvider } from '../../src/components/tour';
 import { useTheme } from '../../src/contexts/theme-context';
 import { trackingApi } from '../../src/lib/api';
 import { COLORS } from '../../src/lib/constants';
@@ -204,6 +205,7 @@ export default function AppLayout() {
     <GlobalChatNotifier />
     <LocationTrackingProvider>
       <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <TourProvider>
       <Stack
         screenOptions={{
           headerStyle: {
@@ -278,6 +280,7 @@ export default function AppLayout() {
         />
       </Stack>
       <SubscriptionGate />
+      </TourProvider>
       </View>
     </LocationTrackingProvider>
     </SocketProvider>

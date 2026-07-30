@@ -34,6 +34,7 @@ import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePic
 import { PhotoGrid } from '../../../src/components/photo-grid';
 import { SignatureCapture } from '../../../src/components/signature-capture';
 import { TechnicianPicker, LoadingState, ErrorState, ConfirmSheet, centeredContent } from '../../../src/components';
+import { TourTarget } from '../../../src/components/tour';
 import { useResponsive } from '../../../src/lib/responsive';
 import { CustomFieldsCard } from '../../../src/components/custom-fields-card';
 import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
@@ -1188,7 +1189,7 @@ export function TaskDetailPane({
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={r.isTablet ? centeredContent(720) : undefined}>
         {/* Section 1: Hero Status Card */}
-        <View style={[styles.heroCard, { backgroundColor: colors.card }]}>
+        <TourTarget name="taskdetail-header" style={[styles.heroCard, { backgroundColor: colors.card }]}>
           <View style={styles.heroHeader}>
             <Text style={[styles.heroJobId, { color: colors.textMuted }]}>{t('taskDetail.jobId', { id: jobId })}</Text>
             <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
@@ -1212,11 +1213,11 @@ export function TaskDetailPane({
               </View>
             )}
           </View>
-        </View>
+        </TourTarget>
 
         {/* Section 2: Compact Progress Dots (Technician only) */}
         {!isAdmin && progressIndex >= 0 && (
-          <View style={[styles.progressCard, { backgroundColor: colors.card }]}>
+          <TourTarget name="taskdetail-status" style={[styles.progressCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.progressLabel, { color: colors.textMuted }]}>{t('taskDetail.progress')}</Text>
             <View style={styles.progressDotsRow}>
               {progressSteps.map((step, index) => {
@@ -1249,7 +1250,7 @@ export function TaskDetailPane({
             {currentStepLabel && (
               <Text style={[styles.progressCurrentLabel, { color: colors.textPrimary }]}>{currentStepLabel}</Text>
             )}
-          </View>
+          </TourTarget>
         )}
 
         {/* Per-step widgets — driven by the current status's capabilities */}
@@ -1602,7 +1603,7 @@ export function TaskDetailPane({
 
       {/* Bottom Bar */}
       {showBottomBar && (
-        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16), backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <TourTarget name="taskdetail-actions" style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16), backgroundColor: colors.card, borderTopColor: colors.border }]}>
           <View style={r.isTablet ? { width: '100%', maxWidth: 720, alignSelf: 'center' } : undefined}>
           {isAdmin ? (
             /* Admin Bottom Bar: Assign, Edit, Cancel */
@@ -1752,7 +1753,7 @@ export function TaskDetailPane({
             </>
           )}
           </View>
-        </View>
+        </TourTarget>
       )}
     </KeyboardAvoidingView>
 

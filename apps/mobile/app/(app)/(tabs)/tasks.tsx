@@ -20,6 +20,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
 import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
 import { TaskCard, FilterChip, Skeleton, ScreenContainer } from '../../../src/components';
+import { TourTarget } from '../../../src/components/tour';
 import { useResponsive } from '../../../src/lib/responsive';
 import { TaskDetailPane } from '../task/[id]';
 import { useSocketContext } from '../../../src/contexts/socket-context';
@@ -411,7 +412,7 @@ export default function TasksScreen() {
         }
       >
       {/* Search Bar */}
-      <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <TourTarget name="tasks-search" style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
@@ -426,10 +427,10 @@ export default function TasksScreen() {
             <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
-      </View>
+      </TourTarget>
 
       {/* Tab Bar */}
-      <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
+      <TourTarget name="tasks-header" style={[styles.tabBar, { borderBottomColor: colors.border }]}>
         {TAB_KEYS.map(tabKey => {
           const active = activeTab === tabKey;
           return (
@@ -444,10 +445,10 @@ export default function TasksScreen() {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </TourTarget>
 
       {/* Filter Chips */}
-      <View style={styles.filterContainer}>
+      <TourTarget name="tasks-filters" style={styles.filterContainer}>
         <FlatList
           data={filterKeys as readonly string[]}
           horizontal
@@ -462,7 +463,7 @@ export default function TasksScreen() {
           )}
           contentContainerStyle={{ gap: SPACING.sm }}
         />
-      </View>
+      </TourTarget>
 
       {/* Tasks Count + Sort */}
       <View style={styles.countContainer}>
@@ -563,17 +564,20 @@ export default function TasksScreen() {
         key={`cols-${listColumns}`}
         numColumns={listColumns}
         columnWrapperStyle={listColumns > 1 ? styles.gridRow : undefined}
-        renderItem={({ item }) =>
-          listColumns > 1 ? (
+        renderItem={({ item, index }) => {
+          const card = (
+            <TaskCard task={item} onPress={() => handleTaskPress(item)} showAssignee={isAdmin} showPriority={isAdmin} showDate />
+          );
+          // Spotlight only the first card for the guided tour.
+          const content = index === 0 ? <TourTarget name="tasks-card">{card}</TourTarget> : card;
+          return listColumns > 1 ? (
             // Fixed-width cell so cards fill half/third of the (capped) row
             // instead of collapsing. A lone last card stays left-aligned.
-            <View style={{ width: cardWidth }}>
-              <TaskCard task={item} onPress={() => handleTaskPress(item)} showAssignee={isAdmin} showPriority={isAdmin} showDate />
-            </View>
+            <View style={{ width: cardWidth }}>{content}</View>
           ) : (
-            <TaskCard task={item} onPress={() => handleTaskPress(item)} showAssignee={isAdmin} showPriority={isAdmin} showDate />
-          )
-        }
+            content
+          );
+        }}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={

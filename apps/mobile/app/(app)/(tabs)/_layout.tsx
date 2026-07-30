@@ -9,7 +9,15 @@ import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
+import { TourTarget, useTourTarget } from '../../../src/components/tour';
 import { Role, hasAccessModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
+
+// Maps a tab route name → guided-tour target key (only the tabs the tours spotlight).
+const TAB_TOUR_KEY: Record<string, string> = {
+  tasks: 'tab-tasks',
+  attendance: 'tab-attendance',
+  'time-off': 'tab-time-off',
+};
 
 // Logo icon for header left
 function HeaderLogo() {
@@ -52,6 +60,7 @@ function ProfileButton() {
       onPressOut={handlePressOut}
       style={styles.profileBtn}
     >
+      <TourTarget name="tab-profile">
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
         <View style={[
           styles.profileAvatar,
@@ -69,6 +78,7 @@ function ProfileButton() {
           { backgroundColor: presenceColor(user?.presence), borderColor: colors.background },
         ]} />
       </Animated.View>
+      </TourTarget>
     </Pressable>
   );
 }
@@ -132,13 +142,10 @@ function TabItem({
     iconName = isFocused ? 'person' : 'person-outline';
   }
 
-  return (
-    <Pressable
-      style={styles.tabItem}
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-    >
+  const tourKey = TAB_TOUR_KEY[route.name];
+
+  const inner = (
+    <>
       <Animated.View
         style={[
           styles.tabIconWrapper,
@@ -164,6 +171,23 @@ function TabItem({
           },
         ]}
       />
+    </>
+  );
+
+  return (
+    <Pressable
+      style={styles.tabItem}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      {tourKey ? (
+        <TourTarget name={tourKey} style={styles.tabItemInner}>
+          {inner}
+        </TourTarget>
+      ) : (
+        inner
+      )}
     </Pressable>
   );
 }
@@ -404,6 +428,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 4,
+  },
+  tabItemInner: {
+    alignItems: 'center',
   },
   tabIconWrapper: {
     width: 36,

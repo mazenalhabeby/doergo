@@ -699,7 +699,8 @@
       "privacyPolicy": "Privacy Policy",
       "about": "About",
       "language": "Language",
-      "timeFormat": "Time format"
+      "timeFormat": "Time format",
+      "guidedTour": "Guided tours"
     },
     "language": {
       "choosePreferred": "Choose your preferred language",
@@ -1141,5 +1142,254 @@
     "privacyPost": " for details.",
     "allow": "Allow background location",
     "deny": "Not now"
+  },
+  "tours": {
+    "progress": "Step {{current}} of {{total}}",
+    "next": "Next",
+    "finish": "Done",
+    "skip": "Skip",
+    "tapHint": "Tap to continue",
+    "menuTitle": "Guided tours",
+    "thisScreen": "This screen",
+    "showMeAround": "Show me around this screen",
+    "allGuides": "All guides",
+    "welcome": {
+      "title": "Welcome tour",
+      "steps": {
+        "greeting": {
+          "title": "Welcome to HBCField",
+          "body": "This is your home base. Here is a quick tour of the app — you can replay it anytime from your profile."
+        },
+        "today": {
+          "title": "Your day at a glance",
+          "body": "A live snapshot of today — your jobs, hours and what needs your attention."
+        },
+        "work": {
+          "title": "Your work",
+          "body": "Your jobs and schedule live here. Tap any card to open it and see the details."
+        },
+        "tabsTasks": {
+          "title": "Jobs",
+          "body": "Find every job assigned to you here — search, filter and open them."
+        },
+        "tabsClock": {
+          "title": "Clock in & out",
+          "body": "Start and end your shift, and take breaks, from the clock tab."
+        },
+        "tabsTimeOff": {
+          "title": "Time off",
+          "body": "Request days off and track your requests here."
+        },
+        "profile": {
+          "title": "Your profile",
+          "body": "Your account, availability, language, notifications — and this guided tour — live here."
+        }
+      }
+    },
+    "tasks": {
+      "title": "Jobs",
+      "steps": {
+        "intro": {
+          "title": "Your jobs",
+          "body": "Every job assigned to you shows up here, newest first."
+        },
+        "search": {
+          "title": "Search",
+          "body": "Quickly find a job by title, customer or address."
+        },
+        "filters": {
+          "title": "Filter",
+          "body": "Narrow the list by status — active, completed or blocked."
+        },
+        "card": {
+          "title": "Open a job",
+          "body": "Tap a job to see the full details, update its status and add photos or notes."
+        }
+      }
+    },
+    "taskDetail": {
+      "title": "Job details",
+      "steps": {
+        "intro": {
+          "title": "Job details",
+          "body": "Everything about this job — location, description, customer and history — in one place."
+        },
+        "status": {
+          "title": "Progress",
+          "body": "Follow the job through its stages, from accepted to completed."
+        },
+        "actions": {
+          "title": "Update the job",
+          "body": "Accept, start, block or complete the job from here as you work through it."
+        }
+      }
+    },
+    "attendance": {
+      "title": "Clock in & out",
+      "steps": {
+        "intro": {
+          "title": "Attendance",
+          "body": "Track your working hours here — clock in when you start and out when you finish."
+        },
+        "clock": {
+          "title": "Clock in / out",
+          "body": "One tap to start or end your shift. Your location confirms you are at the right place."
+        },
+        "status": {
+          "title": "Your status",
+          "body": "See at a glance whether you are on the clock and how long you have worked today."
+        },
+        "history": {
+          "title": "History",
+          "body": "Review your recent shifts, breaks and hours."
+        }
+      }
+    },
+    "timeOff": {
+      "title": "Time off",
+      "steps": {
+        "intro": {
+          "title": "Time off",
+          "body": "Request days off and follow your requests from here."
+        },
+        "request": {
+          "title": "Request time off",
+          "body": "Pick your dates and a reason — your manager gets it for approval."
+        },
+        "list": {
+          "title": "Your requests",
+          "body": "Track each request — pending, approved or declined."
+        }
+      }
+    },
+    "profile": {
+      "title": "Your profile",
+      "steps": {
+        "intro": {
+          "title": "Your profile",
+          "body": "Manage your account and app preferences from here."
+        },
+        "availability": {
+          "title": "Availability",
+          "body": "Set yourself as available, busy or away so your team knows your status."
+        },
+        "menu": {
+          "title": "Settings",
+          "body": "Language, appearance, notifications, security and support all live in this menu."
+        },
+        "guide": {
+          "title": "Guided tours",
+          "body": "Replay any walkthrough anytime — tap here to open the guides."
+        }
+      }
+    }
+  },
+  "setup": {
+    "stepOf": "Step {{step}} of {{total}}",
+    "friend": "there",
+    "work": {
+      "kicker": "Tell me about your work",
+      "title": "What does your team do?",
+      "sub": "Describe it in your own words — a sentence is plenty. I'll read it and figure out how to set you up.",
+      "placeholder": "e.g. we install and service AC units and do emergency callouts",
+      "orPick": "or pick a starting point",
+      "understoodEyebrow": "Here's what I understood",
+      "youreIn": "You're in {{industry}}",
+      "understoodSub": "From what you wrote, here's how I'll set you up.",
+      "areasLabel": "Work areas I'll create",
+      "toolsLabel": "Tools I'll switch on",
+      "continue": "Perfect, continue",
+      "addDetail": "Add more detail"
+    },
+    "group": {
+      "kicker": "Your work areas",
+      "confirmTitle": "Here's how I'll organise your work",
+      "confirmSub": "Based on what you told me. These become your groups for jobs, people and reports — all editable later.",
+      "looksGood": "Looks good",
+      "groupDifferently": "Group it differently instead",
+      "chooseTitle": "How should I group your jobs?",
+      "chooseSub": "I can set this up for you — or choose how to group your jobs yourself.",
+      "orManual": "or organise it yourself",
+      "byType": "By type of job",
+      "byTypeHint": "installs, repairs, maintenance…",
+      "byPlace": "By place",
+      "byPlaceHint": "one group per site or area",
+      "byTeam": "By team",
+      "byTeamHint": "one group per crew",
+      "pickForMe": "Not sure? I'll pick",
+      "pickForMeHint": "I'll choose the best setup"
+    },
+    "done": {
+      "title": "All set — you're ready",
+      "flag": "{{org}} is built and ready to use",
+      "areasTitle": "Your work areas are ready",
+      "toolsTitle": "The right tools are switched on",
+      "teamTitle": "Invite your team",
+      "teamReady": "Add your teammates from Members when you're ready",
+      "teamSoloTitle": "Just you for now",
+      "teamSolo": "Add people anytime from Members",
+      "cta": "Show me around"
+    },
+    "industries": {
+      "repairs": "Repairs & trades",
+      "machines": "Machines & maintenance",
+      "facilities": "Buildings & facilities",
+      "cleaning": "Cleaning",
+      "security": "Security & guarding",
+      "grounds": "Gardens & grounds",
+      "construction": "Construction",
+      "it": "IT & telecom",
+      "solar": "Solar & energy",
+      "other": "General"
+    },
+    "areaNames": {
+      "installations": "Installations",
+      "maintenance": "Maintenance",
+      "repairs": "Repairs & callouts",
+      "preventive": "Preventive maintenance",
+      "breakdowns": "Breakdowns",
+      "inspections": "Inspections",
+      "requests": "Requests",
+      "regularCleans": "Regular cleans",
+      "deepCleans": "Deep cleans",
+      "oneOff": "One-off jobs",
+      "cleaning": "Cleaning jobs",
+      "patrols": "Patrols",
+      "alarmCallouts": "Alarm callouts",
+      "staticGuarding": "Static guarding",
+      "regularVisits": "Regular visits",
+      "projects": "Projects",
+      "snagging": "Snagging",
+      "callbacks": "Callbacks",
+      "installs": "Installs",
+      "supportTickets": "Support tickets",
+      "servicing": "Servicing",
+      "callouts": "Callouts",
+      "routes": "Routes",
+      "pickups": "Pickups",
+      "deliveries": "Deliveries",
+      "treatments": "Treatments",
+      "followUps": "Follow-ups",
+      "grounds": "Grounds",
+      "jobs": "Jobs"
+    },
+    "tools": {
+      "jobs": "Jobs & scheduling",
+      "serviceReports": "Service reports",
+      "photos": "Photos & signatures",
+      "tracking": "Live GPS tracking",
+      "clock": "Clock in / out",
+      "checklists": "Checklists",
+      "projects": "Projects & phases"
+    },
+    "mobile": {
+      "needOneArea": "Add at least one work area to continue.",
+      "areaNamePlaceholder": "Area name",
+      "almostThere": "Almost there",
+      "nameTitle": "Let's name your company, {{name}}",
+      "nameSub": "This is how your team will see it. You can change everything later.",
+      "summaryIndustry": "What you do",
+      "createButton": "Create my workspace"
+    }
   }
 }

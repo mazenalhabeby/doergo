@@ -699,7 +699,8 @@
       "privacyPolicy": "Politique de confidentialité",
       "about": "À propos",
       "language": "Langue",
-      "timeFormat": "Format de l'heure"
+      "timeFormat": "Format de l'heure",
+      "guidedTour": "Visites guidées"
     },
     "language": {
       "choosePreferred": "Choisissez votre langue préférée",
@@ -1141,5 +1142,254 @@
     "privacyPost": " pour plus de détails.",
     "allow": "Autoriser la localisation en arrière-plan",
     "deny": "Pas maintenant"
+  },
+  "tours": {
+    "progress": "Étape {{current}} sur {{total}}",
+    "next": "Suivant",
+    "finish": "Terminé",
+    "skip": "Passer",
+    "tapHint": "Appuyez pour continuer",
+    "menuTitle": "Visites guidées",
+    "thisScreen": "Cet écran",
+    "showMeAround": "Me présenter cet écran",
+    "allGuides": "Toutes les visites",
+    "welcome": {
+      "title": "Visite de bienvenue",
+      "steps": {
+        "greeting": {
+          "title": "Bienvenue sur HBCField",
+          "body": "Voici votre écran d'accueil. Découvrez l'application en quelques étapes — vous pouvez revoir cette visite à tout moment depuis votre profil."
+        },
+        "today": {
+          "title": "Votre journée en un coup d'œil",
+          "body": "Un aperçu en direct de votre journée : vos interventions, vos heures et ce qui requiert votre attention."
+        },
+        "work": {
+          "title": "Votre travail",
+          "body": "Vos interventions et votre planning sont ici. Appuyez sur une carte pour l'ouvrir et voir les détails."
+        },
+        "tabsTasks": {
+          "title": "Interventions",
+          "body": "Retrouvez ici toutes les interventions qui vous sont assignées — recherchez, filtrez et ouvrez-les."
+        },
+        "tabsClock": {
+          "title": "Pointer l'arrivée et le départ",
+          "body": "Commencez et terminez votre service, et prenez vos pauses, depuis l'onglet de pointage."
+        },
+        "tabsTimeOff": {
+          "title": "Congés",
+          "body": "Demandez des jours de congé et suivez vos demandes ici."
+        },
+        "profile": {
+          "title": "Votre profil",
+          "body": "Votre compte, votre disponibilité, la langue, les notifications — et cette visite guidée — se trouvent ici."
+        }
+      }
+    },
+    "tasks": {
+      "title": "Interventions",
+      "steps": {
+        "intro": {
+          "title": "Vos interventions",
+          "body": "Chaque intervention qui vous est assignée apparaît ici, la plus récente en premier."
+        },
+        "search": {
+          "title": "Rechercher",
+          "body": "Trouvez rapidement une intervention par titre, client ou adresse."
+        },
+        "filters": {
+          "title": "Filtrer",
+          "body": "Affinez la liste par statut — active, terminée ou bloquée."
+        },
+        "card": {
+          "title": "Ouvrir une intervention",
+          "body": "Appuyez sur une intervention pour voir tous les détails, mettre à jour son statut et ajouter des photos ou des notes."
+        }
+      }
+    },
+    "taskDetail": {
+      "title": "Détails de l'intervention",
+      "steps": {
+        "intro": {
+          "title": "Détails de l'intervention",
+          "body": "Tout sur cette intervention — lieu, description, client et historique — au même endroit."
+        },
+        "status": {
+          "title": "Progression",
+          "body": "Suivez l'intervention à travers ses étapes, de l'acceptation à la clôture."
+        },
+        "actions": {
+          "title": "Mettre à jour l'intervention",
+          "body": "Acceptez, démarrez, bloquez ou terminez l'intervention ici au fil de votre travail."
+        }
+      }
+    },
+    "attendance": {
+      "title": "Pointer l'arrivée et le départ",
+      "steps": {
+        "intro": {
+          "title": "Pointage",
+          "body": "Suivez ici vos heures de travail — pointez à l'arrivée quand vous commencez et au départ quand vous finissez."
+        },
+        "clock": {
+          "title": "Pointer l'arrivée / le départ",
+          "body": "Une seule pression pour commencer ou terminer votre service. Votre position confirme que vous êtes au bon endroit."
+        },
+        "status": {
+          "title": "Votre statut",
+          "body": "Voyez en un coup d'œil si vous êtes en service et combien de temps vous avez travaillé aujourd'hui."
+        },
+        "history": {
+          "title": "Historique",
+          "body": "Consultez vos services, pauses et heures récents."
+        }
+      }
+    },
+    "timeOff": {
+      "title": "Congés",
+      "steps": {
+        "intro": {
+          "title": "Congés",
+          "body": "Demandez des jours de congé et suivez vos demandes depuis cet écran."
+        },
+        "request": {
+          "title": "Demander un congé",
+          "body": "Choisissez vos dates et un motif — votre responsable le reçoit pour approbation."
+        },
+        "list": {
+          "title": "Vos demandes",
+          "body": "Suivez chaque demande — en attente, approuvée ou refusée."
+        }
+      }
+    },
+    "profile": {
+      "title": "Votre profil",
+      "steps": {
+        "intro": {
+          "title": "Votre profil",
+          "body": "Gérez votre compte et vos préférences d'application depuis cet écran."
+        },
+        "availability": {
+          "title": "Disponibilité",
+          "body": "Indiquez si vous êtes disponible, occupé ou absent pour que votre équipe connaisse votre statut."
+        },
+        "menu": {
+          "title": "Paramètres",
+          "body": "La langue, l'apparence, les notifications, la sécurité et l'assistance se trouvent tous dans ce menu."
+        },
+        "guide": {
+          "title": "Visites guidées",
+          "body": "Revoyez n'importe quelle présentation à tout moment — appuyez ici pour ouvrir les visites."
+        }
+      }
+    }
+  },
+  "setup": {
+    "stepOf": "Étape {{step}} sur {{total}}",
+    "friend": "vous",
+    "work": {
+      "kicker": "Parlez-moi de votre travail",
+      "title": "Que fait votre équipe ?",
+      "sub": "Décrivez-le avec vos propres mots — une phrase suffit. Je la lirai et déterminerai comment vous configurer.",
+      "placeholder": "p. ex. nous installons et entretenons des climatiseurs et effectuons des interventions d'urgence",
+      "orPick": "ou choisissez un point de départ",
+      "understoodEyebrow": "Voici ce que j'ai compris",
+      "youreIn": "Vous êtes dans le domaine {{industry}}",
+      "understoodSub": "D'après ce que vous avez écrit, voici comment je vais vous configurer.",
+      "areasLabel": "Domaines de travail que je vais créer",
+      "toolsLabel": "Outils que je vais activer",
+      "continue": "Parfait, continuer",
+      "addDetail": "Ajouter des précisions"
+    },
+    "group": {
+      "kicker": "Vos domaines de travail",
+      "confirmTitle": "Voici comment je vais organiser votre travail",
+      "confirmSub": "D'après ce que vous m'avez indiqué. Ceux-ci deviennent vos groupes pour les interventions, les personnes et les rapports — tous modifiables plus tard.",
+      "looksGood": "Ça me convient",
+      "groupDifferently": "Grouper autrement à la place",
+      "chooseTitle": "Comment dois-je grouper vos interventions ?",
+      "chooseSub": "Je peux le configurer pour vous — ou choisissez vous-même comment grouper vos interventions.",
+      "orManual": "ou organisez-le vous-même",
+      "byType": "Par type d'intervention",
+      "byTypeHint": "installations, réparations, entretien…",
+      "byPlace": "Par lieu",
+      "byPlaceHint": "un groupe par site ou par zone",
+      "byTeam": "Par équipe",
+      "byTeamHint": "un groupe par équipe",
+      "pickForMe": "Vous ne savez pas ? Je choisis",
+      "pickForMeHint": "Je choisirai la meilleure configuration"
+    },
+    "done": {
+      "title": "Tout est prêt — vous pouvez commencer",
+      "flag": "{{org}} est configurée et prête à l'emploi",
+      "areasTitle": "Vos domaines de travail sont prêts",
+      "toolsTitle": "Les bons outils sont activés",
+      "teamTitle": "Invitez votre équipe",
+      "teamReady": "Ajoutez vos coéquipiers depuis Membres quand vous serez prêt",
+      "teamSoloTitle": "Juste vous pour l'instant",
+      "teamSolo": "Ajoutez des personnes à tout moment depuis Membres",
+      "cta": "Faites-moi visiter"
+    },
+    "industries": {
+      "repairs": "Réparations et métiers",
+      "machines": "Machines et maintenance",
+      "facilities": "Bâtiments et installations",
+      "cleaning": "Nettoyage",
+      "security": "Sécurité et gardiennage",
+      "grounds": "Jardins et espaces verts",
+      "construction": "Construction",
+      "it": "Informatique et télécoms",
+      "solar": "Solaire et énergie",
+      "other": "Général"
+    },
+    "areaNames": {
+      "installations": "Installations",
+      "maintenance": "Maintenance",
+      "repairs": "Réparations et interventions",
+      "preventive": "Maintenance préventive",
+      "breakdowns": "Pannes",
+      "inspections": "Inspections",
+      "requests": "Demandes",
+      "regularCleans": "Nettoyages réguliers",
+      "deepCleans": "Nettoyages en profondeur",
+      "oneOff": "Interventions ponctuelles",
+      "cleaning": "Interventions de nettoyage",
+      "patrols": "Patrouilles",
+      "alarmCallouts": "Interventions sur alarme",
+      "staticGuarding": "Gardiennage statique",
+      "regularVisits": "Visites régulières",
+      "projects": "Projets",
+      "snagging": "Levée de réserves",
+      "callbacks": "Rappels",
+      "installs": "Installations",
+      "supportTickets": "Tickets de support",
+      "servicing": "Entretien",
+      "callouts": "Interventions",
+      "routes": "Tournées",
+      "pickups": "Enlèvements",
+      "deliveries": "Livraisons",
+      "treatments": "Traitements",
+      "followUps": "Suivis",
+      "grounds": "Espaces verts",
+      "jobs": "Interventions"
+    },
+    "tools": {
+      "jobs": "Interventions et planification",
+      "serviceReports": "Comptes rendus d'intervention",
+      "photos": "Photos et signatures",
+      "tracking": "Suivi GPS en direct",
+      "clock": "Pointage entrée / sortie",
+      "checklists": "Listes de contrôle",
+      "projects": "Projets et phases"
+    },
+    "mobile": {
+      "needOneArea": "Ajoute au moins un domaine de travail pour continuer.",
+      "areaNamePlaceholder": "Nom du domaine",
+      "almostThere": "Presque terminé",
+      "nameTitle": "Donnons un nom à ton entreprise, {{name}}",
+      "nameSub": "C'est ainsi que ton équipe la verra. Tu peux tout modifier plus tard.",
+      "summaryIndustry": "Ce que tu fais",
+      "createButton": "Créer mon espace de travail"
+    }
   }
 }

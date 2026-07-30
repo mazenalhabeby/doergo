@@ -42,6 +42,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
+import { TourTarget } from '../../../src/components/tour';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
 import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import {
@@ -517,7 +518,7 @@ export default function AttendanceScreen() {
       >
         {/* Status Card */}
         <View style={[styles.statusCard, { backgroundColor: colors.card }]}>
-          <View style={styles.statusHeader}>
+          <TourTarget name="attendance-header" style={styles.statusHeader}>
             <View
               style={[
                 styles.statusIndicator,
@@ -527,7 +528,7 @@ export default function AttendanceScreen() {
             <Text style={[styles.statusTitle, { color: colors.textPrimary }]}>
               {isClockedIn ? t('attendance.clockedIn') : t('attendance.clockedOut')}
             </Text>
-          </View>
+          </TourTarget>
 
           {/* Geofence Warning Banner */}
           {isClockedIn && isOutsideGeofence && (
@@ -580,7 +581,7 @@ export default function AttendanceScreen() {
           )}
 
           {isClockedIn && currentEntry && (
-            <View style={[styles.currentShiftInfo, { borderTopColor: colors.border }]}>
+            <TourTarget name="attendance-status" style={[styles.currentShiftInfo, { borderTopColor: colors.border }]}>
               <View style={styles.shiftDetail}>
                 <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
                 <Text style={[styles.shiftDetailText, { color: colors.textSecondary }]}>
@@ -668,10 +669,11 @@ export default function AttendanceScreen() {
                   )}
                 </View>
               )}
-            </View>
+            </TourTarget>
           )}
 
           {/* Action Button */}
+          <TourTarget name="attendance-clock">
           <TouchableOpacity
             style={[
               styles.actionButton,
@@ -695,6 +697,7 @@ export default function AttendanceScreen() {
               </>
             )}
           </TouchableOpacity>
+          </TourTarget>
 
           {!!locationError && (
             <Text style={styles.locationErrorText}>{locationError}</Text>
@@ -799,7 +802,7 @@ export default function AttendanceScreen() {
         )}
 
         {/* Recent History */}
-        <View style={styles.section}>
+        <TourTarget name="attendance-history" style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('attendance.history.title')}</Text>
 
           {history.length === 0 ? (
@@ -887,7 +890,7 @@ export default function AttendanceScreen() {
               </View>
             ))
           )}
-        </View>
+        </TourTarget>
 
         {/* Bottom spacing */}
         <View style={{ height: SPACING.xl }} />

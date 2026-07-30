@@ -18,6 +18,7 @@ import { ROUTES } from '../../lib/constants';
 import { isSameDay } from '../../lib/utils';
 import { useTheme } from '../../contexts/theme-context';
 import { WeekCalendar } from '../week-calendar';
+import { TourTarget } from '../tour';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 
 export function FreelancerHome() {
@@ -171,15 +172,15 @@ export function FreelancerHome() {
   const listHeader = useMemo(() => (
     <>
       {/* Welcome Section */}
-      <View style={sharedStyles.welcomeSection}>
+      <TourTarget name="home-greeting" style={sharedStyles.welcomeSection}>
         <Text style={[sharedStyles.welcomeGreeting, { color: colors.textMuted }]}>
           {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
         </Text>
         <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
-      </View>
+      </TourTarget>
 
       {/* Stats Cards */}
-      <View style={sharedStyles.statsGrid}>
+      <TourTarget name="home-today" style={sharedStyles.statsGrid}>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
             <View style={[sharedStyles.statIcon, { backgroundColor: colors.primaryLight }]}>
@@ -216,7 +217,7 @@ export function FreelancerHome() {
           </View>
           <Text style={[sharedStyles.statLabel, { color: colors.textMuted }]}>{t('home.freelancer.pending')}</Text>
         </View>
-      </View>
+      </TourTarget>
 
       {/* Calendar Section */}
       <WeekCalendar
@@ -230,14 +231,14 @@ export function FreelancerHome() {
       />
 
       {/* Jobs Header */}
-      <View style={flStyles.jobsSection}>
+      <TourTarget name="home-work" style={flStyles.jobsSection}>
         <View style={flStyles.jobsHeader}>
           <Text style={[flStyles.jobsTitle, { color: colors.textPrimary }]}>{t('home.freelancer.todaysJobs')}</Text>
           <View style={[flStyles.jobsCount, { backgroundColor: colors.surfaceRaised }]}>
             <Text style={[flStyles.jobsCountText, { color: colors.textSecondary }]}>{filteredTasks.length}</Text>
           </View>
         </View>
-      </View>
+      </TourTarget>
     </>
   ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName, colors, t]);
 

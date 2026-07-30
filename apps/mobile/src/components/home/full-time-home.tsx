@@ -29,6 +29,7 @@ import {
   formatDateRelative as formatDate,
 } from '../../lib/utils';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { TourTarget } from '../tour';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 
 export function FullTimeHome() {
@@ -264,15 +265,15 @@ export function FullTimeHome() {
         }
       >
         {/* Welcome Section */}
-        <View style={sharedStyles.welcomeSection}>
+        <TourTarget name="home-greeting" style={sharedStyles.welcomeSection}>
           <Text style={[sharedStyles.welcomeGreeting, { color: colors.textMuted }]}>
             {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
           </Text>
           <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
-        </View>
+        </TourTarget>
 
         {/* Clock Status Card */}
-        <View style={[ftStyles.statusCard, isClockedIn ? ftStyles.statusCardActive : ftStyles.statusCardInactive, !isClockedIn && { backgroundColor: colors.card }]}>
+        <TourTarget name="home-work" style={[ftStyles.statusCard, isClockedIn ? ftStyles.statusCardActive : ftStyles.statusCardInactive, !isClockedIn && { backgroundColor: colors.card }]}>
           <View style={ftStyles.statusHeader}>
             <View style={[ftStyles.statusIndicator, isClockedIn ? ftStyles.indicatorActive : ftStyles.indicatorInactive]} />
             <Text style={[ftStyles.statusText, isClockedIn ? ftStyles.statusTextActive : { color: colors.textPrimary }]}>
@@ -333,10 +334,10 @@ export function FullTimeHome() {
               </>
             )}
           </TouchableOpacity>
-        </View>
+        </TourTarget>
 
         {/* Quick Stats */}
-        <View style={ftStyles.quickStatsRow}>
+        <TourTarget name="home-today" style={ftStyles.quickStatsRow}>
           <View style={[ftStyles.quickStatCard, { backgroundColor: colors.card }]}>
             <Ionicons name="briefcase-outline" size={24} color={COLORS.primary} />
             <Text style={[ftStyles.quickStatValue, { color: colors.textPrimary }]}>
@@ -373,7 +374,7 @@ export function FullTimeHome() {
             </Text>
             <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>{t('home.fullTime.thisWeek')}</Text>
           </View>
-        </View>
+        </TourTarget>
 
         {/* Assigned Locations (when clocked out) */}
         {!isClockedIn && status?.assignedLocations && status.assignedLocations.length > 0 && (

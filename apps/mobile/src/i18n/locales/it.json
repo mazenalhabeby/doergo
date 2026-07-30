@@ -699,7 +699,8 @@
       "privacyPolicy": "Informativa sulla privacy",
       "about": "Informazioni",
       "language": "Lingua",
-      "timeFormat": "Formato dell'ora"
+      "timeFormat": "Formato dell'ora",
+      "guidedTour": "Tour guidati"
     },
     "language": {
       "choosePreferred": "Scegli la tua lingua preferita",
@@ -1141,5 +1142,254 @@
     "privacyPost": " per i dettagli.",
     "allow": "Consenti posizione in background",
     "deny": "Non ora"
+  },
+  "tours": {
+    "progress": "Passaggio {{current}} di {{total}}",
+    "next": "Avanti",
+    "finish": "Fatto",
+    "skip": "Salta",
+    "tapHint": "Tocca per continuare",
+    "menuTitle": "Tour guidati",
+    "thisScreen": "Questa schermata",
+    "showMeAround": "Mostrami questa schermata",
+    "allGuides": "Tutti i tour",
+    "welcome": {
+      "title": "Tour di benvenuto",
+      "steps": {
+        "greeting": {
+          "title": "Le diamo il benvenuto in HBCField",
+          "body": "Questa è la Sua schermata iniziale. Ecco un breve tour dell'app: può rivederlo quando vuole dal Suo profilo."
+        },
+        "today": {
+          "title": "La Sua giornata in sintesi",
+          "body": "Una panoramica in tempo reale di oggi: i Suoi lavori, le ore e ciò che richiede la Sua attenzione."
+        },
+        "work": {
+          "title": "Il Suo lavoro",
+          "body": "I Suoi lavori e il calendario sono qui. Tocchi una scheda per aprirla e vederne i dettagli."
+        },
+        "tabsTasks": {
+          "title": "Lavori",
+          "body": "Qui trova ogni lavoro assegnato a Lei: cerchi, filtri e apra i lavori."
+        },
+        "tabsClock": {
+          "title": "Timbrare entrata e uscita",
+          "body": "Inizi e termini il turno, e faccia le pause, dalla scheda di timbratura."
+        },
+        "tabsTimeOff": {
+          "title": "Permessi",
+          "body": "Richieda giorni di permesso e monitori le Sue richieste qui."
+        },
+        "profile": {
+          "title": "Il Suo profilo",
+          "body": "Il Suo account, la disponibilità, la lingua, le notifiche e questo tour guidato si trovano qui."
+        }
+      }
+    },
+    "tasks": {
+      "title": "Lavori",
+      "steps": {
+        "intro": {
+          "title": "I Suoi lavori",
+          "body": "Ogni lavoro assegnato a Lei compare qui, dal più recente."
+        },
+        "search": {
+          "title": "Cerca",
+          "body": "Trovi rapidamente un lavoro per titolo, cliente o indirizzo."
+        },
+        "filters": {
+          "title": "Filtra",
+          "body": "Restringa l'elenco per stato: attivo, completato o bloccato."
+        },
+        "card": {
+          "title": "Apri un lavoro",
+          "body": "Tocchi un lavoro per vederne tutti i dettagli, aggiornarne lo stato e aggiungere foto o note."
+        }
+      }
+    },
+    "taskDetail": {
+      "title": "Dettagli del lavoro",
+      "steps": {
+        "intro": {
+          "title": "Dettagli del lavoro",
+          "body": "Tutto su questo lavoro: luogo, descrizione, cliente e cronologia, in un unico posto."
+        },
+        "status": {
+          "title": "Avanzamento",
+          "body": "Segua il lavoro attraverso le sue fasi, da accettato a completato."
+        },
+        "actions": {
+          "title": "Aggiorna il lavoro",
+          "body": "Accetti, avvii, blocchi o completi il lavoro da qui mentre procede."
+        }
+      }
+    },
+    "attendance": {
+      "title": "Timbrare entrata e uscita",
+      "steps": {
+        "intro": {
+          "title": "Presenze",
+          "body": "Registri qui le Sue ore di lavoro: timbri l'entrata quando inizia e l'uscita quando finisce."
+        },
+        "clock": {
+          "title": "Timbra entrata / uscita",
+          "body": "Un tocco per iniziare o terminare il turno. La Sua posizione conferma che si trova nel posto giusto."
+        },
+        "status": {
+          "title": "Il Suo stato",
+          "body": "Veda a colpo d'occhio se è in servizio e quanto ha lavorato oggi."
+        },
+        "history": {
+          "title": "Cronologia",
+          "body": "Riveda i Suoi turni, le pause e le ore recenti."
+        }
+      }
+    },
+    "timeOff": {
+      "title": "Permessi",
+      "steps": {
+        "intro": {
+          "title": "Permessi",
+          "body": "Richieda giorni di permesso e segua le Sue richieste da qui."
+        },
+        "request": {
+          "title": "Richiedi un permesso",
+          "body": "Scelga le date e un motivo: il Suo responsabile lo riceve per l'approvazione."
+        },
+        "list": {
+          "title": "Le Sue richieste",
+          "body": "Segua ogni richiesta: in attesa, approvata o rifiutata."
+        }
+      }
+    },
+    "profile": {
+      "title": "Il Suo profilo",
+      "steps": {
+        "intro": {
+          "title": "Il Suo profilo",
+          "body": "Gestisca il Suo account e le preferenze dell'app da qui."
+        },
+        "availability": {
+          "title": "Disponibilità",
+          "body": "Si imposti come disponibile, occupato o assente così che il Suo team conosca il Suo stato."
+        },
+        "menu": {
+          "title": "Impostazioni",
+          "body": "Lingua, aspetto, notifiche, sicurezza e assistenza si trovano tutti in questo menu."
+        },
+        "guide": {
+          "title": "Tour guidati",
+          "body": "Riveda qualsiasi guida quando vuole: tocchi qui per aprire i tour."
+        }
+      }
+    }
+  },
+  "setup": {
+    "stepOf": "Passaggio {{step}} di {{total}}",
+    "friend": "ciao",
+    "work": {
+      "kicker": "Mi parli del suo lavoro",
+      "title": "Di cosa si occupa il suo team?",
+      "sub": "Lo descriva con parole sue — una frase è sufficiente. La leggerò e capirò come configurarla.",
+      "placeholder": "es. installiamo e assistiamo impianti di condizionamento ed effettuiamo interventi di emergenza",
+      "orPick": "oppure scelga un punto di partenza",
+      "understoodEyebrow": "Ecco cosa ho capito",
+      "youreIn": "Opera nel settore {{industry}}",
+      "understoodSub": "Da quanto ha scritto, ecco come la configurerò.",
+      "areasLabel": "Aree di lavoro che creerò",
+      "toolsLabel": "Strumenti che attiverò",
+      "continue": "Perfetto, continua",
+      "addDetail": "Aggiungi altri dettagli"
+    },
+    "group": {
+      "kicker": "Le sue aree di lavoro",
+      "confirmTitle": "Ecco come organizzerò il suo lavoro",
+      "confirmSub": "In base a quanto mi ha indicato. Questi diventano i suoi gruppi per interventi, persone e report — tutti modificabili in seguito.",
+      "looksGood": "Va bene così",
+      "groupDifferently": "Raggruppa in modo diverso",
+      "chooseTitle": "Come devo raggruppare i suoi interventi?",
+      "chooseSub": "Posso configurarlo io per Lei — oppure scelga Lei come raggruppare i suoi interventi.",
+      "orManual": "oppure lo organizzi Lei stesso",
+      "byType": "Per tipo di intervento",
+      "byTypeHint": "installazioni, riparazioni, manutenzione…",
+      "byPlace": "Per luogo",
+      "byPlaceHint": "un gruppo per sede o area",
+      "byTeam": "Per team",
+      "byTeamHint": "un gruppo per squadra",
+      "pickForMe": "Non è sicuro? Scelgo io",
+      "pickForMeHint": "Sceglierò la configurazione migliore"
+    },
+    "done": {
+      "title": "Tutto pronto — è a posto",
+      "flag": "{{org}} è stato creato ed è pronto all'uso",
+      "areasTitle": "Le sue aree di lavoro sono pronte",
+      "toolsTitle": "Gli strumenti giusti sono attivati",
+      "teamTitle": "Inviti il suo team",
+      "teamReady": "Aggiunga i suoi colleghi dalla sezione Membri quando è pronto",
+      "teamSoloTitle": "Solo Lei per ora",
+      "teamSolo": "Aggiunga persone in qualsiasi momento dalla sezione Membri",
+      "cta": "Mi faccia fare un giro"
+    },
+    "industries": {
+      "repairs": "Riparazioni e artigianato",
+      "machines": "Macchinari e manutenzione",
+      "facilities": "Edifici e strutture",
+      "cleaning": "Pulizie",
+      "security": "Sicurezza e vigilanza",
+      "grounds": "Giardini e aree verdi",
+      "construction": "Edilizia",
+      "it": "IT e telecomunicazioni",
+      "solar": "Solare ed energia",
+      "other": "Generale"
+    },
+    "areaNames": {
+      "installations": "Installazioni",
+      "maintenance": "Manutenzione",
+      "repairs": "Riparazioni e interventi",
+      "preventive": "Manutenzione preventiva",
+      "breakdowns": "Guasti",
+      "inspections": "Ispezioni",
+      "requests": "Richieste",
+      "regularCleans": "Pulizie ordinarie",
+      "deepCleans": "Pulizie approfondite",
+      "oneOff": "Interventi occasionali",
+      "cleaning": "Interventi di pulizia",
+      "patrols": "Ronde",
+      "alarmCallouts": "Interventi su allarme",
+      "staticGuarding": "Vigilanza fissa",
+      "regularVisits": "Visite regolari",
+      "projects": "Progetti",
+      "snagging": "Correzione difetti",
+      "callbacks": "Richiami",
+      "installs": "Installazioni",
+      "supportTickets": "Ticket di assistenza",
+      "servicing": "Assistenza",
+      "callouts": "Interventi",
+      "routes": "Percorsi",
+      "pickups": "Ritiri",
+      "deliveries": "Consegne",
+      "treatments": "Trattamenti",
+      "followUps": "Follow-up",
+      "grounds": "Aree verdi",
+      "jobs": "Interventi"
+    },
+    "tools": {
+      "jobs": "Interventi e pianificazione",
+      "serviceReports": "Rapporti di servizio",
+      "photos": "Foto e firme",
+      "tracking": "Tracciamento GPS in tempo reale",
+      "clock": "Entrata / uscita",
+      "checklists": "Checklist",
+      "projects": "Progetti e fasi"
+    },
+    "mobile": {
+      "needOneArea": "Aggiungi almeno un’area di lavoro per continuare.",
+      "areaNamePlaceholder": "Nome dell’area",
+      "almostThere": "Ci siamo quasi",
+      "nameTitle": "Diamo un nome alla tua azienda, {{name}}",
+      "nameSub": "Così lo vedrà il tuo team. Puoi cambiare tutto in seguito.",
+      "summaryIndustry": "Di cosa ti occupi",
+      "createButton": "Crea il mio spazio di lavoro"
+    }
   }
 }

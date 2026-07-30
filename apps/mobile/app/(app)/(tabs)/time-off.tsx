@@ -18,6 +18,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { useFetchData } from '../../../src/hooks/useFetchData';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
+import { TourTarget } from '../../../src/components/tour';
 import {
   timeOffApi,
   availabilityApi,
@@ -538,7 +539,7 @@ export default function TimeOffScreen() {
         {/* ============================================================= */}
         {/* STATS ROW                                                     */}
         {/* ============================================================= */}
-        <View style={styles.statsRow}>
+        <TourTarget name="timeoff-header" style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.primaryLight }]}>
               <Ionicons name="checkmark-done" size={18} color={COLORS.primary} />
@@ -567,7 +568,7 @@ export default function TimeOffScreen() {
             <Text style={[styles.statNumber, { color: COLORS.error }]}>{stats.rejected}</Text>
             <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.rejected')}</Text>
           </View>
-        </View>
+        </TourTarget>
 
         {/* Schedule info banner */}
         {schedule.length === 0 && (
@@ -582,7 +583,7 @@ export default function TimeOffScreen() {
         {/* ============================================================= */}
         {/* MONTHLY CALENDAR                                              */}
         {/* ============================================================= */}
-        <View style={[styles.calendarCard, { backgroundColor: colors.card }]}>
+        <TourTarget name="timeoff-request" style={[styles.calendarCard, { backgroundColor: colors.card }]}>
           {/* Month header */}
           <View style={styles.calendarHeader}>
             <TouchableOpacity onPress={goToPrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -696,7 +697,7 @@ export default function TimeOffScreen() {
               {t('timeOff.calendar.selectionHint')}
             </Text>
           )}
-        </View>
+        </TourTarget>
 
         {/* ============================================================= */}
         {/* AVAILABILITY INSIGHT PANEL                                    */}
@@ -831,7 +832,7 @@ export default function TimeOffScreen() {
         {/* ============================================================= */}
         {/* REQUESTS LIST                                                 */}
         {/* ============================================================= */}
-        <View style={styles.section}>
+        <TourTarget name="timeoff-list" style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('timeOff.myRequests')}</Text>
 
           {/* Segmented filter */}
@@ -935,7 +936,7 @@ export default function TimeOffScreen() {
               );
             })
           )}
-        </View>
+        </TourTarget>
 
         {/* Bottom spacing */}
         <View style={{ height: SPACING.xxxl }} />

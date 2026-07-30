@@ -22,6 +22,9 @@ export * from './support';
 // Chat (member-to-member conversation/message types) — pure, client-safe
 export * from './chat';
 
+// Setup wizard engine (guided org builder catalog + classifier) — pure, client-safe
+export * from './setup';
+
 // Export utility functions (date, query string building)
 export * from './utils';
 

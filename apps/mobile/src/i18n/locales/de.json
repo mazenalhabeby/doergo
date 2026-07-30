@@ -699,7 +699,8 @@
       "privacyPolicy": "Datenschutzerklärung",
       "about": "Über",
       "language": "Sprache",
-      "timeFormat": "Zeitformat"
+      "timeFormat": "Zeitformat",
+      "guidedTour": "Geführte Touren"
     },
     "language": {
       "choosePreferred": "Wählen Sie Ihre bevorzugte Sprache",
@@ -1141,5 +1142,254 @@
     "privacyPost": ".",
     "allow": "Standort im Hintergrund erlauben",
     "deny": "Jetzt nicht"
+  },
+  "tours": {
+    "progress": "Schritt {{current}} von {{total}}",
+    "next": "Weiter",
+    "finish": "Fertig",
+    "skip": "Überspringen",
+    "tapHint": "Tippen, um fortzufahren",
+    "menuTitle": "Geführte Touren",
+    "thisScreen": "Dieser Bildschirm",
+    "showMeAround": "Diesen Bildschirm erklären",
+    "allGuides": "Alle Touren",
+    "welcome": {
+      "title": "Willkommenstour",
+      "steps": {
+        "greeting": {
+          "title": "Willkommen bei HBCField",
+          "body": "Das ist Ihre Startseite. Hier ist eine kurze Tour durch die App – Sie können sie jederzeit über Ihr Profil erneut ansehen."
+        },
+        "today": {
+          "title": "Ihr Tag auf einen Blick",
+          "body": "Ein Live-Überblick über heute – Ihre Aufträge, Stunden und was Ihre Aufmerksamkeit braucht."
+        },
+        "work": {
+          "title": "Ihre Arbeit",
+          "body": "Ihre Aufträge und Ihr Plan sind hier zu finden. Tippen Sie auf eine Karte, um sie zu öffnen und die Details zu sehen."
+        },
+        "tabsTasks": {
+          "title": "Aufträge",
+          "body": "Hier finden Sie jeden Ihnen zugewiesenen Auftrag – suchen, filtern und öffnen."
+        },
+        "tabsClock": {
+          "title": "Ein- und ausstempeln",
+          "body": "Beginnen und beenden Sie Ihre Schicht und machen Sie Pausen im Zeiterfassungs-Tab."
+        },
+        "tabsTimeOff": {
+          "title": "Abwesenheit",
+          "body": "Beantragen Sie freie Tage und verfolgen Sie Ihre Anträge hier."
+        },
+        "profile": {
+          "title": "Ihr Profil",
+          "body": "Ihr Konto, Ihre Verfügbarkeit, Sprache, Benachrichtigungen – und diese geführte Tour – finden Sie hier."
+        }
+      }
+    },
+    "tasks": {
+      "title": "Aufträge",
+      "steps": {
+        "intro": {
+          "title": "Ihre Aufträge",
+          "body": "Jeder Ihnen zugewiesene Auftrag erscheint hier, der neueste zuerst."
+        },
+        "search": {
+          "title": "Suchen",
+          "body": "Finden Sie schnell einen Auftrag nach Titel, Kunde oder Adresse."
+        },
+        "filters": {
+          "title": "Filtern",
+          "body": "Grenzen Sie die Liste nach Status ein – aktiv, abgeschlossen oder blockiert."
+        },
+        "card": {
+          "title": "Auftrag öffnen",
+          "body": "Tippen Sie auf einen Auftrag, um alle Details zu sehen, den Status zu aktualisieren und Fotos oder Notizen hinzuzufügen."
+        }
+      }
+    },
+    "taskDetail": {
+      "title": "Auftragsdetails",
+      "steps": {
+        "intro": {
+          "title": "Auftragsdetails",
+          "body": "Alles zu diesem Auftrag – Standort, Beschreibung, Kunde und Verlauf – an einem Ort."
+        },
+        "status": {
+          "title": "Fortschritt",
+          "body": "Verfolgen Sie den Auftrag durch seine Phasen, von angenommen bis abgeschlossen."
+        },
+        "actions": {
+          "title": "Auftrag aktualisieren",
+          "body": "Nehmen Sie den Auftrag an, starten, blockieren oder schließen Sie ihn hier ab, während Sie ihn bearbeiten."
+        }
+      }
+    },
+    "attendance": {
+      "title": "Ein- und ausstempeln",
+      "steps": {
+        "intro": {
+          "title": "Zeiterfassung",
+          "body": "Erfassen Sie hier Ihre Arbeitszeit – stempeln Sie sich ein, wenn Sie beginnen, und aus, wenn Sie fertig sind."
+        },
+        "clock": {
+          "title": "Ein- / ausstempeln",
+          "body": "Ein Tippen startet oder beendet Ihre Schicht. Ihr Standort bestätigt, dass Sie am richtigen Ort sind."
+        },
+        "status": {
+          "title": "Ihr Status",
+          "body": "Sehen Sie auf einen Blick, ob Sie im Dienst sind und wie lange Sie heute gearbeitet haben."
+        },
+        "history": {
+          "title": "Verlauf",
+          "body": "Sehen Sie Ihre letzten Schichten, Pausen und Stunden ein."
+        }
+      }
+    },
+    "timeOff": {
+      "title": "Abwesenheit",
+      "steps": {
+        "intro": {
+          "title": "Abwesenheit",
+          "body": "Beantragen Sie freie Tage und verfolgen Sie Ihre Anträge von hier aus."
+        },
+        "request": {
+          "title": "Abwesenheit beantragen",
+          "body": "Wählen Sie Ihre Termine und einen Grund – Ihr Vorgesetzter erhält den Antrag zur Genehmigung."
+        },
+        "list": {
+          "title": "Ihre Anträge",
+          "body": "Verfolgen Sie jeden Antrag – ausstehend, genehmigt oder abgelehnt."
+        }
+      }
+    },
+    "profile": {
+      "title": "Ihr Profil",
+      "steps": {
+        "intro": {
+          "title": "Ihr Profil",
+          "body": "Verwalten Sie hier Ihr Konto und Ihre App-Einstellungen."
+        },
+        "availability": {
+          "title": "Verfügbarkeit",
+          "body": "Legen Sie fest, ob Sie verfügbar, beschäftigt oder abwesend sind, damit Ihr Team Ihren Status kennt."
+        },
+        "menu": {
+          "title": "Einstellungen",
+          "body": "Sprache, Erscheinungsbild, Benachrichtigungen, Sicherheit und Support finden Sie alle in diesem Menü."
+        },
+        "guide": {
+          "title": "Geführte Touren",
+          "body": "Sehen Sie jede Anleitung jederzeit erneut an – tippen Sie hier, um die Touren zu öffnen."
+        }
+      }
+    }
+  },
+  "setup": {
+    "stepOf": "Schritt {{step}} von {{total}}",
+    "friend": "da",
+    "work": {
+      "kicker": "Erzählen Sie von Ihrer Arbeit",
+      "title": "Was macht Ihr Team?",
+      "sub": "Beschreiben Sie es in eigenen Worten — ein Satz reicht. Ich lese es und richte Sie passend ein.",
+      "placeholder": "z. B. wir installieren und warten Klimaanlagen und übernehmen Notfalleinsätze",
+      "orPick": "oder wählen Sie einen Startpunkt",
+      "understoodEyebrow": "Das habe ich verstanden",
+      "youreIn": "Sie sind im Bereich {{industry}}",
+      "understoodSub": "Basierend auf Ihrer Eingabe richte ich Sie so ein.",
+      "areasLabel": "Arbeitsbereiche, die ich anlege",
+      "toolsLabel": "Funktionen, die ich aktiviere",
+      "continue": "Perfekt, weiter",
+      "addDetail": "Mehr Details hinzufügen"
+    },
+    "group": {
+      "kicker": "Ihre Arbeitsbereiche",
+      "confirmTitle": "So organisiere ich Ihre Arbeit",
+      "confirmSub": "Basierend auf Ihren Angaben. Diese werden Ihre Gruppen für Aufträge, Personen und Berichte — alles später änderbar.",
+      "looksGood": "Passt",
+      "groupDifferently": "Anders gruppieren",
+      "chooseTitle": "Wie soll ich Ihre Aufträge gruppieren?",
+      "chooseSub": "Ich kann das für Sie einrichten — oder Sie wählen selbst, wie Ihre Aufträge gruppiert werden.",
+      "orManual": "oder selbst gruppieren",
+      "byType": "Nach Auftragsart",
+      "byTypeHint": "Installationen, Reparaturen, Wartung…",
+      "byPlace": "Nach Ort",
+      "byPlaceHint": "eine Gruppe pro Standort oder Gebiet",
+      "byTeam": "Nach Team",
+      "byTeamHint": "eine Gruppe pro Trupp",
+      "pickForMe": "Nicht sicher? Ich wähle",
+      "pickForMeHint": "Ich wähle die beste Einrichtung"
+    },
+    "done": {
+      "title": "Fertig — Sie können loslegen",
+      "flag": "{{org}} ist eingerichtet und einsatzbereit",
+      "areasTitle": "Ihre Arbeitsbereiche sind bereit",
+      "toolsTitle": "Die richtigen Funktionen sind aktiviert",
+      "teamTitle": "Laden Sie Ihr Team ein",
+      "teamReady": "Fügen Sie Ihre Teammitglieder bei Bedarf unter Mitglieder hinzu",
+      "teamSoloTitle": "Vorerst nur Sie",
+      "teamSolo": "Fügen Sie jederzeit Personen unter Mitglieder hinzu",
+      "cta": "Zeigen Sie mir alles"
+    },
+    "industries": {
+      "repairs": "Reparatur & Handwerk",
+      "machines": "Maschinen & Wartung",
+      "facilities": "Gebäude & Facility",
+      "cleaning": "Reinigung",
+      "security": "Sicherheit & Bewachung",
+      "grounds": "Garten & Außenanlagen",
+      "construction": "Bau",
+      "it": "IT & Telekom",
+      "solar": "Solar & Energie",
+      "other": "Allgemein"
+    },
+    "areaNames": {
+      "installations": "Installationen",
+      "maintenance": "Wartung",
+      "repairs": "Reparaturen & Einsätze",
+      "preventive": "Vorbeugende Wartung",
+      "breakdowns": "Störungen",
+      "inspections": "Inspektionen",
+      "requests": "Anfragen",
+      "regularCleans": "Regelmäßige Reinigung",
+      "deepCleans": "Grundreinigung",
+      "oneOff": "Einmalaufträge",
+      "cleaning": "Reinigungsaufträge",
+      "patrols": "Rundgänge",
+      "alarmCallouts": "Alarmeinsätze",
+      "staticGuarding": "Objektschutz",
+      "regularVisits": "Regelmäßige Besuche",
+      "projects": "Projekte",
+      "snagging": "Mängelbehebung",
+      "callbacks": "Nacharbeiten",
+      "installs": "Installationen",
+      "supportTickets": "Support-Tickets",
+      "servicing": "Wartung",
+      "callouts": "Einsätze",
+      "routes": "Routen",
+      "pickups": "Abholungen",
+      "deliveries": "Lieferungen",
+      "treatments": "Behandlungen",
+      "followUps": "Nachkontrollen",
+      "grounds": "Außenanlagen",
+      "jobs": "Aufträge"
+    },
+    "tools": {
+      "jobs": "Aufträge & Planung",
+      "serviceReports": "Serviceberichte",
+      "photos": "Fotos & Unterschriften",
+      "tracking": "Live-GPS-Tracking",
+      "clock": "Ein-/Ausstempeln",
+      "checklists": "Checklisten",
+      "projects": "Projekte & Phasen"
+    },
+    "mobile": {
+      "needOneArea": "Füge mindestens einen Arbeitsbereich hinzu, um fortzufahren.",
+      "areaNamePlaceholder": "Bereichsname",
+      "almostThere": "Fast geschafft",
+      "nameTitle": "Benennen wir dein Unternehmen, {{name}}",
+      "nameSub": "So sieht es dein Team. Du kannst später alles ändern.",
+      "summaryIndustry": "Was du machst",
+      "createButton": "Arbeitsbereich erstellen"
+    }
   }
 }

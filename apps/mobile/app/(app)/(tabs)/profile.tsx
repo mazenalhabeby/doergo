@@ -33,6 +33,7 @@ import {
   SHADOWS,
 } from '../../../src/lib/constants';
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
+import { TourTarget, GuideSheet } from '../../../src/components/tour';
 import {
   Role,
 } from '@hbcfield/shared/client';
@@ -71,6 +72,7 @@ export default function ProfileScreen() {
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [savingPresence, setSavingPresence] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [guidesOpen, setGuidesOpen] = useState(false);
 
   // Availability control (mirrors the web navbar toggle): Available / Busy / Away.
   const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
@@ -210,7 +212,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       {/* ── 1. Profile Header ─────────────────────────────────────────── */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <TourTarget name="profile-header" style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.avatarContainer}
           onPress={handleAvatarPress}
@@ -269,12 +271,12 @@ export default function ProfileScreen() {
             </View>
           );
         })()}
-      </View>
+      </TourTarget>
 
       {/* ── Availability status ──────────────────────────────────────── */}
       <View style={styles.section}>
         <Text style={[styles.menuGroupLabel, { color: colors.textMuted }]}>{t('profile.status.title', 'Availability')}</Text>
-        <View style={[styles.statusRow, { backgroundColor: colors.card }]}>
+        <TourTarget name="profile-availability" style={[styles.statusRow, { backgroundColor: colors.card }]}>
           {([
             { value: 'AVAILABLE' as const, color: '#22c55e', label: t('profile.status.available', 'Available') },
             { value: 'BUSY' as const, color: '#ef4444', label: t('profile.status.busy', 'Busy') },
@@ -301,13 +303,13 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </TourTarget>
       </View>
 
       {/* ── 2. Settings Menu ──────────────────────────────────────────── */}
       <View style={styles.section}>
         <Text style={[styles.menuGroupLabel, { color: colors.textMuted }]}>{t('profile.menu.general')}</Text>
-        <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
+        <TourTarget name="profile-menu" style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <MenuItem
             icon="chatbubbles-outline"
             iconColor={COLORS.primary}
@@ -384,7 +386,7 @@ export default function ProfileScreen() {
             }
             themeColors={colors}
           />
-        </View>
+        </TourTarget>
 
         <Text style={[styles.menuGroupLabel, { marginTop: SPACING.xl, color: colors.textMuted }]}>{t('profile.menu.support')}</Text>
         <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
@@ -405,6 +407,17 @@ export default function ProfileScreen() {
             onPress={() => router.push('/support' as Href)}
             themeColors={colors}
           />
+          <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+          <TourTarget name="profile-guide">
+            <MenuItem
+              icon="compass-outline"
+              iconColor={COLORS.primary}
+              iconBg={colors.primaryLight}
+              label={t('profile.menu.guidedTour')}
+              onPress={() => setGuidesOpen(true)}
+              themeColors={colors}
+            />
+          </TourTarget>
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
           <MenuItem
             icon="star-outline"
@@ -477,6 +490,8 @@ export default function ProfileScreen() {
         variant="warning"
         icon="log-out-outline"
       />
+
+      <GuideSheet visible={guidesOpen} onClose={() => setGuidesOpen(false)} />
     </ScrollView>
     </ScreenContainer>
   );

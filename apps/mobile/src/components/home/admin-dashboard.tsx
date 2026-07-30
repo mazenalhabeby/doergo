@@ -26,6 +26,7 @@ import {
 } from '../../lib/api';
 import type { TimeEntry } from '../../lib/api/types';
 import { ErrorState, Skeleton, ScreenContainer } from '../../components';
+import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
 import { styles as homeStyles, SPACING, COLORS } from './home-styles';
 import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
@@ -525,15 +526,15 @@ export function AdminDashboard() {
         }
       >
         {/* Header */}
-        <View style={styles.header}>
+        <TourTarget name="home-greeting" style={styles.header}>
           <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting}</Text>
           <Text style={[styles.welcome, { color: colors.textPrimary }]}>
             {t('home.admin.welcomeBack', { name: user?.firstName })}
           </Text>
-        </View>
+        </TourTarget>
 
         {/* Workspace cards */}
-        <View style={styles.grid}>
+        <TourTarget name="home-work" style={styles.grid}>
           {boxes.length === 0 || !hasFixed ? (
             <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="business-outline" size={32} color={colors.textMuted} />
@@ -560,7 +561,7 @@ export function AdminDashboard() {
               ))}
             </View>
           )}
-        </View>
+        </TourTarget>
       </ScrollView>
       </ScreenContainer>
 
