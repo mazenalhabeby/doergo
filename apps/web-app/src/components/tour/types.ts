@@ -42,6 +42,15 @@ export interface TourStep {
    * quickly instead of stalling the tour.
    */
   optional?: boolean
+  /**
+   * Include this step only if its target is present when the tour starts
+   * (composition-aware). Unlike `optional` (which lets a target appear later via
+   * `enter`/`route`/dialogs), a `dynamic` step is PRE-FILTERED out of the tour
+   * entirely when its target isn't on screen at start — so the total count and
+   * numbering reflect only what's actually shown. Use for top-level layout blocks
+   * that are conditionally composed per role/access (spaces vs tasks vs panels).
+   */
+  dynamic?: boolean
   /** Extra spotlight padding in px (default 8). */
   padding?: number
 }

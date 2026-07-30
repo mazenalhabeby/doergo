@@ -949,9 +949,11 @@ export function ClientDashboard() {
               {/* Right column: management contacts (top, always visible) + my tasks */}
               <div className="space-y-6">
                 {/* Reach management — independent of space membership */}
-                <ManagementContacts />
+                <div data-tour="dash-emp-contacts">
+                  <ManagementContacts />
+                </div>
 
-                <section>
+                <section data-tour="dash-emp-tasks">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
                     <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>

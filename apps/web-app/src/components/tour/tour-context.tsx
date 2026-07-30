@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { TOURS } from "./registry"
 import { createLocalTourStorage } from "./tour-storage"
 import { TourOverlay } from "./tour-overlay"
-import type { TourDef, TourGateContext } from "./types"
+import type { TourDef, TourGateContext, TourStep } from "./types"
 
 interface TourContextValue {
   /** Start a tour by id (used by the Help launcher and programmatic triggers). */
@@ -40,6 +40,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [tourId, setTourId] = useState<string | null>(null)
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
+  // Composition-aware step list: once a tour starts and we're on its route, we
+  // pre-filter its steps to drop any `dynamic` step whose target isn't on screen
+  // (so the total + numbering match the actual dashboard composition). `null`
+  // means "not resolved yet" — the overlay stays hidden until it's set.
+  const [activeSteps, setActiveSteps] = useState<TourStep[] | null>(null)
   const elRef = useRef<HTMLElement | null>(null)
 
   const gateCtx: TourGateContext = useMemo(
@@ -55,6 +60,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   const availableTours = useMemo(() => TOURS.filter((tr) => !tr.gate || tr.gate(gateCtx)), [gateCtx])
   const tour = useMemo(() => (tourId ? TOURS.find((t) => t.id === tourId) ?? null : null), [tourId])
+
+  // The step list the engine actually runs: the composition-filtered list once it
+  // has resolved, else the tour's full list (used as a safe fallback everywhere).
+  const steps = useMemo(() => activeSteps ?? tour?.steps ?? [], [activeSteps, tour])
 
   // The tour (if any) that walks the current route — drives "Show me this page".
   const contextualTourId = useMemo(() => {
@@ -82,6 +91,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       elRef.current = null
       setRect(null)
       setStepIndex(0)
+      setActiveSteps(null) // re-resolved by the composition effect once on-route
       setTourId(id)
     },
     [pathname, router],
@@ -92,6 +102,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       if (complete && tourId) storage.markCompleted(tourId)
       elRef.current = null
       setRect(null)
+      setActiveSteps(null)
       setTourId(null)
     },
     [tourId],
@@ -108,13 +119,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // target (CSS transitions) instead of unmounting and re-popping every step.
   const next = useCallback(() => {
     if (!tour) return
-    if (stepIndex >= tour.steps.length - 1) {
+    if (stepIndex >= steps.length - 1) {
       finish(true)
       return
     }
     elRef.current = null
     setStepIndex((i) => i + 1)
-  }, [tour, stepIndex, finish])
+  }, [tour, steps, stepIndex, finish])
 
   const back = useCallback(() => {
     elRef.current = null
@@ -127,11 +138,66 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     next()
   }, [next])
 
+  // Composition pre-filter: once a tour is active AND we're on its route, build
+  // the actual step list for THIS screen — keep every non-`dynamic` step (their
+  // targets may still appear later via enter/route/dialogs, handled reactively),
+  // and drop a `dynamic` step only if its target isn't present after a few
+  // retries. This gives a correct total + numbering that matches the rendered
+  // dashboard composition (spaces / tasks / management / activity vary per user).
+  useEffect(() => {
+    if (!tour) return
+    // If the tour lives on a specific route, wait until we're there so the
+    // dynamic targets have a chance to render before we measure presence.
+    if (tour.autoRunOn) {
+      const onRoute = tour.autoRunExact
+        ? pathname === tour.autoRunOn
+        : routeMatches(pathname, tour.autoRunOn)
+      if (!onRoute) return // re-runs when pathname updates
+    }
+
+    let cancelled = false
+    let tries = 0
+    let timer: ReturnType<typeof setTimeout>
+
+    const resolve = () => {
+      if (cancelled) return
+      const present = (target: string) =>
+        !!document.querySelector(`[data-tour="${target}"]`)
+      // Are all dynamic targets accounted for yet (present, or we've exhausted
+      // retries and treat the rest as absent)? Retry a few times so a slightly
+      // late render isn't misread as "missing".
+      const anyDynamicMissing = tour.steps.some(
+        (s) => s.dynamic === true && !present(s.target),
+      )
+      if (anyDynamicMissing && tries++ < 4) {
+        timer = setTimeout(resolve, 120)
+        return
+      }
+      const filtered = tour.steps.filter(
+        (s) => s.dynamic !== true || present(s.target),
+      )
+      setActiveSteps(filtered.length > 0 ? filtered : tour.steps)
+      setStepIndex(0)
+    }
+
+    // Short render delay so the dashboard's conditional branches have mounted.
+    timer = setTimeout(resolve, 300)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+    // Keyed on tourId (via `tour`) + pathname per spec; re-resolves if the tour
+    // or route changes. stepIndex is intentionally excluded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tour, pathname])
+
   // Resolve the current step's target: navigate if needed, then wait for the
   // element to exist (dialogs/pages render async), scroll it into view, measure.
   useEffect(() => {
-    if (!tour) return
-    const step = tour.steps[stepIndex]
+    // Wait for the composition pre-filter to resolve before we start measuring
+    // targets, so the very first frame isn't the unfiltered step 0.
+    if (!tour || activeSteps === null) return
+    const step = steps[stepIndex]
     if (!step) return
 
     if (step.route && !routeMatches(pathname, step.route)) {
@@ -163,7 +229,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         // slow render). Skip to the next step so the tour keeps flowing; only
         // end (without completing) if this was the last step. Keep the last rect
         // so the overlay stays mounted and glides to the next resolved target.
-        if (stepIndex < tour.steps.length - 1) {
+        if (stepIndex < steps.length - 1) {
           setStepIndex((i) => i + 1)
         } else {
           finish(false)
@@ -180,7 +246,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [tour, stepIndex, pathname, router, finish])
+  }, [tour, activeSteps, steps, stepIndex, pathname, router, finish])
 
   // Keep the spotlight glued to the element as the page scrolls / resizes.
   useEffect(() => {
@@ -229,12 +295,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      {tour && rect && (
+      {tour && activeSteps && rect && steps[stepIndex] && (
         <TourOverlay
           rect={rect}
-          step={tour.steps[stepIndex]!}
+          step={steps[stepIndex]!}
           index={stepIndex}
-          total={tour.steps.length}
+          total={steps.length}
           onNext={next}
           onBack={back}
           onSkip={stop}

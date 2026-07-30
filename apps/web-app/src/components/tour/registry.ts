@@ -46,7 +46,7 @@ export const TOURS: TourDef[] = [
     gate: (c) => c.isAdmin,
     steps: [
       step("welcomeAdmin", "dashboard", "nav-dashboard"),
-      { ...step("welcomeAdmin", "yourSpaces", "dash-spaces"), optional: true }, // the spaces grid on the dashboard
+      { ...step("welcomeAdmin", "yourSpaces", "dash-spaces"), optional: true, dynamic: true }, // the spaces grid on the dashboard
       // ── Deep dive into an opened space (each step skips fast if that group is empty) ──
       { ...step("welcomeAdmin", "spaceHeader", "dash-space-header"), enter: "dash-space-box", optional: true }, // live headcount (opens the space)
       { ...step("welcomeAdmin", "openSpace", "dash-space-members"), optional: true }, // on-site team (present now)
@@ -56,8 +56,8 @@ export const TOURS: TourDef[] = [
       { ...step("welcomeAdmin", "offDuty", "dash-space-offduty"), optional: true }, // off today + reason
       { ...step("welcomeAdmin", "spaceActions", "dash-space-actions"), optional: true }, // manage / add member / view tasks
       // ── The live right-hand panel: activity feed + things needing your attention ──
-      { ...step("welcomeAdmin", "activity", "dash-activity"), optional: true },
-      { ...step("welcomeAdmin", "pending", "dash-pending"), optional: true },
+      { ...step("welcomeAdmin", "activity", "dash-activity"), optional: true, dynamic: true },
+      { ...step("welcomeAdmin", "pending", "dash-pending"), optional: true, dynamic: true },
       step("welcomeAdmin", "tasks", "nav-tasks"),
       step("welcomeAdmin", "team", "nav-team"),
       step("welcomeAdmin", "spaces", "nav-spaces"),
@@ -102,10 +102,10 @@ export const TOURS: TourDef[] = [
     steps: [
       step("welcomeEmployee", "dashboard", "nav-dashboard"),
       // Compact landing (tasks-only / unassigned member).
-      { ...step("welcomeEmployee", "yourWork", "dash-emp-tasks"), optional: true },
-      { ...step("welcomeEmployee", "contacts", "dash-emp-contacts"), optional: true },
+      { ...step("welcomeEmployee", "yourWork", "dash-emp-tasks"), optional: true, dynamic: true },
+      { ...step("welcomeEmployee", "contacts", "dash-emp-contacts"), optional: true, dynamic: true },
       // Spaces grid (space-assigned member).
-      { ...step("welcomeEmployee", "yourSpaces", "dash-spaces"), optional: true },
+      { ...step("welcomeEmployee", "yourSpaces", "dash-spaces"), optional: true, dynamic: true },
       { ...step("welcomeEmployee", "openSpace", "dash-space-members"), enter: "dash-space-box", optional: true },
       // Navigation.
       step("welcomeEmployee", "tasks", "nav-tasks"),
