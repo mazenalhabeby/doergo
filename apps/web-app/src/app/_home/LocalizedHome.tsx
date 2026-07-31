@@ -34,7 +34,7 @@ export default function LocalizedHome({ lang }: { lang: string }) {
 
   return (
     <I18nextProvider i18n={instance}>
-      <HomeClient />
+      <HomeClient lang={lang} />
     </I18nextProvider>
   );
 }
