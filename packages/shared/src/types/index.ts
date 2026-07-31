@@ -41,12 +41,17 @@ export const LegacyRoleMap = {
 // MANAGER/OFFICE/DISPATCHER/TECHNICIAN/WORKER) → EMPLOYEE.
 export function normalizeRole(role: string): Role {
   if (role === 'ADMIN' || role === 'CLIENT' || role === 'PARTNER') return Role.ADMIN;
+  // External customers are a distinct principal — never collapse to a staff role.
+  if (role === 'CUSTOMER') return Role.CUSTOMER;
   return Role.EMPLOYEE;
 }
 
 // Get display label for a role
 export function getRoleLabel(role: string): string {
-  return normalizeRole(role) === Role.ADMIN ? 'Admin' : 'Employee';
+  const r = normalizeRole(role);
+  if (r === Role.ADMIN) return 'Admin';
+  if (r === Role.CUSTOMER) return 'Customer';
+  return 'Employee';
 }
 
 // Socket.IO Events
@@ -149,6 +154,15 @@ export const DEFAULT_PERMISSIONS: Record<Role, {
   [Role.EMPLOYEE]: {
     canCreateTasks: false,
     taskCreationScope: TaskCreationScope.SELF,
+    canViewAllTasks: false,
+    canAssignTasks: false,
+    canManageUsers: false,
+  },
+  // External customer: zero staff permissions. Request submission is authorized
+  // by CustomerScopeGuard + dedicated portal endpoints, NOT by these flags.
+  [Role.CUSTOMER]: {
+    canCreateTasks: false,
+    taskCreationScope: TaskCreationScope.NONE,
     canViewAllTasks: false,
     canAssignTasks: false,
     canManageUsers: false,

@@ -6,7 +6,8 @@ export const authApi = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     const result = await fetchApi<LoginResponse>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      // client:'mobile' → 90-day rotating session (app users stay signed in).
+      body: JSON.stringify({ email, password, client: 'mobile' }),
     });
 
     // Save tokens after successful login
@@ -74,6 +75,13 @@ export const userApi = {
     return fetchWithAuth<void>('/users/me', {
       method: 'PATCH',
       body: JSON.stringify({ timeFormat }),
+    });
+  },
+  // Update your own name (any authenticated user, incl. portal clients).
+  updateProfile: async (data: { firstName: string; lastName: string }): Promise<void> => {
+    return fetchWithAuth<void>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     });
   },
 };

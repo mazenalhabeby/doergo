@@ -20,7 +20,7 @@ import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto, DeleteAccountDto } from './dto';
 import { Public } from '../../common/decorators';
-import { CurrentUser, CurrentUserData, SkipOnboardingCheck, SERVICE_NAMES } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData, SkipOnboardingCheck, AllowCustomer, SERVICE_NAMES } from '@hbcfield/shared';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -152,6 +152,7 @@ export class AuthController {
   }
 
   @SkipOnboardingCheck()
+  @AllowCustomer()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -262,6 +263,7 @@ export class AuthController {
   }
 
   @SkipOnboardingCheck()
+  @AllowCustomer()
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })

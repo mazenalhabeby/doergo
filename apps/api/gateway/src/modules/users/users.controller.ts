@@ -22,7 +22,7 @@ import { firstValueFrom } from 'rxjs';
 import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
@@ -253,6 +253,7 @@ export class UsersController {
   // =========================================================================
 
   @Post('push-token')
+  @AllowCustomer() // portal customers register their device to get request-status pushes
   @ApiOperation({ summary: 'Register a push notification token for the current user' })
   @ApiBody({ type: RegisterPushTokenDto })
   async registerPushToken(
@@ -273,6 +274,7 @@ export class UsersController {
   }
 
   @Delete('push-token/:token')
+  @AllowCustomer() // portal customers unregister their device on logout
   @ApiOperation({ summary: 'Remove a push notification token' })
   async removePushToken(
     @Param('token') token: string,

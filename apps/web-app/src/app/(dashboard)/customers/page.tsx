@@ -30,7 +30,7 @@ export default function CustomersPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["customers", search],
-    queryFn: () => customersApi.list({ search: search || undefined, limit: 100 }),
+    queryFn: () => customersApi.list({ search: search || undefined, portalResident: false, limit: 100 }),
   })
   const customers = data?.data || []
 

@@ -70,6 +70,9 @@ export interface CreateInvitationInput {
   maxDailyJobs?: number;
   /** Pre-assigned space (CompanyLocation id) — user is assigned to it on accept. */
   spaceId?: string;
+  /** Customer-portal invite (targetRole=CUSTOMER): the Customer + optional unit. */
+  customerId?: string;
+  unitId?: string;
 }
 
 // Accept invitation input (from mobile/web registration)

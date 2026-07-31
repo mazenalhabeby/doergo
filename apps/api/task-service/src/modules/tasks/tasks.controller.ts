@@ -124,6 +124,27 @@ export class TasksController {
     return this.tasksService.resyncAllSpaces(data);
   }
 
+  // ============ Customer Portal (customer-scoped reads) ============
+
+  @MessagePattern({ cmd: 'portal_list_requests' })
+  async listPortalRequests(@Payload() data: { organizationId: string; customerId: string }) {
+    return this.tasksService.listPortalRequests(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_list_requests_by_portal' })
+  async listPortalRequestsByPortal(
+    @Payload() data: { organizationId: string; portalId: string },
+  ) {
+    return this.tasksService.listPortalRequestsByPortal(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_get_request' })
+  async getPortalRequest(
+    @Payload() data: { id: string; organizationId: string; customerId: string },
+  ) {
+    return this.tasksService.getPortalRequest(data);
+  }
+
   // ============ Subtask READ Operations ============
 
   @MessagePattern({ cmd: 'get_subtasks' })

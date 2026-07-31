@@ -138,6 +138,23 @@ export class TasksService {
       if (firstStatus) initialStatus = firstStatus.key;
     }
 
+    // Portal requests: validate the unit belongs to THIS customer/org right here
+    // (single source of truth, no gateway round-trip, no TOCTOU). Silently drop
+    // an unowned/unknown unit rather than fail the whole submission.
+    let effUnitId: string | null = data.unitId || null;
+    if (data.source === 'CUSTOMER_PORTAL' && effUnitId) {
+      const ownUnit = await this.prisma.customerUnit.findFirst({
+        where: {
+          id: effUnitId,
+          customerId: data.customerId || undefined,
+          organizationId: data.organizationId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      if (!ownUnit) effUnitId = null;
+    }
+
     const task = await this.prisma.$transaction(async (tx) => {
       const createdTask = await tx.task.create({
         data: {
@@ -162,6 +179,12 @@ export class TasksService {
           epicId: data.epicId || null,
           storyPoints: data.storyPoints ?? null,
           spaceId: data.spaceId || null,
+          // Customer link + origin (portal requests carry these; internal tasks
+          // default to source=INTERNAL and no customer/unit). unitId is validated
+          // above for portal requests.
+          customerId: data.customerId || null,
+          unitId: effUnitId,
+          source: data.source === 'CUSTOMER_PORTAL' ? 'CUSTOMER_PORTAL' : 'INTERNAL',
         },
         include: {
           createdBy: {
@@ -350,6 +373,109 @@ export class TasksService {
       spacesProcessed += 1;
     }
     return success({ spacesProcessed, updated, remapped });
+  }
+
+  // ============ Customer Portal (customer-scoped reads) ============
+  // Every query is filtered by BOTH organizationId AND the caller's own
+  // customerId (passed from the verified token, never the client body) so a
+  // customer can only ever see their own requests.
+
+  private portalRequestShape(task: any) {
+    const statuses: any[] = task.workflow?.statuses ?? [];
+    const curIdx = statuses.findIndex((s) => s.key === task.status);
+    const timeline = statuses.map((s, i) => ({
+      label: s.name,
+      state: curIdx < 0 ? 'pending' : i < curIdx ? 'done' : i === curIdx ? 'active' : 'pending',
+    }));
+    return {
+      id: task.id,
+      reference: `#${String(task.id).slice(-6).toUpperCase()}`,
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+      unitName: task.unit?.name ?? null,
+      unitId: task.unitId ?? null,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      // The client renders live tracking only when the current status enables it.
+      tracked: statuses[curIdx]?.capabilities?.includes('gps') ?? false,
+      timeline,
+    };
+  }
+
+  /** A customer's own requests (newest first). */
+  async listPortalRequests(data: { organizationId: string; customerId: string }) {
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        organizationId: data.organizationId,
+        customerId: data.customerId,
+        source: 'CUSTOMER_PORTAL',
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        unit: { select: { id: true, name: true } },
+        workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
+      },
+    });
+    return success(tasks.map((t) => this.portalRequestShape(t)));
+  }
+
+  /**
+   * Every request across a whole portal (office view, newest first). Scoped by
+   * the portal's customers via the Customer.portalId relation, so it never leaks
+   * across orgs or portals. Includes the submitting client's name.
+   */
+  async listPortalRequestsByPortal(data: { organizationId: string; portalId: string }) {
+    // Explicit portal-ownership check (defense-in-depth): the task filter below
+    // already scopes by org + the customer→portal join, but assert the portal
+    // belongs to the caller's org so ownership never rests on an implicit join.
+    const ownsPortal = await this.prisma.portal.findFirst({
+      where: { id: data.portalId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!ownsPortal) return success([]);
+
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        organizationId: data.organizationId,
+        source: 'CUSTOMER_PORTAL',
+        customer: { portalId: data.portalId },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        unit: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true } },
+        workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
+      },
+    });
+    return success(
+      tasks.map((t) => ({
+        ...this.portalRequestShape(t),
+        customerId: t.customerId ?? null,
+        customerName: (t as any).customer?.name ?? null,
+      })),
+    );
+  }
+
+  /** One of the customer's own requests — 404 if it isn't theirs. */
+  async getPortalRequest(data: { id: string; organizationId: string; customerId: string }) {
+    const task = await this.prisma.task.findFirst({
+      where: {
+        id: data.id,
+        organizationId: data.organizationId,
+        customerId: data.customerId,
+        source: 'CUSTOMER_PORTAL',
+      },
+      include: {
+        unit: { select: { id: true, name: true } },
+        workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
+        attachments: { select: { id: true, fileUrl: true, fileType: true, fileName: true } },
+      },
+    });
+    if (!task) {
+      throw new NotFoundException('Request not found');
+    }
+    return success({ ...this.portalRequestShape(task), description: task.description, attachments: task.attachments });
   }
 
   /**

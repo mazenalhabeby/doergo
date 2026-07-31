@@ -279,7 +279,7 @@ export class AuthService {
     }
   }
 
-  async login(data: { email: string; password: string; rememberMe?: boolean; userAgent?: string; ipAddress?: string }) {
+  async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; userAgent?: string; ipAddress?: string }) {
     try {
       // Normalize email to lowercase for lookup
       const email = data.email.trim().toLowerCase();
@@ -401,10 +401,17 @@ export class AuthService {
         });
       }
 
+      // Session lifetime by client: WEB honors rememberMe (30d) vs a short
+      // session (24h) on shared machines; MOBILE (or an unknown/legacy client
+      // that sends nothing) keeps the env default (90d) so app users stay signed
+      // in. Defaulting absent→mobile preserves existing mobile builds.
+      const refreshTtl =
+        data.client === 'web' ? (data.rememberMe ? '30d' : '24h') : undefined;
+
       const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
         userAgent: data.userAgent,
         ipAddress: data.ipAddress,
-      }, user.canViewAllTasks);
+      }, user.canViewAllTasks, refreshTtl);
 
       // Audit: successful login (fire-and-forget, never blocks response)
       if (user.organizationId) {
@@ -488,6 +495,16 @@ export class AuthService {
 
       // SECURITY: Hash the incoming token to compare with stored hash
       const tokenHash = hashToken(refreshToken);
+
+      // Carry the session's refresh lifetime across rotation. Older tokens issued
+      // before this change have no `rtl` claim → undefined → env default (90d).
+      let refreshTtl: string | undefined;
+      try {
+        const decoded = this.jwtService.decode(refreshToken) as { rtl?: string } | null;
+        if (decoded?.rtl) refreshTtl = decoded.rtl;
+      } catch {
+        /* malformed token is handled by the hash lookup below */
+      }
 
       // Find the stored token by hash
       const storedToken = await this.prisma.refreshToken.findUnique({
@@ -658,6 +675,7 @@ export class AuthService {
         storedToken.user.organizationId,
         undefined,
         storedToken.user.canViewAllTasks,
+        refreshTtl,
       );
 
       // Find the new refresh token hash (it was just created by generateTokens)
@@ -976,7 +994,11 @@ export class AuthService {
           // Per-user clock display preference ("24h" | "12h")
           timeFormat: true,
           enabledModules: true,
-          organization: { select: { profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
+          // Customer-portal binding (null for staff) — carried on req.user so
+          // CustomerScopeGuard + portal endpoints scope to the caller's own data.
+          customerId: true,
+          unitId: true,
+          organization: { select: { profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true } },
           // Custom role
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
         },
@@ -1013,6 +1035,8 @@ export class AuthService {
           planTier: organization?.planTier ? organization.planTier.toString().toLowerCase() : null,
           orgRole: orgRole ? { id: orgRole.id, name: orgRole.name, slug: orgRole.slug, color: orgRole.color } : null,
           rolePermissions: (orgRole?.permissions as Record<string, boolean>) || {},
+          // Org-level portal opt-in (customers only exist when enabled).
+          customerPortalEnabled: organization?.customerPortalEnabled ?? false,
         },
       };
     } catch {
@@ -1020,7 +1044,7 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }, canViewAllTasks = false) {
+  private async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }, canViewAllTasks = false, refreshTtl?: string) {
     // organizationId is embedded so downstream services (e.g. the Socket.IO
     // gateway) can scope rooms from the verified token instead of trusting a
     // client-supplied org id.
@@ -1030,9 +1054,13 @@ export class AuthService {
     // holders (a room they join) instead of broadcasting to the whole org.
     if (canViewAllTasks) basePayload.canViewAllTasks = true;
 
-    // Token expiration from environment variables
+    // Token expiration from environment variables. `refreshTtl` (per-session, from
+    // login: web honors rememberMe → 24h/30d; mobile → env default 90d) overrides
+    // the env default and is carried forward across rotations via the `rtl` claim.
     const accessExpiration = this.configService.get('JWT_ACCESS_EXPIRATION') || '15m';
-    const refreshExpiration = this.configService.get('JWT_REFRESH_EXPIRATION') || '7d';
+    // Typed loose (like accessExpiration, which is any from configService) so the
+    // jsonwebtoken `expiresIn` StringValue overload accepts it.
+    const refreshExpiration: any = refreshTtl || this.configService.get('JWT_REFRESH_EXPIRATION') || '7d';
 
     this.logger.log(`Generating tokens with refreshExpiration=${refreshExpiration}`);
 
@@ -1045,7 +1073,9 @@ export class AuthService {
     );
 
     const refreshToken = this.jwtService.sign(
-      { ...basePayload, jti: randomUUID() },
+      // `rtl` = this session's refresh lifetime, so rotation keeps the original
+      // policy (web-short vs mobile-90d) instead of resetting to the env default.
+      { ...basePayload, jti: randomUUID(), rtl: refreshExpiration },
       {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
         expiresIn: refreshExpiration,

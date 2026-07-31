@@ -13,6 +13,9 @@ enum Role {
   EMPLOYEE // Everyone else. "Manager" capability is now the canViewAllTasks /
   // canAssignTasks access flags, not a role. (MANAGER + legacy
   // CLIENT/DISPATCHER/TECHNICIAN retired 2026-07-16.)
+  CUSTOMER // External end-customer (resident/recipient) with portal access only.
+  // Belongs to a Customer + optional CustomerUnit; sees ONLY their own requests.
+  // Born onboardingCompleted=true; never reaches the org-builder or staff app.
 }
 
 // Platform access restriction
@@ -355,6 +358,13 @@ model Organization {
   // Customers (first-class entity for customer-scoped work + reporting)
   customers Customer[]
 
+  // Customer portal (optional B2B2C / B2C module: residents/recipients submit requests)
+  customerPortalEnabled Boolean          @default(false) // Org opt-in (true if any Portal exists)
+  customerPortalConfig  Json? // LEGACY single-portal config (superseded by Portal rows; kept for migration)
+  portals               Portal[] // Multiple portals per org (each its own type + categories + residents)
+  customerUnits         CustomerUnit[] // Units/sites customers are tied to
+  intakeCategories      IntakeCategory[] // Dynamic request-intake config
+
   // Saved report definitions (custom report builder)
   reportDefinitions ReportDefinition[]
   reportSchedules   ReportSchedule[]
@@ -511,6 +521,13 @@ model User {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
+  // Customer portal: for role=CUSTOMER, the Customer they log in as + optional
+  // default unit. Null for staff (ADMIN/EMPLOYEE). See [[customer-portal]].
+  customerId String?
+  customer   Customer?     @relation("CustomerPortalUsers", fields: [customerId], references: [id], onDelete: Cascade)
+  unitId     String?
+  unit       CustomerUnit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
   // Custom role assignment
   orgRoleId String?
   orgRole   OrgRole? @relation(fields: [orgRoleId], references: [id], onDelete: SetNull)
@@ -580,6 +597,7 @@ model User {
   @@index([email])
   @@index([orgRoleId])
   @@index([organizationId, role, isActive]) // list technicians/members in org
+  @@index([customerId]) // customer portal: a customer's login users
   @@map("users")
 }
 
@@ -688,6 +706,14 @@ model Task {
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
+  // Where the task originated. INTERNAL (staff-created) | CUSTOMER_PORTAL (a
+  // customer self-submitted it via the portal). Free-form String, mirrors status.
+  source String @default("INTERNAL")
+
+  // Optional link to the customer's unit/site the request is about
+  unitId String?
+  unit   CustomerUnit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
   // Subtask hierarchy
   parentId String?
   parent   Task?   @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
@@ -736,6 +762,10 @@ model Task {
   @@index([workflowId]) // workflow filtering
   @@index([spaceId]) // space filtering
   @@index([customerId]) // customer-scoped reporting
+  @@index([unitId]) // customer portal: requests for a unit
+  @@index([organizationId, source]) // portal vs internal split
+  @@index([organizationId, source, createdAt]) // portal-wide request list (filter org+source, sort by newest)
+  @@index([customerId, createdAt]) // portal request list (filter customer + sort by newest)
   @@index([organizationId, spaceId, status]) // space + status filtering
   @@map("tasks")
 }
@@ -956,15 +986,138 @@ model Customer {
   notes        String?
   isActive     Boolean  @default(true)
 
+  // Distinguishes a customer-portal RESIDENT (an end-user who logs into the app,
+  // e.g. a tenant renting an apartment) from a B2B customer (a company you do
+  // field-service work for). The office "Customers" list shows B2B; the Customer
+  // Portal page manages residents. See [[customer-portal]].
+  isPortalResident Boolean @default(false)
+
+  // Which portal this resident belongs to (null for B2B customers). A resident
+  // lives in exactly one portal → drives which flow/config the app shows them.
+  portalId String?
+  portal   Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+
   tasks          Task[]
   serviceReports ServiceReport[]
+
+  // Customer portal
+  portalUsers User[]         @relation("CustomerPortalUsers") // login accounts for this customer
+  units       CustomerUnit[] // the units/sites this customer occupies
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([organizationId, isActive])
   @@index([organizationId, name])
+  @@index([portalId])
   @@map("customers")
+}
+
+// A customer portal — a self-contained B2C flow (type, branding, categories,
+// residents). An org can run several (e.g. a Rental portal AND a Logistics one,
+// or one per property). Supersedes the org-level customerPortalConfig.
+model Portal {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String // "Rivergate Rentals", "Downtown Deliveries"
+  templateKey String // rental | logistics | workplace | custom — the vertical/type
+  entityLabel String // "Apartment" | "Order" | "Workspace"
+  contactLabel String?
+  accent      String?
+  features    Json? // PortalFeatureFlags
+  isActive    Boolean @default(true)
+
+  categories IntakeCategory[]
+  customers  Customer[]
+  units      CustomerUnit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, isActive])
+  @@map("portals")
+}
+
+// A unit/site an external customer is tied to — generic on purpose so it fits
+// any vertical: an apartment (rental), an order (delivery), a workspace
+// (facilities). Requests inherit the linked space's workflow for routing.
+model CustomerUnit {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Owning customer (nullable so a unit can exist before a resident is assigned)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Which portal this unit belongs to (null for legacy/unassigned).
+  portalId String?
+  portal   Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+
+  name    String // "Apartment 766 C", "Order #A-3391", "Building B · Floor 3"
+  label   String? // Optional entity-type override ("Apartment", "Order", "Workspace")
+  address String?
+  lat     Float?
+  lng     Float?
+
+  // Requests about this unit route into this space (→ its workflow). Optional:
+  // falls back to the org default space at task creation.
+  spaceId String?
+  space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+
+  isActive Boolean @default(true)
+
+  users User[] // portal logins whose default unit is this
+  tasks Task[] // requests submitted about this unit
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, isActive])
+  @@index([customerId])
+  @@index([spaceId])
+  @@index([portalId])
+  @@map("customer_units")
+}
+
+// Dynamic request-intake config (per org). The category tree the portal shows
+// residents ("Air Conditioning" → issues). Seeded from shared templates on
+// module-enable; fully editable by the office. Routing: a category can pin the
+// space (→ workflow) and default priority for the tasks it creates.
+model IntakeCategory {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Which portal this category belongs to (required going forward; a category
+  // is part of exactly one portal's flow).
+  portalId String?
+  portal   Portal? @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  key             String // machine key, unique per portal ("air_conditioning")
+  label           String // display label ("Air Conditioning")
+  icon            String? // icon name (mirrors the mobile icon set)
+  color           String? // semantic color key ("cyan", "red", …)
+  urgent          Boolean  @default(false) // auto-flag priority=URGENT for this category
+  team            String? // routing hint shown to the customer ("HVAC team")
+  defaultPriority String? // LOW | MEDIUM | HIGH | URGENT (null = MEDIUM)
+  issues          String[] @default([]) // sub-issue labels ("Not cooling", "No power")
+  position        Int      @default(0)
+  isActive        Boolean  @default(true)
+
+  // Optional: requests in this category route to this space (→ its workflow)
+  spaceId String?
+  space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([portalId, key])
+  @@index([organizationId, isActive])
+  @@index([portalId, isActive])
+  @@map("intake_categories")
 }
 
 // Saved report — a named, reusable report definition (config = the query spec:
@@ -1153,6 +1306,10 @@ model CompanyLocation {
 
   // Overtime requests at this location
   overtimeRequests OvertimeRequest[]
+
+  // Customer portal: units & intake categories routing into this space
+  customerUnits    CustomerUnit[]
+  intakeCategories IntakeCategory[]
 
   @@index([organizationId])
   @@index([isActive])
@@ -1416,6 +1573,13 @@ model Invitation {
 
   // Pre-assigned space (CompanyLocation id) — the accepting user is assigned to it.
   spaceId String?
+
+  // Customer-portal invite (only used when targetRole = CUSTOMER): which Customer
+  // the new login is bound to + an optional default unit + the portal. Scalar refs
+  // (validated on accept) — the invitation is transient so no FK relation is kept.
+  customerId String?
+  unitId     String?
+  portalId   String?
 
   // Status tracking
   status    InvitationStatus @default(PENDING)

@@ -314,6 +314,19 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       rooms: [],
     };
 
+    // External CUSTOMER: confine to their OWN user room only. Never join the
+    // org/role/taskviewers rooms — otherwise a valid customer token would receive
+    // org-wide staff attendance/presence/geofence/join-request events. Customers
+    // have no staff-presence footprint and don't broadcast online status.
+    if (role === 'CUSTOMER') {
+      client.join(`user:${userId}`);
+      clientInfo.rooms.push(`user:${userId}`);
+      this.connectedClients.set(client.id, clientInfo);
+      clearTimeout((client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer);
+      this.logger.log(`[AUTH] Customer ${userId} confined to user room only`);
+      return { success: true, rooms: clientInfo.rooms };
+    }
+
     // Join organization room
     client.join(`org:${organizationId}`);
     clientInfo.rooms.push(`org:${organizationId}`);
@@ -387,6 +400,9 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // Live-chat typing indicator relay. Customer → agents; agent → the ticket owner.
   @SubscribeMessage('support_typing')
   handleSupportTyping(client: Socket, payload: { ticketId: string; customerId?: string; from: 'CUSTOMER' | 'AGENT' }) {
+    // Portal customers have a live socket but no support surface — never let them
+    // drive typing indicators into the operator inbox (spoof defense).
+    if (this.connectedClients.get(client.id)?.role === 'CUSTOMER') return;
     if (!payload?.ticketId) return;
     const evt = { ticketId: payload.ticketId, from: payload.from };
     if (payload.from === 'CUSTOMER') {
@@ -399,6 +415,9 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // Chat typing indicator — relayed to the other conversation members' user rooms.
   @SubscribeMessage('chat_typing')
   handleChatTyping(client: Socket, payload: { conversationId: string; recipientIds: string[]; from: string }) {
+    // Portal customers are excluded from member chat entirely — reject any
+    // chat-typing relay from a customer socket (spoof defense).
+    if (this.connectedClients.get(client.id)?.role === 'CUSTOMER') return;
     if (!payload?.conversationId || !Array.isArray(payload.recipientIds)) return;
     const evt = { conversationId: payload.conversationId, from: payload.from };
     for (const uid of payload.recipientIds) {
@@ -581,9 +600,14 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
   emitTaskStatusChanged(task: any, oldStatus: string, newStatus: string) {
     this.logger.log(`[EMIT] task.statusChanged (${oldStatus} -> ${newStatus}) to task:${task.id}`);
-    this.messagesSent += 2;
-    this.server.to(`task:${task.id}`).emit(SocketEvents.TASK_STATUS_CHANGED, { task, oldStatus, newStatus });
-    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_STATUS_CHANGED, { task, oldStatus, newStatus });
+    this.messagesSent++;
+    const payload = { task, oldStatus, newStatus };
+    // Single emit across the task room + org taskviewers + the creator's own room.
+    // The creator room lets a portal CUSTOMER (confined to user:{id}) watch their
+    // request update live; Socket.IO dedups a staff creator who is also a taskviewer.
+    let target = this.server.to(`task:${task.id}`).to(`taskviewers:${task.organizationId}`);
+    if (task.createdById) target = target.to(`user:${task.createdById}`);
+    target.emit(SocketEvents.TASK_STATUS_CHANGED, payload);
   }
 
   emitCommentAdded(taskId: string, comment: any) {

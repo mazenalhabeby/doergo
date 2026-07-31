@@ -47,6 +47,18 @@ export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 // =============================================================================
+// CUSTOMER PORTAL ALLOWLIST
+// =============================================================================
+/**
+ * Marks a route (or controller) as reachable by external CUSTOMER users.
+ * CustomerConfinementGuard is default-DENY for customers: a CUSTOMER token can
+ * only reach @Public routes, @AllowCustomer routes, and its own portal. Staff
+ * are unaffected. This makes the portal an allowlist, not a blocklist.
+ */
+export const IS_CUSTOMER_ALLOWED_KEY = 'isCustomerAllowed';
+export const AllowCustomer = () => SetMetadata(IS_CUSTOMER_ALLOWED_KEY, true);
+
+// =============================================================================
 // CURRENT USER
 // =============================================================================
 
@@ -91,6 +103,11 @@ export interface CurrentUserData {
   };
   // Per-user clock display preference ("12h" | "24h"); display-only.
   timeFormat?: string;
+  // Customer portal: for role=CUSTOMER, the Customer they act as + default unit.
+  // Null for staff. Portal endpoints scope every query to this customerId.
+  customerId?: string | null;
+  unitId?: string | null;
+  customerPortalEnabled?: boolean; // org-level opt-in
 }
 
 /**

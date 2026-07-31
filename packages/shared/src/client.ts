@@ -25,6 +25,9 @@ export * from './chat';
 // Setup wizard engine (guided org builder catalog + classifier) — pure, client-safe
 export * from './setup';
 
+// Customer portal (intake types, seed templates, helpers) — pure, client-safe
+export * from './customer-portal';
+
 // Export utility functions (date, query string building)
 export * from './utils';
 

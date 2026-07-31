@@ -308,11 +308,12 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
 
 // Auth-specific API methods
 export const authApi = {
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string, rememberMe = false) => {
     const response = await fetchWithTimeout(`${AUTH_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      // client:'web' → session length honors rememberMe (24h default / 30d).
+      body: JSON.stringify({ email, password, rememberMe, client: 'web' }),
     });
 
     const result = await response.json();
@@ -4083,6 +4084,7 @@ export interface Customer {
   address?: string | null;
   notes?: string | null;
   isActive: boolean;
+  isPortalResident?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -4090,7 +4092,7 @@ export interface Customer {
 export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
 
 export const customersApi = {
-  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; page?: number; limit?: number }) => {
+  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; page?: number; limit?: number }) => {
     const qs = buildUrlWithQuery("/customers", params || {});
     const res = await api.get<{ data: Customer[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(qs);
     if (res.error) throw new Error(res.error);
@@ -4117,6 +4119,162 @@ export const customersApi = {
     return res.data;
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Customer Portal (office-facing management: enable, units, requests)
+// ─────────────────────────────────────────────────────────────────────────────
+import type {
+  IntakeCategory as PortalIntakeCategory,
+  CustomerUnit as PortalCustomerUnit,
+  PortalFeatureFlags,
+  CustomerRequestView,
+} from "@hbcfield/shared/client";
+
+export type { PortalIntakeCategory, PortalCustomerUnit };
+
+export interface PortalSummary {
+  id: string;
+  organizationId: string;
+  name: string;
+  templateKey: string;
+  entityLabel: string;
+  contactLabel?: string | null;
+  accent?: string | null;
+  isActive: boolean;
+  residentCount: number;
+  categoryCount: number;
+}
+
+export interface PortalDetail {
+  id: string;
+  name: string;
+  enabled: boolean;
+  templateKey: string;
+  entityLabel: string;
+  contactLabel: string;
+  accent: string;
+  features: PortalFeatureFlags;
+  categories: PortalIntakeCategory[];
+}
+
+export interface PortalCategoryInput {
+  portalId?: string;
+  key?: string;
+  label: string;
+  icon?: string;
+  color?: string;
+  urgent?: boolean;
+  team?: string;
+  defaultPriority?: string | null;
+  issues?: string[];
+  position?: number;
+}
+
+export interface PortalUnitInput {
+  customerId?: string;
+  portalId?: string;
+  name: string;
+  label?: string | null;
+  address?: string | null;
+  spaceId?: string | null;
+}
+
+export const portalAdminApi = {
+  // ── Portals ──
+  listPortals: async () => {
+    const res = await api.get<PortalSummary[]>("/portal/admin/portals");
+    if (res.error) throw new Error(res.error);
+    return res.data ?? [];
+  },
+  createPortal: async (templateKey: string, name?: string) => {
+    const res = await api.post<PortalDetail>("/portal/admin/portals", { templateKey, name });
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  getPortal: async (id: string) => {
+    const res = await api.get<PortalDetail>(`/portal/admin/portals/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  updatePortal: async (id: string, input: { name?: string; templateKey?: string; reseed?: boolean }) => {
+    const res = await api.patch<PortalDetail>(`/portal/admin/portals/${id}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  deletePortal: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/portal/admin/portals/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+
+  // ── Intake categories (per portal) ──
+  createCategory: async (input: PortalCategoryInput) => {
+    const res = await api.post<PortalIntakeCategory>("/portal/admin/categories", input);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  updateCategory: async (id: string, input: Partial<PortalCategoryInput> & { isActive?: boolean }) => {
+    const res = await api.patch<PortalIntakeCategory>(`/portal/admin/categories/${id}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  deleteCategory: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/portal/admin/categories/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  reorderCategories: async (portalId: string, orderedIds: string[]) => {
+    const res = await api.post<{ success: boolean }>("/portal/admin/categories/reorder", { portalId, orderedIds });
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+
+  // ── Residents (per portal) ──
+  residents: async (portalId: string, search?: string) => {
+    const res = await api.get<{ data: Customer[] }>(buildUrlWithQuery("/portal/admin/residents", { portalId, search }));
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  inviteResident: async (portalId: string, input: { name?: string; email?: string; unitName: string; unitAddress?: string }) => {
+    const res = await api.post<{ customer: Customer; unit: PortalCustomerUnit; code?: string }>("/portal/admin/residents", { portalId, ...input });
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
+  // ── Units + requests (per resident) ──
+  listUnits: async (customerId?: string) => {
+    const res = await api.get<PortalCustomerUnit[]>(buildUrlWithQuery("/portal/admin/units", { customerId }));
+    if (res.error) throw new Error(res.error);
+    return res.data ?? [];
+  },
+  createUnit: async (input: { customerId: string; name: string; address?: string | null }) => {
+    const res = await api.post<PortalCustomerUnit>("/portal/admin/units", input);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+  deleteUnit: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/portal/admin/units/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  requests: async (customerId: string) => {
+    const res = await api.get<{ data: CustomerRequestView[] }>(buildUrlWithQuery("/portal/admin/requests", { customerId }));
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  // Every request across a whole portal (office view; carries the client name).
+  portalRequests: async (portalId: string) => {
+    const res = await api.get<{ data: PortalRequestView[] }>(`/portal/admin/portals/${portalId}/requests`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+};
+
+export interface PortalRequestView extends CustomerRequestView {
+  customerId: string | null;
+  customerName: string | null;
+  updatedAt?: string;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Analytics / Reports — dynamic report engine (semantic registry + query engine)

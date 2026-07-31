@@ -53,9 +53,13 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN' | 'EMPLOYEE';
+  role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN' | 'EMPLOYEE' | 'CUSTOMER';
   organizationId: string | null;
   onboardingCompleted: boolean;
+  // Customer portal: bound Customer + default unit (only for role=CUSTOMER).
+  customerId?: string | null;
+  unitId?: string | null;
+  customerPortalEnabled?: boolean;
   avatarUrl?: string | null;
   // Permission fields
   canCreateTasks: boolean;

@@ -91,7 +91,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   tokenInfo: TokenInfo;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   /** Optimistically merge fields into the local user (e.g. presence) without a round-trip. */
@@ -217,10 +217,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [user, updateTokenInfo]);
 
   // Login function
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, rememberMe = false) => {
     // Clear all cached data from previous session before setting new user
     queryClient.clear();
-    const response = await authApi.login(email, password);
+    const response = await authApi.login(email, password, rememberMe);
     const u = response.user;
     setUser({
       ...u,

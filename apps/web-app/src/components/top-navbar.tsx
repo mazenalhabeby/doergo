@@ -267,7 +267,7 @@ export function TopNavbar() {
           </Link>
         )}
 
-        {/* Customers */}
+        {/* Customers (B2B) */}
         {showCustomers && (
           <Link
             href="/customers"
@@ -279,6 +279,21 @@ export function TopNavbar() {
             )}
           >
             {t("nav.customers", "Customers")}
+          </Link>
+        )}
+
+        {/* Customer Portal (B2C) */}
+        {showCustomers && (
+          <Link
+            href="/customer-portal"
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/customer-portal")
+                ? cn(navItemActiveStyle, bottomIndicator)
+                : navItemInactive,
+            )}
+          >
+            {t("nav.customerPortal", "Clients Portals")}
           </Link>
         )}
 
@@ -578,6 +593,15 @@ function MobileMenu({
               className={cn(mobileItemBase, isActive(pathname, "/customers") ? mobileItemActiveStyle : mobileItemInactive)}>
               <Building2 className="h-4 w-4" />
               {t("nav.customers", "Customers")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showCustomers && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/customer-portal" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/customer-portal") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <Building2 className="h-4 w-4" />
+              {t("nav.customerPortal", "Clients Portals")}
             </Link>
           </DropdownMenuItem>
         )}

@@ -34,7 +34,7 @@ import { applyOrientationPolicy } from '../src/lib/orientation';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading, needsOnboarding } = useAuth();
+  const { isAuthenticated, isLoading, needsOnboarding, user } = useAuth();
   const { colors, isDark } = useTheme();
   const segments = useSegments();
   const router = useRouter();
@@ -79,18 +79,30 @@ function RootLayoutNav() {
     const inAuthGroup = firstSegment === '(auth)';
     const inAppGroup = firstSegment === '(app)';
     const inOnboardingGroup = firstSegment === '(onboarding)';
+    const inCustomerGroup = firstSegment === '(customer)';
+    // External customers get a wholly separate stack (portal). They are born
+    // onboardingCompleted=true, so they never see the org-builder or staff app.
+    const isCustomer = user?.role === 'CUSTOMER';
 
     if (isAuthenticated && needsOnboarding && !inOnboardingGroup) {
       // Authenticated but needs onboarding → onboarding wizard
       router.replace('/(onboarding)/choose-path' as Href);
-    } else if (isAuthenticated && !needsOnboarding && (inAuthGroup || inOnboardingGroup || !firstSegment)) {
-      // Authenticated and onboarded → main app
+    } else if (isAuthenticated && !needsOnboarding && isCustomer && !inCustomerGroup) {
+      // Customer → customer portal (never the staff app)
+      router.replace('/(customer)' as Href);
+    } else if (
+      isAuthenticated &&
+      !needsOnboarding &&
+      !isCustomer &&
+      (inAuthGroup || inOnboardingGroup || inCustomerGroup || !firstSegment)
+    ) {
+      // Staff (admin/employee), onboarded → main app
       router.replace('/(app)' as Href);
-    } else if (!isAuthenticated && (inAppGroup || inOnboardingGroup || !firstSegment)) {
+    } else if (!isAuthenticated && (inAppGroup || inOnboardingGroup || inCustomerGroup || !firstSegment)) {
       // Not authenticated → login
       router.replace('/(auth)/login' as Href);
     }
-  }, [isAuthenticated, needsOnboarding, isLoading, segments, showAnimatedSplash]);
+  }, [isAuthenticated, needsOnboarding, isLoading, segments, showAnimatedSplash, user?.role]);
 
   const handleSplashComplete = useCallback(() => {
     setShowAnimatedSplash(false);
@@ -114,6 +126,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="(customer)" />
         <Stack.Screen name="splash-preview" />
       </Stack>
       {/* Prominent background-location disclosure — overlays the app when a

@@ -9,6 +9,8 @@ export interface CustomerInput {
   address?: string | null;
   notes?: string | null;
   isActive?: boolean;
+  isPortalResident?: boolean;
+  portalId?: string | null;
 }
 
 const customerSelect = {
@@ -20,6 +22,8 @@ const customerSelect = {
   address: true,
   notes: true,
   isActive: true,
+  isPortalResident: true,
+  portalId: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -33,6 +37,8 @@ export class CustomersService {
     organizationId: string;
     search?: string;
     status?: 'active' | 'inactive' | 'all';
+    portalResident?: boolean; // true = B2C residents only; false = B2B customers only
+    portalId?: string; // residents in a specific portal
     page?: number;
     limit?: number;
   }) {
@@ -41,6 +47,8 @@ export class CustomersService {
     const where: Record<string, unknown> = { organizationId: data.organizationId };
     if (data.status === 'active' || !data.status) where.isActive = true;
     else if (data.status === 'inactive') where.isActive = false;
+    if (typeof data.portalResident === 'boolean') where.isPortalResident = data.portalResident;
+    if (data.portalId) where.portalId = data.portalId;
     if (data.search) {
       where.OR = [
         { name: { contains: data.search, mode: 'insensitive' } },
@@ -82,6 +90,8 @@ export class CustomersService {
         phone: dto.phone ?? null,
         address: dto.address ?? null,
         notes: dto.notes ?? null,
+        isPortalResident: dto.isPortalResident ?? false,
+        portalId: dto.portalId ?? null,
       },
       select: customerSelect,
     });
@@ -108,7 +118,15 @@ export class CustomersService {
   async remove(id: string, organizationId: string) {
     const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true } });
     if (!existing) throw new NotFoundException('Customer not found');
-    await this.prisma.customer.update({ where: { id }, data: { isActive: false } });
-    return { success: true };
+    // Grab the portal login ids first so the gateway can bust their cached tokens
+    // (instant revocation, not just at the 60s cache TTL).
+    const portalUsers = await this.prisma.user.findMany({ where: { customerId: id }, select: { id: true } });
+    await this.prisma.$transaction([
+      this.prisma.customer.update({ where: { id }, data: { isActive: false } }),
+      // Revoke portal access: deactivate the customer's login accounts so the
+      // existing User.isActive gate (login + validateToken) locks them out.
+      this.prisma.user.updateMany({ where: { customerId: id }, data: { isActive: false } }),
+    ]);
+    return { success: true, deactivatedUserIds: portalUsers.map((u) => u.id) };
   }
 }

@@ -3,6 +3,9 @@
 export enum Role {
   ADMIN = 'ADMIN',
   EMPLOYEE = 'EMPLOYEE',
+  // External end-customer (customer portal). NOT a staff role — a CUSTOMER only
+  // ever sees their own requests via the portal. normalizeRole() preserves it.
+  CUSTOMER = 'CUSTOMER',
   // Note: legacy roles (CLIENT/DISPATCHER/TECHNICIAN) and MANAGER have been
   // retired. normalizeRole() still collapses any legacy string → ADMIN/EMPLOYEE.
 }

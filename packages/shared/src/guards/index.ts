@@ -8,6 +8,8 @@
 
 export { OnboardingCompleteGuard } from './onboarding.guard';
 export { PermissionsGuard } from './permissions.guard';
+export { CustomerScopeGuard } from './customer-scope.guard';
+export { CustomerConfinementGuard } from './customer-confinement.guard';
 
 import { Role, normalizeRole } from '../types';
 
@@ -40,6 +42,16 @@ export function isManager(_user: { role: string }): boolean {
 export function isEmployee(user: { role: string }): boolean {
   const r = normalizeRole(user.role);
   return r === Role.EMPLOYEE;
+}
+
+/** Check if user is an external CUSTOMER (customer portal persona) */
+export function isCustomer(user: { role: string }): boolean {
+  return normalizeRole(user.role) === Role.CUSTOMER;
+}
+
+/** True for internal staff (ADMIN or EMPLOYEE) — i.e. NOT an external customer */
+export function isStaff(user: { role: string }): boolean {
+  return !isCustomer(user);
 }
 
 // ── Legacy aliases (backward compat) ──

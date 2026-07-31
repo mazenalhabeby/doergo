@@ -30,6 +30,7 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -52,7 +53,7 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
     }
 
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       notify.success(t('auth.login.successTitle'), t('auth.login.successDescription'));
       router.push('/dashboard');
     } catch (err) {
@@ -114,6 +115,24 @@ export function LoginForm({ isActive, isMobile = false }: LoginFormProps) {
           onFocusChange={setFocusedField}
           transitionDelay={getTransitionDelay(0.2)}
         />
+
+        {/* Remember me — web sessions are 24h by default; opt into 30 days */}
+        <label
+          className={cn(
+            'flex items-center gap-2 text-xs sm:text-sm text-slate-600 select-none cursor-pointer transition-all duration-500',
+            isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          )}
+          style={{ transitionDelay: getTransitionDelay(0.25) }}
+        >
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            disabled={isLoading}
+            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+          />
+          {t('auth.login.rememberMe', { defaultValue: 'Keep me signed in for 30 days' })}
+        </label>
 
         {/* Submit Button */}
         <div

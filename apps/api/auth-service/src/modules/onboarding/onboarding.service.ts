@@ -416,6 +416,14 @@ export class OnboardingService {
                 },
               }
             : {}),
+          // Customer-portal invite: bind the login to its Customer + optional unit
+          // (mirror of the public accept path) so the portal scopes correctly.
+          ...(role === Role.CUSTOMER
+            ? {
+                customerId: invitation.customerId,
+                unitId: invitation.unitId,
+              }
+            : {}),
         },
         select: {
           id: true,
@@ -425,6 +433,8 @@ export class OnboardingService {
           role: true,
           organizationId: true,
           onboardingCompleted: true,
+          customerId: true,
+          unitId: true,
 
           canCreateTasks: true,
           taskCreationScope: true,
@@ -464,6 +474,22 @@ export class OnboardingService {
             where: { userId_locationId: { userId, locationId: invitation.spaceId } },
             update: { isPrimary: true, effectiveTo: null },
             create: { userId, locationId: invitation.spaceId, isPrimary: true },
+          });
+        }
+      }
+
+      // Customer portal: the resident owns their identity. Sync the Customer
+      // record's name from the account they just registered, so the office
+      // dashboard (which reads Customer.name) and the app show the same name.
+      if (role === Role.CUSTOMER && invitation.customerId) {
+        const fullName = [updatedUser.firstName, updatedUser.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+        if (fullName) {
+          await tx.customer.update({
+            where: { id: invitation.customerId },
+            data: { name: fullName },
           });
         }
       }

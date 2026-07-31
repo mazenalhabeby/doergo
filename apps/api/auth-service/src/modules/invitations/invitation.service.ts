@@ -59,8 +59,13 @@ export class InvitationService {
     specialty?: string;
     maxDailyJobs?: number;
     spaceId?: string;
+    // Customer-portal invite (targetRole = CUSTOMER)
+    customerId?: string;
+    unitId?: string;
   }) {
-    // Non-admin creators may only invite employees (never other admins).
+    const isCustomerInvite = data.targetRole === Role.CUSTOMER;
+
+    // Non-admin creators may only invite employees (never admins or customers).
     if (data.creatorRole !== Role.ADMIN && data.targetRole !== Role.EMPLOYEE) {
       return {
         success: false,
@@ -78,13 +83,36 @@ export class InvitationService {
       };
     }
 
-    // Validate target role (ADMIN already blocked above → must be EMPLOYEE).
-    if (data.targetRole !== Role.EMPLOYEE) {
+    // Target role must be EMPLOYEE or CUSTOMER (ADMIN already blocked above).
+    if (data.targetRole !== Role.EMPLOYEE && !isCustomerInvite) {
       return {
         success: false,
         statusCode: HttpStatus.BAD_REQUEST,
-        message: 'Target role must be EMPLOYEE',
+        message: 'Target role must be EMPLOYEE or CUSTOMER',
       };
+    }
+
+    // Customer invites must name an existing Customer in this org (fail closed).
+    if (isCustomerInvite) {
+      if (!data.customerId) {
+        return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'customerId is required for a customer invite' };
+      }
+      const customer = await this.prisma.customer.findFirst({
+        where: { id: data.customerId, organizationId: data.organizationId },
+        select: { id: true },
+      });
+      if (!customer) {
+        return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Customer not found in this organization' };
+      }
+      if (data.unitId) {
+        const unit = await this.prisma.customerUnit.findFirst({
+          where: { id: data.unitId, organizationId: data.organizationId },
+          select: { id: true },
+        });
+        if (!unit) {
+          return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Unit not found in this organization' };
+        }
+      }
     }
 
     // Check pending invitation count for org
@@ -158,6 +186,9 @@ export class InvitationService {
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
         // Pre-assigned space — applied to the user on accept.
         spaceId: isTechnician ? (data.spaceId || null) : null,
+        // Customer-portal invite target (bound to the new login on accept).
+        customerId: isCustomerInvite ? (data.customerId || null) : null,
+        unitId: isCustomerInvite ? (data.unitId || null) : null,
       },
       include: {
         organization: { select: { id: true, name: true } },
@@ -349,6 +380,15 @@ export class InvitationService {
                 },
               }
             : {}),
+          // Customer-portal login: bind to the Customer + optional default unit.
+          // onboardingCompleted defaults to true → the portal never sees the
+          // org-builder wizard. See [[customer-portal]].
+          ...(invitation.targetRole === 'CUSTOMER'
+            ? {
+                customerId: invitation.customerId,
+                unitId: invitation.unitId,
+              }
+            : {}),
         },
         select: {
           id: true,
@@ -362,6 +402,8 @@ export class InvitationService {
           canViewAllTasks: true,
           canAssignTasks: true,
           canManageUsers: true,
+          customerId: true,
+          unitId: true,
         },
       });
 

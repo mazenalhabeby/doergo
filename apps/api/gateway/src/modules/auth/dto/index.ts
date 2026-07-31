@@ -21,10 +21,16 @@ export class LoginDto {
   @PasswordField()
   password: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Keep user signed in for 30 days (default: false = 24h)' })
+  @ApiPropertyOptional({ example: false, description: 'Web only: keep signed in for 30 days (default: false = 24h). Ignored for mobile (90d).' })
   @IsOptional()
   @IsBoolean()
   rememberMe?: boolean;
+
+  @ApiPropertyOptional({ enum: ['web', 'mobile'], description: 'Client platform. web → rememberMe (24h/30d); mobile/absent → 90d.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  client?: string;
 }
 
 /**

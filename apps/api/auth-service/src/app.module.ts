@@ -11,6 +11,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { InvoiceModule } from './modules/invoices/invoice.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { PortalModule } from './modules/portal/portal.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { CustomersModule } from './modules/customers/customers.module';
     InvoiceModule,
     BillingModule,
     CustomersModule,
+    PortalModule,
   ],
 })
 export class AppModule {}

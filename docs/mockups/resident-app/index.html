@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HBCField · Customer Portal — mockup (HBCField design)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ===== HBCField design tokens (from apps/mobile/src/lib/constants.ts) ===== */
+  :root{
+    --bg:#FFFFFF; --surface:#F8FAFC; --surfaceRaised:#F1F5F9; --card:#FFFFFF;
+    --border:#E2E8F0; --borderL:#CBD5E1; --input:#F1F5F9;
+    --text:#1E293B; --sub:#475569; --mut:#94A3B8; --header:#FFFFFF; --tab:#FFFFFF;
+    --shadow:0 1px 2px rgba(16,24,40,.05); --shadowLg:0 2px 8px rgba(16,24,40,.08);
+    /* accent (org brand) — set live by JS; defaults to emerald */
+    --primary:#059669; --primaryDark:#047857; --primaryLight:#ECFDF5;
+    --success:#22C55E; --successLight:#DCFCE7; --warning:#EAB308;
+    --error:#EF4444; --errorLight:#FEE2E2; --amber:#D97706;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c0c14; --surface:#131320; --surfaceRaised:#1e1e2e; --card:#1a1a28;
+    --border:#232335; --borderL:#363650; --input:#1e1e2e;
+    --text:#f0f0f8; --sub:#9898b0; --mut:#6a6a82; --header:#101018; --tab:#0a0a10;
+    --shadow:none; --shadowLg:none;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{background:#0b0f17;color:var(--text);font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;min-height:100%}
+  svg{display:block}
+
+  /* ---------- Left rail (control panel — stays dark) ---------- */
+  .rail{width:320px;flex:none;padding:22px 20px;border-right:1px solid #1c2233;background:#0e1320;position:sticky;top:0;height:100vh;overflow:auto;color:#c7d0e0}
+  .rail::-webkit-scrollbar{width:8px}.rail::-webkit-scrollbar-thumb{background:#1f2740;border-radius:8px}
+  .brand{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+  .brand .logo{width:34px;height:34px;border-radius:10px;background:var(--primary);display:grid;place-items:center;color:#fff}
+  .brand b{font-size:15px;color:#eef3fb;font-weight:700}.brand small{display:block;color:#8595b0;font-size:11px}
+  .rail h4{color:#68789a;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;margin:22px 0 10px;display:flex;justify-content:space-between}
+  .rail h4 span{color:var(--primary);text-transform:none;letter-spacing:0;font-weight:600;filter:brightness(1.3)}
+
+  .tpls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .tpl{border:1px solid #232c42;background:#111726;border-radius:13px;padding:11px 6px;cursor:pointer;text-align:center;transition:.15s;color:#c7d0e0}
+  .tpl:hover{border-color:#33405f}.tpl.on{border-color:var(--primary);background:rgba(5,150,105,.14)}
+  .tpl b{display:block;font-size:11px;margin-top:6px}.tpl .dot{width:8px;height:8px;border-radius:50%;margin:6px auto 0}
+  .tpl svg{margin:0 auto}
+
+  .seg{display:flex;background:#111726;border:1px solid #232c42;border-radius:11px;padding:3px;gap:3px}
+  .seg button{all:unset;flex:1;text-align:center;padding:7px;border-radius:8px;font-size:12px;color:#9aa8c4;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .seg button.on{background:#1d2740;color:#fff}
+
+  .sw{display:flex;align-items:center;gap:10px;padding:8px 4px;cursor:pointer;border-radius:9px;transition:.12s}
+  .sw:hover{background:#111726}
+  .sw .t{flex:1;font-size:12.5px;color:#dbe3f0}.sw .t small{display:block;color:#68789a;font-size:10.5px}
+  .track{width:38px;height:22px;border-radius:20px;background:#2a3450;position:relative;flex:none;transition:.18s}
+  .track i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#7d8cae;transition:.18s}
+  .sw.on .track{background:var(--primary)}.sw.on .track i{left:18px;background:#fff}
+  .colors{display:flex;gap:8px;margin-top:4px}
+  .col{width:26px;height:26px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:.12s}
+  .col.on{border-color:#fff;transform:scale(1.08)}
+  .field{margin-top:10px}.field label{font-size:11px;color:#68789a;display:block;margin-bottom:5px}
+  .field input{width:100%;background:#111726;border:1px solid #232c42;border-radius:9px;color:#eef3fb;padding:8px 10px;font-size:12.5px;font-family:inherit}
+  .navlist{display:flex;flex-direction:column;gap:1px}
+  .navlist button{all:unset;cursor:pointer;padding:8px 10px;border-radius:9px;color:#9aa8c4;font-size:12.5px;display:flex;gap:9px;align-items:center;transition:.12s}
+  .navlist button:hover{background:#111726;color:#eef3fb}.navlist button.on{background:rgba(5,150,105,.16);color:#fff}
+  .navlist button svg{opacity:.8}
+  .hint{margin-top:20px;font-size:11px;color:#68789a;line-height:1.6;border-top:1px solid #1c2233;padding-top:14px}
+  .hint b{color:#9aa8c4}
+
+  /* ---------- Stage / device ---------- */
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;min-height:100vh;background:radial-gradient(1000px 600px at 60% -10%, #141a28 0%, #0b0f17 60%)}
+  .device{width:344px;height:730px;border-radius:48px;background:#0a0f1a;padding:11px;box-shadow:0 40px 90px -30px #000, inset 0 0 0 2px #232c42, 0 0 0 8px #10151f;position:relative;flex:none}
+  .device::before{content:"";position:absolute;top:19px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:#05070c;border-radius:16px;z-index:40}
+  .viewport{position:relative;width:100%;height:100%;border-radius:38px;overflow:hidden;background:var(--bg);transition:background .2s}
+  .statusbar{position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:12.5px;font-weight:600;z-index:30;color:var(--text)}
+  .statusbar .r{font-size:11px;opacity:.8}
+
+  .screen{position:absolute;inset:0;padding:52px 0 80px;overflow-y:auto;display:none;animation:fade .26s ease}
+  .screen.on{display:block}.screen::-webkit-scrollbar{width:0}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .apphead{display:flex;align-items:flex-start;justify-content:space-between;padding:6px 18px 12px}
+  .apphead .who small{color:var(--sub);font-size:12px;font-weight:500}
+  .apphead .who b{font-size:20px;display:block;margin-top:2px;font-weight:700}
+  .unit{display:inline-flex;align-items:center;gap:6px;margin-top:8px;background:var(--primaryLight);color:var(--primaryDark);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:20px}
+  .unit svg{width:13px;height:13px}
+  .iconbtn{width:40px;height:40px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;position:relative;flex:none;color:var(--sub)}
+  .iconbtn b{position:absolute;top:9px;right:10px;width:8px;height:8px;background:var(--error);border-radius:50%;border:2px solid var(--card)}
+
+  .banner{margin:2px 18px 14px;border-radius:18px;overflow:hidden;height:104px;position:relative;background:linear-gradient(120deg,var(--primary),var(--primaryDark));box-shadow:var(--shadowLg)}
+  .banner .g{position:absolute;inset:0;background:radial-gradient(240px 120px at 88% -30%, rgba(255,255,255,.28), transparent 60%)}
+  .banner .t{position:absolute;left:17px;bottom:15px;color:#fff}.banner .t b{font-size:16px;font-weight:700}.banner .t small{display:block;color:rgba(255,255,255,.85);font-size:11.5px;margin-top:2px}
+
+  .sect{display:flex;align-items:center;justify-content:space-between;margin:18px 18px 10px}
+  .sect b{font-size:15px;font-weight:600}.sect a{color:var(--primary);font-size:12.5px;text-decoration:none;font-weight:600;cursor:pointer}
+
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 18px}
+  .tile{border-radius:16px;padding:15px 14px;min-height:102px;border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:.15s;box-shadow:var(--shadow)}
+  .tile:active{transform:scale(.97)}
+  .tile .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}
+  .tile b{font-size:13px;line-height:1.3;font-weight:600;color:var(--text)}
+  .tile.big{grid-column:span 2;min-height:auto;flex-direction:row;align-items:center;gap:14px;background:linear-gradient(120deg,var(--primary),var(--primaryDark));border-color:transparent}
+  .tile.big .ic{background:rgba(255,255,255,.2);color:#fff}.tile.big b{font-size:16px;color:#fff}
+  .tile.big small{color:rgba(255,255,255,.85);font-size:12px;display:block;margin-top:3px;font-weight:400}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin:0 18px 12px;box-shadow:var(--shadow)}
+  .row{display:flex;align-items:center;gap:12px}
+  .pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .p-prog{background:var(--primaryLight);color:var(--primaryDark)}
+  .p-done{background:var(--successLight);color:#15803D}.p-urgent{background:var(--errorLight);color:#B91C1C}
+  .muted{color:var(--mut);font-size:12px}
+  .thumb{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .btn{display:block;width:100%;text-align:center;padding:14px;border-radius:14px;border:none;font-weight:600;font-size:14.5px;cursor:pointer;transition:.15s;font-family:inherit}
+  .btn:active{transform:scale(.985)}.btn-p{background:var(--primary);color:#fff;box-shadow:0 6px 16px -6px var(--primary)}
+  .btn-g{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+  .btnrow{display:flex;gap:10px;padding:0 18px}
+
+  .wz-top{display:flex;align-items:center;gap:12px;padding:6px 18px 6px}
+  .wz-top .back{width:38px;height:38px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;cursor:pointer;flex:none;color:var(--sub)}
+  .wz-top .ttl b{font-size:15px;font-weight:600}.wz-top .ttl small{display:block;color:var(--sub);font-size:11.5px}
+  .prog{height:6px;background:var(--surfaceRaised);border-radius:4px;margin:8px 18px 16px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--primary);border-radius:4px;transition:.35s}
+  .q{font-size:19px;font-weight:700;padding:0 18px;margin-bottom:8px;line-height:1.3}
+  .smartchip{margin:0 18px 14px;display:flex;gap:7px;flex-wrap:wrap}
+  .smartchip span{font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;display:inline-flex;gap:5px;align-items:center}
+  .smartchip svg{width:13px;height:13px}
+  .sc-route{background:var(--primaryLight);color:var(--primaryDark)}.sc-urgent{background:var(--errorLight);color:#B91C1C}
+  .opts{display:flex;flex-direction:column;gap:9px;padding:0 18px}
+  .opt{display:flex;align-items:center;gap:13px;padding:13px;border-radius:14px;border:1px solid var(--border);background:var(--card);cursor:pointer;transition:.14s}
+  .opt:hover{border-color:var(--borderL)}.opt.sel{border-color:var(--primary);background:var(--primaryLight)}
+  .opt .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none}
+  .opt b{font-size:14px;font-weight:600}.opt .chev{margin-left:auto;color:var(--mut)}.opt.sel .chev{color:var(--primary)}
+  .photos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:0 18px}
+  .ph{aspect-ratio:1;border-radius:14px;border:1.5px dashed var(--borderL);display:grid;place-items:center;color:var(--mut);cursor:pointer;background:var(--surface)}
+  .ph.filled{border:none;background:var(--surfaceRaised);color:var(--sub);font-size:12px;position:relative}
+  .ph.filled .chk{position:absolute;top:6px;right:6px;color:var(--success)}
+  .ta{margin:0 18px;width:calc(100% - 36px);min-height:118px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--text);padding:14px;font-size:14px;font-family:inherit;resize:none}
+  .ta::placeholder{color:var(--mut)}
+  .foot{position:absolute;left:0;right:0;bottom:0;padding:14px 18px 20px;background:linear-gradient(0deg,var(--bg) 72%,transparent);z-index:20}
+
+  .done-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 32px;text-align:center}
+  .done-c{width:86px;height:86px;border-radius:50%;background:var(--successLight);display:grid;place-items:center;color:var(--success);margin-bottom:20px}
+  .tick{font-size:11px;color:var(--sub);background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:20px;margin-top:12px}
+
+  .tl{padding:6px 18px}
+  .tl .step{display:flex;gap:14px;padding-bottom:18px;position:relative}
+  .tl .step::before{content:"";position:absolute;left:14px;top:28px;bottom:-4px;width:2px;background:var(--border)}
+  .tl .step:last-child::before{display:none}
+  .tl .dot{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;border:2px solid var(--border);background:var(--card);color:var(--mut);z-index:2}
+  .tl .step.done .dot{background:var(--success);border-color:var(--success);color:#fff}.tl .step.done::before{background:var(--success)}
+  .tl .step.active .dot{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 0 0 5px var(--primaryLight)}
+  .tl .step.active .dot .pulse{width:9px;height:9px;border-radius:50%;background:#fff}
+  .tl .step b{font-size:13.5px;display:block;font-weight:600}.tl .step small{color:var(--sub);font-size:11.5px}
+
+  .mapcard{margin:0 18px 12px;border-radius:16px;overflow:hidden;border:1px solid var(--border);position:relative;height:142px;background:var(--surfaceRaised)}
+  .mapcard svg.map{position:absolute;inset:0;width:100%;height:100%}
+  .eta{position:absolute;left:12px;bottom:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px 12px;display:flex;gap:9px;align-items:center;box-shadow:var(--shadowLg)}
+  .eta .av{width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;flex:none}
+  .eta b{font-size:13px;font-weight:600}.eta small{display:block;color:var(--sub);font-size:11px}
+
+  .chat{padding:6px 16px 0;display:flex;flex-direction:column;gap:10px}
+  .bub{max-width:82%;padding:11px 14px;border-radius:16px;font-size:13.5px;line-height:1.45}
+  .bub.ai{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:5px;align-self:flex-start}
+  .bub.me{background:var(--primary);color:#fff;border-bottom-right-radius:5px;align-self:flex-end}
+  .chip{align-self:flex-start;background:var(--card);border:1px solid var(--border);color:var(--primary);font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:20px;cursor:pointer}
+  .composer{position:absolute;left:0;right:0;bottom:64px;padding:10px 16px;display:flex;gap:9px;background:var(--bg);border-top:1px solid var(--border)}
+  .composer input{flex:1;background:var(--input);border:1px solid var(--border);border-radius:22px;padding:11px 15px;color:var(--text);font-size:13.5px;font-family:inherit}
+  .composer input::placeholder{color:var(--mut)}
+  .composer .send{width:42px;height:42px;border-radius:50%;background:var(--primary);border:none;color:#fff;cursor:pointer;flex:none;display:grid;place-items:center}
+
+  .ann{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin:0 18px 12px;box-shadow:var(--shadow)}
+  .ann .tag{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:8px}
+  .ann b{font-size:14px;font-weight:600}.ann p{color:var(--sub);font-size:12.5px;margin:5px 0 0;line-height:1.5}.ann .when{color:var(--mut);font-size:11px;margin-top:9px;display:block}
+
+  .pf-head{display:flex;flex-direction:column;align-items:center;padding:10px 18px 4px;text-align:center}
+  .pf-av{width:78px;height:78px;border-radius:50%;background:var(--primary);display:grid;place-items:center;font-size:28px;font-weight:700;color:#fff;margin-bottom:12px}
+  .pf-row{display:flex;align-items:center;gap:13px;padding:15px 18px;border-bottom:1px solid var(--border);cursor:pointer}
+  .pf-row .ic{width:38px;height:38px;border-radius:11px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--sub);flex:none}
+  .pf-row b{font-size:13.5px;font-weight:500}.pf-row .chev{margin-left:auto;color:var(--mut)}
+  .stars{display:flex;gap:8px;justify-content:center;margin:6px 0 18px}
+  .stars span{cursor:pointer;color:var(--borderL)}.stars span.on{color:#F59E0B}
+
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:66px;background:var(--tab);border-top:1px solid var(--border);display:flex;z-index:35}
+  .tabbar button{all:unset;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mut);font-size:10px;font-weight:500;cursor:pointer;transition:.14s}
+  .tabbar button.on{color:var(--primary)}
+  .fab{position:absolute;left:50%;transform:translateX(-50%);bottom:44px;width:56px;height:56px;border-radius:50%;background:var(--primary);border:4px solid var(--bg);display:grid;place-items:center;color:#fff;cursor:pointer;z-index:36;box-shadow:0 10px 24px -8px var(--primary)}
+  .cap{position:absolute;bottom:-30px;left:0;right:0;text-align:center;color:#566179;font-size:12px}
+  @media(max-width:960px){.rail{display:none}}
+</style>
+</head>
+<body>
+  <aside class="rail">
+    <div class="brand"><div class="logo" id="brandLogo"></div><div><b id="brandName">Rivergate Living</b><small>Customer portal · config engine</small></div></div>
+
+    <h4>Start from a template</h4>
+    <div class="tpls" id="tplRow"></div>
+
+    <h4>Appearance</h4>
+    <div class="seg" id="themeSeg"><button data-th="light" class="on">Light</button><button data-th="dark">Dark</button></div>
+
+    <h4>Configure <span id="cfgVertical">Rental</span></h4>
+    <div class="field"><label>Entity the customer is tied to</label><input id="entityInput" /></div>
+    <div style="margin-top:12px"><label style="font-size:11px;color:#68789a;display:block;margin-bottom:6px">Brand accent</label><div class="colors" id="colorRow"></div></div>
+    <div id="featRows" style="margin-top:14px"></div>
+
+    <h4>Screens</h4>
+    <div class="navlist" id="navList"></div>
+
+    <div class="hint"><b>Everything on the phone is driven by the config above</b> and rendered in HBCField’s real design tokens (Outfit type, emerald primary, light/dark themes, premium line icons). Switch template, recolor, rename the entity or toggle a feature — tiles, tabs, wizard steps, smart routing and the status timeline all re-derive live.</div>
+  </aside>
+
+  <main class="stage">
+    <div class="device"><div class="viewport">
+      <div class="statusbar"><span>9:41</span><span class="r">5G  100%</span></div>
+
+      <section class="screen on" data-screen="home">
+        <div class="apphead"><div class="who"><small id="greet">Good morning,</small><b id="resname">Patrick</b><span class="unit"><span id="unitPin"></span><span id="unitLbl"></span></span></div><div class="iconbtn" id="homeBell"></div></div>
+        <div class="banner"><div class="g"></div><div class="t"><b id="bannerT"></b><small>Simple. Fast. Transparent.</small></div></div>
+        <div class="tiles" id="homeTiles"></div>
+        <div class="sect"><b>Recent</b><a onclick="go('requests')">See all</a></div>
+        <div id="recentCard"></div>
+        <div style="height:10px"></div>
+      </section>
+
+      <section class="screen" data-screen="wizard">
+        <div class="wz-top"><div class="back" id="wzBack" onclick="wzBack()"></div><div class="ttl"><b id="wzTitle">Report an issue</b><small id="wzStep">Step 1</small></div></div>
+        <div class="prog"><i id="wzBar" style="width:16%"></i></div>
+        <div id="wzBody"></div>
+        <div class="foot"><button class="btn btn-p" id="wzNext" onclick="wzNext()">Next</button></div>
+      </section>
+
+      <section class="screen" data-screen="submitted">
+        <div class="done-wrap"><div class="done-c" id="doneCheck"></div><b style="font-size:21px;font-weight:700">Thank you!</b>
+          <p class="muted" id="submitMsg" style="margin:10px 0 0;font-size:13.5px;line-height:1.5"></p>
+          <span class="tick">Reference #2025-05-24-0018</span>
+          <div style="height:24px"></div>
+          <button class="btn btn-p" style="width:220px" onclick="go('detail')">View</button>
+          <button class="btn btn-g" style="width:220px;margin-top:10px" onclick="go('home')">Back to home</button></div>
+      </section>
+
+      <section class="screen" data-screen="requests">
+        <div class="apphead"><div class="who"><b style="font-size:21px;font-weight:700">My requests</b></div></div>
+        <div class="btnrow" style="margin-bottom:14px"><button class="btn btn-g" style="padding:10px">Open · 1</button><button class="btn btn-g" style="padding:10px">History · 3</button></div>
+        <div id="reqList"></div>
+      </section>
+
+      <section class="screen" data-screen="detail">
+        <div class="wz-top"><div class="back" onclick="go('requests')"></div><div class="ttl"><b>Details</b><small>#2025-05-24-0017</small></div></div>
+        <div id="detailHead"></div>
+        <div id="detailMap"></div>
+        <div class="sect"><b>Status</b></div>
+        <div class="tl" id="detailTl"></div>
+        <div class="btnrow" style="margin-top:4px"><button class="btn btn-g" onclick="go('messages')">Message</button></div>
+        <div style="height:16px"></div>
+      </section>
+
+      <section class="screen" data-screen="community">
+        <div class="apphead"><div class="who"><b style="font-size:21px;font-weight:700" id="commTitle">Community</b></div><div class="iconbtn" id="commBell"></div></div>
+        <div id="commList"></div>
+      </section>
+
+      <section class="screen" data-screen="messages">
+        <div class="apphead"><div class="who"><b style="font-size:21px;font-weight:700" id="aiTitle">Messages</b><small class="muted" id="msgSub">Chat with the office</small></div></div>
+        <div class="chat" id="chat"></div>
+        <div class="composer"><input placeholder="Type a message…"/><button class="send" id="sendBtn"></button></div>
+      </section>
+
+      <section class="screen" data-screen="profile">
+        <div class="pf-head"><div class="pf-av" id="pfAv">P</div><b style="font-size:18px;font-weight:700" id="pfName">Patrick Moreno</b><span class="muted" id="pfUnit"></span></div>
+        <div style="height:10px"></div>
+        <div id="pfRows"></div>
+      </section>
+
+      <section class="screen" data-screen="completed">
+        <div class="wz-top"><div class="back" onclick="go('profile')"></div><div class="ttl"><b>Completed</b><small>Feedback</small></div></div>
+        <div class="card" style="text-align:center;padding:20px"><div class="done-c" id="doneCheck2" style="width:62px;height:62px;margin:0 auto 14px"></div><b style="font-size:16px;font-weight:600" id="doneTitle">Resolved</b><p class="muted" id="doneNote" style="font-size:12.5px;margin-top:8px;line-height:1.5"></p></div>
+        <div class="photos" style="margin-bottom:16px"><div class="ph filled">Before</div><div class="ph filled">After</div><div class="ph" style="border-style:solid;opacity:.4"></div></div>
+        <div class="sect"><b>How was your experience?</b></div>
+        <div class="stars" id="stars"></div>
+        <div class="btnrow"><button class="btn btn-p" onclick="go('home')">Submit feedback</button></div>
+      </section>
+
+      <nav class="tabbar" id="tabbar"></nav>
+      <div class="fab" id="fab" onclick="startWizard()"></div>
+    </div></div>
+    <div class="cap">HBCField · Customer Portal — mockup · HBCField design tokens · not wired to backend</div>
+  </main>
+
+<script>
+/* ===== premium line icons (Feather / Lucide style, 24x24 stroke) ===== */
+const ICONS={
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>',
+  list:'<rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 3h8v3H8z"/><path d="M8 11h8M8 15h5"/>',
+  megaphone:'<path d="M4 10v3a1 1 0 0 0 1 1h1l1.2 4.2a1 1 0 0 0 1 .8h.5a1 1 0 0 0 1-1.1L10 14l9 4V6L9 10H5a1 1 0 0 0-1 1z"/>',
+  message:'<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  tool:'<path d="M14.7 6.3a4 4 0 0 1-5.6 5.6l-6 6a2 2 0 1 0 2.8 2.8l6-6a4 4 0 0 0 5.6-5.6l-2.6 2.6-2.8-2.8z"/>',
+  package:'<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+  sparkles:'<path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4z"/><path d="M19 14l.7 1.8L21.5 16.5l-1.8.7L19 19l-.7-1.8L16.5 16.5l1.8-.7z"/>',
+  truck:'<path d="M1 4h14v11H1z"/><path d="M15 8h4l3 3v4h-7z"/><circle cx="5.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/>',
+  armchair:'<path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M4 12a2 2 0 0 1 2 2v3h12v-3a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-4a2 2 0 0 1 2-2z"/><path d="M6 19v2M18 19v2"/>',
+  snowflake:'<path d="M12 2v20M4 6l16 12M20 6L4 18"/><path d="M12 6l3-2M12 6l-3-2M12 18l3 2M12 18l-3 2M6 9l-3 .5M18 15l3-.5M18 9l3-.5M6 15l-3 .5"/>',
+  droplet:'<path d="M12 3l5 6a6 6 0 1 1-10 0z"/>',
+  zap:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  door:'<path d="M4 21h16M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><circle cx="14.5" cy="12" r="1"/>',
+  appliance:'<rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6h.01M11 6h.01"/>',
+  alert:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/>',
+  shuffle:'<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"/><path d="M12 17h.01"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  thermometer:'<path d="M14 14.8V4a2.5 2.5 0 0 0-5 0v10.8a4.5 4.5 0 1 0 5 0z"/>',
+  bulb:'<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 .9 1 1.8v.5h6v-.5c0-.9.4-1.3 1-1.8A7 7 0 0 0 12 2z"/>',
+  shower:'<path d="M4 12h16M6 12V7a3 3 0 0 1 6 0"/><path d="M8 16v2M12 16v3M16 16v2"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  monitor:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h1a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  close:'<path d="M18 6 6 18M6 6l12 12"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>',
+  sunrise:'<path d="M3 18h18M8 18a4 4 0 0 1 8 0"/><path d="M12 3v6M9 6l3-3 3 3"/>',
+  sunset:'<path d="M3 18h18M8 18a4 4 0 0 1 8 0"/><path d="M12 9V3M9 6l3 3 3-3"/>',
+  pin:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  building:'<path d="M4 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17"/><path d="M15 8h4a1 1 0 0 1 1 1v12M3 21h18"/><path d="M8 7h.01M11 7h.01M8 11h.01M11 11h.01M8 15h.01M11 15h.01"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6 12 13 2 6"/>',
+  phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.4 1.6.7 2.3a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.7-1.1a2 2 0 0 1 2.1-.4c.7.3 1.5.6 2.3.7A2 2 0 0 1 22 16.9z"/>',
+  send:'<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+  star:'<path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  chevron:'<path d="M9 18l6-6-6-6"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  fileText:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/>',
+  navigation:'<path d="M3 11l19-9-9 19-2-8-8-2z"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+};
+function ic(name,size=20,sw=1.8){return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||''}</svg>`;}
+
+/* ===== palette (HBCField semantic colors: [base, lightBg]) ===== */
+const PAL={emerald:['#059669','#ECFDF5'],blue:['#3B82F6','#DBEAFE'],amber:['#D97706','#FFFBEB'],purple:['#8B5CF6','#EDE9FE'],cyan:['#0891B2','#CFFAFE'],indigo:['#4F46E5','#E0E7FF'],red:['#EF4444','#FEE2E2'],orange:['#F97316','#FFEDD5'],slate:['#64748B','#F1F5F9']};
+/* accent trios [base, dark, lightBg] */
+const ACCENTS={emerald:['#059669','#047857','#ECFDF5'],blue:['#3B82F6','#2563EB','#DBEAFE'],orange:['#F97316','#EA580C','#FFEDD5'],purple:['#8B5CF6','#7C3AED','#EDE9FE'],cyan:['#0891B2','#0E7490','#CFFAFE']};
+
+const TEMPLATES={
+  rental:{key:'rental',vertical:'Rental',brand:'Rivergate Living',logo:'home',accent:'emerald',
+    person:'Patrick',surname:'Moreno',greet:'Good morning,',entityLabel:'Apartment',entityValue:'766 C',banner:'Tiffany Square Apartments',
+    features:{extra:true,photos:true,access:true,preferredTime:true,appointments:true,community:true,messages:true,ratings:true},
+    contactLabel:'Leasing Office',supportMsg:'Hi Patrick, this is the leasing office 👋 How can we help?',
+    extraTile:{t:'Package Notification',icon:'package',color:'blue'},
+    reportLabel:'Report a Maintenance Issue',reportSub:'AC, plumbing, electrical & more',
+    categories:[
+      {icon:'snowflake',label:'Air Conditioning',color:'cyan',team:'HVAC team',issues:['Not cooling','No power','Strange noise','Water leaking']},
+      {icon:'droplet',label:'Plumbing',color:'blue',team:'Plumbing team',issues:['Leak','No hot water','Clogged drain','Low pressure']},
+      {icon:'zap',label:'Electrical',color:'amber',team:'Electrical team',issues:['Outlet dead','Breaker trips','Flickering lights']},
+      {icon:'door',label:'Door / Window',color:'purple',team:'Maintenance',issues:['Won’t lock','Broken handle','Draft']},
+      {icon:'appliance',label:'Appliances',color:'emerald',team:'Appliance team',issues:['Not starting','Leaking','Error code']},
+      {icon:'alert',label:'Emergency',color:'red',team:'On-call team',urgent:true,issues:['Flood','Gas smell','No power','Lockout']},
+      {icon:'plus',label:'Other',color:'slate',team:'Front office',issues:['Describe it']}],
+    steps:['category','issue','photos','describe','access','time'],
+    timeline:['Request submitted','Received by leasing office','Assigned to John (technician)','Technician on the way','Repair completed'],
+    activeIdx:3,tracked:true,recentTitle:'AC not cooling',recentIcon:'snowflake',recentColor:'cyan',
+    community:[['#EDE9FE','#6D28D9','Maintenance','Pool maintenance','Pool closed Tuesday for cleaning.','2 days ago'],['#DCFCE7','#15803D','Event','BBQ community event','Friday 6 PM at the courtyard.','4 days ago'],['#DBEAFE','#1D4ED8','Notice','Office closed','Leasing office closed Mon (holiday).','1 week ago']],
+    doneTitle:'Your issue has been resolved',doneNote:'Cleared a clog in the drain filter and tested the cycle. — John K.'},
+  logistics:{key:'logistics',vertical:'Logistics',brand:'SwiftShip',logo:'truck',accent:'orange',
+    person:'Sarah',surname:'Klein',greet:'Hi,',entityLabel:'Order',entityValue:'#A-3391',banner:'SwiftShip Deliveries',
+    features:{extra:true,photos:true,access:false,preferredTime:false,appointments:false,community:true,messages:true,ratings:true},
+    contactLabel:'Support',supportMsg:'Hi Sarah, SwiftShip support here 👋 How can we help with order #A-3391?',
+    extraTile:{t:'Track My Order',icon:'navigation',color:'blue'},
+    reportLabel:'Report a Delivery Problem',reportSub:'Not arrived, damaged, wrong item…',
+    categories:[
+      {icon:'inbox',label:'Not Arrived',color:'red',team:'Dispatch',urgent:true,issues:['Marked delivered, not received','Still in transit','Never shipped']},
+      {icon:'package',label:'Damaged Item',color:'amber',team:'Claims team',issues:['Crushed box','Broken item','Water damage']},
+      {icon:'shuffle',label:'Wrong Item',color:'purple',team:'Claims team',issues:['Different product','Wrong size','Wrong colour']},
+      {icon:'help',label:'Missing Item',color:'blue',team:'Claims team',issues:['Part of order missing','Empty package']},
+      {icon:'clock',label:'Late Delivery',color:'cyan',team:'Dispatch',issues:['Past the window','No update']},
+      {icon:'plus',label:'Other',color:'slate',team:'Support',issues:['Describe it']}],
+    steps:['category','issue','photos','describe','contact'],
+    timeline:['Problem reported','Carrier notified','Investigating','Resolution offered (redeliver / refund)','Closed'],
+    activeIdx:2,tracked:true,recentTitle:'Order not arrived',recentIcon:'inbox',recentColor:'red',
+    community:[['#DBEAFE','#1D4ED8','Service','Weather delays','Storms may delay deliveries ~24h.','1 day ago'],['#DCFCE7','#15803D','New','Live tracking','Watch your courier on the map in real time.','5 days ago']],
+    doneTitle:'Your claim has been resolved',doneNote:'A replacement was shipped free of charge, arriving tomorrow. — Claims team'},
+  workplace:{key:'workplace',vertical:'Workplace',brand:'FacilOne',logo:'building',accent:'cyan',
+    person:'Mark',surname:'Weber',greet:'Hello,',entityLabel:'Workspace',entityValue:'Building B · Floor 3',banner:'FacilOne Workplace',
+    features:{extra:true,photos:true,access:false,preferredTime:true,appointments:true,community:true,messages:true,ratings:true},
+    contactLabel:'Facilities',supportMsg:'Hi Mark, Facilities here 👋 What do you need at Building B?',
+    extraTile:{t:'Book a Room',icon:'armchair',color:'blue'},
+    reportLabel:'Report a Facility Issue',reportSub:'HVAC, lighting, restroom, IT…',
+    categories:[
+      {icon:'thermometer',label:'HVAC',color:'cyan',team:'Facilities',issues:['Too hot','Too cold','No airflow']},
+      {icon:'bulb',label:'Lighting',color:'amber',team:'Electrical',issues:['Flickering','Out','Too dim']},
+      {icon:'shower',label:'Restroom',color:'blue',team:'Cleaning',issues:['Out of supplies','Leak','Not clean']},
+      {icon:'shield',label:'Safety',color:'red',team:'EHS',urgent:true,issues:['Blocked exit','Spill','Alarm fault']},
+      {icon:'monitor',label:'IT / Network',color:'indigo',team:'IT desk',issues:['No Wi-Fi','Monitor dead','Cable missing']},
+      {icon:'plus',label:'Other',color:'slate',team:'Facilities',issues:['Describe it']}],
+    steps:['category','issue','photos','describe','location','time'],
+    timeline:['Ticket logged','Facilities triaged','Assigned to technician','In progress','Resolved'],
+    activeIdx:2,tracked:false,recentTitle:'Meeting room AC too warm',recentIcon:'thermometer',recentColor:'cyan',
+    community:[['#DBEAFE','#1D4ED8','Notice','Fire drill','Thursday 10 AM, all floors.','2 days ago'],['#EDE9FE','#6D28D9','Maintenance','Elevator service','East elevator out this weekend.','6 days ago']],
+    doneTitle:'Your ticket has been resolved',doneNote:'Adjusted the zone thermostat and confirmed airflow. — Facilities'},
+};
+const FEATURE_DEFS=[['extra','Quick-access tile',t=>t.extraTile.t],['photos','Photo attachments','Ask for photos in the wizard'],['access','Access permission','“Can we enter if you’re out?”'],['preferredTime','Preferred time','Let them pick a time window'],['appointments','Appointments','Show upcoming visits'],['community','Community','Announcements tab'],['messages','Messages','Chat with the office / support'],['ratings','Ratings','Star feedback on completion']];
+
+let cfg, theme='light';
+function loadTemplate(k){cfg=JSON.parse(JSON.stringify(TEMPLATES[k]));renderAll();}
+function setTheme(t){theme=t;document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'');document.querySelectorAll('#themeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.th===t));}
+function setAccent(name){cfg.accent=name;applyAccent();}
+function applyAccent(){const[b,d,l]=ACCENTS[cfg.accent]||ACCENTS.emerald;const r=document.documentElement.style;r.setProperty('--primary',b);r.setProperty('--primaryDark',d);r.setProperty('--primaryLight',l);document.querySelectorAll('#colorRow .col').forEach(c=>c.classList.toggle('on',c.dataset.k===cfg.accent));document.querySelector('.rail .logo').style.background=b;}
+const STEP_GATE={photos:'photos',access:'access',time:'preferredTime'};
+function activeSteps(){return cfg.steps.filter(s=>STEP_GATE[s]?cfg.features[STEP_GATE[s]]:true);}
+let wz={i:0,cat:null,issue:null};
+
+function sq(icon,color,size=38,isz=18){const[fg,bg]=PAL[color]||PAL.slate;return `<div class="ic" style="background:${bg};color:${fg}">${ic(icon,isz)}</div>`;}
+
+function renderAll(){
+  const t=cfg;
+  document.getElementById('brandLogo').innerHTML=ic(t.logo,18);
+  document.getElementById('brandName').textContent=t.brand;
+  document.getElementById('cfgVertical').textContent=t.vertical;
+  document.getElementById('greet').textContent=t.greet;
+  document.getElementById('resname').textContent=t.person;
+  document.getElementById('unitPin').innerHTML=ic('pin',13);
+  document.getElementById('unitLbl').textContent=` ${t.entityLabel} ${t.entityValue}`;
+  document.getElementById('bannerT').textContent=t.banner;
+  document.getElementById('commTitle').textContent=t.features.community?'Community':'Updates';
+  document.getElementById('aiTitle').textContent='Messages';
+  document.getElementById('pfAv').textContent=t.person[0];
+  document.getElementById('pfName').textContent=`${t.person} ${t.surname}`;
+  document.getElementById('pfUnit').textContent=`${t.brand} · ${t.entityLabel} ${t.entityValue}`;
+  document.getElementById('doneTitle').textContent=t.doneTitle;
+  document.getElementById('doneNote').textContent=t.doneNote;
+  document.getElementById('entityInput').value=t.entityLabel;
+  document.getElementById('homeBell').innerHTML=ic('bell',18)+'<b></b>';
+  document.getElementById('commBell').innerHTML=ic('bell',18);
+  document.getElementById('wzBack').innerHTML=ic('chevron',20);document.querySelectorAll('.wz-top .back').forEach(el=>el.innerHTML=ic('chevron',20));
+  document.getElementById('doneCheck').innerHTML=ic('check',40,2.2);document.getElementById('doneCheck2').innerHTML=ic('check',28,2.2);
+  document.getElementById('fab').innerHTML=ic('plus',24,2.2);document.getElementById('sendBtn').innerHTML=ic('send',18);
+  document.getElementById('stars').innerHTML=Array(5).fill(0).map(()=>`<span>${ic('star',30,1.6)}</span>`).join('');
+
+  applyAccent();
+  renderTiles();renderRecent();renderReqList();renderDetail();renderCommunity();renderMessages();renderTabs();renderProfile();
+  document.getElementById('msgSub').textContent=`Chat with the ${t.contactLabel} · replies in a few minutes`;
+  renderTemplateRow();renderColors();renderFeatureRows();
+  wz={i:0,cat:null,issue:null};
+}
+function renderTiles(){
+  const t=cfg,w=document.getElementById('homeTiles');w.innerHTML='';
+  const list=[{t:t.reportLabel,icon:'tool',sub:t.reportSub,big:true,act:'startWizard()'}];
+  if(t.features.extra)list.push(t.extraTile);
+  if(t.features.community)list.push({t:'Community',icon:'megaphone',color:'purple',act:"go('community')"});
+  if(t.features.messages)list.push({t:`Contact ${t.contactLabel}`,icon:'message',color:'cyan',act:"go('messages')"});
+  if(t.features.appointments)list.push({t:'Upcoming Appointments',icon:'calendar',color:'blue'});
+  list.forEach(x=>{const el=document.createElement('div');el.className='tile'+(x.big?' big':'');
+    el.innerHTML=(x.big?`<div class="ic">${ic('tool',20)}</div>`:sq(x.icon,x.color,40,19))+`<div><b>${x.t}</b>${x.sub?`<small>${x.sub}</small>`:''}</div>`;
+    if(x.act)el.setAttribute('onclick',x.act);w.appendChild(el);});
+}
+function statusPill(){return cfg.tracked?'<span class="pill p-prog">On the way</span>':'<span class="pill p-prog">In progress</span>';}
+function renderRecent(){const t=cfg;document.getElementById('recentCard').innerHTML=`<div class="card row" onclick="go('detail')" style="cursor:pointer">${sq(t.recentIcon,t.recentColor,42,19)}<div style="flex:1"><b style="font-size:13.5px;font-weight:600">${t.recentTitle}</b><div class="muted">#2025-05-24-0017 · today</div></div>${statusPill()}</div>`;}
+function renderReqList(){const t=cfg;const[sg]=PAL.slate;document.getElementById('reqList').innerHTML=
+  `<div class="card row" onclick="go('detail')" style="cursor:pointer">${sq(t.recentIcon,t.recentColor,42,19)}<div style="flex:1"><b style="font-size:13.5px;font-weight:600">${t.recentTitle}</b><div class="muted">#0017 · today</div></div>${statusPill()}</div>`+
+  `<div class="card row" style="opacity:.9">${sq('check','emerald',42,19)}<div style="flex:1"><b style="font-size:13.5px;font-weight:600">Earlier resolved request</b><div class="muted">#0009 · resolved</div></div><span class="pill p-done">Done</span></div>`+
+  `<div class="card row" style="opacity:.9">${sq('check','emerald',42,19)}<div style="flex:1"><b style="font-size:13.5px;font-weight:600">Earlier resolved request</b><div class="muted">#0006 · resolved</div></div><span class="pill p-done">Done</span></div>`;}
+function renderDetail(){const t=cfg;
+  document.getElementById('detailHead').innerHTML=`<div class="card"><div class="row">${sq(t.recentIcon,t.recentColor,42,19)}<div style="flex:1"><b style="font-size:14px;font-weight:600">${t.recentTitle}</b><div class="muted">${t.entityLabel} ${t.entityValue}</div></div></div></div>`;
+  document.getElementById('detailMap').innerHTML=t.tracked?`<div class="mapcard"><svg class="map" viewBox="0 0 320 142" preserveAspectRatio="none"><path d="M20,112 C80,102 90,42 160,52 S250,36 300,26" fill="none" stroke="var(--primary)" stroke-width="3" stroke-dasharray="7 7"/><circle cx="20" cy="112" r="6" fill="var(--success)"/><circle cx="300" cy="26" r="6" fill="var(--primary)"/></svg><div class="eta"><div class="av">${ic(t.key==='logistics'?'truck':'tool',15)}</div><div><b>${t.key==='logistics'?'Courier en route':'John is on the way'}</b><small>ETA 9:15 – 9:30 AM</small></div></div></div>`:'';
+  const tl=document.getElementById('detailTl');tl.innerHTML='';
+  t.timeline.forEach((label,i)=>{const cls=i<t.activeIdx?'done':i===t.activeIdx?'active':'';const sub=i<t.activeIdx?'Done':i===t.activeIdx?'In progress':'Pending';
+    const inner=i<t.activeIdx?ic('check',15,2.4):i===t.activeIdx?'<span class="pulse"></span>':'';
+    tl.innerHTML+=`<div class="step ${cls}"><div class="dot">${inner}</div><div><b>${label}</b><small>${sub}</small></div></div>`;});
+}
+function renderCommunity(){const cl=document.getElementById('commList');cl.innerHTML='';cfg.community.forEach(([bg,fg,tag,ttl,txt,when])=>{cl.innerHTML+=`<div class="ann"><span class="tag" style="background:${bg};color:${fg}">${tag}</span><b>${ttl}</b><p>${txt}</p><span class="when">${when}</span></div>`;});}
+function renderMessages(){const c=document.getElementById('chat');c.innerHTML=`<div class="bub ai">${cfg.supportMsg}</div><div class="bub me">Hi — I just submitted a request about ${cfg.recentTitle.toLowerCase()}.</div><div class="bub ai">Thanks, we’ve got it and assigned someone. You’ll see live status on your request. 👍</div>`;}
+function renderTabs(){const hc=cfg.features.community;const tb=document.getElementById('tabbar');
+  const mk=(s,icn,l)=>`<button data-tab="${s}" onclick="go('${s}')">${ic(icn,20)}<span>${l}</span></button>`;
+  tb.innerHTML=mk('home','home','Home')+mk('requests','list','Requests')+`<button style="visibility:hidden"></button>`+(hc?mk('community','megaphone','Community'):mk('messages','message','Messages'))+mk('profile','user','Profile');
+  go(currentScreen);
+}
+function renderProfile(){const rows=[['fileText',`My ${cfg.entityLabel.toLowerCase()}`],['bell','Notifications'],['globe','Language'],['star','Rate a completed job','completed'],['logout','Sign out']];
+  document.getElementById('pfRows').innerHTML=rows.map(([i,l,go2])=>`<div class="pf-row" ${go2?`onclick="go('${go2}')"`:''}><div class="ic">${ic(i,17)}</div><b style="${i==='logout'?'color:var(--error)':''}">${l}</b>${l==='Language'?'<span class="muted" style="margin-left:auto;margin-right:8px">English</span>':''}<span class="chev">${ic('chevron',16)}</span></div>`).join('');}
+
+function startWizard(){wz={i:0,cat:null,issue:null};go('wizard');renderWizard();}
+function wzBack(){if(wz.i===0){go('home');}else{wz.i--;renderWizard();}}
+function wzNext(){const s=activeSteps();if(wz.i>=s.length-1){go('submitted');document.getElementById('submitMsg').textContent=`Your ${cfg.vertical.toLowerCase()} request has been submitted. ${cfg.tracked?'You’ll get live updates and an ETA.':'You’ll be notified as it progresses.'}`;return;}wz.i++;renderWizard();}
+function renderWizard(){
+  const t=cfg,steps=activeSteps(),s=steps[wz.i],body=document.getElementById('wzBody');
+  document.getElementById('wzTitle').textContent=t.reportLabel;
+  document.getElementById('wzStep').textContent=`Step ${wz.i+1} of ${steps.length}`;
+  document.getElementById('wzBar').style.width=((wz.i+1)/steps.length*100)+'%';
+  document.getElementById('wzNext').textContent=wz.i>=steps.length-1?'Submit request':'Next';
+  const cat=wz.cat!=null?t.categories[wz.cat]:null;let h='';
+  const opt=(inner,sel,click,badge)=>`<div class="opt${sel?' sel':''}" onclick="${click}">${inner}${badge||'<span class="chev">'+ic('chevron',18)+'</span>'}</div>`;
+  if(s==='category'){h=`<div class="q">What’s the problem?</div><div class="opts">`+t.categories.map((c,i)=>opt(sq(c.icon,c.color)+`<b>${c.label}</b>`,wz.cat===i,`wz.cat=${i};wz.issue=null;renderWizard()`,c.urgent?'<span class="pill p-urgent" style="margin-left:auto">Priority</span>':null)).join('')+`</div>`;}
+  else if(s==='issue'){h=`<div class="q">Select the issue</div>`+smartChips(cat)+`<div class="opts">`+(cat?cat.issues:[]).map((x,i)=>opt(`<div class="ic" style="background:var(--surfaceRaised);color:var(--sub)">${ic('chevron',14)}</div><b>${x}</b>`,wz.issue===i,`wz.issue=${i};renderWizard()`)).join('')+`</div>`;}
+  else if(s==='photos'){h=`<div class="q">Add photos <span style="color:var(--mut);font-weight:400;font-size:13px">(optional)</span></div><div class="photos"><div class="ph filled" style="color:var(--sub)">${ic('camera',22)}<span class="chk">${ic('check',15,2.4)}</span></div><div class="ph" onclick="fillPhoto(this)">${ic('camera',22)}</div><div class="ph" onclick="fillPhoto(this)">${ic('plus',22)}</div></div><p class="muted" style="padding:14px 18px 0">A photo helps whoever responds arrive prepared.</p>`;}
+  else if(s==='describe'){h=`<div class="q">Describe it</div><textarea class="ta" placeholder="What happened, and when? Add anything useful…"></textarea>`;}
+  else if(s==='access'){h=`<div class="q">Can we enter if you’re out?</div><div class="opts">${opt(sq('check','emerald')+'<b>Yes, entry permitted</b>',true,'pickOne(this)')}${opt(sq('close','red')+'<b>No, I’ll be there</b>',false,'pickOne(this)')}</div>`;}
+  else if(s==='time'){h=`<div class="q">Preferred time</div><div class="opts">${opt(sq('sunrise','amber')+'<b>Morning</b>',true,'pickOne(this)','<span class="muted" style="margin-left:auto">8–12</span>')}${opt(sq('sun','cyan')+'<b>Afternoon</b>',false,'pickOne(this)','<span class="muted" style="margin-left:auto">12–5</span>')}${opt(sq('sunset','purple')+'<b>Evening</b>',false,'pickOne(this)','<span class="muted" style="margin-left:auto">5–8</span>')}</div>`;}
+  else if(s==='location'){h=`<div class="q">Where is it?</div><div class="opts">${opt(sq('building','blue')+'<b>Building B · Floor 3</b>',true,'pickOne(this)')}${opt(sq('pin','cyan')+'<b>Meeting room 3B</b>',false,'pickOne(this)')}${opt(sq('plus','slate')+'<b>Somewhere else…</b>',false,'pickOne(this)')}</div>`;}
+  else if(s==='contact'){h=`<div class="q">How should we reach you?</div><div class="opts">${opt(sq('bell','emerald')+'<b>Push notification</b>',true,'pickOne(this)')}${opt(sq('mail','blue')+'<b>Email</b>',false,'pickOne(this)')}${opt(sq('phone','cyan')+'<b>Phone call</b>',false,'pickOne(this)')}</div>`;}
+  body.innerHTML=h;
+}
+function smartChips(cat){if(!cat)return '<div class="smartchip"></div>';let c=`<span class="sc-route">${ic('navigation',13)} Smart routing → ${cat.team}</span>`;if(cat.urgent)c=`<span class="sc-urgent">${ic('alert',13)} Priority auto-set: Urgent</span>`+c;return `<div class="smartchip">${c}</div>`;}
+function pickOne(el){el.parentElement.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');}
+function fillPhoto(el){el.classList.add('filled');el.style.color='var(--sub)';el.innerHTML=ic('camera',22)+'<span class="chk">'+ic('check',15,2.4)+'</span>';}
+
+let currentScreen='home';
+const SCREENS=['home','wizard','submitted','requests','detail','community','messages','profile','completed'];
+function go(s){currentScreen=s;SCREENS.forEach(x=>{const e=document.querySelector(`[data-screen="${x}"]`);if(e)e.classList.toggle('on',x===s);});document.querySelectorAll('.tabbar button[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===s));document.querySelectorAll('#navList button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));const on=document.querySelector('.screen.on');if(on)on.scrollTop=0;}
+
+function renderTemplateRow(){const r=document.getElementById('tplRow');r.innerHTML='';Object.values(TEMPLATES).forEach(t=>{const a=ACCENTS[t.accent][0];const el=document.createElement('div');el.className='tpl'+(t.key===cfg.key?' on':'');el.innerHTML=`<div style="color:${a}">${ic(t.logo,20)}</div><b>${t.vertical}</b><div class="dot" style="background:${a}"></div>`;el.onclick=()=>loadTemplate(t.key);r.appendChild(el);});}
+function renderColors(){const r=document.getElementById('colorRow');r.innerHTML='';Object.entries(ACCENTS).forEach(([k,v])=>{const c=document.createElement('div');c.className='col'+(k===cfg.accent?' on':'');c.dataset.k=k;c.style.background=v[0];c.onclick=()=>setAccent(k);r.appendChild(c);});}
+function renderFeatureRows(){const w=document.getElementById('featRows');w.innerHTML='';FEATURE_DEFS.forEach(([key,title,sub])=>{const on=!!cfg.features[key];const subT=typeof sub==='function'?sub(cfg):sub;const el=document.createElement('div');el.className='sw'+(on?' on':'');el.innerHTML=`<div class="t">${title}<small>${subT}</small></div><div class="track"><i></i></div>`;el.onclick=()=>{cfg.features[key]=!cfg.features[key];renderAll();};w.appendChild(el);});}
+function renderNav(){const NAV=[['home','home','Home'],['wizard','tool','Report wizard'],['requests','list','Requests'],['detail','pin','Live status'],['community','megaphone','Community'],['messages','message','Messages'],['profile','user','Profile'],['completed','star','Rating']];const n=document.getElementById('navList');n.innerHTML='';NAV.forEach(([s,i,l])=>{const b=document.createElement('button');b.dataset.s=s;b.innerHTML=ic(i,16)+`<span>${l}</span>`;b.onclick=()=>{if(s==='wizard'){startWizard();return;}go(s);};n.appendChild(b);});}
+document.getElementById('entityInput').addEventListener('input',e=>{cfg.entityLabel=e.target.value||'Item';document.getElementById('unitLbl').textContent=` ${cfg.entityLabel} ${cfg.entityValue}`;document.getElementById('pfUnit').textContent=`${cfg.brand} · ${cfg.entityLabel} ${cfg.entityValue}`;});
+document.querySelectorAll('#themeSeg button').forEach(b=>b.onclick=()=>setTheme(b.dataset.th));
+document.getElementById('stars').addEventListener('click',e=>{const sp=[...document.querySelectorAll('#stars span')];const el=e.target.closest('span');if(!el)return;const idx=sp.indexOf(el);sp.forEach((s,x)=>s.classList.toggle('on',x<=idx));});
+
+/* boot */
+setTheme('light');renderNav();loadTemplate('rental');
+</script>
+</body>
+</html>

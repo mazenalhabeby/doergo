@@ -14,6 +14,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { RequirePermission } from '../../common/decorators';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 
 interface CustomerDto {
   name?: string;
@@ -29,7 +30,10 @@ interface CustomerDto {
 @ApiBearerAuth()
 @Controller('customers')
 export class CustomersController {
-  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
+  constructor(
+    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly authCache: AuthTokenCache,
+  ) {}
 
   @Get()
   @RequirePermission('canViewAllTasks')
@@ -40,6 +44,7 @@ export class CustomersController {
     @Query('status') status?: 'active' | 'inactive' | 'all',
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('portalResident') portalResident?: string,
   ) {
     return firstValueFrom(
       this.authClient.send({ cmd: 'list_customers' }, {
@@ -48,6 +53,8 @@ export class CustomersController {
         status,
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
+        // 'false' → B2B customers only; 'true' → residents only; omitted → all.
+        portalResident: portalResident === undefined ? undefined : portalResident === 'true',
       }),
     );
   }
@@ -83,8 +90,13 @@ export class CustomersController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Deactivate a customer (soft delete)' })
   async remove(@Param('id') id: string, @Request() req: any) {
-    return firstValueFrom(
+    const result: any = await firstValueFrom(
       this.authClient.send({ cmd: 'delete_customer' }, { id, organizationId: req.user.organizationId }),
     );
+    // Instantly revoke the deactivated portal logins (don't wait for the 60s
+    // token-cache TTL) — consistent with every other access-change path.
+    const ids: string[] = result?.deactivatedUserIds ?? [];
+    await Promise.all(ids.map((uid) => this.authCache.invalidateUser(uid).catch(() => undefined)));
+    return result;
   }
 }

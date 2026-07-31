@@ -34,12 +34,12 @@ export class InvitationScheduleEntryDto {
 
 export class CreateInvitationDto {
   @ApiProperty({
-    enum: ['ADMIN', 'EMPLOYEE'],
+    enum: ['ADMIN', 'EMPLOYEE', 'CUSTOMER'],
     description: 'Role for the invitee',
   })
   @IsString()
-  @IsEnum(['ADMIN', 'EMPLOYEE'], {
-    message: 'Target role must be MANAGER or EMPLOYEE',
+  @IsEnum(['ADMIN', 'EMPLOYEE', 'CUSTOMER'], {
+    message: 'Target role must be EMPLOYEE or CUSTOMER',
   })
   targetRole: string;
 
@@ -105,6 +105,18 @@ export class CreateInvitationDto {
   @IsString()
   @IsOptional()
   spaceId?: string;
+
+  // Customer-portal invite (only for targetRole=CUSTOMER)
+
+  @ApiPropertyOptional({ description: 'Customer this portal login is bound to (required when targetRole=CUSTOMER)' })
+  @IsString()
+  @IsOptional()
+  customerId?: string;
+
+  @ApiPropertyOptional({ description: 'Default unit for the customer login (optional)' })
+  @IsString()
+  @IsOptional()
+  unitId?: string;
 
   @ApiPropertyOptional({
     example: 5,

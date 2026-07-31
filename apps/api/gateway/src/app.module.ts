@@ -24,6 +24,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { GeoModule } from './modules/geo/geo.module';
+import { PortalModule } from './modules/portal/portal.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { BillingModule } from './modules/billing/billing.module';
@@ -41,6 +42,7 @@ import { AuthCacheModule } from './common/cache/auth-cache.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { CustomerConfinementGuard } from './common/guards/customer-confinement.guard';
 import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { PlanGuard } from './common/guards/plan.guard';
 import { ModuleGuard } from './common/guards/module.guard';
@@ -106,6 +108,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     RecurringTasksModule,
     InvoicesModule,
     GeoModule,
+    PortalModule,
   ],
   controllers: [AppController],
   providers: [
@@ -118,6 +121,12 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    // Default-DENY for external CUSTOMER accounts: confines them to @Public,
+    // @AllowCustomer, and the portal. Must run right after auth (needs req.user).
+    {
+      provide: APP_GUARD,
+      useClass: CustomerConfinementGuard,
     },
     {
       provide: APP_GUARD,

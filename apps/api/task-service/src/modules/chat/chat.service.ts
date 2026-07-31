@@ -22,7 +22,8 @@ export class ChatService {
     });
     if (!me) throw new NotFoundException('User not found');
     const all = await this.prisma.user.findMany({
-      where: { organizationId: data.organizationId, isActive: true, id: { not: data.userId } },
+      // Exclude external CUSTOMER accounts — member chat is staff-only.
+      where: { organizationId: data.organizationId, isActive: true, id: { not: data.userId }, role: { not: 'CUSTOMER' } },
       select: {
         id: true, firstName: true, lastName: true, avatarUrl: true, position: true,
         role: true, contactable: true, canManageUsers: true, presence: true,
@@ -45,6 +46,8 @@ export class ChatService {
     me: { role: string; enabledModules: unknown; contactScope: string; contactAllowedIds: string[]; canManageUsers?: boolean },
     target: { id: string; role: string; contactable: boolean; canManageUsers?: boolean },
   ): boolean {
+    // External customers are never part of member chat (neither direction).
+    if (me.role === 'CUSTOMER' || target.role === 'CUSTOMER') return false;
     // Admins and managers (canManageUsers) may contact anyone and are always reachable.
     const meIsManager = me.role === 'ADMIN' || me.canManageUsers === true;
     const targetIsManager = target.role === 'ADMIN' || target.canManageUsers === true;

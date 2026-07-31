@@ -74,6 +74,8 @@ const EXECUTION_STATUSES: TaskStatus[] = [
 export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
   [Role.ADMIN]: [...EXECUTION_STATUSES, TaskStatus.ASSIGNED, TaskStatus.CANCELED],
   [Role.EMPLOYEE]: EXECUTION_STATUSES,
+  // External customers never drive task execution — they only open requests.
+  [Role.CUSTOMER]: [],
 };
 
 /**
