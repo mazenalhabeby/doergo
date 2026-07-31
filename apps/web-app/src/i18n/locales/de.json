@@ -2915,10 +2915,8 @@
       "subtitle": "Anwesenheit verfolgen, Berichte anzeigen und Genehmigungen verwalten"
     },
     "tabs": {
-      "tracking": "Verfolgung",
-      "reports": "Berichte",
-      "approvals": "Genehmigungen",
-      "breaks": "Pausen"
+      "attendance": "Anwesenheit",
+      "daysOff": "Freie Tage"
     },
     "toast": {
       "autoClockOutTriggered": "Automatisches Ausstempeln ausgelöst",
@@ -2989,6 +2987,12 @@
       "success": "Freier Tag aktualisiert",
       "deleteSuccess": "Freier Tag entfernt",
       "error": "Freier Tag konnte nicht aktualisiert werden"
+    },
+    "daysOff": {
+      "none": "Keine freien Tage in diesem Zeitraum",
+      "noneHint": "Genehmigte Abwesenheiten für die gewählten Daten erscheinen hier.",
+      "type": "Art",
+      "dates": "Zeitraum"
     }
   },
   "auditLog": {

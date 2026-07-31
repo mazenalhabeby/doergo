@@ -2915,10 +2915,8 @@
       "subtitle": "Suivez les présences, consultez les rapports et gérez les approbations"
     },
     "tabs": {
-      "tracking": "Suivi",
-      "reports": "Rapports",
-      "approvals": "Approbations",
-      "breaks": "Pauses"
+      "attendance": "Présence",
+      "daysOff": "Jours de congé"
     },
     "toast": {
       "autoClockOutTriggered": "Pointage sortie automatique déclenché",
@@ -2989,6 +2987,12 @@
       "success": "Jour de congé mis à jour",
       "deleteSuccess": "Jour de congé supprimé",
       "error": "Impossible de mettre à jour le jour de congé"
+    },
+    "daysOff": {
+      "none": "Aucun jour de congé sur cette période",
+      "noneHint": "Les congés approuvés pour les dates sélectionnées apparaissent ici.",
+      "type": "Type",
+      "dates": "Dates"
     }
   },
   "auditLog": {

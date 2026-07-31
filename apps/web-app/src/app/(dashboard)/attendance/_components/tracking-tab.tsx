@@ -107,6 +107,13 @@ export function TrackingTab({
   const { t } = useTranslation()
   const { hour12, timeToken } = useTimeFormat()
 
+  // Days off (org-wide) only load in the "all" view. They get their own sub-tab
+  // so the Clock In / Clock Out columns aren't shown for rows that never have
+  // clock times — the attendance table stays pure clock entries.
+  const showDaysOffTab = selectedLocationId === "all"
+  const [view, setView] = React.useState<"attendance" | "daysoff">("attendance")
+  const effectiveView: "attendance" | "daysoff" = showDaysOffTab ? view : "attendance"
+
   // Quick date-range presets (computed once on mount).
   const presets = React.useMemo(() => {
     const now = new Date()
@@ -429,6 +436,39 @@ export function TrackingTab({
           </div>
         </div>
 
+        {/* Attendance vs Days-off sub-tabs (days off are org-wide → "all" view only) */}
+        {showDaysOffTab && (
+          <div className="mb-4 inline-flex items-center gap-1 rounded-xl bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setView("attendance")}
+              className={cn(
+                "inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium transition-all",
+                effectiveView === "attendance" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Clock className="size-4" />
+              {t("attendance.tabs.attendance", "Attendance")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("daysoff")}
+              className={cn(
+                "inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium transition-all",
+                effectiveView === "daysoff" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <CalendarOff className="size-4" />
+              {t("attendance.tabs.daysOff", "Days off")}
+              {daysOff.length > 0 && (
+                <span className={cn("ml-0.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums", effectiveView === "daysoff" ? "bg-background/20" : "bg-foreground/10")}>
+                  {daysOff.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Table */}
         <div data-tour="tracking-table" className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
           {loadingEntries || loadingLocations ? (
@@ -462,56 +502,40 @@ export function TrackingTab({
                 {t("common.retry")}
               </Button>
             </div>
-          ) : filteredEntries.length === 0 && daysOff.length === 0 ? (
-            <div className="p-12 text-center">
-              <Clock className="size-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground">
-                {t("attendance.tracking.noRecords")}
-              </h3>
-              <p className="text-muted-foreground mt-1">
-                {selectedLocationId === "all"
-                  ? t("attendance.tracking.selectLocationHint")
-                  : t("attendance.tracking.noEntriesHint")}
-              </p>
-            </div>
-          ) : (
-            <>
+          ) : effectiveView === "daysoff" ? (
+            daysOff.length === 0 ? (
+              <div className="p-12 text-center">
+                <CalendarOff className="size-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground">{t("attendance.daysOff.none", "No days off in this range")}</h3>
+                <p className="text-muted-foreground mt-1">{t("attendance.daysOff.noneHint", "Approved time off for the selected dates shows here.")}</p>
+              </div>
+            ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/80">
-                    <SortHead label={t("attendance.worker")} active={sort?.key === "worker"} dir={sort?.dir ?? "asc"} onClick={() => onSort("worker")} />
-                    <SortHead label={t("common.status")} active={sort?.key === "status"} dir={sort?.dir ?? "asc"} onClick={() => onSort("status")} />
-                    <SortHead label={t("attendance.clockIn")} active={sort?.key === "clockIn"} dir={sort?.dir ?? "asc"} onClick={() => onSort("clockIn")} />
-                    <SortHead label={t("attendance.clockOut")} active={sort?.key === "clockOut"} dir={sort?.dir ?? "asc"} onClick={() => onSort("clockOut")} />
-                    <SortHead label={t("common.duration")} active={sort?.key === "duration"} dir={sort?.dir ?? "asc"} onClick={() => onSort("duration")} />
-                    <SortHead label={t("attendance.approval")} active={sort?.key === "approval"} dir={sort?.dir ?? "asc"} onClick={() => onSort("approval")} />
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.worker")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.daysOff.type", "Type")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.daysOff.dates", "Dates")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
                     {isAdmin && <TableHead className="w-10 text-right" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Approved days off in range — rendered inline above clock entries */}
                   {daysOff.map((off) => {
                     const rs = toDate(off.startDate)
                     const re = toDate(off.endDate)
                     const single = format(rs, "yyyy-MM-dd") === format(re, "yyyy-MM-dd")
                     const days = Math.max(1, Math.round((re.getTime() - rs.getTime()) / 86_400_000) + 1)
                     return (
-                      <TableRow key={`off-${off.id}`} className="bg-violet-500/[0.06] hover:bg-violet-500/10">
+                      <TableRow key={`off-${off.id}`} className="hover:bg-violet-500/10">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <UserAvatar
-                              firstName={off.technician?.firstName}
-                              lastName={off.technician?.lastName}
-                              seed={off.technician?.id}
-                              size="sm"
-                            />
-                            <div>
-                              <p className="font-medium text-foreground">
-                                {off.technician?.firstName} {off.technician?.lastName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{t("attendance.dayOff.label")}</p>
-                            </div>
+                            <UserAvatar firstName={off.technician?.firstName} lastName={off.technician?.lastName} seed={off.technician?.id} size="md" />
+                            <p className="font-medium text-foreground">
+                              {off.technician?.firstName} {off.technician?.lastName}
+                            </p>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -524,9 +548,6 @@ export function TrackingTab({
                           <span className="text-sm text-foreground">
                             {single ? format(rs, "MMM d") : `${format(rs, "MMM d")} – ${format(re, "MMM d")}`}
                           </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-muted-foreground">—</span>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground">
@@ -556,6 +577,37 @@ export function TrackingTab({
                       </TableRow>
                     )
                   })}
+                </TableBody>
+              </Table>
+            )
+          ) : filteredEntries.length === 0 ? (
+            <div className="p-12 text-center">
+              <Clock className="size-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground">
+                {t("attendance.tracking.noRecords")}
+              </h3>
+              <p className="text-muted-foreground mt-1">
+                {selectedLocationId === "all"
+                  ? t("attendance.tracking.selectLocationHint")
+                  : t("attendance.tracking.noEntriesHint")}
+              </p>
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/80">
+                    <SortHead label={t("attendance.worker")} active={sort?.key === "worker"} dir={sort?.dir ?? "asc"} onClick={() => onSort("worker")} />
+                    <SortHead label={t("common.status")} active={sort?.key === "status"} dir={sort?.dir ?? "asc"} onClick={() => onSort("status")} />
+                    <SortHead label={t("attendance.clockIn")} active={sort?.key === "clockIn"} dir={sort?.dir ?? "asc"} onClick={() => onSort("clockIn")} />
+                    <SortHead label={t("attendance.clockOut")} active={sort?.key === "clockOut"} dir={sort?.dir ?? "asc"} onClick={() => onSort("clockOut")} />
+                    <SortHead label={t("common.duration")} active={sort?.key === "duration"} dir={sort?.dir ?? "asc"} onClick={() => onSort("duration")} />
+                    <SortHead label={t("attendance.approval")} active={sort?.key === "approval"} dir={sort?.dir ?? "asc"} onClick={() => onSort("approval")} />
+                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
+                    {isAdmin && <TableHead className="w-10 text-right" />}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {filteredEntries.map((entry: TimeEntry) => (
                     <TableRow key={entry.id} className="hover:bg-accent/50">
                       <TableCell>

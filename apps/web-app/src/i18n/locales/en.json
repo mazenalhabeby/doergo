@@ -2915,10 +2915,8 @@
       "subtitle": "Track attendance, view reports, and manage approvals"
     },
     "tabs": {
-      "tracking": "Tracking",
-      "reports": "Reports",
-      "approvals": "Approvals",
-      "breaks": "Breaks"
+      "attendance": "Attendance",
+      "daysOff": "Days off"
     },
     "toast": {
       "autoClockOutTriggered": "Auto clock-out triggered",
@@ -2989,6 +2987,12 @@
       "success": "Day off updated",
       "deleteSuccess": "Day off removed",
       "error": "Couldn’t update the day off"
+    },
+    "daysOff": {
+      "none": "No days off in this range",
+      "noneHint": "Approved time off for the selected dates shows here.",
+      "type": "Type",
+      "dates": "Dates"
     }
   },
   "auditLog": {

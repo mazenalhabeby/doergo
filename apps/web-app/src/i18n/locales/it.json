@@ -2915,10 +2915,8 @@
       "subtitle": "Monitori le presenze, visualizzi i report e gestisca le approvazioni"
     },
     "tabs": {
-      "tracking": "Monitoraggio",
-      "reports": "Report",
-      "approvals": "Approvazioni",
-      "breaks": "Pause"
+      "attendance": "Presenze",
+      "daysOff": "Giorni liberi"
     },
     "toast": {
       "autoClockOutTriggered": "Uscita automatica attivata",
@@ -2989,6 +2987,12 @@
       "success": "Giorno libero aggiornato",
       "deleteSuccess": "Giorno libero rimosso",
       "error": "Impossibile aggiornare il giorno libero"
+    },
+    "daysOff": {
+      "none": "Nessun giorno libero in questo intervallo",
+      "noneHint": "Le assenze approvate per le date selezionate compaiono qui.",
+      "type": "Tipo",
+      "dates": "Date"
     }
   },
   "auditLog": {

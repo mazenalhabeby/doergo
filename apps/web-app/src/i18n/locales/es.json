@@ -2915,10 +2915,8 @@
       "subtitle": "Controla la asistencia, consulta informes y gestiona aprobaciones"
     },
     "tabs": {
-      "tracking": "Seguimiento",
-      "reports": "Informes",
-      "approvals": "Aprobaciones",
-      "breaks": "Descansos"
+      "attendance": "Asistencia",
+      "daysOff": "Días libres"
     },
     "toast": {
       "autoClockOutTriggered": "Salida automática activada",
@@ -2989,6 +2987,12 @@
       "success": "Día libre actualizado",
       "deleteSuccess": "Día libre eliminado",
       "error": "No se pudo actualizar el día libre"
+    },
+    "daysOff": {
+      "none": "No hay días libres en este rango",
+      "noneHint": "Las ausencias aprobadas para las fechas seleccionadas aparecen aquí.",
+      "type": "Tipo",
+      "dates": "Fechas"
     }
   },
   "auditLog": {

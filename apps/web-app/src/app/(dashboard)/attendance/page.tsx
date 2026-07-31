@@ -134,10 +134,11 @@ export default function AttendancePage() {
   })
 
   // Day-off rows for the current view: overlapping the selected range, matching
-  // the name search. Only in the org-wide view (time off isn't site-scoped) and
-  // only on page 1 so they aren't repeated across paginated clock entries.
+  // the name search. Only in the org-wide view (time off isn't site-scoped). They
+  // render in their own "Days off" sub-tab, so no page gate — the full set for the
+  // range is available regardless of the attendance page.
   const daysOff = useMemo(() => {
-    if (selectedLocationId !== "all" || page !== 1) return []
+    if (selectedLocationId !== "all") return []
     const q = debouncedSearch.trim().toLowerCase()
     return (orgTimeOff ?? [])
       .filter((r) => {
