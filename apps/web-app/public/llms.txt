@@ -1,0 +1,27 @@
+# HBCField
+
+> HBCField is a field service management (FSM) platform that unifies task dispatch, GPS route tracking, employee time & attendance, scheduling, service reports and invoicing for field teams — on web and mobile.
+
+HBCField is for companies that dispatch technicians or field workers (maintenance, HVAC, facilities, delivery, property management) and need one system for jobs, people, and time tracking instead of several disconnected tools.
+
+## What it does
+- Task dispatch & assignment: admins and dispatchers create jobs and assign technicians; technicians execute them on mobile.
+- Real-time GPS route tracking: exact routes captured in the background, shown on a live map.
+- Time & attendance: clock in/out with geofencing, schedules, days off, and manual/back-dated entries.
+- Service reports: on-site reports with parts used, photos, and customer signatures.
+- Reporting & invoicing: dynamic reports, CSV/PDF export, and Stripe billing.
+- Real-time updates via WebSockets, multi-language (English, German, Spanish, French, Italian).
+
+## Platforms
+- Web app for admins and dispatchers.
+- Native iOS and Android apps for field technicians and, optionally, an invite-only customer/resident portal for reporting issues.
+
+## Pricing
+Per-seat subscription in EUR, billed monthly or annually, with a 14-day trial. Office (web) seats are tiered; field (mobile-only) seats start at €19/month.
+
+## Links
+- Website: https://hbcfield.com
+- Privacy: https://hbcfield.com/privacy
+- Terms: https://hbcfield.com/terms
+- iOS: https://apps.apple.com/app/id6762745260
+- Android: https://play.google.com/store/apps/details?id=com.hbcfield.app

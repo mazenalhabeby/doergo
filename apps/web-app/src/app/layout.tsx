@@ -14,12 +14,63 @@ const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', weight: [
 const familjen = Familjen_Grotesk({ subsets: ['latin'], variable: '--font-familjen', weight: ['400', '500', '600'] });
 const martian = Martian_Mono({ subsets: ['latin'], variable: '--font-martian', weight: ['300', '400', '500'] });
 
+const SITE_URL = 'https://hbcfield.com';
+const SITE_DESCRIPTION =
+  'HBCField unifies task dispatch, GPS tracking, employee time & attendance, service reports and invoicing for field teams — in real time on web and mobile.';
+
 export const metadata: Metadata = {
-  title: 'HBCField',
-  description: 'Dispatch · Track · Deliver',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'HBCField — Field Service Management, Time & Attendance Software',
+    template: '%s | HBCField',
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: 'HBCField',
+  keywords: [
+    'field service management',
+    'FSM software',
+    'technician dispatch software',
+    'time and attendance software',
+    'GPS technician tracking',
+    'work order management',
+    'job scheduling software',
+    'service report app',
+    'field team management',
+  ],
+  authors: [{ name: 'HBCField' }],
+  creator: 'HBCField',
+  publisher: 'HBCField',
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    siteName: 'HBCField',
+    title: 'HBCField — Field Service Management, Time & Attendance Software',
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    locale: 'en',
+    // opengraph-image.tsx supplies the image automatically.
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'HBCField — Field Service Management',
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
   icons: {
     icon: '/favicon.png',
+    apple: '/favicon.png',
   },
+  category: 'business software',
 };
 
 export default function RootLayout({
