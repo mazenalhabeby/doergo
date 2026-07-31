@@ -5,7 +5,7 @@ const SITE = "https://hbcfield.com";
 // Block the private app + API from all crawlers; allow the public marketing +
 // legal pages. AI crawlers are allowed explicitly so HBCField can appear in
 // AI answer engines (opt out here later if you ever want to).
-const DISALLOW = ["/dashboard", "/api/", "/login", "/register", "/onboarding", "/welcome", "/operator", "/my/", "/account-deletion/success"];
+const DISALLOW = ["/dashboard", "/api/", "/login", "/register", "/onboarding", "/welcome", "/operator", "/my/", "/splash-preview", "/unauthorized", "/account-deletion/success"];
 
 export default function robots(): MetadataRoute.Robots {
   return {

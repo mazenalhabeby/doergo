@@ -19,9 +19,22 @@ const graph = {
       "@id": `${SITE}/#organization`,
       name: "HBCField",
       url: SITE,
-      logo: `${SITE}/favicon.png`,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE}/favicon.png`,
+      },
       description:
         "HBCField is a field service management platform that unifies task dispatch, GPS tracking, employee time & attendance, and reporting for field teams.",
+      address: {
+        "@type": "PostalAddress",
+        addressCountry: "AT",
+      },
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: "office@hbcfield.com",
+        availableLanguage: ["en", "de", "es", "fr", "it"],
+      },
       sameAs: [IOS_URL, ANDROID_URL],
     },
     {
@@ -52,8 +65,10 @@ const graph = {
       offers: {
         "@type": "AggregateOffer",
         priceCurrency: "EUR",
+        // Field (mobile-only) seat is the floor; Business office seat is the top
+        // fixed tier. Enterprise is custom-priced and not represented here.
         lowPrice: "19",
-        offerCount: "3",
+        highPrice: "99",
         availability: "https://schema.org/InStock",
       },
       publisher: { "@id": `${SITE}/#organization` },

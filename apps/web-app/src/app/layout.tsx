@@ -7,12 +7,15 @@ import { I18nProvider } from '@/providers/i18n-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', weight: ['400', '800'] });
+// display:'swap' → text paints immediately in the fallback and swaps when the
+// web font loads (better LCP, no invisible-text FOIT). size-adjust fallbacks are
+// applied by next/font automatically to keep the swap CLS-free.
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', weight: ['400', '800'], display: 'swap' });
 // Marketing/landing typography — mirrors the studio-grade reference:
 // Familjen Grotesk for large light-weight display, Martian Mono for micro-labels.
-const familjen = Familjen_Grotesk({ subsets: ['latin'], variable: '--font-familjen', weight: ['400', '500', '600'] });
-const martian = Martian_Mono({ subsets: ['latin'], variable: '--font-martian', weight: ['300', '400', '500'] });
+const familjen = Familjen_Grotesk({ subsets: ['latin'], variable: '--font-familjen', weight: ['400', '500', '600'], display: 'swap' });
+const martian = Martian_Mono({ subsets: ['latin'], variable: '--font-martian', weight: ['300', '400', '500'], display: 'swap' });
 
 const SITE_URL = 'https://hbcfield.com';
 const SITE_DESCRIPTION =

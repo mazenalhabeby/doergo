@@ -186,12 +186,10 @@ export default function HomeClient() {
       `}</style>
       <noscript><style>{`.reveal{opacity:1!important;transform:none!important}.lr-in{transform:none!important}`}</style></noscript>
 
-      {isLoading ? (
-        <div className="flex min-h-screen items-center justify-center bg-background">
-          <div className="h-6 w-6 animate-spin rounded-full border border-foreground/20 border-t-foreground/70" />
-        </div>
-      ) : (
-        <div className={`min-h-screen bg-background text-foreground antialiased selection:bg-foreground/20 ${DISPLAY}`}>
+      {/* Marketing content is ALWAYS rendered (server-side too) so crawlers and
+          AI engines receive the full page — not a spinner. Authenticated users
+          are redirected to /dashboard by the effect above, over the top. */}
+      <div className={`min-h-screen bg-background text-foreground antialiased selection:bg-foreground/20 ${DISPLAY}`}>
           {/* corner registration marks (fixed frame) */}
           <FramePlus />
 
@@ -668,7 +666,6 @@ export default function HomeClient() {
             </div>
           </footer>
         </div>
-      )}
     </>
   );
 }
