@@ -716,7 +716,10 @@ export class UsersService {
   async listOrgMembers(dto: ListOrgMembersDto) {
     const { organizationId, search, role, page = 1, limit = 10 } = dto;
 
-    const where: any = { organizationId };
+    // Members = staff only. Portal customers (they carry a customerId) live in
+    // Clients Portals, not here — excluding them keeps admins from accidentally
+    // re-roling a customer into a staff account (which breaks their portal login).
+    const where: any = { organizationId, customerId: null };
 
     if (role) {
       where.role = role;
@@ -828,6 +831,20 @@ export class UsersService {
 
     if (!member) {
       throw new NotFoundException('Member not found');
+    }
+
+    // Portal customers are managed in Clients Portals, never as staff members.
+    // Re-roling one (e.g. → ADMIN) strands their portal login (customerId set but
+    // role no longer CUSTOMER), so block it from both directions.
+    if (member.customerId || member.role === Role.CUSTOMER) {
+      throw new BadRequestException(
+        'This is a portal customer account — manage it in Clients Portals, not Members.',
+      );
+    }
+    if ((dto.role as any) === Role.CUSTOMER) {
+      throw new BadRequestException(
+        'Customers are added through a portal invite, not by changing a member’s role.',
+      );
     }
 
     await this.assertCanGrantRoleAndPerms(requesterId, organizationId, member, dto);
