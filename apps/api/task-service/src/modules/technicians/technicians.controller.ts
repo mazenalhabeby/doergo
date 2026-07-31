@@ -81,6 +81,25 @@ export class TechniciansController {
     return this.techniciansService.cancelTimeOff(data);
   }
 
+  @MessagePattern({ cmd: 'update_time_off' })
+  async updateTimeOff(
+    @Payload()
+    data: {
+      organizationId: string;
+      timeOffId: string;
+      startDate?: string;
+      endDate?: string;
+      reason?: string | null;
+    },
+  ) {
+    return this.techniciansService.updateTimeOff(data);
+  }
+
+  @MessagePattern({ cmd: 'admin_delete_time_off' })
+  async adminDeleteTimeOff(@Payload() data: { organizationId: string; timeOffId: string }) {
+    return this.techniciansService.adminDeleteTimeOff(data);
+  }
+
   @MessagePattern({ cmd: 'add_time_off' })
   async addTimeOff(
     @Payload()

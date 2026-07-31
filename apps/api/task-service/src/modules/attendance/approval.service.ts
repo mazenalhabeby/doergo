@@ -242,6 +242,21 @@ export class ApprovalService {
     return success(updated, 'Time entry updated');
   }
 
+  /** Admin: delete a time entry (its breaks cascade), scoped to the org. */
+  async deleteEntry(data: { entryId: string; editorId: string; organizationId: string }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: data.entryId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!entry) {
+      throw new NotFoundException('Time entry not found');
+    }
+    // Break has onDelete: Cascade, so removing the entry removes its breaks.
+    await this.prisma.timeEntry.delete({ where: { id: data.entryId } });
+    this.logger.log(`Entry deleted: entry=${data.entryId}, editor=${data.editorId}`);
+    return success({ id: data.entryId }, 'Time entry removed');
+  }
+
   /**
    * Admin: manually add (back-date) attendance for an employee.
    * Generates one CLOCKED_OUT entry per selected working day in [startDate, endDate],

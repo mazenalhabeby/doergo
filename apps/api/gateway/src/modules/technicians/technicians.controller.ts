@@ -186,6 +186,45 @@ export class EmployeesController {
     );
   }
 
+  @Patch('time-off/:timeOffId')
+  @ApiOperation({ summary: 'Admin: edit an existing day off (dates / reason)' })
+  @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
+  @RequirePermission('canManageUsers')
+  async updateTimeOff(
+    @Param('timeOffId') timeOffId: string,
+    @Body() body: { startDate?: string; endDate?: string; reason?: string | null },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'update_time_off' },
+        {
+          organizationId: user.organizationId,
+          timeOffId,
+          startDate: body.startDate,
+          endDate: body.endDate,
+          reason: body.reason,
+        },
+      ),
+    );
+  }
+
+  @Delete('time-off/:timeOffId/manage')
+  @ApiOperation({ summary: 'Admin: delete a day off' })
+  @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
+  @RequirePermission('canManageUsers')
+  async adminDeleteTimeOff(
+    @Param('timeOffId') timeOffId: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'admin_delete_time_off' },
+        { organizationId: user.organizationId, timeOffId },
+      ),
+    );
+  }
+
   @Post('time-off/bulk-approve')
   @ApiOperation({ summary: 'Bulk approve or reject time-off requests' })
   @RequirePermission('canManageUsers')

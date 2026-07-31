@@ -2942,7 +2942,10 @@
       "clockOutBeforeIn": "Clock-out must be after clock-in.",
       "save": "Save changes",
       "success": "Attendance entry updated.",
-      "error": "Could not update the entry."
+      "error": "Could not update the entry.",
+      "delete": "Remove",
+      "confirmDelete": "Confirm remove",
+      "deleteSuccess": "Entry removed"
     },
     "addDayOff": {
       "button": "Add day off",
@@ -2970,6 +2973,22 @@
       "label": "Day off",
       "day": "day",
       "days": "days"
+    },
+    "editDayOff": {
+      "title": "Edit day off",
+      "description": "For {{name}}",
+      "button": "Edit day off",
+      "start": "First day",
+      "end": "Last day",
+      "reason": "Reason",
+      "reasonPlaceholder": "Vacation, sick leave, personal…",
+      "save": "Save",
+      "delete": "Remove",
+      "confirmDelete": "Confirm remove",
+      "endBeforeStart": "The last day can’t be before the first day.",
+      "success": "Day off updated",
+      "deleteSuccess": "Day off removed",
+      "error": "Couldn’t update the day off"
     }
   },
   "auditLog": {

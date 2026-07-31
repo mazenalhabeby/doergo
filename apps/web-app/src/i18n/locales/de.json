@@ -2942,7 +2942,10 @@
       "clockOutBeforeIn": "Ausstempeln muss nach dem Einstempeln liegen.",
       "save": "Änderungen speichern",
       "success": "Anwesenheitseintrag aktualisiert.",
-      "error": "Eintrag konnte nicht aktualisiert werden."
+      "error": "Eintrag konnte nicht aktualisiert werden.",
+      "delete": "Entfernen",
+      "confirmDelete": "Entfernen bestätigen",
+      "deleteSuccess": "Eintrag entfernt"
     },
     "addDayOff": {
       "button": "Freien Tag hinzufügen",
@@ -2970,6 +2973,22 @@
       "label": "Frei",
       "day": "Tag",
       "days": "Tage"
+    },
+    "editDayOff": {
+      "title": "Freien Tag bearbeiten",
+      "description": "Für {{name}}",
+      "button": "Freien Tag bearbeiten",
+      "start": "Erster Tag",
+      "end": "Letzter Tag",
+      "reason": "Grund",
+      "reasonPlaceholder": "Urlaub, Krankheit, persönlich…",
+      "save": "Speichern",
+      "delete": "Entfernen",
+      "confirmDelete": "Entfernen bestätigen",
+      "endBeforeStart": "Der letzte Tag darf nicht vor dem ersten Tag liegen.",
+      "success": "Freier Tag aktualisiert",
+      "deleteSuccess": "Freier Tag entfernt",
+      "error": "Freier Tag konnte nicht aktualisiert werden"
     }
   },
   "auditLog": {

@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff } from "lucide-react"
+import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
 import { EditEntryDialog } from "./edit-entry-dialog"
+import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { useTimeFormat } from "@/hooks"
 
 // Approved time-off shown inline as a "day off" row in the tracking table.
@@ -91,6 +92,8 @@ interface TrackingTabProps {
   schedulerInfo?: any
   triggerAutoClockOut: { mutate: (type: "hourly" | "midnight") => void; isPending: boolean }
   isAdmin: boolean
+  sort: { key: string; dir: "asc" | "desc" } | null
+  onSort: (key: string) => void
 }
 
 export function TrackingTab({
@@ -99,6 +102,7 @@ export function TrackingTab({
   selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus,
   selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
   page, setPage, limit, daysOff, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
+  sort, onSort,
 }: TrackingTabProps) {
   const { t } = useTranslation()
   const { hour12, timeToken } = useTimeFormat()
@@ -475,12 +479,12 @@ export function TrackingTab({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/80">
-                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.worker")}</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">{t("common.status")}</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockIn")}</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockOut")}</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
+                    <SortHead label={t("attendance.worker")} active={sort?.key === "worker"} dir={sort?.dir ?? "asc"} onClick={() => onSort("worker")} />
+                    <SortHead label={t("common.status")} active={sort?.key === "status"} dir={sort?.dir ?? "asc"} onClick={() => onSort("status")} />
+                    <SortHead label={t("attendance.clockIn")} active={sort?.key === "clockIn"} dir={sort?.dir ?? "asc"} onClick={() => onSort("clockIn")} />
+                    <SortHead label={t("attendance.clockOut")} active={sort?.key === "clockOut"} dir={sort?.dir ?? "asc"} onClick={() => onSort("clockOut")} />
+                    <SortHead label={t("common.duration")} active={sort?.key === "duration"} dir={sort?.dir ?? "asc"} onClick={() => onSort("duration")} />
+                    <SortHead label={t("attendance.approval")} active={sort?.key === "approval"} dir={sort?.dir ?? "asc"} onClick={() => onSort("approval")} />
                     <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
                     {isAdmin && <TableHead className="w-10 text-right" />}
                   </TableRow>
@@ -544,7 +548,11 @@ export function TrackingTab({
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        {isAdmin && <TableCell />}
+                        {isAdmin && (
+                          <TableCell className="text-right">
+                            <EditDayOffDialog dayOff={off} />
+                          </TableCell>
+                        )}
                       </TableRow>
                     )
                   })}
@@ -685,5 +693,35 @@ export function TrackingTab({
           )}
         </div>
     </>
+  )
+}
+
+// Sortable column header — click to cycle asc → desc → off.
+function SortHead({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  dir: "asc" | "desc"
+  onClick: () => void
+}) {
+  const Icon = !active ? ChevronsUpDown : dir === "asc" ? ArrowUp : ArrowDown
+  return (
+    <TableHead className="font-semibold text-muted-foreground">
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "-ml-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-foreground transition-colors",
+          active && "text-foreground",
+        )}
+      >
+        {label}
+        <Icon className={cn("size-3.5", active ? "opacity-100" : "opacity-40")} />
+      </button>
+    </TableHead>
   )
 }

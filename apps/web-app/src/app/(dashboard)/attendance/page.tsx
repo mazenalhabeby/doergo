@@ -47,6 +47,14 @@ export default function AttendancePage() {
   const [page, setPage] = useState(1)
   const [debouncedSearch, setDebouncedSearch] = useState("")
 
+  // Server-side sort across ALL pages. Click a column to cycle asc → desc → off;
+  // any change resets to page 1 so the sorted set starts from the top.
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null)
+  const onSort = (key: string) => {
+    setPage(1)
+    setSort((cur) => (cur?.key !== key ? { key, dir: "asc" } : cur.dir === "asc" ? { key, dir: "desc" } : null))
+  }
+
   // Debounce the search box → server-side search across all pages; reset to
   // page 1 whenever the term changes.
   useEffect(() => {
@@ -86,7 +94,7 @@ export default function AttendancePage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["attendance", selectedLocationId, selectedStatus, selectedDate, endDate, debouncedSearch, page, limit],
+    queryKey: ["attendance", selectedLocationId, selectedStatus, selectedDate, endDate, debouncedSearch, page, limit, sort?.key ?? null, sort?.dir ?? null],
     queryFn: () => {
       if (selectedLocationId === "all") {
         // Use getAllEntries for organization-wide view
@@ -97,6 +105,8 @@ export default function AttendancePage() {
           search: debouncedSearch || undefined,
           page,
           limit,
+          sortBy: sort?.key,
+          sortOrder: sort?.dir,
         })
       }
       return attendanceApi.getLocationEntries(selectedLocationId, {
@@ -105,6 +115,8 @@ export default function AttendancePage() {
         search: debouncedSearch || undefined,
         page,
         limit,
+        sortBy: sort?.key,
+        sortOrder: sort?.dir,
       })
     },
     enabled: canAccess,
@@ -385,6 +397,7 @@ export default function AttendancePage() {
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               page={page} setPage={setPage} limit={limit} daysOff={daysOff} locations={locations}
               schedulerInfo={schedulerInfo} triggerAutoClockOut={triggerAutoClockOut} isAdmin={isAdmin}
+              sort={sort} onSort={onSort}
             />
           </TabsContent>
 

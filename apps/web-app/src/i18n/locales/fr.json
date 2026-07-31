@@ -2942,7 +2942,10 @@
       "clockOutBeforeIn": "Le pointage sortie doit être postérieur au pointage entrée.",
       "save": "Enregistrer les modifications",
       "success": "Pointage de présence mis à jour.",
-      "error": "Impossible de mettre à jour le pointage."
+      "error": "Impossible de mettre à jour le pointage.",
+      "delete": "Supprimer",
+      "confirmDelete": "Confirmer la suppression",
+      "deleteSuccess": "Entrée supprimée"
     },
     "addDayOff": {
       "button": "Ajouter un jour de repos",
@@ -2970,6 +2973,22 @@
       "label": "Jour de repos",
       "day": "jour",
       "days": "jours"
+    },
+    "editDayOff": {
+      "title": "Modifier le jour de congé",
+      "description": "Pour {{name}}",
+      "button": "Modifier le jour de congé",
+      "start": "Premier jour",
+      "end": "Dernier jour",
+      "reason": "Motif",
+      "reasonPlaceholder": "Vacances, maladie, personnel…",
+      "save": "Enregistrer",
+      "delete": "Supprimer",
+      "confirmDelete": "Confirmer la suppression",
+      "endBeforeStart": "Le dernier jour ne peut pas être avant le premier jour.",
+      "success": "Jour de congé mis à jour",
+      "deleteSuccess": "Jour de congé supprimé",
+      "error": "Impossible de mettre à jour le jour de congé"
     }
   },
   "auditLog": {

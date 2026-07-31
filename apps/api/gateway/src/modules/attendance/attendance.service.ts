@@ -45,6 +45,8 @@ export class AttendanceService extends BaseGatewayService {
     limit?: number;
     requesterId?: string;
     requesterCanViewAll?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
   }) {
     return this.send({ cmd: 'get_location_entries' }, data);
   }
@@ -71,6 +73,8 @@ export class AttendanceService extends BaseGatewayService {
     search?: string;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
   }) {
     return this.send({ cmd: 'get_all_entries' }, data);
   }
@@ -264,6 +268,10 @@ export class AttendanceService extends BaseGatewayService {
     reason: string;
   }) {
     return this.send({ cmd: 'edit_entry' }, data);
+  }
+
+  async deleteEntry(data: { entryId: string; editorId: string; organizationId: string }) {
+    return this.send({ cmd: 'delete_entry' }, data);
   }
 
   async addManualEntries(data: {

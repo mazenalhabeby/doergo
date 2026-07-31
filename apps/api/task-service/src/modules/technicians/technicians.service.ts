@@ -689,6 +689,71 @@ export class TechniciansService {
     return success(updated);
   }
 
+  /** Admin edit of an existing day off (dates / reason), scoped to the org. */
+  async updateTimeOff(data: {
+    organizationId: string;
+    timeOffId: string;
+    startDate?: string; // "YYYY-MM-DD"
+    endDate?: string; // "YYYY-MM-DD" (inclusive)
+    reason?: string | null;
+  }) {
+    const timeOff = await this.prisma.timeOff.findFirst({
+      where: { id: data.timeOffId, technician: { organizationId: data.organizationId } },
+    });
+    if (!timeOff) {
+      throw new NotFoundException('Time-off request not found');
+    }
+    if (data.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(data.startDate)) {
+      throw new BadRequestException('Invalid date');
+    }
+    if (data.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)) {
+      throw new BadRequestException('Invalid date');
+    }
+    const start = data.startDate ? new Date(data.startDate) : timeOff.startDate;
+    const end = data.endDate ? new Date(data.endDate) : timeOff.endDate;
+    if (start > end) {
+      throw new BadRequestException('Start date must be before or equal to end date');
+    }
+
+    // Block overlap with the SAME employee's OTHER time off (exclude this one).
+    const overlap = await this.prisma.timeOff.findFirst({
+      where: {
+        id: { not: data.timeOffId },
+        technicianId: timeOff.technicianId,
+        status: { in: ['PENDING', 'APPROVED'] },
+        startDate: { lte: end },
+        endDate: { gte: start },
+      },
+      select: { id: true },
+    });
+    if (overlap) {
+      throw new BadRequestException('This overlaps an existing time-off entry for the employee');
+    }
+
+    const updated = await this.prisma.timeOff.update({
+      where: { id: data.timeOffId },
+      data: {
+        ...(data.startDate ? { startDate: start } : {}),
+        ...(data.endDate ? { endDate: end } : {}),
+        ...(data.reason !== undefined ? { reason: data.reason?.trim() || null } : {}),
+      },
+    });
+    return success(updated, 'Day off updated');
+  }
+
+  /** Admin delete of a day off, scoped to the org. */
+  async adminDeleteTimeOff(data: { organizationId: string; timeOffId: string }) {
+    const timeOff = await this.prisma.timeOff.findFirst({
+      where: { id: data.timeOffId, technician: { organizationId: data.organizationId } },
+      select: { id: true },
+    });
+    if (!timeOff) {
+      throw new NotFoundException('Time-off request not found');
+    }
+    await this.prisma.timeOff.delete({ where: { id: data.timeOffId } });
+    return success({ id: data.timeOffId }, 'Day off removed');
+  }
+
   // ========================================================================
   // AVAILABILITY QUERIES
   // ========================================================================

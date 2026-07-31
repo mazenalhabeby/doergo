@@ -46,6 +46,8 @@ export class AttendanceController {
       limit?: number;
       requesterId?: string;
       requesterCanViewAll?: boolean;
+      sortBy?: string;
+      sortOrder?: string;
     },
   ) {
     return this.attendanceService.getLocationEntries(data);
@@ -75,6 +77,8 @@ export class AttendanceController {
       search?: string;
       page?: number;
       limit?: number;
+      sortBy?: string;
+      sortOrder?: string;
     },
   ) {
     return this.attendanceService.getAllEntries(data);
@@ -293,6 +297,13 @@ export class AttendanceController {
     },
   ) {
     return this.approvalService.editEntry(data);
+  }
+
+  @MessagePattern({ cmd: 'delete_entry' })
+  async deleteEntry(
+    @Payload() data: { entryId: string; editorId: string; organizationId: string },
+  ) {
+    return this.approvalService.deleteEntry(data);
   }
 
   @MessagePattern({ cmd: 'add_manual_entries' })

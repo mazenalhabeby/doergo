@@ -1913,6 +1913,8 @@ export interface AttendanceQueryParams {
   search?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 export interface AttendanceListResponse {
@@ -1976,6 +1978,8 @@ export const attendanceApi = {
       search: params?.search,
       page: params?.page,
       limit: params?.limit,
+      sortBy: params?.sortBy,
+      sortOrder: params?.sortOrder,
     });
 
     const response = await api.get<AttendanceListResponse>(endpoint);
@@ -2047,6 +2051,15 @@ export const attendanceApi = {
       throw new Error(response.error);
     }
     return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
+  // Delete a time entry (admin)
+  deleteEntry: async (entryId: string) => {
+    const response = await api.delete<{ success: boolean }>(`/attendance/entries/${entryId}`);
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
   },
 
   // Get all time entries for the organization (admin view)
@@ -2624,6 +2637,32 @@ export const employeesApi = {
     }
 
     return response.data?.data;
+  },
+
+  // Admin: edit an existing day off (dates / reason)
+  updateTimeOff: async (
+    timeOffId: string,
+    input: { startDate?: string; endDate?: string; reason?: string | null },
+  ) => {
+    const response = await api.patch<{ success: boolean; data: TimeOffRequest }>(
+      `/employees/time-off/${timeOffId}`,
+      input,
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data?.data;
+  },
+
+  // Admin: delete a day off
+  adminDeleteTimeOff: async (timeOffId: string) => {
+    const response = await api.delete<{ success: boolean }>(
+      `/employees/time-off/${timeOffId}/manage`,
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
   },
 
   // Bulk approve/reject time-off requests

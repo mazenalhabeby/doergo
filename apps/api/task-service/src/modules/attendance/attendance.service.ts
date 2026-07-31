@@ -620,6 +620,8 @@ export class AttendanceService {
     limit?: number;
     requesterId?: string;
     requesterCanViewAll?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
   }) {
     // Verify location belongs to organization
     const location = await this.prisma.companyLocation.findFirst({
@@ -684,7 +686,7 @@ export class AttendanceService {
             },
           },
         },
-        orderBy: { clockInAt: 'desc' },
+        orderBy: this.buildEntriesOrderBy(data.sortBy, data.sortOrder),
       }),
       this.prisma.timeEntry.count({ where }),
     ]);
@@ -995,6 +997,30 @@ export class AttendanceService {
   /**
    * Get all time entries for an organization (admin view)
    */
+  /**
+   * Map a UI sort key → Prisma orderBy for the entries list. Defaults to newest
+   * clock-in first. `totalMinutes`/`clockOutAt` are nullable → nulls sort last.
+   */
+  private buildEntriesOrderBy(sortBy?: string, sortOrder?: string): any {
+    const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+    switch (sortBy) {
+      case 'worker':
+        return [{ user: { firstName: dir } }, { user: { lastName: dir } }];
+      case 'status':
+        return { status: dir };
+      case 'clockIn':
+        return { clockInAt: dir };
+      case 'clockOut':
+        return { clockOutAt: { sort: dir, nulls: 'last' } };
+      case 'duration':
+        return { totalMinutes: { sort: dir, nulls: 'last' } };
+      case 'approval':
+        return { approvalStatus: dir };
+      default:
+        return { clockInAt: 'desc' };
+    }
+  }
+
   async getAllEntries(data: {
     organizationId: string;
     date?: Date | string;
@@ -1004,6 +1030,8 @@ export class AttendanceService {
     search?: string;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
   }) {
     const page = data.page ?? 1;
     const limit = data.limit ?? 50;
@@ -1060,7 +1088,7 @@ export class AttendanceService {
             },
           },
         },
-        orderBy: { clockInAt: 'desc' },
+        orderBy: this.buildEntriesOrderBy(data.sortBy, data.sortOrder),
       }),
       this.prisma.timeEntry.count({ where }),
     ]);

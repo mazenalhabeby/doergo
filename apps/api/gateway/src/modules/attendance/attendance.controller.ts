@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -132,6 +133,8 @@ export class AttendanceController {
     @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
     @Request() req?: any,
   ) {
     // Full-access roles see any location; otherwise the service verifies the
@@ -145,6 +148,8 @@ export class AttendanceController {
       search,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      sortBy,
+      sortOrder,
       requesterId: req.user.id,
       requesterCanViewAll: !!req.user.canViewAllTasks,
     });
@@ -191,6 +196,8 @@ export class AttendanceController {
     @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
     @Request() req?: any,
   ) {
     const parsedPage = page ? Math.max(1, Number(page) || 1) : 1;
@@ -204,6 +211,8 @@ export class AttendanceController {
       search,
       page: parsedPage,
       limit: parsedLimit,
+      sortBy,
+      sortOrder,
     });
   }
 
@@ -479,6 +488,17 @@ export class AttendanceController {
       clockOutAt: body.clockOutAt,
       notes: body.notes,
       reason: body.reason,
+    });
+  }
+
+  @Delete('entries/:id')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Delete a time entry (admin)' })
+  async deleteEntry(@Param('id') entryId: string, @Request() req?: any) {
+    return this.attendanceService.deleteEntry({
+      entryId,
+      editorId: req.user.id,
+      organizationId: req.user.organizationId,
     });
   }
 

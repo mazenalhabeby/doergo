@@ -2942,7 +2942,10 @@
       "clockOutBeforeIn": "L'uscita deve essere successiva all'entrata.",
       "save": "Salva modifiche",
       "success": "Registrazione di presenza aggiornata.",
-      "error": "Impossibile aggiornare la registrazione."
+      "error": "Impossibile aggiornare la registrazione.",
+      "delete": "Rimuovi",
+      "confirmDelete": "Conferma rimozione",
+      "deleteSuccess": "Voce rimossa"
     },
     "addDayOff": {
       "button": "Aggiungi giorno di riposo",
@@ -2970,6 +2973,22 @@
       "label": "Giorno di riposo",
       "day": "giorno",
       "days": "giorni"
+    },
+    "editDayOff": {
+      "title": "Modifica giorno libero",
+      "description": "Per {{name}}",
+      "button": "Modifica giorno libero",
+      "start": "Primo giorno",
+      "end": "Ultimo giorno",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Ferie, malattia, personale…",
+      "save": "Salva",
+      "delete": "Rimuovi",
+      "confirmDelete": "Conferma rimozione",
+      "endBeforeStart": "L'ultimo giorno non può essere prima del primo giorno.",
+      "success": "Giorno libero aggiornato",
+      "deleteSuccess": "Giorno libero rimosso",
+      "error": "Impossibile aggiornare il giorno libero"
     }
   },
   "auditLog": {

@@ -2942,7 +2942,10 @@
       "clockOutBeforeIn": "La salida debe ser posterior a la entrada.",
       "save": "Guardar cambios",
       "success": "Registro de asistencia actualizado.",
-      "error": "No se pudo actualizar el registro."
+      "error": "No se pudo actualizar el registro.",
+      "delete": "Eliminar",
+      "confirmDelete": "Confirmar eliminación",
+      "deleteSuccess": "Entrada eliminada"
     },
     "addDayOff": {
       "button": "Añadir día libre",
@@ -2970,6 +2973,22 @@
       "label": "Día libre",
       "day": "día",
       "days": "días"
+    },
+    "editDayOff": {
+      "title": "Editar día libre",
+      "description": "Para {{name}}",
+      "button": "Editar día libre",
+      "start": "Primer día",
+      "end": "Último día",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Vacaciones, baja, personal…",
+      "save": "Guardar",
+      "delete": "Eliminar",
+      "confirmDelete": "Confirmar eliminación",
+      "endBeforeStart": "El último día no puede ser anterior al primero.",
+      "success": "Día libre actualizado",
+      "deleteSuccess": "Día libre eliminado",
+      "error": "No se pudo actualizar el día libre"
     }
   },
   "auditLog": {

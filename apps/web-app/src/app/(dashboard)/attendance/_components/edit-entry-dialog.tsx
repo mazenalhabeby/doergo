@@ -4,7 +4,7 @@ import { useState } from "react"
 import { format } from "date-fns"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Pencil, Loader2 } from "lucide-react"
+import { Pencil, Loader2, Trash2 } from "lucide-react"
 
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -42,6 +42,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
   const [clockOut, setClockOut] = useState(() => toLocalInput(entry.clockOutAt))
   const [notes, setNotes] = useState(entry.notes ?? "")
   const [reason, setReason] = useState("")
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   // Reset local state to the entry's current values whenever the dialog opens.
   function openWith(next: boolean) {
@@ -50,6 +51,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
       setClockOut(toLocalInput(entry.clockOutAt))
       setNotes(entry.notes ?? "")
       setReason("")
+      setConfirmDelete(false)
     }
     setOpen(next)
   }
@@ -73,8 +75,20 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
     },
   })
 
+  const remove = useMutation({
+    mutationFn: () => attendanceApi.deleteEntry(entry.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance"] })
+      queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
+      notify.success(t("attendance.editEntry.deleteSuccess", "Entry removed"))
+      setOpen(false)
+    },
+    onError: (err: Error) => notify.error(err.message || t("attendance.editEntry.error")),
+  })
+
   const clockOutBeforeIn = !!clockIn && !!clockOut && new Date(clockOut) <= new Date(clockIn)
-  const canSubmit = !!reason.trim() && !!clockIn && !clockOutBeforeIn && !mutation.isPending
+  const busy = mutation.isPending || remove.isPending
+  const canSubmit = !!reason.trim() && !!clockIn && !clockOutBeforeIn && !busy
 
   return (
     <Dialog open={open} onOpenChange={openWith}>
@@ -148,14 +162,28 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
-            {t("common.cancel")}
+        <DialogFooter className="sm:justify-between">
+          <Button
+            variant="ghost"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            disabled={busy}
+            onClick={() => (confirmDelete ? remove.mutate() : setConfirmDelete(true))}
+          >
+            {remove.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Trash2 className="mr-1.5 size-4" />
+            {confirmDelete
+              ? t("attendance.editEntry.confirmDelete", "Confirm remove")
+              : t("attendance.editEntry.delete", "Remove")}
           </Button>
-          <Button onClick={() => mutation.mutate()} disabled={!canSubmit}>
-            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t("attendance.editEntry.save")}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={() => mutation.mutate()} disabled={!canSubmit}>
+              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("attendance.editEntry.save")}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
