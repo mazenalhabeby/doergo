@@ -462,6 +462,44 @@
           ]
         }
       ]
+    },
+    "faq": {
+      "label": "FAQ",
+      "heading": "Fragen, beantwortet.",
+      "items": [
+        {
+          "q": "Was ist HBCField?",
+          "a": "HBCField ist eine Plattform für das Außendienst-Management, die Auftragsdisposition, GPS-Tracking in Echtzeit, Arbeitszeit- & Anwesenheitserfassung und Serviceberichte in einem System vereint — Büro und Außendienst verbunden."
+        },
+        {
+          "q": "Für wen ist HBCField gedacht?",
+          "a": "Für Unternehmen, die Techniker oder Außendienstmitarbeiter disponieren — Instandhaltung, HLK, Sanitär, Elektrik, Reinigung, Sicherheit, Garten- und Immobilienverwaltung — und Aufträge, Personal und Zeiterfassung an einem Ort möchten."
+        },
+        {
+          "q": "Auf welchen Plattformen läuft HBCField?",
+          "a": "Eine Web-App für Administratoren und Disponenten sowie native iOS- und Android-Apps für Außendiensttechniker."
+        },
+        {
+          "q": "Wie funktioniert das GPS-Routentracking?",
+          "a": "Ein nativer Hintergrunddienst zeichnet die Route des Technikers mit distanzbasierter Erfassung auf — ein Punkt etwa alle 25 Meter — auch bei gesperrtem Bildschirm, und speichert den Routenverlauf."
+        },
+        {
+          "q": "Was ist das geofencing-basierte Einstempeln?",
+          "a": "Techniker stempeln vor Ort an ihrem zugewiesenen Standort ein, sodass die Arbeitszeiten per Standort verifiziert und nicht selbst gemeldet werden."
+        },
+        {
+          "q": "Funktioniert HBCField offline?",
+          "a": "Ja — Fotos, Notizen und Berichte werden auf dem Gerät zwischengespeichert und synchronisieren automatisch, sobald wieder Signal besteht."
+        },
+        {
+          "q": "Was kostet HBCField?",
+          "a": "Preise pro Platz in Euro mit 14 Tagen kostenloser Testphase, ohne Kreditkarte. Feld-Plätze (nur mobil) beginnen bei 19 € pro Monat; Büro-Plätze sind gestaffelt."
+        },
+        {
+          "q": "Ersetzt HBCField mehrere Einzeltools?",
+          "a": "Ja — statt ein Außendienst-Tool, eine Stempeluhr und einen GPS-Tracker separat zu bezahlen, vereint HBCField Disposition, Anwesenheit und Routentracking in einer Plattform."
+        }
+      ]
     }
   },
   "common": {

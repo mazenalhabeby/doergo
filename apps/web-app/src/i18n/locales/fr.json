@@ -462,6 +462,44 @@
           ]
         }
       ]
+    },
+    "faq": {
+      "label": "FAQ",
+      "heading": "Vos questions, nos réponses.",
+      "items": [
+        {
+          "q": "Qu’est-ce que HBCField ?",
+          "a": "HBCField est une plateforme de gestion des interventions terrain qui réunit la répartition des tâches, le suivi GPS en temps réel, le temps et la présence des employés et les rapports d’intervention dans un seul système — le bureau et le terrain reliés."
+        },
+        {
+          "q": "À qui s’adresse HBCField ?",
+          "a": "Aux entreprises qui envoient des techniciens ou du personnel de terrain — maintenance, CVC, plomberie, électricité, nettoyage, sécurité, espaces verts et gestion immobilière — et qui veulent les interventions, les équipes et le suivi du temps au même endroit."
+        },
+        {
+          "q": "Sur quelles plateformes fonctionne HBCField ?",
+          "a": "Une application web pour les administrateurs et les répartiteurs, et des applications natives iOS et Android pour les techniciens de terrain."
+        },
+        {
+          "q": "Comment fonctionne le suivi GPS des trajets ?",
+          "a": "Un service natif en arrière-plan enregistre le trajet du technicien avec un échantillonnage par distance — un point tous les 25 mètres environ — même téléphone verrouillé, et conserve l’historique des trajets."
+        },
+        {
+          "q": "Qu’est-ce que le pointage géolocalisé ?",
+          "a": "Les techniciens pointent sur site par rapport à leur emplacement assigné, de sorte que les heures de présence sont vérifiées par la localisation plutôt que déclarées."
+        },
+        {
+          "q": "HBCField fonctionne-t-il hors ligne ?",
+          "a": "Oui — les photos, notes et rapports sont mis en file d’attente sur l’appareil et se synchronisent automatiquement dès le retour du signal."
+        },
+        {
+          "q": "Combien coûte HBCField ?",
+          "a": "Une tarification par siège en euros avec un essai gratuit de 14 jours, sans carte bancaire. Les sièges terrain (mobile uniquement) commencent à 19 € par mois ; les sièges bureau sont par paliers."
+        },
+        {
+          "q": "HBCField remplace-t-il des outils séparés ?",
+          "a": "Oui — au lieu de payer séparément un outil d’intervention, une pointeuse et un traceur GPS, HBCField réunit répartition, présence et suivi des trajets sur une seule plateforme."
+        }
+      ]
     }
   },
   "common": {

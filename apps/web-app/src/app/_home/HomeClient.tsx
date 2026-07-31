@@ -575,6 +575,24 @@ export default function HomeClient() {
             </div>
           </section>
 
+          {/* ══════ FAQ ══════ */}
+          <section id="faq" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
+            <div className="mx-auto max-w-[1600px]">
+              <Label className="mb-10 block">{t('home.faq.label', 'FAQ')}</Label>
+              <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
+                {t('home.faq.heading', 'Questions, answered.')}
+              </h2>
+              <div className="mt-14 grid gap-px overflow-hidden rounded-lg border border-foreground/[0.08] bg-foreground/[0.08] sm:grid-cols-2">
+                {asArray<{ q: string; a: string }>(t('home.faq.items', { returnObjects: true })).map((item, i) => (
+                  <Reveal key={i} className="bg-background p-7 sm:p-9">
+                    <h3 className={`${DISPLAY} text-[19px] leading-snug tracking-[-0.01em] text-foreground`}>{item.q}</h3>
+                    <p className="mt-3 text-[15px] leading-relaxed text-foreground/55">{item.a}</p>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {/* ══════ CTA ══════ */}
           <section id="contact" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-44">
             <div className="mx-auto max-w-[1600px]">

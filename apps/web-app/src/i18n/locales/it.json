@@ -462,6 +462,44 @@
           ]
         }
       ]
+    },
+    "faq": {
+      "label": "Domande frequenti",
+      "heading": "Domande, con risposte.",
+      "items": [
+        {
+          "q": "Che cos’è HBCField?",
+          "a": "HBCField è una piattaforma di gestione dei servizi sul campo che unifica l’assegnazione dei lavori, il tracciamento GPS in tempo reale, presenze e orari del personale e i rapporti di servizio in un unico sistema, collegando l’ufficio e il campo."
+        },
+        {
+          "q": "A chi è rivolto HBCField?",
+          "a": "Alle aziende che inviano tecnici o personale sul campo — manutenzione, climatizzazione, idraulica, elettrica, pulizie, sicurezza, giardinaggio e gestione immobiliare — che vogliono lavori, persone e orari in un unico posto."
+        },
+        {
+          "q": "Su quali piattaforme funziona HBCField?",
+          "a": "Un’app web per amministratori e dispatcher e app native iOS e Android per i tecnici sul campo."
+        },
+        {
+          "q": "Come funziona il tracciamento GPS del percorso?",
+          "a": "Un servizio nativo in background registra il percorso del tecnico con campionamento per distanza — un punto ogni 25 metri circa — anche a telefono bloccato, e conserva la cronologia dei percorsi."
+        },
+        {
+          "q": "Che cos’è la timbratura con geofence?",
+          "a": "I tecnici timbrano sul posto rispetto alla sede assegnata, così le ore di presenza sono verificate per posizione anziché autodichiarate."
+        },
+        {
+          "q": "HBCField funziona offline?",
+          "a": "Sì — foto, note e rapporti vengono messi in coda sul dispositivo e si sincronizzano automaticamente al ritorno del segnale."
+        },
+        {
+          "q": "Quanto costa HBCField?",
+          "a": "Prezzi per postazione in euro con una prova gratuita di 14 giorni e senza carta di credito. Le postazioni sul campo (solo mobile) partono da 19 € al mese; quelle da ufficio sono a livelli."
+        },
+        {
+          "q": "HBCField sostituisce strumenti separati?",
+          "a": "Sì — invece di pagare separatamente uno strumento per il servizio sul campo, un timbracartellino e un tracker GPS, HBCField unisce assegnazione, presenze e tracciamento dei percorsi in un’unica piattaforma."
+        }
+      ]
     }
   },
   "common": {

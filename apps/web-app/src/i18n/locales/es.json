@@ -462,6 +462,44 @@
           ]
         }
       ]
+    },
+    "faq": {
+      "label": "Preguntas frecuentes",
+      "heading": "Preguntas, respondidas.",
+      "items": [
+        {
+          "q": "¿Qué es HBCField?",
+          "a": "HBCField es una plataforma de gestión de servicios de campo que unifica la asignación de tareas, el seguimiento GPS en tiempo real, el control horario y de asistencia y los informes de servicio en un solo sistema, conectando la oficina y el campo."
+        },
+        {
+          "q": "¿Para quién es HBCField?",
+          "a": "Para empresas que despachan técnicos o personal de campo — mantenimiento, climatización, fontanería, electricidad, limpieza, seguridad, jardinería y gestión de propiedades — que quieren trabajos, personas y control horario en un solo lugar."
+        },
+        {
+          "q": "¿En qué plataformas funciona HBCField?",
+          "a": "Una app web para administradores y despachadores, y apps nativas de iOS y Android para los técnicos de campo."
+        },
+        {
+          "q": "¿Cómo funciona el seguimiento GPS de rutas?",
+          "a": "Un servicio nativo en segundo plano registra la ruta del técnico con muestreo por distancia — un punto cada unos 25 metros — incluso con el teléfono bloqueado, y conserva el historial de rutas."
+        },
+        {
+          "q": "¿Qué es el fichaje con geovalla?",
+          "a": "Los técnicos fichan en el sitio contra su ubicación asignada, de modo que las horas de asistencia se verifican por ubicación en lugar de declararse."
+        },
+        {
+          "q": "¿Funciona HBCField sin conexión?",
+          "a": "Sí — las fotos, notas e informes se ponen en cola en el dispositivo y se sincronizan automáticamente cuando vuelve la señal."
+        },
+        {
+          "q": "¿Cuánto cuesta HBCField?",
+          "a": "Precios por asiento en euros con una prueba gratuita de 14 días y sin tarjeta de crédito. Los asientos de campo (solo móvil) empiezan en 19 € al mes; los de oficina son por niveles."
+        },
+        {
+          "q": "¿HBCField reemplaza a herramientas separadas?",
+          "a": "Sí — en lugar de pagar por separado una herramienta de servicio de campo, un reloj de fichar y un rastreador GPS, HBCField combina asignación, asistencia y seguimiento de rutas en una plataforma."
+        }
+      ]
     }
   },
   "common": {

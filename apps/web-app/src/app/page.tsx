@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StructuredData } from "@/components/seo/structured-data";
+import { FaqJsonLd } from "@/components/seo/faq-jsonld";
 import HomeClient from "./_home/HomeClient";
 import { hreflangAlternates } from "@/lib/marketing-seo";
 
@@ -17,6 +18,7 @@ export default function Page() {
   return (
     <>
       <StructuredData />
+      <FaqJsonLd />
       <HomeClient />
     </>
   );
