@@ -21,6 +21,8 @@ Per-seat subscription in EUR, billed monthly or annually, with a 14-day trial. O
 
 ## Links
 - Website: https://hbcfield.com
+- Full reference: https://hbcfield.com/llms-full.txt
+- Industries: https://hbcfield.com/industries
 - Privacy: https://hbcfield.com/privacy
 - Terms: https://hbcfield.com/terms
 - iOS: https://apps.apple.com/app/id6762745260

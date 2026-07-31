@@ -7,6 +7,7 @@ import {
   industriesHubPath,
   localePath,
 } from "@/lib/industries";
+import { IndustryJsonLd } from "@/components/seo/industry-jsonld";
 
 const DISPLAY = "font-[family:var(--font-familjen)]";
 const MONO = "font-[family:var(--font-martian)]";
@@ -29,6 +30,7 @@ export function IndustryArticle({ lang, slug }: { lang: string; slug: string }) 
 
   return (
     <main className={`min-h-screen bg-[#0e1116] text-[#d8d8d8] ${DISPLAY}`}>
+      <IndustryJsonLd lang={lang} slug={slug} />
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-5 sm:px-10">
         <Link href={homeHref} className="text-[15px] font-semibold tracking-tight text-[#f2f2f0]">HBCField</Link>

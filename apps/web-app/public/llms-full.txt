@@ -1,0 +1,75 @@
+# HBCField — full reference for AI / LLM engines
+
+> HBCField is a field service management (FSM) platform that unifies task dispatch, GPS route tracking, employee time & attendance, scheduling, service reports and invoicing for field teams — on web and mobile. This file expands on /llms.txt with the full feature set, per-industry use, pricing model and FAQ. All facts here are published on https://hbcfield.com.
+
+HBCField is for companies that dispatch technicians or field workers (maintenance, HVAC, facilities, delivery, property management) and need one system for jobs, people, and time tracking instead of several disconnected tools. It connects the back office (admins and dispatchers on the web) with the field (technicians on native mobile apps) in real time.
+
+## Core capabilities
+- Task dispatch & assignment: admins and dispatchers create jobs, set priority and due dates, and assign technicians; technicians accept and execute jobs on mobile through a defined status flow (new → assigned → accepted → en route → arrived → in progress → completed).
+- Real-time GPS route tracking: a native background service records each technician's route with distance-based sampling (a point roughly every 25 metres), even when the phone is locked, and keeps the route history on record. Routes are shown on a live map and road-snapped for the office.
+- Time & attendance: geofenced clock in/out against an assigned company location (attendance verified by location, not self-reported), weekly schedules, days off with an approval workflow, and manual/back-dated entries for admins.
+- Service reports: on-site reports with work performed, parts used, before/after photos, and captured technician and customer signatures.
+- Scheduling & availability: weekly schedules, time-off requests and approvals, and availability that combines schedule, time off and current jobs.
+- Reporting & invoicing: a dynamic report builder with saved reports, CSV and branded PDF export, and Stripe-based subscription billing.
+- Real-time updates via WebSockets; multi-language interface in English, German, Spanish, French and Italian.
+- Offline resilience: photos, notes and reports queue on the device and sync automatically when signal returns.
+
+## Platforms
+- Web app for admins and dispatchers (task creation, assignment, live map, technician management, attendance, reports, billing).
+- Native iOS and Android apps for field technicians (job execution, GPS tracking, clock in/out, photos, service reports).
+- Optional invite-only customer/resident portal for reporting issues, which flow into the same task pipeline.
+
+## Roles
+- Admin: organization owner with full access.
+- Dispatcher: office coordinator who views all jobs and assigns technicians (web only).
+- Technician: field worker who executes assigned jobs (mobile only).
+- Customer (optional portal): submits requests through an invite-only portal.
+
+## Industries served
+Each industry has a dedicated page under https://hbcfield.com/industries.
+- Property & facility management — one system for tenants, technicians and paperwork, so nothing slips. https://hbcfield.com/industries/property-facility-management
+- HVAC, plumbing & electrical trades — faster call-outs and a signed service report before the technician leaves. https://hbcfield.com/industries/hvac-plumbing-electrical
+- Industry & maintenance — less unplanned downtime, with planned upkeep and every asset's full history in one place. https://hbcfield.com/industries/industrial-maintenance
+- Cleaning & janitorial services — proof of service on every site, automatically. https://hbcfield.com/industries/cleaning-janitorial
+- Security & guarding — verified, timestamped patrols you can show the client. https://hbcfield.com/industries/security-guarding
+- Landscaping & grounds maintenance — full visibility across scattered sites and the work done. https://hbcfield.com/industries/landscaping-grounds
+
+## Pricing
+Per-seat subscription in EUR, billed monthly or annually, with a 14-day free trial and no credit card required. Seats are of two kinds:
+- Office seat (anyone with web access, including the admin owner): tiered — Starter, Professional or Business.
+- Field seat (mobile-only technician): flat rate, starting at €19 per month.
+Seat type follows a member's access, so it re-syncs automatically when access changes. Instead of paying for a field-service tool, a time clock and a GPS tracker separately, HBCField combines dispatch, attendance and route tracking in one platform.
+
+## FAQ
+Q: What is HBCField?
+A: A field service management platform that unifies task dispatch, real-time GPS tracking, employee time & attendance, and service reports in one system — connecting the office and the field.
+
+Q: Who is HBCField for?
+A: Companies that dispatch technicians or field workers — maintenance, HVAC, plumbing, electrical, cleaning, security, landscaping and property management — that want jobs, people and time tracking in one place.
+
+Q: What platforms does HBCField run on?
+A: A web app for admins and dispatchers, and native iOS and Android apps for field technicians.
+
+Q: How does GPS route tracking work?
+A: A native background service records the technician's route with distance-based sampling — a point roughly every 25 metres — even when the phone is locked, and keeps the route history on record.
+
+Q: What is geofenced clock-in?
+A: Technicians clock in on site against their assigned location, so attendance hours are verified by location rather than self-reported.
+
+Q: Does HBCField work offline?
+A: Yes — photos, notes and reports queue on the device and sync automatically when signal returns.
+
+Q: How much does HBCField cost?
+A: Per-seat pricing in euros with a 14-day free trial and no credit card required. Field (mobile-only) seats start at €19 per month; office seats are tiered.
+
+Q: Does HBCField replace separate tools?
+A: Yes — instead of paying for a field-service tool, a time clock and a GPS tracker separately, HBCField combines dispatch, attendance and route tracking in one platform.
+
+## Links
+- Website: https://hbcfield.com
+- Industries: https://hbcfield.com/industries
+- Privacy: https://hbcfield.com/privacy
+- Terms: https://hbcfield.com/terms
+- iOS app: https://apps.apple.com/app/id6762745260
+- Android app: https://play.google.com/store/apps/details?id=com.hbcfield.app
+- Contact: office@hbcfield.com
