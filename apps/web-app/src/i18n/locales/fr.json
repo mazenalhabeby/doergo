@@ -2955,7 +2955,10 @@
     },
     "tabs": {
       "attendance": "Présence",
-      "daysOff": "Jours de congé"
+      "daysOff": "Jours de congé",
+      "tracking": "Suivi",
+      "approvals": "Approbations",
+      "breaks": "Pauses"
     },
     "toast": {
       "autoClockOutTriggered": "Pointage sortie automatique déclenché",

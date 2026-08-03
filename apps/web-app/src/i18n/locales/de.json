@@ -2955,7 +2955,10 @@
     },
     "tabs": {
       "attendance": "Anwesenheit",
-      "daysOff": "Freie Tage"
+      "daysOff": "Freie Tage",
+      "tracking": "Tracking",
+      "approvals": "Genehmigungen",
+      "breaks": "Pausen"
     },
     "toast": {
       "autoClockOutTriggered": "Automatisches Ausstempeln ausgelöst",

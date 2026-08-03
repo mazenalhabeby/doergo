@@ -2955,7 +2955,10 @@
     },
     "tabs": {
       "attendance": "Attendance",
-      "daysOff": "Days off"
+      "daysOff": "Days off",
+      "tracking": "Tracking",
+      "approvals": "Approvals",
+      "breaks": "Breaks"
     },
     "toast": {
       "autoClockOutTriggered": "Auto clock-out triggered",

@@ -2955,7 +2955,10 @@
     },
     "tabs": {
       "attendance": "Presenze",
-      "daysOff": "Giorni liberi"
+      "daysOff": "Giorni liberi",
+      "tracking": "Tracciamento",
+      "approvals": "Approvazioni",
+      "breaks": "Pause"
     },
     "toast": {
       "autoClockOutTriggered": "Uscita automatica attivata",
