@@ -283,6 +283,11 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                     </div>
                   ))}
                 </div>
+                {custom.summary && (
+                  <Field label={t("reports.pdfSummaryPos", "Summary position")}>
+                    <Seg value={custom.summaryPosition} onChange={(v) => setC({ summaryPosition: v })} options={[{ v: "top", label: t("reports.pdfSummaryTop", "Top") }, { v: "bottom", label: t("reports.pdfSummaryBottom", "End of table") }]} />
+                  </Field>
+                )}
               </Group>
 
               {/* TEXT */}

@@ -39,6 +39,7 @@ export interface PdfConfig {
   headerStyle: HeaderStyle
   logo: boolean
   summary: boolean // KPI totals cards
+  summaryPosition: "top" | "bottom" // render the KPI cards above the table or after it
   chart: boolean // bar chart of the first measure
   table: boolean
   signature: boolean // signature block at the end
@@ -57,6 +58,7 @@ export interface CustomPdfOptions {
   headerStyle: HeaderStyle
   logo: boolean
   summary: boolean
+  summaryPosition: "top" | "bottom"
   chart: boolean
   table: boolean
   signature: boolean
@@ -68,7 +70,7 @@ export interface CustomPdfOptions {
 /** Sensible defaults for a fresh custom config. */
 export const DEFAULT_CUSTOM_PDF: CustomPdfOptions = {
   accent: "#2563EB", orientation: "portrait", paper: "a4", font: "sans", density: "comfortable",
-  headerStyle: "line", logo: true, summary: true, chart: true, table: true, signature: false, pageNumbers: true,
+  headerStyle: "line", logo: true, summary: true, summaryPosition: "top", chart: true, table: true, signature: false, pageNumbers: true,
   heading: "", note: "",
 }
 
@@ -106,7 +108,7 @@ function hexToRgb(hex: string): RGB {
 function baseCfg(): Omit<PdfConfig, "accent"> {
   return {
     orientation: "portrait", paper: "a4", font: "helvetica", density: "comfortable", headerStyle: "line",
-    logo: true, summary: false, chart: true, table: true, signature: false, pageNumbers: true,
+    logo: true, summary: false, summaryPosition: "top", chart: true, table: true, signature: false, pageNumbers: true,
   }
 }
 
@@ -128,6 +130,7 @@ function presetFor(template: PdfTemplate, custom?: CustomPdfOptions): PdfConfig 
         headerStyle: custom?.headerStyle ?? "line",
         logo: custom?.logo ?? true,
         summary: custom?.summary ?? false,
+        summaryPosition: custom?.summaryPosition ?? "top",
         chart: custom?.chart ?? true,
         table: custom?.table ?? true,
         signature: custom?.signature ?? false,
@@ -154,9 +157,14 @@ function fmt(value: unknown, format?: string): string {
   return s
 }
 
-/** Sum (or average, for percent) each measure column → KPI cards. */
+/**
+ * Build the KPI cards: one per measure column (sum, or average for percentages),
+ * plus a dynamic "Days worked" card for timesheet-style reports — the number of
+ * days that actually have hours logged. So a timesheet summary shows both the
+ * total hours AND how many days were worked.
+ */
 function summarize(result: ReportResult): { label: string; value: string }[] {
-  return result.columns
+  const cards = result.columns
     .filter((c) => c.kind === "measure")
     .map((c) => {
       const nums = result.rows.map((r) => Number(r[c.key]) || 0)
@@ -164,6 +172,14 @@ function summarize(result: ReportResult): { label: string; value: string }[] {
       const value = c.format === "percent" && nums.length ? total / nums.length : total
       return { label: c.label, value: fmt(value, c.format) }
     })
+
+  // Days worked — only meaningful when the report tracks hours per day (timesheet).
+  const hoursCol = result.columns.find((c) => c.format === "hours")
+  if (hoursCol) {
+    const daysWorked = result.rows.reduce((n, r) => n + ((Number(r[hoursCol.key]) || 0) > 0 ? 1 : 0), 0)
+    cards.push({ label: "Days worked", value: String(daysWorked) })
+  }
+  return cards
 }
 
 /** Load a (possibly cross-origin) logo into a PNG data URL. Resolves null on any failure. */
@@ -335,38 +351,38 @@ async function buildDoc(
   }
   y += 4
 
-  // ── KPI summary cards ─────────────────────────────────────────────────────
-  if (cfg.summary) {
+  // ── KPI summary cards (rendered at the top OR after the table) ─────────────
+  const renderSummary = (atY: number): number => {
     const cards = summarize(result)
-    if (cards.length) {
-      y = sectionLabel("Summary", y)
-      const gap = 3
-      const perRow = Math.min(cards.length, cfg.orientation === "landscape" ? 5 : 4)
-      const cardW = (contentW - gap * (perRow - 1)) / perRow
-      const cardH = 18
-      cards.forEach((card, i) => {
-        const col = i % perRow
-        const row = Math.floor(i / perRow)
-        const cx = margin + col * (cardW + gap)
-        const cy = y + row * (cardH + gap)
-        // Light card, no border, with an accent left bar.
-        doc.setFillColor(248, 250, 252)
-        doc.roundedRect(cx, cy, cardW, cardH, 1.8, 1.8, "F")
-        doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
-        doc.roundedRect(cx, cy, 1.4, cardH, 0.7, 0.7, "F")
-        doc.setFontSize(6.8)
-        doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-        doc.setFont(FF, "bold")
-        doc.text(doc.splitTextToSize(card.label.toUpperCase(), cardW - 6)[0], cx + 4, cy + 6, { charSpace: 0.2 })
-        doc.setFontSize(13)
-        doc.setTextColor(INK.r, INK.g, INK.b)
-        doc.setFont(FF, "bold")
-        doc.text(card.value, cx + 4, cy + 13.5)
-      })
-      const rows = Math.ceil(cards.length / perRow)
-      y += rows * (cardH + gap) + 5
-    }
+    if (!cards.length) return atY
+    let yy = sectionLabel("Summary", atY)
+    const gap = 3
+    const perRow = Math.min(cards.length, cfg.orientation === "landscape" ? 5 : 4)
+    const cardW = (contentW - gap * (perRow - 1)) / perRow
+    const cardH = 18
+    cards.forEach((card, i) => {
+      const col = i % perRow
+      const row = Math.floor(i / perRow)
+      const cx = margin + col * (cardW + gap)
+      const cy = yy + row * (cardH + gap)
+      // Light card, no border, with an accent left bar.
+      doc.setFillColor(248, 250, 252)
+      doc.roundedRect(cx, cy, cardW, cardH, 1.8, 1.8, "F")
+      doc.setFillColor(cfg.accent.r, cfg.accent.g, cfg.accent.b)
+      doc.roundedRect(cx, cy, 1.4, cardH, 0.7, 0.7, "F")
+      doc.setFontSize(6.8)
+      doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+      doc.setFont(FF, "bold")
+      doc.text(doc.splitTextToSize(card.label.toUpperCase(), cardW - 6)[0], cx + 4, cy + 6, { charSpace: 0.2 })
+      doc.setFontSize(13)
+      doc.setTextColor(INK.r, INK.g, INK.b)
+      doc.setFont(FF, "bold")
+      doc.text(card.value, cx + 4, cy + 13.5)
+    })
+    const rows = Math.ceil(cards.length / perRow)
+    return yy + rows * (cardH + gap) + 5
   }
+  if (cfg.summary && cfg.summaryPosition !== "bottom") y = renderSummary(y)
 
   // ── Chart (horizontal bars of the first measure) ──────────────────────────
   const measureCol = result.columns.find((c) => c.kind === "measure")
@@ -421,6 +437,13 @@ async function buildDoc(
       columnStyles,
     })
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+  }
+
+  // ── KPI summary at the bottom (when chosen) — after the table ─────────────
+  if (cfg.summary && cfg.summaryPosition === "bottom") {
+    const phB = doc.internal.pageSize.getHeight()
+    if (y > phB - 32) { doc.addPage(); y = margin }
+    y = renderSummary(y)
   }
 
   // ── Signature block ───────────────────────────────────────────────────────
