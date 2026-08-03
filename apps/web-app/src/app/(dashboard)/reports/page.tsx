@@ -55,10 +55,11 @@ function toCSV(result: ReportResult): string {
 // Tasteful, colorful chart palette (Stripe-ish).
 const CHART_COLORS = ["#6366f1", "#3b82f6", "#0ea5e9", "#14b8a6", "#22c55e", "#f59e0b", "#f43f5e", "#a855f7"]
 
-// Selectable columns for the detailed timesheet (Date/Day/Status are always on).
-const TIMESHEET_COLS: { key: string; label: string; always?: boolean }[] = [
-  { key: "date", label: "Date", always: true },
-  { key: "day", label: "Day", always: true },
+// Selectable columns for the detailed timesheet. Every column is freely
+// toggleable; the picker only enforces that at least one stays selected.
+const TIMESHEET_COLS: { key: string; label: string }[] = [
+  { key: "date", label: "Date" },
+  { key: "day", label: "Day" },
   { key: "clockIn", label: "Clock in" },
   { key: "clockOut", label: "Clock out" },
   { key: "hours", label: "Hours" },
@@ -69,7 +70,7 @@ const TIMESHEET_COLS: { key: string; label: string; always?: boolean }[] = [
   { key: "location", label: "Location" },
   { key: "remote", label: "Remote" },
   { key: "note", label: "Note" },
-  { key: "status", label: "Status", always: true },
+  { key: "status", label: "Status" },
 ]
 const TIMESHEET_DEFAULT = ["date", "day", "clockIn", "clockOut", "hours", "status"]
 
@@ -266,7 +267,7 @@ export default function ReportsPage() {
   const toDateInput = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : "")
 
   const supportsTime = active && (active.def.granularity !== undefined)
-  // For the detailed timesheet, show only the user-selected columns (Date/Day/Status always).
+  // For the detailed timesheet, show only the user-selected columns.
   const displayResult = useMemo<ReportResult | null>(() => {
     if (!result) return null
     if (!isDetail) return result
@@ -425,12 +426,14 @@ export default function ReportsPage() {
                             <div className="flex flex-wrap gap-1.5">
                               {TIMESHEET_COLS.map((col) => {
                                 const on = tsCols.includes(col.key)
+                                // Keep at least one column so the report is never empty.
+                                const isLast = on && tsCols.length === 1
                                 return (
                                   <button
                                     key={col.key}
-                                    disabled={col.always}
+                                    disabled={isLast}
                                     onClick={() => setTsCols((cur) => (cur.includes(col.key) ? cur.filter((k) => k !== col.key) : [...cur, col.key]))}
-                                    className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground", col.always && "opacity-60 cursor-default")}
+                                    className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground", isLast && "cursor-default")}
                                   >
                                     {t(`reports.tsCol.${col.key}`, col.label)}
                                   </button>
