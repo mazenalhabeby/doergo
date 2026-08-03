@@ -13,7 +13,7 @@ export class SearchService {
   constructor(private readonly prisma: PrismaService) {}
 
   async search(data: { organizationId: string; query: string; limit?: number }) {
-    const q = (data.query || '').trim();
+    const q = (data.query || '').trim().slice(0, 100);
     if (!data.organizationId || q.length < 2) return { members: [], customers: [] };
     const take = Math.min(Math.max(1, data.limit ?? 6), 10);
     const contains = { contains: q, mode: 'insensitive' as const };

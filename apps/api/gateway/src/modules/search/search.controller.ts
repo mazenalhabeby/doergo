@@ -29,7 +29,8 @@ export class SearchController {
   @ApiOperation({ summary: 'Global search across tasks, people, spaces and customers' })
   @ApiQuery({ name: 'q', required: true, description: 'Search text (min 2 chars)' })
   async search(@Query('q') q: string, @Request() req: any) {
-    const query = (q ?? '').trim();
+    // Cap length (defense against oversized/abusive patterns) and require >= 2 chars.
+    const query = (q ?? '').trim().slice(0, 100);
     const empty = { tasks: [], members: [], spaces: [], customers: [] };
     if (query.length < 2) return empty;
 
