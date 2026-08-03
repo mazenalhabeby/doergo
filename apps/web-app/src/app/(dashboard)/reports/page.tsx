@@ -12,6 +12,7 @@ import {
   type ReportCadence,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { useTimeFormat } from "@/hooks/use-time-format"
 import { notify } from "@/lib/toast"
 import { type ReportBranding } from "@/lib/report-pdf"
 import { ReportExportStudio } from "@/components/reports/report-export-studio"
@@ -98,6 +99,7 @@ interface ActiveReport {
 export default function ReportsPage() {
   const { t } = useTranslation()
   const { hasPlanFeature } = useAuth()
+  const { formatSchedule } = useTimeFormat()
   const qc = useQueryClient()
   const canBuild = hasPlanFeature("reports_builder")
   const canSchedule = hasPlanFeature("report_scheduling")
@@ -272,8 +274,16 @@ export default function ReportsPage() {
     if (!result) return null
     if (!isDetail) return result
     const keep = new Set(tsCols)
-    return { columns: result.columns.filter((c) => keep.has(c.key)), rows: result.rows }
-  }, [result, isDetail, tsCols])
+    // Clock-in/out arrive from the backend as 24h "HH:MM" strings. Re-format them
+    // to honor the user's 12h/24h preference (set in Settings). Only non-empty
+    // values are touched, so blank days still render "—".
+    const rows = result.rows.map((r) => {
+      const nr = { ...r }
+      for (const k of ["clockIn", "clockOut"]) if (nr[k]) nr[k] = formatSchedule(String(nr[k]))
+      return nr
+    })
+    return { columns: result.columns.filter((c) => keep.has(c.key)), rows }
+  }, [result, isDetail, tsCols, formatSchedule])
   const measureCols = displayResult?.columns.filter((c) => c.kind === "measure") || []
   const labelCol = displayResult?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
   const chartMeasure = measureCols[0]
