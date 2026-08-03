@@ -288,6 +288,14 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                     <Seg value={custom.summaryPosition} onChange={(v) => setC({ summaryPosition: v })} options={[{ v: "top", label: t("reports.pdfSummaryTop", "Top") }, { v: "bottom", label: t("reports.pdfSummaryBottom", "End of table") }]} />
                   </Field>
                 )}
+                {custom.signature && (
+                  <Field label={t("reports.pdfSignatureDate", "Signature date")}>
+                    <div className="flex gap-1.5">
+                      <Input value={custom.signatureDate ?? ""} onChange={(e) => setC({ signatureDate: e.target.value })} placeholder={t("reports.pdfSignatureDatePlaceholder", "Empty = sign by hand")} className="h-9" />
+                      <Button type="button" variant="outline" size="sm" className="h-9 shrink-0" onClick={() => { const d = new Date(); setC({ signatureDate: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}` }) }}>{t("reports.pdfToday", "Today")}</Button>
+                    </div>
+                  </Field>
+                )}
               </Group>
 
               {/* TEXT */}

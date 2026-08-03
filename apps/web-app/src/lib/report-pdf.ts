@@ -43,6 +43,7 @@ export interface PdfConfig {
   chart: boolean // bar chart of the first measure
   table: boolean
   signature: boolean // signature block at the end
+  signatureDate?: string // printed date in the signature block (empty = blank line to hand-write)
   pageNumbers: boolean
   heading?: string // overrides the report title in the document
   note?: string // short intro / disclaimer under the title
@@ -62,6 +63,7 @@ export interface CustomPdfOptions {
   chart: boolean
   table: boolean
   signature: boolean
+  signatureDate?: string
   pageNumbers: boolean
   heading?: string
   note?: string
@@ -71,7 +73,7 @@ export interface CustomPdfOptions {
 export const DEFAULT_CUSTOM_PDF: CustomPdfOptions = {
   accent: "#2563EB", orientation: "portrait", paper: "a4", font: "sans", density: "comfortable",
   headerStyle: "line", logo: true, summary: true, summaryPosition: "top", chart: true, table: true, signature: false, pageNumbers: true,
-  heading: "", note: "",
+  heading: "", note: "", signatureDate: "",
 }
 
 const BLUE: RGB = { r: 37, g: 99, b: 235 } // #2563EB (blue-600)
@@ -134,6 +136,7 @@ function presetFor(template: PdfTemplate, custom?: CustomPdfOptions): PdfConfig 
         chart: custom?.chart ?? true,
         table: custom?.table ?? true,
         signature: custom?.signature ?? false,
+        signatureDate: custom?.signatureDate?.trim() || undefined,
         pageNumbers: custom?.pageNumbers ?? true,
         heading: custom?.heading?.trim() || undefined,
         note: custom?.note?.trim() || undefined,
@@ -471,7 +474,7 @@ async function buildDoc(
   // ── Signature block ───────────────────────────────────────────────────────
   if (cfg.signature) {
     const ph2 = doc.internal.pageSize.getHeight()
-    if (y > ph2 - 40) { doc.addPage(); y = margin }
+    if (y > ph2 - 46) { doc.addPage(); y = margin }
     y += 6
     const colW = (contentW - 12) / 2
     const sign = (label: string, x: number) => {
@@ -483,8 +486,25 @@ async function buildDoc(
       doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
       doc.text(label, x, y + 14)
     }
-    sign("Prepared by / Date", margin)
-    sign("Received by / Date", margin + colW + 12)
+    sign("Prepared by", margin)
+    sign("Received by", margin + colW + 12)
+
+    // Date line: print the chosen date, or a blank underline to sign by hand.
+    const dy = y + 24
+    doc.setFont(FF, "normal")
+    doc.setFontSize(8)
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+    doc.text("Date", margin, dy)
+    const lblW = doc.getTextWidth("Date") + 3
+    if (cfg.signatureDate) {
+      doc.setFont(FF, "bold")
+      doc.setTextColor(INK.r, INK.g, INK.b)
+      doc.text(cfg.signatureDate, margin + lblW, dy)
+    } else {
+      doc.setDrawColor(203, 213, 225)
+      doc.setLineWidth(0.3)
+      doc.line(margin + lblW, dy + 1, margin + lblW + 55, dy + 1)
+    }
   }
 
   // ── Footer on every page ──────────────────────────────────────────────────
