@@ -67,6 +67,7 @@ export class AnalyticsService {
                SUM(CASE WHEN 'OVERTIME' = ANY(te."flagReasons") THEN COALESCE(te."totalMinutes", 0) ELSE 0 END) AS ot_minutes,
                bool_or(te."isRemote") AS remote,
                NULLIF(string_agg(DISTINCT COALESCE(cl.name, te."clockInPlace"), ', '), '') AS location,
+               MIN(COALESCE(cl.timezone, 'UTC')) AS tz,
                NULLIF(string_agg(NULLIF(te.notes, ''), ' · '), '') AS note
         FROM "time_entries" te
         LEFT JOIN "company_locations" cl ON cl.id = te."locationId"
@@ -97,8 +98,8 @@ export class AnalyticsService {
       SELECT
         to_char(d.day, 'YYYY-MM-DD') AS "date",
         trim(to_char(d.day, 'Dy')) AS "day",
-        to_char(e.clock_in, 'HH24:MI') AS "clockIn",
-        to_char(e.clock_out, 'HH24:MI') AS "clockOut",
+        to_char((e.clock_in AT TIME ZONE 'UTC') AT TIME ZONE COALESCE(e.tz, 'UTC'), 'HH24:MI') AS "clockIn",
+        to_char((e.clock_out AT TIME ZONE 'UTC') AT TIME ZONE COALESCE(e.tz, 'UTC'), 'HH24:MI') AS "clockOut",
         ROUND(COALESCE(e.minutes, 0) / 60.0, 2) AS "hours",
         ROUND(COALESCE(e.break_minutes, 0) / 60.0, 2) AS "break",
         ROUND(COALESCE(e.ot_minutes, 0) / 60.0, 2) AS "overtime",
