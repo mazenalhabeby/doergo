@@ -15,6 +15,7 @@ import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
+import { SearchModule } from './modules/search/search.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
@@ -65,6 +66,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     AssetsModule,
     ReportsModule,
     LocationsModule,
+    SearchModule,
     AttendanceModule,
     OvertimeModule,
     TechniciansModule,

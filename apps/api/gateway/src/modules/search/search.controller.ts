@@ -11,7 +11,6 @@ import { SERVICE_NAMES } from '@hbcfield/shared';
  * only matches their own tasks); people / spaces / customers are only searched
  * for users who can view all tasks (managers, dispatchers, admins).
  */
-const EMPTY = { data: [] as unknown[] };
 const rows = (res: unknown): any[] => {
   const r = res as any;
   return Array.isArray(r) ? r : (r?.data ?? r?.items ?? []);
@@ -40,30 +39,32 @@ export class SearchController {
     const canAll = !!user.canViewAllTasks;
     const LIMIT = 6;
 
-    const call = (client: ClientProxy, cmd: string, payload: Record<string, unknown>) =>
+    const call = <T>(client: ClientProxy, cmd: string, payload: Record<string, unknown>, fallback: T): Promise<T> =>
       firstValueFrom(
         client.send({ cmd }, payload).pipe(
           timeout(4000),
-          catchError(() => of(EMPTY)),
+          catchError(() => of(fallback)),
         ),
-      ).catch(() => EMPTY);
+      ).catch(() => fallback);
 
-    const [tasksRes, membersRes, spacesRes, customersRes] = await Promise.all([
-      call(this.taskClient, 'find_all_tasks', {
-        search: query, page: 1, limit: LIMIT,
-        organizationId: org, userId: user.id, userRole: user.role,
-        canViewAllTasks: canAll, canAssignTasks: !!user.canAssignTasks,
-      }),
-      canAll ? call(this.authClient, 'list_technicians', { search: query, organizationId: org, page: 1, limit: LIMIT }) : Promise.resolve(EMPTY),
-      canAll ? call(this.taskClient, 'find_all_locations', { search: query, organizationId: org, page: 1, limit: LIMIT }) : Promise.resolve(EMPTY),
-      canAll ? call(this.authClient, 'list_customers', { search: query, organizationId: org, page: 1, limit: LIMIT }) : Promise.resolve(EMPTY),
+    // Two lightweight, org-scoped round-trips (task-service: tasks+spaces,
+    // auth-service: people+customers). People/spaces/customers are only queried
+    // for users who can view all tasks; a basic employee only gets their own tasks.
+    const [taskRes, authRes] = await Promise.all([
+      call<{ tasks?: unknown[]; spaces?: unknown[] }>(this.taskClient, 'search_tasks_and_spaces', {
+        query, organizationId: org, userId: user.id, userRole: user.role,
+        canViewAllTasks: canAll, limit: LIMIT,
+      }, {}),
+      canAll
+        ? call<{ members?: unknown[]; customers?: unknown[] }>(this.authClient, 'search_people_and_customers', { query, organizationId: org, limit: LIMIT }, {})
+        : Promise.resolve({}),
     ]);
 
     return {
-      tasks: rows(tasksRes).slice(0, LIMIT).map((t) => ({ id: t.id, title: t.title, status: t.status })),
-      members: rows(membersRes).slice(0, LIMIT).map((m) => ({ id: m.id, firstName: m.firstName ?? '', lastName: m.lastName ?? '', email: m.email ?? null, avatarUrl: m.avatarUrl ?? null })),
-      spaces: rows(spacesRes).slice(0, LIMIT).map((s) => ({ id: s.id, name: s.name, address: s.address ?? null })),
-      customers: rows(customersRes).slice(0, LIMIT).map((c) => ({ id: c.id, name: c.name, contactName: c.contactName ?? null })),
+      tasks: rows((taskRes as any).tasks).map((t) => ({ id: t.id, title: t.title, status: t.status })),
+      members: rows((authRes as any).members).map((m) => ({ id: m.id, firstName: m.firstName ?? '', lastName: m.lastName ?? '', email: m.email ?? null, avatarUrl: m.avatarUrl ?? null })),
+      spaces: rows((taskRes as any).spaces).map((s) => ({ id: s.id, name: s.name, address: s.address ?? null })),
+      customers: rows((authRes as any).customers).map((c) => ({ id: c.id, name: c.name, contactName: c.contactName ?? null })),
     };
   }
 }
