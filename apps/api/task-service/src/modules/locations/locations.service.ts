@@ -65,6 +65,7 @@ export class LocationsService {
     page?: number;
     limit?: number;
     includeInactive?: boolean;
+    search?: string;
   }) {
     const page = data.page ?? 1;
     const limit = data.limit ?? 20;
@@ -81,6 +82,15 @@ export class LocationsService {
     // By default, only show active locations
     if (!data.includeInactive) {
       where.isActive = true;
+    }
+
+    // Optional name/address search (used by global search).
+    const search = data.search?.trim();
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const [locations, total] = await Promise.all([

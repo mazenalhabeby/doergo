@@ -4438,3 +4438,23 @@ export interface ScheduleInput {
   recipients: string[];
   isActive?: boolean;
 }
+
+// ===========================================================================
+// Global search (command palette) — unified across tasks, people, spaces, customers
+// ===========================================================================
+export interface GlobalSearchResults {
+  tasks: { id: string; title: string; status: string }[];
+  members: { id: string; firstName: string; lastName: string; email: string | null; avatarUrl: string | null }[];
+  spaces: { id: string; name: string; address: string | null }[];
+  customers: { id: string; name: string; contactName: string | null }[];
+}
+
+export const searchApi = {
+  global: async (q: string): Promise<GlobalSearchResults> => {
+    const empty: GlobalSearchResults = { tasks: [], members: [], spaces: [], customers: [] };
+    if (!q || q.trim().length < 2) return empty;
+    const res = await api.get<GlobalSearchResults>(buildUrlWithQuery('/search', { q: q.trim() }));
+    if (res.error) throw new Error(res.error);
+    return res.data ?? empty;
+  },
+};

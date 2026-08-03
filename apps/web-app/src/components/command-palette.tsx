@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useTranslation } from "react-i18next"
+import { useQuery } from "@tanstack/react-query"
 import {
   LayoutDashboard,
   ClipboardList,
@@ -18,8 +19,11 @@ import {
   Plus,
   Search,
   Archive,
+  Building2,
   type LucideIcon,
 } from "lucide-react"
+
+import { searchApi } from "@/lib/api"
 
 import {
   CommandDialog,
@@ -70,6 +74,33 @@ export function CommandPalette() {
   const { theme, setTheme } = useTheme()
   const { toggle: toggleActivity } = useActivityPanel()
   const { t } = useTranslation()
+
+  // --- Live global search (debounced) ---
+  const [query, setQuery] = useState("")
+  const [debounced, setDebounced] = useState("")
+  useEffect(() => {
+    const h = setTimeout(() => setDebounced(query.trim()), 250)
+    return () => clearTimeout(h)
+  }, [query])
+  // Clear the query whenever the palette closes.
+  useEffect(() => {
+    if (!open) { setQuery(""); setDebounced("") }
+  }, [open])
+
+  const { data: results, isFetching } = useQuery({
+    queryKey: ["globalSearch", debounced],
+    queryFn: () => searchApi.global(debounced),
+    enabled: open && debounced.length >= 2,
+    staleTime: 15_000,
+  })
+
+  const navigate = useCallback(
+    (path: string) => {
+      setOpen(false)
+      requestAnimationFrame(() => router.push(path))
+    },
+    [router, setOpen],
+  )
 
   // --- Build base navigation actions ---
   const baseActions = useMemo<CommandAction[]>(() => {
@@ -200,12 +231,68 @@ export function CommandPalette() {
     [allActions, setOpen],
   )
 
+  // With cmdk filtering off (so remote results render verbatim), filter the
+  // static commands ourselves. Empty query → show them all.
+  const ql = query.trim().toLowerCase()
+  const staticGroups = useMemo(() => {
+    const out: [string, CommandAction[]][] = []
+    for (const [key, list] of grouped.entries()) {
+      const f = ql
+        ? list.filter((a) => `${a.label} ${a.description || ""}`.toLowerCase().includes(ql))
+        : list
+      if (f.length) out.push([key, f])
+    }
+    return out
+  }, [grouped, ql])
+
+  const resultRow = (
+    key: string,
+    Icon: LucideIcon,
+    label: string,
+    sub: string | null,
+    onSelect: () => void,
+  ) => (
+    <CommandItem key={key} value={key} onSelect={onSelect} className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/50 bg-muted/50">
+        <Icon className="size-4 text-muted-foreground" />
+      </div>
+      <div className="flex flex-col flex-1 min-w-0">
+        <span className="text-sm font-medium truncate">{label}</span>
+        {sub && <span className="text-xs text-muted-foreground truncate">{sub}</span>}
+      </div>
+    </CommandItem>
+  )
+
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder={t("commandPalette.placeholder")} />
+    <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
+      <CommandInput placeholder={t("commandPalette.placeholder")} value={query} onValueChange={setQuery} />
       <CommandList>
-        <CommandEmpty>{t("common.noResults")}</CommandEmpty>
-        {Array.from(grouped.entries()).map(([groupKey, groupActions]) => (
+        <CommandEmpty>{isFetching ? t("commandPalette.searching", "Searching…") : t("common.noResults")}</CommandEmpty>
+
+        {/* Live search results */}
+        {results?.members?.length ? (
+          <CommandGroup heading={t("commandPalette.groups.people", "People")}>
+            {results.members.map((m) => resultRow(`member-${m.id}`, Users, `${m.firstName} ${m.lastName}`.trim() || m.email || "—", m.email, () => navigate(`/members/${m.id}`)))}
+          </CommandGroup>
+        ) : null}
+        {results?.tasks?.length ? (
+          <CommandGroup heading={t("commandPalette.groups.tasksResults", "Tasks")}>
+            {results.tasks.map((tk) => resultRow(`task-${tk.id}`, ClipboardList, tk.title, tk.status ? tk.status.replace(/_/g, " ").toLowerCase() : null, () => navigate(`/tasks/${tk.id}`)))}
+          </CommandGroup>
+        ) : null}
+        {results?.spaces?.length ? (
+          <CommandGroup heading={t("commandPalette.groups.spaces", "Spaces")}>
+            {results.spaces.map((s) => resultRow(`space-${s.id}`, MapPin, s.name, s.address, () => navigate(`/locations/${s.id}`)))}
+          </CommandGroup>
+        ) : null}
+        {results?.customers?.length ? (
+          <CommandGroup heading={t("commandPalette.groups.customers", "Customers")}>
+            {results.customers.map((c) => resultRow(`customer-${c.id}`, Building2, c.name, c.contactName, () => navigate(`/customers/${c.id}`)))}
+          </CommandGroup>
+        ) : null}
+
+        {/* Static commands (filtered by the query) */}
+        {staticGroups.map(([groupKey, groupActions]) => (
           <CommandGroup
             key={groupKey}
             heading={GROUP_LABEL_KEYS[groupKey] ? t(GROUP_LABEL_KEYS[groupKey]) : groupKey}
@@ -215,7 +302,7 @@ export function CommandPalette() {
               return (
                 <CommandItem
                   key={action.id}
-                  value={`${action.label} ${action.description || ""}`}
+                  value={`cmd-${action.id}`}
                   onSelect={() => handleSelect(action.id)}
                   className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer"
                 >

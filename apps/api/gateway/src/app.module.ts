@@ -25,6 +25,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { PortalModule } from './modules/portal/portal.module';
+import { SearchModule } from './modules/search/search.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { BillingModule } from './modules/billing/billing.module';
@@ -109,6 +110,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     InvoicesModule,
     GeoModule,
     PortalModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [
