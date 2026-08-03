@@ -106,7 +106,7 @@ export class AnalyticsService {
         COALESCE(l.reason, '') AS "leaveReason",
         COALESCE(e.location, '') AS "location",
         CASE WHEN e.remote THEN 'Yes' WHEN e.day IS NOT NULL THEN 'No' ELSE '' END AS "remote",
-        COALESCE(e.note, '') AS "note",
+        CASE WHEN e.day IS NOT NULL THEN COALESCE(e.note, '') ELSE 'Day off' END AS "note",
         CASE
           WHEN l.reason IS NOT NULL THEN l.reason
           WHEN e.day IS NOT NULL THEN 'Worked'
