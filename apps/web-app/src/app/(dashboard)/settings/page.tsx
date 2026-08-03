@@ -879,33 +879,23 @@ function ProfileSection() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [avatarRemoving, setAvatarRemoving] = useState(false)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
-  const [savingTimeFormat, setSavingTimeFormat] = useState(false)
 
-  const timeFormat: "12h" | "24h" = user?.timeFormat === "12h" ? "12h" : "24h"
+  const userTimeFormat: "12h" | "24h" = user?.timeFormat === "12h" ? "12h" : "24h"
+  // Local, unsaved preference — only persisted when "Save Changes" is clicked.
+  const [timeFormat, setTimeFormat] = useState<"12h" | "24h">(userTimeFormat)
 
   useEffect(() => {
     if (user) {
       setFirstName(user.firstName || "")
       setLastName(user.lastName || "")
+      setTimeFormat(user.timeFormat === "12h" ? "12h" : "24h")
     }
   }, [user])
 
-  const handleTimeFormatChange = async (next: "12h" | "24h") => {
-    if (next === timeFormat || savingTimeFormat) return
-    setSavingTimeFormat(true)
-    try {
-      await usersApi.updateMe({ timeFormat: next })
-      await refreshUser()
-      notify.success(t("settings.profile.timeFormatUpdated"))
-    } catch (e: any) {
-      notify.error(e.message || t("settings.profile.failed"))
-    } finally {
-      setSavingTimeFormat(false)
-    }
-  }
-
   const dirty =
-    firstName.trim() !== (user?.firstName || "") || lastName.trim() !== (user?.lastName || "")
+    firstName.trim() !== (user?.firstName || "") ||
+    lastName.trim() !== (user?.lastName || "") ||
+    timeFormat !== userTimeFormat
   const canSave = dirty && firstName.trim() !== "" && lastName.trim() !== "" && !saving
 
   const handleSave = async () => {
@@ -913,7 +903,7 @@ function ProfileSection() {
     setSaving(true)
     try {
       // Self-service — works for any user (not the admin member endpoint).
-      await usersApi.updateMe({ firstName: firstName.trim(), lastName: lastName.trim() })
+      await usersApi.updateMe({ firstName: firstName.trim(), lastName: lastName.trim(), timeFormat })
       notify.success(t("settings.profile.updated"))
       queryClient.invalidateQueries({ queryKey: ["user"] })
       refreshUser()
@@ -1043,36 +1033,36 @@ function ProfileSection() {
           </p>
         </div>
 
-        {/* Clock format — per-user 12h / 24h display preference (saves instantly) */}
+        {/* Clock format — per-user 12h / 24h display preference (saved with the form) */}
         <div>
-          <Label className="text-xs text-muted-foreground">{t("settings.profile.timeFormat")}</Label>
-          <div className="mt-1 inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
-            {([
-              { value: "24h" as const, label: t("settings.profile.timeFormat24"), sample: "14:30" },
-              { value: "12h" as const, label: t("settings.profile.timeFormat12"), sample: "2:30 PM" },
-            ]).map((opt) => {
-              const active = timeFormat === opt.value
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleTimeFormatChange(opt.value)}
-                  disabled={savingTimeFormat}
-                  className={cn(
-                    "relative flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-60",
-                    active
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <span>{opt.label}</span>
-                  <span className="text-[11px] tabular-nums text-muted-foreground">{opt.sample}</span>
-                  {active && savingTimeFormat && <Loader2 className="size-3 animate-spin" />}
-                </button>
-              )
-            })}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Label className="text-xs text-muted-foreground">{t("settings.profile.timeFormat")}</Label>
+            <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+              {([
+                { value: "24h" as const, label: t("settings.profile.timeFormat24"), sample: "14:30" },
+                { value: "12h" as const, label: t("settings.profile.timeFormat12"), sample: "2:30 PM" },
+              ]).map((opt) => {
+                const active = timeFormat === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTimeFormat(opt.value)}
+                    className={cn(
+                      "relative flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <span>{opt.label}</span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground">{opt.sample}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">
+          <p className="text-[11px] text-muted-foreground mt-1.5">
             {t("settings.profile.timeFormatNote")}
           </p>
         </div>
