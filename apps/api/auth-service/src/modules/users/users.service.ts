@@ -1085,15 +1085,17 @@ export class UsersService {
    */
   async updateOwnProfile(
     userId: string,
-    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string },
+    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean },
   ) {
-    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string } = {};
+    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean } = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
     if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
     // presence: a value sets the manual override; null clears it back to auto.
     if (dto.presence !== undefined) data.presence = dto.presence;
     // timeFormat: per-user clock display ("12h" | "24h"); ignore anything else.
     if (dto.timeFormat === '12h' || dto.timeFormat === '24h') data.timeFormat = dto.timeFormat;
+    // guidesSeen: one-time welcome-tour flag (only ever set to true by the client).
+    if (dto.guidesSeen === true) data.guidesSeen = true;
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
@@ -1107,6 +1109,7 @@ export class UsersService {
         role: true,
         presence: true,
         timeFormat: true,
+        guidesSeen: true,
       },
     });
 

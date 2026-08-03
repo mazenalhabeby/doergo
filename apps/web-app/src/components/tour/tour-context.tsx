@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { usePathname, useRouter } from "next/navigation"
 
 import { useAuth } from "@/contexts/auth-context"
+import { usersApi } from "@/lib/api"
 import { TOURS } from "./registry"
 import { createLocalTourStorage } from "./tour-storage"
 import { TourOverlay } from "./tour-overlay"
@@ -33,7 +34,7 @@ function routeMatches(pathname: string, pattern: string) {
 }
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
-  const { user, hasModule, hasPlanFeature, hasPermission } = useAuth()
+  const { user, hasModule, hasPlanFeature, hasPermission, refreshUser } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -264,24 +265,28 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
   }, [tourId, stepIndex])
 
-  // Auto-run a role-appropriate tour once, the first time the user lands on its
-  // route (and hasn't seen it). One-shot per route change.
+  // Auto-run the welcome tour EXACTLY ONCE — the first time a freshly-created
+  // account reaches the dashboard. `user.guidesSeen` is a per-account server flag
+  // (existing users are backfilled to true), so this never fires for returning
+  // users and survives browser/device changes. After it runs we flip the flag.
+  // Every other tour is launched only from the "Help & guides" button.
+  const autoRunFired = useRef(false)
   useEffect(() => {
     if (tourId || !user) return
-    const candidate = TOURS.find(
-      (tr) =>
-        tr.autoRunOn &&
-        (tr.autoRunExact ? pathname === tr.autoRunOn : routeMatches(pathname, tr.autoRunOn)) &&
-        (!tr.gate || tr.gate(gateCtx)) &&
-        !storage.isCompleted(tr.id),
-    )
-    if (!candidate) return
-    const to = window.setTimeout(() => start(candidate.id), 900)
+    if (user.guidesSeen !== false) return // already seen / not a new account
+    if (autoRunFired.current) return // one-shot per session
+    if (!routeMatches(pathname, "/dashboard")) return // the post-onboarding landing page
+    const welcome = availableTours.find((tr) => tr.autoRunOn === "/dashboard")
+    if (!welcome) return
+    autoRunFired.current = true
+    const to = window.setTimeout(() => {
+      start(welcome.id)
+      // Persist per-account so it never auto-runs again (any browser/device).
+      usersApi.updateMe({ guidesSeen: true }).then(() => refreshUser()).catch(() => {})
+    }, 900)
     return () => window.clearTimeout(to)
-    // gateCtx is read via closure; keying on user id/role keeps this a one-shot
-    // per route change even if the gate helpers aren't referentially stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, user?.id, user?.role, tourId, start])
+  }, [pathname, user?.id, user?.guidesSeen, tourId, start, availableTours])
 
   const value: TourContextValue = {
     start,

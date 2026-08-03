@@ -19,7 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer } from '@hbcfield/shared';
@@ -61,6 +61,11 @@ class UpdateMeDto {
   @IsOptional()
   @IsIn(['12h', '24h'])
   timeFormat?: '12h' | '24h';
+
+  // One-time welcome-tour flag; the client only ever sets this to true.
+  @IsOptional()
+  @IsBoolean()
+  guidesSeen?: boolean;
 }
 
 class UpdateMyEmailDto {

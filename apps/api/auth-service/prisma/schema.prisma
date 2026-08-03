@@ -518,6 +518,12 @@ model User {
   // Onboarding flag (false = orphan user needs to complete onboarding wizard)
   onboardingCompleted Boolean @default(true)
 
+  // Has the one-time welcome guided tour auto-run for this account yet? New
+  // accounts start false → the welcome tour auto-runs once on first dashboard
+  // visit, then this flips true. Thereafter guides are launched only via the
+  // "Help & guides" button. Existing users are backfilled to true (no re-show).
+  guidesSeen Boolean @default(false)
+
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 

@@ -454,6 +454,8 @@ export class AuthService {
             profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
             // Per-user clock display preference ("24h" | "12h") — display-only.
             timeFormat: user.timeFormat ?? '24h',
+            // One-time welcome-tour flag (false = auto-run the welcome guide once).
+            guidesSeen: user.guidesSeen ?? false,
             // Access Profile (mobile tabs / web screens) — per-user overrides org.
             enabledModules: (user.enabledModules ?? user.organization?.enabledModules) || [],
             // Org FEATURE modules (sprints, checklists, tracking…) — always the
@@ -993,6 +995,8 @@ export class AuthService {
           profileBadges: true,
           // Per-user clock display preference ("24h" | "12h")
           timeFormat: true,
+          // One-time welcome-tour flag (carried on req.user → /auth/me → web).
+          guidesSeen: true,
           enabledModules: true,
           // Customer-portal binding (null for staff) — carried on req.user so
           // CustomerScopeGuard + portal endpoints scope to the caller's own data.
