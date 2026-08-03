@@ -68,6 +68,11 @@ export const UserAvatar = React.memo(function UserAvatar({
   const gradient = getGradient(seed || `${firstName}${lastName}`)
   const s = SIZES[size]
 
+  // If the avatar image fails to load (broken URL / storage hiccup), fall back to
+  // the initials instead of showing an empty gradient circle. Reset on url change.
+  const [imgError, setImgError] = React.useState(false)
+  React.useEffect(() => setImgError(false), [avatarUrl])
+
   return (
     <div
       className={cn(
@@ -79,12 +84,13 @@ export const UserAvatar = React.memo(function UserAvatar({
       )}
       title={title || `${firstName || ""} ${lastName || ""}`.trim()}
     >
-      {avatarUrl ? (
+      {avatarUrl && !imgError ? (
         <img
           src={avatarUrl}
           alt=""
           className="size-full object-cover"
           loading="lazy"
+          onError={() => setImgError(true)}
         />
       ) : (
         <span className={cn(s.text, s.font, "leading-none select-none")}>
