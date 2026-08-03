@@ -199,14 +199,19 @@ export default function ReportsPage() {
   const resolveRange = (dr?: ReportDefinition["dateRange"]): { from?: string; to?: string } => {
     if (!dr) return {}
     if (dr.from || dr.to) return { from: dr.from, to: dr.to }
-    const now = new Date(); const iso = (d: Date) => d.toISOString()
+    const now = new Date()
+    // Emit LOCAL calendar dates as YYYY-MM-DD. Using toISOString() here converted
+    // local midnight to UTC and shifted the month boundary to the previous day
+    // (e.g. "last month" started on Jun 30 instead of Jul 1) for users east of UTC.
+    const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    const Y = now.getFullYear(), M = now.getMonth(), D = now.getDate()
     switch (dr.preset) {
-      case "last_7d": return { from: iso(new Date(now.getTime() - 6 * 864e5)), to: iso(now) }
-      case "last_90d": return { from: iso(new Date(now.getTime() - 89 * 864e5)), to: iso(now) }
-      case "this_month": return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to: iso(now) }
-      case "last_month": return { from: iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)), to: iso(new Date(now.getFullYear(), now.getMonth(), 0)) }
-      case "this_year": return { from: iso(new Date(now.getFullYear(), 0, 1)), to: iso(now) }
-      case "last_30d": default: return { from: iso(new Date(now.getTime() - 29 * 864e5)), to: iso(now) }
+      case "last_7d": return { from: ymd(new Date(Y, M, D - 6)), to: ymd(now) }
+      case "last_90d": return { from: ymd(new Date(Y, M, D - 89)), to: ymd(now) }
+      case "this_month": return { from: ymd(new Date(Y, M, 1)), to: ymd(now) }
+      case "last_month": return { from: ymd(new Date(Y, M - 1, 1)), to: ymd(new Date(Y, M, 0)) }
+      case "this_year": return { from: ymd(new Date(Y, 0, 1)), to: ymd(now) }
+      case "last_30d": default: return { from: ymd(new Date(Y, M, D - 29)), to: ymd(now) }
     }
   }
   const runTimesheet = () => {
