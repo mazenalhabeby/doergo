@@ -179,6 +179,25 @@ function summarize(result: ReportResult): { label: string; value: string }[] {
     const daysWorked = result.rows.reduce((n, r) => n + ((Number(r[hoursCol.key]) || 0) > 0 ? 1 : 0), 0)
     cards.push({ label: "Days worked", value: String(daysWorked) })
   }
+
+  // Period — the actual date span covered, e.g. "01/07/2026 - 31/07/2026",
+  // read from the first date-like column (min → max), shown as the first card.
+  const dateCol = result.columns.find(
+    (c) =>
+      (c.kind === "period" || c.kind === "dimension") &&
+      result.rows.some((r) => /^\d{4}-\d{2}-\d{2}/.test(String(r[c.key] ?? ""))),
+  )
+  if (dateCol && result.rows.length) {
+    const dates = result.rows
+      .map((r) => String(r[dateCol.key] ?? "").slice(0, 10))
+      .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
+      .sort()
+    if (dates.length) {
+      const dmy = (s: string) => { const [y, m, d] = s.split("-"); return `${d}/${m}/${y}` }
+      const first = dmy(dates[0]!), last = dmy(dates[dates.length - 1]!)
+      cards.unshift({ label: "Period", value: first === last ? first : `${first} - ${last}` })
+    }
+  }
   return cards
 }
 
@@ -374,9 +393,12 @@ async function buildDoc(
       doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
       doc.setFont(FF, "bold")
       doc.text(doc.splitTextToSize(card.label.toUpperCase(), cardW - 6)[0], cx + 4, cy + 6, { charSpace: 0.2 })
-      doc.setFontSize(13)
       doc.setTextColor(INK.r, INK.g, INK.b)
       doc.setFont(FF, "bold")
+      // Auto-fit the value so longer text (e.g. a date range) never overflows.
+      let vfs = 13
+      doc.setFontSize(vfs)
+      while (vfs > 8 && doc.getTextWidth(card.value) > cardW - 7) { vfs -= 0.5; doc.setFontSize(vfs) }
       doc.text(card.value, cx + 4, cy + 13.5)
     })
     const rows = Math.ceil(cards.length / perRow)
