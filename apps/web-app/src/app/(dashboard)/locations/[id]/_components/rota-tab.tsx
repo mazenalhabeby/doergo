@@ -1,17 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, CalendarClock, CalendarDays, Pencil, Trash2, Loader2, User } from "lucide-react"
+import { addDays, format, startOfWeek } from "date-fns"
+import { Plus, CalendarClock, CalendarDays, ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, User, Users } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import {
   rotaApi,
   shiftsApi,
   employeesApi,
+  spaceMembersApi,
   type CreateRotaInput,
 } from "@/lib/api"
+import { UserAvatar } from "@/components/user-avatar"
 import { type ShiftAssignment, ShiftRecurrence } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -68,6 +71,30 @@ const RECURRENCE_BADGE: Record<ShiftRecurrence, string> = {
 // 0=Sun..6=Sat to match backend daysOfWeek.
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
 
+/**
+ * Does an assignment apply on a given calendar day? Resolves the recurrence
+ * against the effective window. Date comparisons are done on yyyy-MM-dd strings
+ * to sidestep timezone drift (matches how the day is displayed to the admin).
+ */
+function assignmentAppliesOn(a: ShiftAssignment, day: Date, dayStr: string): boolean {
+  const from = a.effectiveFrom?.slice(0, 10)
+  const to = a.effectiveTo?.slice(0, 10)
+  if (from && dayStr < from) return false
+  if (to && dayStr > to) return false
+  switch (a.recurrence) {
+    case ShiftRecurrence.DAILY:
+      return true
+    case ShiftRecurrence.WEEKLY:
+      return a.daysOfWeek?.includes(day.getDay()) ?? false
+    case ShiftRecurrence.MONTHLY:
+      return a.daysOfMonth?.includes(day.getDate()) ?? false
+    case ShiftRecurrence.ONE_OFF:
+      return a.dates?.some((d) => d.slice(0, 10) === dayStr) ?? false
+    default:
+      return false
+  }
+}
+
 export function RotaTab({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -79,6 +106,43 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
     queryKey: ["rota", spaceId],
     queryFn: () => rotaApi.list(spaceId),
   })
+  // Space members — to surface who works "open hours" (no shift assigned).
+  const { data: spaceMembers } = useQuery({
+    queryKey: ["space-members", spaceId],
+    queryFn: () => spaceMembersApi.list(spaceId),
+  })
+
+  // Week navigator (weeks start Monday).
+  const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart],
+  )
+  const dayStrs = useMemo(() => days.map((d) => format(d, "yyyy-MM-dd")), [days])
+  const todayStr = format(new Date(), "yyyy-MM-dd")
+
+  // Scheduled members = anyone with an assignment (deduped, name-sorted).
+  const scheduledMembers = useMemo(() => {
+    const map = new Map<string, { id: string; first: string; last: string }>()
+    for (const a of assignments ?? []) {
+      if (a.user && !map.has(a.userId)) {
+        map.set(a.userId, { id: a.userId, first: a.user.firstName, last: a.user.lastName })
+      }
+    }
+    return [...map.values()].sort((x, y) => `${x.first} ${x.last}`.localeCompare(`${y.first} ${y.last}`))
+  }, [assignments])
+
+  // Open-hours members = space members not on the rota.
+  const openMembers = useMemo(() => {
+    const scheduledIds = new Set(scheduledMembers.map((m) => m.id))
+    return (spaceMembers ?? [])
+      .filter((m) => m.user && !scheduledIds.has(m.userId))
+      .map((m) => ({ id: m.userId, first: m.user!.firstName, last: m.user!.lastName }))
+      .sort((x, y) => `${x.first} ${x.last}`.localeCompare(`${y.first} ${y.last}`))
+  }, [spaceMembers, scheduledMembers])
+
+  const cellFor = (userId: string, day: Date, dayStr: string) =>
+    (assignments ?? []).filter((a) => a.userId === userId && assignmentAppliesOn(a, day, dayStr))
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => rotaApi.remove(id),
@@ -147,7 +211,121 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
           }
         />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-5">
+          {/* Week navigator */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart((w) => addDays(w, -7))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart((w) => addDays(w, 7))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <span className="ml-2 text-sm font-medium text-foreground">
+                {format(days[0], "MMM d")} – {format(days[6], "MMM d")}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+            >
+              {t("scheduling.rota.grid.thisWeek")}
+            </Button>
+          </div>
+
+          {/* Weekly grid: scheduled members × days */}
+          <div className="overflow-x-auto rounded-xl border">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="sticky left-0 z-10 bg-muted/50 px-3 py-2 text-left text-xs font-semibold text-muted-foreground min-w-[140px]">
+                    {t("scheduling.rota.grid.member")}
+                  </th>
+                  {days.map((d, i) => (
+                    <th
+                      key={dayStrs[i]}
+                      className={cn(
+                        "px-2 py-2 text-center text-xs font-semibold min-w-[92px]",
+                        dayStrs[i] === todayStr ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground",
+                      )}
+                    >
+                      <div>{t(`scheduling.rota.weekdaysShort.${WEEKDAY_KEYS[d.getDay()]}`)}</div>
+                      <div className="text-[11px] font-normal">{format(d, "d")}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {scheduledMembers.map((m) => (
+                  <tr key={m.id} className="border-t">
+                    <td className="sticky left-0 z-10 bg-card px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar firstName={m.first} lastName={m.last} seed={m.id} size="sm" />
+                        <span className="text-sm font-medium text-foreground truncate">{m.first} {m.last}</span>
+                      </div>
+                    </td>
+                    {days.map((d, i) => {
+                      const cell = cellFor(m.id, d, dayStrs[i])
+                      return (
+                        <td
+                          key={dayStrs[i]}
+                          className={cn(
+                            "px-1.5 py-1.5 align-top text-center",
+                            dayStrs[i] === todayStr && "bg-blue-50/50 dark:bg-blue-950/20",
+                          )}
+                        >
+                          <div className="flex flex-col items-stretch gap-1">
+                            {cell.map((a) => (
+                              <button
+                                key={a.id}
+                                type="button"
+                                title={a.shift ? `${a.shift.startLocal}–${a.shift.endLocal}` : undefined}
+                                onClick={() => { setEditTarget(a); setDialogOpen(true) }}
+                                className="rounded-md px-1.5 py-1 text-[11px] font-medium leading-tight truncate transition-opacity hover:opacity-80"
+                                style={{
+                                  backgroundColor: `${a.shift?.color || "#2563eb"}22`,
+                                  color: a.shift?.color || "#2563eb",
+                                }}
+                              >
+                                {a.shift?.name || t("scheduling.rota.unknownShift")}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Open hours — space members without a shift assigned */}
+          {openMembers.length > 0 && (
+            <div className="rounded-xl border border-dashed bg-muted/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">{t("scheduling.rota.grid.openHoursTitle")}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">{t("scheduling.rota.grid.openHoursHint")}</p>
+              <div className="flex flex-wrap gap-2">
+                {openMembers.map((m) => (
+                  <span key={m.id} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs">
+                    <UserAvatar firstName={m.first} lastName={m.last} seed={m.id} size="sm" />
+                    {m.first} {m.last}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Assignments — manage (edit / delete) */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("scheduling.rota.grid.allAssignments")}
+            </p>
           {assignments.map((a) => (
             <div
               key={a.id}
@@ -198,6 +376,7 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
 

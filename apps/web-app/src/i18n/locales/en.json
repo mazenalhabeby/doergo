@@ -5420,6 +5420,13 @@
         "deleted": "Assignment removed",
         "saveFailed": "Failed to save assignment",
         "deleteFailed": "Failed to remove assignment"
+      },
+      "grid": {
+        "thisWeek": "This week",
+        "member": "Member",
+        "openHoursTitle": "Open hours (no shift)",
+        "openHoursHint": "These members work open hours — they clock in and out freely, with no reminders.",
+        "allAssignments": "All assignments"
       }
     },
     "roles": {

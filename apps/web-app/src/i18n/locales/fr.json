@@ -5420,6 +5420,13 @@
         "deleted": "Affectation retirée",
         "saveFailed": "Impossible d’enregistrer l’affectation",
         "deleteFailed": "Impossible de retirer l’affectation"
+      },
+      "grid": {
+        "thisWeek": "Cette semaine",
+        "member": "Membre",
+        "openHoursTitle": "Horaires libres (sans créneau)",
+        "openHoursHint": "Ces membres travaillent en horaires libres — ils pointent librement, sans rappels.",
+        "allAssignments": "Toutes les affectations"
       }
     },
     "roles": {

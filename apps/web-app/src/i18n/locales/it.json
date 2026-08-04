@@ -5420,6 +5420,13 @@
         "deleted": "Assegnazione rimossa",
         "saveFailed": "Impossibile salvare l’assegnazione",
         "deleteFailed": "Impossibile rimuovere l’assegnazione"
+      },
+      "grid": {
+        "thisWeek": "Questa settimana",
+        "member": "Membro",
+        "openHoursTitle": "Orario libero (nessun turno)",
+        "openHoursHint": "Questi membri lavorano a orario libero: timbrano entrata e uscita liberamente, senza promemoria.",
+        "allAssignments": "Tutte le assegnazioni"
       }
     },
     "roles": {

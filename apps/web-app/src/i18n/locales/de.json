@@ -5420,6 +5420,13 @@
         "deleted": "Zuweisung entfernt",
         "saveFailed": "Zuweisung konnte nicht gespeichert werden",
         "deleteFailed": "Zuweisung konnte nicht entfernt werden"
+      },
+      "grid": {
+        "thisWeek": "Diese Woche",
+        "member": "Mitglied",
+        "openHoursTitle": "Offene Zeiten (keine Schicht)",
+        "openHoursHint": "Diese Mitglieder arbeiten zu offenen Zeiten — sie stempeln frei ein und aus, ohne Erinnerungen.",
+        "allAssignments": "Alle Zuweisungen"
       }
     },
     "roles": {

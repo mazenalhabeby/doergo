@@ -5420,6 +5420,13 @@
         "deleted": "Asignación eliminada",
         "saveFailed": "No se pudo guardar la asignación",
         "deleteFailed": "No se pudo eliminar la asignación"
+      },
+      "grid": {
+        "thisWeek": "Esta semana",
+        "member": "Miembro",
+        "openHoursTitle": "Horario abierto (sin turno)",
+        "openHoursHint": "Estos miembros trabajan en horario abierto: fichan entrada y salida libremente, sin recordatorios.",
+        "allAssignments": "Todas las asignaciones"
       }
     },
     "roles": {
