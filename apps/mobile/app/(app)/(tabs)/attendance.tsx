@@ -39,7 +39,7 @@ import {
   BreakType,
 } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
-import { tierAllows } from '@hbcfield/shared/client';
+import { tierAllows, countryFromTz } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
@@ -60,7 +60,7 @@ export default function AttendanceScreen() {
   const toast = useToast();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -731,6 +731,8 @@ export default function AttendanceScreen() {
                 <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
                 <Text style={[styles.shiftDetailText, { color: colors.textSecondary }]}>
                   {currentEntry.location?.name || t('common.unknownLocation')}
+                  {!!countryFromTz((currentEntry.timezone ?? currentEntry.location?.timezone), i18n.language) &&
+                    ` · ${countryFromTz((currentEntry.timezone ?? currentEntry.location?.timezone), i18n.language)}`}
                 </Text>
               </View>
               <View style={styles.shiftDetail}>
@@ -997,6 +999,8 @@ export default function AttendanceScreen() {
 
                 <Text style={[styles.historyLocation, { color: colors.textSecondary }]}>
                   {entry.location?.name || t('common.unknownLocation')}
+                  {!!countryFromTz((entry.timezone ?? entry.location?.timezone), i18n.language) &&
+                    ` · ${countryFromTz((entry.timezone ?? entry.location?.timezone), i18n.language)}`}
                 </Text>
 
                 <View style={styles.historyTimes}>

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table"
 import { AddAttendanceDialog } from "./add-attendance-dialog"
 import { useTimeFormat } from "@/hooks"
+import { countryFromTz } from "@hbcfield/shared/client"
 
 interface AttendanceTabProps {
   attendance: TimeEntry[] | undefined
@@ -38,7 +39,7 @@ export function AttendanceTab({
   canManage,
 }: AttendanceTabProps) {
   const { t } = useTranslation()
-  const { formatTime } = useTimeFormat()
+  const { formatTime, locale } = useTimeFormat()
 
   return (
     <Card>
@@ -73,7 +74,12 @@ export function AttendanceTab({
               {attendance.map((entry: TimeEntry) => (
                 <TableRow key={entry.id}>
                   <TableCell>
-                    {format(new Date(entry.clockInAt), "MMM d, yyyy")}
+                    <div>{format(new Date(entry.clockInAt), "MMM d, yyyy")}</div>
+                    {countryFromTz((entry.timezone ?? entry.location?.timezone), locale) && (
+                      <div className="text-xs text-muted-foreground">
+                        {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     {formatTime(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))}

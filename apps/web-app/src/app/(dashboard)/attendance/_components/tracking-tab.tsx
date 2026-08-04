@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
+import { countryFromTz } from "@hbcfield/shared/client"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { useTimeFormat } from "@/hooks"
@@ -640,6 +641,11 @@ export function TrackingTab({
                           <p className="text-xs text-muted-foreground">
                             {format(toDate(entry.clockInAt), "MMM d")}
                           </p>
+                          {countryFromTz((entry.timezone ?? entry.location?.timezone), locale) && (
+                            <p className="text-xs text-muted-foreground">
+                              {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}
+                            </p>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

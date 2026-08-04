@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause, RefreshCw, CheckCircle2, Calendar } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, formatTime } from "./attendance-helpers"
+import { countryFromTz } from "@hbcfield/shared/client"
 import { useTimeFormat } from "@/hooks"
 
 interface BreaksTabProps {
@@ -359,7 +360,14 @@ export function BreaksTab({
                             {t(`attendance.breaks.types.${breakTypeKey(breakItem.type)}`)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-foreground">{formatTime(breakItem.startedAt, hour12, locale, breakTz(breakItem))}</TableCell>
+                        <TableCell className="text-foreground">
+                          <div>{formatTime(breakItem.startedAt, hour12, locale, breakTz(breakItem))}</div>
+                          {countryFromTz(breakTz(breakItem), locale) && (
+                            <div className="text-xs text-muted-foreground">
+                              {countryFromTz(breakTz(breakItem), locale)}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-foreground">
                           {breakItem.endedAt ? formatTime(breakItem.endedAt, hour12, locale, breakTz(breakItem)) : (
                             <span className="text-orange-600">{t("attendance.breaks.onBreak")}</span>

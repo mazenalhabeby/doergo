@@ -29,6 +29,7 @@ import {
   formatDateRelative as formatDate,
 } from '../../lib/utils';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { countryFromTz } from '@hbcfield/shared/client';
 import { TourTarget } from '../tour';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 
@@ -36,7 +37,7 @@ export function FullTimeHome() {
   const { user } = useAuth();
   const { formatTime } = useTimeFormat();
   const { colors } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -287,6 +288,8 @@ export function FullTimeHome() {
                 <Ionicons name="location" size={16} color={COLORS.primary} />
                 <Text style={ftStyles.shiftLocation}>
                   {status.currentEntry.location?.name || t('common.unknownLocation')}
+                  {!!countryFromTz((status.currentEntry.timezone ?? status.currentEntry.location?.timezone), i18n.language) &&
+                    ` · ${countryFromTz((status.currentEntry.timezone ?? status.currentEntry.location?.timezone), i18n.language)}`}
                 </Text>
               </View>
               <View style={ftStyles.shiftRow}>
@@ -420,6 +423,11 @@ export function FullTimeHome() {
                 <View style={ftStyles.historyLeft}>
                   <Text style={[ftStyles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt)}</Text>
                   <Text style={[ftStyles.historyLocation, { color: colors.textSecondary }]}>{entry.location?.name || t('common.unknown')}</Text>
+                  {!!countryFromTz((entry.timezone ?? entry.location?.timezone), i18n.language) && (
+                    <Text style={[ftStyles.historyLocation, { color: colors.textMuted }]}>
+                      {countryFromTz((entry.timezone ?? entry.location?.timezone), i18n.language)}
+                    </Text>
+                  )}
                 </View>
                 <View style={ftStyles.historyRight}>
                   <Text style={[ftStyles.historyTime, { color: colors.textSecondary }]}>

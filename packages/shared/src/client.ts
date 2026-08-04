@@ -31,5 +31,8 @@ export * from './customer-portal';
 // Export utility functions (date, query string building)
 export * from './utils';
 
+// IANA timezone → country name (for attendance display labels)
+export * from './timezone-country';
+
 // Client-safe constants (pure data — no server deps)
 export * from './constants/attendance';

@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
+import { countryFromTz } from "@hbcfield/shared/client"
 import { useTimeFormat } from "@/hooks"
 
 interface ApprovalsTabProps {
@@ -104,7 +105,14 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{entry.location?.name || t("attendance.approvals.unknown")}</TableCell>
-                <TableCell className="text-muted-foreground">{format(toDate(entry.clockInAt), "MMM d, yyyy")}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  <div>{format(toDate(entry.clockInAt), "MMM d, yyyy")}</div>
+                  {countryFromTz((entry.timezone ?? entry.location?.timezone), locale) && (
+                    <div className="text-xs text-muted-foreground">
+                      {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell>{formatTime(entry.clockInAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}</TableCell>
                 <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt, hour12, locale, (entry.timezone ?? entry.location?.timezone)) : "-"}</TableCell>
                 <TableCell className="font-medium tabular-nums">{formatDurationMinutes(entry.totalMinutes)}</TableCell>

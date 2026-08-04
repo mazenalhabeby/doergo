@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
 import { getBrowserPosition, distanceMeters, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import { Button } from "@/components/ui/button"
-import { hasAccessModule } from "@hbcfield/shared/client"
+import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import type { TFunction } from "i18next"
 
@@ -47,7 +47,7 @@ function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
 
 export default function MyAttendancePage() {
   const { t } = useTranslation()
-  const { formatTime } = useTimeFormat()
+  const { formatTime, locale } = useTimeFormat()
   const { user } = useAuth()
   const qc = useQueryClient()
   const canSee = !user || hasAccessModule(user, "clock")
@@ -222,7 +222,14 @@ export default function MyAttendancePage() {
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           {entries.map((e, i) => (
             <div key={e.id} className={`flex items-center gap-4 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
-              <div className="w-28 shrink-0 text-sm font-medium text-foreground">{fmtDate(e.clockInAt)}</div>
+              <div className="w-28 shrink-0">
+                <div className="text-sm font-medium text-foreground">{fmtDate(e.clockInAt)}</div>
+                {countryFromTz((e.timezone ?? e.location?.timezone), locale) && (
+                  <div className="text-xs text-muted-foreground">
+                    {countryFromTz((e.timezone ?? e.location?.timezone), locale)}
+                  </div>
+                )}
+              </div>
               <div className="flex-1 text-sm text-muted-foreground">
                 {formatTime(e.clockInAt, (e.timezone ?? e.location?.timezone))} → {e.clockOutAt ? formatTime(e.clockOutAt, (e.timezone ?? e.location?.timezone)) : <span className="text-green-600">{t("attendance.my.active")}</span>}
                 {e.isRemote ? (
