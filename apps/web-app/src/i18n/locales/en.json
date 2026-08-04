@@ -3216,7 +3216,10 @@
     "timezoneAutoHint": "Auto-filled from the map. Search to override.",
     "detailsSection": "Space details",
     "locationSection": "Location & timezone",
-    "locationHint": "Search an address or drop a pin — the timezone fills in from the location."
+    "locationHint": "Search an address or drop a pin — the timezone fills in from the location.",
+    "modulesEnabledCount": "{{count}} enabled",
+    "detailsHint": "Name this space and set whether it is currently active.",
+    "workflowHint": "Choose the task board columns members see in this space, or build a new one."
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",
@@ -5290,7 +5293,9 @@
       "onBulletScheduled": "Members WITH a shift or rota (see the Shifts and Rota tabs) get scheduled clock-out reminders.",
       "onBulletTaskBased": "Members WITHOUT one are task-based — they clock in and out freely.",
       "offTitle": "Attendance is off",
-      "offBullet": "Everyone clocks in and out freely, with no reminders."
+      "offBullet": "Everyone clocks in and out freely, with no reminders.",
+      "attendanceOnBadge": "Attendance on",
+      "attendanceOffBadge": "Attendance off"
     },
     "shifts": {
       "heading": "Shifts",

@@ -3216,7 +3216,10 @@
     "timezoneAutoHint": "Compilato automaticamente dalla mappa. Cerca per modificarlo.",
     "detailsSection": "Dettagli dello spazio",
     "locationSection": "Posizione e fuso orario",
-    "locationHint": "Cerca un indirizzo o posiziona un segnaposto: il fuso orario si compila in base alla posizione."
+    "locationHint": "Cerca un indirizzo o posiziona un segnaposto: il fuso orario si compila in base alla posizione.",
+    "modulesEnabledCount": "{{count}} attivati",
+    "detailsHint": "Assegna un nome a questo spazio e indica se è attualmente attivo.",
+    "workflowHint": "Scegli le colonne della bacheca attività che i membri vedono in questo spazio, oppure creane una nuova."
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",
@@ -5290,7 +5293,9 @@
       "onBulletScheduled": "I membri CON un turno o una turnazione (vedi le schede Turni e Turnazione) ricevono promemoria di uscita programmati.",
       "onBulletTaskBased": "I membri SENZA lavorano in base alle attività: timbrano entrata e uscita liberamente.",
       "offTitle": "La presenza è disattivata",
-      "offBullet": "Tutti timbrano entrata e uscita liberamente, senza promemoria."
+      "offBullet": "Tutti timbrano entrata e uscita liberamente, senza promemoria.",
+      "attendanceOnBadge": "Presenza attiva",
+      "attendanceOffBadge": "Presenza disattivata"
     },
     "shifts": {
       "heading": "Turni",

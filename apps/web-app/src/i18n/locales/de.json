@@ -3216,7 +3216,10 @@
     "timezoneAutoHint": "Automatisch von der Karte übernommen. Zum Überschreiben suchen.",
     "detailsSection": "Bereichsdetails",
     "locationSection": "Standort & Zeitzone",
-    "locationHint": "Suchen Sie eine Adresse oder setzen Sie eine Markierung — die Zeitzone wird aus dem Standort übernommen."
+    "locationHint": "Suchen Sie eine Adresse oder setzen Sie eine Markierung — die Zeitzone wird aus dem Standort übernommen.",
+    "modulesEnabledCount": "{{count}} aktiviert",
+    "detailsHint": "Benennen Sie diesen Bereich und legen Sie fest, ob er derzeit aktiv ist.",
+    "workflowHint": "Wählen Sie die Aufgaben-Board-Spalten, die Mitglieder in diesem Bereich sehen, oder erstellen Sie neue."
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",
@@ -5290,7 +5293,9 @@
       "onBulletScheduled": "Mitglieder MIT einer Schicht oder einem Dienstplan (siehe die Reiter Schichten und Dienstplan) erhalten geplante Ausstempel-Erinnerungen.",
       "onBulletTaskBased": "Mitglieder OHNE einen Plan arbeiten aufgabenbasiert – sie stempeln frei ein und aus.",
       "offTitle": "Anwesenheit ist deaktiviert",
-      "offBullet": "Alle stempeln frei ein und aus, ohne Erinnerungen."
+      "offBullet": "Alle stempeln frei ein und aus, ohne Erinnerungen.",
+      "attendanceOnBadge": "Anwesenheit ein",
+      "attendanceOffBadge": "Anwesenheit aus"
     },
     "shifts": {
       "heading": "Schichten",

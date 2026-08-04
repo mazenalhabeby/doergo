@@ -4,7 +4,18 @@ import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, Building2, Loader2, ShieldAlert } from "lucide-react"
+import {
+  ArrowLeft,
+  Blocks,
+  Building2,
+  CalendarClock,
+  CalendarDays,
+  CalendarRange,
+  Loader2,
+  ShieldAlert,
+  UserCog,
+  Workflow,
+} from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi } from "@/lib/api"
@@ -72,8 +83,8 @@ export default function SpaceSettingsPage() {
             {t("scheduling.backToSpaces")}
           </button>
           <div className="mt-3 flex items-center gap-3">
-            <div className="rounded-xl bg-muted/50 p-2.5">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
+            <div className="rounded-xl bg-primary/10 p-2.5">
+              <Building2 className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight">
@@ -96,13 +107,34 @@ export default function SpaceSettingsPage() {
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="inline-flex h-auto flex-wrap justify-start gap-1">
-              <TabsTrigger value="general">{t("locations.tabs.general")}</TabsTrigger>
-              <TabsTrigger value="work-model">{t("scheduling.tabs.workModel")}</TabsTrigger>
-              <TabsTrigger value="shifts">{t("scheduling.tabs.shifts")}</TabsTrigger>
-              <TabsTrigger value="rota">{t("scheduling.tabs.rota")}</TabsTrigger>
-              <TabsTrigger value="modules">{t("locations.tabs.modules")}</TabsTrigger>
-              <TabsTrigger value="workflow">{t("locations.tabs.workflow")}</TabsTrigger>
-              <TabsTrigger value="members">{t("scheduling.tabs.members")}</TabsTrigger>
+              <TabsTrigger value="general" className="gap-1.5">
+                <Building2 className="h-4 w-4" />
+                {t("locations.tabs.general")}
+              </TabsTrigger>
+              <TabsTrigger value="work-model" className="gap-1.5">
+                <CalendarClock className="h-4 w-4" />
+                {t("scheduling.tabs.workModel")}
+              </TabsTrigger>
+              <TabsTrigger value="shifts" className="gap-1.5">
+                <CalendarRange className="h-4 w-4" />
+                {t("scheduling.tabs.shifts")}
+              </TabsTrigger>
+              <TabsTrigger value="rota" className="gap-1.5">
+                <CalendarDays className="h-4 w-4" />
+                {t("scheduling.tabs.rota")}
+              </TabsTrigger>
+              <TabsTrigger value="modules" className="gap-1.5">
+                <Blocks className="h-4 w-4" />
+                {t("locations.tabs.modules")}
+              </TabsTrigger>
+              <TabsTrigger value="workflow" className="gap-1.5">
+                <Workflow className="h-4 w-4" />
+                {t("locations.tabs.workflow")}
+              </TabsTrigger>
+              <TabsTrigger value="members" className="gap-1.5">
+                <UserCog className="h-4 w-4" />
+                {t("scheduling.tabs.members")}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="general" className="mt-6">

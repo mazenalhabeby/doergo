@@ -3,13 +3,17 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { CalendarClock, CheckCircle2, MinusCircle } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
 import { WorkModel } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { SectionHeader } from "./section-header"
 
 export function WorkModelTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -36,33 +40,50 @@ export function WorkModelTab({ space }: { space: CompanyLocation }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">{t("scheduling.workModel.heading")}</h2>
-        <p className="text-sm text-muted-foreground mt-1">{t("scheduling.workModel.intro")}</p>
-      </div>
+      <SectionHeader
+        icon={CalendarClock}
+        accent="indigo"
+        title={t("scheduling.workModel.heading")}
+        description={t("scheduling.workModel.intro")}
+      />
 
       {/* Single ON/OFF attendance toggle */}
-      <div className="flex items-center justify-between rounded-xl border p-4">
-        <div className="pr-4">
-          <p className="text-sm font-semibold text-foreground">{t("scheduling.workModel.attendanceLabel")}</p>
+      <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+        <div className="pr-2">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-foreground">{t("scheduling.workModel.attendanceLabel")}</p>
+            {enabled ? (
+              <Badge className="gap-1 border-transparent bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-300">
+                <CheckCircle2 className="h-3 w-3" />
+                {t("scheduling.workModel.attendanceOnBadge")}
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="gap-1 text-muted-foreground">
+                <MinusCircle className="h-3 w-3" />
+                {t("scheduling.workModel.attendanceOffBadge")}
+              </Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-1">
             {enabled ? t("scheduling.workModel.attendanceOnHint") : t("scheduling.workModel.attendanceOffHint")}
           </p>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer shrink-0">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
-            className="sr-only peer"
-          />
-          <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
-        </label>
+        <Switch checked={enabled} onCheckedChange={setEnabled} className="shrink-0" />
       </div>
 
       {/* Explain the per-member behavior clearly */}
-      <Card className={cn("p-4 border-dashed", enabled ? "bg-blue-50/40 dark:bg-blue-950/20" : "bg-muted/30")}>
-        <p className="text-sm font-medium text-foreground">
+      <Card
+        className={cn(
+          "p-4 border-dashed",
+          enabled ? "border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20" : "bg-muted/30",
+        )}
+      >
+        <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+          {enabled ? (
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+          ) : (
+            <MinusCircle className="h-4 w-4 text-muted-foreground" />
+          )}
           {enabled ? t("scheduling.workModel.onTitle") : t("scheduling.workModel.offTitle")}
         </p>
         <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground list-disc pl-4">

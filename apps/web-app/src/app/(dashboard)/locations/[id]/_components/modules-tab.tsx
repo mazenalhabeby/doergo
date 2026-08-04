@@ -3,12 +3,15 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Blocks, Sparkles } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
 import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { SectionHeader } from "./section-header"
 
 export function ModulesTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -41,12 +44,26 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{t("locations.modulesIntro")}</p>
+    <div className="space-y-4">
+      <SectionHeader
+        icon={Blocks}
+        accent="emerald"
+        title={t("locations.tabs.modules")}
+        description={t("locations.modulesIntro")}
+        action={
+          <Badge variant="secondary" className="gap-1">
+            <Blocks className="h-3 w-3" />
+            {t("locations.modulesEnabledCount", { count: enabledModules.length })}
+          </Badge>
+        }
+      />
 
       {/* Presets — one click to set a sensible bundle */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("locations.presets")}</p>
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <Sparkles className="h-3 w-3" />
+          {t("locations.presets")}
+        </p>
         <div className="flex flex-wrap gap-1.5">
           {MODULE_PRESETS.map((p) => {
             const active =
@@ -60,7 +77,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                   active
-                    ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                     : "border-border text-muted-foreground hover:bg-muted/50",
                 )}
               >
@@ -85,7 +102,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                 key={mod.key}
                 className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                   isEnabled
-                    ? "border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30"
+                    ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30"
                     : "border-border hover:bg-muted/50"
                 }`}
               >
@@ -100,7 +117,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                     onChange={() => toggleModule(mod.key)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                  <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
                 </div>
               </label>
             )

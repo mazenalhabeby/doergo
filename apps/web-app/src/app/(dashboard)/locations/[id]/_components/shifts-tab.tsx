@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Clock, Pencil, Trash2, Loader2, Moon } from "lucide-react"
+import { Plus, Clock, Pencil, Trash2, Loader2, Moon, CalendarRange, Coffee } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import {
@@ -35,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { SectionHeader, EmptyState } from "./section-header"
 
 const DEFAULT_COLOR = "#2563eb"
 
@@ -72,16 +73,18 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">{t("scheduling.shifts.heading")}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{t("scheduling.shifts.intro")}</p>
-        </div>
-        <Button onClick={openCreate} className="gap-1.5 shrink-0">
-          <Plus className="h-4 w-4" />
-          {t("scheduling.shifts.new")}
-        </Button>
-      </div>
+      <SectionHeader
+        icon={CalendarRange}
+        accent="amber"
+        title={t("scheduling.shifts.heading")}
+        description={t("scheduling.shifts.intro")}
+        action={
+          <Button onClick={openCreate} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            {t("scheduling.shifts.new")}
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-2">
@@ -90,17 +93,26 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
           ))}
         </div>
       ) : !shifts || shifts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-14 text-center rounded-xl border border-dashed">
-          <Clock className="h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm font-medium text-foreground">{t("scheduling.shifts.empty.title")}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t("scheduling.shifts.empty.description")}</p>
-        </div>
+        <EmptyState
+          icon={Clock}
+          title={t("scheduling.shifts.empty.title")}
+          description={t("scheduling.shifts.empty.description")}
+          action={
+            <Button onClick={openCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t("scheduling.shifts.new")}
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-2">
           {shifts.map((shift) => {
             const crosses = shiftCrossesMidnight(shift.startLocal, shift.endLocal)
             return (
-              <div key={shift.id} className="flex items-center justify-between gap-4 rounded-xl border p-4">
+              <div
+                key={shift.id}
+                className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:bg-muted/50"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <span
                     className="h-9 w-9 rounded-lg shrink-0 flex items-center justify-center"
@@ -112,28 +124,37 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-foreground truncate">{shift.name}</span>
                       {!shift.spaceId && (
-                        <Badge variant="secondary" className="text-[11px]">
+                        <Badge
+                          variant="outline"
+                          className="text-[11px] border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        >
                           {t("scheduling.shifts.orgWide")}
                         </Badge>
                       )}
                       {crosses && (
                         <Badge
                           variant="outline"
-                          className="text-[11px] gap-1 border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
+                          className="text-[11px] gap-1 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
                         >
                           <Moon className="h-3 w-3" />
                           {t("scheduling.shifts.crossesMidnight")}
                         </Badge>
                       )}
                       {!shift.isActive && (
-                        <Badge variant="outline" className="text-[11px] text-muted-foreground">
+                        <Badge variant="secondary" className="text-[11px] text-muted-foreground">
                           {t("common.inactive")}
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {shift.startLocal} – {shift.endLocal}
-                      {shift.breakMinutes > 0 && ` · ${t("scheduling.shifts.breakSummary", { count: shift.breakMinutes })}`}
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                      <span>{shift.startLocal} – {shift.endLocal}</span>
+                      {shift.breakMinutes > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <span aria-hidden>·</span>
+                          <Coffee className="h-3 w-3" />
+                          {t("scheduling.shifts.breakSummary", { count: shift.breakMinutes })}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>

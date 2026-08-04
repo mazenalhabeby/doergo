@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, CalendarClock, Pencil, Trash2, Loader2, User } from "lucide-react"
+import { Plus, CalendarClock, CalendarDays, Pencil, Trash2, Loader2, User } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import {
@@ -44,6 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { SectionHeader, EmptyState } from "./section-header"
 
 const RECURRENCES: ShiftRecurrence[] = [
   ShiftRecurrence.DAILY,
@@ -51,6 +52,18 @@ const RECURRENCES: ShiftRecurrence[] = [
   ShiftRecurrence.MONTHLY,
   ShiftRecurrence.ONE_OFF,
 ]
+
+// Semantic accent per recurrence type (light + dark tokens, no raw hex).
+const RECURRENCE_BADGE: Record<ShiftRecurrence, string> = {
+  [ShiftRecurrence.DAILY]:
+    "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300",
+  [ShiftRecurrence.WEEKLY]:
+    "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300",
+  [ShiftRecurrence.MONTHLY]:
+    "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300",
+  [ShiftRecurrence.ONE_OFF]:
+    "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+}
 
 // 0=Sun..6=Sat to match backend daysOfWeek.
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
@@ -102,19 +115,18 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">{t("scheduling.rota.heading")}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{t("scheduling.rota.intro")}</p>
-        </div>
-        <Button
-          onClick={() => { setEditTarget(null); setDialogOpen(true) }}
-          className="gap-1.5 shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-          {t("scheduling.rota.new")}
-        </Button>
-      </div>
+      <SectionHeader
+        icon={CalendarDays}
+        accent="sky"
+        title={t("scheduling.rota.heading")}
+        description={t("scheduling.rota.intro")}
+        action={
+          <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            {t("scheduling.rota.new")}
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-2">
@@ -123,15 +135,24 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
           ))}
         </div>
       ) : !assignments || assignments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-14 text-center rounded-xl border border-dashed">
-          <CalendarClock className="h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm font-medium text-foreground">{t("scheduling.rota.empty.title")}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t("scheduling.rota.empty.description")}</p>
-        </div>
+        <EmptyState
+          icon={CalendarClock}
+          title={t("scheduling.rota.empty.title")}
+          description={t("scheduling.rota.empty.description")}
+          action={
+            <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t("scheduling.rota.new")}
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-2">
           {assignments.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-4 rounded-xl border p-4">
+            <div
+              key={a.id}
+              className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:bg-muted/50"
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <span
                   className="h-9 w-9 rounded-lg shrink-0 flex items-center justify-center"
@@ -149,7 +170,12 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
                       {a.shift?.name || t("scheduling.rota.unknownShift")}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{recurrenceSummary(a)}</p>
+                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                    <Badge variant="outline" className={cn("text-[11px]", RECURRENCE_BADGE[a.recurrence])}>
+                      {t(`scheduling.rota.recurrence.${a.recurrence}`)}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground truncate">{recurrenceSummary(a)}</span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">

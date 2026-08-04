@@ -3216,7 +3216,10 @@
     "timezoneAutoHint": "Se rellena automáticamente desde el mapa. Busca para cambiarla.",
     "detailsSection": "Detalles del espacio",
     "locationSection": "Ubicación y zona horaria",
-    "locationHint": "Busca una dirección o coloca un pin: la zona horaria se rellena según la ubicación."
+    "locationHint": "Busca una dirección o coloca un pin: la zona horaria se rellena según la ubicación.",
+    "modulesEnabledCount": "{{count}} activados",
+    "detailsHint": "Nombra este espacio y define si está activo actualmente.",
+    "workflowHint": "Elige las columnas del tablero de tareas que verán los miembros en este espacio, o crea una nueva."
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",
@@ -5290,7 +5293,9 @@
       "onBulletScheduled": "Los miembros CON un turno o cuadrante (mira las pestañas Turnos y Cuadrante) reciben recordatorios de salida programados.",
       "onBulletTaskBased": "Los miembros SIN uno trabajan por tareas: fichan entrada y salida libremente.",
       "offTitle": "La asistencia está desactivada",
-      "offBullet": "Todos fichan entrada y salida libremente, sin recordatorios."
+      "offBullet": "Todos fichan entrada y salida libremente, sin recordatorios.",
+      "attendanceOnBadge": "Asistencia activada",
+      "attendanceOffBadge": "Asistencia desactivada"
     },
     "shifts": {
       "heading": "Turnos",

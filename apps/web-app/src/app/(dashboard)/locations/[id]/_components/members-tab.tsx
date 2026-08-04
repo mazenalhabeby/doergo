@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Shield, Pencil, Trash2, Loader2, UserPlus, X, Lock } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, X, Lock } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { spaceRolesApi, spaceMembersApi, employeesApi } from "@/lib/api"
@@ -46,6 +46,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { SectionHeader, EmptyState } from "./section-header"
 
 const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
@@ -92,16 +93,18 @@ function SubRolesSection() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">{t("scheduling.roles.heading")}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{t("scheduling.roles.intro")}</p>
-        </div>
-        <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5 shrink-0">
-          <Plus className="h-4 w-4" />
-          {t("scheduling.roles.new")}
-        </Button>
-      </div>
+      <SectionHeader
+        icon={ShieldCheck}
+        accent="violet"
+        title={t("scheduling.roles.heading")}
+        description={t("scheduling.roles.intro")}
+        action={
+          <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            {t("scheduling.roles.new")}
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-2">
@@ -110,17 +113,26 @@ function SubRolesSection() {
           ))}
         </div>
       ) : !roles || roles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed">
-          <Shield className="h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm font-medium text-foreground">{t("scheduling.roles.empty.title")}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t("scheduling.roles.empty.description")}</p>
-        </div>
+        <EmptyState
+          icon={Shield}
+          title={t("scheduling.roles.empty.title")}
+          description={t("scheduling.roles.empty.description")}
+          action={
+            <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t("scheduling.roles.new")}
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-2">
           {roles.map((role) => {
             const activePerms = SPACE_ROLE_PERMISSION_SCHEMA.filter((p) => role.permissions?.[p.key])
             return (
-              <div key={role.id} className="flex items-center justify-between gap-4 rounded-xl border p-4">
+              <div
+                key={role.id}
+                className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:bg-muted/50"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="h-9 w-9 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: `${role.color || DEFAULT_ROLE_COLOR}20` }}>
                     <Shield className="h-4 w-4" style={{ color: role.color || DEFAULT_ROLE_COLOR }} />
@@ -129,7 +141,10 @@ function SubRolesSection() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-foreground truncate">{role.name}</span>
                       {role.isSystem && (
-                        <Badge variant="secondary" className="text-[11px] gap-1">
+                        <Badge
+                          variant="outline"
+                          className="text-[11px] gap-1 border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        >
                           <Lock className="h-3 w-3" />
                           {t("scheduling.roles.builtIn")}
                         </Badge>
@@ -356,21 +371,32 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">{t("scheduling.members.heading")}</h2>
-        <p className="text-sm text-muted-foreground mt-1">{t("scheduling.members.intro")}</p>
-      </div>
+      <SectionHeader
+        icon={UserCog}
+        accent="blue"
+        title={t("scheduling.members.heading")}
+        description={t("scheduling.members.intro")}
+        action={
+          members && members.length > 0 ? (
+            <Badge variant="secondary" className="gap-1">
+              <Users className="h-3 w-3" />
+              {members.length}
+            </Badge>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : !members || members.length === 0 ? (
-        <div className="text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed">
-          {t("scheduling.members.empty")}
-        </div>
+        <EmptyState icon={Users} title={t("scheduling.members.empty")} />
       ) : (
         <div className="space-y-2">
           {members.map((m) => (
-            <div key={m.id} className="flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div
+              key={m.id}
+              className="flex items-center justify-between gap-4 rounded-xl border p-3 transition-colors hover:bg-muted/50"
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <Avatar className="h-8 w-8">
                   {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
@@ -408,9 +434,11 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
       )}
 
       {/* Assign member */}
-      <div className="rounded-xl border p-4 space-y-3">
-        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-          <UserPlus className="h-4 w-4" />
+      <div className="rounded-xl border bg-muted/20 p-4 space-y-3">
+        <p className="text-sm font-medium text-foreground flex items-center gap-2">
+          <span className="flex size-7 items-center justify-center rounded-md bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-300">
+            <UserPlus className="h-4 w-4" />
+          </span>
           {t("scheduling.members.addHeading")}
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -454,8 +482,9 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
           onClick={handleAssign}
           disabled={!selectedUserId || assignMutation.isPending}
           size="sm"
+          className="gap-1.5"
         >
-          {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {assignMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
           {t("scheduling.members.addButton")}
         </Button>
       </div>

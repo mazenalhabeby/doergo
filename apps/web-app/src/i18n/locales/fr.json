@@ -3216,7 +3216,10 @@
     "timezoneAutoHint": "Rempli automatiquement depuis la carte. Recherchez pour le modifier.",
     "detailsSection": "Détails de l’espace",
     "locationSection": "Emplacement et fuseau horaire",
-    "locationHint": "Recherchez une adresse ou placez un repère — le fuseau horaire se remplit selon l’emplacement."
+    "locationHint": "Recherchez une adresse ou placez un repère — le fuseau horaire se remplit selon l’emplacement.",
+    "modulesEnabledCount": "{{count}} activés",
+    "detailsHint": "Nommez cet espace et indiquez s'il est actuellement actif.",
+    "workflowHint": "Choisissez les colonnes du tableau de tâches que les membres voient dans cet espace, ou créez-en une nouvelle."
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",
@@ -5290,7 +5293,9 @@
       "onBulletScheduled": "Les membres AVEC un poste ou un planning (voir les onglets Postes et Planning) reçoivent des rappels de départ programmés.",
       "onBulletTaskBased": "Les membres SANS l’un d’eux travaillent par tâches — ils pointent librement.",
       "offTitle": "La présence est désactivée",
-      "offBullet": "Tout le monde pointe librement, sans rappels."
+      "offBullet": "Tout le monde pointe librement, sans rappels.",
+      "attendanceOnBadge": "Présence activée",
+      "attendanceOffBadge": "Présence désactivée"
     },
     "shifts": {
       "heading": "Postes",

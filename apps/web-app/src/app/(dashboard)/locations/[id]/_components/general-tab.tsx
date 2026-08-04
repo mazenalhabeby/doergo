@@ -4,12 +4,13 @@ import { useState, useRef } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Loader2, MapPin } from "lucide-react"
+import { Building2, CheckCircle2, Loader2, MapPin, PauseCircle } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
 import { ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -90,7 +91,15 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       {/* ── Space details ── */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">{t("locations.detailsSection")}</CardTitle>
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Building2 className="h-[18px] w-[18px]" />
+            </span>
+            <div>
+              <CardTitle className="text-base">{t("locations.detailsSection")}</CardTitle>
+              <CardDescription>{t("locations.detailsHint")}</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
@@ -98,9 +107,22 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
             <Input id="cfg-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("locations.name")} />
           </div>
           <div className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3">
-            <div>
-              <p className="text-sm font-medium text-foreground">{t("locations.activeLabel")}</p>
-              <p className="text-xs text-muted-foreground">{t("locations.activeHint")}</p>
+            <div className="pr-4">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-foreground">{t("locations.activeLabel")}</p>
+                {isActive ? (
+                  <Badge className="gap-1 border-transparent bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-300">
+                    <CheckCircle2 className="h-3 w-3" />
+                    {t("common.active")}
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1 text-muted-foreground">
+                    <PauseCircle className="h-3 w-3" />
+                    {t("common.inactive")}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("locations.activeHint")}</p>
             </div>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
@@ -110,11 +132,15 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       {/* ── Location & timezone ── */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            {t("locations.locationSection")}
-          </CardTitle>
-          <CardDescription>{t("locations.locationHint")}</CardDescription>
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-300">
+              <MapPin className="h-[18px] w-[18px]" />
+            </span>
+            <div>
+              <CardTitle className="text-base">{t("locations.locationSection")}</CardTitle>
+              <CardDescription>{t("locations.locationHint")}</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Always show the map — it's how you SET a space's location (and its

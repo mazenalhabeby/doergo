@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, RefreshCw, Loader2 } from "lucide-react"
+import { Plus, RefreshCw, Loader2, Workflow } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { WorkflowSelector } from "../../_components/workflow-selector"
 import { WorkflowBuilder } from "../../_components/workflow-builder"
+import { SectionHeader } from "./section-header"
 
 export function WorkflowTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -69,6 +70,13 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
 
   return (
     <div className="space-y-4">
+      <SectionHeader
+        icon={Workflow}
+        accent="primary"
+        title={t("locations.tabs.workflow")}
+        description={t("locations.workflowHint")}
+      />
+
       {/* Workflow selector */}
       <WorkflowSelector
         value={selectedId}
@@ -84,7 +92,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
 
       {/* Status preview */}
       {previewWorkflow?.statuses && previewWorkflow.statuses.length > 0 && !editMode && (
-        <div className="rounded-lg border p-3 space-y-2">
+        <div className="rounded-xl border bg-muted/20 p-4 space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             {t("locations.statusesWithCount", { count: previewWorkflow.statuses.length })}
           </p>
