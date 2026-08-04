@@ -334,7 +334,7 @@ export default function LocationPicker({
         </div>
 
         {showResults && results.length > 0 && (
-          <div className="absolute z-[1000] mt-1 w-full rounded-lg border bg-card shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute z-[20] mt-1 w-full rounded-lg border bg-card shadow-lg max-h-48 overflow-y-auto">
             {results.map((result, i) => (
               <button
                 key={i}
@@ -357,7 +357,7 @@ export default function LocationPicker({
           onClick={useMyLocation}
           disabled={locating}
           title={t("locations.picker.useMyLocation")}
-          className="absolute right-2 top-2 z-[1000] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card disabled:opacity-60"
+          className="absolute right-2 top-2 z-[20] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card disabled:opacity-60"
         >
           {locating ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />

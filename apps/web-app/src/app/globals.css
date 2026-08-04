@@ -309,6 +309,14 @@
   /* Leaflet Map Overrides */
   .leaflet-container {
     @apply font-sans;
+    /* Leaflet's panes/controls use z-index up to 1000, which otherwise renders
+       the map (and its zoom/locate controls) ON TOP of app dropdowns, popovers
+       and the top-nav menus. Isolate the map into its own stacking context
+       rooted at z-index 0 so all of Leaflet's internal z-indexes stay contained
+       below every app overlay. */
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
   }
 
   .leaflet-popup-content-wrapper {
