@@ -1053,7 +1053,8 @@
       "epicSet": "Epic set",
       "itemsCount_one": "{{count}} item",
       "itemsCount_other": "{{count}} items",
-      "fillRequiredCustomFields": "Please fill in all required custom fields"
+      "fillRequiredCustomFields": "Please fill in all required custom fields",
+      "cantReceiveTasks": "can’t receive tasks"
     },
     "detail": {
       "title": "Task Details",

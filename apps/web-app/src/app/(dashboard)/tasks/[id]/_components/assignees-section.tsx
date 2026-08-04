@@ -8,6 +8,7 @@ import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
 import { tasksApi, usersApi, type TaskAssignee, type Worker } from "@/lib/api"
+import { hasAccessModule } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
@@ -122,16 +123,23 @@ function AddAssigneeDialog({
     onError: (e: Error) => notify.error(e.message),
   })
 
-  const filtered = (workers || []).filter((w: Worker) => {
-    if (existingUserIds.includes(w.id)) return false
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      w.firstName.toLowerCase().includes(q) ||
-      w.lastName.toLowerCase().includes(q) ||
-      w.email.toLowerCase().includes(q)
-    )
-  })
+  // A worker can only receive tasks if their Access Profile includes `tasks`.
+  const canReceiveTasks = (w: Worker) =>
+    hasAccessModule(w as Parameters<typeof hasAccessModule>[0], "tasks")
+
+  const filtered = (workers || [])
+    .filter((w: Worker) => {
+      if (existingUserIds.includes(w.id)) return false
+      if (!search) return true
+      const q = search.toLowerCase()
+      return (
+        w.firstName.toLowerCase().includes(q) ||
+        w.lastName.toLowerCase().includes(q) ||
+        w.email.toLowerCase().includes(q)
+      )
+    })
+    // Assignable first; clock-only workers sink to the bottom (disabled).
+    .sort((a: Worker, b: Worker) => Number(canReceiveTasks(b)) - Number(canReceiveTasks(a)))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -165,13 +173,15 @@ function AddAssigneeDialog({
             </p>
           )}
 
-          {filtered.map((worker: Worker) => (
+          {filtered.map((worker: Worker) => {
+              const assignable = canReceiveTasks(worker)
+              return (
               <button
                 key={worker.id}
                 type="button"
                 onClick={() => addMutation.mutate(worker.id)}
-                disabled={addMutation.isPending}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors duration-150 text-left"
+                disabled={addMutation.isPending || !assignable}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 <UserAvatar
                   firstName={worker.firstName}
@@ -183,10 +193,13 @@ function AddAssigneeDialog({
                   <p className="text-sm font-medium text-foreground truncate">
                     {worker.firstName} {worker.lastName}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{worker.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {assignable ? worker.email : t("tasks.create.cantReceiveTasks")}
+                  </p>
                 </div>
               </button>
-          ))}
+              )
+          })}
         </div>
       </DialogContent>
     </Dialog>

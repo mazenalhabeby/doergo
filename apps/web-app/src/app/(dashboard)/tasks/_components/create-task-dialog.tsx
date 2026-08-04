@@ -46,6 +46,7 @@ import {
   type OrgMember,
   type RecurringFrequency,
 } from "@/lib/api"
+import { hasAccessModule } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -284,7 +285,17 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     staleTime: 60000,
     enabled: open && showAssigneePicker,
   })
-  const members = membersData?.data ?? []
+  // A member can only receive tasks if their Access Profile includes the
+  // `tasks` module — clock-only members would never see the task on mobile.
+  // Assignable members first, then the rest (rendered disabled with a hint).
+  const canReceiveTasks = useCallback(
+    (m: OrgMember) => hasAccessModule(m as Parameters<typeof hasAccessModule>[0], "tasks"),
+    [],
+  )
+  const members = useMemo(() => {
+    const list = membersData?.data ?? []
+    return [...list].sort((a, b) => Number(canReceiveTasks(b)) - Number(canReceiveTasks(a)))
+  }, [membersData, canReceiveTasks])
 
   // ── Fetch spaces ──
   const { data: spacesData } = useQuery({
@@ -797,19 +808,27 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         <SelectValue placeholder={t("tasks.create.selectTeamMember")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {members.map((member: OrgMember) => (
-                          <SelectItem key={member.id} value={member.id}>
-                            <div className="flex items-center gap-2">
-                              <div className="size-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[8px] font-semibold text-white">
-                                  {member.firstName?.[0]}
-                                  {member.lastName?.[0]}
-                                </span>
+                        {members.map((member: OrgMember) => {
+                          const assignable = canReceiveTasks(member)
+                          return (
+                            <SelectItem key={member.id} value={member.id} disabled={!assignable}>
+                              <div className="flex items-center gap-2">
+                                <div className="size-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-[8px] font-semibold text-white">
+                                    {member.firstName?.[0]}
+                                    {member.lastName?.[0]}
+                                  </span>
+                                </div>
+                                <span>{member.firstName} {member.lastName}</span>
+                                {!assignable && (
+                                  <span className="ml-1 text-[10px] text-muted-foreground">
+                                    · {t("tasks.create.cantReceiveTasks")}
+                                  </span>
+                                )}
                               </div>
-                              {member.firstName} {member.lastName}
-                            </div>
-                          </SelectItem>
-                        ))}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

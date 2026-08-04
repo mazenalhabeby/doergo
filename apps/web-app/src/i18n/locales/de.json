@@ -1053,7 +1053,8 @@
       "epicSet": "Epic festgelegt",
       "itemsCount_one": "{{count}} Eintrag",
       "itemsCount_other": "{{count}} Einträge",
-      "fillRequiredCustomFields": "Bitte füllen Sie alle erforderlichen benutzerdefinierten Felder aus"
+      "fillRequiredCustomFields": "Bitte füllen Sie alle erforderlichen benutzerdefinierten Felder aus",
+      "cantReceiveTasks": "kann keine Aufgaben erhalten"
     },
     "detail": {
       "title": "Aufgabendetails",

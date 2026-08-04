@@ -1053,7 +1053,8 @@
       "epicSet": "Epic asignada",
       "itemsCount_one": "{{count}} elemento",
       "itemsCount_other": "{{count}} elementos",
-      "fillRequiredCustomFields": "Completa todos los campos personalizados obligatorios"
+      "fillRequiredCustomFields": "Completa todos los campos personalizados obligatorios",
+      "cantReceiveTasks": "no puede recibir tareas"
     },
     "detail": {
       "title": "Detalles de la tarea",

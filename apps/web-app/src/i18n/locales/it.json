@@ -1053,7 +1053,8 @@
       "epicSet": "Epica impostata",
       "itemsCount_one": "{{count}} elemento",
       "itemsCount_other": "{{count}} elementi",
-      "fillRequiredCustomFields": "Compilare tutti i campi personalizzati obbligatori"
+      "fillRequiredCustomFields": "Compilare tutti i campi personalizzati obbligatori",
+      "cantReceiveTasks": "non può ricevere attività"
     },
     "detail": {
       "title": "Dettagli dell'attività",

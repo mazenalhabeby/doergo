@@ -79,6 +79,8 @@ export class UsersService {
         avatarUrl: true,
         organizationId: true,
         lastLocation: true,
+        // Access Profile — lets the UI tell whether a worker can receive tasks.
+        enabledModules: true,
       },
     });
 

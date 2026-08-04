@@ -769,6 +769,8 @@ export interface Worker {
   firstName: string;
   lastName: string;
   organizationId: string;
+  // Mobile Access Profile (JSON) — whether this worker can receive/see tasks.
+  enabledModules?: unknown;
   lastLocation?: {
     lat: number;
     lng: number;
@@ -3030,6 +3032,9 @@ export interface OrgMember {
   isActive: boolean;
   avatarUrl?: string | null;
   createdAt: string;
+  // Mobile Access Profile (JSON, e.g. { modules: ["tasks","clock"] }). Used to
+  // tell whether a member can actually receive/see tasks.
+  enabledModules?: unknown;
   workMode?: string;
   specialty?: string;
   presence?: string | null;
