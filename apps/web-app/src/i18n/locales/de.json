@@ -5426,7 +5426,10 @@
         "member": "Mitglied",
         "openHoursTitle": "Offene Zeiten (keine Schicht)",
         "openHoursHint": "Diese Mitglieder arbeiten zu offenen Zeiten — sie stempeln frei ein und aus, ohne Erinnerungen.",
-        "allAssignments": "Alle Zuweisungen"
+        "allAssignments": "Alle Zuweisungen",
+        "conflictSummary": "{{count}} Planungskonflikt(e) diese Woche — Mitglieder mit überlappenden Schichten doppelt eingeplant.",
+        "conflictCell": "Überlappende Schichten an diesem Tag",
+        "conflictLabel": "Konflikt"
       }
     },
     "roles": {
@@ -5509,7 +5512,9 @@
       "openDesc": "Frei ein- und ausstempeln. Keine festen Schichten, keine Erinnerungen.",
       "scheduledTitle": "Geplante Schichten",
       "scheduledDesc": "Personen zu Schichten zuweisen. Eingeplante Mitglieder erhalten Erinnerungen zum Schichtende; nicht zugewiesene arbeiten zu offenen Zeiten.",
-      "openHoursNote": "Nichts weiter einzurichten — Mitglieder stempeln zu ihren eigenen Zeiten ein und aus."
+      "openHoursNote": "Nichts weiter einzurichten — Mitglieder stempeln zu ihren eigenen Zeiten ein und aus.",
+      "geofenceOn": "Vor-Ort-Zeiterfassung wird im Umkreis von {{radius}} m um die Markierung geprüft.",
+      "geofenceOff": "Standortfreie Zeiterfassung — für diesen Bereich ist kein Geofence festgelegt."
     }
   }
 }

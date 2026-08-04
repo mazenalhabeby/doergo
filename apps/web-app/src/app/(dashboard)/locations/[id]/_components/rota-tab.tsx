@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { addDays, format, startOfWeek } from "date-fns"
-import { Plus, CalendarClock, CalendarDays, ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, User, Users } from "lucide-react"
+import { AlertTriangle, Plus, CalendarClock, CalendarDays, ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, User, Users } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import {
@@ -95,6 +95,34 @@ function assignmentAppliesOn(a: ShiftAssignment, day: Date, dayStr: string): boo
   }
 }
 
+/** "HH:MM" → minutes since midnight. */
+function hhmmToMin(hhmm?: string): number {
+  if (!hhmm) return 0
+  const [h, m] = hhmm.split(":").map(Number)
+  return (h || 0) * 60 + (m || 0)
+}
+
+/** A shift's [start, end) window in minutes; night shifts extend past 1440. */
+function shiftWindow(shift?: { startLocal: string; endLocal: string; crossesMidnight?: boolean }): [number, number] {
+  if (!shift) return [0, 0]
+  const s = hhmmToMin(shift.startLocal)
+  let e = hhmmToMin(shift.endLocal)
+  if (shift.crossesMidnight || e <= s) e += 1440
+  return [s, e]
+}
+
+/** Do any two of a day's assignments have overlapping shift times? */
+function cellHasConflict(cell: ShiftAssignment[]): boolean {
+  for (let i = 0; i < cell.length; i++) {
+    for (let j = i + 1; j < cell.length; j++) {
+      const [s1, e1] = shiftWindow(cell[i].shift)
+      const [s2, e2] = shiftWindow(cell[j].shift)
+      if (s1 < e2 && s2 < e1) return true
+    }
+  }
+  return false
+}
+
 export function RotaTab({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -143,6 +171,18 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
 
   const cellFor = (userId: string, day: Date, dayStr: string) =>
     (assignments ?? []).filter((a) => a.userId === userId && assignmentAppliesOn(a, day, dayStr))
+
+  // Count double-booked cells in the visible week (overlapping shift times).
+  const weekConflicts = useMemo(() => {
+    let n = 0
+    for (const m of scheduledMembers) {
+      for (let i = 0; i < days.length; i++) {
+        if (cellHasConflict(cellFor(m.id, days[i], dayStrs[i]))) n++
+      }
+    }
+    return n
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduledMembers, days, dayStrs, assignments])
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => rotaApi.remove(id),
@@ -235,6 +275,14 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
             </Button>
           </div>
 
+          {/* Conflict summary — overlapping shifts in the visible week */}
+          {weekConflicts > 0 && (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              {t("scheduling.rota.grid.conflictSummary", { count: weekConflicts })}
+            </div>
+          )}
+
           {/* Weekly grid: scheduled members × days */}
           <div className="overflow-x-auto rounded-xl border">
             <table className="w-full border-collapse text-sm">
@@ -268,15 +316,24 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
                     </td>
                     {days.map((d, i) => {
                       const cell = cellFor(m.id, d, dayStrs[i])
+                      const conflict = cellHasConflict(cell)
                       return (
                         <td
                           key={dayStrs[i]}
+                          title={conflict ? t("scheduling.rota.grid.conflictCell") : undefined}
                           className={cn(
                             "px-1.5 py-1.5 align-top text-center",
                             dayStrs[i] === todayStr && "bg-blue-50/50 dark:bg-blue-950/20",
+                            conflict && "rounded-md ring-1 ring-inset ring-amber-400 dark:ring-amber-600",
                           )}
                         >
                           <div className="flex flex-col items-stretch gap-1">
+                            {conflict && (
+                              <span className="inline-flex items-center justify-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                                <AlertTriangle className="h-3 w-3" />
+                                {t("scheduling.rota.grid.conflictLabel")}
+                              </span>
+                            )}
                             {cell.map((a) => (
                               <button
                                 key={a.id}

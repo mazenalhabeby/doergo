@@ -5426,7 +5426,10 @@
         "member": "Miembro",
         "openHoursTitle": "Horario abierto (sin turno)",
         "openHoursHint": "Estos miembros trabajan en horario abierto: fichan entrada y salida libremente, sin recordatorios.",
-        "allAssignments": "Todas las asignaciones"
+        "allAssignments": "Todas las asignaciones",
+        "conflictSummary": "{{count}} conflicto(s) de horario esta semana: miembros con turnos superpuestos.",
+        "conflictCell": "Turnos superpuestos este día",
+        "conflictLabel": "Conflicto"
       }
     },
     "roles": {
@@ -5509,7 +5512,9 @@
       "openDesc": "Ficha entrada y salida libremente. Sin turnos fijos ni recordatorios.",
       "scheduledTitle": "Turnos programados",
       "scheduledDesc": "Asigna personas a turnos. Los miembros programados reciben recordatorios de fin de turno; quien quede sin asignar trabaja en horario abierto.",
-      "openHoursNote": "No hay nada más que configurar: los miembros fichan según su propio horario."
+      "openHoursNote": "No hay nada más que configurar: los miembros fichan según su propio horario.",
+      "geofenceOn": "El fichaje en el sitio se verifica dentro de {{radius}} m del pin de ubicación.",
+      "geofenceOff": "Fichaje sin ubicación: no hay geovalla para este espacio."
     }
   }
 }

@@ -5426,7 +5426,10 @@
         "member": "Membro",
         "openHoursTitle": "Orario libero (nessun turno)",
         "openHoursHint": "Questi membri lavorano a orario libero: timbrano entrata e uscita liberamente, senza promemoria.",
-        "allAssignments": "Tutte le assegnazioni"
+        "allAssignments": "Tutte le assegnazioni",
+        "conflictSummary": "{{count}} conflitto/i di pianificazione questa settimana — membri con turni sovrapposti.",
+        "conflictCell": "Turni sovrapposti in questo giorno",
+        "conflictLabel": "Conflitto"
       }
     },
     "roles": {
@@ -5509,7 +5512,9 @@
       "openDesc": "Timbra entrata e uscita liberamente. Nessun turno fisso, nessun promemoria.",
       "scheduledTitle": "Turni pianificati",
       "scheduledDesc": "Assegna le persone ai turni. I membri pianificati ricevono promemoria di fine turno; chi resta non assegnato lavora a orario libero.",
-      "openHoursNote": "Nient’altro da configurare: i membri timbrano secondo i propri orari."
+      "openHoursNote": "Nient’altro da configurare: i membri timbrano secondo i propri orari.",
+      "geofenceOn": "La timbratura in sede è verificata entro {{radius}} m dal segnaposto.",
+      "geofenceOff": "Timbratura senza posizione — nessun geofence impostato per questo spazio."
     }
   }
 }

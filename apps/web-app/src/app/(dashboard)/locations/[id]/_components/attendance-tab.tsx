@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CalendarClock, CalendarRange, Clock, Loader2, Users } from "lucide-react"
+import { CalendarClock, CalendarRange, Clock, Loader2, MapPin, Users } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
@@ -70,6 +70,13 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
         <div>
           <p className="text-sm font-semibold text-foreground">{t("scheduling.attendanceTab.clockTitle")}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{t("scheduling.attendanceTab.clockDesc")}</p>
+          {/* Geofence status, derived from the space (physical → verified radius). */}
+          <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            {space.lat != null && space.lng != null
+              ? t("scheduling.attendanceTab.geofenceOn", { radius: space.geofenceRadius })
+              : t("scheduling.attendanceTab.geofenceOff")}
+          </p>
         </div>
       </Card>
 

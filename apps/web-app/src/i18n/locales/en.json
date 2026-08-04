@@ -5426,7 +5426,10 @@
         "member": "Member",
         "openHoursTitle": "Open hours (no shift)",
         "openHoursHint": "These members work open hours — they clock in and out freely, with no reminders.",
-        "allAssignments": "All assignments"
+        "allAssignments": "All assignments",
+        "conflictSummary": "{{count}} scheduling conflict(s) this week — members double-booked on overlapping shifts.",
+        "conflictCell": "Overlapping shifts on this day",
+        "conflictLabel": "Conflict"
       }
     },
     "roles": {
@@ -5509,7 +5512,9 @@
       "openDesc": "Clock in and out freely. No fixed shifts, no reminders.",
       "scheduledTitle": "Scheduled shifts",
       "scheduledDesc": "Assign people to shifts. Scheduled members get end-of-shift reminders; anyone left unassigned works open hours.",
-      "openHoursNote": "Nothing else to set up — members clock in and out on their own hours."
+      "openHoursNote": "Nothing else to set up — members clock in and out on their own hours.",
+      "geofenceOn": "On-site clock-in is verified within {{radius}} m of the location pin.",
+      "geofenceOff": "Location-free clock-in — no geofence set for this space."
     }
   }
 }

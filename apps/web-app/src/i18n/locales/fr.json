@@ -5426,7 +5426,10 @@
         "member": "Membre",
         "openHoursTitle": "Horaires libres (sans créneau)",
         "openHoursHint": "Ces membres travaillent en horaires libres — ils pointent librement, sans rappels.",
-        "allAssignments": "Toutes les affectations"
+        "allAssignments": "Toutes les affectations",
+        "conflictSummary": "{{count}} conflit(s) de planning cette semaine — membres en double sur des créneaux qui se chevauchent.",
+        "conflictCell": "Créneaux qui se chevauchent ce jour",
+        "conflictLabel": "Conflit"
       }
     },
     "roles": {
@@ -5509,7 +5512,9 @@
       "openDesc": "Pointez librement l’entrée et la sortie. Pas de créneaux fixes, pas de rappels.",
       "scheduledTitle": "Créneaux planifiés",
       "scheduledDesc": "Affectez des personnes à des créneaux. Les membres planifiés reçoivent des rappels de fin de créneau ; les non-affectés travaillent en horaires libres.",
-      "openHoursNote": "Rien d’autre à configurer — les membres pointent selon leurs propres horaires."
+      "openHoursNote": "Rien d’autre à configurer — les membres pointent selon leurs propres horaires.",
+      "geofenceOn": "Le pointage sur site est vérifié dans un rayon de {{radius}} m autour du repère.",
+      "geofenceOff": "Pointage sans localisation — aucun géorepérage défini pour cet espace."
     }
   }
 }
