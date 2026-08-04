@@ -38,6 +38,11 @@ import type {
   JoinRequest,
   OnboardingStatus,
   OrgCodeValidation,
+  Shift,
+  ShiftAssignment,
+  SpaceRole,
+  SpaceMember,
+  SpaceRolePermissions,
 } from '@hbcfield/shared/client';
 
 // Re-export shared types for convenience
@@ -3277,6 +3282,7 @@ export interface UpdateLocationInput {
   isActive?: boolean;
   enabledModules?: string[];
   workflowId?: string;
+  workModel?: string;
 }
 
 export interface LocationAssignment {
@@ -3419,6 +3425,125 @@ export const locationsApi = {
     const response = await api.post<{ success: boolean; data: { spacesProcessed: number; updated: number; remapped: number } }>(`/tasks/resync-all`, {});
     if (response.error) throw new Error(response.error);
     return response.data?.data;
+  },
+};
+
+// ── Shift scheduling (space-centric attendance) ──────────────────────────────
+
+export interface CreateShiftInput {
+  spaceId?: string | null;
+  name: string;
+  description?: string;
+  color?: string;
+  startLocal: string;
+  endLocal: string;
+  breakMinutes?: number;
+  graceMin?: number;
+  reminderIntervalMin?: number;
+  maxReminders?: number;
+}
+
+export interface CreateRotaInput {
+  userId: string;
+  shiftId: string;
+  recurrence: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'ONE_OFF';
+  daysOfWeek?: number[];
+  daysOfMonth?: number[];
+  dates?: string[];
+  effectiveFrom?: string;
+  effectiveTo?: string | null;
+  priority?: number;
+}
+
+export const shiftsApi = {
+  list: async (spaceId?: string) => {
+    const endpoint = buildUrlWithQuery('/shifts', { spaceId });
+    const res = await api.get<{ success: boolean; data: Shift[] }>(endpoint);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data || [];
+  },
+  create: async (data: CreateShiftInput) => {
+    const res = await api.post<{ success: boolean; data: Shift }>('/shifts', data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  update: async (id: string, data: Partial<CreateShiftInput> & { isActive?: boolean }) => {
+    const res = await api.patch<{ success: boolean; data: Shift }>(`/shifts/${id}`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  remove: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/shifts/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+};
+
+export const rotaApi = {
+  list: async (spaceId: string, includeEnded = false) => {
+    const endpoint = buildUrlWithQuery(`/spaces/${spaceId}/rota`, { includeEnded: includeEnded || undefined });
+    const res = await api.get<{ success: boolean; data: ShiftAssignment[] }>(endpoint);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data || [];
+  },
+  create: async (spaceId: string, data: CreateRotaInput) => {
+    const res = await api.post<{ success: boolean; data: ShiftAssignment }>(`/spaces/${spaceId}/rota`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  update: async (assignmentId: string, data: Partial<CreateRotaInput> & { isActive?: boolean }) => {
+    const res = await api.patch<{ success: boolean; data: ShiftAssignment }>(`/rota/${assignmentId}`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  remove: async (assignmentId: string) => {
+    const res = await api.delete<{ success: boolean }>(`/rota/${assignmentId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+};
+
+export const spaceRolesApi = {
+  list: async () => {
+    const res = await api.get<{ success: boolean; data: SpaceRole[] }>('/space-roles');
+    if (res.error) throw new Error(res.error);
+    return res.data?.data || [];
+  },
+  create: async (data: { name: string; description?: string; color?: string; permissions?: Partial<SpaceRolePermissions> }) => {
+    const res = await api.post<{ success: boolean; data: SpaceRole }>('/space-roles', data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  update: async (
+    id: string,
+    data: { name?: string; description?: string; color?: string; permissions?: Partial<SpaceRolePermissions>; isActive?: boolean },
+  ) => {
+    const res = await api.patch<{ success: boolean; data: SpaceRole }>(`/space-roles/${id}`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  remove: async (id: string) => {
+    const res = await api.delete<{ success: boolean }>(`/space-roles/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+};
+
+export const spaceMembersApi = {
+  list: async (spaceId: string) => {
+    const res = await api.get<{ success: boolean; data: SpaceMember[] }>(`/spaces/${spaceId}/members`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data || [];
+  },
+  assign: async (spaceId: string, data: { userId: string; spaceRoleId?: string | null }) => {
+    const res = await api.post<{ success: boolean; data: SpaceMember }>(`/spaces/${spaceId}/members`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  remove: async (spaceId: string, memberId: string) => {
+    const res = await api.delete<{ success: boolean }>(`/spaces/${spaceId}/members/${memberId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
   },
 };
 

@@ -182,3 +182,30 @@ export enum InvoiceStatus {
   CANCELED = 'CANCELED',
   REFUNDED = 'REFUNDED',
 }
+
+// How a space (CompanyLocation) interprets attendance expectations.
+export enum WorkModel {
+  NONE = 'NONE',   // No attendance expectations (legacy behavior, no reminders)
+  SHIFT = 'SHIFT', // Rota-assigned shift windows (supports cross-midnight)
+  FIXED = 'FIXED', // Weekly fixed schedule (legacy TechnicianSchedule)
+  TASK = 'TASK',   // Task-based, no scheduled end (safety net only)
+}
+
+// Lifecycle of a still-open clock-in relative to its expected shift end.
+// The engine NEVER force-closes — it nudges and escalates.
+export enum ShiftReminderState {
+  NONE = 'NONE',
+  REMINDED = 'REMINDED',
+  OVERTIME_PENDING = 'OVERTIME_PENDING',
+  OVERTIME_APPROVED = 'OVERTIME_APPROVED',
+  ESCALATED = 'ESCALATED',
+  RESOLVED = 'RESOLVED',
+}
+
+// Recurrence pattern for a rota assignment (member → shift within a space).
+export enum ShiftRecurrence {
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  ONE_OFF = 'ONE_OFF',
+}

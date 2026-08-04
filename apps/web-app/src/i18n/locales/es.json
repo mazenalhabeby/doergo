@@ -3209,7 +3209,8 @@
     "resyncAllTasks": "Resincronizar todos los espacios",
     "resyncAllTasksHint": "Ajusta las tareas de cada espacio a su flujo de trabajo",
     "resyncAllTasksConfirmTitle": "¿Resincronizar todos los espacios?",
-    "resyncAllTasksConfirmDescription": "Esto resincroniza todas las tareas de cada espacio con el flujo de trabajo de su espacio. Los estados que no existen en el flujo de un espacio se restablecen a su primera etapa; las tareas completadas y canceladas se conservan."
+    "resyncAllTasksConfirmDescription": "Esto resincroniza todas las tareas de cada espacio con el flujo de trabajo de su espacio. Los estados que no existen en el flujo de un espacio se restablecen a su primera etapa; las tareas completadas y canceladas se conservan.",
+    "spaceSettings": "Ajustes del espacio"
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",
@@ -5232,5 +5233,221 @@
     "inviteHint": "Solo indica la {{entity}} y comparte el código: el cliente pone su propio nombre al registrarse.",
     "resNameOpt": "Nombre del cliente (opcional)",
     "resNamePlaceholder": "Déjalo en blanco: lo pone al registrarse"
+  },
+  "scheduling": {
+    "title": "Ajustes del espacio",
+    "subtitle": "Configura cómo este espacio gestiona la asistencia, los turnos y los miembros.",
+    "backToSpaces": "Volver a los espacios",
+    "unauthorized": {
+      "title": "Acceso restringido",
+      "description": "Necesitas el permiso para gestionar miembros y configurar la planificación del espacio."
+    },
+    "notFound": {
+      "title": "Espacio no encontrado",
+      "description": "Este espacio no existe o no tienes acceso a él."
+    },
+    "tabs": {
+      "workModel": "Modelo de trabajo",
+      "shifts": "Turnos",
+      "rota": "Cuadrante",
+      "members": "Miembros"
+    },
+    "workModel": {
+      "heading": "Modelo de trabajo",
+      "intro": "Elige cómo este espacio interpreta la asistencia y las expectativas de horario.",
+      "saved": "Modelo de trabajo actualizado",
+      "saveFailed": "No se pudo actualizar el modelo de trabajo",
+      "remindersBadge": "Activa recordatorios",
+      "remindersNote": "Los modelos por turnos y de horario fijo activan recordatorios automáticos de salida cuando alguien se queda más allá de su hora de fin prevista.",
+      "options": {
+        "NONE": {
+          "label": "Sin expectativas de horario",
+          "description": "Sin horario de asistencia ni recordatorios. Los miembros fichan entrada y salida libremente."
+        },
+        "SHIFT": {
+          "label": "Por turnos",
+          "description": "A los miembros se les asignan franjas de turno mediante el cuadrante. Admite turnos nocturnos."
+        },
+        "FIXED": {
+          "label": "Horario semanal fijo",
+          "description": "Un horario semanal recurrente define las horas de trabajo previstas."
+        },
+        "TASK": {
+          "label": "Basado en tareas",
+          "description": "La asistencia sigue el trabajo de las tareas, sin hora de fin programada."
+        }
+      }
+    },
+    "shifts": {
+      "heading": "Turnos",
+      "intro": "Define franjas de turno con nombre para este espacio. Las horas son locales a la zona horaria del espacio.",
+      "new": "Nuevo turno",
+      "orgWide": "Toda la organización",
+      "crossesMidnight": "Cruza medianoche",
+      "breakSummary": "{{count}} min de descanso",
+      "editTitle": "Editar turno",
+      "dialogDescription": "Configura la franja del turno, el descanso y el comportamiento de los recordatorios.",
+      "namePlaceholder": "p. ej. Turno de mañana",
+      "nameRequired": "Introduce un nombre de turno",
+      "reminderHint": "La gracia es la espera tras el fin del turno antes del primer recordatorio. El intervalo y el máximo de recordatorios controlan los avisos antes de escalar.",
+      "deleteTitle": "Eliminar turno",
+      "deleteConfirm": "¿Eliminar \"{{name}}\"? Las asignaciones del cuadrante que lo usen se verán afectadas.",
+      "empty": {
+        "title": "Aún no hay turnos",
+        "description": "Crea un turno para empezar a montar el cuadrante."
+      },
+      "fields": {
+        "name": "Nombre",
+        "description": "Descripción",
+        "color": "Color",
+        "start": "Hora de inicio",
+        "end": "Hora de fin",
+        "breakMinutes": "Descanso (minutos)",
+        "graceMin": "Gracia (minutos)",
+        "reminderIntervalMin": "Intervalo de recordatorio (min)",
+        "maxReminders": "Máx. recordatorios"
+      },
+      "toast": {
+        "created": "Turno creado",
+        "updated": "Turno actualizado",
+        "deleted": "Turno eliminado",
+        "saveFailed": "No se pudo guardar el turno",
+        "deleteFailed": "No se pudo eliminar el turno"
+      }
+    },
+    "rota": {
+      "heading": "Cuadrante",
+      "intro": "Asigna miembros a turnos con una planificación recurrente.",
+      "new": "Nueva asignación",
+      "editTitle": "Editar asignación",
+      "dialogDescription": "Asigna un miembro a un turno y define cómo se repite.",
+      "unknownMember": "Miembro desconocido",
+      "unknownShift": "Turno desconocido",
+      "priorityBadge": "Prioridad {{value}}",
+      "priorityHint": "La prioridad más alta gana cuando dos asignaciones coinciden el mismo día.",
+      "selectMember": "Selecciona un miembro",
+      "selectShift": "Selecciona un turno",
+      "noMembers": "No hay miembros disponibles",
+      "noShifts": "No hay turnos activos. Crea uno primero en la pestaña Turnos.",
+      "selectMemberError": "Selecciona un miembro",
+      "selectShiftError": "Selecciona un turno",
+      "selectWeekdayError": "Selecciona al menos un día de la semana",
+      "selectMonthDayError": "Selecciona al menos un día del mes",
+      "selectDateError": "Añade al menos una fecha",
+      "deleteTitle": "Quitar asignación",
+      "deleteConfirm": "¿Quitar esta asignación del cuadrante? Se conserva el historial de asistencia pasado.",
+      "empty": {
+        "title": "Aún no hay asignaciones",
+        "description": "Asigna un miembro a un turno para montar el cuadrante."
+      },
+      "fields": {
+        "member": "Miembro",
+        "shift": "Turno",
+        "recurrence": "Recurrencia",
+        "weekdays": "Días de la semana",
+        "monthDays": "Días del mes",
+        "dates": "Fechas",
+        "effectiveFrom": "Válido desde",
+        "effectiveTo": "Válido hasta",
+        "priority": "Prioridad"
+      },
+      "recurrence": {
+        "DAILY": "Diario",
+        "WEEKLY": "Semanal",
+        "MONTHLY": "Mensual",
+        "ONE_OFF": "Puntual",
+        "dailySummary": "Cada día",
+        "weekly": "Semanal",
+        "monthly": "Mensual",
+        "monthlySummary": "Días {{days}} de cada mes",
+        "oneOffSummary": "{{count}} fecha(s)"
+      },
+      "weekdaysShort": {
+        "sun": "Dom",
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mié",
+        "thu": "Jue",
+        "fri": "Vie",
+        "sat": "Sáb"
+      },
+      "toast": {
+        "created": "Asignación creada",
+        "updated": "Asignación actualizada",
+        "deleted": "Asignación eliminada",
+        "saveFailed": "No se pudo guardar la asignación",
+        "deleteFailed": "No se pudo eliminar la asignación"
+      }
+    },
+    "roles": {
+      "heading": "Roles del espacio",
+      "intro": "Define subroles como \"Jefe de turno\" y los permisos de asistencia que otorgan.",
+      "new": "Nuevo rol",
+      "editTitle": "Editar rol",
+      "dialogDescription": "Nombra el rol y elige qué permisos del espacio otorga.",
+      "builtIn": "Predefinido",
+      "noPermissions": "Sin permisos",
+      "namePlaceholder": "p. ej. Jefe de turno",
+      "nameRequired": "Introduce un nombre de rol",
+      "deleteTitle": "Eliminar rol",
+      "deleteConfirm": "¿Eliminar \"{{name}}\"? Los miembros con este rol lo perderán.",
+      "empty": {
+        "title": "Aún no hay roles personalizados",
+        "description": "Crea un rol para otorgar permisos a nivel de espacio."
+      },
+      "fields": {
+        "name": "Nombre",
+        "description": "Descripción",
+        "color": "Color",
+        "permissions": "Permisos"
+      },
+      "permissions": {
+        "canApproveOvertime": {
+          "label": "Aprobar horas extra",
+          "description": "Puede aprobar solicitudes de tiempo extra para este espacio"
+        },
+        "canManageRota": {
+          "label": "Gestionar cuadrante",
+          "description": "Puede crear turnos y asignar miembros a turnos"
+        },
+        "canReconcileAttendance": {
+          "label": "Conciliar asistencia",
+          "description": "Recibe escalaciones y puede cerrar o corregir entradas abiertas"
+        },
+        "canViewSpaceAttendance": {
+          "label": "Ver asistencia del espacio",
+          "description": "Puede ver la asistencia de todos en este espacio"
+        }
+      },
+      "toast": {
+        "created": "Rol creado",
+        "updated": "Rol actualizado",
+        "deleted": "Rol eliminado",
+        "saveFailed": "No se pudo guardar el rol",
+        "deleteFailed": "No se pudo eliminar el rol"
+      }
+    },
+    "members": {
+      "heading": "Miembros del espacio",
+      "intro": "Asigna miembros a este espacio y, opcionalmente, dales un subrol.",
+      "empty": "Todavía no hay miembros asignados a este espacio.",
+      "unknownMember": "Miembro desconocido",
+      "addHeading": "Añadir un miembro",
+      "addButton": "Añadir miembro",
+      "selectMember": "Selecciona un miembro",
+      "selectMemberError": "Selecciona un miembro",
+      "noAvailable": "No hay miembros disponibles",
+      "noRole": "Sin rol",
+      "fields": {
+        "member": "Miembro",
+        "role": "Rol"
+      },
+      "toast": {
+        "added": "Miembro añadido",
+        "removed": "Miembro eliminado",
+        "addFailed": "No se pudo añadir el miembro",
+        "removeFailed": "No se pudo eliminar el miembro"
+      }
+    }
   }
 }

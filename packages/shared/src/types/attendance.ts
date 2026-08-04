@@ -25,6 +25,7 @@ export interface CompanyLocation {
   // Space configuration
   enabledModules?: string[] | null;
   workflowId?: string | null;
+  workModel?: string | null; // NONE | SHIFT | FIXED | TASK — how attendance is interpreted
 }
 
 // ============================================================================
@@ -64,6 +65,13 @@ export interface TimeEntry {
   originalClockIn: string | null;
   originalClockOut: string | null;
   editReason: string | null;
+  // Shift expectation (space-centric attendance). Set at clock-in for shift/fixed
+  // spaces; drives the reminder engine. null on task/none spaces.
+  shiftId?: string | null;
+  expectedClockOutAt?: string | null;
+  reminderState?: 'NONE' | 'REMINDED' | 'OVERTIME_PENDING' | 'OVERTIME_APPROVED' | 'ESCALATED' | 'RESOLVED';
+  nextRemindAt?: string | null;
+  reminderCount?: number;
   createdAt: string;
   updatedAt: string;
   organizationId: string;

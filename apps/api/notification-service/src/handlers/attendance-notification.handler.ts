@@ -84,6 +84,176 @@ export class AttendanceNotificationHandler {
     });
   }
 
+  // Shift reminder engine: a worker's shift ended but they're still clocked in.
+  // Push the worker + live-update their org dashboard. Never force-closes.
+  @EventPattern('attendance_shift_reminder')
+  async handleShiftReminder(@Payload() data: {
+    entryId: string;
+    userId: string;
+    userName: string;
+    locationId: string;
+    locationName: string;
+    expectedClockOutAt: string | null;
+    reminderCount: number;
+    organizationId: string;
+  }) {
+    this.logger.log(`Shift reminder: user=${data.userName}, entry=${data.entryId}, count=${data.reminderCount}`);
+
+    try {
+      await this.pushService.sendShiftReminderPush({
+        userId: data.userId,
+        entryId: data.entryId,
+        locationName: data.locationName,
+        reminderCount: data.reminderCount,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send shift-reminder push: ${error}`);
+    }
+
+    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_shift_reminder', {
+      entryId: data.entryId,
+      userId: data.userId,
+      userName: data.userName,
+      locationName: data.locationName,
+      reminderCount: data.reminderCount,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Reminders exhausted → notify the space leaders to reconcile the open shift.
+  @EventPattern('attendance_shift_escalation')
+  async handleShiftEscalation(@Payload() data: {
+    entryId: string;
+    userId: string;
+    userName: string;
+    locationId: string;
+    locationName: string;
+    expectedClockOutAt: string | null;
+    leaderIds: string[];
+    organizationId: string;
+  }) {
+    const leaderIds = data.leaderIds || [];
+    this.logger.log(`Shift escalation: user=${data.userName}, entry=${data.entryId}, leaders=${leaderIds.length}`);
+
+    try {
+      await this.pushService.sendShiftEscalationPush({
+        leaderIds,
+        userName: data.userName,
+        locationName: data.locationName,
+        entryId: data.entryId,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send shift-escalation push: ${error}`);
+    }
+
+    const payload = {
+      entryId: data.entryId,
+      userId: data.userId,
+      userName: data.userName,
+      locationName: data.locationName,
+      timestamp: new Date().toISOString(),
+    };
+    if (leaderIds.length) {
+      for (const id of leaderIds) {
+        this.websocketGateway.emitToUser(id, 'attendance_shift_escalation', payload);
+      }
+    } else {
+      this.websocketGateway.emitToRole('ADMIN', 'attendance_shift_escalation', payload);
+    }
+
+    // Persist to the in-app inbox for the resolved leaders.
+    await this.store.record({
+      recipientIds: leaderIds,
+      organizationId: data.organizationId,
+      eventType: 'attendance_shift_escalation',
+      title: 'Open shift needs review',
+      body: `${data.userName} is still clocked in at ${data.locationName} after their shift and hasn't responded`,
+      link: '/attendance',
+    });
+  }
+
+  // Worker asked to keep working past their shift → notify overtime approvers.
+  @EventPattern('attendance_overtime_request')
+  async handleOvertimeRequest(@Payload() data: {
+    entryId: string;
+    userId: string;
+    userName: string;
+    locationId: string;
+    locationName: string;
+    leaderIds: string[];
+    organizationId: string;
+  }) {
+    const leaderIds = data.leaderIds || [];
+    this.logger.log(`Overtime request: user=${data.userName}, entry=${data.entryId}, leaders=${leaderIds.length}`);
+
+    try {
+      await this.pushService.sendOvertimeRequestPush({
+        leaderIds,
+        userName: data.userName,
+        locationName: data.locationName,
+        entryId: data.entryId,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send overtime-request push: ${error}`);
+    }
+
+    const payload = {
+      entryId: data.entryId,
+      userId: data.userId,
+      userName: data.userName,
+      locationName: data.locationName,
+      timestamp: new Date().toISOString(),
+    };
+    if (leaderIds.length) {
+      for (const id of leaderIds) {
+        this.websocketGateway.emitToUser(id, 'attendance_overtime_request', payload);
+      }
+    } else {
+      this.websocketGateway.emitToRole('ADMIN', 'attendance_overtime_request', payload);
+    }
+
+    await this.store.record({
+      recipientIds: leaderIds,
+      organizationId: data.organizationId,
+      eventType: 'attendance_overtime_request',
+      title: 'Extra-time request',
+      body: `${data.userName} wants to keep working past their shift at ${data.locationName}`,
+      link: '/attendance',
+    });
+  }
+
+  // Leader approved/rejected the extra time → tell the worker.
+  @EventPattern('attendance_overtime_decision')
+  async handleOvertimeDecision(@Payload() data: {
+    entryId: string;
+    userId: string;
+    decision: 'approved' | 'rejected';
+    minutes?: number;
+    newExpectedClockOutAt?: string;
+    organizationId: string;
+  }) {
+    this.logger.log(`Overtime decision: entry=${data.entryId}, decision=${data.decision}`);
+
+    try {
+      await this.pushService.sendOvertimeDecisionPush({
+        userId: data.userId,
+        entryId: data.entryId,
+        decision: data.decision,
+        minutes: data.minutes,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send overtime-decision push: ${error}`);
+    }
+
+    this.websocketGateway.emitToUser(data.userId, 'attendance_overtime_decision', {
+      entryId: data.entryId,
+      decision: data.decision,
+      minutes: data.minutes,
+      newExpectedClockOutAt: data.newExpectedClockOutAt,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   @EventPattern('attendance_geofence_alert')
   async handleGeofenceAlert(@Payload() data: {
     userId: string;

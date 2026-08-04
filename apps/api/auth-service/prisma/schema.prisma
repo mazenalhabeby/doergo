@@ -115,6 +115,34 @@ enum BreakType {
   OTHER // Other break type
 }
 
+// How a space (CompanyLocation) interprets attendance expectations.
+// Drives the shift resolver at clock-in and the reminder engine.
+enum WorkModel {
+  NONE // No attendance expectations (default — legacy behavior, no reminders)
+  SHIFT // Rota-assigned shift windows (supports cross-midnight)
+  FIXED // Weekly fixed schedule (legacy TechnicianSchedule)
+  TASK // Task-based, no scheduled end (safety net only)
+}
+
+// Lifecycle of a still-open clock-in relative to its expected shift end.
+// The engine NEVER force-closes — it nudges and escalates.
+enum ShiftReminderState {
+  NONE // Within expected shift, no reminder due yet
+  REMINDED // Reminder push sent, awaiting worker response
+  OVERTIME_PENDING // Worker chose "extra time", awaiting leader approval
+  OVERTIME_APPROVED // Leader approved extra minutes, expected end extended
+  ESCALATED // Reminders exhausted, escalated to a space leader to reconcile
+  RESOLVED // Closed (worker clocked out or leader reconciled)
+}
+
+// Recurrence pattern for a rota assignment (member → shift within a space).
+enum ShiftRecurrence {
+  DAILY // Every day within the effective window
+  WEEKLY // Specific days of the week (daysOfWeek)
+  MONTHLY // Specific days of the month (daysOfMonth)
+  ONE_OFF // Specific explicit dates
+}
+
 // Time-off request status
 enum TimeOffStatus {
   PENDING // Awaiting manager approval
@@ -344,6 +372,12 @@ model Organization {
   // Custom roles
   orgRoles OrgRole[]
 
+  // Shift scheduling (space-centric attendance)
+  shifts           Shift[]
+  shiftAssignments ShiftAssignment[]
+  spaceRoles       SpaceRole[] // Dynamic per-space sub-roles (org-defined, space-assigned)
+  spaceMembers     SpaceMember[]
+
   // Organization delegation relationships
   grantedAccess  OrganizationAccess[] @relation("Grantor") // Access this org has granted to others
   receivedAccess OrganizationAccess[] @relation("Grantee") // Access this org has received from others
@@ -564,6 +598,10 @@ model User {
 
   // Push notifications
   pushTokens UserPushToken[] // Device push tokens for notifications
+
+  // Shift scheduling (space-centric attendance)
+  shiftAssignments ShiftAssignment[] // Rota: shifts this member is assigned to
+  spaceMemberships SpaceMember[] // Per-space membership + dynamic sub-role
 
   // Availability management
   schedules        TechnicianSchedule[] // Weekly recurring schedule
@@ -1283,6 +1321,7 @@ model CompanyLocation {
   lng            Float? // Longitude (only for physical locations / attendance)
   geofenceRadius Int     @default(15) // Radius in meters for clock-in zone
   timezone       String  @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
+  workModel      WorkModel @default(NONE) // How attendance is interpreted for this space
   isActive       Boolean @default(true)
   isDefault      Boolean @default(false) // The org's default space (holds otherwise-unassigned tasks)
   isRemote       Boolean @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
@@ -1306,6 +1345,11 @@ model CompanyLocation {
 
   // Technicians assigned to this location
   assignments TechnicianAssignment[]
+
+  // Shift scheduling (space-centric attendance)
+  shifts           Shift[] // Shift definitions scoped to this space
+  shiftAssignments ShiftAssignment[] // Rota: members assigned to shifts here
+  spaceMembers     SpaceMember[] // Per-space membership + dynamic sub-role
 
   // Time entries at this location
   timeEntries TimeEntry[]
@@ -1406,6 +1450,14 @@ model TimeEntry {
   // Calculated duration (set on clock-out)
   totalMinutes Int?
 
+  // ── Shift expectation (resolved once at clock-in; server-authoritative) ──
+  shiftId            String? // Resolved shift for this clock-in (null = no shift / task / flex)
+  shift              Shift?             @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  expectedClockOutAt DateTime? // Absolute UTC instant the shift is expected to end (cross-midnight safe)
+  reminderState      ShiftReminderState @default(NONE) // Reminder/escalation lifecycle for an open entry
+  nextRemindAt       DateTime? // When the next reminder push is due (null = nothing scheduled)
+  reminderCount      Int                @default(0) // How many reminders have been sent for this entry
+
   // Break duration (calculated from breaks)
   breakMinutes Int @default(0)
 
@@ -1448,6 +1500,8 @@ model TimeEntry {
   @@index([approvalStatus])
   @@index([userId, status]) // check active clock-in
   @@index([organizationId, clockInAt]) // org attendance reports
+  @@index([status, nextRemindAt]) // reminder engine safety-net sweep
+  @@index([organizationId, reminderState]) // pending extra-time lookups per org
   @@map("time_entries")
 }
 
@@ -1518,6 +1572,139 @@ model ScheduleTemplate {
   @@unique([organizationId, name])
   @@index([organizationId])
   @@map("schedule_templates")
+}
+
+// ==================== SHIFT SCHEDULING (space-centric attendance) ====================
+
+// A single named shift window. Supports shifts that cross midnight
+// (endLocal <= startLocal → crossesMidnight). Reusable; may be org-wide
+// (spaceId null) or scoped to one space. The reminder engine reads its
+// grace + reminder cadence.
+model Shift {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Optional space scope: null = reusable across all of the org's spaces
+  spaceId String?
+  space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  name        String // "Night Shift", "Early", "Late"
+  description String?
+  color       String? @default("#3b82f6")
+
+  startLocal      String  // "22:00" (24h, in the space's timezone)
+  endLocal        String  // "06:00"
+  crossesMidnight Boolean @default(false) // derived: endLocal <= startLocal
+
+  breakMinutes        Int @default(0) // Unpaid break subtracted from expected duration
+  graceMin            Int @default(5) // Minutes after end before the first reminder fires
+  reminderIntervalMin Int @default(5) // Gap between subsequent reminders
+  maxReminders        Int @default(3) // Reminders before escalating to a space leader
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments ShiftAssignment[]
+  timeEntries TimeEntry[]
+
+  @@index([organizationId])
+  @@index([spaceId])
+  @@map("shifts")
+}
+
+// Rota entry: assigns a member to a shift within a space on a recurrence.
+// Effective-dated so edits/deletes never rewrite historical attendance —
+// set effectiveTo to end an assignment instead of deleting the row.
+model ShiftAssignment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  spaceId String
+  space   CompanyLocation @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  shiftId String
+  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  recurrence  ShiftRecurrence @default(WEEKLY)
+  daysOfWeek  Int[]           @default([]) // WEEKLY: 0=Sun..6=Sat
+  daysOfMonth Int[]           @default([]) // MONTHLY: 1..31
+  dates       DateTime[]      @default([]) // ONE_OFF: explicit dates
+
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime? // null = open-ended; set to end (soft-delete) the assignment
+  priority      Int       @default(0) // Higher wins when assignments overlap
+  isActive      Boolean   @default(true)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, spaceId, isActive])
+  @@index([spaceId])
+  @@index([organizationId])
+  @@map("shift_assignments")
+}
+
+// Dynamic per-space sub-role (e.g. "Space Manager", "Shift Leader",
+// "Team Leader"). Org-defined + reusable across spaces; carries attendance
+// permission flags in `permissions`. Follows the OrgRole pattern.
+model SpaceRole {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String // "Shift Leader"
+  slug        String
+  description String?
+  color       String? @default("#6b7280")
+  isSystem    Boolean @default(false) // Seeded, non-deletable built-in role
+
+  // { canApproveOvertime, canManageRota, canReconcileAttendance, canViewSpaceAttendance }
+  permissions Json
+  position    Int     @default(0)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members SpaceMember[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("space_roles")
+}
+
+// Membership of a user in a space, with an optional dynamic sub-role.
+// Drives overtime-approval routing + escalation targets for that space.
+model SpaceMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  spaceId String
+  space   CompanyLocation @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  spaceRoleId String?
+  spaceRole   SpaceRole? @relation(fields: [spaceRoleId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, spaceId])
+  @@index([spaceId])
+  @@index([organizationId])
+  @@index([spaceRoleId])
+  @@map("space_members")
 }
 
 // Time-off request (vacation, sick day, personal leave)

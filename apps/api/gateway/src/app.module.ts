@@ -17,6 +17,8 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { SpaceRolesModule } from './modules/space-roles/space-roles.module';
+import { ShiftsModule } from './modules/shifts/shifts.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
 import { EmployeesModule } from './modules/technicians/technicians.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
@@ -90,6 +92,8 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     ReportsModule,
     LocationsModule,
     AttendanceModule,
+    SpaceRolesModule,
+    ShiftsModule,
     OvertimeModule,
     EmployeesModule,
     InvitationsModule,

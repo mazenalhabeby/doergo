@@ -12,6 +12,7 @@ export const MODULE_LABELS: Record<string, string> = {
   dependencies: 'Task dependencies',
   recurring: 'Recurring jobs',
   overtime: 'Overtime engine',
+  shift_scheduling: 'Shift scheduling',
   invoicing: 'Invoicing',
   sprints: 'Sprints',
   story_points: 'Story points',

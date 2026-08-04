@@ -5,11 +5,12 @@ import {
   IsNumber,
   IsOptional,
   IsArray,
+  IsIn,
   MaxLength,
   Min,
   Max,
 } from 'class-validator';
-import { ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
+import { ATTENDANCE_CONSTANTS, WorkModel } from '@hbcfield/shared';
 
 export class CreateLocationDto {
   @ApiProperty({
@@ -69,6 +70,15 @@ export class CreateLocationDto {
   @IsString()
   @IsOptional()
   timezone?: string;
+
+  @ApiPropertyOptional({
+    enum: WorkModel,
+    description: 'How attendance is interpreted for this space (shift-based, fixed, task, or none)',
+    default: WorkModel.NONE,
+  })
+  @IsIn(Object.values(WorkModel))
+  @IsOptional()
+  workModel?: WorkModel;
 
   @ApiPropertyOptional({
     example: ['time_tracking', 'sprints'],

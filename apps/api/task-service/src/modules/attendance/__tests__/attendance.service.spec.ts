@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { AttendanceService } from '../attendance.service';
 import { BreakService } from '../break.service';
 import { ApprovalService } from '../approval.service';
 import { AttendanceReportService } from '../attendance-report.service';
+import { ShiftResolverService } from '../shift-resolver.service';
+import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
   TimeEntryStatus,
@@ -107,6 +109,11 @@ describe('AttendanceService', () => {
     organization: {
       findMany: jest.fn().mockResolvedValue([]),
     },
+    // Space members + roles used by the reminder engine's escalation routing.
+    spaceMember: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
   };
 
   const mockNotificationClient = {
@@ -132,6 +139,16 @@ describe('AttendanceService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: mockNotificationClient },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: mockOvertimeQueue },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
+        // Default: resolver returns null (no shift stamp) so existing clock-in
+        // assertions are unaffected. Shift resolution is covered by its own spec.
+        {
+          provide: ShiftResolverService,
+          useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) },
+        },
       ],
     }).compile();
 
@@ -360,59 +377,260 @@ describe('AttendanceService', () => {
     });
   });
 
-  describe('autoClockOut', () => {
-    it('should auto clock out entries past the max duration', async () => {
-      const overdueEntry = {
-        ...mockTimeEntry,
-        clockInAt: new Date(Date.now() - 17 * 60 * 60 * 1000), // 17h ago — past the 16h cap
-        user: mockTechnician,
-        location: mockLocation,
-      };
-      mockPrismaService.timeEntry.findMany.mockResolvedValue([overdueEntry]);
-      mockPrismaService.timeEntry.update.mockResolvedValue({
-        ...overdueEntry,
-        status: TimeEntryStatus.AUTO_OUT,
-      });
+  describe('runShiftReminders (reminder engine — never force-closes)', () => {
+    const dueEntry = (over: any = {}) => ({
+      ...mockTimeEntry,
+      id: over.id ?? 'entry-123',
+      userId: over.userId ?? 'tech-123',
+      locationId: 'loc-123',
+      organizationId: 'org-123',
+      reminderCount: over.reminderCount ?? 0,
+      expectedClockOutAt: new Date(Date.now() - 6 * 60 * 1000),
+      nextRemindAt: new Date(Date.now() - 60 * 1000), // due
+      user: { id: over.userId ?? 'tech-123', firstName: 'John', lastName: 'Doe', email: 'j@e.com' },
+      location: { id: 'loc-123', name: 'Main Office' },
+      shift: over.shift ?? { reminderIntervalMin: 5, maxReminders: 3 },
+      ...over,
+    });
 
-      const result = await service.autoClockOut({ type: 'hourly' }) as any;
+    it('sends a reminder and re-arms — it does NOT clock anyone out', async () => {
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 0 })]);
+      mockPrismaService.timeEntry.update.mockResolvedValue({});
+
+      const result = (await service.runShiftReminders()) as any;
 
       expect(result.success).toBe(true);
-      expect(result.data.processedCount).toBe(1);
+      expect(result.data.remindedCount).toBe(1);
+      expect(result.data.escalatedCount).toBe(0);
+
+      // Reminder push emitted — NOT the old auto-clock-out event.
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith('attendance_shift_reminder', expect.any(Object));
+      expect(mockNotificationClient.emit).not.toHaveBeenCalledWith('attendance_auto_clock_out', expect.anything());
+
+      // The write bumps reminder state/count + re-arms nextRemindAt; it never
+      // sets AUTO_OUT or a clockOutAt.
+      const updateArg = mockPrismaService.timeEntry.update.mock.calls[0][0];
+      expect(updateArg.data.reminderState).toBe('REMINDED');
+      expect(updateArg.data.reminderCount).toBe(1);
+      expect(updateArg.data.nextRemindAt).toBeInstanceOf(Date);
+      expect(updateArg.data.status).toBeUndefined();
+      expect(updateArg.data.clockOutAt).toBeUndefined();
+    });
+
+    it('escalates to a space leader after max reminders, then stops nudging', async () => {
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]); // already at max=3
+      mockPrismaService.timeEntry.update.mockResolvedValue({});
+      mockPrismaService.spaceMember.findMany.mockResolvedValue([
+        { userId: 'leader-1', spaceRole: { permissions: { canReconcileAttendance: true } } },
+        { userId: 'other', spaceRole: { permissions: { canReconcileAttendance: false } } },
+      ]);
+
+      const result = (await service.runShiftReminders()) as any;
+
+      expect(result.data.remindedCount).toBe(0);
+      expect(result.data.escalatedCount).toBe(1);
+
+      const updateArg = mockPrismaService.timeEntry.update.mock.calls[0][0];
+      expect(updateArg.data.reminderState).toBe('ESCALATED');
+      expect(updateArg.data.nextRemindAt).toBeNull(); // stop the loop
+
       expect(mockNotificationClient.emit).toHaveBeenCalledWith(
-        'attendance_auto_clock_out',
-        expect.any(Object),
+        'attendance_shift_escalation',
+        expect.objectContaining({ leaderIds: ['leader-1'] }),
       );
     });
 
-    it('should auto clock out every overdue open entry in one sweep', async () => {
-      // Two overdue entries → the parallelized write batch should process both.
-      const overdue = (id: string) => ({
-        ...mockTimeEntry,
-        id,
-        userId: id,
-        clockInAt: new Date(Date.now() - 17 * 60 * 60 * 1000),
-        user: { ...mockTechnician, id },
-        location: mockLocation,
-      });
-      mockPrismaService.timeEntry.findMany.mockResolvedValue([overdue('e1'), overdue('e2')]);
-      mockPrismaService.timeEntry.update.mockImplementation(({ where }: any) =>
-        Promise.resolve({ id: where.id, status: TimeEntryStatus.AUTO_OUT }),
+    it('falls back to org admins when the space has no reconcile leaders', async () => {
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]);
+      mockPrismaService.timeEntry.update.mockResolvedValue({});
+      mockPrismaService.spaceMember.findMany.mockResolvedValue([]); // no space leaders
+      mockPrismaService.user.findMany.mockResolvedValue([{ id: 'admin-1' }]);
+
+      await service.runShiftReminders();
+
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'attendance_shift_escalation',
+        expect.objectContaining({ leaderIds: ['admin-1'] }),
       );
-
-      const result = await service.autoClockOut({ type: 'midnight' }) as any;
-
-      expect(result.success).toBe(true);
-      expect(result.data.processedCount).toBe(2);
-      expect(mockPrismaService.timeEntry.update).toHaveBeenCalledTimes(2);
     });
 
-    it('should return 0 processed when no overdue entries', async () => {
+    it('returns zero and does nothing when no reminders are due', async () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue([]);
 
-      const result = await service.autoClockOut({ type: 'hourly' }) as any;
+      const result = (await service.runShiftReminders()) as any;
 
       expect(result.success).toBe(true);
-      expect(result.data.processedCount).toBe(0);
+      expect(result.data.remindedCount).toBe(0);
+      expect(result.data.escalatedCount).toBe(0);
+      expect(mockPrismaService.timeEntry.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('shift reminder responses (Phase 3)', () => {
+    const openEntry = (over: any = {}) => ({
+      ...mockTimeEntry,
+      id: 'entry-123',
+      userId: 'tech-123',
+      locationId: 'loc-123',
+      organizationId: 'org-123',
+      status: TimeEntryStatus.CLOCKED_IN,
+      clockInAt: new Date('2026-08-03T07:00:00Z'),
+      breakMinutes: 0,
+      flagReasons: [],
+      expectedClockOutAt: new Date('2026-08-03T15:00:00Z'),
+      location: { id: 'loc-123', name: 'Main Office' },
+      user: { id: 'tech-123', firstName: 'John', lastName: 'Doe' },
+      shift: null,
+      ...over,
+    });
+
+    describe('resolveForgotClockOut', () => {
+      it('closes at the self-reported time within the shift (no overtime flag)', async () => {
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
+        mockPrismaService.timeEntry.update.mockImplementation(({ data }: any) =>
+          Promise.resolve({ id: 'entry-123', ...data, location: { name: 'Main Office' }, user: {} }),
+        );
+
+        const result = (await service.resolveForgotClockOut({
+          userId: 'tech-123',
+          entryId: 'entry-123',
+          clockOutAt: '2026-08-03T14:30:00Z', // before 15:00 expected end
+          organizationId: 'org-123',
+        })) as any;
+
+        expect(result.success).toBe(true);
+        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        expect(data.status).toBe(TimeEntryStatus.CLOCKED_OUT);
+        expect(data.reminderState).toBe('RESOLVED');
+        expect(data.nextRemindAt).toBeNull();
+        expect(data.flagReasons).toContain('MISSED_CLOCK_OUT');
+        expect(data.flagReasons).not.toContain('OVERTIME');
+      });
+
+      it('flags OVERTIME when the reported time is past the expected end', async () => {
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
+        mockPrismaService.timeEntry.update.mockImplementation(({ data }: any) =>
+          Promise.resolve({ id: 'entry-123', ...data, location: { name: 'Main Office' }, user: {} }),
+        );
+
+        await service.resolveForgotClockOut({
+          userId: 'tech-123',
+          entryId: 'entry-123',
+          clockOutAt: '2026-08-03T17:00:00Z', // 2h past 15:00
+          organizationId: 'org-123',
+        });
+
+        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        expect(data.flagReasons).toContain('OVERTIME');
+        expect(data.approvalStatus).toBe('PENDING');
+      });
+
+      it('rejects a future clock-out time', async () => {
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
+        await expect(
+          service.resolveForgotClockOut({
+            userId: 'tech-123',
+            entryId: 'entry-123',
+            clockOutAt: new Date(Date.now() + 3600_000).toISOString(),
+            organizationId: 'org-123',
+          }),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe('requestExtraTime', () => {
+      it('sets OVERTIME_PENDING, stops reminders, and routes to approvers', async () => {
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
+        mockPrismaService.timeEntry.update.mockResolvedValue({});
+        mockPrismaService.spaceMember.findMany.mockResolvedValue([
+          { userId: 'leader-1', spaceRole: { permissions: { canApproveOvertime: true } } },
+        ]);
+
+        const result = (await service.requestExtraTime({
+          userId: 'tech-123',
+          entryId: 'entry-123',
+          organizationId: 'org-123',
+        })) as any;
+
+        expect(result.success).toBe(true);
+        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        expect(data.reminderState).toBe('OVERTIME_PENDING');
+        expect(data.nextRemindAt).toBeNull();
+        expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+          'attendance_overtime_request',
+          expect.objectContaining({ leaderIds: ['leader-1'] }),
+        );
+      });
+    });
+
+    describe('approveExtraTime', () => {
+      it('extends the expected end and re-arms reminders (admin approver)', async () => {
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue(
+          openEntry({ expectedClockOutAt: new Date('2026-08-03T15:00:00Z') }),
+        );
+        mockPrismaService.timeEntry.update.mockResolvedValue({});
+        mockPrismaService.spaceMember.findFirst.mockResolvedValue(null); // no space role
+        mockPrismaService.user.findFirst.mockResolvedValue({ id: 'admin-1' }); // admin fallback
+
+        const result = (await service.approveExtraTime({
+          approverId: 'admin-1',
+          entryId: 'entry-123',
+          minutes: 60,
+          organizationId: 'org-123',
+        })) as any;
+
+        expect(result.success).toBe(true);
+        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        expect(data.reminderState).toBe('OVERTIME_APPROVED');
+        expect(data.reminderCount).toBe(0);
+        expect(data.expectedClockOutAt).toBeInstanceOf(Date);
+        expect(data.nextRemindAt).toBeInstanceOf(Date);
+        expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+          'attendance_overtime_decision',
+          expect.objectContaining({ decision: 'approved', minutes: 60 }),
+        );
+      });
+
+      it('forbids approval when the user lacks the permission', async () => {
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
+        mockPrismaService.spaceMember.findFirst.mockResolvedValue(null);
+        mockPrismaService.user.findFirst.mockResolvedValue(null); // not an admin either
+
+        await expect(
+          service.approveExtraTime({ approverId: 'nobody', entryId: 'entry-123', minutes: 30, organizationId: 'org-123' }),
+        ).rejects.toThrow(ForbiddenException);
+      });
+
+      it('rejects invalid minutes', async () => {
+        await expect(
+          service.approveExtraTime({ approverId: 'admin-1', entryId: 'entry-123', minutes: 0, organizationId: 'org-123' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe('rejectExtraTime', () => {
+      it('re-arms an immediate reminder and notifies the worker', async () => {
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue({ id: 'entry-123', locationId: 'loc-123', userId: 'tech-123' });
+        mockPrismaService.timeEntry.update.mockResolvedValue({});
+        mockPrismaService.spaceMember.findFirst.mockResolvedValue({
+          spaceRole: { permissions: { canApproveOvertime: true } },
+        });
+
+        const result = (await service.rejectExtraTime({
+          approverId: 'leader-1',
+          entryId: 'entry-123',
+          organizationId: 'org-123',
+        })) as any;
+
+        expect(result.success).toBe(true);
+        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        expect(data.reminderState).toBe('REMINDED');
+        expect(data.nextRemindAt).toBeInstanceOf(Date);
+        expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+          'attendance_overtime_decision',
+          expect.objectContaining({ decision: 'rejected' }),
+        );
+      });
     });
   });
 

@@ -76,4 +76,39 @@ export const attendanceApi = {
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
   },
+
+  // ── Shift reminder responses ──────────────────────────────────────────────
+
+  /** "I forgot to clock out" — self-report the real leave time (ISO string). */
+  resolveForgotClockOut: async (entryId: string, clockOutAt: string): Promise<TimeEntry> => {
+    return fetchWithAuth<TimeEntry>(`/attendance/entries/${entryId}/forgot-clock-out`, {
+      method: 'POST',
+      body: JSON.stringify({ clockOutAt }),
+    });
+  },
+
+  /** "I'm working extra time" — routes to a space leader for approval. */
+  requestExtraTime: async (entryId: string): Promise<{ entryId: string; status: string }> => {
+    return fetchWithAuth(`/attendance/entries/${entryId}/request-extra-time`, { method: 'POST' });
+  },
+
+  /** Leader: open extra-time requests the caller can approve. */
+  getPendingExtraTime: async (): Promise<TimeEntry[]> => {
+    const result = await fetchWithAuth<any>('/attendance/extra-time/pending', { method: 'GET' });
+    if (Array.isArray(result)) return result;
+    return result?.data ?? [];
+  },
+
+  /** Leader: approve N more minutes of overtime for an open shift. */
+  approveExtraTime: async (entryId: string, minutes: number): Promise<any> => {
+    return fetchWithAuth(`/attendance/extra-time/${entryId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ minutes }),
+    });
+  },
+
+  /** Leader: reject an extra-time request. */
+  rejectExtraTime: async (entryId: string): Promise<any> => {
+    return fetchWithAuth(`/attendance/extra-time/${entryId}/reject`, { method: 'POST' });
+  },
 };

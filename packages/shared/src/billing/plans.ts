@@ -86,7 +86,10 @@ const ENTERPRISE_MODULES = [...BUSINESS_MODULES];
 const STARTER_CAPS: string[] = [];
 // `reports_builder` — custom report builder + saved/shared reports (Pro+). All
 // tiers can VIEW/run the predefined report templates; only Pro+ can build & save.
-const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing', 'priority_routing', 'reports_builder'];
+// `shift_scheduling` — define shifts + rota, dynamic per-space sub-roles, and the
+// shift reminder / extra-time approval loop (advanced attendance; Pro+, same tier
+// as overtime which it builds on).
+const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing', 'priority_routing', 'reports_builder', 'shift_scheduling'];
 // NOTE: `multi_org` was removed — the OrganizationAccess delegation flow isn't
 // wired to any billing gate, so advertising it would be a phantom feature.
 // Re-add here (with real enforcement) when multi-org delegation actually ships.

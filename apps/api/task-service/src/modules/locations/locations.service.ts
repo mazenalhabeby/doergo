@@ -159,6 +159,7 @@ export class LocationsService {
     isActive?: boolean;
     enabledModules?: string[];
     workflowId?: string;
+    workModel?: string;
   }) {
     // Verify location exists and belongs to organization
     const existing = await this.prisma.companyLocation.findFirst({
@@ -181,6 +182,7 @@ export class LocationsService {
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
     if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;
+    if (data.workModel !== undefined) updateData.workModel = data.workModel;
 
     const location = await this.prisma.companyLocation.update({
       where: { id: data.id },

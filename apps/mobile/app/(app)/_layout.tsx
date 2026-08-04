@@ -120,10 +120,22 @@ export default function AppLayout() {
 
     console.log('[AppLayout] Notification tapped, type:', type, 'taskId:', taskId);
 
-    // Overtime notifications
+    // Overtime notifications (legacy overtime module)
     if (type?.startsWith('overtime.')) {
       const overtimeId = data?.overtimeRequestId || 'active';
       router.push(`/overtime/${overtimeId}` as Href);
+      return;
+    }
+
+    // Shift reminder → the worker's clock screen, where the response actions live.
+    if (type === 'shift_reminder' || type === 'overtime_decision') {
+      router.push('/(app)/(tabs)/attendance' as Href);
+      return;
+    }
+
+    // Extra-time request → the leader's approval screen.
+    if (type === 'overtime_request') {
+      router.push('/extra-time' as Href);
       return;
     }
 
@@ -235,6 +247,7 @@ export default function AppLayout() {
         />
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
+        <Stack.Screen name="extra-time" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/notifications"
           options={{

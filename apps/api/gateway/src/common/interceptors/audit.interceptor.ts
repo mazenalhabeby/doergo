@@ -51,6 +51,23 @@ const ROUTE_ACTIONS: Record<string, string> = {
   'DELETE /custom-fields/:id': 'CUSTOM_FIELD_DELETED',
   'POST /technicians': 'TECHNICIAN_CREATED',
   'DELETE /technicians/:id': 'TECHNICIAN_DEACTIVATED',
+  // Shift scheduling
+  'POST /shifts': 'SHIFT_CREATED',
+  'PATCH /shifts/:id': 'SHIFT_UPDATED',
+  'DELETE /shifts/:id': 'SHIFT_DELETED',
+  'POST /spaces/:id/rota': 'ROTA_ASSIGNED',
+  'PATCH /rota/:id': 'ROTA_UPDATED',
+  'DELETE /rota/:id': 'ROTA_REMOVED',
+  'POST /space-roles': 'SPACE_ROLE_CREATED',
+  'PATCH /space-roles/:id': 'SPACE_ROLE_UPDATED',
+  'DELETE /space-roles/:id': 'SPACE_ROLE_DELETED',
+  'POST /spaces/:id/members': 'SPACE_MEMBER_ASSIGNED',
+  'DELETE /spaces/:id/members/:id': 'SPACE_MEMBER_REMOVED',
+  // Shift reminder responses
+  'POST /attendance/entries/:id/forgot-clock-out': 'ATTENDANCE_FORGOT_RESOLVED',
+  'POST /attendance/entries/:id/request-extra-time': 'ATTENDANCE_EXTRA_TIME_REQUESTED',
+  'POST /attendance/extra-time/:id/approve': 'ATTENDANCE_EXTRA_TIME_APPROVED',
+  'POST /attendance/extra-time/:id/reject': 'ATTENDANCE_EXTRA_TIME_REJECTED',
 };
 
 const VERB: Record<string, string> = {

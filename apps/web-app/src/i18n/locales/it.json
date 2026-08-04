@@ -3209,7 +3209,8 @@
     "resyncAllTasks": "Risincronizza tutti gli spazi",
     "resyncAllTasksHint": "Allinea le attività di ogni spazio al suo flusso di lavoro",
     "resyncAllTasksConfirmTitle": "Risincronizzare tutti gli spazi?",
-    "resyncAllTasksConfirmDescription": "Questa operazione risincronizza tutte le attività di ogni spazio con il flusso di lavoro del rispettivo spazio. Gli stati non presenti nel flusso di uno spazio vengono riportati alla sua prima fase; le attività completate e annullate vengono mantenute."
+    "resyncAllTasksConfirmDescription": "Questa operazione risincronizza tutte le attività di ogni spazio con il flusso di lavoro del rispettivo spazio. Gli stati non presenti nel flusso di uno spazio vengono riportati alla sua prima fase; le attività completate e annullate vengono mantenute.",
+    "spaceSettings": "Impostazioni spazio"
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",
@@ -5232,5 +5233,221 @@
     "inviteHint": "Imposta solo l'{{entity}} e condividi il codice: il cliente inserisce il proprio nome al momento della registrazione.",
     "resNameOpt": "Nome del cliente (facoltativo)",
     "resNamePlaceholder": "Lascia vuoto: lo imposta alla registrazione"
+  },
+  "scheduling": {
+    "title": "Impostazioni spazio",
+    "subtitle": "Configura come questo spazio gestisce presenze, turni e membri.",
+    "backToSpaces": "Torna agli spazi",
+    "unauthorized": {
+      "title": "Accesso limitato",
+      "description": "Ti serve il permesso di gestione dei membri per configurare la pianificazione dello spazio."
+    },
+    "notFound": {
+      "title": "Spazio non trovato",
+      "description": "Questo spazio non esiste o non hai accesso ad esso."
+    },
+    "tabs": {
+      "workModel": "Modello di lavoro",
+      "shifts": "Turni",
+      "rota": "Turnazione",
+      "members": "Membri"
+    },
+    "workModel": {
+      "heading": "Modello di lavoro",
+      "intro": "Scegli come questo spazio interpreta le presenze e le aspettative di orario.",
+      "saved": "Modello di lavoro aggiornato",
+      "saveFailed": "Impossibile aggiornare il modello di lavoro",
+      "remindersBadge": "Attiva i promemoria",
+      "remindersNote": "I modelli a turni e a orario fisso attivano promemoria di uscita automatici quando qualcuno rimane oltre l’orario di fine previsto.",
+      "options": {
+        "NONE": {
+          "label": "Nessuna aspettativa di orario",
+          "description": "Nessun orario di presenza né promemoria. I membri timbrano entrata e uscita liberamente."
+        },
+        "SHIFT": {
+          "label": "A turni",
+          "description": "Ai membri vengono assegnate fasce di turno tramite la turnazione. Supporta i turni notturni."
+        },
+        "FIXED": {
+          "label": "Orario settimanale fisso",
+          "description": "Un orario settimanale ricorrente definisce le ore di lavoro previste."
+        },
+        "TASK": {
+          "label": "Basato sulle attività",
+          "description": "La presenza segue il lavoro sulle attività, senza un orario di fine programmato."
+        }
+      }
+    },
+    "shifts": {
+      "heading": "Turni",
+      "intro": "Definisci fasce di turno con nome per questo spazio. Gli orari sono locali al fuso orario dello spazio.",
+      "new": "Nuovo turno",
+      "orgWide": "Tutta l’organizzazione",
+      "crossesMidnight": "Oltre la mezzanotte",
+      "breakSummary": "{{count}} min di pausa",
+      "editTitle": "Modifica turno",
+      "dialogDescription": "Imposta la fascia del turno, la pausa e il comportamento dei promemoria.",
+      "namePlaceholder": "es. Turno del mattino",
+      "nameRequired": "Inserisci un nome per il turno",
+      "reminderHint": "La tolleranza è l’attesa dopo la fine del turno prima del primo promemoria. Intervallo e numero massimo di promemoria controllano i solleciti prima dell’escalation.",
+      "deleteTitle": "Elimina turno",
+      "deleteConfirm": "Eliminare \"{{name}}\"? Le assegnazioni della turnazione che lo usano ne saranno interessate.",
+      "empty": {
+        "title": "Ancora nessun turno",
+        "description": "Crea un turno per iniziare a costruire la turnazione."
+      },
+      "fields": {
+        "name": "Nome",
+        "description": "Descrizione",
+        "color": "Colore",
+        "start": "Ora di inizio",
+        "end": "Ora di fine",
+        "breakMinutes": "Pausa (minuti)",
+        "graceMin": "Tolleranza (minuti)",
+        "reminderIntervalMin": "Intervallo promemoria (min)",
+        "maxReminders": "Promemoria max"
+      },
+      "toast": {
+        "created": "Turno creato",
+        "updated": "Turno aggiornato",
+        "deleted": "Turno eliminato",
+        "saveFailed": "Impossibile salvare il turno",
+        "deleteFailed": "Impossibile eliminare il turno"
+      }
+    },
+    "rota": {
+      "heading": "Turnazione",
+      "intro": "Assegna i membri ai turni con una pianificazione ricorrente.",
+      "new": "Nuova assegnazione",
+      "editTitle": "Modifica assegnazione",
+      "dialogDescription": "Assegna un membro a un turno e definisci come si ripete.",
+      "unknownMember": "Membro sconosciuto",
+      "unknownShift": "Turno sconosciuto",
+      "priorityBadge": "Priorità {{value}}",
+      "priorityHint": "La priorità più alta prevale quando due assegnazioni si sovrappongono lo stesso giorno.",
+      "selectMember": "Seleziona un membro",
+      "selectShift": "Seleziona un turno",
+      "noMembers": "Nessun membro disponibile",
+      "noShifts": "Nessun turno attivo. Creane uno prima nella scheda Turni.",
+      "selectMemberError": "Seleziona un membro",
+      "selectShiftError": "Seleziona un turno",
+      "selectWeekdayError": "Seleziona almeno un giorno della settimana",
+      "selectMonthDayError": "Seleziona almeno un giorno del mese",
+      "selectDateError": "Aggiungi almeno una data",
+      "deleteTitle": "Rimuovi assegnazione",
+      "deleteConfirm": "Rimuovere questa assegnazione della turnazione? Lo storico delle presenze passate viene conservato.",
+      "empty": {
+        "title": "Ancora nessuna assegnazione",
+        "description": "Assegna un membro a un turno per costruire la turnazione."
+      },
+      "fields": {
+        "member": "Membro",
+        "shift": "Turno",
+        "recurrence": "Ricorrenza",
+        "weekdays": "Giorni della settimana",
+        "monthDays": "Giorni del mese",
+        "dates": "Date",
+        "effectiveFrom": "Valido dal",
+        "effectiveTo": "Valido fino al",
+        "priority": "Priorità"
+      },
+      "recurrence": {
+        "DAILY": "Giornaliero",
+        "WEEKLY": "Settimanale",
+        "MONTHLY": "Mensile",
+        "ONE_OFF": "Una tantum",
+        "dailySummary": "Ogni giorno",
+        "weekly": "Settimanale",
+        "monthly": "Mensile",
+        "monthlySummary": "Giorni {{days}} di ogni mese",
+        "oneOffSummary": "{{count}} data/e"
+      },
+      "weekdaysShort": {
+        "sun": "Dom",
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mer",
+        "thu": "Gio",
+        "fri": "Ven",
+        "sat": "Sab"
+      },
+      "toast": {
+        "created": "Assegnazione creata",
+        "updated": "Assegnazione aggiornata",
+        "deleted": "Assegnazione rimossa",
+        "saveFailed": "Impossibile salvare l’assegnazione",
+        "deleteFailed": "Impossibile rimuovere l’assegnazione"
+      }
+    },
+    "roles": {
+      "heading": "Ruoli dello spazio",
+      "intro": "Definisci sotto-ruoli come \"Capoturno\" e i permessi di presenza che concedono.",
+      "new": "Nuovo ruolo",
+      "editTitle": "Modifica ruolo",
+      "dialogDescription": "Assegna un nome al ruolo e scegli quali permessi dello spazio concede.",
+      "builtIn": "Predefinito",
+      "noPermissions": "Nessun permesso",
+      "namePlaceholder": "es. Capoturno",
+      "nameRequired": "Inserisci un nome per il ruolo",
+      "deleteTitle": "Elimina ruolo",
+      "deleteConfirm": "Eliminare \"{{name}}\"? I membri con questo ruolo lo perderanno.",
+      "empty": {
+        "title": "Ancora nessun ruolo personalizzato",
+        "description": "Crea un ruolo per concedere permessi a livello di spazio."
+      },
+      "fields": {
+        "name": "Nome",
+        "description": "Descrizione",
+        "color": "Colore",
+        "permissions": "Permessi"
+      },
+      "permissions": {
+        "canApproveOvertime": {
+          "label": "Approvare gli straordinari",
+          "description": "Può approvare le richieste di tempo extra per questo spazio"
+        },
+        "canManageRota": {
+          "label": "Gestire la turnazione",
+          "description": "Può creare turni e assegnare membri ai turni"
+        },
+        "canReconcileAttendance": {
+          "label": "Riconciliare le presenze",
+          "description": "Riceve le escalation e può chiudere o correggere le voci aperte"
+        },
+        "canViewSpaceAttendance": {
+          "label": "Vedere le presenze dello spazio",
+          "description": "Può vedere le presenze di tutti in questo spazio"
+        }
+      },
+      "toast": {
+        "created": "Ruolo creato",
+        "updated": "Ruolo aggiornato",
+        "deleted": "Ruolo eliminato",
+        "saveFailed": "Impossibile salvare il ruolo",
+        "deleteFailed": "Impossibile eliminare il ruolo"
+      }
+    },
+    "members": {
+      "heading": "Membri dello spazio",
+      "intro": "Assegna membri a questo spazio e, facoltativamente, dai loro un sotto-ruolo.",
+      "empty": "Nessun membro ancora assegnato a questo spazio.",
+      "unknownMember": "Membro sconosciuto",
+      "addHeading": "Aggiungi un membro",
+      "addButton": "Aggiungi membro",
+      "selectMember": "Seleziona un membro",
+      "selectMemberError": "Seleziona un membro",
+      "noAvailable": "Nessun membro disponibile",
+      "noRole": "Nessun ruolo",
+      "fields": {
+        "member": "Membro",
+        "role": "Ruolo"
+      },
+      "toast": {
+        "added": "Membro aggiunto",
+        "removed": "Membro rimosso",
+        "addFailed": "Impossibile aggiungere il membro",
+        "removeFailed": "Impossibile rimuovere il membro"
+      }
+    }
   }
 }

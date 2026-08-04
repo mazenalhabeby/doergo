@@ -96,7 +96,13 @@ export type LocationJobType = (typeof LOCATION_JOB_TYPES)[keyof typeof LOCATION_
 export const ATTENDANCE_JOB_TYPES = {
   CLOCK_IN: 'attendance.clockIn',
   CLOCK_OUT: 'attendance.clockOut',
+  // Deprecated: the timezone force-close sweep. Replaced by SHIFT_REMINDER (the
+  // reminder engine never force-closes). Kept so the scheduler can de-register
+  // the old repeatable job from Redis on startup.
   AUTO_CLOCK_OUT: 'attendance.autoClockOut',
+  // Shift reminder engine sweep: nudges open shifts past their expected end,
+  // then escalates to a space leader. Never clocks anyone out.
+  SHIFT_REMINDER: 'attendance.shiftReminder',
   HEARTBEAT: 'attendance.heartbeat',
 } as const;
 

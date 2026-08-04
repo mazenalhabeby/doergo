@@ -20,6 +20,7 @@ import {
   X,
   UserPlus,
   RefreshCw,
+  SlidersHorizontal,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
@@ -258,6 +259,7 @@ export default function SpacesPage() {
                 onDelete={() => setDeleteTarget(location)}
                 onReactivate={() => reactivateMutation.mutate(location.id)}
                 onViewTasks={() => router.push(`/tasks?space=${location.id}`)}
+                onOpenSettings={() => router.push(`/locations/${location.id}`)}
               />
             ))}
           </div>
@@ -370,6 +372,7 @@ const SpaceCard = memo(function SpaceCard({
   onDelete,
   onReactivate,
   onViewTasks,
+  onOpenSettings,
 }: {
   space: CompanyLocation
   workflows: StatusWorkflow[]
@@ -379,6 +382,7 @@ const SpaceCard = memo(function SpaceCard({
   onDelete: () => void
   onReactivate: () => void
   onViewTasks: () => void
+  onOpenSettings: () => void
 }) {
   const { t } = useTranslation()
   const { data: assignments } = useQuery({
@@ -474,6 +478,15 @@ const SpaceCard = memo(function SpaceCard({
                 {t("locations.configure")}
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs rounded-lg"
+                onClick={onOpenSettings}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                {t("locations.spaceSettings")}
+              </Button>
+              <Button
                 data-tour={index === 0 ? "spaces-card-viewtasks" : undefined}
                 variant="ghost"
                 size="sm"
@@ -493,6 +506,10 @@ const SpaceCard = memo(function SpaceCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onOpenSettings}>
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  {t("locations.spaceSettings")}
+                </DropdownMenuItem>
                 {space.isActive ? (
                   <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
                     <ToggleLeft className="mr-2 h-4 w-4" />

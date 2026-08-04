@@ -10,11 +10,10 @@ import {
 /**
  * Attendance Scheduler Service
  *
- * Registers a single repeatable job that runs every 15 minutes.
- * The job checks ALL open clock-in entries and auto-clocks out based on:
- * 1. Max shift duration (16 hours)
- * 2. Midnight in the location's timezone
- * 3. Technician schedule end time + grace period
+ * Registers the shift reminder-engine sweep (a short-interval repeatable job).
+ * The sweep NEVER clocks anyone out — it nudges open shifts past their expected
+ * end and escalates to a space leader after a few unanswered reminders. On
+ * startup it also de-registers the deprecated force-close job from Redis.
  */
 @Injectable()
 export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
@@ -35,25 +34,26 @@ export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
 
   private async setupScheduledJobs() {
     try {
-      // Remove existing repeatable jobs to avoid duplicates on restart
+      // Remove existing repeatable jobs (incl. the deprecated force-close sweep)
+      // to avoid duplicates on restart.
       await this.removeExistingRepeatableJobs();
 
-      // Single job that runs every 15 minutes — handles all auto-clock-out scenarios
+      // Shift reminder sweep — short interval, indexed query, no force-close.
       await this.attendanceQueue.add(
-        ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT,
+        ATTENDANCE_JOB_TYPES.SHIFT_REMINDER,
         { triggeredAt: new Date().toISOString() },
         {
           repeat: {
-            every: ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_INTERVAL_MS,
+            every: ATTENDANCE_CONSTANTS.SHIFT_REMINDER_SWEEP_INTERVAL_MS,
           },
-          jobId: ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_JOB_ID,
+          jobId: ATTENDANCE_CONSTANTS.SHIFT_REMINDER_JOB_ID,
           removeOnComplete: true,
           removeOnFail: { age: 86400 },
         },
       );
 
       this.logger.log(
-        `Scheduled auto clock-out job (every ${ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_INTERVAL_MS / 60000} minutes) — timezone-aware`,
+        `Scheduled shift reminder sweep (every ${ATTENDANCE_CONSTANTS.SHIFT_REMINDER_SWEEP_INTERVAL_MS / 60000} min)`,
       );
 
       const repeatableJobs = await this.attendanceQueue.getRepeatableJobs();
@@ -66,22 +66,26 @@ export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
   }
 
   private async removeExistingRepeatableJobs() {
+    const stale: string[] = [
+      ATTENDANCE_JOB_TYPES.SHIFT_REMINDER,
+      ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT, // deprecated force-close sweep
+    ];
     const repeatableJobs = await this.attendanceQueue.getRepeatableJobs();
     for (const job of repeatableJobs) {
-      if (job.name === ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT) {
+      if (stale.includes(job.name)) {
         await this.attendanceQueue.removeRepeatableByKey(job.key);
         this.logger.debug(`Removed existing repeatable job: ${job.key}`);
       }
     }
   }
 
-  async triggerAutoClockOut() {
+  async triggerShiftReminders() {
     const job = await this.attendanceQueue.add(
-      ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT,
+      ATTENDANCE_JOB_TYPES.SHIFT_REMINDER,
       { triggeredAt: new Date().toISOString(), manual: true },
       { removeOnComplete: true, removeOnFail: { age: 3600 } },
     );
-    this.logger.log(`Manually triggered auto clock-out job: ${job.id}`);
+    this.logger.log(`Manually triggered shift reminder sweep: ${job.id}`);
     return job.id;
   }
 

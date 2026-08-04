@@ -255,6 +255,43 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'reject_entry' }, data);
   }
 
+  // ── Shift reminder responses (worker actions + leader approval) ──
+
+  /** Worker self-reports their leave time after forgetting to clock out. */
+  async resolveForgotClockOut(data: {
+    userId: string;
+    entryId: string;
+    clockOutAt: string;
+    organizationId: string;
+  }) {
+    return this.send({ cmd: 'resolve_forgot_clock_out' }, data);
+  }
+
+  /** Worker requests to keep working past the shift end (routes to a leader). */
+  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string }) {
+    return this.send({ cmd: 'request_extra_time' }, data);
+  }
+
+  /** Leader approves N more minutes of overtime for an open shift. */
+  async approveExtraTime(data: {
+    approverId: string;
+    entryId: string;
+    minutes: number;
+    organizationId: string;
+  }) {
+    return this.send({ cmd: 'approve_extra_time' }, data);
+  }
+
+  /** Leader rejects an extra-time request. */
+  async rejectExtraTime(data: { approverId: string; entryId: string; organizationId: string }) {
+    return this.send({ cmd: 'reject_extra_time' }, data);
+  }
+
+  /** Open extra-time requests awaiting approval (scoped to the caller's spaces). */
+  async listPendingExtraTime(data: { userId: string; organizationId: string; isAdmin?: boolean }) {
+    return this.send({ cmd: 'list_pending_extra_time' }, data);
+  }
+
   /**
    * Edit a time entry
    */

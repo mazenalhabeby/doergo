@@ -283,6 +283,42 @@ export class AttendanceController {
     return this.approvalService.rejectEntry(data);
   }
 
+  // ── Shift reminder responses (worker actions + leader approval) ──
+  @MessagePattern({ cmd: 'resolve_forgot_clock_out' })
+  async resolveForgotClockOut(
+    @Payload() data: { userId: string; entryId: string; clockOutAt: string; organizationId: string },
+  ) {
+    return this.attendanceService.resolveForgotClockOut(data);
+  }
+
+  @MessagePattern({ cmd: 'request_extra_time' })
+  async requestExtraTime(
+    @Payload() data: { userId: string; entryId: string; organizationId: string },
+  ) {
+    return this.attendanceService.requestExtraTime(data);
+  }
+
+  @MessagePattern({ cmd: 'approve_extra_time' })
+  async approveExtraTime(
+    @Payload() data: { approverId: string; entryId: string; minutes: number; organizationId: string },
+  ) {
+    return this.attendanceService.approveExtraTime(data);
+  }
+
+  @MessagePattern({ cmd: 'reject_extra_time' })
+  async rejectExtraTime(
+    @Payload() data: { approverId: string; entryId: string; organizationId: string },
+  ) {
+    return this.attendanceService.rejectExtraTime(data);
+  }
+
+  @MessagePattern({ cmd: 'list_pending_extra_time' })
+  async listPendingExtraTime(
+    @Payload() data: { userId: string; organizationId: string; isAdmin?: boolean },
+  ) {
+    return this.attendanceService.listPendingExtraTime(data);
+  }
+
   @MessagePattern({ cmd: 'edit_entry' })
   async editEntry(
     @Payload()

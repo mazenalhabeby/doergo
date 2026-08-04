@@ -213,6 +213,90 @@ export class PushService {
     });
   }
 
+  // Shift reminder engine: nudge the worker whose shift has ended but is still
+  // clocked in. The `type`/`entryId` let the mobile app render the "I forgot" /
+  // "working extra" actions (wired in the mobile phase).
+  async sendShiftReminderPush(data: {
+    userId: string;
+    entryId: string;
+    locationName: string;
+    reminderCount: number;
+  }) {
+    const body = `Your shift at ${data.locationName} has ended — did you forget to clock out, or are you working extra time?`;
+    return this.sendToUser(data.userId, 'Still clocked in?', body, {
+      type: 'shift_reminder',
+      entryId: data.entryId,
+      reminderCount: data.reminderCount,
+    });
+  }
+
+  // Escalation: nobody responded to the reminders → ask a space leader to
+  // reconcile the still-open shift. Nothing is auto-closed.
+  async sendShiftEscalationPush(data: {
+    leaderIds: string[];
+    userName: string;
+    locationName: string;
+    entryId: string;
+  }) {
+    const body = `${data.userName} is still clocked in at ${data.locationName} after their shift ended and hasn't responded. Please review.`;
+
+    const allTokens: string[] = [];
+    for (const leaderId of data.leaderIds) {
+      const tokens = await this.getUserTokens(leaderId);
+      allTokens.push(...tokens);
+    }
+
+    return this.sendPushNotification(allTokens, 'Open shift needs review', body, {
+      type: 'shift_escalation',
+      userName: data.userName,
+      entryId: data.entryId,
+    });
+  }
+
+  // A worker asked to keep working past their shift — notify the space's
+  // overtime approvers so they can grant/deny extra minutes.
+  async sendOvertimeRequestPush(data: {
+    leaderIds: string[];
+    userName: string;
+    locationName: string;
+    entryId: string;
+  }) {
+    const body = `${data.userName} wants to keep working past their shift at ${data.locationName}. Approve extra time?`;
+
+    const allTokens: string[] = [];
+    for (const leaderId of data.leaderIds) {
+      const tokens = await this.getUserTokens(leaderId);
+      allTokens.push(...tokens);
+    }
+
+    return this.sendPushNotification(allTokens, 'Extra-time request', body, {
+      type: 'overtime_request',
+      userName: data.userName,
+      entryId: data.entryId,
+    });
+  }
+
+  // Tell the worker whether their extra time was approved (and for how long) or
+  // rejected (they should clock out now).
+  async sendOvertimeDecisionPush(data: {
+    userId: string;
+    entryId: string;
+    decision: 'approved' | 'rejected';
+    minutes?: number;
+  }) {
+    const body =
+      data.decision === 'approved'
+        ? `Your extra time was approved${data.minutes ? ` for ${data.minutes} more minutes` : ''}.`
+        : 'Your extra-time request was declined — please clock out.';
+
+    return this.sendToUser(data.userId, data.decision === 'approved' ? 'Overtime approved' : 'Overtime declined', body, {
+      type: 'overtime_decision',
+      entryId: data.entryId,
+      decision: data.decision,
+      minutes: data.minutes,
+    });
+  }
+
   async sendGeofenceAlertPush(data: {
     dispatcherIds: string[];
     userName: string;

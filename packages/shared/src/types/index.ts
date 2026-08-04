@@ -7,6 +7,7 @@ export {
   DependencyType, SprintStatus, EpicStatus,
   CustomFieldType, RecurrenceFrequency,
   TaskCreationScope, TimeOffStatus, InvoiceStatus,
+  WorkModel, ShiftReminderState, ShiftRecurrence,
 } from './enums';
 
 export {
@@ -727,6 +728,9 @@ export interface OrgRoleData {
 
 // Export attendance types
 export * from './attendance';
+
+// Export shift-scheduling types (space-centric attendance)
+export * from './shift';
 
 // Export employee types (file still named technician.ts for git history)
 export * from './technician';

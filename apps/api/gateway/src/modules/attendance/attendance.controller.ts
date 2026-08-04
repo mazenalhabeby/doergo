@@ -18,6 +18,7 @@ import {
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
+import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
 import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto } from './dto';
@@ -464,6 +465,79 @@ export class AttendanceController {
       approverId: req.user.id,
       organizationId: req.user.organizationId,
       reason: body.reason,
+    });
+  }
+
+  // ── Shift reminder responses ──────────────────────────────────────────────
+
+  @Post('entries/:id/forgot-clock-out')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Resolve a forgotten clock-out with a self-reported leave time' })
+  async resolveForgotClockOut(
+    @Param('id') entryId: string,
+    @Body() body: { clockOutAt: string },
+    @Request() req?: any,
+  ) {
+    return this.attendanceService.resolveForgotClockOut({
+      entryId,
+      clockOutAt: body.clockOutAt,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post('entries/:id/request-extra-time')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @RequirePlan('shift_scheduling')
+  @ApiOperation({ summary: 'Request to keep working past the shift end (routes to a leader)' })
+  async requestExtraTime(@Param('id') entryId: string, @Request() req?: any) {
+    return this.attendanceService.requestExtraTime({
+      entryId,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Get('extra-time/pending')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'List open extra-time requests the caller can approve' })
+  async getPendingExtraTime(@Request() req?: any) {
+    return this.attendanceService.listPendingExtraTime({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      // Org admins/managers see all; the space-role check runs server-side.
+      isAdmin: req.user.role === Role.ADMIN || !!req.user.canManageUsers,
+    });
+  }
+
+  // Leader actions: gated to authenticated staff; the real space-role permission
+  // (canApproveOvertime) is enforced server-side in task-service.
+  @Post('extra-time/:id/approve')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @RequirePlan('shift_scheduling')
+  @ApiOperation({ summary: 'Approve N more minutes of overtime for an open shift' })
+  async approveExtraTime(
+    @Param('id') entryId: string,
+    @Body() body: { minutes: number },
+    @Request() req?: any,
+  ) {
+    return this.attendanceService.approveExtraTime({
+      entryId,
+      minutes: body.minutes,
+      approverId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post('extra-time/:id/reject')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @RequirePlan('shift_scheduling')
+  @ApiOperation({ summary: 'Reject an extra-time request' })
+  async rejectExtraTime(@Param('id') entryId: string, @Request() req?: any) {
+    return this.attendanceService.rejectExtraTime({
+      entryId,
+      approverId: req.user.id,
+      organizationId: req.user.organizationId,
     });
   }
 

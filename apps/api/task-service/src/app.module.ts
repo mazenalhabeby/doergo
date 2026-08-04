@@ -17,6 +17,8 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { SearchModule } from './modules/search/search.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { SpaceRolesModule } from './modules/space-roles/space-roles.module';
+import { ShiftsModule } from './modules/shifts/shifts.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
 import { PhasesModule } from './modules/phases/phases.module';
@@ -68,6 +70,8 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     LocationsModule,
     SearchModule,
     AttendanceModule,
+    SpaceRolesModule,
+    ShiftsModule,
     OvertimeModule,
     TechniciansModule,
     PhasesModule,

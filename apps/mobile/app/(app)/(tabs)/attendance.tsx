@@ -39,6 +39,7 @@ import {
   BreakType,
 } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { tierAllows } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
@@ -406,6 +407,44 @@ export default function AttendanceScreen() {
     }
   };
 
+  // ── Shift reminder responses ──────────────────────────────────────────────
+  const [showForgotSheet, setShowForgotSheet] = useState(false);
+  const [isReminderLoading, setIsReminderLoading] = useState(false);
+
+  // "I forgot to clock out" — self-report actual leave time.
+  const resolveForgot = async (clockOutAt: Date) => {
+    const entry = status?.currentEntry;
+    if (!entry) return;
+    setShowForgotSheet(false);
+    setIsReminderLoading(true);
+    try {
+      await attendanceApi.resolveForgotClockOut(entry.id, clockOutAt.toISOString());
+      await stopBackgroundHeartbeat();
+      await fetchAttendanceData();
+      toast.success(t('common.success'), t('shiftReminder.resolveSuccess'));
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('shiftReminder.resolveFailed'));
+    } finally {
+      setIsReminderLoading(false);
+    }
+  };
+
+  // "I'm working extra time" — routes to a leader for approval.
+  const handleRequestExtraTime = async () => {
+    const entry = status?.currentEntry;
+    if (!entry) return;
+    setIsReminderLoading(true);
+    try {
+      await attendanceApi.requestExtraTime(entry.id);
+      await fetchAttendanceData();
+      toast.success(t('common.success'), t('shiftReminder.extraRequestSent'));
+    } catch (err) {
+      toast.error(t('common.error'), err instanceof Error ? err.message : t('shiftReminder.extraRequestFailed'));
+    } finally {
+      setIsReminderLoading(false);
+    }
+  };
+
   // Handle start break - show modal for notes
   const handleStartBreak = (type: BreakType) => {
     setPendingBreakType(type);
@@ -501,6 +540,31 @@ export default function AttendanceScreen() {
   const currentEntry = status?.currentEntry;
   const assignedLocations = status?.assignedLocations || [];
 
+  // Shift reminder: has the shift ended while still clocked in?
+  const reminderState = currentEntry?.reminderState ?? 'NONE';
+  const expectedEnd = currentEntry?.expectedClockOutAt
+    ? new Date(currentEntry.expectedClockOutAt)
+    : null;
+  const shiftHasEnded = !!expectedEnd && expectedEnd.getTime() <= Date.now();
+  // Prompt the worker when the backend flagged them (REMINDED/ESCALATED) or when the
+  // expected end has simply passed and nothing has happened yet (NONE + past end).
+  const showReminderPrompt =
+    isClockedIn &&
+    (reminderState === 'REMINDED' ||
+      reminderState === 'ESCALATED' ||
+      (reminderState === 'NONE' && shiftHasEnded));
+  const showOvertimePending = isClockedIn && reminderState === 'OVERTIME_PENDING';
+  const showOvertimeApproved = isClockedIn && reminderState === 'OVERTIME_APPROVED';
+
+  // Extra-time (overtime) is a Professional+ capability. Under-tier orgs still
+  // get reminders and can "forgot to clock out", but the extra-time request +
+  // leader approval flow is hidden (backend enforces the same 402).
+  const hasShiftScheduling = tierAllows(user?.planTier, 'shift_scheduling');
+
+  // Leaders (anyone who manages users) get an entry point to the approval screen.
+  // Backend is the real gate; this just hides it from plain field workers.
+  const canApproveExtraTime = !!user?.canManageUsers && hasShiftScheduling;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
@@ -577,6 +641,87 @@ export default function AttendanceScreen() {
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={activeOvertime.status === 'APPROVED' ? '#059669' : '#D97706'} />
+            </TouchableOpacity>
+          )}
+
+          {/* Shift-reminder: shift ended, still clocked in — prompt for response */}
+          {showReminderPrompt && (
+            <View style={[styles.reminderCard, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+              <View style={styles.reminderHeader}>
+                <Ionicons name="alarm" size={22} color="#D97706" />
+                <Text style={styles.reminderTitle}>{t('shiftReminder.shiftEndedTitle')}</Text>
+              </View>
+              <Text style={styles.reminderSubtitle}>{t('shiftReminder.shiftEndedSubtitle')}</Text>
+              <TouchableOpacity
+                style={styles.reminderPrimaryBtn}
+                onPress={() => setShowForgotSheet(true)}
+                disabled={isReminderLoading}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="log-out-outline" size={18} color="#fff" />
+                <Text style={styles.reminderPrimaryText}>{t('shiftReminder.forgotClockOut')}</Text>
+              </TouchableOpacity>
+              {hasShiftScheduling && (
+                <TouchableOpacity
+                  style={styles.reminderSecondaryBtn}
+                  onPress={handleRequestExtraTime}
+                  disabled={isReminderLoading}
+                  activeOpacity={0.7}
+                >
+                  {isReminderLoading ? (
+                    <ActivityIndicator size="small" color="#92400E" />
+                  ) : (
+                    <>
+                      <Ionicons name="time-outline" size={18} color="#92400E" />
+                      <Text style={styles.reminderSecondaryText}>{t('shiftReminder.workingExtra')}</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Extra time pending leader approval */}
+          {showOvertimePending && (
+            <View style={[styles.reminderCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
+              <View style={styles.reminderHeader}>
+                <ActivityIndicator size="small" color="#2563EB" />
+                <Text style={[styles.reminderTitle, { color: '#1E3A8A' }]}>{t('shiftReminder.waitingApprovalTitle')}</Text>
+              </View>
+              <Text style={[styles.reminderSubtitle, { color: '#1D4ED8' }]}>{t('shiftReminder.waitingApprovalSubtitle')}</Text>
+            </View>
+          )}
+
+          {/* Extra time approved — new end time */}
+          {showOvertimeApproved && (
+            <View style={[styles.reminderCard, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
+              <View style={styles.reminderHeader}>
+                <Ionicons name="checkmark-circle" size={22} color="#059669" />
+                <Text style={[styles.reminderTitle, { color: '#065F46' }]}>{t('shiftReminder.extraApprovedTitle')}</Text>
+              </View>
+              {expectedEnd && (
+                <Text style={[styles.reminderSubtitle, { color: '#047857' }]}>
+                  {t('shiftReminder.extraApprovedSubtitle', { time: formatTime(currentEntry!.expectedClockOutAt!) })}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* Leader entry point: approve extra time for the team */}
+          {canApproveExtraTime && (
+            <TouchableOpacity
+              style={[styles.leaderEntry, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
+              onPress={() => router.push('/extra-time' as Href)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.leaderEntryIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                <Ionicons name="checkmark-done-outline" size={20} color={COLORS.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.leaderEntryTitle, { color: colors.textPrimary }]}>{t('shiftReminder.openEntryPoint')}</Text>
+                <Text style={[styles.leaderEntrySub, { color: colors.textMuted }]}>{t('shiftReminder.openEntryPointDesc')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           )}
 
@@ -921,6 +1066,70 @@ export default function AttendanceScreen() {
         isLoading={isActionLoading}
       />
 
+      {/* Forgot-to-clock-out Bottom Sheet — pick actual leave time */}
+      <Modal
+        visible={showForgotSheet}
+        transparent
+        animationType="none"
+        onRequestClose={() => setShowForgotSheet(false)}
+        statusBarTranslucent
+      >
+        <Pressable
+          style={[StyleSheet.absoluteFill, styles.forgotOverlay]}
+          onPress={() => setShowForgotSheet(false)}
+        >
+          <Pressable
+            style={[styles.forgotSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.lg }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.modalHandle, { backgroundColor: colors.borderLight }]} />
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('shiftReminder.forgotSheetTitle')}</Text>
+              <TouchableOpacity onPress={() => setShowForgotSheet(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              {t('shiftReminder.forgotSheetSubtitle')}
+            </Text>
+
+            {expectedEnd && (
+              <TouchableOpacity
+                style={[styles.forgotOption, { borderColor: colors.border }]}
+                onPress={() => resolveForgot(expectedEnd)}
+                disabled={isReminderLoading}
+                activeOpacity={0.7}
+              >
+                <View style={styles.forgotOptionLeft}>
+                  <Ionicons name="flag-outline" size={20} color={COLORS.primary} />
+                  <Text style={[styles.forgotOptionLabel, { color: colors.textPrimary }]}>{t('shiftReminder.atShiftEnd')}</Text>
+                </View>
+                <Text style={[styles.forgotOptionTime, { color: colors.textSecondary }]}>
+                  {formatTime(currentEntry!.expectedClockOutAt!)}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.forgotOption, styles.forgotOptionPrimary]}
+              onPress={() => resolveForgot(new Date())}
+              disabled={isReminderLoading}
+              activeOpacity={0.7}
+            >
+              <View style={styles.forgotOptionLeft}>
+                <Ionicons name="time-outline" size={20} color="#fff" />
+                <Text style={[styles.forgotOptionLabel, { color: '#fff' }]}>{t('shiftReminder.now')}</Text>
+              </View>
+              {isReminderLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={[styles.forgotOptionTime, { color: '#fff' }]}>{formatTime(new Date().toISOString())}</Text>
+              )}
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* Break Notes Bottom Sheet */}
       <Modal
         visible={breakModalVisible}
@@ -1084,6 +1293,124 @@ const styles = StyleSheet.create({
   overtimeBannerSub: {
     fontSize: FONT_SIZE.sm,
     marginTop: 2,
+  },
+  // Shift reminder card
+  reminderCard: {
+    marginTop: SPACING.md,
+    padding: SPACING.lg,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  reminderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  reminderTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: '#92400E',
+    flex: 1,
+  },
+  reminderSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: '#A16207',
+    marginTop: SPACING.xs,
+  },
+  reminderPrimaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#D97706',
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    marginTop: SPACING.md,
+  },
+  reminderPrimaryText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: '#fff',
+  },
+  reminderSecondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    marginTop: SPACING.sm,
+  },
+  reminderSecondaryText: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: '#92400E',
+  },
+  // Leader entry point
+  leaderEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  leaderEntryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  leaderEntryTitle: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  leaderEntrySub: {
+    fontSize: FONT_SIZE.sm,
+    marginTop: 1,
+  },
+  // Forgot clock-out sheet
+  forgotOverlay: {
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  forgotSheet: {
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.sm,
+  },
+  forgotOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    marginTop: SPACING.md,
+  },
+  forgotOptionPrimary: {
+    backgroundColor: COLORS.primary,
+    borderWidth: 0,
+  },
+  forgotOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  forgotOptionLabel: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  forgotOptionTime: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.medium,
   },
   geofenceWarningTextContainer: {
     flex: 1,

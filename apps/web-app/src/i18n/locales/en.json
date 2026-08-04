@@ -3209,7 +3209,8 @@
     "resyncAllTasks": "Re-sync all spaces",
     "resyncAllTasksHint": "Update every space’s tasks to match its workflow",
     "resyncAllTasksConfirmTitle": "Re-sync all spaces?",
-    "resyncAllTasksConfirmDescription": "This re-syncs every task in every space onto its space’s workflow. Statuses that don’t exist in a space’s workflow are reset to that workflow’s first stage — Completed and Canceled tasks are preserved."
+    "resyncAllTasksConfirmDescription": "This re-syncs every task in every space onto its space’s workflow. Statuses that don’t exist in a space’s workflow are reset to that workflow’s first stage — Completed and Canceled tasks are preserved.",
+    "spaceSettings": "Space settings"
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",
@@ -5232,5 +5233,221 @@
     "inviteHint": "Just set the {{entity}} and share the code — the client fills in their own name when they register.",
     "resNameOpt": "Client name (optional)",
     "resNamePlaceholder": "Leave blank — they set it on sign-up"
+  },
+  "scheduling": {
+    "title": "Space settings",
+    "subtitle": "Configure how this space handles attendance, shifts and members.",
+    "backToSpaces": "Back to spaces",
+    "unauthorized": {
+      "title": "Access restricted",
+      "description": "You need the manage-members permission to configure space scheduling."
+    },
+    "notFound": {
+      "title": "Space not found",
+      "description": "This space doesn't exist or you don't have access to it."
+    },
+    "tabs": {
+      "workModel": "Work model",
+      "shifts": "Shifts",
+      "rota": "Rota",
+      "members": "Members"
+    },
+    "workModel": {
+      "heading": "Work model",
+      "intro": "Choose how this space interprets attendance and time expectations.",
+      "saved": "Work model updated",
+      "saveFailed": "Failed to update work model",
+      "remindersBadge": "Enables reminders",
+      "remindersNote": "Shift-based and fixed schedule models enable automatic clock-out reminders when someone stays past their expected end time.",
+      "options": {
+        "NONE": {
+          "label": "No time expectations",
+          "description": "No attendance schedule or reminders. Members clock in and out freely."
+        },
+        "SHIFT": {
+          "label": "Shift-based",
+          "description": "Members are assigned shift windows via the rota. Supports overnight shifts."
+        },
+        "FIXED": {
+          "label": "Fixed weekly schedule",
+          "description": "A repeating weekly schedule defines expected working hours."
+        },
+        "TASK": {
+          "label": "Task-based",
+          "description": "Attendance follows task work, with no scheduled end time."
+        }
+      }
+    },
+    "shifts": {
+      "heading": "Shifts",
+      "intro": "Define named shift windows for this space. Times are local to the space timezone.",
+      "new": "New shift",
+      "orgWide": "Org-wide",
+      "crossesMidnight": "Crosses midnight",
+      "breakSummary": "{{count}} min break",
+      "editTitle": "Edit shift",
+      "dialogDescription": "Set the shift window, break and reminder behaviour.",
+      "namePlaceholder": "e.g. Morning shift",
+      "nameRequired": "Please enter a shift name",
+      "reminderHint": "Grace is the wait after the shift end before the first reminder. Interval and max reminders control follow-ups before escalation.",
+      "deleteTitle": "Delete shift",
+      "deleteConfirm": "Delete \"{{name}}\"? Existing rota assignments using it will be affected.",
+      "empty": {
+        "title": "No shifts yet",
+        "description": "Create a shift to start building the rota."
+      },
+      "fields": {
+        "name": "Name",
+        "description": "Description",
+        "color": "Color",
+        "start": "Start time",
+        "end": "End time",
+        "breakMinutes": "Break (minutes)",
+        "graceMin": "Grace (minutes)",
+        "reminderIntervalMin": "Reminder interval (min)",
+        "maxReminders": "Max reminders"
+      },
+      "toast": {
+        "created": "Shift created",
+        "updated": "Shift updated",
+        "deleted": "Shift deleted",
+        "saveFailed": "Failed to save shift",
+        "deleteFailed": "Failed to delete shift"
+      }
+    },
+    "rota": {
+      "heading": "Rota",
+      "intro": "Assign members to shifts on a recurring schedule.",
+      "new": "New assignment",
+      "editTitle": "Edit assignment",
+      "dialogDescription": "Assign a member to a shift and set how it repeats.",
+      "unknownMember": "Unknown member",
+      "unknownShift": "Unknown shift",
+      "priorityBadge": "Priority {{value}}",
+      "priorityHint": "Higher priority wins when two assignments overlap on the same day.",
+      "selectMember": "Select a member",
+      "selectShift": "Select a shift",
+      "noMembers": "No members available",
+      "noShifts": "No active shifts. Create one in the Shifts tab first.",
+      "selectMemberError": "Please select a member",
+      "selectShiftError": "Please select a shift",
+      "selectWeekdayError": "Please select at least one weekday",
+      "selectMonthDayError": "Please select at least one day of the month",
+      "selectDateError": "Please add at least one date",
+      "deleteTitle": "Remove assignment",
+      "deleteConfirm": "Remove this rota assignment? Past attendance history is preserved.",
+      "empty": {
+        "title": "No assignments yet",
+        "description": "Assign a member to a shift to build the rota."
+      },
+      "fields": {
+        "member": "Member",
+        "shift": "Shift",
+        "recurrence": "Recurrence",
+        "weekdays": "Weekdays",
+        "monthDays": "Days of month",
+        "dates": "Dates",
+        "effectiveFrom": "Effective from",
+        "effectiveTo": "Effective to",
+        "priority": "Priority"
+      },
+      "recurrence": {
+        "DAILY": "Daily",
+        "WEEKLY": "Weekly",
+        "MONTHLY": "Monthly",
+        "ONE_OFF": "One-off",
+        "dailySummary": "Every day",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "monthlySummary": "Days {{days}} each month",
+        "oneOffSummary": "{{count}} date(s)"
+      },
+      "weekdaysShort": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      },
+      "toast": {
+        "created": "Assignment created",
+        "updated": "Assignment updated",
+        "deleted": "Assignment removed",
+        "saveFailed": "Failed to save assignment",
+        "deleteFailed": "Failed to remove assignment"
+      }
+    },
+    "roles": {
+      "heading": "Space roles",
+      "intro": "Define sub-roles like \"Shift Leader\" and the attendance permissions they grant.",
+      "new": "New role",
+      "editTitle": "Edit role",
+      "dialogDescription": "Name the role and choose which space permissions it grants.",
+      "builtIn": "Built-in",
+      "noPermissions": "No permissions",
+      "namePlaceholder": "e.g. Shift Leader",
+      "nameRequired": "Please enter a role name",
+      "deleteTitle": "Delete role",
+      "deleteConfirm": "Delete \"{{name}}\"? Members with this role will lose it.",
+      "empty": {
+        "title": "No custom roles yet",
+        "description": "Create a role to grant space-level permissions."
+      },
+      "fields": {
+        "name": "Name",
+        "description": "Description",
+        "color": "Color",
+        "permissions": "Permissions"
+      },
+      "permissions": {
+        "canApproveOvertime": {
+          "label": "Approve overtime",
+          "description": "Can approve extra-time requests for this space"
+        },
+        "canManageRota": {
+          "label": "Manage rota",
+          "description": "Can create shifts and assign members to shifts"
+        },
+        "canReconcileAttendance": {
+          "label": "Reconcile attendance",
+          "description": "Receives escalations and can close or fix open entries"
+        },
+        "canViewSpaceAttendance": {
+          "label": "View space attendance",
+          "description": "Can see attendance for everyone in this space"
+        }
+      },
+      "toast": {
+        "created": "Role created",
+        "updated": "Role updated",
+        "deleted": "Role deleted",
+        "saveFailed": "Failed to save role",
+        "deleteFailed": "Failed to delete role"
+      }
+    },
+    "members": {
+      "heading": "Space members",
+      "intro": "Assign members to this space and optionally give them a sub-role.",
+      "empty": "No members assigned to this space yet.",
+      "unknownMember": "Unknown member",
+      "addHeading": "Add a member",
+      "addButton": "Add member",
+      "selectMember": "Select a member",
+      "selectMemberError": "Please select a member",
+      "noAvailable": "No available members",
+      "noRole": "No role",
+      "fields": {
+        "member": "Member",
+        "role": "Role"
+      },
+      "toast": {
+        "added": "Member added",
+        "removed": "Member removed",
+        "addFailed": "Failed to add member",
+        "removeFailed": "Failed to remove member"
+      }
+    }
   }
 }

@@ -3209,7 +3209,8 @@
     "resyncAllTasks": "Alle Bereiche neu abgleichen",
     "resyncAllTasksHint": "Aufgaben aller Bereiche an deren Workflow anpassen",
     "resyncAllTasksConfirmTitle": "Alle Bereiche neu abgleichen?",
-    "resyncAllTasksConfirmDescription": "Dadurch werden alle Aufgaben in jedem Bereich an den Workflow des jeweiligen Bereichs angepasst. Status, die im Workflow eines Bereichs nicht existieren, werden auf dessen erste Phase zurückgesetzt – abgeschlossene und stornierte Aufgaben bleiben erhalten."
+    "resyncAllTasksConfirmDescription": "Dadurch werden alle Aufgaben in jedem Bereich an den Workflow des jeweiligen Bereichs angepasst. Status, die im Workflow eines Bereichs nicht existieren, werden auf dessen erste Phase zurückgesetzt – abgeschlossene und stornierte Aufgaben bleiben erhalten.",
+    "spaceSettings": "Bereichseinstellungen"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",
@@ -5232,5 +5233,221 @@
     "inviteHint": "Legen Sie nur die {{entity}} fest und teilen Sie den Code — der Kunde trägt seinen Namen bei der Registrierung selbst ein.",
     "resNameOpt": "Kundenname (optional)",
     "resNamePlaceholder": "Leer lassen — wird bei der Anmeldung gesetzt"
+  },
+  "scheduling": {
+    "title": "Bereichseinstellungen",
+    "subtitle": "Legen Sie fest, wie dieser Bereich Anwesenheit, Schichten und Mitglieder verwaltet.",
+    "backToSpaces": "Zurück zu den Bereichen",
+    "unauthorized": {
+      "title": "Zugriff eingeschränkt",
+      "description": "Sie benötigen die Berechtigung zur Mitgliederverwaltung, um die Bereichsplanung zu konfigurieren."
+    },
+    "notFound": {
+      "title": "Bereich nicht gefunden",
+      "description": "Dieser Bereich existiert nicht oder Sie haben keinen Zugriff darauf."
+    },
+    "tabs": {
+      "workModel": "Arbeitsmodell",
+      "shifts": "Schichten",
+      "rota": "Dienstplan",
+      "members": "Mitglieder"
+    },
+    "workModel": {
+      "heading": "Arbeitsmodell",
+      "intro": "Wählen Sie, wie dieser Bereich Anwesenheit und Zeitvorgaben interpretiert.",
+      "saved": "Arbeitsmodell aktualisiert",
+      "saveFailed": "Arbeitsmodell konnte nicht aktualisiert werden",
+      "remindersBadge": "Aktiviert Erinnerungen",
+      "remindersNote": "Die Modelle „Schichtbasiert“ und „Feste Wochenplanung“ aktivieren automatische Ausstempel-Erinnerungen, wenn jemand über das erwartete Ende hinaus bleibt.",
+      "options": {
+        "NONE": {
+          "label": "Keine Zeitvorgaben",
+          "description": "Kein Anwesenheitsplan und keine Erinnerungen. Mitglieder stempeln frei ein und aus."
+        },
+        "SHIFT": {
+          "label": "Schichtbasiert",
+          "description": "Mitgliedern werden über den Dienstplan Schichtfenster zugewiesen. Unterstützt Nachtschichten."
+        },
+        "FIXED": {
+          "label": "Feste Wochenplanung",
+          "description": "Ein sich wiederholender Wochenplan legt die erwarteten Arbeitszeiten fest."
+        },
+        "TASK": {
+          "label": "Aufgabenbasiert",
+          "description": "Die Anwesenheit folgt der Aufgabenarbeit, ohne geplantes Ende."
+        }
+      }
+    },
+    "shifts": {
+      "heading": "Schichten",
+      "intro": "Definieren Sie benannte Schichtfenster für diesen Bereich. Zeiten gelten in der Zeitzone des Bereichs.",
+      "new": "Neue Schicht",
+      "orgWide": "Organisationsweit",
+      "crossesMidnight": "Über Mitternacht",
+      "breakSummary": "{{count}} Min. Pause",
+      "editTitle": "Schicht bearbeiten",
+      "dialogDescription": "Legen Sie Schichtfenster, Pause und Erinnerungsverhalten fest.",
+      "namePlaceholder": "z. B. Frühschicht",
+      "nameRequired": "Bitte geben Sie einen Schichtnamen ein",
+      "reminderHint": "Die Karenzzeit ist die Wartezeit nach Schichtende bis zur ersten Erinnerung. Intervall und maximale Erinnerungen steuern die Nachfassungen vor der Eskalation.",
+      "deleteTitle": "Schicht löschen",
+      "deleteConfirm": "„{{name}}“ löschen? Bestehende Dienstplanzuweisungen, die sie verwenden, sind betroffen.",
+      "empty": {
+        "title": "Noch keine Schichten",
+        "description": "Erstellen Sie eine Schicht, um den Dienstplan aufzubauen."
+      },
+      "fields": {
+        "name": "Name",
+        "description": "Beschreibung",
+        "color": "Farbe",
+        "start": "Startzeit",
+        "end": "Endzeit",
+        "breakMinutes": "Pause (Minuten)",
+        "graceMin": "Karenzzeit (Minuten)",
+        "reminderIntervalMin": "Erinnerungsintervall (Min.)",
+        "maxReminders": "Max. Erinnerungen"
+      },
+      "toast": {
+        "created": "Schicht erstellt",
+        "updated": "Schicht aktualisiert",
+        "deleted": "Schicht gelöscht",
+        "saveFailed": "Schicht konnte nicht gespeichert werden",
+        "deleteFailed": "Schicht konnte nicht gelöscht werden"
+      }
+    },
+    "rota": {
+      "heading": "Dienstplan",
+      "intro": "Weisen Sie Mitglieder Schichten nach einem wiederkehrenden Zeitplan zu.",
+      "new": "Neue Zuweisung",
+      "editTitle": "Zuweisung bearbeiten",
+      "dialogDescription": "Weisen Sie ein Mitglied einer Schicht zu und legen Sie fest, wie sie sich wiederholt.",
+      "unknownMember": "Unbekanntes Mitglied",
+      "unknownShift": "Unbekannte Schicht",
+      "priorityBadge": "Priorität {{value}}",
+      "priorityHint": "Bei Überschneidung am selben Tag hat die höhere Priorität Vorrang.",
+      "selectMember": "Mitglied auswählen",
+      "selectShift": "Schicht auswählen",
+      "noMembers": "Keine Mitglieder verfügbar",
+      "noShifts": "Keine aktiven Schichten. Erstellen Sie zuerst eine im Reiter „Schichten“.",
+      "selectMemberError": "Bitte wählen Sie ein Mitglied aus",
+      "selectShiftError": "Bitte wählen Sie eine Schicht aus",
+      "selectWeekdayError": "Bitte wählen Sie mindestens einen Wochentag",
+      "selectMonthDayError": "Bitte wählen Sie mindestens einen Tag des Monats",
+      "selectDateError": "Bitte fügen Sie mindestens ein Datum hinzu",
+      "deleteTitle": "Zuweisung entfernen",
+      "deleteConfirm": "Diese Dienstplanzuweisung entfernen? Die bisherige Anwesenheitshistorie bleibt erhalten.",
+      "empty": {
+        "title": "Noch keine Zuweisungen",
+        "description": "Weisen Sie ein Mitglied einer Schicht zu, um den Dienstplan aufzubauen."
+      },
+      "fields": {
+        "member": "Mitglied",
+        "shift": "Schicht",
+        "recurrence": "Wiederholung",
+        "weekdays": "Wochentage",
+        "monthDays": "Tage des Monats",
+        "dates": "Daten",
+        "effectiveFrom": "Gültig ab",
+        "effectiveTo": "Gültig bis",
+        "priority": "Priorität"
+      },
+      "recurrence": {
+        "DAILY": "Täglich",
+        "WEEKLY": "Wöchentlich",
+        "MONTHLY": "Monatlich",
+        "ONE_OFF": "Einmalig",
+        "dailySummary": "Jeden Tag",
+        "weekly": "Wöchentlich",
+        "monthly": "Monatlich",
+        "monthlySummary": "Tage {{days}} jeden Monat",
+        "oneOffSummary": "{{count}} Datum/Daten"
+      },
+      "weekdaysShort": {
+        "sun": "So",
+        "mon": "Mo",
+        "tue": "Di",
+        "wed": "Mi",
+        "thu": "Do",
+        "fri": "Fr",
+        "sat": "Sa"
+      },
+      "toast": {
+        "created": "Zuweisung erstellt",
+        "updated": "Zuweisung aktualisiert",
+        "deleted": "Zuweisung entfernt",
+        "saveFailed": "Zuweisung konnte nicht gespeichert werden",
+        "deleteFailed": "Zuweisung konnte nicht entfernt werden"
+      }
+    },
+    "roles": {
+      "heading": "Bereichsrollen",
+      "intro": "Definieren Sie Unterrollen wie „Schichtleiter“ und die Anwesenheitsberechtigungen, die sie gewähren.",
+      "new": "Neue Rolle",
+      "editTitle": "Rolle bearbeiten",
+      "dialogDescription": "Benennen Sie die Rolle und wählen Sie, welche Bereichsberechtigungen sie gewährt.",
+      "builtIn": "Vordefiniert",
+      "noPermissions": "Keine Berechtigungen",
+      "namePlaceholder": "z. B. Schichtleiter",
+      "nameRequired": "Bitte geben Sie einen Rollennamen ein",
+      "deleteTitle": "Rolle löschen",
+      "deleteConfirm": "„{{name}}“ löschen? Mitglieder mit dieser Rolle verlieren sie.",
+      "empty": {
+        "title": "Noch keine eigenen Rollen",
+        "description": "Erstellen Sie eine Rolle, um Berechtigungen auf Bereichsebene zu gewähren."
+      },
+      "fields": {
+        "name": "Name",
+        "description": "Beschreibung",
+        "color": "Farbe",
+        "permissions": "Berechtigungen"
+      },
+      "permissions": {
+        "canApproveOvertime": {
+          "label": "Überstunden genehmigen",
+          "description": "Kann Anträge auf Mehrarbeit für diesen Bereich genehmigen"
+        },
+        "canManageRota": {
+          "label": "Dienstplan verwalten",
+          "description": "Kann Schichten erstellen und Mitglieder Schichten zuweisen"
+        },
+        "canReconcileAttendance": {
+          "label": "Anwesenheit abgleichen",
+          "description": "Erhält Eskalationen und kann offene Einträge schließen oder korrigieren"
+        },
+        "canViewSpaceAttendance": {
+          "label": "Bereichsanwesenheit anzeigen",
+          "description": "Kann die Anwesenheit aller in diesem Bereich sehen"
+        }
+      },
+      "toast": {
+        "created": "Rolle erstellt",
+        "updated": "Rolle aktualisiert",
+        "deleted": "Rolle gelöscht",
+        "saveFailed": "Rolle konnte nicht gespeichert werden",
+        "deleteFailed": "Rolle konnte nicht gelöscht werden"
+      }
+    },
+    "members": {
+      "heading": "Bereichsmitglieder",
+      "intro": "Weisen Sie diesem Bereich Mitglieder zu und geben Sie ihnen optional eine Unterrolle.",
+      "empty": "Diesem Bereich sind noch keine Mitglieder zugewiesen.",
+      "unknownMember": "Unbekanntes Mitglied",
+      "addHeading": "Mitglied hinzufügen",
+      "addButton": "Mitglied hinzufügen",
+      "selectMember": "Mitglied auswählen",
+      "selectMemberError": "Bitte wählen Sie ein Mitglied aus",
+      "noAvailable": "Keine verfügbaren Mitglieder",
+      "noRole": "Keine Rolle",
+      "fields": {
+        "member": "Mitglied",
+        "role": "Rolle"
+      },
+      "toast": {
+        "added": "Mitglied hinzugefügt",
+        "removed": "Mitglied entfernt",
+        "addFailed": "Mitglied konnte nicht hinzugefügt werden",
+        "removeFailed": "Mitglied konnte nicht entfernt werden"
+      }
+    }
   }
 }

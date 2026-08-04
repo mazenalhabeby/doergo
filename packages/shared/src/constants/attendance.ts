@@ -37,10 +37,26 @@ export const ATTENDANCE_CONSTANTS = {
   OVERTIME_THRESHOLD_MINUTES: 30,         // Flag if >30 min past schedule end
 
   // Scheduler settings
-  AUTO_CLOCK_OUT_INTERVAL_MS: 15 * 60 * 1000,    // Run every 15 minutes (timezone-aware checks)
+  AUTO_CLOCK_OUT_INTERVAL_MS: 15 * 60 * 1000,    // Legacy force-close sweep (removed)
   MIDNIGHT_CLOCK_OUT_CRON: '0 0 * * *',          // Legacy: kept for reference
   AUTO_CLOCK_OUT_JOB_ID: 'auto-clock-out-hourly',
   MIDNIGHT_CLOCK_OUT_JOB_ID: 'auto-clock-out-midnight',
+
+  // Shift reminder engine: how often the sweep runs. The sweep is a single
+  // indexed query (status + nextRemindAt) returning only entries actually due,
+  // so a tight cadence is cheap and gives ~1-min reminder precision.
+  SHIFT_REMINDER_SWEEP_INTERVAL_MS: 60 * 1000,   // Every 1 minute
+  SHIFT_REMINDER_JOB_ID: 'shift-reminder-sweep',
+} as const;
+
+// Shift reminder engine defaults (space-centric attendance).
+// The engine NEVER force-closes — it nudges the worker, routes extra-time to a
+// space leader, then escalates. These are the fallback cadence values used when
+// a shift doesn't override them.
+export const SHIFT_REMINDER_DEFAULTS = {
+  GRACE_MINUTES: 5,          // Minutes after expected end before the first reminder
+  REMINDER_INTERVAL_MINUTES: 5, // Gap between subsequent reminders
+  MAX_REMINDERS: 3,          // Reminders before escalating to a space leader
 } as const;
 
 // Flag reasons for smart auto-approval

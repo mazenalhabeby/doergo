@@ -11,21 +11,19 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { ShiftResolverService, ResolverSpace } from './shift-resolver.service';
 import {
   success,
   paginated,
   TimeEntryStatus,
   haversineDistance,
   ATTENDANCE_CONSTANTS,
+  SHIFT_REMINDER_DEFAULTS,
   SERVICE_NAMES,
   QUEUE_NAMES,
-  OVERTIME_JOB_TYPES,
   buildSingleDayFilter,
   buildDateRangeFilter,
-  tierAllows,
-  type PlanTier,
 } from '@hbcfield/shared';
-import { format } from 'date-fns';
 
 @Injectable()
 export class AttendanceService {
@@ -38,7 +36,34 @@ export class AttendanceService {
     @InjectQueue(QUEUE_NAMES.OVERTIME)
     private readonly overtimeQueue: Queue,
     private readonly notificationRouting: NotificationRoutingService,
+    private readonly shiftResolver: ShiftResolverService,
   ) {}
+
+  /**
+   * Resolve the shift expectation for a clock-in and return the DB fields to
+   * stamp on the TimeEntry. Returns {} for spaces without hour expectations
+   * (workModel NONE/TASK) or when no shift/schedule matches — leaving the entry
+   * with the default reminderState=NONE and no expected end. Never throws:
+   * a resolver failure must not block a clock-in.
+   */
+  private async buildShiftStamp(
+    userId: string,
+    space: ResolverSpace,
+    clockInAt: Date,
+  ): Promise<{ shiftId?: string; expectedClockOutAt?: Date; nextRemindAt?: Date }> {
+    try {
+      const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt });
+      if (!resolved) return {};
+      return {
+        ...(resolved.shiftId ? { shiftId: resolved.shiftId } : {}),
+        expectedClockOutAt: resolved.expectedClockOutAt,
+        nextRemindAt: resolved.nextRemindAt,
+      };
+    } catch (err) {
+      this.logger.error(`Shift resolution failed for user=${userId} space=${space.id}: ${err}`);
+      return {};
+    }
+  }
 
   /**
    * Clock in at a company location
@@ -90,12 +115,14 @@ export class AttendanceService {
       }
       const bucket = await this.getOrCreateRemoteBucket(data.organizationId);
       const place = await this.reverseGeocode(data.lat, data.lng);
+      const remoteClockInAt = new Date();
+      const remoteStamp = await this.buildShiftStamp(data.userId, bucket, remoteClockInAt);
       const entry = await this.prisma.timeEntry.create({
         data: {
           userId: data.userId,
           locationId: bucket.id,
           status: TimeEntryStatus.CLOCKED_IN,
-          clockInAt: new Date(),
+          clockInAt: remoteClockInAt,
           clockInLat: data.lat,
           clockInLng: data.lng,
           clockInAccuracy: data.accuracy,
@@ -105,6 +132,7 @@ export class AttendanceService {
           flagReasons: [],
           approvalStatus: 'AUTO',
           organizationId: data.organizationId,
+          ...remoteStamp,
         },
         include: { location: true, user: { select: { firstName: true, lastName: true } } },
       });
@@ -227,6 +255,9 @@ export class AttendanceService {
 
     const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
 
+    // Resolve the shift expectation once, now, as an absolute instant.
+    const shiftStamp = await this.buildShiftStamp(data.userId, location, clockInTime);
+
     // Create time entry
     const entry = await this.prisma.timeEntry.create({
       data: {
@@ -241,6 +272,7 @@ export class AttendanceService {
         flagReasons,
         approvalStatus,
         organizationId: data.organizationId,
+        ...shiftStamp,
       },
       include: {
         location: true,
@@ -348,23 +380,34 @@ export class AttendanceService {
       flagReasons.push('OUTSIDE_GEOFENCE_OUT');
     }
 
-    // Look up today's schedule for overtime/early departure
-    const dayOfWeek = clockOutTime.getDay();
-    const schedule = await this.prisma.technicianSchedule.findFirst({
-      where: { technicianId: data.userId, dayOfWeek, isActive: true },
-    });
-
-    if (schedule) {
-      const [endH, endM] = schedule.endTime.split(':').map(Number);
-      const scheduledEnd = new Date(clockOutTime);
-      scheduledEnd.setHours(endH!, endM!, 0, 0);
-      const diffMinutes = (clockOutTime.getTime() - scheduledEnd.getTime()) / 60000;
-
+    // Overtime / early-departure flagging. Prefer the shift's stamped
+    // `expectedClockOutAt` (an absolute UTC instant — timezone-correct and
+    // cross-midnight-safe) when present; only fall back to the legacy weekly
+    // technicianSchedule (server-local, same-day only) for non-shift spaces.
+    if (entry.expectedClockOutAt) {
+      const diffMinutes = (clockOutTime.getTime() - entry.expectedClockOutAt.getTime()) / 60000;
       if (diffMinutes > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) {
         flagReasons.push('OVERTIME');
       }
       if (diffMinutes < -ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) {
         flagReasons.push('EARLY_DEPARTURE');
+      }
+    } else {
+      const dayOfWeek = clockOutTime.getDay();
+      const schedule = await this.prisma.technicianSchedule.findFirst({
+        where: { technicianId: data.userId, dayOfWeek, isActive: true },
+      });
+      if (schedule) {
+        const [endH, endM] = schedule.endTime.split(':').map(Number);
+        const scheduledEnd = new Date(clockOutTime);
+        scheduledEnd.setHours(endH!, endM!, 0, 0);
+        const diffMinutes = (clockOutTime.getTime() - scheduledEnd.getTime()) / 60000;
+        if (diffMinutes > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) {
+          flagReasons.push('OVERTIME');
+        }
+        if (diffMinutes < -ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) {
+          flagReasons.push('EARLY_DEPARTURE');
+        }
       }
     }
 
@@ -390,6 +433,10 @@ export class AttendanceService {
         flagReasons: uniqueFlags,
         approvalStatus,
         clockOutPlace,
+        // Close out any shift-reminder lifecycle so a completed entry never
+        // lingers in a reminder state and its nextRemindAt index key is cleared.
+        reminderState: 'RESOLVED',
+        nextRemindAt: null,
       },
       include: {
         location: true,
@@ -439,6 +486,274 @@ export class AttendanceService {
       updatedEntry,
       `Clocked out from ${entry.location.name}. Total time: ${hours}h ${minutes}m`,
     );
+  }
+
+  // ==========================================================================
+  // SHIFT REMINDER RESPONSES — worker actions + leader approval (Phase 3)
+  // These are how an open shift gets resolved. Nothing here is auto-closed by
+  // the machine; every path is driven by a human tapping a reminder action.
+  // ==========================================================================
+
+  /**
+   * Worker responds "I forgot to clock out" with their real leave time
+   * (trusted self-report). Closes the entry at that time. If the reported time
+   * is beyond the expected shift end, the entry is flagged OVERTIME and lands in
+   * the approvals queue for a leader to review — overtime is never paid silently.
+   */
+  async resolveForgotClockOut(data: {
+    userId: string;
+    entryId: string;
+    clockOutAt: string;
+    organizationId: string;
+  }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: {
+        id: data.entryId,
+        userId: data.userId,
+        organizationId: data.organizationId,
+        status: TimeEntryStatus.CLOCKED_IN,
+      },
+      include: { location: true },
+    });
+    if (!entry) throw new BadRequestException('No matching open shift found');
+
+    const clockOutTime = new Date(data.clockOutAt);
+    const now = new Date();
+    if (isNaN(clockOutTime.getTime())) throw new BadRequestException('Invalid clock-out time');
+    if (clockOutTime.getTime() <= entry.clockInAt.getTime()) {
+      throw new BadRequestException('Clock-out time must be after clock-in');
+    }
+    if (clockOutTime.getTime() > now.getTime() + 60_000) {
+      throw new BadRequestException('Clock-out time cannot be in the future');
+    }
+
+    // Store GROSS minutes (clock-in → clock-out), consistent with the normal
+    // clockOut path — break time lives separately on breakMinutes and is netted
+    // out downstream, so we must not pre-subtract it here (that double-counted).
+    const totalMinutes = Math.round((clockOutTime.getTime() - entry.clockInAt.getTime()) / 60_000);
+
+    const flags = new Set<string>([...(entry.flagReasons || []), 'MISSED_CLOCK_OUT']);
+    const isOvertime =
+      !!entry.expectedClockOutAt && clockOutTime.getTime() > entry.expectedClockOutAt.getTime();
+    if (isOvertime) flags.add('OVERTIME');
+    const uniqueFlags = [...flags];
+
+    const updated = await this.prisma.timeEntry.update({
+      where: { id: entry.id },
+      data: {
+        status: TimeEntryStatus.CLOCKED_OUT,
+        clockOutAt: clockOutTime,
+        totalMinutes,
+        notes: 'Self-reported clock-out (forgot to clock out)',
+        flagReasons: uniqueFlags,
+        approvalStatus: 'PENDING', // a forgotten clock-out is always worth a glance
+        reminderState: 'RESOLVED',
+        nextRemindAt: null,
+      },
+      include: { location: true, user: { select: { firstName: true, lastName: true } } },
+    });
+
+    this.notificationClient.emit('attendance_clock_out', {
+      userId: data.userId,
+      organizationId: data.organizationId,
+      timeEntry: updated,
+    });
+    await this.sendPendingApprovalAlert({
+      entryId: updated.id,
+      userId: data.userId,
+      organizationId: data.organizationId,
+      locationName: entry.location?.name || 'Unknown',
+      flagReasons: uniqueFlags,
+      totalMinutes,
+    });
+
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return success(
+      updated,
+      `Clocked out. Total time: ${h}h ${m}m${isOvertime ? ' (overtime pending approval)' : ''}`,
+    );
+  }
+
+  /**
+   * Worker responds "I'm working extra time". Pauses reminders and routes the
+   * request to the space's overtime approvers. The entry stays open.
+   */
+  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: {
+        id: data.entryId,
+        userId: data.userId,
+        organizationId: data.organizationId,
+        status: TimeEntryStatus.CLOCKED_IN,
+      },
+      include: {
+        location: { select: { id: true, name: true } },
+        user: { select: { firstName: true, lastName: true } },
+      },
+    });
+    if (!entry) throw new BadRequestException('No matching open shift found');
+
+    await this.prisma.timeEntry.update({
+      where: { id: entry.id },
+      data: { reminderState: 'OVERTIME_PENDING', nextRemindAt: null },
+    });
+
+    const leaderIds = await this.resolveSpaceLeaders(
+      entry.locationId,
+      data.organizationId,
+      'canApproveOvertime',
+    );
+    this.notificationClient.emit('attendance_overtime_request', {
+      entryId: entry.id,
+      userId: entry.userId,
+      userName: `${entry.user.firstName} ${entry.user.lastName}`,
+      locationId: entry.locationId,
+      locationName: entry.location?.name || 'a shift',
+      leaderIds,
+      organizationId: data.organizationId,
+    });
+
+    return success({ entryId: entry.id, status: 'OVERTIME_PENDING' }, 'Extra-time request sent for approval');
+  }
+
+  /** Leader approves N more minutes of work → extends the expected end + re-arms reminders. */
+  async approveExtraTime(data: {
+    approverId: string;
+    entryId: string;
+    minutes: number;
+    organizationId: string;
+  }) {
+    const minutes = Math.round(data.minutes);
+    if (!minutes || minutes < 1 || minutes > 1440) {
+      throw new BadRequestException('Approved minutes must be between 1 and 1440');
+    }
+
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
+      include: { shift: { select: { graceMin: true } } },
+    });
+    if (!entry) throw new BadRequestException('No matching open shift found');
+
+    const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
+    if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
+
+    const now = new Date();
+    // Grant the extra minutes from the later of the expected end or now, so a
+    // shift that already ended extends from now (not into the past).
+    const base =
+      entry.expectedClockOutAt && entry.expectedClockOutAt.getTime() > now.getTime()
+        ? entry.expectedClockOutAt
+        : now;
+    const newExpected = new Date(base.getTime() + minutes * 60_000);
+    const graceMin = entry.shift?.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
+
+    await this.prisma.timeEntry.update({
+      where: { id: entry.id },
+      data: {
+        expectedClockOutAt: newExpected,
+        reminderState: 'OVERTIME_APPROVED',
+        reminderCount: 0,
+        nextRemindAt: new Date(newExpected.getTime() + graceMin * 60_000),
+      },
+    });
+
+    this.notificationClient.emit('attendance_overtime_decision', {
+      entryId: entry.id,
+      userId: entry.userId,
+      decision: 'approved',
+      minutes,
+      newExpectedClockOutAt: newExpected.toISOString(),
+      organizationId: data.organizationId,
+    });
+
+    return success(
+      { entryId: entry.id, minutes, expectedClockOutAt: newExpected.toISOString() },
+      `Approved ${minutes} min of overtime`,
+    );
+  }
+
+  /** Leader rejects the extra-time request → nudge the worker to clock out now. */
+  async rejectExtraTime(data: { approverId: string; entryId: string; organizationId: string }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
+      select: { id: true, locationId: true, userId: true },
+    });
+    if (!entry) throw new BadRequestException('No matching open shift found');
+
+    const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
+    if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
+
+    // Give the worker a fresh reminder cycle to clock out now — reset the count
+    // so a previously-exhausted worker gets a clean nudge, not instant escalation.
+    await this.prisma.timeEntry.update({
+      where: { id: entry.id },
+      data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: new Date() },
+    });
+
+    this.notificationClient.emit('attendance_overtime_decision', {
+      entryId: entry.id,
+      userId: entry.userId,
+      decision: 'rejected',
+      organizationId: data.organizationId,
+    });
+
+    return success({ entryId: entry.id, decision: 'rejected' }, 'Extra-time request rejected');
+  }
+
+  /** Open extra-time requests awaiting approval, scoped to spaces the caller can approve for. */
+  async listPendingExtraTime(data: { userId: string; organizationId: string; isAdmin?: boolean }) {
+    let spaceFilter: { locationId?: { in: string[] } } = {};
+    if (!data.isAdmin) {
+      const memberships = await this.prisma.spaceMember.findMany({
+        where: { userId: data.userId, organizationId: data.organizationId, spaceRole: { isActive: true } },
+        include: { spaceRole: { select: { permissions: true } } },
+      });
+      const spaceIds = memberships
+        .filter((m) => (m.spaceRole?.permissions as any)?.canApproveOvertime === true)
+        .map((m) => m.spaceId);
+      if (spaceIds.length === 0) return success([], 'No pending extra-time requests');
+      spaceFilter = { locationId: { in: spaceIds } };
+    }
+
+    const entries = await this.prisma.timeEntry.findMany({
+      where: {
+        organizationId: data.organizationId,
+        status: TimeEntryStatus.CLOCKED_IN,
+        reminderState: 'OVERTIME_PENDING',
+        ...spaceFilter,
+      },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        location: { select: { id: true, name: true } },
+      },
+      orderBy: { expectedClockOutAt: 'asc' },
+    });
+    return success(entries, `${entries.length} pending extra-time request(s)`);
+  }
+
+  /** True if the user may approve overtime for a space (space sub-role grant, or org admin). */
+  private async userCanApproveOvertime(
+    userId: string,
+    spaceId: string,
+    organizationId: string,
+  ): Promise<boolean> {
+    const membership = await this.prisma.spaceMember.findFirst({
+      where: { userId, spaceId, organizationId, spaceRole: { isActive: true } },
+      include: { spaceRole: { select: { permissions: true } } },
+    });
+    if ((membership?.spaceRole?.permissions as any)?.canApproveOvertime === true) return true;
+    // Org admins / user managers can always approve.
+    const admin = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        organizationId,
+        isActive: true,
+        OR: [{ role: 'ADMIN' }, { canManageUsers: true }],
+      },
+      select: { id: true },
+    });
+    return !!admin;
   }
 
   /**
@@ -738,260 +1053,154 @@ export class AttendanceService {
   }
 
   /**
-   * Auto clock-out for entries that exceeded max duration
-   * @param type - 'hourly' checks only overdue entries, 'midnight' closes all open entries
+   * Shift reminder engine — replaces the old force-close auto-clock-out.
+   *
+   * It NEVER clocks anyone out. On a short interval it scans only the open
+   * shifts whose reminder is actually due (`nextRemindAt <= now`, served by the
+   * `[status, nextRemindAt]` index — not every open shift) and either:
+   *   • nudges the worker ("forgot to clock out, or working extra?") and re-arms
+   *     the next reminder, or
+   *   • after `maxReminders` with no response, escalates to a space leader
+   *     (a member whose sub-role grants `canReconcileAttendance`) and stops.
+   *
+   * Entries with no expected end (`nextRemindAt` null — TASK/NONE spaces or an
+   * unresolved shift) are never touched: no reminders and no auto-close.
    */
-  async autoClockOut(data?: { type?: 'hourly' | 'midnight'; manual?: boolean }) {
-    const isManual = data?.manual ?? false;
-    this.logger.log(`Auto clock-out triggered: manual=${isManual}`);
+  async runShiftReminders(_data?: { manual?: boolean }) {
+    const now = new Date();
 
-    // Find all open entries with their location timezone and user schedule
-    const openEntries = await this.prisma.timeEntry.findMany({
-      where: { status: TimeEntryStatus.CLOCKED_IN },
+    const dueEntries = await this.prisma.timeEntry.findMany({
+      where: {
+        status: TimeEntryStatus.CLOCKED_IN,
+        nextRemindAt: { not: null, lte: now },
+      },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
-        location: { select: { name: true, timezone: true } },
+        location: { select: { id: true, name: true } },
+        shift: { select: { reminderIntervalMin: true, maxReminders: true } },
       },
+      orderBy: { nextRemindAt: 'asc' }, // drain oldest-due first
+      take: 500, // cap per tick; any backlog drains over subsequent ticks
     });
 
-    if (openEntries.length === 0) {
-      this.logger.debug('Auto clock-out: No open entries found');
-      return success({ processedCount: 0, entryIds: [], reasons: {} });
+    if (dueEntries.length === 0) {
+      return success({ remindedCount: 0, escalatedCount: 0, entryIds: [] });
     }
 
-    const results: string[] = [];
-    const reasons: Record<string, string> = {};
-    // Each due entry's clock-out write is collected here and flushed in parallel
-    // after the scan — instead of N sequential round-trips (e.g. a whole org's
-    // shifts closing at once on the midnight rollover).
-    const clockOutWrites: Promise<void>[] = [];
-    const now = new Date();
-    const maxDurationMs = ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS * 60 * 60 * 1000;
-
-    // Batch the per-entry lookups up front to avoid an N+1 over open shifts:
-    // one query for all overtime requests, one for all active schedules.
-    const entryIds = openEntries.map((e) => e.id);
-    const userIds = [...new Set(openEntries.map((e) => e.userId))];
-
-    const overtimeRequests = await this.prisma.overtimeRequest.findMany({
-      where: { timeEntryId: { in: entryIds } },
-    });
-    const overtimeByEntry = new Map(overtimeRequests.map((o) => [o.timeEntryId, o]));
-
-    const activeSchedules = await this.prisma.technicianSchedule.findMany({
-      where: { technicianId: { in: userIds }, isActive: true },
-    });
-    const scheduleByUserDay = new Map(
-      activeSchedules.map((s) => [`${s.technicianId}:${s.dayOfWeek}`, s]),
-    );
-
-    // Overtime is a Professional+ capability. Batch-resolve which orgs are
-    // entitled so a shift-end triggers the overtime flow only on those plans;
-    // orgs without it just auto-clock-out normally at shift end (below).
-    const orgIds = [...new Set(openEntries.map((e) => e.organizationId))];
-    const orgTiers = await this.prisma.organization.findMany({
-      where: { id: { in: orgIds } },
-      select: { id: true, planTier: true },
-    });
-    const overtimeEntitledOrgs = new Set(
-      orgTiers
-        .filter((o) => tierAllows((o.planTier ?? '').toString().toLowerCase() as PlanTier, 'overtime'))
-        .map((o) => o.id),
-    );
-
-    for (const entry of openEntries) {
-      // Skip entries that are in the overtime flow (pending, approved, or waiting approval)
-      const activeOvertimeRequest = overtimeByEntry.get(entry.id);
-      if (activeOvertimeRequest && ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'].includes(activeOvertimeRequest.status)) {
-        this.logger.debug(`Skipping entry ${entry.id}: active overtime request (${activeOvertimeRequest.status})`);
-        continue;
-      }
-
-      const tz = entry.location?.timezone || 'UTC';
-      let reason: string | null = null;
-
-      // 1. Check max duration (16h) — universal, no timezone needed
-      const durationMs = now.getTime() - entry.clockInAt.getTime();
-      if (durationMs > maxDurationMs) {
-        reason = 'exceeded_duration';
-      }
-
-      // 2. Check if it's past midnight in the LOCATION's timezone
-      if (!reason) {
-        const localTime = this.getLocalTime(now, tz);
-        const clockInLocal = this.getLocalTime(entry.clockInAt, tz);
-        // If the local date has changed since clock-in, it's past midnight
-        if (localTime.date !== clockInLocal.date) {
-          reason = 'end_of_day';
-        }
-      }
-
-      // 3. Check if shift has ended (schedule-based) with grace period
-      //    Instead of immediate clock-out, initiate overtime request flow
-      if (!reason) {
-        const schedule = scheduleByUserDay.get(
-          `${entry.userId}:${this.getLocalDayOfWeek(entry.clockInAt, tz)}`,
-        );
-
-        if (schedule?.endTime) {
-          const localNow = this.getLocalTime(now, tz);
-          const [endH, endM] = schedule.endTime.split(':').map(Number);
-          const endMinutes = endH! * 60 + endM!;
-          const nowMinutes = localNow.hours * 60 + localNow.minutes;
-          const gracePeriod = ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES;
-
-          if (nowMinutes >= endMinutes + gracePeriod) {
-            if (overtimeEntitledOrgs.has(entry.organizationId)) {
-              // Check if overtime request already exists (from the batched map)
-              const existingOT = overtimeByEntry.get(entry.id);
-              if (!existingOT) {
-                // Initiate overtime flow instead of clock-out
-                await this.overtimeQueue.add(OVERTIME_JOB_TYPES.INITIATE, {
-                  userId: entry.userId,
-                  timeEntryId: entry.id,
-                  locationId: entry.locationId,
-                  organizationId: entry.organizationId,
-                }, { removeOnComplete: true });
-                this.logger.log(`Shift ended for entry ${entry.id}: initiated overtime flow instead of auto-clock-out`);
-              }
-              // Skip clock-out — overtime timeout checker handles it
-              continue;
-            }
-            // Plan without the overtime engine → normal auto-clock-out at shift end.
-            reason = 'shift_ended';
-          }
-        }
-      }
-
-      if (!reason) continue;
-
-      // Auto clock-out this entry
-      const totalMinutes = Math.round(durationMs / (1000 * 60));
-      const totalHours = totalMinutes / 60;
-      const existingFlags = (entry as any).flagReasons || [];
-      const mergedFlags = [...new Set([...existingFlags, 'MISSED_CLOCK_OUT'])];
-
-      const reasonNotes: Record<string, string> = {
-        exceeded_duration: `Auto clock-out: exceeded ${ATTENDANCE_CONSTANTS.MAX_CLOCK_IN_DURATION_HOURS}h limit`,
-        end_of_day: `Auto clock-out: end of day (midnight in ${tz})`,
-        shift_ended: `Auto clock-out: shift ended + ${ATTENDANCE_CONSTANTS.SCHEDULE_GRACE_PERIOD_MINUTES}min grace period`,
-      };
-
-      const dueReason = reason;
-      results.push(entry.id);
-      reasons[entry.id] = dueReason;
-
-      // Collect the write; emit + log happen once it lands. The notification
-      // emit is fire-and-forget so it doesn't gate the parallel batch.
-      clockOutWrites.push(
-        this.prisma.timeEntry
-          .update({
-            where: { id: entry.id },
-            data: {
-              status: TimeEntryStatus.AUTO_OUT,
-              clockOutAt: now,
-              totalMinutes,
-              notes: reasonNotes[dueReason] || 'Auto clock-out',
-              flagReasons: mergedFlags,
-              approvalStatus: 'PENDING',
-            },
-          })
-          .then(() => {
-            this.notificationClient.emit('attendance_auto_clock_out', {
-              userId: entry.user.id,
-              userEmail: entry.user.email,
-              userName: `${entry.user.firstName} ${entry.user.lastName}`,
-              locationName: entry.location?.name || 'Unknown',
-              clockInTime: format(entry.clockInAt, 'MMM d, yyyy h:mm a'),
-              clockOutTime: format(now, 'MMM d, yyyy h:mm a'),
-              totalHours,
-              reason: dueReason,
-              organizationId: entry.organizationId,
-            });
-
-            this.logger.warn(
-              `Auto clock-out (${dueReason}): entry=${entry.id}, user=${entry.user.firstName} ${entry.user.lastName}, tz=${tz}, duration=${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
-            );
-          }),
-      );
+    // Partition into reminders vs escalations up front.
+    type Due = (typeof dueEntries)[number];
+    const toRemind: { entry: Due; nextCount: number; intervalMin: number; maxReminders: number }[] = [];
+    const toEscalate: Due[] = [];
+    for (const entry of dueEntries) {
+      const intervalMin = entry.shift?.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES;
+      const maxReminders = entry.shift?.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS;
+      const nextCount = entry.reminderCount + 1;
+      if (nextCount <= maxReminders) toRemind.push({ entry, nextCount, intervalMin, maxReminders });
+      else toEscalate.push(entry);
     }
 
-    // Flush all clock-out writes concurrently.
-    await Promise.all(clockOutWrites);
+    // Resolve leaders ONCE per distinct escalating space (not per entry) — avoids
+    // an N+1 + duplicate admin-fallback when many workers escalate together.
+    const leadersBySpace = new Map<string, string[]>();
+    await Promise.all(
+      [...new Set(toEscalate.map((e) => e.locationId))].map(async (spaceId) => {
+        const e = toEscalate.find((x) => x.locationId === spaceId)!;
+        leadersBySpace.set(spaceId, await this.resolveSpaceLeaders(spaceId, e.organizationId, 'canReconcileAttendance'));
+      }),
+    );
+
+    // Deferred writes (thunks) so we can cap DB concurrency.
+    const tasks: Array<() => Promise<void>> = [];
+
+    for (const { entry, nextCount, intervalMin, maxReminders } of toRemind) {
+      const userName = `${entry.user.firstName} ${entry.user.lastName}`;
+      const nextRemindAt = new Date(now.getTime() + intervalMin * 60_000);
+      tasks.push(async () => {
+        await this.prisma.timeEntry.update({
+          where: { id: entry.id },
+          data: { reminderState: 'REMINDED', reminderCount: nextCount, nextRemindAt },
+        });
+        this.notificationClient.emit('attendance_shift_reminder', {
+          entryId: entry.id,
+          userId: entry.user.id,
+          userName,
+          locationId: entry.location?.id ?? entry.locationId,
+          locationName: entry.location?.name || 'your shift',
+          expectedClockOutAt: entry.expectedClockOutAt?.toISOString() ?? null,
+          reminderCount: nextCount,
+          organizationId: entry.organizationId,
+        });
+        this.logger.log(`Shift reminder ${nextCount}/${maxReminders}: entry=${entry.id}, user=${userName}`);
+      });
+    }
+
+    for (const entry of toEscalate) {
+      const userName = `${entry.user.firstName} ${entry.user.lastName}`;
+      const leaderIds = leadersBySpace.get(entry.locationId) ?? [];
+      tasks.push(async () => {
+        await this.prisma.timeEntry.update({
+          where: { id: entry.id },
+          data: { reminderState: 'ESCALATED', nextRemindAt: null },
+        });
+        this.notificationClient.emit('attendance_shift_escalation', {
+          entryId: entry.id,
+          userId: entry.user.id,
+          userName,
+          locationId: entry.locationId,
+          locationName: entry.location?.name || 'a shift',
+          expectedClockOutAt: entry.expectedClockOutAt?.toISOString() ?? null,
+          leaderIds,
+          organizationId: entry.organizationId,
+        });
+        this.logger.warn(`Shift escalation: entry=${entry.id}, user=${userName}, leaders=[${leaderIds.join(',')}]`);
+      });
+    }
+
+    // Flush with bounded concurrency so a big burst can't monopolize the pooled
+    // DB connections and starve live clock-in/out requests.
+    const CONCURRENCY = 20;
+    for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+      await Promise.all(tasks.slice(i, i + CONCURRENCY).map((fn) => fn()));
+    }
 
     return success({
-      processedCount: results.length,
-      entryIds: results,
-      reasons,
-      message: `Processed ${results.length} entries`,
+      remindedCount: toRemind.length,
+      escalatedCount: toEscalate.length,
+      entryIds: [...toRemind.map((r) => r.entry.id), ...toEscalate.map((e) => e.id)],
+      message: `Reminded ${toRemind.length}, escalated ${toEscalate.length}`,
     });
   }
 
-  // Cached Intl formatters keyed by timezone. Constructing an Intl.DateTimeFormat
-  // is comparatively expensive, and the auto-clock-out sweep calls these 2–3×
-  // per open entry — so reuse one formatter per timezone across the process.
-  private readonly tzTimeFormatters = new Map<string, Intl.DateTimeFormat>();
-  private readonly tzWeekdayFormatters = new Map<string, Intl.DateTimeFormat>();
-
-  private getTimeFormatter(timezone: string): Intl.DateTimeFormat {
-    let fmt = this.tzTimeFormatters.get(timezone);
-    if (!fmt) {
-      fmt = new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      this.tzTimeFormatters.set(timezone, fmt);
-    }
-    return fmt;
-  }
-
-  private getWeekdayFormatter(timezone: string): Intl.DateTimeFormat {
-    let fmt = this.tzWeekdayFormatters.get(timezone);
-    if (!fmt) {
-      fmt = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short' });
-      this.tzWeekdayFormatters.set(timezone, fmt);
-    }
-    return fmt;
-  }
-
   /**
-   * Get local time components in a specific timezone
+   * Resolve who to notify for a space attendance action: members of the space
+   * whose dynamic sub-role grants the given permission. Falls back to org admins
+   * when the space has no such leaders configured, so escalations/approvals are
+   * never silently dropped.
    */
-  private getLocalTime(date: Date, timezone: string): { hours: number; minutes: number; date: string } {
-    try {
-      const parts = this.getTimeFormatter(timezone).formatToParts(date);
-      const get = (type: string) => parts.find((p) => p.type === type)?.value || '0';
-      return {
-        hours: parseInt(get('hour')),
-        minutes: parseInt(get('minute')),
-        date: `${get('year')}-${get('month')}-${get('day')}`,
-      };
-    } catch {
-      // Fallback to UTC if timezone is invalid
-      return {
-        hours: date.getUTCHours(),
-        minutes: date.getUTCMinutes(),
-        date: date.toISOString().split('T')[0]!,
-      };
-    }
-  }
+  private async resolveSpaceLeaders(
+    spaceId: string,
+    organizationId: string,
+    permission: 'canApproveOvertime' | 'canReconcileAttendance',
+  ): Promise<string[]> {
+    const members = await this.prisma.spaceMember.findMany({
+      where: { spaceId, spaceRole: { isActive: true } },
+      include: { spaceRole: { select: { permissions: true } } },
+    });
+    const leaderIds = members
+      .filter((m) => (m.spaceRole?.permissions as any)?.[permission] === true)
+      .map((m) => m.userId);
+    if (leaderIds.length > 0) return [...new Set(leaderIds)];
 
-  /**
-   * Get day of week (0=Sunday) in a specific timezone
-   */
-  private getLocalDayOfWeek(date: Date, timezone: string): number {
-    try {
-      const dayStr = this.getWeekdayFormatter(timezone).format(date);
-      const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-      return dayMap[dayStr] ?? date.getUTCDay();
-    } catch {
-      return date.getUTCDay();
-    }
+    // Fallback: org admins / user managers.
+    const admins = await this.prisma.user.findMany({
+      where: {
+        organizationId,
+        isActive: true,
+        OR: [{ role: 'ADMIN' }, { canManageUsers: true }],
+      },
+      select: { id: true },
+    });
+    return admins.map((a) => a.id);
   }
 
   /**

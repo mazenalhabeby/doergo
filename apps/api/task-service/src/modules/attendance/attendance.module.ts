@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@hbcfield/shared';
 import { AttendanceController } from './attendance.controller';
 import { AttendanceService } from './attendance.service';
+import { ShiftResolverService } from './shift-resolver.service';
 import { BreakService } from './break.service';
 import { AttendanceReportService } from './attendance-report.service';
 import { ApprovalService } from './approval.service';
@@ -20,6 +21,7 @@ import { NotificationRoutingService } from '../../common/notification-routing.se
   controllers: [AttendanceController],
   providers: [
     AttendanceService,
+    ShiftResolverService,
     BreakService,
     AttendanceReportService,
     ApprovalService,

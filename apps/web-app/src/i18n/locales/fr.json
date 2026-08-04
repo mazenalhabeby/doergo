@@ -3209,7 +3209,8 @@
     "resyncAllTasks": "Resynchroniser tous les espaces",
     "resyncAllTasksHint": "Aligner les tâches de chaque espace sur son flux",
     "resyncAllTasksConfirmTitle": "Resynchroniser tous les espaces ?",
-    "resyncAllTasksConfirmDescription": "Cette action resynchronise toutes les tâches de chaque espace sur le flux de travail de son espace. Les statuts qui n’existent pas dans le flux d’un espace sont réinitialisés à sa première étape ; les tâches terminées et annulées sont conservées."
+    "resyncAllTasksConfirmDescription": "Cette action resynchronise toutes les tâches de chaque espace sur le flux de travail de son espace. Les statuts qui n’existent pas dans le flux d’un espace sont réinitialisés à sa première étape ; les tâches terminées et annulées sont conservées.",
+    "spaceSettings": "Paramètres de l'espace"
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",
@@ -5232,5 +5233,221 @@
     "inviteHint": "Indiquez juste l'{{entity}} et partagez le code — le client saisit son nom lors de son inscription.",
     "resNameOpt": "Nom du client (facultatif)",
     "resNamePlaceholder": "Laissez vide — défini à l'inscription"
+  },
+  "scheduling": {
+    "title": "Paramètres de l’espace",
+    "subtitle": "Configurez la façon dont cet espace gère la présence, les postes et les membres.",
+    "backToSpaces": "Retour aux espaces",
+    "unauthorized": {
+      "title": "Accès restreint",
+      "description": "Vous avez besoin de l’autorisation de gestion des membres pour configurer la planification de l’espace."
+    },
+    "notFound": {
+      "title": "Espace introuvable",
+      "description": "Cet espace n’existe pas ou vous n’y avez pas accès."
+    },
+    "tabs": {
+      "workModel": "Modèle de travail",
+      "shifts": "Postes",
+      "rota": "Planning",
+      "members": "Membres"
+    },
+    "workModel": {
+      "heading": "Modèle de travail",
+      "intro": "Choisissez comment cet espace interprète la présence et les attentes horaires.",
+      "saved": "Modèle de travail mis à jour",
+      "saveFailed": "Impossible de mettre à jour le modèle de travail",
+      "remindersBadge": "Active les rappels",
+      "remindersNote": "Les modèles par poste et à horaire fixe activent des rappels de pointage de sortie automatiques lorsqu’une personne dépasse son heure de fin prévue.",
+      "options": {
+        "NONE": {
+          "label": "Aucune attente horaire",
+          "description": "Aucun planning de présence ni rappel. Les membres pointent librement."
+        },
+        "SHIFT": {
+          "label": "Par postes",
+          "description": "Des créneaux de poste sont attribués aux membres via le planning. Prend en charge les postes de nuit."
+        },
+        "FIXED": {
+          "label": "Horaire hebdomadaire fixe",
+          "description": "Un horaire hebdomadaire récurrent définit les heures de travail prévues."
+        },
+        "TASK": {
+          "label": "Basé sur les tâches",
+          "description": "La présence suit le travail sur les tâches, sans heure de fin planifiée."
+        }
+      }
+    },
+    "shifts": {
+      "heading": "Postes",
+      "intro": "Définissez des créneaux de poste nommés pour cet espace. Les heures sont locales au fuseau horaire de l’espace.",
+      "new": "Nouveau poste",
+      "orgWide": "Toute l’organisation",
+      "crossesMidnight": "Passe minuit",
+      "breakSummary": "{{count}} min de pause",
+      "editTitle": "Modifier le poste",
+      "dialogDescription": "Définissez le créneau du poste, la pause et le comportement des rappels.",
+      "namePlaceholder": "ex. Poste du matin",
+      "nameRequired": "Veuillez saisir un nom de poste",
+      "reminderHint": "Le délai de grâce est l’attente après la fin du poste avant le premier rappel. L’intervalle et le nombre maximal de rappels contrôlent les relances avant escalade.",
+      "deleteTitle": "Supprimer le poste",
+      "deleteConfirm": "Supprimer « {{name}} » ? Les affectations du planning qui l’utilisent seront affectées.",
+      "empty": {
+        "title": "Aucun poste pour l’instant",
+        "description": "Créez un poste pour commencer à construire le planning."
+      },
+      "fields": {
+        "name": "Nom",
+        "description": "Description",
+        "color": "Couleur",
+        "start": "Heure de début",
+        "end": "Heure de fin",
+        "breakMinutes": "Pause (minutes)",
+        "graceMin": "Délai de grâce (minutes)",
+        "reminderIntervalMin": "Intervalle de rappel (min)",
+        "maxReminders": "Rappels max."
+      },
+      "toast": {
+        "created": "Poste créé",
+        "updated": "Poste mis à jour",
+        "deleted": "Poste supprimé",
+        "saveFailed": "Impossible d’enregistrer le poste",
+        "deleteFailed": "Impossible de supprimer le poste"
+      }
+    },
+    "rota": {
+      "heading": "Planning",
+      "intro": "Affectez des membres à des postes selon une planification récurrente.",
+      "new": "Nouvelle affectation",
+      "editTitle": "Modifier l’affectation",
+      "dialogDescription": "Affectez un membre à un poste et définissez sa récurrence.",
+      "unknownMember": "Membre inconnu",
+      "unknownShift": "Poste inconnu",
+      "priorityBadge": "Priorité {{value}}",
+      "priorityHint": "La priorité la plus élevée l’emporte lorsque deux affectations se chevauchent le même jour.",
+      "selectMember": "Sélectionnez un membre",
+      "selectShift": "Sélectionnez un poste",
+      "noMembers": "Aucun membre disponible",
+      "noShifts": "Aucun poste actif. Créez-en un d’abord dans l’onglet Postes.",
+      "selectMemberError": "Veuillez sélectionner un membre",
+      "selectShiftError": "Veuillez sélectionner un poste",
+      "selectWeekdayError": "Veuillez sélectionner au moins un jour de la semaine",
+      "selectMonthDayError": "Veuillez sélectionner au moins un jour du mois",
+      "selectDateError": "Veuillez ajouter au moins une date",
+      "deleteTitle": "Retirer l’affectation",
+      "deleteConfirm": "Retirer cette affectation du planning ? L’historique de présence passé est conservé.",
+      "empty": {
+        "title": "Aucune affectation pour l’instant",
+        "description": "Affectez un membre à un poste pour construire le planning."
+      },
+      "fields": {
+        "member": "Membre",
+        "shift": "Poste",
+        "recurrence": "Récurrence",
+        "weekdays": "Jours de la semaine",
+        "monthDays": "Jours du mois",
+        "dates": "Dates",
+        "effectiveFrom": "À partir du",
+        "effectiveTo": "Jusqu’au",
+        "priority": "Priorité"
+      },
+      "recurrence": {
+        "DAILY": "Quotidien",
+        "WEEKLY": "Hebdomadaire",
+        "MONTHLY": "Mensuel",
+        "ONE_OFF": "Ponctuel",
+        "dailySummary": "Chaque jour",
+        "weekly": "Hebdomadaire",
+        "monthly": "Mensuel",
+        "monthlySummary": "Jours {{days}} de chaque mois",
+        "oneOffSummary": "{{count}} date(s)"
+      },
+      "weekdaysShort": {
+        "sun": "Dim",
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mer",
+        "thu": "Jeu",
+        "fri": "Ven",
+        "sat": "Sam"
+      },
+      "toast": {
+        "created": "Affectation créée",
+        "updated": "Affectation mise à jour",
+        "deleted": "Affectation retirée",
+        "saveFailed": "Impossible d’enregistrer l’affectation",
+        "deleteFailed": "Impossible de retirer l’affectation"
+      }
+    },
+    "roles": {
+      "heading": "Rôles de l’espace",
+      "intro": "Définissez des sous-rôles comme « Chef de poste » et les autorisations de présence qu’ils accordent.",
+      "new": "Nouveau rôle",
+      "editTitle": "Modifier le rôle",
+      "dialogDescription": "Nommez le rôle et choisissez les autorisations d’espace qu’il accorde.",
+      "builtIn": "Prédéfini",
+      "noPermissions": "Aucune autorisation",
+      "namePlaceholder": "ex. Chef de poste",
+      "nameRequired": "Veuillez saisir un nom de rôle",
+      "deleteTitle": "Supprimer le rôle",
+      "deleteConfirm": "Supprimer « {{name}} » ? Les membres ayant ce rôle le perdront.",
+      "empty": {
+        "title": "Aucun rôle personnalisé pour l’instant",
+        "description": "Créez un rôle pour accorder des autorisations au niveau de l’espace."
+      },
+      "fields": {
+        "name": "Nom",
+        "description": "Description",
+        "color": "Couleur",
+        "permissions": "Autorisations"
+      },
+      "permissions": {
+        "canApproveOvertime": {
+          "label": "Approuver les heures sup.",
+          "description": "Peut approuver les demandes de temps supplémentaire pour cet espace"
+        },
+        "canManageRota": {
+          "label": "Gérer le planning",
+          "description": "Peut créer des postes et affecter des membres aux postes"
+        },
+        "canReconcileAttendance": {
+          "label": "Réconcilier la présence",
+          "description": "Reçoit les escalades et peut clôturer ou corriger les entrées ouvertes"
+        },
+        "canViewSpaceAttendance": {
+          "label": "Voir la présence de l’espace",
+          "description": "Peut voir la présence de tout le monde dans cet espace"
+        }
+      },
+      "toast": {
+        "created": "Rôle créé",
+        "updated": "Rôle mis à jour",
+        "deleted": "Rôle supprimé",
+        "saveFailed": "Impossible d’enregistrer le rôle",
+        "deleteFailed": "Impossible de supprimer le rôle"
+      }
+    },
+    "members": {
+      "heading": "Membres de l’espace",
+      "intro": "Affectez des membres à cet espace et donnez-leur éventuellement un sous-rôle.",
+      "empty": "Aucun membre n’est encore affecté à cet espace.",
+      "unknownMember": "Membre inconnu",
+      "addHeading": "Ajouter un membre",
+      "addButton": "Ajouter un membre",
+      "selectMember": "Sélectionnez un membre",
+      "selectMemberError": "Veuillez sélectionner un membre",
+      "noAvailable": "Aucun membre disponible",
+      "noRole": "Aucun rôle",
+      "fields": {
+        "member": "Membre",
+        "role": "Rôle"
+      },
+      "toast": {
+        "added": "Membre ajouté",
+        "removed": "Membre retiré",
+        "addFailed": "Impossible d’ajouter le membre",
+        "removeFailed": "Impossible de retirer le membre"
+      }
+    }
   }
 }
