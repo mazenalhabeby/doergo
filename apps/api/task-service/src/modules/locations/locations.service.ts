@@ -7,6 +7,19 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, DEFAULT_ORG_MODULES } from '@hbcfield/shared';
 
+// tz-lookup: offline coords → IANA timezone (no types pkg).
+const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
+
+/** Derive a space's IANA timezone from its coordinates (null when unavailable). */
+function tzFromCoords(lat?: number | null, lng?: number | null): string | null {
+  if (lat == null || lng == null || (lat === 0 && lng === 0)) return null;
+  try {
+    return tzlookup(lat, lng);
+  } catch {
+    return null;
+  }
+}
+
 // Valid schedule days
 const VALID_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
@@ -25,6 +38,7 @@ export class LocationsService {
     lat?: number;
     lng?: number;
     geofenceRadius?: number;
+    timezone?: string;
     enabledModules?: string[];
     workflowId?: string;
     organizationId: string;
@@ -44,6 +58,9 @@ export class LocationsService {
         lat: data.lat ?? null,
         lng: data.lng ?? null,
         geofenceRadius: data.geofenceRadius ?? 15,
+        // Space timezone: explicit value wins, else auto-derive from coords, else
+        // the schema default. This is the fallback zone for clock-ins here.
+        timezone: data.timezone || tzFromCoords(data.lat, data.lng) || undefined,
         // Each space owns its module set; new spaces start with the standard
         // default (the org-level Modules tab was removed — modules live on spaces).
         enabledModules: data.enabledModules ?? DEFAULT_ORG_MODULES,
@@ -160,6 +177,7 @@ export class LocationsService {
     enabledModules?: string[];
     workflowId?: string;
     workModel?: string;
+    timezone?: string;
   }) {
     // Verify location exists and belongs to organization
     const existing = await this.prisma.companyLocation.findFirst({
@@ -183,6 +201,14 @@ export class LocationsService {
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
     if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;
     if (data.workModel !== undefined) updateData.workModel = data.workModel;
+    // Timezone: an explicit value wins; otherwise, when coordinates change,
+    // re-derive the space's timezone from the new location.
+    if (data.timezone !== undefined) {
+      updateData.timezone = data.timezone;
+    } else if (data.lat !== undefined || data.lng !== undefined) {
+      const derived = tzFromCoords(data.lat ?? existing.lat, data.lng ?? existing.lng);
+      if (derived) updateData.timezone = derived;
+    }
 
     const location = await this.prisma.companyLocation.update({
       where: { id: data.id },

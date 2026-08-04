@@ -206,8 +206,8 @@ export function TrackingTab({
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-sm font-medium text-foreground">
-                        {formatTime(entry.clockInAt, hour12, locale, entry.location?.timezone)}
-                        {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt, hour12, locale, entry.location?.timezone)}`}
+                        {formatTime(entry.clockInAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}
+                        {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}`}
                       </p>
                       <div className="flex items-center gap-2 justify-end">
                         {!entry.clockInWithinGeofence && (
@@ -635,7 +635,7 @@ export function TrackingTab({
                       <TableCell>
                         <div>
                           <p className="font-medium text-foreground">
-                            {formatTime(entry.clockInAt, hour12, locale, entry.location?.timezone)}
+                            {formatTime(entry.clockInAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {format(toDate(entry.clockInAt), "MMM d")}
@@ -646,7 +646,7 @@ export function TrackingTab({
                         {entry.clockOutAt ? (
                           <div>
                             <p className="font-medium text-foreground">
-                              {formatTime(entry.clockOutAt, hour12, locale, entry.location?.timezone)}
+                              {formatTime(entry.clockOutAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {format(toDate(entry.clockOutAt), "MMM d")}

@@ -12,6 +12,9 @@ import { Queue } from 'bullmq';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { ShiftResolverService, ResolverSpace } from './shift-resolver.service';
+
+// tz-lookup: offline coords → IANA timezone (single in-memory lookup, no types pkg).
+const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
 import {
   success,
   paginated,
@@ -46,6 +49,24 @@ export class AttendanceService {
    * with the default reminderState=NONE and no expected end. Never throws:
    * a resolver failure must not block a clock-in.
    */
+  /**
+   * Resolve the IANA timezone WHERE the worker physically clocked in, from the
+   * clock-in GPS. Computed once here (offline, microsecond lookup) and stored on
+   * the entry so display is a zero-cost read — and correct for remote clock-ins.
+   * Falls back to the space's timezone when GPS is unavailable/invalid.
+   */
+  private resolveEntryTimezone(lat: number | null | undefined, lng: number | null | undefined, spaceTz?: string | null): string | null {
+    // (0,0) is Null Island — a missing/failed GPS fix, not a real location.
+    if (lat != null && lng != null && !(lat === 0 && lng === 0)) {
+      try {
+        return tzlookup(lat, lng);
+      } catch {
+        // out-of-range / lookup miss → fall through to the space timezone
+      }
+    }
+    return spaceTz ?? null;
+  }
+
   private async buildShiftStamp(
     userId: string,
     space: ResolverSpace,
@@ -129,6 +150,7 @@ export class AttendanceService {
           clockInWithinGeofence: true,
           isRemote: true,
           clockInPlace: place,
+          timezone: this.resolveEntryTimezone(data.lat, data.lng, bucket.timezone),
           flagReasons: [],
           approvalStatus: 'AUTO',
           organizationId: data.organizationId,
@@ -269,6 +291,7 @@ export class AttendanceService {
         clockInLng: data.lng,
         clockInAccuracy: data.accuracy,
         clockInWithinGeofence: withinGeofence,
+        timezone: this.resolveEntryTimezone(data.lat, data.lng, location.timezone),
         flagReasons,
         approvalStatus,
         organizationId: data.organizationId,

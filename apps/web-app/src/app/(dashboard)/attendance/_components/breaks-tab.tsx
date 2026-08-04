@@ -47,8 +47,10 @@ export function BreaksTab({
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
   const breakTypeKey = (type: string) => type.toLowerCase()
-  // Break times render in the zone WHERE the break was taken (its space's tz).
-  const breakTz = (b: Break) => b.location?.timezone ?? b.timeEntry?.location?.timezone
+  // Break times render in the zone WHERE the break was taken — the parent
+  // entry's per-entry (GPS) zone first, then the space's zone as fallback.
+  const breakTz = (b: Break) =>
+    b.timeEntry?.timezone ?? b.location?.timezone ?? b.timeEntry?.location?.timezone
   return (
     <div data-tour="breaks-content">
             {/* Break Statistics */}

@@ -161,7 +161,7 @@ export default function MyAttendancePage() {
             </div>
             <p className="mt-2 text-lg font-semibold text-foreground">{clockedIn ? t("attendance.my.clockedIn") : t("attendance.my.clockedOut")}</p>
             {clockedIn && activeEntry?.clockInAt && (
-              <p className="text-xs text-muted-foreground">{t("attendance.my.since", { time: formatTime(activeEntry.clockInAt, activeEntry.location?.timezone), duration: duration(activeEntry.clockInAt) })}</p>
+              <p className="text-xs text-muted-foreground">{t("attendance.my.since", { time: formatTime(activeEntry.clockInAt, (activeEntry.timezone ?? activeEntry.location?.timezone)), duration: duration(activeEntry.clockInAt) })}</p>
             )}
           </div>
 
@@ -224,7 +224,7 @@ export default function MyAttendancePage() {
             <div key={e.id} className={`flex items-center gap-4 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
               <div className="w-28 shrink-0 text-sm font-medium text-foreground">{fmtDate(e.clockInAt)}</div>
               <div className="flex-1 text-sm text-muted-foreground">
-                {formatTime(e.clockInAt, e.location?.timezone)} → {e.clockOutAt ? formatTime(e.clockOutAt, e.location?.timezone) : <span className="text-green-600">{t("attendance.my.active")}</span>}
+                {formatTime(e.clockInAt, (e.timezone ?? e.location?.timezone))} → {e.clockOutAt ? formatTime(e.clockOutAt, (e.timezone ?? e.location?.timezone)) : <span className="text-green-600">{t("attendance.my.active")}</span>}
                 {e.isRemote ? (
                   <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Home className="h-3 w-3" />{t("attendance.my.remote", "Remote")}

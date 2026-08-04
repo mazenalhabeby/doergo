@@ -701,7 +701,7 @@ export default function AttendanceScreen() {
               </View>
               {expectedEnd && (
                 <Text style={[styles.reminderSubtitle, { color: '#047857' }]}>
-                  {t('shiftReminder.extraApprovedSubtitle', { time: formatTime(currentEntry!.expectedClockOutAt!, currentEntry?.location?.timezone) })}
+                  {t('shiftReminder.extraApprovedSubtitle', { time: formatTime(currentEntry!.expectedClockOutAt!, (currentEntry?.timezone ?? currentEntry?.location?.timezone)) })}
                 </Text>
               )}
             </View>
@@ -736,7 +736,7 @@ export default function AttendanceScreen() {
               <View style={styles.shiftDetail}>
                 <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
                 <Text style={[styles.shiftDetailText, { color: colors.textSecondary }]}>
-                  {t('attendance.startedAt', { time: formatTime(currentEntry.clockInAt, currentEntry.location?.timezone) })}
+                  {t('attendance.startedAt', { time: formatTime(currentEntry.clockInAt, (currentEntry.timezone ?? currentEntry.location?.timezone)) })}
                 </Text>
               </View>
               <View style={styles.elapsedTimeContainer}>
@@ -760,7 +760,7 @@ export default function AttendanceScreen() {
                   </View>
                   {breakStatus.currentBreak?.startedAt && (
                     <Text style={[styles.breakTimeText, { color: colors.textSecondary }]}>
-                      {t('attendance.startedAt', { time: formatTime(breakStatus.currentBreak.startedAt, currentEntry?.location?.timezone) })}
+                      {t('attendance.startedAt', { time: formatTime(breakStatus.currentBreak.startedAt, (currentEntry?.timezone ?? currentEntry?.location?.timezone)) })}
                     </Text>
                   )}
                   <TouchableOpacity
@@ -926,8 +926,8 @@ export default function AttendanceScreen() {
                 </View>
                 <View style={styles.breakHistoryTimes}>
                   <Text style={[styles.breakHistoryTimeText, { color: colors.textSecondary }]}>
-                    {formatTime(breakItem.startedAt, currentEntry?.location?.timezone)}
-                    {breakItem.endedAt && ` - ${formatTime(breakItem.endedAt, currentEntry?.location?.timezone)}`}
+                    {formatTime(breakItem.startedAt, (currentEntry?.timezone ?? currentEntry?.location?.timezone))}
+                    {breakItem.endedAt && ` - ${formatTime(breakItem.endedAt, (currentEntry?.timezone ?? currentEntry?.location?.timezone))}`}
                   </Text>
                 </View>
                 {!!breakItem.notes && (
@@ -1003,14 +1003,14 @@ export default function AttendanceScreen() {
                   <View style={styles.historyTimeItem}>
                     <Text style={[styles.historyTimeLabel, { color: colors.textMuted }]}>{t('attendance.history.in')}</Text>
                     <Text style={[styles.historyTimeValue, { color: colors.textPrimary }]}>
-                      {formatTime(entry.clockInAt, entry.location?.timezone)}
+                      {formatTime(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))}
                     </Text>
                   </View>
                   {entry.clockOutAt && (
                     <View style={styles.historyTimeItem}>
                       <Text style={[styles.historyTimeLabel, { color: colors.textMuted }]}>{t('attendance.history.out')}</Text>
                       <Text style={[styles.historyTimeValue, { color: colors.textPrimary }]}>
-                        {formatTime(entry.clockOutAt, entry.location?.timezone)}
+                        {formatTime(entry.clockOutAt, (entry.timezone ?? entry.location?.timezone))}
                       </Text>
                     </View>
                   )}
@@ -1105,7 +1105,7 @@ export default function AttendanceScreen() {
                   <Text style={[styles.forgotOptionLabel, { color: colors.textPrimary }]}>{t('shiftReminder.atShiftEnd')}</Text>
                 </View>
                 <Text style={[styles.forgotOptionTime, { color: colors.textSecondary }]}>
-                  {formatTime(currentEntry!.expectedClockOutAt!, currentEntry?.location?.timezone)}
+                  {formatTime(currentEntry!.expectedClockOutAt!, (currentEntry?.timezone ?? currentEntry?.location?.timezone))}
                 </Text>
               </TouchableOpacity>
             )}
@@ -1123,7 +1123,7 @@ export default function AttendanceScreen() {
               {isReminderLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={[styles.forgotOptionTime, { color: '#fff' }]}>{formatTime(new Date().toISOString(), currentEntry?.location?.timezone)}</Text>
+                <Text style={[styles.forgotOptionTime, { color: '#fff' }]}>{formatTime(new Date().toISOString(), (currentEntry?.timezone ?? currentEntry?.location?.timezone))}</Text>
               )}
             </TouchableOpacity>
           </Pressable>

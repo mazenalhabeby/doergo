@@ -1447,6 +1447,11 @@ model TimeEntry {
   clockInPlace  String? // Coarse reverse-geocoded place, e.g. "Vienna, AT"
   clockOutPlace String?
 
+  // IANA timezone WHERE the worker physically clocked in, derived from the
+  // clock-in GPS at write-time (falls back to the space's timezone). This is the
+  // zone the entry's times are displayed in — correct even for remote clock-ins.
+  timezone String?
+
   // Calculated duration (set on clock-out)
   totalMinutes Int?
 

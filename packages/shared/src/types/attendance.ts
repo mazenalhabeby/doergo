@@ -51,6 +51,8 @@ export interface TimeEntry {
   isRemote?: boolean;
   clockInPlace?: string | null;
   clockOutPlace?: string | null;
+  // IANA timezone where the worker clocked in (GPS-derived; space-tz fallback).
+  timezone?: string | null;
   totalMinutes: number | null;
   breakMinutes: number;
   notes: string | null;

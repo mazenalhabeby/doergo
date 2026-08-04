@@ -76,11 +76,11 @@ export function AttendanceTab({
                     {format(new Date(entry.clockInAt), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell>
-                    {formatTime(entry.clockInAt, entry.location?.timezone)}
+                    {formatTime(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))}
                   </TableCell>
                   <TableCell>
                     {entry.clockOutAt
-                      ? formatTime(entry.clockOutAt, entry.location?.timezone)
+                      ? formatTime(entry.clockOutAt, (entry.timezone ?? entry.location?.timezone))
                       : "—"}
                   </TableCell>
                   <TableCell>
