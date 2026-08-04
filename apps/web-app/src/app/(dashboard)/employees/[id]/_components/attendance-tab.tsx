@@ -74,12 +74,12 @@ export function AttendanceTab({
               {attendance.map((entry: TimeEntry) => (
                 <TableRow key={entry.id}>
                   <TableCell>
-                    <div>{format(new Date(entry.clockInAt), "MMM d, yyyy")}</div>
-                    {countryFromTz((entry.timezone ?? entry.location?.timezone), locale) && (
-                      <div className="text-xs text-muted-foreground">
-                        {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}
-                      </div>
-                    )}
+                    <div>
+                      {format(new Date(entry.clockInAt), "MMM d, yyyy")}
+                      {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)
+                        ? ` / ${countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}`
+                        : ""}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {formatTime(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))}

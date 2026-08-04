@@ -106,12 +106,12 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                 </TableCell>
                 <TableCell className="text-muted-foreground">{entry.location?.name || t("attendance.approvals.unknown")}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  <div>{format(toDate(entry.clockInAt), "MMM d, yyyy")}</div>
-                  {countryFromTz((entry.timezone ?? entry.location?.timezone), locale) && (
-                    <div className="text-xs text-muted-foreground">
-                      {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}
-                    </div>
-                  )}
+                  <div>
+                    {format(toDate(entry.clockInAt), "MMM d, yyyy")}
+                    {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)
+                      ? ` / ${countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}`
+                      : ""}
+                  </div>
                 </TableCell>
                 <TableCell>{formatTime(entry.clockInAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}</TableCell>
                 <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt, hour12, locale, (entry.timezone ?? entry.location?.timezone)) : "-"}</TableCell>
