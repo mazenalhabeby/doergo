@@ -3275,9 +3275,9 @@ export interface CreateLocationInput {
 
 export interface UpdateLocationInput {
   name?: string;
-  address?: string;
-  lat?: number;
-  lng?: number;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   geofenceRadius?: number;
   timezone?: string;
   isActive?: boolean;

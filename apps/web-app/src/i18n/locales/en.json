@@ -3219,7 +3219,11 @@
     "locationHint": "Search an address or drop a pin — the timezone fills in from the location.",
     "modulesEnabledCount": "{{count}} enabled",
     "detailsHint": "Name this space and set whether it is currently active.",
-    "workflowHint": "Choose the task board columns members see in this space, or build a new one."
+    "workflowHint": "Choose the task board columns members see in this space, or build a new one.",
+    "typeSection": "Space type",
+    "typeHint": "Is this a physical site with an address, or a logical workspace?",
+    "timezoneOnlyHint": "The timezone used to display this workspace’s times.",
+    "timezoneManualHint": "Used to display attendance and task times for this workspace."
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",

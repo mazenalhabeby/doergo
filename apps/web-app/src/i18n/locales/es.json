@@ -3219,7 +3219,11 @@
     "locationHint": "Busca una dirección o coloca un pin: la zona horaria se rellena según la ubicación.",
     "modulesEnabledCount": "{{count}} activados",
     "detailsHint": "Nombra este espacio y define si está activo actualmente.",
-    "workflowHint": "Elige las columnas del tablero de tareas que verán los miembros en este espacio, o crea una nueva."
+    "workflowHint": "Elige las columnas del tablero de tareas que verán los miembros en este espacio, o crea una nueva.",
+    "typeSection": "Tipo de espacio",
+    "typeHint": "¿Es un sitio físico con dirección o un espacio de trabajo lógico?",
+    "timezoneOnlyHint": "La zona horaria para mostrar las horas de este espacio de trabajo.",
+    "timezoneManualHint": "Se usa para mostrar las horas de asistencia y tareas de este espacio de trabajo."
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",

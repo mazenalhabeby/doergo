@@ -3219,7 +3219,11 @@
     "locationHint": "Recherchez une adresse ou placez un repère — le fuseau horaire se remplit selon l’emplacement.",
     "modulesEnabledCount": "{{count}} activés",
     "detailsHint": "Nommez cet espace et indiquez s'il est actuellement actif.",
-    "workflowHint": "Choisissez les colonnes du tableau de tâches que les membres voient dans cet espace, ou créez-en une nouvelle."
+    "workflowHint": "Choisissez les colonnes du tableau de tâches que les membres voient dans cet espace, ou créez-en une nouvelle.",
+    "typeSection": "Type d’espace",
+    "typeHint": "S’agit-il d’un site physique avec une adresse ou d’un espace de travail logique ?",
+    "timezoneOnlyHint": "Le fuseau horaire utilisé pour afficher les heures de cet espace de travail.",
+    "timezoneManualHint": "Utilisé pour afficher les heures de présence et de tâches de cet espace de travail."
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",

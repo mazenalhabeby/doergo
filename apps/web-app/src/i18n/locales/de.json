@@ -3219,7 +3219,11 @@
     "locationHint": "Suchen Sie eine Adresse oder setzen Sie eine Markierung — die Zeitzone wird aus dem Standort übernommen.",
     "modulesEnabledCount": "{{count}} aktiviert",
     "detailsHint": "Benennen Sie diesen Bereich und legen Sie fest, ob er derzeit aktiv ist.",
-    "workflowHint": "Wählen Sie die Aufgaben-Board-Spalten, die Mitglieder in diesem Bereich sehen, oder erstellen Sie neue."
+    "workflowHint": "Wählen Sie die Aufgaben-Board-Spalten, die Mitglieder in diesem Bereich sehen, oder erstellen Sie neue.",
+    "typeSection": "Bereichstyp",
+    "typeHint": "Ist dies ein physischer Standort mit Adresse oder ein logischer Arbeitsbereich?",
+    "timezoneOnlyHint": "Die Zeitzone zur Anzeige der Zeiten dieses Arbeitsbereichs.",
+    "timezoneManualHint": "Wird zur Anzeige von Anwesenheits- und Aufgabenzeiten dieses Arbeitsbereichs verwendet."
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

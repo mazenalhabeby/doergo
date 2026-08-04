@@ -3219,7 +3219,11 @@
     "locationHint": "Cerca un indirizzo o posiziona un segnaposto: il fuso orario si compila in base alla posizione.",
     "modulesEnabledCount": "{{count}} attivati",
     "detailsHint": "Assegna un nome a questo spazio e indica se è attualmente attivo.",
-    "workflowHint": "Scegli le colonne della bacheca attività che i membri vedono in questo spazio, oppure creane una nuova."
+    "workflowHint": "Scegli le colonne della bacheca attività che i membri vedono in questo spazio, oppure creane una nuova.",
+    "typeSection": "Tipo di spazio",
+    "typeHint": "È un sito fisico con un indirizzo o uno spazio di lavoro logico?",
+    "timezoneOnlyHint": "Il fuso orario usato per mostrare gli orari di questo spazio di lavoro.",
+    "timezoneManualHint": "Usato per mostrare gli orari di presenza e delle attività di questo spazio di lavoro."
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",
