@@ -3223,7 +3223,25 @@
     "typeSection": "Tipo de espacio",
     "typeHint": "¿Es un sitio físico con dirección o un espacio de trabajo lógico?",
     "timezoneOnlyHint": "La zona horaria para mostrar las horas de este espacio de trabajo.",
-    "timezoneManualHint": "Se usa para mostrar las horas de asistencia y tareas de este espacio de trabajo."
+    "timezoneManualHint": "Se usa para mostrar las horas de asistencia y tareas de este espacio de trabajo.",
+    "danger": {
+      "title": "Zona de peligro",
+      "hint": "Acciones irreversibles y destructivas.",
+      "deleteTitle": "Eliminar este espacio",
+      "deleteHint": "Archiva el espacio y lo oculta de los selectores. Sus tareas se mueven a tu espacio predeterminado. No se puede deshacer.",
+      "lockedDefault": "Este es tu espacio predeterminado: contiene las tareas sin asignar y no se puede eliminar.",
+      "lockedRemote": "Este es el espacio Remoto: es necesario para los fichajes remotos y no se puede eliminar.",
+      "deleteButton": "Eliminar espacio",
+      "dialogTitle": "¿Eliminar «{{name}}»?",
+      "dialogDesc": "El espacio se archiva y se quita de los selectores. Esta acción no se puede deshacer.",
+      "tasksMoved": "{{count}} tarea(s) de este espacio se moverán a tu espacio predeterminado.",
+      "tasksNone": "Este espacio no tiene tareas.",
+      "confirmLabel": "Escribe «{{name}}» para confirmar",
+      "confirmButton": "Eliminar espacio",
+      "deleting": "Eliminando…",
+      "deleted": "Espacio eliminado",
+      "deleteFailed": "No se pudo eliminar el espacio"
+    }
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",

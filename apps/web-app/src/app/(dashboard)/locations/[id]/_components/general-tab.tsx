@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AuditTrail } from "@/components/audit-trail"
 import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
+import { DangerZone } from "./danger-zone"
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } =
   ATTENDANCE_CONSTANTS
@@ -293,6 +294,9 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
 
       {/* Full accountability audit trail — managers only (self-gated). */}
       <AuditTrail resourceType="locations" resourceId={space.id} />
+
+      {/* Danger zone — delete (archive) this space. */}
+      <DangerZone space={space} />
     </div>
   )
 }

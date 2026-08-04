@@ -3223,7 +3223,25 @@
     "typeSection": "Type d’espace",
     "typeHint": "S’agit-il d’un site physique avec une adresse ou d’un espace de travail logique ?",
     "timezoneOnlyHint": "Le fuseau horaire utilisé pour afficher les heures de cet espace de travail.",
-    "timezoneManualHint": "Utilisé pour afficher les heures de présence et de tâches de cet espace de travail."
+    "timezoneManualHint": "Utilisé pour afficher les heures de présence et de tâches de cet espace de travail.",
+    "danger": {
+      "title": "Zone de danger",
+      "hint": "Actions irréversibles et destructrices.",
+      "deleteTitle": "Supprimer cet espace",
+      "deleteHint": "Archive l’espace et le masque des sélecteurs. Ses tâches sont déplacées vers votre espace par défaut. Irréversible.",
+      "lockedDefault": "Ceci est votre espace par défaut : il contient les tâches non attribuées et ne peut pas être supprimé.",
+      "lockedRemote": "Ceci est l’espace À distance : il est requis pour les pointages à distance et ne peut pas être supprimé.",
+      "deleteButton": "Supprimer l’espace",
+      "dialogTitle": "Supprimer « {{name}} » ?",
+      "dialogDesc": "L’espace est archivé et retiré des sélecteurs. Cette action est irréversible.",
+      "tasksMoved": "{{count}} tâche(s) de cet espace seront déplacées vers votre espace par défaut.",
+      "tasksNone": "Cet espace n’a aucune tâche.",
+      "confirmLabel": "Saisissez « {{name}} » pour confirmer",
+      "confirmButton": "Supprimer l’espace",
+      "deleting": "Suppression…",
+      "deleted": "Espace supprimé",
+      "deleteFailed": "Impossible de supprimer l’espace"
+    }
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",

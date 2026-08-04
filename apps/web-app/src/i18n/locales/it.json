@@ -3223,7 +3223,25 @@
     "typeSection": "Tipo di spazio",
     "typeHint": "È un sito fisico con un indirizzo o uno spazio di lavoro logico?",
     "timezoneOnlyHint": "Il fuso orario usato per mostrare gli orari di questo spazio di lavoro.",
-    "timezoneManualHint": "Usato per mostrare gli orari di presenza e delle attività di questo spazio di lavoro."
+    "timezoneManualHint": "Usato per mostrare gli orari di presenza e delle attività di questo spazio di lavoro.",
+    "danger": {
+      "title": "Zona pericolosa",
+      "hint": "Azioni irreversibili e distruttive.",
+      "deleteTitle": "Elimina questo spazio",
+      "deleteHint": "Archivia lo spazio e lo nasconde dai selettori. Le sue attività vengono spostate nel tuo spazio predefinito. Non annullabile.",
+      "lockedDefault": "Questo è il tuo spazio predefinito: contiene le attività non assegnate e non può essere eliminato.",
+      "lockedRemote": "Questo è lo spazio Remoto: è necessario per le timbrature da remoto e non può essere eliminato.",
+      "deleteButton": "Elimina spazio",
+      "dialogTitle": "Eliminare «{{name}}»?",
+      "dialogDesc": "Lo spazio viene archiviato e rimosso dai selettori. Questa azione non può essere annullata.",
+      "tasksMoved": "{{count}} attività in questo spazio verranno spostate nel tuo spazio predefinito.",
+      "tasksNone": "Questo spazio non ha attività.",
+      "confirmLabel": "Digita «{{name}}» per confermare",
+      "confirmButton": "Elimina spazio",
+      "deleting": "Eliminazione…",
+      "deleted": "Spazio eliminato",
+      "deleteFailed": "Impossibile eliminare lo spazio"
+    }
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",

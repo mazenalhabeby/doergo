@@ -26,6 +26,12 @@ export interface CompanyLocation {
   enabledModules?: string[] | null;
   workflowId?: string | null;
   workModel?: string | null; // NONE | SHIFT | FIXED | TASK — how attendance is interpreted
+  // Structural flags — the default bucket (unassigned tasks) and the Remote
+  // bucket (WFH clock-ins) can't be deleted.
+  isDefault?: boolean;
+  isRemote?: boolean;
+  // Present on the single-space detail response (findOne includes _count).
+  _count?: { tasks: number };
 }
 
 // ============================================================================

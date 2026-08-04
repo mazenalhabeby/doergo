@@ -229,10 +229,44 @@ export class LocationsService {
         id: data.id,
         organizationId: data.organizationId,
       },
+      include: { _count: { select: { tasks: true } } },
     });
 
     if (!existing) {
       throw new NotFoundException('Company location not found');
+    }
+
+    // Structural spaces are never deletable: the default bucket holds
+    // otherwise-unassigned tasks, and the Remote bucket backs WFH clock-ins.
+    if (existing.isDefault) {
+      throw new BadRequestException(
+        'The default space cannot be deleted. Make another space the default first.',
+      );
+    }
+    if (existing.isRemote) {
+      throw new BadRequestException(
+        'The Remote space is required for remote clock-ins and cannot be deleted.',
+      );
+    }
+
+    // Move this space's tasks to the org's default space so nothing is orphaned
+    // in a deactivated space (falls back to null → unassigned if no default).
+    let tasksReassigned = 0;
+    if (existing._count.tasks > 0) {
+      const fallback = await this.prisma.companyLocation.findFirst({
+        where: {
+          organizationId: data.organizationId,
+          isDefault: true,
+          isActive: true,
+          id: { not: data.id },
+        },
+        select: { id: true },
+      });
+      const res = await this.prisma.task.updateMany({
+        where: { spaceId: data.id },
+        data: { spaceId: fallback?.id ?? null },
+      });
+      tasksReassigned = res.count;
     }
 
     const location = await this.prisma.companyLocation.update({
@@ -240,8 +274,13 @@ export class LocationsService {
       data: { isActive: false },
     });
 
-    this.logger.log(`Company location deactivated: ${location.id}`);
-    return success(location, 'Company location deactivated successfully');
+    this.logger.log(
+      `Company location deactivated: ${location.id} (tasks reassigned: ${tasksReassigned})`,
+    );
+    return success(
+      { ...location, tasksReassigned },
+      'Company location deleted successfully',
+    );
   }
 
   /**

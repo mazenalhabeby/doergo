@@ -3223,7 +3223,25 @@
     "typeSection": "Bereichstyp",
     "typeHint": "Ist dies ein physischer Standort mit Adresse oder ein logischer Arbeitsbereich?",
     "timezoneOnlyHint": "Die Zeitzone zur Anzeige der Zeiten dieses Arbeitsbereichs.",
-    "timezoneManualHint": "Wird zur Anzeige von Anwesenheits- und Aufgabenzeiten dieses Arbeitsbereichs verwendet."
+    "timezoneManualHint": "Wird zur Anzeige von Anwesenheits- und Aufgabenzeiten dieses Arbeitsbereichs verwendet.",
+    "danger": {
+      "title": "Gefahrenzone",
+      "hint": "Unwiderrufliche und destruktive Aktionen.",
+      "deleteTitle": "Diesen Bereich löschen",
+      "deleteHint": "Archiviert den Bereich und blendet ihn aus Auswahllisten aus. Seine Aufgaben werden in deinen Standardbereich verschoben. Kann nicht rückgängig gemacht werden.",
+      "lockedDefault": "Dies ist dein Standardbereich – er enthält nicht zugewiesene Aufgaben und kann nicht gelöscht werden.",
+      "lockedRemote": "Dies ist der Remote-Bereich – er wird für Remote-Zeiterfassung benötigt und kann nicht gelöscht werden.",
+      "deleteButton": "Bereich löschen",
+      "dialogTitle": "„{{name}}“ löschen?",
+      "dialogDesc": "Der Bereich wird archiviert und aus Auswahllisten entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "tasksMoved": "{{count}} Aufgabe(n) in diesem Bereich werden in deinen Standardbereich verschoben.",
+      "tasksNone": "Dieser Bereich hat keine Aufgaben.",
+      "confirmLabel": "Gib „{{name}}“ ein, um zu bestätigen",
+      "confirmButton": "Bereich löschen",
+      "deleting": "Wird gelöscht…",
+      "deleted": "Bereich gelöscht",
+      "deleteFailed": "Bereich konnte nicht gelöscht werden"
+    }
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",
