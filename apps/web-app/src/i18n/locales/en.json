@@ -5282,7 +5282,8 @@
       "workModel": "Work model",
       "shifts": "Shifts",
       "rota": "Rota",
-      "members": "Members"
+      "members": "Members",
+      "attendance": "Attendance"
     },
     "workModel": {
       "heading": "Work model",
@@ -5490,6 +5491,18 @@
         "addFailed": "Failed to add member",
         "removeFailed": "Failed to remove member"
       }
+    },
+    "attendanceTab": {
+      "heading": "Attendance",
+      "intro": "How this space tracks time.",
+      "clockTitle": "Time clock — always on",
+      "clockDesc": "Everyone with the Clock module clocks in and out — on-site (geofence) or remotely. Set the geofence and remote clock-in in the General tab.",
+      "modeQuestion": "How are hours tracked here?",
+      "openTitle": "Open hours",
+      "openDesc": "Clock in and out freely. No fixed shifts, no reminders.",
+      "scheduledTitle": "Scheduled shifts",
+      "scheduledDesc": "Assign people to shifts. Scheduled members get end-of-shift reminders; anyone left unassigned works open hours.",
+      "openHoursNote": "Nothing else to set up — members clock in and out on their own hours."
     }
   }
 }

@@ -5282,7 +5282,8 @@
       "workModel": "Modello di lavoro",
       "shifts": "Turni",
       "rota": "Turnazione",
-      "members": "Membri"
+      "members": "Membri",
+      "attendance": "Presenze"
     },
     "workModel": {
       "heading": "Modello di lavoro",
@@ -5490,6 +5491,18 @@
         "addFailed": "Impossibile aggiungere il membro",
         "removeFailed": "Impossibile rimuovere il membro"
       }
+    },
+    "attendanceTab": {
+      "heading": "Presenze",
+      "intro": "Come questo spazio registra il tempo.",
+      "clockTitle": "Timbratore — sempre attivo",
+      "clockDesc": "Chiunque abbia il modulo Timbratura entra ed esce — in sede (geofence) o da remoto. Imposta il geofence e la timbratura remota nella scheda Generale.",
+      "modeQuestion": "Come vengono registrate le ore qui?",
+      "openTitle": "Orario libero",
+      "openDesc": "Timbra entrata e uscita liberamente. Nessun turno fisso, nessun promemoria.",
+      "scheduledTitle": "Turni pianificati",
+      "scheduledDesc": "Assegna le persone ai turni. I membri pianificati ricevono promemoria di fine turno; chi resta non assegnato lavora a orario libero.",
+      "openHoursNote": "Nient’altro da configurare: i membri timbrano secondo i propri orari."
     }
   }
 }

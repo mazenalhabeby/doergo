@@ -5282,7 +5282,8 @@
       "workModel": "Modèle de travail",
       "shifts": "Postes",
       "rota": "Planning",
-      "members": "Membres"
+      "members": "Membres",
+      "attendance": "Présence"
     },
     "workModel": {
       "heading": "Modèle de travail",
@@ -5490,6 +5491,18 @@
         "addFailed": "Impossible d’ajouter le membre",
         "removeFailed": "Impossible de retirer le membre"
       }
+    },
+    "attendanceTab": {
+      "heading": "Présence",
+      "intro": "Comment cet espace suit le temps.",
+      "clockTitle": "Pointeuse — toujours active",
+      "clockDesc": "Toute personne disposant du module Pointage pointe l’entrée et la sortie — sur site (géorepérage) ou à distance. Réglez le géorepérage et le pointage à distance dans l’onglet Général.",
+      "modeQuestion": "Comment les heures sont-elles suivies ici ?",
+      "openTitle": "Horaires libres",
+      "openDesc": "Pointez librement l’entrée et la sortie. Pas de créneaux fixes, pas de rappels.",
+      "scheduledTitle": "Créneaux planifiés",
+      "scheduledDesc": "Affectez des personnes à des créneaux. Les membres planifiés reçoivent des rappels de fin de créneau ; les non-affectés travaillent en horaires libres.",
+      "openHoursNote": "Rien d’autre à configurer — les membres pointent selon leurs propres horaires."
     }
   }
 }

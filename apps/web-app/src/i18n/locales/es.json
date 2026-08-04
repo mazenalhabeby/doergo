@@ -5282,7 +5282,8 @@
       "workModel": "Modelo de trabajo",
       "shifts": "Turnos",
       "rota": "Cuadrante",
-      "members": "Miembros"
+      "members": "Miembros",
+      "attendance": "Asistencia"
     },
     "workModel": {
       "heading": "Modelo de trabajo",
@@ -5490,6 +5491,18 @@
         "addFailed": "No se pudo añadir el miembro",
         "removeFailed": "No se pudo eliminar el miembro"
       }
+    },
+    "attendanceTab": {
+      "heading": "Asistencia",
+      "intro": "Cómo registra el tiempo este espacio.",
+      "clockTitle": "Reloj de fichaje: siempre activo",
+      "clockDesc": "Todos los que tengan el módulo de Fichaje entran y salen — en el sitio (geovalla) o en remoto. Configura la geovalla y el fichaje remoto en la pestaña General.",
+      "modeQuestion": "¿Cómo se registran las horas aquí?",
+      "openTitle": "Horario abierto",
+      "openDesc": "Ficha entrada y salida libremente. Sin turnos fijos ni recordatorios.",
+      "scheduledTitle": "Turnos programados",
+      "scheduledDesc": "Asigna personas a turnos. Los miembros programados reciben recordatorios de fin de turno; quien quede sin asignar trabaja en horario abierto.",
+      "openHoursNote": "No hay nada más que configurar: los miembros fichan según su propio horario."
     }
   }
 }

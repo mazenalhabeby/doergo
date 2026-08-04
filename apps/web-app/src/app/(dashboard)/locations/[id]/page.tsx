@@ -9,8 +9,6 @@ import {
   Blocks,
   Building2,
   CalendarClock,
-  CalendarDays,
-  CalendarRange,
   Loader2,
   ShieldAlert,
   UserCog,
@@ -24,9 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlanGate } from "@/components/plan-gate"
 
 import { GeneralTab } from "./_components/general-tab"
-import { WorkModelTab } from "./_components/work-model-tab"
-import { ShiftsTab } from "./_components/shifts-tab"
-import { RotaTab } from "./_components/rota-tab"
+import { AttendanceTab } from "./_components/attendance-tab"
 import { ModulesTab } from "./_components/modules-tab"
 import { WorkflowTab } from "./_components/workflow-tab"
 import { MembersTab } from "./_components/members-tab"
@@ -111,17 +107,9 @@ export default function SpaceSettingsPage() {
                 <Building2 className="h-4 w-4" />
                 {t("locations.tabs.general")}
               </TabsTrigger>
-              <TabsTrigger value="work-model" className="gap-1.5">
+              <TabsTrigger value="attendance" className="gap-1.5">
                 <CalendarClock className="h-4 w-4" />
-                {t("scheduling.tabs.workModel")}
-              </TabsTrigger>
-              <TabsTrigger value="shifts" className="gap-1.5">
-                <CalendarRange className="h-4 w-4" />
-                {t("scheduling.tabs.shifts")}
-              </TabsTrigger>
-              <TabsTrigger value="rota" className="gap-1.5">
-                <CalendarDays className="h-4 w-4" />
-                {t("scheduling.tabs.rota")}
+                {t("scheduling.tabs.attendance")}
               </TabsTrigger>
               <TabsTrigger value="modules" className="gap-1.5">
                 <Blocks className="h-4 w-4" />
@@ -143,19 +131,9 @@ export default function SpaceSettingsPage() {
 
             {/* Attendance / scheduling is a Professional+ capability. Under-tier
                 orgs see an upgrade panel here; the API enforces the same 402. */}
-            <TabsContent value="work-model" className="mt-6">
+            <TabsContent value="attendance" className="mt-6">
               <PlanGate feature="shift_scheduling">
-                <WorkModelTab space={space} />
-              </PlanGate>
-            </TabsContent>
-            <TabsContent value="shifts" className="mt-6">
-              <PlanGate feature="shift_scheduling">
-                <ShiftsTab spaceId={spaceId} />
-              </PlanGate>
-            </TabsContent>
-            <TabsContent value="rota" className="mt-6">
-              <PlanGate feature="shift_scheduling">
-                <RotaTab spaceId={spaceId} />
+                <AttendanceTab space={space} />
               </PlanGate>
             </TabsContent>
 

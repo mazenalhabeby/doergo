@@ -5282,7 +5282,8 @@
       "workModel": "Arbeitsmodell",
       "shifts": "Schichten",
       "rota": "Dienstplan",
-      "members": "Mitglieder"
+      "members": "Mitglieder",
+      "attendance": "Anwesenheit"
     },
     "workModel": {
       "heading": "Arbeitsmodell",
@@ -5490,6 +5491,18 @@
         "addFailed": "Mitglied konnte nicht hinzugefügt werden",
         "removeFailed": "Mitglied konnte nicht entfernt werden"
       }
+    },
+    "attendanceTab": {
+      "heading": "Anwesenheit",
+      "intro": "Wie dieser Bereich die Zeit erfasst.",
+      "clockTitle": "Stempeluhr — immer aktiv",
+      "clockDesc": "Jeder mit dem Zeiterfassungs-Modul stempelt ein und aus — vor Ort (Geofence) oder remote. Geofence und Remote-Zeiterfassung im Tab „Allgemein“ festlegen.",
+      "modeQuestion": "Wie werden die Stunden hier erfasst?",
+      "openTitle": "Offene Zeiten",
+      "openDesc": "Frei ein- und ausstempeln. Keine festen Schichten, keine Erinnerungen.",
+      "scheduledTitle": "Geplante Schichten",
+      "scheduledDesc": "Personen zu Schichten zuweisen. Eingeplante Mitglieder erhalten Erinnerungen zum Schichtende; nicht zugewiesene arbeiten zu offenen Zeiten.",
+      "openHoursNote": "Nichts weiter einzurichten — Mitglieder stempeln zu ihren eigenen Zeiten ein und aus."
     }
   }
 }
