@@ -11,7 +11,8 @@ export {
 } from './enums';
 
 export {
-  getDefaultModules, hasModule, hasAccessModule, getModuleLabel, getModules,
+  getDefaultModules, hasModule, hasAccessModule, canReceiveTasks, byAssignableFirst,
+  getModuleLabel, getModules,
   getSpaceScope, getAccessPlatforms, canContactColleagues, getWebScreens,
   getFeatureModules, hasFeatureModule, DEFAULT_ORG_MODULES,
   type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform, type WebScreen,

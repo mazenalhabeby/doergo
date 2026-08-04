@@ -250,29 +250,35 @@ export class LocationsService {
     }
 
     // Move this space's tasks to the org's default space so nothing is orphaned
-    // in a deactivated space (falls back to null → unassigned if no default).
-    let tasksReassigned = 0;
-    if (existing._count.tasks > 0) {
-      const fallback = await this.prisma.companyLocation.findFirst({
-        where: {
-          organizationId: data.organizationId,
-          isDefault: true,
-          isActive: true,
-          id: { not: data.id },
-        },
-        select: { id: true },
-      });
-      const res = await this.prisma.task.updateMany({
-        where: { spaceId: data.id },
-        data: { spaceId: fallback?.id ?? null },
-      });
-      tasksReassigned = res.count;
-    }
-
-    const location = await this.prisma.companyLocation.update({
-      where: { id: data.id },
-      data: { isActive: false },
-    });
+    // in a deactivated space (falls back to null → unassigned if no default),
+    // then deactivate — atomically, so a crash can't leave tasks stranded on a
+    // still-active space or double-apply.
+    const { location, tasksReassigned } = await this.prisma.$transaction(
+      async (tx) => {
+        let reassigned = 0;
+        if (existing._count.tasks > 0) {
+          const fallback = await tx.companyLocation.findFirst({
+            where: {
+              organizationId: data.organizationId,
+              isDefault: true,
+              isActive: true,
+              id: { not: data.id },
+            },
+            select: { id: true },
+          });
+          const res = await tx.task.updateMany({
+            where: { spaceId: data.id },
+            data: { spaceId: fallback?.id ?? null },
+          });
+          reassigned = res.count;
+        }
+        const loc = await tx.companyLocation.update({
+          where: { id: data.id },
+          data: { isActive: false },
+        });
+        return { location: loc, tasksReassigned: reassigned };
+      },
+    );
 
     this.logger.log(
       `Company location deactivated: ${location.id} (tasks reassigned: ${tasksReassigned})`,

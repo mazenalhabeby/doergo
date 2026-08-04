@@ -155,6 +155,25 @@ export function hasAccessModule(
   return Array.isArray(profile.modules) ? profile.modules.includes(module) : false;
 }
 
+/**
+ * The single source of truth for "can this member be assigned a task?" — they
+ * must have the `tasks` module, otherwise the task is invisible on their mobile.
+ * Used by every assignee picker so the rule lives in one place.
+ */
+export function canReceiveTasks(
+  user: { enabledModules?: unknown } & UserPermissionFields,
+): boolean {
+  return hasAccessModule(user, 'tasks');
+}
+
+/** Sort comparator: task-assignable members first, others (clock-only) last. */
+export function byAssignableFirst(
+  a: { enabledModules?: unknown } & UserPermissionFields,
+  b: { enabledModules?: unknown } & UserPermissionFields,
+): number {
+  return Number(canReceiveTasks(b)) - Number(canReceiveTasks(a));
+}
+
 // ── Unified access resolver ──────────────────────────────────────────────────
 // ONE object describing everything a user can do/see — merges the per-user
 // Access Profile (reach + feature tabs) with the enforced permission fields

@@ -133,11 +133,13 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["rota", spaceId],
     queryFn: () => rotaApi.list(spaceId),
+    staleTime: 30_000,
   })
   // Space members — to surface who works "open hours" (no shift assigned).
   const { data: spaceMembers } = useQuery({
     queryKey: ["space-members", spaceId],
     queryFn: () => spaceMembersApi.list(spaceId),
+    staleTime: 30_000,
   })
 
   // Week navigator (weeks start Monday).
@@ -169,8 +171,20 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
       .sort((x, y) => `${x.first} ${x.last}`.localeCompare(`${y.first} ${y.last}`))
   }, [spaceMembers, scheduledMembers])
 
+  // Index assignments by member once, so a cell filters only that member's
+  // slice instead of re-scanning the whole array members×7 times per render.
+  const byUser = useMemo(() => {
+    const map = new Map<string, ShiftAssignment[]>()
+    for (const a of assignments ?? []) {
+      const arr = map.get(a.userId)
+      if (arr) arr.push(a)
+      else map.set(a.userId, [a])
+    }
+    return map
+  }, [assignments])
+
   const cellFor = (userId: string, day: Date, dayStr: string) =>
-    (assignments ?? []).filter((a) => a.userId === userId && assignmentAppliesOn(a, day, dayStr))
+    (byUser.get(userId) ?? []).filter((a) => assignmentAppliesOn(a, day, dayStr))
 
   // Count double-booked cells in the visible week (overlapping shift times).
   const weekConflicts = useMemo(() => {
@@ -182,7 +196,7 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
     }
     return n
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduledMembers, days, dayStrs, assignments])
+  }, [scheduledMembers, days, dayStrs, byUser])
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => rotaApi.remove(id),

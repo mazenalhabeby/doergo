@@ -8,7 +8,7 @@ import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
 import { tasksApi, usersApi, type TaskAssignee, type Worker } from "@/lib/api"
-import { hasAccessModule } from "@hbcfield/shared/client"
+import { canReceiveTasks, byAssignableFirst } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
@@ -123,10 +123,8 @@ function AddAssigneeDialog({
     onError: (e: Error) => notify.error(e.message),
   })
 
-  // A worker can only receive tasks if their Access Profile includes `tasks`.
-  const canReceiveTasks = (w: Worker) =>
-    hasAccessModule(w as Parameters<typeof hasAccessModule>[0], "tasks")
-
+  // A worker can only receive tasks if their Access Profile includes `tasks`
+  // (shared rule). Clock-only workers sink to the bottom, rendered disabled.
   const filtered = (workers || [])
     .filter((w: Worker) => {
       if (existingUserIds.includes(w.id)) return false
@@ -138,8 +136,7 @@ function AddAssigneeDialog({
         w.email.toLowerCase().includes(q)
       )
     })
-    // Assignable first; clock-only workers sink to the bottom (disabled).
-    .sort((a: Worker, b: Worker) => Number(canReceiveTasks(b)) - Number(canReceiveTasks(a)))
+    .sort(byAssignableFirst)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
