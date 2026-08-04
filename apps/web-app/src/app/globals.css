@@ -1,5 +1,23 @@
 @import "leaflet/dist/leaflet.css";
 
+/* Contain Leaflet's z-index. Its panes/controls use z-index up to 1000, which
+   otherwise renders the map (and its zoom/locate controls) ON TOP of app menus,
+   dropdowns and popovers. This MUST be unlayered (Leaflet is imported unlayered,
+   and unlayered CSS beats @layer rules) with !important so it can't be beaten:
+   isolate the container into its own z-index:0 stacking context, and drop the
+   panes/controls to auto so they layer by DOM order INSIDE that context. */
+.leaflet-container {
+  position: relative !important;
+  z-index: 0 !important;
+  isolation: isolate;
+}
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+  z-index: auto !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -306,17 +324,9 @@
     @apply bg-blue-700;
   }
 
-  /* Leaflet Map Overrides */
+  /* Leaflet Map Overrides (z-index containment lives unlayered at the top). */
   .leaflet-container {
     @apply font-sans;
-    /* Leaflet's panes/controls use z-index up to 1000, which otherwise renders
-       the map (and its zoom/locate controls) ON TOP of app dropdowns, popovers
-       and the top-nav menus. Isolate the map into its own stacking context
-       rooted at z-index 0 so all of Leaflet's internal z-indexes stay contained
-       below every app overlay. */
-    position: relative;
-    z-index: 0;
-    isolation: isolate;
   }
 
   .leaflet-popup-content-wrapper {
