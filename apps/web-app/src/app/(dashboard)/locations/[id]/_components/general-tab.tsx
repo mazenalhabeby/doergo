@@ -4,7 +4,7 @@ import { useState, useRef } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Loader2 } from "lucide-react"
+import { Loader2, MapPin } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
@@ -12,18 +12,20 @@ import { ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AuditTrail } from "@/components/audit-trail"
 import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } =
   ATTENDANCE_CONSTANTS
 
-// Same map picker used by the New-Space form — reused here so the address
+// The same map picker used by the New-Space form — reused so the address
 // experience is identical (DRY). Dynamic-imported because Leaflet needs `window`.
 const LocationPicker = dynamic(() => import("../../_components/location-picker"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/40">
+    <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/40">
       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
     </div>
   ),
@@ -41,8 +43,6 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
   const [isActive, setIsActive] = useState(space.isActive)
 
-  // Physical spaces (those with coordinates) get the map; logical workspaces don't.
-  const isPhysical = space.lat != null && space.lng != null
   const clampRadius = () => Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
 
   // Remember the last coords we auto-derived a timezone for, so a save/re-render
@@ -86,73 +86,86 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="cfg-name">{t("locations.name")}</Label>
-        <Input id="cfg-name" value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
-
-      {isPhysical ? (
-        // Map-first address: search + drop-a-pin, coords + geofence circle.
-        <LocationPicker
-          lat={lat}
-          lng={lng}
-          radius={clampRadius()}
-          address={address}
-          onLocationChange={handleLocationChange}
-          onAddressChange={setAddress}
-        />
-      ) : (
-        <div className="space-y-2">
-          <Label htmlFor="cfg-address">{t("locations.address")}</Label>
-          <Input id="cfg-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="cfg-radius">{t("locations.geofenceRadius")}</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="cfg-radius"
-              type="number"
-              min={GEO_MIN}
-              max={GEO_MAX}
-              value={radius}
-              onChange={(e) => setRadius(e.target.value)}
-              className="w-24"
-            />
-            <span className="text-sm text-muted-foreground">{radius}m</span>
+    <div className="max-w-3xl space-y-5">
+      {/* ── Space details ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{t("locations.detailsSection")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="cfg-name">{t("locations.name")}</Label>
+            <Input id="cfg-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("locations.name")} />
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cfg-timezone">{t("locations.timezone")}</Label>
-          <TimezoneCombobox value={timezone} onChange={setTimezone} />
-          {isPhysical && (
-            <p className="text-[11px] text-muted-foreground/70">{t("locations.timezoneAutoHint")}</p>
-          )}
-        </div>
-      </div>
+          <div className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">{t("locations.activeLabel")}</p>
+              <p className="text-xs text-muted-foreground">{t("locations.activeHint")}</p>
+            </div>
+            <Switch checked={isActive} onCheckedChange={setIsActive} />
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="flex items-center justify-between rounded-lg border p-3">
-        <div>
-          <p className="text-sm font-medium text-foreground">{t("locations.activeLabel")}</p>
-          <p className="text-xs text-muted-foreground">{t("locations.activeHint")}</p>
-        </div>
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-            className="sr-only peer"
+      {/* ── Location & timezone ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            {t("locations.locationSection")}
+          </CardTitle>
+          <CardDescription>{t("locations.locationHint")}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Always show the map — it's how you SET a space's location (and its
+              timezone auto-fills). Logical spaces can simply leave it empty. */}
+          <LocationPicker
+            lat={lat}
+            lng={lng}
+            radius={clampRadius()}
+            address={address}
+            onLocationChange={handleLocationChange}
+            onAddressChange={setAddress}
           />
-          <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
-        </label>
-      </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-radius">{t("locations.geofenceRadius")}</Label>
+              <div className="relative w-40">
+                <Input
+                  id="cfg-radius"
+                  type="number"
+                  min={GEO_MIN}
+                  max={GEO_MAX}
+                  value={radius}
+                  onChange={(e) => setRadius(e.target.value)}
+                  className="pr-8"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  m
+                </span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-timezone">{t("locations.timezone")}</Label>
+              <TimezoneCombobox value={timezone} onChange={setTimezone} />
+              <p className="text-[11px] text-muted-foreground/70">{t("locations.timezoneAutoHint")}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Save ── */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={mutation.isPending} size="sm">
-          {mutation.isPending ? t("common.saving") : t("common.save")}
+        <Button onClick={handleSave} disabled={mutation.isPending} className="min-w-[120px]">
+          {mutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t("common.saving")}
+            </>
+          ) : (
+            t("common.save")
+          )}
         </Button>
       </div>
 

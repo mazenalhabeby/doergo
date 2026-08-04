@@ -3213,7 +3213,10 @@
     "spaceSettings": "Ajustes del espacio",
     "selectTimezone": "Seleccionar zona horaria",
     "searchTimezone": "Buscar zona horaria…",
-    "timezoneAutoHint": "Se rellena automáticamente desde el mapa. Busca para cambiarla."
+    "timezoneAutoHint": "Se rellena automáticamente desde el mapa. Busca para cambiarla.",
+    "detailsSection": "Detalles del espacio",
+    "locationSection": "Ubicación y zona horaria",
+    "locationHint": "Busca una dirección o coloca un pin: la zona horaria se rellena según la ubicación."
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",

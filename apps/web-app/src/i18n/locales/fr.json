@@ -3213,7 +3213,10 @@
     "spaceSettings": "Paramètres de l'espace",
     "selectTimezone": "Sélectionner le fuseau horaire",
     "searchTimezone": "Rechercher un fuseau horaire…",
-    "timezoneAutoHint": "Rempli automatiquement depuis la carte. Recherchez pour le modifier."
+    "timezoneAutoHint": "Rempli automatiquement depuis la carte. Recherchez pour le modifier.",
+    "detailsSection": "Détails de l’espace",
+    "locationSection": "Emplacement et fuseau horaire",
+    "locationHint": "Recherchez une adresse ou placez un repère — le fuseau horaire se remplit selon l’emplacement."
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",

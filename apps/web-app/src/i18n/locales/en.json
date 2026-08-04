@@ -3213,7 +3213,10 @@
     "spaceSettings": "Space settings",
     "selectTimezone": "Select timezone",
     "searchTimezone": "Search timezone…",
-    "timezoneAutoHint": "Auto-filled from the map. Search to override."
+    "timezoneAutoHint": "Auto-filled from the map. Search to override.",
+    "detailsSection": "Space details",
+    "locationSection": "Location & timezone",
+    "locationHint": "Search an address or drop a pin — the timezone fills in from the location."
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",

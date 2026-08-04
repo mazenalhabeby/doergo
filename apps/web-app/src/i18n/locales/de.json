@@ -3213,7 +3213,10 @@
     "spaceSettings": "Bereichseinstellungen",
     "selectTimezone": "Zeitzone auswählen",
     "searchTimezone": "Zeitzone suchen…",
-    "timezoneAutoHint": "Automatisch von der Karte übernommen. Zum Überschreiben suchen."
+    "timezoneAutoHint": "Automatisch von der Karte übernommen. Zum Überschreiben suchen.",
+    "detailsSection": "Bereichsdetails",
+    "locationSection": "Standort & Zeitzone",
+    "locationHint": "Suchen Sie eine Adresse oder setzen Sie eine Markierung — die Zeitzone wird aus dem Standort übernommen."
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

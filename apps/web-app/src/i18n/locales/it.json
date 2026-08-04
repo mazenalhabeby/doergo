@@ -3213,7 +3213,10 @@
     "spaceSettings": "Impostazioni spazio",
     "selectTimezone": "Seleziona fuso orario",
     "searchTimezone": "Cerca fuso orario…",
-    "timezoneAutoHint": "Compilato automaticamente dalla mappa. Cerca per modificarlo."
+    "timezoneAutoHint": "Compilato automaticamente dalla mappa. Cerca per modificarlo.",
+    "detailsSection": "Dettagli dello spazio",
+    "locationSection": "Posizione e fuso orario",
+    "locationHint": "Cerca un indirizzo o posiziona un segnaposto: il fuso orario si compila in base alla posizione."
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",

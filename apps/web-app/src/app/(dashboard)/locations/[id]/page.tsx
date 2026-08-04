@@ -95,7 +95,7 @@ export default function SpaceSettingsPage() {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto">
+            <TabsList className="inline-flex h-auto flex-wrap justify-start gap-1">
               <TabsTrigger value="general">{t("locations.tabs.general")}</TabsTrigger>
               <TabsTrigger value="work-model">{t("scheduling.tabs.workModel")}</TabsTrigger>
               <TabsTrigger value="shifts">{t("scheduling.tabs.shifts")}</TabsTrigger>
