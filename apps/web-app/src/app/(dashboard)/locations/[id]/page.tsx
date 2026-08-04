@@ -12,9 +12,12 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlanGate } from "@/components/plan-gate"
 
+import { GeneralTab } from "./_components/general-tab"
 import { WorkModelTab } from "./_components/work-model-tab"
 import { ShiftsTab } from "./_components/shifts-tab"
 import { RotaTab } from "./_components/rota-tab"
+import { ModulesTab } from "./_components/modules-tab"
+import { WorkflowTab } from "./_components/workflow-tab"
 import { MembersTab } from "./_components/members-tab"
 
 export default function SpaceSettingsPage() {
@@ -25,7 +28,7 @@ export default function SpaceSettingsPage() {
   const { user } = useAuth()
   const canManage = !!user?.canManageUsers
 
-  const [activeTab, setActiveTab] = useState("work-model")
+  const [activeTab, setActiveTab] = useState("general")
 
   const { data: space, isLoading } = useQuery({
     queryKey: ["location", spaceId],
@@ -91,31 +94,49 @@ export default function SpaceSettingsPage() {
             <p className="text-sm text-muted-foreground mt-2">{t("scheduling.notFound.description")}</p>
           </div>
         ) : (
-          // Shift scheduling is a Professional+ capability. Under-tier orgs see an
-          // upgrade panel here instead of the tabs; the API enforces the same 402.
-          <PlanGate feature="shift_scheduling">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full max-w-2xl grid-cols-4">
-                <TabsTrigger value="work-model">{t("scheduling.tabs.workModel")}</TabsTrigger>
-                <TabsTrigger value="shifts">{t("scheduling.tabs.shifts")}</TabsTrigger>
-                <TabsTrigger value="rota">{t("scheduling.tabs.rota")}</TabsTrigger>
-                <TabsTrigger value="members">{t("scheduling.tabs.members")}</TabsTrigger>
-              </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto">
+              <TabsTrigger value="general">{t("locations.tabs.general")}</TabsTrigger>
+              <TabsTrigger value="work-model">{t("scheduling.tabs.workModel")}</TabsTrigger>
+              <TabsTrigger value="shifts">{t("scheduling.tabs.shifts")}</TabsTrigger>
+              <TabsTrigger value="rota">{t("scheduling.tabs.rota")}</TabsTrigger>
+              <TabsTrigger value="modules">{t("locations.tabs.modules")}</TabsTrigger>
+              <TabsTrigger value="workflow">{t("locations.tabs.workflow")}</TabsTrigger>
+              <TabsTrigger value="members">{t("scheduling.tabs.members")}</TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="work-model" className="mt-6">
+            <TabsContent value="general" className="mt-6">
+              <GeneralTab space={space} />
+            </TabsContent>
+
+            {/* Attendance / scheduling is a Professional+ capability. Under-tier
+                orgs see an upgrade panel here; the API enforces the same 402. */}
+            <TabsContent value="work-model" className="mt-6">
+              <PlanGate feature="shift_scheduling">
                 <WorkModelTab space={space} />
-              </TabsContent>
-              <TabsContent value="shifts" className="mt-6">
+              </PlanGate>
+            </TabsContent>
+            <TabsContent value="shifts" className="mt-6">
+              <PlanGate feature="shift_scheduling">
                 <ShiftsTab spaceId={spaceId} />
-              </TabsContent>
-              <TabsContent value="rota" className="mt-6">
+              </PlanGate>
+            </TabsContent>
+            <TabsContent value="rota" className="mt-6">
+              <PlanGate feature="shift_scheduling">
                 <RotaTab spaceId={spaceId} />
-              </TabsContent>
-              <TabsContent value="members" className="mt-6">
-                <MembersTab spaceId={spaceId} />
-              </TabsContent>
-            </Tabs>
-          </PlanGate>
+              </PlanGate>
+            </TabsContent>
+
+            <TabsContent value="modules" className="mt-6">
+              <ModulesTab space={space} />
+            </TabsContent>
+            <TabsContent value="workflow" className="mt-6">
+              <WorkflowTab space={space} />
+            </TabsContent>
+            <TabsContent value="members" className="mt-6">
+              <MembersTab spaceId={spaceId} />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>

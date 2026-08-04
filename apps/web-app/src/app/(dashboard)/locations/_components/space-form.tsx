@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
@@ -12,6 +12,7 @@ import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Input, Button, Label } from "@/components/ui"
+import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 import { WorkflowSelector } from "./workflow-selector"
 
 const LocationPicker = dynamic(() => import("./location-picker"), {
@@ -56,7 +57,10 @@ export function SpaceForm({
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
   const [radius, setRadius] = useState(String(GEO_DEFAULT))
-  const [timezone] = useState("Europe/Berlin")
+  // Auto-derived from the picked coordinates (admin can override with the
+  // searchable picker); backend also auto-derives if this is empty.
+  const [timezone, setTimezone] = useState("")
+  const lastTzCoords = useRef<string>("")
   const [workflowId, setWorkflowId] = useState("")
   const [enabledModules, setEnabledModules] = useState<string[]>([...DEFAULT_ORG_MODULES])
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -77,6 +81,19 @@ export function SpaceForm({
     setEnabledModules((prev) => (prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]))
   }, [])
 
+  // Dropping a pin / searching updates coords AND auto-fills the timezone from
+  // the map (admin can still override with the searchable picker below).
+  const handleLocationChange = useCallback((newLat: number, newLng: number) => {
+    setLat(newLat)
+    setLng(newLng)
+    const key = `${newLat.toFixed(4)},${newLng.toFixed(4)}`
+    if (key === lastTzCoords.current) return
+    lastTzCoords.current = key
+    void fetchTimezone(newLat, newLng).then((tz) => {
+      if (tz) setTimezone(tz)
+    })
+  }, [])
+
   const handleSubmit = () => {
     if (!name.trim()) return notify.error(t("locations.nameRequired"))
     mutation.mutate({
@@ -92,7 +109,8 @@ export function SpaceForm({
       geofenceRadius: isPhysical
         ? Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
         : undefined,
-      timezone,
+      // Empty → backend auto-derives from coordinates (or its own default).
+      timezone: timezone || undefined,
       enabledModules,
       workflowId: workflowId || defaultWorkflow?.id || undefined,
     })
@@ -168,9 +186,14 @@ export function SpaceForm({
             lng={lng}
             radius={parseInt(radius) || GEO_DEFAULT}
             address={address}
-            onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
+            onLocationChange={handleLocationChange}
             onAddressChange={setAddress}
           />
+          <div className="space-y-2">
+            <Label htmlFor="space-timezone">{t("locations.timezone")}</Label>
+            <TimezoneCombobox value={timezone} onChange={setTimezone} />
+            <p className="text-xs text-muted-foreground">{t("locations.timezoneAutoHint")}</p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="space-radius">{t("locations.form.geofenceRadius")}</Label>
             <div className="flex items-center gap-3">

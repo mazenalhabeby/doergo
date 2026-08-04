@@ -3210,7 +3210,10 @@
     "resyncAllTasksHint": "Allinea le attività di ogni spazio al suo flusso di lavoro",
     "resyncAllTasksConfirmTitle": "Risincronizzare tutti gli spazi?",
     "resyncAllTasksConfirmDescription": "Questa operazione risincronizza tutte le attività di ogni spazio con il flusso di lavoro del rispettivo spazio. Gli stati non presenti nel flusso di uno spazio vengono riportati alla sua prima fase; le attività completate e annullate vengono mantenute.",
-    "spaceSettings": "Impostazioni spazio"
+    "spaceSettings": "Impostazioni spazio",
+    "selectTimezone": "Seleziona fuso orario",
+    "searchTimezone": "Cerca fuso orario…",
+    "timezoneAutoHint": "Compilato automaticamente dalla mappa. Cerca per modificarlo."
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",
@@ -5276,7 +5279,15 @@
           "label": "Basato sulle attività",
           "description": "La presenza segue il lavoro sulle attività, senza un orario di fine programmato."
         }
-      }
+      },
+      "attendanceLabel": "Presenza",
+      "attendanceOnHint": "I membri timbrano entrata e uscita; chi ha un turno riceve promemoria di uscita.",
+      "attendanceOffHint": "Tutti timbrano entrata e uscita liberamente, senza promemoria.",
+      "onTitle": "La presenza è attiva",
+      "onBulletScheduled": "I membri CON un turno o una turnazione (vedi le schede Turni e Turnazione) ricevono promemoria di uscita programmati.",
+      "onBulletTaskBased": "I membri SENZA lavorano in base alle attività: timbrano entrata e uscita liberamente.",
+      "offTitle": "La presenza è disattivata",
+      "offBullet": "Tutti timbrano entrata e uscita liberamente, senza promemoria."
     },
     "shifts": {
       "heading": "Turni",

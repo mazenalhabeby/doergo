@@ -46,21 +46,27 @@ describe('ShiftResolverService', () => {
 
   const viennaSpace = { id: 'sp-1', timezone: 'Europe/Vienna', workModel: WorkModel.SHIFT };
 
-  it('returns null for NONE / TASK spaces (no expectation)', async () => {
+  it('short-circuits NONE spaces (attendance off) — no expectation, no query', async () => {
     const none = await service.resolveForClockIn({
       userId: 'u-1',
       space: { id: 'sp-1', timezone: 'Europe/Vienna', workModel: WorkModel.NONE },
       clockInAt: new Date('2026-08-03T07:00:00Z'),
     });
     expect(none).toBeNull();
+    expect(prisma.shiftAssignment.findMany).not.toHaveBeenCalled();
+  });
 
-    const task = await service.resolveForClockIn({
+  it('per-member: a tracked space with no matching shift resolves to null (task-based member)', async () => {
+    // Attendance is ON but this member has no rota/schedule → task-based.
+    prisma.shiftAssignment.findMany.mockResolvedValue([]);
+    prisma.technicianSchedule.findFirst.mockResolvedValue(null);
+    const res = await service.resolveForClockIn({
       userId: 'u-1',
-      space: { id: 'sp-1', timezone: 'Europe/Vienna', workModel: WorkModel.TASK },
+      space: viennaSpace, // workModel SHIFT
       clockInAt: new Date('2026-08-03T07:00:00Z'),
     });
-    expect(task).toBeNull();
-    expect(prisma.shiftAssignment.findMany).not.toHaveBeenCalled();
+    expect(res).toBeNull();
+    expect(prisma.shiftAssignment.findMany).toHaveBeenCalled(); // it DID resolve per-member
   });
 
   it('resolves a normal day shift to the same-day local end (summer/DST offset +2)', async () => {

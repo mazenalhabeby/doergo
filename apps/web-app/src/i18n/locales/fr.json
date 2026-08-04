@@ -3210,7 +3210,10 @@
     "resyncAllTasksHint": "Aligner les tâches de chaque espace sur son flux",
     "resyncAllTasksConfirmTitle": "Resynchroniser tous les espaces ?",
     "resyncAllTasksConfirmDescription": "Cette action resynchronise toutes les tâches de chaque espace sur le flux de travail de son espace. Les statuts qui n’existent pas dans le flux d’un espace sont réinitialisés à sa première étape ; les tâches terminées et annulées sont conservées.",
-    "spaceSettings": "Paramètres de l'espace"
+    "spaceSettings": "Paramètres de l'espace",
+    "selectTimezone": "Sélectionner le fuseau horaire",
+    "searchTimezone": "Rechercher un fuseau horaire…",
+    "timezoneAutoHint": "Rempli automatiquement depuis la carte. Recherchez pour le modifier."
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",
@@ -5276,7 +5279,15 @@
           "label": "Basé sur les tâches",
           "description": "La présence suit le travail sur les tâches, sans heure de fin planifiée."
         }
-      }
+      },
+      "attendanceLabel": "Présence",
+      "attendanceOnHint": "Les membres pointent à l’arrivée et au départ ; ceux qui ont un poste reçoivent des rappels de départ.",
+      "attendanceOffHint": "Tout le monde pointe librement, sans rappels.",
+      "onTitle": "La présence est activée",
+      "onBulletScheduled": "Les membres AVEC un poste ou un planning (voir les onglets Postes et Planning) reçoivent des rappels de départ programmés.",
+      "onBulletTaskBased": "Les membres SANS l’un d’eux travaillent par tâches — ils pointent librement.",
+      "offTitle": "La présence est désactivée",
+      "offBullet": "Tout le monde pointe librement, sans rappels."
     },
     "shifts": {
       "heading": "Postes",

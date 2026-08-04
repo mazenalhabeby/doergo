@@ -1,6 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { Public } from '../../common/decorators';
 
+// tz-lookup: offline coords → IANA timezone (no types pkg).
+const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
+
 // Geocoding stays server-side so the provider key is never exposed to clients
 // and we avoid public OSM rate limits.
 //
@@ -51,6 +54,26 @@ function featureToResult(f: any): GeoResult | null {
 
 @Controller('geo')
 export class GeoController {
+  /**
+   * IANA timezone for a coordinate — GET /geo/timezone?lat=&lon=
+   * Offline lookup; lets the space-settings form auto-fill the timezone the
+   * moment the admin drops a pin on the map (same derivation the server uses on
+   * save). Returns { timezone: string | null }.
+   */
+  @Get('timezone')
+  timezone(@Query('lat') lat?: string, @Query('lon') lon?: string): { timezone: string | null } {
+    const la = Number(lat);
+    const lo = Number(lon);
+    if (!Number.isFinite(la) || !Number.isFinite(lo) || (la === 0 && lo === 0)) {
+      return { timezone: null };
+    }
+    try {
+      return { timezone: tzlookup(la, lo) };
+    } catch {
+      return { timezone: null };
+    }
+  }
+
   /**
    * Autocomplete suggestions. GET /geo/search?q=&session=&lat=&lon=&limit=
    * Google rows return { id, label } (call /geo/place to get coordinates).

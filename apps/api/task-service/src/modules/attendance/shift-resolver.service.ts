@@ -52,8 +52,13 @@ export class ShiftResolverService {
     const { userId, space, clockInAt } = params;
     const workModel = (space.workModel ?? WorkModel.NONE) as WorkModel;
 
-    // Spaces without hour expectations never get a shift stamp (current behavior).
-    if (workModel !== WorkModel.SHIFT && workModel !== WorkModel.FIXED) {
+    // Attendance is per-member: when the space tracks attendance (anything but
+    // NONE), resolve each member individually — a member WITH a shift/rota (or
+    // legacy schedule) gets an expected end + reminders; a member WITHOUT one
+    // resolves to null and is task-based (free clock-out, no reminders). So
+    // scheduled and task-based workers coexist in the same space. NONE opts the
+    // whole space out (free clock in/out, no expectations).
+    if (workModel === WorkModel.NONE) {
       return null;
     }
 

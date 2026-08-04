@@ -3210,7 +3210,10 @@
     "resyncAllTasksHint": "Aufgaben aller Bereiche an deren Workflow anpassen",
     "resyncAllTasksConfirmTitle": "Alle Bereiche neu abgleichen?",
     "resyncAllTasksConfirmDescription": "Dadurch werden alle Aufgaben in jedem Bereich an den Workflow des jeweiligen Bereichs angepasst. Status, die im Workflow eines Bereichs nicht existieren, werden auf dessen erste Phase zurückgesetzt – abgeschlossene und stornierte Aufgaben bleiben erhalten.",
-    "spaceSettings": "Bereichseinstellungen"
+    "spaceSettings": "Bereichseinstellungen",
+    "selectTimezone": "Zeitzone auswählen",
+    "searchTimezone": "Zeitzone suchen…",
+    "timezoneAutoHint": "Automatisch von der Karte übernommen. Zum Überschreiben suchen."
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",
@@ -5276,7 +5279,15 @@
           "label": "Aufgabenbasiert",
           "description": "Die Anwesenheit folgt der Aufgabenarbeit, ohne geplantes Ende."
         }
-      }
+      },
+      "attendanceLabel": "Anwesenheit",
+      "attendanceOnHint": "Mitglieder stempeln ein und aus; geplante Mitglieder erhalten Ausstempel-Erinnerungen.",
+      "attendanceOffHint": "Alle stempeln frei ein und aus, ohne Erinnerungen.",
+      "onTitle": "Anwesenheit ist aktiv",
+      "onBulletScheduled": "Mitglieder MIT einer Schicht oder einem Dienstplan (siehe die Reiter Schichten und Dienstplan) erhalten geplante Ausstempel-Erinnerungen.",
+      "onBulletTaskBased": "Mitglieder OHNE einen Plan arbeiten aufgabenbasiert – sie stempeln frei ein und aus.",
+      "offTitle": "Anwesenheit ist deaktiviert",
+      "offBullet": "Alle stempeln frei ein und aus, ohne Erinnerungen."
     },
     "shifts": {
       "heading": "Schichten",

@@ -3,26 +3,23 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CheckCircle2 } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
 import { WorkModel } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-
-const WORK_MODEL_ORDER: WorkModel[] = [WorkModel.NONE, WorkModel.SHIFT, WorkModel.FIXED, WorkModel.TASK]
-
-// Models that drive shift reminders / attendance expectations.
-const REMINDER_MODELS = new Set<WorkModel>([WorkModel.SHIFT, WorkModel.FIXED])
 
 export function WorkModelTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+
+  // Attendance is ON for any non-NONE value; OFF only for NONE. When the admin
+  // turns it ON we persist SHIFT (the reminder-capable model). Members WITH a
+  // shift/rota get scheduled reminders; members WITHOUT one stay task-based.
   const current = (space.workModel as WorkModel) || WorkModel.NONE
-  const [selected, setSelected] = useState<WorkModel>(current)
+  const [enabled, setEnabled] = useState(current !== WorkModel.NONE)
 
   const mutation = useMutation({
     mutationFn: (workModel: WorkModel) => locationsApi.update(space.id, { workModel }),
@@ -34,7 +31,8 @@ export function WorkModelTab({ space }: { space: CompanyLocation }) {
     onError: (err: Error) => notify.error(err.message || t("scheduling.workModel.saveFailed")),
   })
 
-  const hasChanges = selected !== current
+  const currentlyOn = current !== WorkModel.NONE
+  const hasChanges = enabled !== currentlyOn
 
   return (
     <div className="space-y-5">
@@ -43,49 +41,47 @@ export function WorkModelTab({ space }: { space: CompanyLocation }) {
         <p className="text-sm text-muted-foreground mt-1">{t("scheduling.workModel.intro")}</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {WORK_MODEL_ORDER.map((model) => {
-          const isSelected = selected === model
-          return (
-            <button
-              key={model}
-              type="button"
-              onClick={() => setSelected(model)}
-              className={cn(
-                "text-left rounded-xl border p-4 transition-colors",
-                isSelected
-                  ? "border-blue-500 bg-blue-50/60 dark:border-blue-700 dark:bg-blue-950/30"
-                  : "border-border hover:bg-muted/40",
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-foreground">
-                  {t(`scheduling.workModel.options.${model}.label`)}
-                </span>
-                {isSelected && <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                {t(`scheduling.workModel.options.${model}.description`)}
-              </p>
-              {REMINDER_MODELS.has(model) && (
-                <Badge
-                  variant="outline"
-                  className="mt-2.5 text-[11px] border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                >
-                  {t("scheduling.workModel.remindersBadge")}
-                </Badge>
-              )}
-            </button>
-          )
-        })}
+      {/* Single ON/OFF attendance toggle */}
+      <div className="flex items-center justify-between rounded-xl border p-4">
+        <div className="pr-4">
+          <p className="text-sm font-semibold text-foreground">{t("scheduling.workModel.attendanceLabel")}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {enabled ? t("scheduling.workModel.attendanceOnHint") : t("scheduling.workModel.attendanceOffHint")}
+          </p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
+        </label>
       </div>
 
-      <Card className="p-3 bg-muted/30 border-dashed">
-        <p className="text-xs text-muted-foreground">{t("scheduling.workModel.remindersNote")}</p>
+      {/* Explain the per-member behavior clearly */}
+      <Card className={cn("p-4 border-dashed", enabled ? "bg-blue-50/40 dark:bg-blue-950/20" : "bg-muted/30")}>
+        <p className="text-sm font-medium text-foreground">
+          {enabled ? t("scheduling.workModel.onTitle") : t("scheduling.workModel.offTitle")}
+        </p>
+        <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground list-disc pl-4">
+          {enabled ? (
+            <>
+              <li>{t("scheduling.workModel.onBulletScheduled")}</li>
+              <li>{t("scheduling.workModel.onBulletTaskBased")}</li>
+            </>
+          ) : (
+            <li>{t("scheduling.workModel.offBullet")}</li>
+          )}
+        </ul>
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={() => mutation.mutate(selected)} disabled={!hasChanges || mutation.isPending}>
+        <Button
+          onClick={() => mutation.mutate(enabled ? WorkModel.SHIFT : WorkModel.NONE)}
+          disabled={!hasChanges || mutation.isPending}
+        >
           {mutation.isPending ? t("common.saving") : t("common.save")}
         </Button>
       </div>

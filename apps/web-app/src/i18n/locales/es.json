@@ -3210,7 +3210,10 @@
     "resyncAllTasksHint": "Ajusta las tareas de cada espacio a su flujo de trabajo",
     "resyncAllTasksConfirmTitle": "¿Resincronizar todos los espacios?",
     "resyncAllTasksConfirmDescription": "Esto resincroniza todas las tareas de cada espacio con el flujo de trabajo de su espacio. Los estados que no existen en el flujo de un espacio se restablecen a su primera etapa; las tareas completadas y canceladas se conservan.",
-    "spaceSettings": "Ajustes del espacio"
+    "spaceSettings": "Ajustes del espacio",
+    "selectTimezone": "Seleccionar zona horaria",
+    "searchTimezone": "Buscar zona horaria…",
+    "timezoneAutoHint": "Se rellena automáticamente desde el mapa. Busca para cambiarla."
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",
@@ -5276,7 +5279,15 @@
           "label": "Basado en tareas",
           "description": "La asistencia sigue el trabajo de las tareas, sin hora de fin programada."
         }
-      }
+      },
+      "attendanceLabel": "Asistencia",
+      "attendanceOnHint": "Los miembros fichan la entrada y salida; los que tienen turno reciben recordatorios de salida.",
+      "attendanceOffHint": "Todos fichan entrada y salida libremente, sin recordatorios.",
+      "onTitle": "La asistencia está activada",
+      "onBulletScheduled": "Los miembros CON un turno o cuadrante (mira las pestañas Turnos y Cuadrante) reciben recordatorios de salida programados.",
+      "onBulletTaskBased": "Los miembros SIN uno trabajan por tareas: fichan entrada y salida libremente.",
+      "offTitle": "La asistencia está desactivada",
+      "offBullet": "Todos fichan entrada y salida libremente, sin recordatorios."
     },
     "shifts": {
       "heading": "Turnos",

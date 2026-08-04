@@ -3210,7 +3210,10 @@
     "resyncAllTasksHint": "Update every space’s tasks to match its workflow",
     "resyncAllTasksConfirmTitle": "Re-sync all spaces?",
     "resyncAllTasksConfirmDescription": "This re-syncs every task in every space onto its space’s workflow. Statuses that don’t exist in a space’s workflow are reset to that workflow’s first stage — Completed and Canceled tasks are preserved.",
-    "spaceSettings": "Space settings"
+    "spaceSettings": "Space settings",
+    "selectTimezone": "Select timezone",
+    "searchTimezone": "Search timezone…",
+    "timezoneAutoHint": "Auto-filled from the map. Search to override."
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",
@@ -5276,7 +5279,15 @@
           "label": "Task-based",
           "description": "Attendance follows task work, with no scheduled end time."
         }
-      }
+      },
+      "attendanceLabel": "Attendance",
+      "attendanceOnHint": "Members clock in and out; scheduled members get clock-out reminders.",
+      "attendanceOffHint": "Everyone clocks in and out freely, with no reminders.",
+      "onTitle": "Attendance is on",
+      "onBulletScheduled": "Members WITH a shift or rota (see the Shifts and Rota tabs) get scheduled clock-out reminders.",
+      "onBulletTaskBased": "Members WITHOUT one are task-based — they clock in and out freely.",
+      "offTitle": "Attendance is off",
+      "offBullet": "Everyone clocks in and out freely, with no reminders."
     },
     "shifts": {
       "heading": "Shifts",

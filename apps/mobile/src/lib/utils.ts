@@ -53,6 +53,25 @@ export function cityFromTz(tz?: string | null): string {
  * (e.g. "6:00 AM · New York"). On an invalid zone it falls back to the device
  * local zone with no label. Without a `timeZone` it renders in the device zone.
  */
+// Cache one Intl.DateTimeFormat per (hour12, timeZone) combo — these are called
+// once per row in attendance lists, and constructing the formatter each time is
+// the expensive part (especially on lower-end phones).
+const _dtfCache = new Map<string, Intl.DateTimeFormat>();
+function getTimeDtf(hour12: boolean, timeZone: string): Intl.DateTimeFormat {
+  const key = `${hour12 ? 1 : 0}|${timeZone}`;
+  let fmt = _dtfCache.get(key);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(hour12 ? 'en-US' : 'en-GB', {
+      hour: hour12 ? 'numeric' : '2-digit',
+      minute: '2-digit',
+      hour12,
+      timeZone,
+    });
+    _dtfCache.set(key, fmt);
+  }
+  return fmt;
+}
+
 export function formatTime(
   date: string | Date,
   hour12: boolean = false,
@@ -62,12 +81,7 @@ export function formatTime(
   if (Number.isNaN(d.getTime())) return '';
   if (!timeZone) return formatClock(d.getHours(), d.getMinutes(), hour12);
   try {
-    const time = d.toLocaleTimeString(hour12 ? 'en-US' : 'en-GB', {
-      hour: hour12 ? 'numeric' : '2-digit',
-      minute: '2-digit',
-      hour12,
-      timeZone,
-    });
+    const time = getTimeDtf(hour12, timeZone).format(d);
     const city = cityFromTz(timeZone);
     return city ? `${time} · ${city}` : time;
   } catch {

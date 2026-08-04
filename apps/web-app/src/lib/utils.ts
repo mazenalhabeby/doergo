@@ -93,6 +93,25 @@ export function cityFromTz(tz?: string | null): string {
   return last.replace(/_/g, " ")
 }
 
+// Constructing an Intl.DateTimeFormat is comparatively expensive, and these
+// formatters are called once PER ROW in attendance lists. Cache one instance per
+// distinct (kind, locale, timeZone, hour12) combo — in practice a tiny set — so
+// rendering a long list reuses formatters instead of rebuilding them each cell.
+const _dtfCache = new Map<string, Intl.DateTimeFormat>()
+function getDtf(kind: "t" | "dt", locale: string | undefined, hour12: boolean, timeZone?: string | null): Intl.DateTimeFormat {
+  const key = `${kind}|${locale || ""}|${hour12 ? 1 : 0}|${timeZone || ""}`
+  let fmt = _dtfCache.get(key)
+  if (!fmt) {
+    const base: Intl.DateTimeFormatOptions =
+      kind === "t"
+        ? { hour: hour12 ? "numeric" : "2-digit", minute: "2-digit", hour12 }
+        : { month: "short", day: "numeric", hour: hour12 ? "numeric" : "2-digit", minute: "2-digit", hour12 }
+    fmt = new Intl.DateTimeFormat(locale || undefined, timeZone ? { ...base, timeZone } : base)
+    _dtfCache.set(key, fmt)
+  }
+  return fmt
+}
+
 export function formatTimeOfDay(
   input: string | number | Date,
   hour12: boolean,
@@ -101,18 +120,13 @@ export function formatTimeOfDay(
 ): string {
   const d = input instanceof Date ? input : new Date(input)
   if (isNaN(d.getTime())) return ""
-  const opts: Intl.DateTimeFormatOptions = {
-    hour: hour12 ? "numeric" : "2-digit",
-    minute: "2-digit",
-    hour12,
-  }
   try {
-    const time = d.toLocaleTimeString(locale || undefined, timeZone ? { ...opts, timeZone } : opts)
+    const time = getDtf("t", locale, hour12, timeZone).format(d)
     const city = cityFromTz(timeZone)
     return city ? `${time} · ${city}` : time
   } catch {
     // Invalid timezone → fall back to the local zone with no label.
-    return d.toLocaleTimeString(locale || undefined, opts)
+    return getDtf("t", locale, hour12).format(d)
   }
 }
 
@@ -128,19 +142,12 @@ export function formatDateTimeOf(
 ): string {
   const d = input instanceof Date ? input : new Date(input)
   if (isNaN(d.getTime())) return ""
-  const opts: Intl.DateTimeFormatOptions = {
-    month: "short",
-    day: "numeric",
-    hour: hour12 ? "numeric" : "2-digit",
-    minute: "2-digit",
-    hour12,
-  }
   try {
-    const str = d.toLocaleString(locale || undefined, timeZone ? { ...opts, timeZone } : opts)
+    const str = getDtf("dt", locale, hour12, timeZone).format(d)
     const city = cityFromTz(timeZone)
     return city ? `${str} · ${city}` : str
   } catch {
-    return d.toLocaleString(locale || undefined, opts)
+    return getDtf("dt", locale, hour12).format(d)
   }
 }
 
