@@ -49,9 +49,11 @@ export function cityFromTz(tz?: string | null): string {
  * Format a time (e.g., "9:00 AM" or "09:00"), honoring the 12h/24h preference.
  *
  * When `timeZone` (IANA, e.g. "America/New_York") is given, the wall-clock is
- * computed IN THAT ZONE via Intl and a " · <city>" label is appended
- * (e.g. "6:00 AM · New York"). On an invalid zone it falls back to the device
- * local zone with no label. Without a `timeZone` it renders in the device zone.
+ * computed IN THAT ZONE via Intl and the SHORT zone label is appended by the
+ * formatter (e.g. "6:00 AM EST" / "08:00 CET", falling back to a GMT offset like
+ * "GMT+5:30" for zones without a common abbreviation). DST-aware. On an invalid
+ * zone it falls back to the device local zone with no label. Without a
+ * `timeZone` it renders in the device zone.
  */
 // Cache one Intl.DateTimeFormat per (hour12, timeZone) combo — these are called
 // once per row in attendance lists, and constructing the formatter each time is
@@ -66,6 +68,7 @@ function getTimeDtf(hour12: boolean, timeZone: string): Intl.DateTimeFormat {
       minute: '2-digit',
       hour12,
       timeZone,
+      timeZoneName: 'short',
     });
     _dtfCache.set(key, fmt);
   }
@@ -81,9 +84,8 @@ export function formatTime(
   if (Number.isNaN(d.getTime())) return '';
   if (!timeZone) return formatClock(d.getHours(), d.getMinutes(), hour12);
   try {
-    const time = getTimeDtf(hour12, timeZone).format(d);
-    const city = cityFromTz(timeZone);
-    return city ? `${time} · ${city}` : time;
+    // The short zone label (e.g. "EST") is included by the formatter itself.
+    return getTimeDtf(hour12, timeZone).format(d);
   } catch {
     // Invalid timezone → fall back to the local zone with no label.
     return formatClock(d.getHours(), d.getMinutes(), hour12);

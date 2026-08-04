@@ -106,7 +106,13 @@ function getDtf(kind: "t" | "dt", locale: string | undefined, hour12: boolean, t
       kind === "t"
         ? { hour: hour12 ? "numeric" : "2-digit", minute: "2-digit", hour12 }
         : { month: "short", day: "numeric", hour: hour12 ? "numeric" : "2-digit", minute: "2-digit", hour12 }
-    fmt = new Intl.DateTimeFormat(locale || undefined, timeZone ? { ...base, timeZone } : base)
+    // With a timeZone, append the SHORT zone name (EST, CET, …) via Intl —
+    // DST-aware, and it falls back to a GMT offset (GMT+5:30) for zones without
+    // a common abbreviation. This is the standard, unambiguous label.
+    fmt = new Intl.DateTimeFormat(
+      locale || undefined,
+      timeZone ? { ...base, timeZone, timeZoneName: "short" } : base,
+    )
     _dtfCache.set(key, fmt)
   }
   return fmt
@@ -121,9 +127,8 @@ export function formatTimeOfDay(
   const d = input instanceof Date ? input : new Date(input)
   if (isNaN(d.getTime())) return ""
   try {
-    const time = getDtf("t", locale, hour12, timeZone).format(d)
-    const city = cityFromTz(timeZone)
-    return city ? `${time} · ${city}` : time
+    // The short zone label (e.g. "EST") is included by the formatter itself.
+    return getDtf("t", locale, hour12, timeZone).format(d)
   } catch {
     // Invalid timezone → fall back to the local zone with no label.
     return getDtf("t", locale, hour12).format(d)
@@ -143,9 +148,7 @@ export function formatDateTimeOf(
   const d = input instanceof Date ? input : new Date(input)
   if (isNaN(d.getTime())) return ""
   try {
-    const str = getDtf("dt", locale, hour12, timeZone).format(d)
-    const city = cityFromTz(timeZone)
-    return city ? `${str} · ${city}` : str
+    return getDtf("dt", locale, hour12, timeZone).format(d)
   } catch {
     return getDtf("dt", locale, hour12).format(d)
   }
