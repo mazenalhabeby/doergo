@@ -654,6 +654,9 @@ export function TrackingTab({
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {format(toDate(entry.clockOutAt), "MMM d")}
+                              {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)
+                                ? ` / ${countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}`
+                                : ""}
                             </p>
                           </div>
                         ) : (
