@@ -36,11 +36,44 @@ function formatClock(h: number, m: number, hour12: boolean): string {
 }
 
 /**
- * Format a time (e.g., "9:00 AM" or "09:00"), honoring the 12h/24h preference.
+ * Human city/region label from an IANA timezone.
+ * "America/New_York" -> "New York", "Europe/Vienna" -> "Vienna".
  */
-export function formatTime(date: string | Date, hour12: boolean = false): string {
+export function cityFromTz(tz?: string | null): string {
+  if (!tz) return '';
+  const last = tz.split('/').pop() || tz;
+  return last.replace(/_/g, ' ');
+}
+
+/**
+ * Format a time (e.g., "9:00 AM" or "09:00"), honoring the 12h/24h preference.
+ *
+ * When `timeZone` (IANA, e.g. "America/New_York") is given, the wall-clock is
+ * computed IN THAT ZONE via Intl and a " · <city>" label is appended
+ * (e.g. "6:00 AM · New York"). On an invalid zone it falls back to the device
+ * local zone with no label. Without a `timeZone` it renders in the device zone.
+ */
+export function formatTime(
+  date: string | Date,
+  hour12: boolean = false,
+  timeZone?: string | null,
+): string {
   const d = new Date(date);
-  return formatClock(d.getHours(), d.getMinutes(), hour12);
+  if (Number.isNaN(d.getTime())) return '';
+  if (!timeZone) return formatClock(d.getHours(), d.getMinutes(), hour12);
+  try {
+    const time = d.toLocaleTimeString(hour12 ? 'en-US' : 'en-GB', {
+      hour: hour12 ? 'numeric' : '2-digit',
+      minute: '2-digit',
+      hour12,
+      timeZone,
+    });
+    const city = cityFromTz(timeZone);
+    return city ? `${time} · ${city}` : time;
+  } catch {
+    // Invalid timezone → fall back to the local zone with no label.
+    return formatClock(d.getHours(), d.getMinutes(), hour12);
+  }
 }
 
 /**

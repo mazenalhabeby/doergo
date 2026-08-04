@@ -76,6 +76,10 @@ export interface User {
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
   // Per-user clock display preference ("12h" | "24h"); display-only.
   timeFormat?: '12h' | '24h' | null;
+  // IANA timezone of the org (e.g. "Europe/Vienna"). Default display zone for
+  // times so they render in a fixed, labeled zone instead of the device's local
+  // zone. Attendance call sites override per-entry with the location's timezone.
+  organizationTimezone?: string | null;
   // Either a legacy string[] (org-level default) or a per-user AccessProfile
   // object ({ modules, platforms, spaceScope, canContact }). Read via the
   // shared getModules/hasModule/getAccessPlatforms helpers — never indexed directly.

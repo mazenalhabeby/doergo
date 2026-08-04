@@ -23,6 +23,9 @@ export interface User {
   lastName: string;
   organizationId?: string;
   organizationName?: string;
+  /** IANA timezone of the org — the default display zone for all times on the
+   *  client (attendance times override per-entry with the location's zone). */
+  organizationTimezone?: string | null;
   /** False for a freshly-registered "orphan" user who must complete onboarding. */
   onboardingCompleted?: boolean;
   // Permission fields

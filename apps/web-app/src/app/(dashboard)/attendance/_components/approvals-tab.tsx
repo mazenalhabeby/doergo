@@ -33,7 +33,7 @@ interface ApprovalsTabProps {
 
 export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, approving, rejecting }: ApprovalsTabProps) {
   const { t } = useTranslation()
-  const { hour12 } = useTimeFormat()
+  const { hour12, locale } = useTimeFormat()
   const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
 
@@ -105,8 +105,8 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                 </TableCell>
                 <TableCell className="text-muted-foreground">{entry.location?.name || t("attendance.approvals.unknown")}</TableCell>
                 <TableCell className="text-muted-foreground">{format(toDate(entry.clockInAt), "MMM d, yyyy")}</TableCell>
-                <TableCell>{formatTime(entry.clockInAt, hour12)}</TableCell>
-                <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt, hour12) : "-"}</TableCell>
+                <TableCell>{formatTime(entry.clockInAt, hour12, locale, entry.location?.timezone)}</TableCell>
+                <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt, hour12, locale, entry.location?.timezone) : "-"}</TableCell>
                 <TableCell className="font-medium tabular-nums">{formatDurationMinutes(entry.totalMinutes)}</TableCell>
                 <TableCell>
                   <FlagReasonBadges reasons={entry.flagReasons} />

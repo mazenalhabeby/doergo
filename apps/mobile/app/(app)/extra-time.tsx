@@ -146,7 +146,7 @@ export default function ExtraTimeScreen() {
               <View style={s.metaRow}>
                 <Ionicons name="time-outline" size={14} color={colors.textMuted} />
                 <Text style={[s.meta, { color: colors.textSecondary }]}>
-                  {t('shiftReminder.shiftEndedAt', { time: formatTime(item.expectedClockOutAt) })}
+                  {t('shiftReminder.shiftEndedAt', { time: formatTime(item.expectedClockOutAt, item.location?.timezone) })}
                 </Text>
               </View>
             )}

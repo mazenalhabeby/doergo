@@ -40,7 +40,7 @@ export class AttendanceReportService {
           select: { id: true, firstName: true, lastName: true, email: true },
         },
         location: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, timezone: true },
         },
       },
       orderBy: { clockInAt: 'asc' },
@@ -190,7 +190,7 @@ export class AttendanceReportService {
       where,
       include: {
         user: { select: { firstName: true, lastName: true, email: true } },
-        location: { select: { name: true } },
+        location: { select: { name: true, timezone: true } },
       },
       orderBy: [{ clockInAt: 'asc' }],
     });

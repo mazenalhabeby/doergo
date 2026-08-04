@@ -41,7 +41,7 @@ export class ApprovalService {
             select: { id: true, firstName: true, lastName: true, email: true },
           },
           location: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, timezone: true },
           },
           breaks: true,
         },
@@ -92,7 +92,7 @@ export class ApprovalService {
           select: { id: true, firstName: true, lastName: true },
         },
         location: {
-          select: { name: true },
+          select: { name: true, timezone: true },
         },
       },
     });
@@ -227,7 +227,7 @@ export class ApprovalService {
           select: { id: true, firstName: true, lastName: true },
         },
         location: {
-          select: { name: true },
+          select: { name: true, timezone: true },
         },
         editedBy: {
           select: { id: true, firstName: true, lastName: true },

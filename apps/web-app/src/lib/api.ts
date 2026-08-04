@@ -361,6 +361,7 @@ export const authApi = {
         firstName: string;
         lastName: string;
         organizationId?: string;
+        organizationTimezone?: string | null;
         onboardingCompleted?: boolean;
         avatarUrl?: string | null;
         // Permission fields

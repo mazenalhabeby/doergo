@@ -15,9 +15,18 @@ export function useTimeFormat() {
   const { user } = useAuth();
   const hour12 = user?.timeFormat === '12h';
 
+  // Default display zone = the org's timezone, so times render in a fixed,
+  // labeled zone instead of being silently converted to the device's local
+  // zone. Attendance call sites override this per-entry with the location's
+  // timezone by passing an explicit `tz` argument.
+  const orgTz = user?.organizationTimezone || undefined;
+
   const time = useCallback(
-    (input: string | Date) => formatTime(input, hour12),
-    [hour12],
+    // `tz` overrides the org default (e.g. an attendance entry's location zone).
+    // Pass `null` explicitly to opt out of any zone (raw device-local, no label).
+    (input: string | Date, tz?: string | null) =>
+      formatTime(input, hour12, tz === null ? undefined : tz ?? orgTz),
+    [hour12, orgTz],
   );
 
   const range = useCallback(

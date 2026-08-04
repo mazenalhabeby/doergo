@@ -45,8 +45,10 @@ export function BreaksTab({
   endBreakManually,
 }: BreaksTabProps) {
   const { t } = useTranslation()
-  const { hour12 } = useTimeFormat()
+  const { hour12, locale } = useTimeFormat()
   const breakTypeKey = (type: string) => type.toLowerCase()
+  // Break times render in the zone WHERE the break was taken (its space's tz).
+  const breakTz = (b: Break) => b.location?.timezone ?? b.timeEntry?.location?.timezone
   return (
     <div data-tour="breaks-content">
             {/* Break Statistics */}
@@ -213,7 +215,7 @@ export function BreaksTab({
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{t(`attendance.breaks.typeBreak.${breakTypeKey(breakItem.type)}`)}</span>
                             <span>•</span>
-                            <span>{t("attendance.breaks.startedAt", { time: formatTime(breakItem.startedAt, hour12) })}</span>
+                            <span>{t("attendance.breaks.startedAt", { time: formatTime(breakItem.startedAt, hour12, locale, breakTz(breakItem)) })}</span>
                           </div>
                         </div>
                       </div>
@@ -355,9 +357,9 @@ export function BreaksTab({
                             {t(`attendance.breaks.types.${breakTypeKey(breakItem.type)}`)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-foreground">{formatTime(breakItem.startedAt, hour12)}</TableCell>
+                        <TableCell className="text-foreground">{formatTime(breakItem.startedAt, hour12, locale, breakTz(breakItem))}</TableCell>
                         <TableCell className="text-foreground">
-                          {breakItem.endedAt ? formatTime(breakItem.endedAt, hour12) : (
+                          {breakItem.endedAt ? formatTime(breakItem.endedAt, hour12, locale, breakTz(breakItem)) : (
                             <span className="text-orange-600">{t("attendance.breaks.onBreak")}</span>
                           )}
                         </TableCell>

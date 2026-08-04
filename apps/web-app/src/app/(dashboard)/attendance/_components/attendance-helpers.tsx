@@ -1,7 +1,7 @@
 import React from "react"
 import type { LucideIcon } from "lucide-react"
-import { format, parseISO } from "date-fns"
-import { cn } from "@/lib/utils"
+import { parseISO } from "date-fns"
+import { cn, formatTimeOfDay } from "@/lib/utils"
 
 // Flag reason badge config for smart auto-approval.
 const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
@@ -43,11 +43,21 @@ export function toDate(dateInput: Date | string): Date {
 
 /**
  * Format a time honoring the user's 12h/24h preference, or "-" when null.
- * Pass `hour12` from the `useTimeFormat()` hook. Defaults to 24h.
+ * Pass `hour12` and `locale` from the `useTimeFormat()` hook.
+ *
+ * `timeZone` is the entry's OWN location timezone — attendance times must render
+ * in the zone WHERE they were clocked (not the viewer's browser zone). When set,
+ * the formatter appends a city label (e.g. "6:00 AM · New York"). Pass the org tz
+ * (or omit) only when the location zone is genuinely unavailable.
  */
-export function formatTime(dateInput: Date | string | null, hour12 = false): string {
+export function formatTime(
+  dateInput: Date | string | null,
+  hour12 = false,
+  locale?: string,
+  timeZone?: string | null,
+): string {
   if (!dateInput) return "-"
-  return format(toDate(dateInput), hour12 ? "h:mm a" : "HH:mm")
+  return formatTimeOfDay(dateInput, hour12, locale, timeZone)
 }
 
 /** Stat card used across the attendance tabs. */

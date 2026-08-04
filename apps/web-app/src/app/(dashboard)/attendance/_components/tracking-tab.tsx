@@ -105,7 +105,7 @@ export function TrackingTab({
   sort, onSort,
 }: TrackingTabProps) {
   const { t } = useTranslation()
-  const { hour12, timeToken } = useTimeFormat()
+  const { hour12, locale, timeToken } = useTimeFormat()
 
   // Days off (org-wide) only load in the "all" view. They get their own sub-tab
   // so the Clock In / Clock Out columns aren't shown for rows that never have
@@ -206,8 +206,8 @@ export function TrackingTab({
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-sm font-medium text-foreground">
-                        {formatTime(entry.clockInAt, hour12)}
-                        {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt, hour12)}`}
+                        {formatTime(entry.clockInAt, hour12, locale, entry.location?.timezone)}
+                        {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt, hour12, locale, entry.location?.timezone)}`}
                       </p>
                       <div className="flex items-center gap-2 justify-end">
                         {!entry.clockInWithinGeofence && (
@@ -635,7 +635,7 @@ export function TrackingTab({
                       <TableCell>
                         <div>
                           <p className="font-medium text-foreground">
-                            {formatTime(entry.clockInAt, hour12)}
+                            {formatTime(entry.clockInAt, hour12, locale, entry.location?.timezone)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {format(toDate(entry.clockInAt), "MMM d")}
@@ -646,7 +646,7 @@ export function TrackingTab({
                         {entry.clockOutAt ? (
                           <div>
                             <p className="font-medium text-foreground">
-                              {formatTime(entry.clockOutAt, hour12)}
+                              {formatTime(entry.clockOutAt, hour12, locale, entry.location?.timezone)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {format(toDate(entry.clockOutAt), "MMM d")}

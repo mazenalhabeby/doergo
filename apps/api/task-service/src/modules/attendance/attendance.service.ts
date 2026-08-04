@@ -588,7 +588,7 @@ export class AttendanceService {
         status: TimeEntryStatus.CLOCKED_IN,
       },
       include: {
-        location: { select: { id: true, name: true } },
+        location: { select: { id: true, name: true, timezone: true } },
         user: { select: { firstName: true, lastName: true } },
       },
     });
@@ -725,7 +725,7 @@ export class AttendanceService {
       },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-        location: { select: { id: true, name: true } },
+        location: { select: { id: true, name: true, timezone: true } },
       },
       orderBy: { expectedClockOutAt: 'asc' },
     });
@@ -1076,7 +1076,7 @@ export class AttendanceService {
       },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
-        location: { select: { id: true, name: true } },
+        location: { select: { id: true, name: true, timezone: true } },
         shift: { select: { reminderIntervalMin: true, maxReminders: true } },
       },
       orderBy: { nextRemindAt: 'asc' }, // drain oldest-due first
@@ -1294,6 +1294,7 @@ export class AttendanceService {
               id: true,
               name: true,
               address: true,
+              timezone: true,
             },
           },
         },

@@ -287,7 +287,7 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
         },
       });
@@ -435,6 +435,7 @@ export class AuthService {
             role: normalizeRole(user.role),
             organizationId: user.organizationId,
             organizationName: user.organization?.name || null,
+            organizationTimezone: user.organization?.timezone || null,
             onboardingCompleted: user.onboardingCompleted,
             avatarUrl: user.avatarUrl,
             // Permission fields
@@ -514,7 +515,7 @@ export class AuthService {
         include: {
           user: {
             include: {
-              organization: { select: { profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
+              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
               orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
             },
           },
@@ -1002,7 +1003,7 @@ export class AuthService {
           // CustomerScopeGuard + portal endpoints scope to the caller's own data.
           customerId: true,
           unitId: true,
-          organization: { select: { profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true } },
           // Custom role
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
         },
@@ -1028,6 +1029,10 @@ export class AuthService {
           // service (and the gateway's req.user) sees ADMIN/MANAGER/EMPLOYEE,
           // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.
           role: normalizeRole(userData.role),
+          organizationName: organization?.name || null,
+          // Org timezone — the default display zone for all times on the client
+          // (attendance times override per-entry with the location's timezone).
+          organizationTimezone: organization?.timezone || null,
           profileBadges: resolveProfileBadges(profileBadges, organization?.profileBadges),
           // Per-user Access Profile overrides the org-wide modules when set.
           enabledModules: (userModules ?? organization?.enabledModules) || [],

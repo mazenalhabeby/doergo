@@ -83,18 +83,37 @@ export type TimeFormatPref = "12h" | "24h"
  * `hour12=true`  -> "2:30 PM"   `hour12=false` -> "14:30"
  * The explicit hour12 overrides the locale default, so the user's choice wins.
  */
+/**
+ * Human city/region label from an IANA timezone.
+ * "America/New_York" -> "New York", "Europe/Vienna" -> "Vienna".
+ */
+export function cityFromTz(tz?: string | null): string {
+  if (!tz) return ""
+  const last = tz.split("/").pop() || tz
+  return last.replace(/_/g, " ")
+}
+
 export function formatTimeOfDay(
   input: string | number | Date,
   hour12: boolean,
   locale?: string,
+  timeZone?: string | null,
 ): string {
   const d = input instanceof Date ? input : new Date(input)
   if (isNaN(d.getTime())) return ""
-  return d.toLocaleTimeString(locale || undefined, {
+  const opts: Intl.DateTimeFormatOptions = {
     hour: hour12 ? "numeric" : "2-digit",
     minute: "2-digit",
     hour12,
-  })
+  }
+  try {
+    const time = d.toLocaleTimeString(locale || undefined, timeZone ? { ...opts, timeZone } : opts)
+    const city = cityFromTz(timeZone)
+    return city ? `${time} · ${city}` : time
+  } catch {
+    // Invalid timezone → fall back to the local zone with no label.
+    return d.toLocaleTimeString(locale || undefined, opts)
+  }
 }
 
 /**
@@ -105,16 +124,24 @@ export function formatDateTimeOf(
   input: string | number | Date,
   hour12: boolean,
   locale?: string,
+  timeZone?: string | null,
 ): string {
   const d = input instanceof Date ? input : new Date(input)
   if (isNaN(d.getTime())) return ""
-  return d.toLocaleString(locale || undefined, {
+  const opts: Intl.DateTimeFormatOptions = {
     month: "short",
     day: "numeric",
     hour: hour12 ? "numeric" : "2-digit",
     minute: "2-digit",
     hour12,
-  })
+  }
+  try {
+    const str = d.toLocaleString(locale || undefined, timeZone ? { ...opts, timeZone } : opts)
+    const city = cityFromTz(timeZone)
+    return city ? `${str} · ${city}` : str
+  } catch {
+    return d.toLocaleString(locale || undefined, opts)
+  }
 }
 
 /** date-fns time token for the current preference: "h:mm a" (12h) or "HH:mm" (24h). */

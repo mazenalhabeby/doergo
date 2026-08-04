@@ -292,7 +292,7 @@ export function FullTimeHome() {
               <View style={ftStyles.shiftRow}>
                 <Ionicons name="time" size={16} color={COLORS.primary} />
                 <Text style={ftStyles.shiftTime}>
-                  {t('home.fullTime.startedAt', { time: formatTime(status.currentEntry.clockInAt) })}
+                  {t('home.fullTime.startedAt', { time: formatTime(status.currentEntry.clockInAt, status.currentEntry.location?.timezone) })}
                 </Text>
               </View>
               <View style={ftStyles.durationBadge}>
@@ -423,7 +423,7 @@ export function FullTimeHome() {
                 </View>
                 <View style={ftStyles.historyRight}>
                   <Text style={[ftStyles.historyTime, { color: colors.textSecondary }]}>
-                    {formatTime(entry.clockInAt)} - {entry.clockOutAt ? formatTime(entry.clockOutAt) : t('common.active')}
+                    {formatTime(entry.clockInAt, entry.location?.timezone)} - {entry.clockOutAt ? formatTime(entry.clockOutAt, entry.location?.timezone) : t('common.active')}
                   </Text>
                   {entry.totalMinutes != null && entry.totalMinutes > 0 && (
                     <Text style={ftStyles.historyDuration}>{formatDuration(entry.totalMinutes)}</Text>

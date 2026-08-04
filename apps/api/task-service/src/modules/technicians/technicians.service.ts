@@ -810,7 +810,7 @@ export class TechniciansService {
           where: { effectiveTo: null }, // Only active assignments
           select: {
             isPrimary: true,
-            location: { select: { id: true, name: true } },
+            location: { select: { id: true, name: true, timezone: true } },
           },
         },
       },

@@ -38,7 +38,7 @@ export function AttendanceTab({
   canManage,
 }: AttendanceTabProps) {
   const { t } = useTranslation()
-  const { timeToken } = useTimeFormat()
+  const { formatTime } = useTimeFormat()
 
   return (
     <Card>
@@ -76,11 +76,11 @@ export function AttendanceTab({
                     {format(new Date(entry.clockInAt), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(entry.clockInAt), timeToken)}
+                    {formatTime(entry.clockInAt, entry.location?.timezone)}
                   </TableCell>
                   <TableCell>
                     {entry.clockOutAt
-                      ? format(new Date(entry.clockOutAt), timeToken)
+                      ? formatTime(entry.clockOutAt, entry.location?.timezone)
                       : "—"}
                   </TableCell>
                   <TableCell>

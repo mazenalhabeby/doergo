@@ -28,6 +28,12 @@ export function useTimeFormat() {
 
   const hour12 = user?.timeFormat === "12h"
 
+  // Default display zone = the org's timezone, so times render in a fixed,
+  // labeled zone instead of being silently converted to the viewer's browser
+  // zone. Attendance call sites override this per-entry with the location's
+  // timezone by passing an explicit `tz` argument.
+  const orgTz = user?.organizationTimezone || undefined
+
   const locale = useMemo(() => {
     const lang = i18n.language || "en"
     if (lang.startsWith("de")) return "de-DE"
@@ -38,13 +44,17 @@ export function useTimeFormat() {
   }, [i18n.language])
 
   const formatTime = useCallback(
-    (input: string | number | Date) => formatTimeOfDay(input, hour12, locale),
-    [hour12, locale],
+    // `tz` overrides the org default (e.g. an attendance entry's location zone).
+    // Pass `null` explicitly to opt out of any zone (raw browser-local, no label).
+    (input: string | number | Date, tz?: string | null) =>
+      formatTimeOfDay(input, hour12, locale, tz === null ? undefined : tz ?? orgTz),
+    [hour12, locale, orgTz],
   )
 
   const formatDateTime = useCallback(
-    (input: string | number | Date) => formatDateTimeOf(input, hour12, locale),
-    [hour12, locale],
+    (input: string | number | Date, tz?: string | null) =>
+      formatDateTimeOf(input, hour12, locale, tz === null ? undefined : tz ?? orgTz),
+    [hour12, locale, orgTz],
   )
 
   const formatSchedule = useCallback(
