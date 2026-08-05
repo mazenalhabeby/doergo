@@ -296,12 +296,14 @@ function SpacesCell({ spaceNames }: { spaceNames: string[] }) {
 
 function RowActions({
   show,
+  isSelf,
   member,
   onEdit,
   onRemove,
   alwaysVisible,
 }: {
   show: boolean
+  isSelf?: boolean
   member: OrgMember
   onEdit: (m: OrgMember) => void
   onRemove: (m: OrgMember) => void
@@ -325,11 +327,16 @@ function RowActions({
           <Pencil className="h-4 w-4 mr-2" />
           {t("common.edit")}
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => onRemove(member)}>
-          <UserMinus className="h-4 w-4 mr-2" />
-          {t("members.actions.remove")}
-        </DropdownMenuItem>
+        {/* You can edit your own profile, but you can't remove yourself. */}
+        {!isSelf && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => onRemove(member)}>
+              <UserMinus className="h-4 w-4 mr-2" />
+              {t("members.actions.remove")}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -393,7 +400,7 @@ const MemberRow = memo(function MemberRow({
         <div><RoleBadge member={member} /></div>
         <div><ScheduleBadge member={member} /></div>
         <div className="min-w-0"><SpacesCell spaceNames={spaceNames} /></div>
-        <RowActions show={canManage} member={member} onEdit={onEdit} onRemove={onRemove} />
+        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} />
       </div>
 
       {/* \u2500\u2500 Mobile: stacked card \u2500\u2500 */}
@@ -415,7 +422,7 @@ const MemberRow = memo(function MemberRow({
             {spaceNames.length > 0 && <SpacesCell spaceNames={spaceNames} />}
           </div>
         </div>
-        <RowActions show={canManage} member={member} onEdit={onEdit} onRemove={onRemove} alwaysVisible />
+        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} alwaysVisible />
       </div>
     </div>
   )
@@ -863,6 +870,7 @@ export default function MembersPage() {
       {/* ── Edit Member Dialog (shared component) ───────────────────────── */}
       <EditMemberDialog
         member={editTarget}
+        isSelf={!!editTarget && editTarget.id === user?.id}
         onClose={() => setEditTarget(null)}
         onSaved={() => queryClient.invalidateQueries({ queryKey: ["orgMembers"] })}
       />

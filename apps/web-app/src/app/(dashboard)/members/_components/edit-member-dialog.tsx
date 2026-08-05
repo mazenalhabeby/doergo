@@ -185,10 +185,13 @@ function EditSection({ label }: { label: string }) {
  */
 export function EditMemberDialog({
   member,
+  isSelf,
   onClose,
   onSaved,
 }: {
   member: OrgMember | null
+  /** True when editing your own row — you can edit your profile but not your own role. */
+  isSelf?: boolean
   onClose: () => void
   onSaved?: () => void
 }) {
@@ -337,7 +340,9 @@ export function EditMemberDialog({
         scheduleType,
         monthlyHourBudget:
           scheduleType === "FLEXIBLE" && monthlyHourBudget !== "" ? Number(monthlyHourBudget) : undefined,
-        role,
+        // Omit role when editing yourself — the backend rejects any own-role change
+        // (even an unchanged value), and the selector is disabled for self anyway.
+        ...(isSelf ? {} : { role }),
       },
     })
   }
@@ -416,13 +421,16 @@ export function EditMemberDialog({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.role")}</Label>
-            <Select value={role} onValueChange={setRole}>
+            <Select value={role} onValueChange={setRole} disabled={isSelf}>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
                 <SelectItem value="EMPLOYEE">{t("members.roles.employee")}</SelectItem>
               </SelectContent>
             </Select>
+            {isSelf && (
+              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.cantChangeOwnRole", "You can't change your own role.")}</p>
+            )}
           </div>
 
           {member && (
