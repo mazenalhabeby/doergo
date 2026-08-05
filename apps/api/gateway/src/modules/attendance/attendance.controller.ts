@@ -217,6 +217,15 @@ export class AttendanceController {
     });
   }
 
+  @Get('active-entries')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Who is clocked in right now (org-wide, date-independent)' })
+  async getActiveEntries(@Request() req: any) {
+    return this.attendanceService.getActiveEntries({
+      organizationId: req.user.organizationId,
+    });
+  }
+
   // =========================================================================
   // REPORTS
   // =========================================================================

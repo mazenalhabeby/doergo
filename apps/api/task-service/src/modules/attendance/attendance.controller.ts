@@ -84,6 +84,11 @@ export class AttendanceController {
     return this.attendanceService.getAllEntries(data);
   }
 
+  @MessagePattern({ cmd: 'get_active_entries' })
+  async getActiveEntries(@Payload() data: { organizationId: string }) {
+    return this.attendanceService.getActiveEntries(data);
+  }
+
   // =========================================================================
   // REPORTS
   // =========================================================================

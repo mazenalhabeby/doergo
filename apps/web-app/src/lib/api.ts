@@ -2083,6 +2083,16 @@ export const attendanceApi = {
     return response.data;
   },
 
+  /** Who is clocked in RIGHT NOW, org-wide — date-independent (catches overnight
+   *  shifts). Backs the dashboard "on duty" presence. */
+  getActiveEntries: async () => {
+    const response = await api.get<{ success: boolean; data: TimeEntry[] }>('/attendance/active-entries');
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  },
+
   // Get scheduler info (ADMIN only)
   getSchedulerInfo: async () => {
     const response = await api.get<{

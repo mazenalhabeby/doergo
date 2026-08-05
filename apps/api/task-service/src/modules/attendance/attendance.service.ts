@@ -1033,6 +1033,35 @@ export class AttendanceService {
   }
 
   /**
+   * Who is clocked in RIGHT NOW, org-wide — answers the dashboard "on duty"
+   * question independently of clock-in date. A shift that started before
+   * midnight and is still open (overnight / long / forgot-to-clock-out) must
+   * still count, so this filters on the open state (`status = CLOCKED_IN`),
+   * NOT on a date window. Backed by the `[organizationId, status]` index and a
+   * narrow select (only what the dashboard reads) → O(open entries), tiny
+   * payload. No pagination: the open set is always small.
+   */
+  async getActiveEntries(data: { organizationId: string }) {
+    const entries = await this.prisma.timeEntry.findMany({
+      where: {
+        organizationId: data.organizationId,
+        status: 'CLOCKED_IN',
+      },
+      select: {
+        id: true,
+        userId: true,
+        locationId: true,
+        clockInAt: true,
+        clockOutAt: true,
+        status: true,
+        isRemote: true,
+      },
+      orderBy: { clockInAt: 'desc' },
+    });
+    return success(entries);
+  }
+
+  /**
    * Today's entries for MANY locations in 2 queries (vs 4-per-location) — backs
    * the dashboard. Full-access roles get all requested org spaces; otherwise the
    * set is narrowed to the spaces the requester is a roster member of.
@@ -1066,7 +1095,12 @@ export class AttendanceService {
     const entries = await this.prisma.timeEntry.findMany({
       where: {
         locationId: { in: validIds },
-        clockInAt: buildSingleDayFilter(data.date || new Date().toISOString()),
+        // Today's entries PLUS any still-open shift (even one that started before
+        // midnight) so overnight clock-ins stay "on duty" after the date rolls.
+        OR: [
+          { clockInAt: buildSingleDayFilter(data.date || new Date().toISOString()) },
+          { status: 'CLOCKED_IN' },
+        ],
       },
       include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
       orderBy: { clockInAt: 'desc' },

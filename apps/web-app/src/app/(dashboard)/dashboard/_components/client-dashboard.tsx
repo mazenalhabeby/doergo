@@ -189,11 +189,13 @@ export function ClientDashboard() {
     refetchInterval: 60000,
   })
 
-  // Attendance entries for today — who is clocked in? Admins read org-wide;
-  // employees can't (403), so they fetch presence per visible space below.
+  // Who is clocked in RIGHT NOW? Admins read org-wide. This is date-independent
+  // (open entries only) so an overnight / still-open shift that started before
+  // midnight still counts — a single-day query would drop them after the date
+  // rolls over. Employees can't read this (403); they fetch presence per space.
   const { data: attendanceData } = useQuery({
-    queryKey: ["attendance-today"],
-    queryFn: () => attendanceApi.getAllEntries({ date: getTodayString(), limit: 500 }),
+    queryKey: ["attendance-active"],
+    queryFn: () => attendanceApi.getActiveEntries(),
     staleTime: 30000,
     enabled: isAdminOrDispatcher,
     // Safety refetch so clock-in/out state self-heals if a socket event is missed.

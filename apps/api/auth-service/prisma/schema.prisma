@@ -1505,6 +1505,7 @@ model TimeEntry {
   @@index([approvalStatus])
   @@index([userId, status]) // check active clock-in
   @@index([organizationId, clockInAt]) // org attendance reports
+  @@index([organizationId, status]) // "who's clocked in right now" (dashboard, date-independent)
   @@index([status, nextRemindAt]) // reminder engine safety-net sweep
   @@index([organizationId, reminderState]) // pending extra-time lookups per org
   @@map("time_entries")

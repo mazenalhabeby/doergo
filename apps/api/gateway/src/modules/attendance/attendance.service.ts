@@ -79,6 +79,10 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_all_entries' }, data);
   }
 
+  async getActiveEntries(data: { organizationId: string }) {
+    return this.send({ cmd: 'get_active_entries' }, data);
+  }
+
   // =========================================================================
   // REPORTS
   // =========================================================================
