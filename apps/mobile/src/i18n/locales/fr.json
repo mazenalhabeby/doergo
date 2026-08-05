@@ -268,6 +268,10 @@
         "unassigned": "Non affecté",
         "blocked": "Bloqué",
         "unassignedNewTask": "Non affecté — Nouvelle tâche"
+      },
+      "clock": {
+        "clockIn": "Pointer l’arrivée",
+        "onTheClock": "En service"
       }
     },
     "fullTime": {

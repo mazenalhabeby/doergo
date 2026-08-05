@@ -268,6 +268,10 @@
         "unassigned": "Nicht zugewiesen",
         "blocked": "Blockiert",
         "unassignedNewTask": "Nicht zugewiesen — Neue Aufgabe"
+      },
+      "clock": {
+        "clockIn": "Einstempeln",
+        "onTheClock": "Im Dienst"
       }
     },
     "fullTime": {

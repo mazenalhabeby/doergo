@@ -28,6 +28,7 @@ import type { TimeEntry } from '../../lib/api/types';
 import { ErrorState, Skeleton, ScreenContainer } from '../../components';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
+import { hasAccessModule } from '@hbcfield/shared/client';
 import { styles as homeStyles, SPACING, COLORS } from './home-styles';
 import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
 import { type PersonNodeData } from './workspace/person-node';
@@ -515,6 +516,13 @@ export function AdminDashboard() {
 
   const hasFixed = boxes.some((b) => b.type === 'fixed');
 
+  // Admin/owner clock control — shown when the admin has the `clock` module
+  // (optional, module-driven). Their own clocked-in state comes free from the
+  // org-wide active entries already loaded; the button opens the full clock
+  // screen (GPS/geofence flow lives there — no duplication).
+  const canClock = hasAccessModule(user || {}, 'clock');
+  const myClockedIn = !!user && clockedInUserIds.has(user.id);
+
   return (
     <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
@@ -537,6 +545,35 @@ export function AdminDashboard() {
             {t('home.admin.welcomeBack', { name: user?.firstName })}
           </Text>
         </TourTarget>
+
+        {/* Clock in/out — visible control for a working admin/owner. */}
+        {canClock && (
+          <TouchableOpacity
+            onPress={() => router.push(ROUTES.attendance as any)}
+            activeOpacity={0.85}
+            style={[
+              styles.clockButton,
+              myClockedIn
+                ? { backgroundColor: colors.card, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }
+                : { backgroundColor: COLORS.primary },
+            ]}
+          >
+            <Ionicons
+              name={myClockedIn ? 'time' : 'log-in-outline'}
+              size={18}
+              color={myClockedIn ? COLORS.primary : '#fff'}
+            />
+            <Text style={[styles.clockButtonText, { color: myClockedIn ? colors.textPrimary : '#fff' }]}>
+              {myClockedIn ? t('home.admin.clock.onTheClock') : t('home.admin.clock.clockIn')}
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={myClockedIn ? colors.textMuted : 'rgba(255,255,255,0.85)'}
+              style={{ marginLeft: 'auto' }}
+            />
+          </TouchableOpacity>
+        )}
 
         {/* Workspace cards */}
         <TourTarget name="home-work" style={styles.grid}>
@@ -627,6 +664,17 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 12, fontWeight: '500' },
   welcome: { fontSize: 21, fontWeight: '700', marginTop: 2 },
+  clockButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.sm,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+  },
+  clockButtonText: { fontSize: 14, fontWeight: '600' },
   grid: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
   columns: { flexDirection: 'row', alignItems: 'flex-start', gap: GRID_GAP },
   column: { flex: 1 },
