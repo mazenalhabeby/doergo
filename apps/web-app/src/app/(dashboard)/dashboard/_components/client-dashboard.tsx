@@ -569,7 +569,10 @@ export function ClientDashboard() {
     const offDutyPeople: PersonNodeProps[] = []
     const offShiftPeople: PersonNodeProps[] = []
     const onClockPeople: PersonNodeProps[] = []
-    const workers = members.filter(m => m.role === "EMPLOYEE" && m.isActive)
+    // Employees are always part of presence; admins/owners appear only when
+    // they're actually on the clock (a working owner) — never as idle off-duty
+    // clutter. A non-employee therefore only reaches the "On the Clock" branch.
+    const workers = members.filter(m => m.isActive && (m.role === "EMPLOYEE" || clockedInUserIds.has(m.id)))
     for (const worker of workers) {
       if (accountedWorkerIds.has(worker.id)) continue
       const isClockedIn = clockedInUserIds.has(worker.id)
