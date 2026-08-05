@@ -232,6 +232,16 @@ export class ApprovalService {
         updateData.status = 'CLOCKED_OUT';
         updateData.reminderState = 'RESOLVED';
         updateData.nextRemindAt = null;
+        // An admin manually clocking someone out IS the review, so approve it —
+        // otherwise it lingers as "Pending" yet never shows in the Approvals tab
+        // (that queue excludes CLOCKED_IN rows). Mirrors addManualEntries. A row
+        // an admin already approved/rejected keeps its decision.
+        if (entry.approvalStatus === 'PENDING') {
+          updateData.approvalStatus = 'APPROVED';
+          updateData.approvedById = data.editorId;
+          updateData.approvedAt = new Date();
+          updateData.approvalNotes = 'Auto-approved: manual clock-out by admin';
+        }
       }
     }
 
