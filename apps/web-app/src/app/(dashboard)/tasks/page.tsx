@@ -28,7 +28,6 @@ import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, typ
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -270,15 +269,6 @@ export default function TasksPage() {
     return FALLBACK_STATUS_TABS
   }, [hasWorkflow, activeWorkflowStatuses])
 
-  // Build kanban columns from the active (space-aware) workflow
-  // WIP limits are now embedded in each WorkflowStatus and flow through buildKanbanColumns
-  const spaceKanbanColumns = useMemo(() => {
-    if (hasWorkflow && activeWorkflowStatuses.length > 0) {
-      return buildKanbanColumns(activeWorkflowStatuses)
-    }
-    return undefined // let the component use its own fallback
-  }, [hasWorkflow, activeWorkflowStatuses])
-
   // Derive the API status filter from the active tab
   const statusFilter = useMemo(() => {
     const tab = STATUS_TABS.find((t) => t.key === activeTab)
@@ -484,6 +474,35 @@ export default function TasksPage() {
   const meta = tasksData?.meta
   const effectivePhases = phases || []
   const effectiveEpics = epics || []
+
+  // ── Smart board task-type picker ──────────────────────────────────────────
+  // Only offer the workflows that the space's tasks ACTUALLY use (a task's type
+  // is its own workflowId, else the space default) — not every org workflow. The
+  // board renders one type at a time (columns differ per workflow); default to the
+  // space's own type when present, else the first type that has tasks here.
+  const presentWorkflowIds = useMemo(() => {
+    const scoped = selectedSpaceId ? tasks.filter((t: Task) => t.spaceId === selectedSpaceId) : tasks
+    const s = new Set<string>()
+    for (const tk of scoped) {
+      const wf = (tk as Task).workflowId ?? contextDefaultWorkflowId
+      if (wf) s.add(wf)
+    }
+    return s
+  }, [tasks, selectedSpaceId, contextDefaultWorkflowId])
+  const boardWorkflows = useMemo(
+    () => orgWorkflows.filter((w) => presentWorkflowIds.has(w.id)),
+    [orgWorkflows, presentWorkflowIds],
+  )
+  const boardWorkflowId = useMemo(() => {
+    if (selectedWorkflowId && presentWorkflowIds.has(selectedWorkflowId)) return selectedWorkflowId
+    if (contextDefaultWorkflowId && presentWorkflowIds.has(contextDefaultWorkflowId)) return contextDefaultWorkflowId
+    return boardWorkflows[0]?.id ?? contextDefaultWorkflowId ?? activeWorkflowId
+  }, [selectedWorkflowId, presentWorkflowIds, contextDefaultWorkflowId, boardWorkflows, activeWorkflowId])
+  const { statuses: boardStatuses, hasWorkflow: boardHasWorkflow } = useWorkflow(boardWorkflowId)
+  const boardKanbanColumns = useMemo(
+    () => (boardHasWorkflow && boardStatuses.length > 0 ? buildKanbanColumns(boardStatuses) : undefined),
+    [boardHasWorkflow, boardStatuses],
+  )
 
   // Kanban drag-and-drop status change
   const statusChangeMutation = useMutation({
@@ -827,11 +846,11 @@ export default function TasksPage() {
   // type. A task's effective type is its own workflowId, else the space default.
   // Other views (table/schedule) keep showing everything.
   const boardTasks = useMemo(() => {
-    if (orgWorkflows.length <= 1 || !activeWorkflowId) return filteredTasks
+    if (boardWorkflows.length <= 1 || !boardWorkflowId) return filteredTasks
     return filteredTasks.filter(
-      (tk: Task) => ((tk.workflowId ?? contextDefaultWorkflowId) === activeWorkflowId),
+      (tk: Task) => ((tk.workflowId ?? contextDefaultWorkflowId) === boardWorkflowId),
     )
-  }, [filteredTasks, orgWorkflows.length, activeWorkflowId, contextDefaultWorkflowId])
+  }, [filteredTasks, boardWorkflows.length, boardWorkflowId, contextDefaultWorkflowId])
 
   // Sync ref for shift-click range selection
   filteredTasksRef.current = filteredTasks
@@ -1434,29 +1453,31 @@ export default function TasksPage() {
         {/* Board View — always flat kanban */}
         {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "board" && (
           <div data-tour="tasks-board">
-          {/* Task Type picker — a board shows one workflow at a time (columns differ
-              per type). Only shown when the org has more than one workflow. */}
-          {orgWorkflows.length > 1 && (
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">{t("tasks.create.taskType", "Task type")}</span>
-              <Select
-                value={activeWorkflowId ?? ""}
-                onValueChange={(v) => setSelectedWorkflowId(v || null)}
-              >
-                <SelectTrigger className="h-8 w-auto min-w-[160px] rounded-lg border-border bg-card text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {orgWorkflows.map((w) => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Task Type tabs — a board shows one workflow at a time (columns differ
+              per type). Shown only when the SPACE's tasks span more than one type;
+              each tab is a type that actually has tasks here (not every org workflow). */}
+          {boardWorkflows.length > 1 && (
+            <div className="mb-4 flex items-center gap-1.5 flex-wrap">
+              {boardWorkflows.map((w) => (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => setSelectedWorkflowId(w.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    boardWorkflowId === w.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {w.name}
+                </button>
+              ))}
             </div>
           )}
           <KanbanBoard
             tasks={boardTasks}
-            columns={spaceKanbanColumns}
+            columns={boardKanbanColumns}
             onStatusChange={handleKanbanDrop}
             onReorder={handleReorder}
             onAssignClick={handleAssignClick}
