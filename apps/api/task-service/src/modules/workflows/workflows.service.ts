@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
@@ -78,7 +79,29 @@ export class WorkflowsService {
       capabilities?: string[];
     }>;
   }) {
-    const workflow = await this.prisma.$transaction(async (tx) => {
+    const name = data.name?.trim();
+    if (!name) {
+      throw new BadRequestException('Task type name is required');
+    }
+
+    // Friendly duplicate check (the DB also enforces @@unique(organizationId,
+    // name)). Case-insensitive so "field service" and "Field Service" don't
+    // near-collide. Without this the raw Prisma "Unique constraint failed" leaked
+    // into the UI toast.
+    const existing = await this.prisma.statusWorkflow.findFirst({
+      where: {
+        organizationId: data.organizationId,
+        name: { equals: name, mode: 'insensitive' },
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ConflictException(`A task type named "${name}" already exists.`);
+    }
+
+    let workflow;
+    try {
+      workflow = await this.prisma.$transaction(async (tx) => {
       // If setting as default, unset previous default
       if (data.isDefault) {
         await tx.statusWorkflow.updateMany({
@@ -89,7 +112,7 @@ export class WorkflowsService {
 
       const created = await tx.statusWorkflow.create({
         data: {
-          name: data.name,
+          name,
           isDefault: data.isDefault || false,
           organizationId: data.organizationId,
           ...(data.statuses?.length
@@ -117,7 +140,14 @@ export class WorkflowsService {
       });
 
       return created;
-    });
+      });
+    } catch (err: any) {
+      // Race: another request created the same name between the check and insert.
+      if (err?.code === 'P2002') {
+        throw new ConflictException(`A task type named "${name}" already exists.`);
+      }
+      throw err;
+    }
 
     await this.workflowCache.invalidate(data.organizationId);
     return success(workflow);
@@ -144,17 +174,41 @@ export class WorkflowsService {
       throw new NotFoundException('Workflow not found');
     }
 
-    const workflow = await this.prisma.statusWorkflow.update({
-      where: { id: data.id },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.isActive !== undefined && { isActive: data.isActive }),
-      },
-      include: {
-        statuses: { orderBy: { position: 'asc' } },
-        _count: { select: { tasks: true } },
-      },
-    });
+    const newName = data.name?.trim();
+    // Friendly duplicate check on rename (skip if unchanged).
+    if (newName && newName.toLowerCase() !== existing.name.toLowerCase()) {
+      const clash = await this.prisma.statusWorkflow.findFirst({
+        where: {
+          organizationId: data.organizationId,
+          name: { equals: newName, mode: 'insensitive' },
+          id: { not: data.id },
+        },
+        select: { id: true },
+      });
+      if (clash) {
+        throw new ConflictException(`A task type named "${newName}" already exists.`);
+      }
+    }
+
+    let workflow;
+    try {
+      workflow = await this.prisma.statusWorkflow.update({
+        where: { id: data.id },
+        data: {
+          ...(newName ? { name: newName } : {}),
+          ...(data.isActive !== undefined && { isActive: data.isActive }),
+        },
+        include: {
+          statuses: { orderBy: { position: 'asc' } },
+          _count: { select: { tasks: true } },
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2002') {
+        throw new ConflictException(`A task type named "${newName}" already exists.`);
+      }
+      throw err;
+    }
 
     await this.workflowCache.invalidate(data.organizationId);
     return success(workflow);
