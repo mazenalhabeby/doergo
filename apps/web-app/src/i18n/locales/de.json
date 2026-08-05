@@ -1037,6 +1037,8 @@
       "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus",
       "dialogDescription": "Eine neue Aufgabe für Ihre Organisation erstellen",
       "selectSpace": "Bereich auswählen",
+      "taskType": "Aufgabentyp",
+      "taskTypeInherit": "Bereichsstandard",
       "type": "Typ",
       "auto": "Automatisch",
       "autoFromSpace": "Automatisch (vom Bereich)",

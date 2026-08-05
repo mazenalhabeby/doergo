@@ -80,6 +80,7 @@ import {
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { PrioritySelector } from "@/components/tasks"
+import { useOrgWorkflow } from "@/hooks/use-org-workflow"
 
 const LocationPicker = lazy(() =>
   import("@/components/location-picker").then((m) => ({ default: m.LocationPicker }))
@@ -160,6 +161,11 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   // ── Space state ──
   const [spaceId, setSpaceId] = useState<string>("none")
+
+  // ── Task Type (workflow) — "inherit" = use the space's default; otherwise the
+  // task carries its own flow so one space can hold tasks of different types. ──
+  const [workflowId, setWorkflowId] = useState<string>("inherit")
+  const { workflows } = useOrgWorkflow()
 
   // ── Space-aware module resolution ──
   const { hasModule: spaceHasModule } = useSpaceModules(spaceId !== "none" ? spaceId : null)
@@ -326,14 +332,16 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     enabled: open && spaceId !== "none",
   })
   const spaceWorkflowId = spaceId !== "none" ? spaceModules?.workflowId ?? null : null
+  // The task's effective type: an explicit pick, else inherited from the space.
+  const effectiveWorkflowId = workflowId !== "inherit" ? workflowId : spaceWorkflowId
 
-  // Fields applicable to the space's Task Type: globals always, plus the space
-  // workflow's own fields. No space / no workflow → globals only.
+  // Fields applicable to the chosen Task Type: globals always, plus that
+  // workflow's own fields. No type → globals only.
   const applicableCustomFields = useMemo(
     // Custom Fields is a Professional+ feature — don't render the inputs below tier
     // (the backend also 402s the write; this keeps a downgraded org from seeing them).
-    () => (canCustomFields ? activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === spaceWorkflowId) : []),
-    [activeCustomFields, spaceWorkflowId, canCustomFields],
+    () => (canCustomFields ? activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === effectiveWorkflowId) : []),
+    [activeCustomFields, effectiveWorkflowId, canCustomFields],
   )
 
   // ── Submission state ──
@@ -435,8 +443,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
         description: description.trim() || null,
         priority,
         spaceId: spaceId !== "none" ? spaceId : null,
-        // Task type is always inherited from the space's workflow.
-        workflowId: null,
+        // Task type: explicit pick, else null = inherit the space's workflow.
+        workflowId: workflowId !== "inherit" ? workflowId : null,
         frequency,
         customDays: frequency === "CUSTOM" ? customDays : null,
         dayOfWeek: ["WEEKLY", "BIWEEKLY"].includes(frequency) ? dayOfWeek : null,
@@ -467,7 +475,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       epicId: epicId !== "none" ? epicId : undefined,
       parentId: parentTaskId !== "none" ? parentTaskId : undefined,
       spaceId: spaceId !== "none" ? spaceId : undefined,
-      // Task type is always inherited from the space's workflow (no explicit id).
+      // Task type: explicit pick, else omit so the backend inherits the space's.
+      workflowId: workflowId !== "inherit" ? workflowId : undefined,
       checklistItems: checklistItems.length > 0
         ? checklistItems.map((text) => ({ text }))
         : undefined,
@@ -576,7 +585,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
           {hasSpaces && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">{t("tasks.groupBy.space")}</Label>
-              <Select value={spaceId} onValueChange={setSpaceId} disabled={isSubmitting}>
+              <Select value={spaceId} onValueChange={(v) => { setSpaceId(v); setWorkflowId("inherit") }} disabled={isSubmitting}>
                 <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
                   <SelectValue placeholder={t("tasks.create.selectSpace")} />
                 </SelectTrigger>
@@ -588,6 +597,31 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         {s.name}
                       </div>
                     </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Task Type (workflow) — only meaningful when the org has >1 workflow.
+              Lets a task use a different flow than its space's default, so one
+              space can hold tasks of several types. "Inherit" = the space default. */}
+          {workflows.length > 1 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">{t("tasks.create.taskType", "Task type")}</Label>
+              <Select value={workflowId} onValueChange={setWorkflowId} disabled={isSubmitting}>
+                <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inherit">
+                    {t("tasks.create.taskTypeInherit", "Space default")}
+                    {spaceWorkflowId
+                      ? ` (${workflows.find((w) => w.id === spaceWorkflowId)?.name ?? ""})`
+                      : ""}
+                  </SelectItem>
+                  {workflows.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

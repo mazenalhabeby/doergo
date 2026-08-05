@@ -1037,6 +1037,8 @@
       "fillRequiredFields": "Please fill in all required fields",
       "dialogDescription": "Create a new task for your organization",
       "selectSpace": "Select a space",
+      "taskType": "Task type",
+      "taskTypeInherit": "Space default",
       "type": "Type",
       "auto": "Auto",
       "autoFromSpace": "Auto (from space)",

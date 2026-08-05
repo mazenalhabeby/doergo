@@ -56,6 +56,7 @@ export function useWorkflow(workflowId?: string | null) {
 
   return {
     workflow,
+    workflowId: workflow?.id ?? null,
     statuses,
     isLoading: loadingList || loadingDetail,
     hasWorkflow: hasWorkflow || statuses.length > 0,
@@ -82,43 +83,19 @@ export interface StatusTabGroup {
 export function buildStatusTabs(statuses: WorkflowStatus[]): StatusTabGroup[] {
   if (!statuses.length) return []
 
+  // Faithful: "All" + one tab per status, in the workflow's own order, using each
+  // status's real name/color. No more collapsing finals into "Done" or canceled
+  // into "Canceled" — the tabs mirror exactly what the workflow defines.
   const tabs: StatusTabGroup[] = [
     { key: "all", label: "All", dotColor: null, statuses: [] },
   ]
 
-  // Non-final, non-canceled statuses get individual tabs
-  const normalStatuses = statuses
-    .filter((s) => !s.isFinal && !s.isCanceled)
-    .sort((a, b) => a.position - b.position)
-
-  for (const s of normalStatuses) {
+  for (const s of [...statuses].sort((a, b) => a.position - b.position)) {
     tabs.push({
       key: s.key,
       label: s.name,
       dotColor: s.color,
       statuses: [s.key],
-    })
-  }
-
-  // Final statuses grouped as "Done"
-  const finalStatuses = statuses.filter((s) => s.isFinal && !s.isCanceled)
-  if (finalStatuses.length > 0) {
-    tabs.push({
-      key: "done",
-      label: "Done",
-      dotColor: finalStatuses[0]?.color ?? "#22C55E",
-      statuses: finalStatuses.map((s) => s.key),
-    })
-  }
-
-  // Canceled statuses grouped
-  const canceledStatuses = statuses.filter((s) => s.isCanceled)
-  if (canceledStatuses.length > 0) {
-    tabs.push({
-      key: "canceled",
-      label: "Canceled",
-      dotColor: canceledStatuses[0]?.color ?? "#94A3B8",
-      statuses: canceledStatuses.map((s) => s.key),
     })
   }
 
@@ -143,35 +120,21 @@ export interface KanbanColumnDef {
 export function buildKanbanColumns(statuses: WorkflowStatus[]): KanbanColumnDef[] {
   if (!statuses.length) return []
 
-  const columns: KanbanColumnDef[] = []
-
-  const normalStatuses = statuses
-    .filter((s) => !s.isFinal && !s.isCanceled)
+  // Faithful: one column per status in the workflow's own order, using each
+  // status's real name/color/WIP — including each final status as its own column
+  // (no hardcoded "Done", no merging). Canceled statuses stay OFF the board
+  // (standard kanban practice; canceled tasks are still reachable via the tabs).
+  return [...statuses]
+    .filter((s) => !s.isCanceled)
     .sort((a, b) => a.position - b.position)
-
-  for (const s of normalStatuses) {
-    columns.push({
+    .map((s) => ({
       key: s.key,
       label: s.name,
       dotColor: s.color,
       statuses: [s.key],
       dropStatus: s.key,
       wipLimit: s.wipLimit ?? undefined,
-    })
-  }
-
-  const finalStatuses = statuses.filter((s) => s.isFinal && !s.isCanceled)
-  if (finalStatuses.length > 0) {
-    columns.push({
-      key: "done",
-      label: "Done",
-      dotColor: finalStatuses[0]?.color ?? "#22C55E",
-      statuses: finalStatuses.map((s) => s.key),
-      dropStatus: finalStatuses[0]?.key ?? "COMPLETED",
-    })
-  }
-
-  return columns
+    }))
 }
 
 /**

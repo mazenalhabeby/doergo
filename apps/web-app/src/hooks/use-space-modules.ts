@@ -53,7 +53,9 @@ export function useSpaceWorkflow(spaceId: string | null) {
     staleTime: 60000,
   })
 
-  const { statuses, hasWorkflow } = useWorkflow(spaceModules?.workflowId ?? null)
+  const { statuses, hasWorkflow, workflowId } = useWorkflow(spaceModules?.workflowId ?? null)
 
-  return { statuses, hasWorkflow }
+  // `workflowId` is the RESOLVED effective workflow (space override, else org
+  // default) — the id whose statuses were loaded. Used as the board's default type.
+  return { statuses, hasWorkflow, workflowId }
 }

@@ -1037,6 +1037,8 @@
       "fillRequiredFields": "Completa todos los campos obligatorios",
       "dialogDescription": "Crea una nueva tarea para tu organización",
       "selectSpace": "Selecciona un espacio",
+      "taskType": "Tipo de tarea",
+      "taskTypeInherit": "Predeterminado del espacio",
       "type": "Tipo",
       "auto": "Automático",
       "autoFromSpace": "Automático (según el espacio)",

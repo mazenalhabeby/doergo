@@ -1037,6 +1037,8 @@
       "fillRequiredFields": "Compilare tutti i campi obbligatori",
       "dialogDescription": "Crea una nuova attività per la tua organizzazione",
       "selectSpace": "Seleziona uno spazio",
+      "taskType": "Tipo di attività",
+      "taskTypeInherit": "Predefinito dello spazio",
       "type": "Tipo",
       "auto": "Automatico",
       "autoFromSpace": "Automatico (dallo spazio)",

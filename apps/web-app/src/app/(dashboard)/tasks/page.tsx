@@ -22,12 +22,13 @@ import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette, type CommandAction } from "@/contexts/command-palette-context"
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
-import { useOrgWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
+import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
 import { useSpaceWorkflow } from "@/hooks/use-space-modules"
 import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Phase, type Sprint, type Epic, type TasksListResponse } from "@/lib/api"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -252,11 +253,16 @@ export default function TasksPage() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
-  // Dynamic workflow status tabs — space-aware
-  const { statuses: orgWorkflowStatuses, hasWorkflow: hasOrgWorkflow } = useOrgWorkflow()
-  const { statuses: spaceWorkflowStatuses, hasWorkflow: hasSpaceWorkflow } = useSpaceWorkflow(selectedSpaceId)
-  const activeWorkflowStatuses = selectedSpaceId && hasSpaceWorkflow ? spaceWorkflowStatuses : orgWorkflowStatuses
-  const hasWorkflow = selectedSpaceId ? hasSpaceWorkflow : hasOrgWorkflow
+  // Dynamic workflow status tabs — space- AND task-type-aware.
+  // A space can hold tasks of several types (workflows); the Task Type picker
+  // below chooses which one the board/tabs reflect, defaulting to the space's
+  // (or org's) default. Everything downstream reads `activeWorkflowStatuses`.
+  const { workflows: orgWorkflows, defaultWorkflow } = useOrgWorkflow()
+  const { workflowId: spaceWorkflowId } = useSpaceWorkflow(selectedSpaceId)
+  const contextDefaultWorkflowId = (selectedSpaceId ? spaceWorkflowId : null) ?? defaultWorkflow?.id ?? null
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null)
+  const activeWorkflowId = selectedWorkflowId ?? contextDefaultWorkflowId
+  const { statuses: activeWorkflowStatuses, hasWorkflow } = useWorkflow(activeWorkflowId)
   const STATUS_TABS: StatusTabGroup[] = useMemo(() => {
     if (hasWorkflow && activeWorkflowStatuses.length > 0) {
       return buildStatusTabs(activeWorkflowStatuses)
@@ -345,6 +351,7 @@ export default function TasksPage() {
     setSelectedSpaceId(spaceId)
     setPage(1)
     setActiveTab("all") // Reset tab since workflow changes per space
+    setSelectedWorkflowId(null) // Reset task-type picker to the new space's default
     setEpicFilter("all") // Reset epic filter — different space has different epics
     // Update URL
     const url = spaceId ? `/tasks?space=${spaceId}` : "/tasks"
@@ -814,6 +821,17 @@ export default function TasksPage() {
   const incompleteSprintTasks = useMemo(() => {
     return sprintScopedTasks.filter((t: Task) => !["COMPLETED", "CLOSED", "CANCELED"].includes(t.status))
   }, [sprintScopedTasks])
+
+  // Board-only view: when the org has multiple task types, the kanban shows one
+  // type at a time (columns differ per workflow), so scope its cards to the active
+  // type. A task's effective type is its own workflowId, else the space default.
+  // Other views (table/schedule) keep showing everything.
+  const boardTasks = useMemo(() => {
+    if (orgWorkflows.length <= 1 || !activeWorkflowId) return filteredTasks
+    return filteredTasks.filter(
+      (tk: Task) => ((tk.workflowId ?? contextDefaultWorkflowId) === activeWorkflowId),
+    )
+  }, [filteredTasks, orgWorkflows.length, activeWorkflowId, contextDefaultWorkflowId])
 
   // Sync ref for shift-click range selection
   filteredTasksRef.current = filteredTasks
@@ -1416,8 +1434,28 @@ export default function TasksPage() {
         {/* Board View — always flat kanban */}
         {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "board" && (
           <div data-tour="tasks-board">
+          {/* Task Type picker — a board shows one workflow at a time (columns differ
+              per type). Only shown when the org has more than one workflow. */}
+          {orgWorkflows.length > 1 && (
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">{t("tasks.create.taskType", "Task type")}</span>
+              <Select
+                value={activeWorkflowId ?? ""}
+                onValueChange={(v) => setSelectedWorkflowId(v || null)}
+              >
+                <SelectTrigger className="h-8 w-auto min-w-[160px] rounded-lg border-border bg-card text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {orgWorkflows.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <KanbanBoard
-            tasks={filteredTasks}
+            tasks={boardTasks}
             columns={spaceKanbanColumns}
             onStatusChange={handleKanbanDrop}
             onReorder={handleReorder}
