@@ -480,15 +480,16 @@ export default function TasksPage() {
   // is its own workflowId, else the space default) — not every org workflow. The
   // board renders one type at a time (columns differ per workflow); default to the
   // space's own type when present, else the first type that has tasks here.
-  const presentWorkflowIds = useMemo(() => {
+  const boardWorkflowCounts = useMemo(() => {
     const scoped = selectedSpaceId ? tasks.filter((t: Task) => t.spaceId === selectedSpaceId) : tasks
-    const s = new Set<string>()
+    const m = new Map<string, number>()
     for (const tk of scoped) {
       const wf = (tk as Task).workflowId ?? contextDefaultWorkflowId
-      if (wf) s.add(wf)
+      if (wf) m.set(wf, (m.get(wf) ?? 0) + 1)
     }
-    return s
+    return m
   }, [tasks, selectedSpaceId, contextDefaultWorkflowId])
+  const presentWorkflowIds = useMemo(() => new Set(boardWorkflowCounts.keys()), [boardWorkflowCounts])
   const boardWorkflows = useMemo(
     () => orgWorkflows.filter((w) => presentWorkflowIds.has(w.id)),
     [orgWorkflows, presentWorkflowIds],
@@ -1464,13 +1465,19 @@ export default function TasksPage() {
                   type="button"
                   onClick={() => setSelectedWorkflowId(w.id)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     boardWorkflowId === w.id
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {w.name}
+                  <span className={cn(
+                    "text-xs tabular-nums rounded px-1.5 py-0.5",
+                    boardWorkflowId === w.id ? "bg-primary-foreground/20" : "bg-foreground/10",
+                  )}>
+                    {boardWorkflowCounts.get(w.id) ?? 0}
+                  </span>
                 </button>
               ))}
             </div>

@@ -169,7 +169,10 @@ const KanbanColumn = React.memo(function KanbanColumn({
   }
 
   return (
-    <div className="flex-shrink-0 w-[280px] flex flex-col">
+    // Columns stretch to fill the viewport down to (roughly) the footer so the
+    // board doesn't leave a big empty area beneath short columns. The body is
+    // flex-1, so it grows to fill this min-height.
+    <div className="flex-shrink-0 w-[280px] flex flex-col min-h-[calc(100vh-340px)]">
       {/* Column Header */}
       <div className="flex items-center gap-2 mb-3 px-1">
         <span className="size-2 rounded-full" style={{ backgroundColor: dotColor }} />
@@ -205,7 +208,7 @@ const KanbanColumn = React.memo(function KanbanColumn({
       >
         {tasks.length === 0 ? (
           <div className={cn(
-            "flex items-center justify-center h-[200px] rounded-lg border-2 border-dashed transition-colors duration-200",
+            "flex items-center justify-center h-full min-h-[200px] rounded-lg border-2 border-dashed transition-colors duration-200",
             isOver ? "border-primary/40 bg-primary/[0.04]" : "border-transparent",
           )}>
             <p className="text-xs text-muted-foreground/50">
