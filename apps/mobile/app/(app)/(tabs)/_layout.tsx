@@ -212,7 +212,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     if (route.name === 'profile') return false;
     if (route.name === 'team') return showTeam;
     if (isAdmin) {
-      if (route.name === 'attendance') return false;
+      // Clock is module-driven, not role-locked: an admin/owner who also works
+      // on site (has the `clock` module) sees the Clock tab too — optional, never
+      // required. Matches the web navbar clock. The route href already gates on
+      // showAttendance; this lets the tab button through.
+      if (route.name === 'attendance') return showAttendance;
       if (route.name === 'time-off') return false;
       return true;
     }
