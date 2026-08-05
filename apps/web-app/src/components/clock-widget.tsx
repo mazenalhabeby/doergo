@@ -59,9 +59,12 @@ export function ClockWidget() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const qc = useQueryClient()
-  // Employees only (the backend restricts clock-in to EMPLOYEE role) AND they
-  // must have the clock module. Admins/managers manage the team; they don't clock in.
-  const canClock = !!user && user.role === "EMPLOYEE" && hasAccessModule(user, "clock")
+  // Clock access is module-driven, not role-locked: anyone whose Access Profile
+  // includes the `clock` module can punch in — including an admin/owner who also
+  // works on site. It's optional (a button they can ignore), never required, and
+  // an admin who shouldn't clock just has `clock` left out of their profile. The
+  // backend already allows both ADMIN and EMPLOYEE clock-in.
+  const canClock = !!user && hasAccessModule(user, "clock")
 
   const { data: status } = useQuery({
     queryKey: ["my-attendance-status"],
