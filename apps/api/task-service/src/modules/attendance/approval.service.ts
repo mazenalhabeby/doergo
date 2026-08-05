@@ -166,6 +166,7 @@ export class ApprovalService {
     clockInAt?: string;
     clockOutAt?: string;
     notes?: string;
+    timezone?: string;
     reason: string;
   }) {
     if (!data.reason?.trim()) {
@@ -208,6 +209,12 @@ export class ApprovalService {
       updateData.notes = data.notes;
     }
 
+    // Admin can correct the entry's display timezone (e.g. old rows that fell
+    // back to the space's Europe/Berlin default but were really clocked in the US).
+    if (data.timezone) {
+      updateData.timezone = data.timezone;
+    }
+
     // Recalculate total minutes if times changed
     const newClockIn = updateData.clockInAt || entry.clockInAt;
     const newClockOut = updateData.clockOutAt || entry.clockOutAt;
@@ -217,6 +224,15 @@ export class ApprovalService {
         (new Date(newClockOut).getTime() - new Date(newClockIn).getTime()) /
           (1000 * 60),
       );
+
+      // Adding a clock-out to a still-open entry closes it. Without this the row
+      // keeps status CLOCKED_IN and shows "Active" despite having a clock-out
+      // time + duration (the manual clock-out bug). A system AUTO_OUT stays as-is.
+      if (entry.status === 'CLOCKED_IN') {
+        updateData.status = 'CLOCKED_OUT';
+        updateData.reminderState = 'RESOLVED';
+        updateData.nextRemindAt = null;
+      }
     }
 
     const updated = await this.prisma.timeEntry.update({
@@ -376,6 +392,7 @@ export class ApprovalService {
         organizationId: data.organizationId,
         locationId: data.locationId,
         status: 'CLOCKED_OUT',
+        timezone: tz,
         clockInAt: clockIn,
         clockInLat: loc.lat ?? 0,
         clockInLng: loc.lng ?? 0,

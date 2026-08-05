@@ -2981,6 +2981,8 @@
       "reasonPlaceholder": "e.g. Forgot to clock out",
       "reasonHint": "Required — recorded in the audit trail.",
       "clockOutBeforeIn": "Clock-out must be after clock-in.",
+      "timezone": "Time zone",
+      "timezoneHint": "Times above are shown in this zone. Change it to correct a mis-zoned entry — the clock reading is kept.",
       "save": "Save changes",
       "success": "Attendance entry updated.",
       "error": "Could not update the entry.",

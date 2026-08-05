@@ -2049,7 +2049,7 @@ export const attendanceApi = {
   // required and the original values are preserved for audit server-side.
   editEntry: async (
     entryId: string,
-    input: { clockInAt?: string; clockOutAt?: string; notes?: string; reason: string }
+    input: { clockInAt?: string; clockOutAt?: string; notes?: string; timezone?: string; reason: string }
   ) => {
     const response = await api.put<{ success: boolean; data: unknown }>(
       `/attendance/entries/${entryId}/edit`,

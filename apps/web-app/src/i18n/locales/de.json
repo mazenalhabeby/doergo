@@ -2981,6 +2981,8 @@
       "reasonPlaceholder": "z. B. Ausstempeln vergessen",
       "reasonHint": "Erforderlich – wird im Prüfprotokoll erfasst.",
       "clockOutBeforeIn": "Ausstempeln muss nach dem Einstempeln liegen.",
+      "timezone": "Zeitzone",
+      "timezoneHint": "Die Zeiten oben werden in dieser Zone angezeigt. Ändern Sie sie, um einen falsch zugeordneten Eintrag zu korrigieren — die Uhrzeit bleibt erhalten.",
       "save": "Änderungen speichern",
       "success": "Anwesenheitseintrag aktualisiert.",
       "error": "Eintrag konnte nicht aktualisiert werden.",

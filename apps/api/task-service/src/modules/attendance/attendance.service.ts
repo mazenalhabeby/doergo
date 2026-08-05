@@ -1269,21 +1269,26 @@ export class AttendanceService {
    */
   private buildEntriesOrderBy(sortBy?: string, sortOrder?: string): any {
     const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+    // Smart "sort by day": every non-chronological sort gets clock-in (newest day
+    // first) as a secondary tie-breaker, so a worker's / status's rows always fall
+    // into day order instead of an arbitrary within-group order. Invisible in the
+    // UI — same columns, same rows — but the list is always day-coherent.
+    const byDay = { clockInAt: 'desc' as const };
     switch (sortBy) {
       case 'worker':
-        return [{ user: { firstName: dir } }, { user: { lastName: dir } }];
+        return [{ user: { firstName: dir } }, { user: { lastName: dir } }, byDay];
       case 'status':
-        return { status: dir };
+        return [{ status: dir }, byDay];
       case 'clockIn':
         return { clockInAt: dir };
       case 'clockOut':
-        return { clockOutAt: { sort: dir, nulls: 'last' } };
+        return [{ clockOutAt: { sort: dir, nulls: 'last' } }, byDay];
       case 'duration':
-        return { totalMinutes: { sort: dir, nulls: 'last' } };
+        return [{ totalMinutes: { sort: dir, nulls: 'last' } }, byDay];
       case 'approval':
-        return { approvalStatus: dir };
+        return [{ approvalStatus: dir }, byDay];
       default:
-        return { clockInAt: 'desc' };
+        return byDay;
     }
   }
 

@@ -306,6 +306,7 @@ export class AttendanceService extends BaseGatewayService {
     clockInAt?: string;
     clockOutAt?: string;
     notes?: string;
+    timezone?: string;
     reason: string;
   }) {
     return this.send({ cmd: 'edit_entry' }, data);

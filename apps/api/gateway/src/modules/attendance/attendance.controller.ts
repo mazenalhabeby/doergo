@@ -559,6 +559,7 @@ export class AttendanceController {
       clockInAt?: string;
       clockOutAt?: string;
       notes?: string;
+      timezone?: string;
       reason: string;
     },
     @Request() req?: any,
@@ -570,6 +571,7 @@ export class AttendanceController {
       clockInAt: body.clockInAt,
       clockOutAt: body.clockOutAt,
       notes: body.notes,
+      timezone: body.timezone,
       reason: body.reason,
     });
   }

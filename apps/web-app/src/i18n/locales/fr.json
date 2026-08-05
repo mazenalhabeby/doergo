@@ -2981,6 +2981,8 @@
       "reasonPlaceholder": "p. ex. A oublié de pointer la sortie",
       "reasonHint": "Obligatoire — enregistré dans la piste d'audit.",
       "clockOutBeforeIn": "Le pointage sortie doit être postérieur au pointage entrée.",
+      "timezone": "Fuseau horaire",
+      "timezoneHint": "Les heures ci-dessus sont affichées dans ce fuseau. Modifiez-le pour corriger une entrée mal zonée — l’heure indiquée est conservée.",
       "save": "Enregistrer les modifications",
       "success": "Pointage de présence mis à jour.",
       "error": "Impossible de mettre à jour le pointage.",

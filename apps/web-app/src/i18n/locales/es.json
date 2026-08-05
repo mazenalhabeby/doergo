@@ -2981,6 +2981,8 @@
       "reasonPlaceholder": "p. ej. Olvidó fichar la salida",
       "reasonHint": "Obligatorio: se registra en el historial de auditoría.",
       "clockOutBeforeIn": "La salida debe ser posterior a la entrada.",
+      "timezone": "Zona horaria",
+      "timezoneHint": "Las horas de arriba se muestran en esta zona. Cámbiala para corregir una entrada con zona errónea — la hora marcada se mantiene.",
       "save": "Guardar cambios",
       "success": "Registro de asistencia actualizado.",
       "error": "No se pudo actualizar el registro.",

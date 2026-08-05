@@ -2981,6 +2981,8 @@
       "reasonPlaceholder": "es. Dimenticato di registrare l'uscita",
       "reasonHint": "Obbligatorio — registrato nella traccia di audit.",
       "clockOutBeforeIn": "L'uscita deve essere successiva all'entrata.",
+      "timezone": "Fuso orario",
+      "timezoneHint": "Gli orari sopra sono mostrati in questo fuso. Modificalo per correggere una voce con fuso errato — l’orario indicato viene mantenuto.",
       "save": "Salva modifiche",
       "success": "Registrazione di presenza aggiornata.",
       "error": "Impossibile aggiornare la registrazione.",
