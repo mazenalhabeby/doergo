@@ -4,7 +4,6 @@ import { format } from "date-fns"
 import { RefreshCw, CheckCircle2, Check, X } from "lucide-react"
 import { type TimeEntry } from "@/lib/api"
 import { formatDurationMinutes } from "@/lib/utils"
-import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -18,8 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
-import { countryFromTz } from "@hbcfield/shared/client"
+import { toDate, StatusBadge, WorkerCell, ClockCell, ApprovalCell } from "./attendance-helpers"
 import { useTimeFormat } from "@/hooks"
 
 interface ApprovalsTabProps {
@@ -79,12 +77,12 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="font-semibold text-muted-foreground">{t("attendance.worker")}</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">{t("attendance.approvals.location")}</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">{t("attendance.approvals.date")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("common.status")}</TableHead>
               <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockIn")}</TableHead>
               <TableHead className="font-semibold text-muted-foreground">{t("attendance.clockOut")}</TableHead>
               <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
-              <TableHead className="font-semibold text-muted-foreground">{t("common.reason")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
               <TableHead className="font-semibold text-muted-foreground text-right">{t("common.actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -92,32 +90,29 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
             {data.data.map((entry: TimeEntry) => (
               <TableRow key={entry.id} className="hover:bg-muted/40 transition-colors">
                 <TableCell>
-                  <div className="flex items-center gap-3">
-                    <UserAvatar
-                      firstName={entry.user?.firstName}
-                      lastName={entry.user?.lastName}
-                      seed={entry.user?.id}
-                      size="md"
-                    />
-                    <p className="font-medium text-foreground">
-                      {entry.user?.firstName} {entry.user?.lastName}
-                    </p>
-                  </div>
+                  <WorkerCell entry={entry} />
                 </TableCell>
-                <TableCell className="text-muted-foreground">{entry.location?.name || t("attendance.approvals.unknown")}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  <div>
-                    {format(toDate(entry.clockInAt), "MMM d, yyyy")}
-                    {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)
-                      ? ` / ${countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}`
-                      : ""}
-                  </div>
+                <TableCell>
+                  <StatusBadge status={entry.status} />
                 </TableCell>
-                <TableCell>{formatTime(entry.clockInAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}</TableCell>
-                <TableCell>{entry.clockOutAt ? formatTime(entry.clockOutAt, hour12, locale, (entry.timezone ?? entry.location?.timezone)) : "-"}</TableCell>
+                <TableCell>
+                  <ClockCell at={entry.clockInAt} tz={entry.timezone ?? entry.location?.timezone} hour12={hour12} locale={locale} />
+                </TableCell>
+                <TableCell>
+                  <ClockCell at={entry.clockOutAt} tz={entry.timezone ?? entry.location?.timezone} hour12={hour12} locale={locale} />
+                </TableCell>
                 <TableCell className="font-medium tabular-nums">{formatDurationMinutes(entry.totalMinutes)}</TableCell>
                 <TableCell>
-                  <FlagReasonBadges reasons={entry.flagReasons} />
+                  <ApprovalCell entry={entry} />
+                </TableCell>
+                <TableCell>
+                  {entry.notes ? (
+                    <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={entry.notes}>
+                      {entry.notes}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">

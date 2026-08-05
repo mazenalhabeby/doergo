@@ -1,7 +1,11 @@
 import React from "react"
-import type { LucideIcon } from "lucide-react"
-import { parseISO } from "date-fns"
+import { useTranslation } from "react-i18next"
+import { AlertCircle, CheckCircle2, Clock, XCircle, type LucideIcon } from "lucide-react"
+import { format, parseISO } from "date-fns"
 import { cn, formatTimeOfDay } from "@/lib/utils"
+import { type TimeEntry } from "@/lib/api"
+import { UserAvatar } from "@/components/user-avatar"
+import { countryFromTz } from "@hbcfield/shared/client"
 
 // Flag reason badge config for smart auto-approval.
 const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
@@ -58,6 +62,126 @@ export function formatTime(
 ): string {
   if (!dateInput) return "-"
   return formatTimeOfDay(dateInput, hour12, locale, timeZone)
+}
+
+// ── Shared attendance-row cells (used by BOTH the Tracking and Approvals tables
+// so the two views render identically) ──────────────────────────────────────
+
+/** Clock-status pill: Active / Completed / Auto. */
+export function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation()
+  const config = {
+    CLOCKED_IN: {
+      label: t("attendance.status.active"),
+      icon: CheckCircle2,
+      className: "bg-green-500/10 text-green-700 border-green-200",
+    },
+    CLOCKED_OUT: {
+      label: t("attendance.status.completed"),
+      icon: Clock,
+      className: "bg-muted text-foreground border-border",
+    },
+    AUTO_OUT: {
+      label: t("attendance.status.auto"),
+      icon: AlertCircle,
+      className: "bg-amber-500/10 text-amber-700 border-amber-200",
+    },
+  }[status] || {
+    label: status,
+    icon: Clock,
+    className: "bg-muted text-foreground border-border",
+  }
+  const Icon = config.icon
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
+        config.className,
+      )}
+    >
+      <Icon className="size-3.5" />
+      {config.label}
+    </span>
+  )
+}
+
+/** Worker cell: avatar + name with the location name beneath. */
+export function WorkerCell({ entry }: { entry: TimeEntry }) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex items-center gap-3">
+      <UserAvatar
+        firstName={entry.user?.firstName}
+        lastName={entry.user?.lastName}
+        seed={entry.user?.id}
+        size="md"
+      />
+      <div>
+        <p className="font-medium text-foreground">
+          {entry.user?.firstName} {entry.user?.lastName}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {entry.location?.name || t("attendance.unknownLocation")}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Clock-in / clock-out cell: time (in the entry zone) with date + country beneath, or "-". */
+export function ClockCell({
+  at,
+  tz,
+  hour12,
+  locale,
+}: {
+  at?: string | null
+  tz?: string | null
+  hour12: boolean
+  locale?: string
+}) {
+  if (!at) return <span className="text-muted-foreground">-</span>
+  const country = countryFromTz(tz, locale)
+  return (
+    <div>
+      <p className="font-medium text-foreground">{formatTime(at, hour12, locale, tz)}</p>
+      <p className="text-xs text-muted-foreground">
+        {format(toDate(at), "MMM d")}
+        {country ? ` / ${country}` : ""}
+      </p>
+    </div>
+  )
+}
+
+/** Approval cell: approval-state badge with any smart-flag badges beneath. */
+export function ApprovalCell({ entry }: { entry: TimeEntry }) {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-1">
+      {entry.approvalStatus === "AUTO" ? (
+        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+          <CheckCircle2 className="size-3.5" />
+          {t("attendance.tracking.autoApproved")}
+        </span>
+      ) : entry.approvalStatus === "APPROVED" ? (
+        <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
+          <CheckCircle2 className="size-3.5" />
+          {t("common.approved")}
+        </span>
+      ) : entry.approvalStatus === "REJECTED" ? (
+        <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
+          <XCircle className="size-3.5" />
+          {t("common.rejected")}
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
+          <Clock className="size-3.5" />
+          {t("common.pending")}
+        </span>
+      )}
+      <FlagReasonBadges reasons={entry.flagReasons} />
+    </div>
+  )
 }
 
 /** Stat card used across the attendance tabs. */

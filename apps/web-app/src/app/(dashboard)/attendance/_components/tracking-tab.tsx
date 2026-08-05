@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, XCircle, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
+import { AlertCircle, CheckCircle2, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { StatCard, FlagReasonBadges, toDate, formatTime } from "./attendance-helpers"
-import { countryFromTz } from "@hbcfield/shared/client"
+import { StatCard, toDate, formatTime, StatusBadge, WorkerCell, ClockCell, ApprovalCell } from "./attendance-helpers"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { useTimeFormat } from "@/hooks"
@@ -23,45 +22,6 @@ export type DayOffRow = {
   endDate: string
   reason?: string | null
   technician?: { id: string; firstName: string; lastName: string } | null
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const { t } = useTranslation()
-  const config = {
-    CLOCKED_IN: {
-      label: t("attendance.status.active"),
-      icon: CheckCircle2,
-      className: "bg-green-500/10 text-green-700 border-green-200",
-    },
-    CLOCKED_OUT: {
-      label: t("attendance.status.completed"),
-      icon: Clock,
-      className: "bg-muted text-foreground border-border",
-    },
-    AUTO_OUT: {
-      label: t("attendance.status.auto"),
-      icon: AlertCircle,
-      className: "bg-amber-500/10 text-amber-700 border-amber-200",
-    },
-  }[status] || {
-    label: status,
-    icon: Clock,
-    className: "bg-muted text-foreground border-border",
-  }
-
-  const Icon = config.icon
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
-        config.className
-      )}
-    >
-      <Icon className="size-3.5" />
-      {config.label}
-    </span>
-  )
 }
 
 interface TrackingTabProps {
@@ -612,56 +572,16 @@ export function TrackingTab({
                   {filteredEntries.map((entry: TimeEntry) => (
                     <TableRow key={entry.id} className="hover:bg-accent/50">
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <UserAvatar
-                            firstName={entry.user?.firstName}
-                            lastName={entry.user?.lastName}
-      
-                            seed={entry.user?.id}
-                            size="md"
-                          />
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {entry.user?.firstName} {entry.user?.lastName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {entry.location?.name || t("attendance.unknownLocation")}
-                            </p>
-                          </div>
-                        </div>
+                        <WorkerCell entry={entry} />
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={entry.status} />
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {formatTime(entry.clockInAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(toDate(entry.clockInAt), "MMM d")}
-                            {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)
-                              ? ` / ${countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}`
-                              : ""}
-                          </p>
-                        </div>
+                        <ClockCell at={entry.clockInAt} tz={entry.timezone ?? entry.location?.timezone} hour12={hour12} locale={locale} />
                       </TableCell>
                       <TableCell>
-                        {entry.clockOutAt ? (
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {formatTime(entry.clockOutAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(toDate(entry.clockOutAt), "MMM d")}
-                              {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)
-                                ? ` / ${countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}`
-                                : ""}
-                            </p>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
+                        <ClockCell at={entry.clockOutAt} tz={entry.timezone ?? entry.location?.timezone} hour12={hour12} locale={locale} />
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-foreground">
@@ -669,30 +589,7 @@ export function TrackingTab({
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          {entry.approvalStatus === "AUTO" ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                              <CheckCircle2 className="size-3.5" />
-                              {t("attendance.tracking.autoApproved")}
-                            </span>
-                          ) : entry.approvalStatus === "APPROVED" ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
-                              <CheckCircle2 className="size-3.5" />
-                              {t("common.approved")}
-                            </span>
-                          ) : entry.approvalStatus === "REJECTED" ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
-                              <XCircle className="size-3.5" />
-                              {t("common.rejected")}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
-                              <Clock className="size-3.5" />
-                              {t("common.pending")}
-                            </span>
-                          )}
-                          <FlagReasonBadges reasons={entry.flagReasons} />
-                        </div>
+                        <ApprovalCell entry={entry} />
                       </TableCell>
                       <TableCell>
                         {entry.notes ? (
