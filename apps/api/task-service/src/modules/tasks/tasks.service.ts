@@ -963,17 +963,13 @@ export class TasksService {
         where: { taskId: task.id, userId: data.userId },
         select: { id: true },
       }));
-    const isExecutionStatus = data.status !== TaskStatus.CANCELED && data.status !== TaskStatus.ASSIGNED;
     const isCancelation = data.status === TaskStatus.CANCELED;
+    // Managers (ADMIN or "view all tasks") run the board and may move any card to
+    // any column of its workflow; field workers only advance their own tasks along
+    // the workflow's declared transitions.
+    const hasManageAuthority = data.userRole === Role.ADMIN || !!data.canViewAllTasks;
 
-    if (isExecutionStatus) {
-      // Execution statuses (ACCEPTED, EN_ROUTE, ARRIVED, IN_PROGRESS, BLOCKED, COMPLETED)
-      // Only the assigned user can set these
-      if (!isAssignedUser) {
-        this.logger.warn(`Authorization denied: non-assigned user attempted status update`, { userId: data.userId, taskId: data.id, status: data.status });
-        throw new ForbiddenException('You can only update execution status of tasks assigned to you');
-      }
-    } else if (isCancelation) {
+    if (isCancelation) {
       // Cancellation authorization (new access-flag model).
       if (data.userRole === Role.ADMIN) {
         if (task.createdById !== data.userId && task.organizationId !== data.organizationId) {
@@ -993,7 +989,14 @@ export class TasksService {
         throw new ForbiddenException('You cannot cancel tasks assigned to you. Contact an administrator.');
       }
     } else {
-      throw new ForbiddenException('Access denied');
+      // Any non-cancel status: canonical execution statuses AND custom-workflow
+      // columns (including an "Assigned" column, which the old code wrongly sent to
+      // "Access denied"). A worker may set these on tasks assigned to them; a
+      // manager may move any card on the board.
+      if (!isAssignedUser && !hasManageAuthority) {
+        this.logger.warn(`Authorization denied: non-assigned user attempted status update`, { userId: data.userId, taskId: data.id, status: data.status });
+        throw new ForbiddenException('You can only update execution status of tasks assigned to you');
+      }
     }
 
     // Validate status transition — honor the task's workflow (its own, else its
@@ -1007,9 +1010,11 @@ export class TasksService {
       effWorkflowId = sp?.workflowId ?? null;
     }
     let allowedTransitions: string[] | null = null;
+    let workflowStatusKeys: string[] | null = null;
     if (effWorkflowId) {
       // Read from the per-org workflow cache (Redis) instead of the DB.
       const wf = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
+      workflowStatusKeys = wf?.statuses?.map((s: { key: string }) => s.key) ?? null;
       const cur = wf?.statuses?.find((s: { key: string }) => s.key === task.status);
       if (cur) allowedTransitions = cur.transitions ?? [];
     }
@@ -1018,7 +1023,16 @@ export class TasksService {
     if (allowedTransitions === null) {
       allowedTransitions = STATUS_TRANSITIONS[task.status as TaskStatus] || [];
     }
-    if (!allowedTransitions.includes(data.status as string)) {
+    // A manager dragging on the board may drop a card into ANY column of the task's
+    // workflow (free-form kanban) — even where the workflow declares no transitions
+    // (e.g. a Support flow) — as long as the target is a real status of that
+    // workflow (or a valid canonical status). Execution users follow the declared
+    // transitions.
+    const targetIsValidStatus = workflowStatusKeys
+      ? workflowStatusKeys.includes(data.status as string)
+      : (Object.values(TaskStatus) as string[]).includes(data.status as string);
+    const managerFreeMove = hasManageAuthority && targetIsValidStatus;
+    if (!managerFreeMove && !allowedTransitions.includes(data.status as string)) {
       throw new BadRequestException(
         `Invalid status transition from ${task.status} to ${data.status}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
       );
