@@ -70,6 +70,14 @@ export const attendanceApi = {
     return result?.data ?? [];
   },
 
+  /** Who is clocked in RIGHT NOW, org-wide — date-independent (catches overnight
+   *  shifts). Backs the admin dashboard presence. */
+  getActiveEntries: async (): Promise<TimeEntry[]> => {
+    const result = await fetchWithAuth<any>('/attendance/active-entries', { method: 'GET' });
+    if (Array.isArray(result)) return result;
+    return result?.data ?? [];
+  },
+
   /** Admin view: breaks currently in progress across the org. */
   getActiveBreaks: async (): Promise<Array<{ userId: string; [k: string]: any }>> => {
     const result = await fetchWithAuth<any>('/attendance/breaks/active', { method: 'GET' });

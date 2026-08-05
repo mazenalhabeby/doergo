@@ -40,7 +40,6 @@ import {
   getEmployeeStatus,
   isOnline,
   isClockedIn,
-  getTodayString,
   timeAgo,
   STATUS_DOT,
   STATUS_ACTION,
@@ -123,7 +122,9 @@ export function AdminDashboard() {
         tasksApi.list(),
         locationsApi.list().catch(() => [] as LocationWithMembers[]),
         membersApi.list().catch(() => [] as OrgMember[]),
-        attendanceApi.getAllEntries({ date: getTodayString() }).catch(() => [] as TimeEntry[]),
+        // "Who's on the clock right now" — date-independent (open entries), so an
+        // overnight shift that started before midnight still counts as on-duty.
+        attendanceApi.getActiveEntries().catch(() => [] as TimeEntry[]),
         attendanceApi.getActiveBreaks().catch(() => [] as Array<{ userId: string }>),
       ]);
 
@@ -329,8 +330,12 @@ export function AdminDashboard() {
     const offDutyDyn: PersonNodeData[] = [];
     for (const m of memberMap.values()) {
       if (accounted.has(m.id)) continue;
-      if (m.role !== 'EMPLOYEE' || !m.isActive) continue;
+      if (!m.isActive) continue;
       const clocked = clockedInUserIds.has(m.id);
+      // Employees are always part of presence; admins/owners appear only when
+      // they're actually on the clock (a working owner) — never as idle
+      // "off duty" clutter.
+      if (m.role !== 'EMPLOYEE' && !clocked) continue;
       const online = memberOnline(m);
 
       if (clocked) {
