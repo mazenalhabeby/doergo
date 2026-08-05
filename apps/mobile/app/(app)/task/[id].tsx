@@ -446,7 +446,11 @@ export function TaskDetailPane({
       if (newStatus === TaskStatus.EN_ROUTE) {
         stopTracking();
       }
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToUpdateStatus'));
+      // Lead with the actual reason (e.g. "You can only update execution status of
+      // tasks assigned to you") instead of a generic title, so the member sees why.
+      toast.error(
+        err instanceof Error && err.message ? err.message : t('taskDetail.failedToUpdateStatus'),
+      );
     } finally {
       setIsUpdating(false);
     }

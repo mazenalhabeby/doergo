@@ -73,11 +73,19 @@ export const notify = {
     toast(title, { description })
   },
 
-  /** Error */
-  error: (message: string) => {
-    toast.error(i18n.t("toast.somethingWentWrong"), {
-      description: message,
-    })
+  /**
+   * Error toast. Leads with the actual reason (e.g. a backend message like
+   * "You can only update execution status of tasks assigned to you") so the user
+   * sees WHAT went wrong — not a bare "Something went wrong". Falls back to the
+   * generic only when no message is provided.
+   */
+  error: (message?: string, description?: string) => {
+    const reason = message?.trim()
+    if (reason) {
+      toast.error(reason, description ? { description } : undefined)
+    } else {
+      toast.error(i18n.t("toast.somethingWentWrong"))
+    }
   },
 
   /** Copied to clipboard */
