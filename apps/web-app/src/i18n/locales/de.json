@@ -3283,7 +3283,10 @@
     "somethingWentWrong": "Etwas ist schiefgelaufen",
     "copied": "Kopiert",
     "copiedWhat": "{{what}} kopiert",
-    "savedToClipboard": "In Zwischenablage gespeichert"
+    "savedToClipboard": "In Zwischenablage gespeichert",
+    "billingLoadFailed": "Abrechnungsdaten konnten nicht geladen werden.",
+    "billingUpdated": "Abrechnung aktualisiert.",
+    "checkoutFailed": "Bezahlvorgang konnte nicht gestartet werden."
   },
   "errors": {
     "somethingWentWrong": "Etwas ist schiefgelaufen",

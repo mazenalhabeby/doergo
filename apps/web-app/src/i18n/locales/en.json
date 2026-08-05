@@ -3283,7 +3283,10 @@
     "somethingWentWrong": "Something went wrong",
     "copied": "Copied",
     "copiedWhat": "Copied {{what}}",
-    "savedToClipboard": "Saved to clipboard"
+    "savedToClipboard": "Saved to clipboard",
+    "billingLoadFailed": "Couldn't load billing details.",
+    "billingUpdated": "Billing updated.",
+    "checkoutFailed": "Couldn't start checkout."
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",

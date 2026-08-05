@@ -7,3 +7,4 @@ export {
   ErrorCodes,
 } from './responses';
 export type { PaginationMeta, ErrorCode } from './responses';
+export { mapPrismaException, sanitizeErrorMessage } from './prisma-error';

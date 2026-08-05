@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Check, Loader2, ExternalLink, ArrowUpRight, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import { notify } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { billingApi } from '@/lib/api';
@@ -30,6 +31,7 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 };
 
 export default function BillingPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
@@ -45,7 +47,7 @@ export default function BillingPage() {
         setSub(s);
         setInterval(s.interval || 'monthly');
       })
-      .catch((e) => toast.error(e?.message || 'Failed to load billing'))
+      .catch((e) => notify.error(e?.message || t('toast.billingLoadFailed', "Couldn't load billing details.")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -57,10 +59,10 @@ export default function BillingPage() {
         window.location.href = res.url;
       } else {
         setSub(await billingApi.getSubscription());
-        toast.success('Done');
+        notify.success(t('toast.billingUpdated', 'Billing updated.'));
       }
     } catch (e: any) {
-      toast.error(e?.message || 'Something went wrong');
+      notify.error(e?.message);
     } finally {
       setBusy(null);
     }

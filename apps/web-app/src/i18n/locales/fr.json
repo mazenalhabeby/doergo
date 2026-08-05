@@ -3283,7 +3283,10 @@
     "somethingWentWrong": "Une erreur s’est produite",
     "copied": "Copié",
     "copiedWhat": "{{what}} copié",
-    "savedToClipboard": "Enregistré dans le presse-papiers"
+    "savedToClipboard": "Enregistré dans le presse-papiers",
+    "billingLoadFailed": "Impossible de charger les informations de facturation.",
+    "billingUpdated": "Facturation mise à jour.",
+    "checkoutFailed": "Impossible de démarrer le paiement."
   },
   "errors": {
     "somethingWentWrong": "Une erreur s'est produite",

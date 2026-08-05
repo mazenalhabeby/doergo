@@ -2,6 +2,7 @@ import { ArgumentsHost, Catch, HttpException } from '@nestjs/common';
 import type { RpcExceptionFilter } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { Observable, throwError } from 'rxjs';
+import { mapPrismaException, sanitizeErrorMessage } from '../api/prisma-error';
 
 /**
  * Microservice exception filter that preserves the HTTP status across the RPC
@@ -35,9 +36,17 @@ export class RpcHttpExceptionFilter implements RpcExceptionFilter {
       return throwError(() => exception.getError());
     }
 
-    // Unknown/unexpected error → surface as a 500 with its message.
-    const message =
-      exception instanceof Error ? exception.message : 'Internal server error';
-    return throwError(() => ({ status: 500, statusCode: 500, message }));
+    // Raw Prisma error → clean {status,message} so it never reaches a toast verbatim.
+    const prisma = mapPrismaException(exception);
+    if (prisma) {
+      return throwError(() => ({ status: prisma.status, statusCode: prisma.status, message: prisma.message }));
+    }
+
+    // Unknown/unexpected error → keep an intentional plain-Error message but scrub
+    // any raw Prisma/engine dump. Intentional messages should be HttpExceptions
+    // (handled above); this is the safety net for the rest.
+    const raw = exception instanceof Error ? exception.message : 'Internal server error';
+    const clean = sanitizeErrorMessage(raw);
+    return throwError(() => ({ status: clean.status, statusCode: clean.status, message: clean.message }));
   }
 }

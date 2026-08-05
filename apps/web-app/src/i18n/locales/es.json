@@ -3283,7 +3283,10 @@
     "somethingWentWrong": "Algo salió mal",
     "copied": "Copiado",
     "copiedWhat": "Se copió {{what}}",
-    "savedToClipboard": "Guardado en el portapapeles"
+    "savedToClipboard": "Guardado en el portapapeles",
+    "billingLoadFailed": "No se pudieron cargar los datos de facturación.",
+    "billingUpdated": "Facturación actualizada.",
+    "checkoutFailed": "No se pudo iniciar el pago."
   },
   "errors": {
     "somethingWentWrong": "Algo salió mal",

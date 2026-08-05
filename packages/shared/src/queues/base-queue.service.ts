@@ -22,6 +22,7 @@
 import { HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Queue, QueueEvents, Job } from 'bullmq';
 import { DEFAULT_JOB_OPTIONS } from './constants';
+import { sanitizeErrorMessage } from '../api/prisma-error';
 
 interface JobError {
   message?: string;
@@ -92,14 +93,19 @@ export abstract class BaseQueueService {
         // Parse error from worker if it's a structured error
         try {
           const errorData = JSON.parse(failedJob.failedReason) as JobError;
-          throw new HttpException(
+          // Scrub raw Prisma dumps that a processor may have thrown unguarded, so
+          // clean text (not "Unique constraint failed on the fields: …") reaches
+          // the toast. Intentional messages pass through unchanged.
+          const clean = sanitizeErrorMessage(
             errorData.message || failedJob.failedReason,
             errorData.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
           );
+          throw new HttpException(clean.message, clean.status);
         } catch (parseError) {
-          // If parsing fails, use the raw error message
+          // If parsing fails, the raw error message IS the failedReason — sanitize it.
           if (parseError instanceof HttpException) throw parseError;
-          throw new HttpException(failedJob.failedReason, HttpStatus.INTERNAL_SERVER_ERROR);
+          const clean = sanitizeErrorMessage(failedJob.failedReason, HttpStatus.INTERNAL_SERVER_ERROR);
+          throw new HttpException(clean.message, clean.status);
         }
       }
 

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Loader2, ArrowRight, ArrowUpRight } from 'lucide-react';
-import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import { notify } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { billingApi } from '@/lib/api';
 import {
@@ -20,6 +21,7 @@ const eur = (cents: number | null | undefined) =>
   cents == null ? 'Custom' : `€${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
 
 export default function ChoosePlanPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [interval, setInterval] = useState<BillingInterval>('monthly');
   const [busy, setBusy] = useState<string | null>(null);
@@ -29,9 +31,9 @@ export default function ChoosePlanPage() {
     try {
       const { url } = await billingApi.checkout(tier, interval);
       if (url) window.location.href = url;
-      else toast.error('Could not start checkout');
+      else notify.error(t('toast.checkoutFailed', "Couldn't start checkout."));
     } catch (e: any) {
-      toast.error(e?.message || 'Could not start checkout');
+      notify.error(e?.message || t('toast.checkoutFailed', "Couldn't start checkout."));
       setBusy(null);
     }
   };

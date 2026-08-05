@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success } from '@hbcfield/shared';
@@ -92,18 +93,43 @@ export class CustomFieldsService {
       position = (lastField?.position ?? -1) + 1;
     }
 
-    const definition = await this.prisma.customFieldDefinition.create({
-      data: {
-        name: data.name,
-        key: data.key.toLowerCase().replace(/\s+/g, '_'),
-        type: data.type as any,
-        options: data.options,
-        isRequired: data.isRequired || false,
-        position,
-        workflowId,
-        organizationId: data.organizationId,
-      },
+    const key = data.key.toLowerCase().replace(/\s+/g, '_');
+
+    // Friendly duplicate check (unique is [organizationId, workflowId, key]).
+    // Two names that normalize to the same key collide — without this the raw
+    // Prisma "Unique constraint failed" would leak into the UI.
+    const dup = await this.prisma.customFieldDefinition.findFirst({
+      where: { organizationId: data.organizationId, workflowId, key },
+      select: { id: true },
     });
+    if (dup) {
+      throw new ConflictException(
+        `A field named "${data.name}" already exists${workflowId ? ' for this task type' : ''}.`,
+      );
+    }
+
+    let definition;
+    try {
+      definition = await this.prisma.customFieldDefinition.create({
+        data: {
+          name: data.name,
+          key,
+          type: data.type as any,
+          options: data.options,
+          isRequired: data.isRequired || false,
+          position,
+          workflowId,
+          organizationId: data.organizationId,
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2002') {
+        throw new ConflictException(
+          `A field named "${data.name}" already exists${workflowId ? ' for this task type' : ''}.`,
+        );
+      }
+      throw err;
+    }
 
     return success(definition);
   }
