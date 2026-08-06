@@ -87,6 +87,13 @@ export interface CurrentUserData {
   orgRoleId?: string | null;
   orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
   rolePermissions?: Record<string, boolean>;
+  // Unified resolved access (Phase 2): server-derived org-wide + per-space grants.
+  // Built once at the session boundary; read by guards. Superset of the flags
+  // above, so it can only widen access, never remove it. { org, perSpace }.
+  access?: {
+    org?: Record<string, boolean>;
+    perSpace?: Record<string, Record<string, boolean>>;
+  };
   // Access Profile (mobile tabs / web screens) — legacy string[] or object form.
   enabledModules?: unknown;
   // Org FEATURE modules (sprints, checklists, tracking…) — drives hasFeature().

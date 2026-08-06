@@ -372,6 +372,10 @@ model Organization {
   // Custom roles
   orgRoles OrgRole[]
 
+  // Unified role model (Phase 1) — supersedes orgRoles + spaceRoles
+  accessRoles      AccessRole[]
+  spaceAssignments SpaceAssignment[]
+
   // Shift scheduling (space-centric attendance)
   shifts           Shift[]
   shiftAssignments ShiftAssignment[]
@@ -516,7 +520,7 @@ model User {
   // Contact directory / access — open within the org by default; admins restrict
   // via the Access Builder (canContact:false, or contactScope SELECTED).
   contactable       Boolean           @default(true) // CHAT: reachable in chat / messaging (inbound)
-  contactScope      String            @default("ALL") // Who this member may contact: NONE | ALL | SELECTED
+  contactScope      String            @default("NONE") // Who this member may contact: NONE | ALL | SELECTED (Phase 3: default none → space-driven)
   contactAllowedIds String[]          @default([]) // When SELECTED: the specific contact user IDs this member may reach
   // MANAGEMENT DIRECTORY (separate from chat): surfaces this member in the org
   // "Management" contacts list teammates use to reach leadership. Admins always
@@ -572,6 +576,10 @@ model User {
   orgRoleId String?
   orgRole   OrgRole? @relation(fields: [orgRoleId], references: [id], onDelete: SetNull)
 
+  // Unified org-wide role (Phase 1) — supersedes orgRole
+  memberRoleId String?
+  memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
+
   createdTasks        Task[]                 @relation("TaskCreator")
   assignedTasks       Task[]                 @relation("TaskAssignee")
   taskAssignments     TaskAssignee[]         @relation("TaskAssignees")
@@ -586,6 +594,7 @@ model User {
   reportDefinitions   ReportDefinition[]     @relation("ReportCreator") // saved reports created
   reportSchedules     ReportSchedule[]       @relation("ReportScheduleCreator")
   assignments         TechnicianAssignment[] // Technician location assignments
+  spaceAssignments    SpaceAssignment[] // Unified per-space assignments (Phase 1)
   timeEntries         TimeEntry[] // Clock-in/clock-out records
   approvedTimeEntries TimeEntry[]            @relation("ApprovedTimeEntries") // Time entries approved by this user
   editedTimeEntries   TimeEntry[]            @relation("EditedTimeEntries") // Time entries edited by this user
@@ -640,6 +649,7 @@ model User {
   @@index([role])
   @@index([email])
   @@index([orgRoleId])
+  @@index([memberRoleId])
   @@index([organizationId, role, isActive]) // list technicians/members in org
   @@index([customerId]) // customer portal: a customer's login users
   @@map("users")
@@ -1337,6 +1347,12 @@ model CompanyLocation {
   workflowId     String?
   workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
 
+  // Space-driven routing (Phase 3). AccessRole ids whose holders in THIS space
+  // are (a) notified about members here, and (b) contactable by members here.
+  // Empty = default: the space's leader roles (permissions.canViewSpaceAttendance).
+  notifyRoleIds  String[] @default([])
+  contactRoleIds String[] @default([])
+
   // Tasks linked to this space
   tasks Task[]
 
@@ -1345,6 +1361,9 @@ model CompanyLocation {
 
   // Technicians assigned to this location
   assignments TechnicianAssignment[]
+
+  // Unified space assignments (Phase 1) — merges assignments + spaceMembers
+  spaceAssignments SpaceAssignment[]
 
   // Shift scheduling (space-centric attendance)
   shifts           Shift[] // Shift definitions scoped to this space
@@ -1713,6 +1732,85 @@ model SpaceMember {
   @@map("space_members")
 }
 
+// ==================== UNIFIED ROLE MODEL (Phase 1) ====================
+// One role entity for BOTH org-wide and per-space roles, carrying the unified
+// permission vocabulary. Supersedes OrgRole (org) + SpaceRole (space), which are
+// kept intact during migration and removed in Phase 5. Nothing reads these two
+// new tables yet — Phase 2 wires the resolver/guards.
+
+enum RoleScope {
+  ORG // applies org-wide (assigned on the member)
+  SPACE // applies within a space (assigned on a space)
+  BOTH // usable in either place
+}
+
+model AccessRole {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String
+  slug        String
+  description String?
+  color       String?   @default("#6b7280")
+  scope       RoleScope @default(BOTH)
+  isSystem    Boolean   @default(false) // Seeded built-in, editable but non-deletable
+  legacyKind  String? // migration provenance: 'org' | 'space'
+  position    Int       @default(0)
+  isActive    Boolean   @default(true)
+
+  // Unified permission set (shared PermissionSet):
+  // { canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers,
+  //   canViewReports, canApproveOvertime, canManageRota,
+  //   canReconcileAttendance, canViewSpaceAttendance }
+  permissions Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members          User[] // org-wide holders (User.memberRoleId)
+  spaceAssignments SpaceAssignment[] // per-space holders
+  invitations      Invitation[] // invites pre-assigning this role
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("roles")
+}
+
+// Merges TechnicianAssignment (schedule / primary / effective dates) with
+// SpaceMember (per-space role). One row per (user, space) — carries the
+// member's role FOR THAT SPACE.
+model SpaceAssignment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  spaceId String
+  space   CompanyLocation @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  roleId String?
+  role   AccessRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  isPrimary     Boolean   @default(false)
+  schedule      String[]  @default([]) // Work days: ["MON","TUE",...]
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, spaceId])
+  @@index([spaceId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([roleId])
+  @@map("space_assignments")
+}
+
 // Time-off request (vacation, sick day, personal leave)
 model TimeOff {
   id String @id @default(cuid())
@@ -1760,6 +1858,11 @@ model Invitation {
   // Custom role assignment (optional — overrides targetRole permissions)
   targetOrgRoleId String?
   targetOrgRole   OrgRole? @relation(fields: [targetOrgRoleId], references: [id], onDelete: SetNull)
+
+  // Unified org-wide role (AccessRole) pre-assigned at invite (e.g. Manager),
+  // validated server-side + applied to the member's memberRoleId on accept.
+  memberRoleId String?
+  memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
   position          String?

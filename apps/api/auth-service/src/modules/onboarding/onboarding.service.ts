@@ -46,7 +46,7 @@ export class OnboardingService {
           where: {
             organizationId,
             isActive: true,
-            OR: [{ role: Role.ADMIN }, { showInManagement: true }],
+            OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { memberRoleId: { not: null } }],
           },
           select: { id: true },
         }),

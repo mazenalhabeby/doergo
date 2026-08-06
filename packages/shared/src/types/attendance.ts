@@ -26,6 +26,10 @@ export interface CompanyLocation {
   enabledModules?: string[] | null;
   workflowId?: string | null;
   workModel?: string | null; // NONE | SHIFT | FIXED | TASK — how attendance is interpreted
+  // Space-driven routing (Phase 3): role ids notified about / contactable by
+  // members here. Empty = default to the space's leader roles.
+  notifyRoleIds?: string[] | null;
+  contactRoleIds?: string[] | null;
   // Structural flags — the default bucket (unassigned tasks) and the Remote
   // bucket (WFH clock-ins) can't be deleted.
   isDefault?: boolean;

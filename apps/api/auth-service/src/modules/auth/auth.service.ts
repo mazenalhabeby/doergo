@@ -25,6 +25,7 @@ import {
   DEFAULT_ORG_MODULES,
   Role,
   normalizeRole,
+  buildResolvedAccess,
   type ProfileBadgesConfig,
 } from '@hbcfield/shared';
 
@@ -289,6 +290,10 @@ export class AuthService {
         include: {
           organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
+          // Unified roles (Phase 2) → resolved `access` on the login response.
+          memberRole: { select: { permissions: true } },
+          spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
+          spaceMemberships: { select: { spaceId: true, spaceRole: { select: { permissions: true } } } },
         },
       });
 
@@ -468,6 +473,22 @@ export class AuthService {
             // Custom role
             orgRole: user.orgRole ? { id: user.orgRole.id, name: user.orgRole.name, slug: user.orgRole.slug, color: user.orgRole.color } : null,
             rolePermissions: (user.orgRole?.permissions as Record<string, boolean>) || {},
+            // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
+            access: buildResolvedAccess({
+              userFlags: {
+                canCreateTasks: user.canCreateTasks,
+                canViewAllTasks: user.canViewAllTasks,
+                canAssignTasks: user.canAssignTasks,
+                canManageUsers: user.canManageUsers,
+                canViewReports: user.canViewReports,
+              },
+              orgRolePermissions: user.orgRole?.permissions,
+              memberRolePermissions: user.memberRole?.permissions,
+              spaces: [
+                ...user.spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
+                ...user.spaceMemberships.map((m) => ({ spaceId: m.spaceId, permissions: m.spaceRole?.permissions })),
+              ],
+            }),
           },
           ...tokens,
         },
@@ -1006,6 +1027,12 @@ export class AuthService {
           organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true } },
           // Custom role
           orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
+          // Unified roles (Phase 2): org-wide role + per-space assignments. Read
+          // to build the resolved `access` object. Legacy space memberships are
+          // also read so per-space grants resolve before the backfill runs.
+          memberRole: { select: { permissions: true } },
+          spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
+          spaceMemberships: { select: { spaceId: true, spaceRole: { select: { permissions: true } } } },
         },
       });
 
@@ -1020,11 +1047,29 @@ export class AuthService {
         .update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
         .catch(() => undefined);
 
-      const { organization, profileBadges, orgRole, enabledModules: userModules, ...userData } = user;
+      const { organization, profileBadges, orgRole, enabledModules: userModules, memberRole, spaceAssignments, spaceMemberships, ...userData } = user;
+      // Resolve the member's access ONCE here (server-side, from their own
+      // roles/assignments). Cached with the validated user on the gateway.
+      const access = buildResolvedAccess({
+        userFlags: {
+          canCreateTasks: userData.canCreateTasks,
+          canViewAllTasks: userData.canViewAllTasks,
+          canAssignTasks: userData.canAssignTasks,
+          canManageUsers: userData.canManageUsers,
+          canViewReports: userData.canViewReports,
+        },
+        orgRolePermissions: orgRole?.permissions,
+        memberRolePermissions: memberRole?.permissions,
+        spaces: [
+          ...spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
+          ...spaceMemberships.map((m) => ({ spaceId: m.spaceId, permissions: m.spaceRole?.permissions })),
+        ],
+      });
       return {
         valid: true,
         user: {
           ...userData,
+          access,
           // Canonicalize the role once at this boundary so every downstream
           // service (and the gateway's req.user) sees ADMIN/MANAGER/EMPLOYEE,
           // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.

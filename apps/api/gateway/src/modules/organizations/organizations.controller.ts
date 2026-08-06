@@ -141,6 +141,64 @@ export class OrganizationsController {
     );
   }
 
+  @Get('roles')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'List assignable roles (org: Admin/Manager/custom · space: Space Manager/…)' })
+  async listRoles(@CurrentUser() user: CurrentUserData, @Query('scope') scope?: string) {
+    return firstValueFrom(
+      this.authClient.send(
+        { cmd: 'list_access_roles' },
+        { organizationId: user.organizationId, scope: scope === 'space' ? 'space' : 'org' },
+      ),
+    );
+  }
+
+  @Post('roles')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Create a custom org-wide role' })
+  async createRole(
+    @Body() body: { name: string; description?: string; color?: string; permissions?: Record<string, boolean> },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'create_access_role' }, { ...body, organizationId: user.organizationId }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
+
+  @Patch('roles/:id')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Update a role (name/color/permissions)' })
+  async updateRole(
+    @Param('id') roleId: string,
+    @Body() body: { name?: string; description?: string; color?: string; permissions?: Record<string, boolean> },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'update_access_role' }, { ...body, roleId, organizationId: user.organizationId }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
+
+  @Delete('roles/:id')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Delete a custom role' })
+  async deleteRole(@Param('id') roleId: string, @CurrentUser() user: CurrentUserData) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'delete_access_role' }, { roleId, organizationId: user.organizationId }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
+
   @Patch('members/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update member profile, role, and permissions' })
@@ -168,11 +226,11 @@ export class OrganizationsController {
           canAssignTasks: dto.canAssignTasks,
           canManageUsers: dto.canManageUsers,
           canViewReports: dto.canViewReports,
+          memberRoleId: dto.memberRoleId,
           enabledModules: dto.enabledModules,
           contactable: dto.contactable,
           contactScope: dto.contactScope,
           contactAllowedIds: dto.contactAllowedIds,
-          showInManagement: dto.showInManagement,
           allowRemote: dto.allowRemote,
         },
       }),

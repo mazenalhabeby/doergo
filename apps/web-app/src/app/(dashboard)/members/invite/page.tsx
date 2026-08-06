@@ -97,6 +97,7 @@ export default function InviteMemberPage() {
     if (isEmployee) {
       if (specialty) input.specialty = specialty
       if (maxDailyJobs) input.maxDailyJobs = parseInt(maxDailyJobs)
+      if (access.memberRoleId) input.memberRoleId = access.memberRoleId
       input.accessProfile = serializeAccessDraft(access)
     }
 
@@ -297,7 +298,7 @@ export default function InviteMemberPage() {
                 <div className="space-y-2 pt-2">
                   <h3 className="text-sm font-medium text-foreground">{t("invitations.inviteDialog.accessTitle", "Access & permissions")}</h3>
                   <div className="rounded-2xl border border-border bg-card p-5">
-                    <AccessFields value={access} onChange={patchAccess} />
+                    <AccessFields value={access} onChange={patchAccess} allowAdmin={false} />
                   </div>
                 </div>
               </div>

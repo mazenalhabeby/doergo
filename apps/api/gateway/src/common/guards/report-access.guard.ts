@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { isAdmin } from '@hbcfield/shared';
+import { isAdmin, accessAllowsAnywhere } from '@hbcfield/shared';
 
 /**
  * Report access = admin OR canViewAllTasks OR canViewReports. The per-user
@@ -12,7 +12,18 @@ export class ReportAccessGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const { user } = context.switchToHttp().getRequest();
     if (!user) return false;
-    if (isAdmin(user) || user.canViewAllTasks || user.canViewReports) return true;
+    // Admin, the legacy flags, OR a unified role granting reports (org-wide or in
+    // any space) — reading is safe to widen; the report data itself is still
+    // org-scoped downstream.
+    if (
+      isAdmin(user) ||
+      user.canViewAllTasks ||
+      user.canViewReports ||
+      accessAllowsAnywhere(user.access, 'canViewReports') ||
+      accessAllowsAnywhere(user.access, 'canViewAllTasks')
+    ) {
+      return true;
+    }
     throw new ForbiddenException('You do not have access to reports');
   }
 }

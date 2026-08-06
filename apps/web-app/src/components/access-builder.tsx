@@ -8,6 +8,7 @@ import { organizationsApi } from "@/lib/api"
 import type { OrgMember } from "@/lib/api"
 import { readAccessDraft, serializeAccessDraft } from "@hbcfield/shared/client"
 import type { AccessDraft } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UserAvatar } from "@/components/user-avatar"
@@ -21,6 +22,7 @@ function canon(d: AccessDraft): string {
   const p = serializeAccessDraft(d)
   return JSON.stringify({
     ...p,
+    systemRole: d.systemRole, // role tier isn't in the persisted shape — track it explicitly
     enabledModules: { ...p.enabledModules, modules: [...p.enabledModules.modules].sort() },
     contactAllowedIds: [...p.contactAllowedIds].sort(),
   })
@@ -49,6 +51,9 @@ export function AccessBuilder({
 }) {
   const isBulk = Array.isArray(applyToIds) && applyToIds.length > 0
   const { t } = useTranslation()
+  const { user: currentUser } = useAuth()
+  // Editing your own row — you can't change your own role (backend rejects it).
+  const isSelf = !isBulk && currentUser?.id === member.id
 
   const initial = useMemo(() => readAccessDraft(member), [member])
   const [draft, setDraft] = useState<AccessDraft>(initial)
@@ -86,7 +91,7 @@ export function AccessBuilder({
   })
   const watcherCandidates = useMemo(
     () => (membersData?.data || []).filter(
-      (m) => (isBulk || m.id !== member.id) && m.isActive && (m.role === "ADMIN" || m.showInManagement),
+      (m) => (isBulk || m.id !== member.id) && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || !!m.memberRole),
     ),
     [membersData, member.id, isBulk],
   )
@@ -96,7 +101,14 @@ export function AccessBuilder({
   const save = async () => {
     try {
       setSaving(true)
-      const payload = serializeAccessDraft(draft)
+      const payload: Record<string, unknown> = { ...serializeAccessDraft(draft) }
+      // The Role selector can promote/demote the system tier. Send `role` ONLY
+      // when it actually changed (and never for your own row — the backend
+      // rejects a self role change) so we don't clobber permissions or trip the
+      // last-admin / self guards on an ordinary access edit.
+      if (!isBulk && !isSelf && draft.systemRole !== initial.systemRole) {
+        payload.role = draft.systemRole
+      }
       // Bulk: apply the same access to every selected member. Single: just this one.
       const targetIds = isBulk ? (applyToIds as string[]) : [member.id]
       await Promise.all(targetIds.map((id) => organizationsApi.updateMember(id, payload)))
@@ -141,7 +153,8 @@ export function AccessBuilder({
           value={draft}
           onChange={patch}
           excludeContactId={isBulk ? undefined : member.id}
-          lockManagementForAdmin={!isBulk && member.role === "ADMIN"}
+          showRole={!isBulk}
+          lockRole={isSelf}
         />
 
         {/* Notifications about — who is alerted ABOUT this member (approvals,

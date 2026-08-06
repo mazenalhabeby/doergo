@@ -23,6 +23,7 @@ export {
 } from './modules';
 export * from './schedule';
 export * from './task-flow';
+export * from './permissions';
 
 import {
   Role, AccessLevel, TaskStatus, TaskPriority,

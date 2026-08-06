@@ -3051,7 +3051,6 @@ export interface OrgMember {
   contactable?: boolean;
   contactScope?: string;
   contactAllowedIds?: string[];
-  showInManagement?: boolean;
   allowRemote?: boolean;
   lastActiveAt?: string | null;
   position: string | null;
@@ -3065,6 +3064,20 @@ export interface OrgMember {
   canViewReports?: boolean;
   orgRoleId?: string | null;
   orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
+  /** Unified org-wide role (AccessRole id) — e.g. Manager. */
+  memberRoleId?: string | null;
+  memberRole?: { id: string; name: string; color?: string | null } | null;
+}
+
+/** An org-assignable role (Admin, Manager, or a custom role). */
+export interface AccessRole {
+  id: string;
+  name: string;
+  slug: string;
+  color?: string | null;
+  scope: string;
+  isSystem: boolean;
+  permissions?: Record<string, boolean>;
 }
 
 export interface UpdateMemberInput {
@@ -3080,12 +3093,13 @@ export interface UpdateMemberInput {
   canAssignTasks?: boolean;
   canManageUsers?: boolean;
   canViewReports?: boolean;
+  /** Org-wide role id (AccessRole), or null to clear. */
+  memberRoleId?: string | null;
   /** Per-user Access Profile object, or a legacy module string[]. */
   enabledModules?: Record<string, unknown> | string[];
   contactable?: boolean;
   contactScope?: string;
   contactAllowedIds?: string[];
-  showInManagement?: boolean;
   allowRemote?: boolean;
 }
 
@@ -3124,6 +3138,30 @@ export const organizationsApi = {
     }>('/organizations/settings', data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
+  },
+
+  getRoles: async (scope?: "org" | "space"): Promise<AccessRole[]> => {
+    const endpoint = scope === "space" ? "/organizations/roles?scope=space" : "/organizations/roles";
+    const response = await api.get<{ success: boolean; data: AccessRole[] }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  createRole: async (input: { name: string; description?: string; color?: string; permissions?: Record<string, boolean> }): Promise<AccessRole> => {
+    const response = await api.post<{ success: boolean; data: AccessRole }>('/organizations/roles', input);
+    if (response.error) throw new Error(response.error);
+    return response.data!.data;
+  },
+
+  updateRole: async (id: string, input: { name?: string; description?: string; color?: string; permissions?: Record<string, boolean> }): Promise<AccessRole> => {
+    const response = await api.patch<{ success: boolean; data: AccessRole }>(`/organizations/roles/${id}`, input);
+    if (response.error) throw new Error(response.error);
+    return response.data!.data;
+  },
+
+  deleteRole: async (id: string): Promise<void> => {
+    const response = await api.delete<{ success: boolean }>(`/organizations/roles/${id}`);
+    if (response.error) throw new Error(response.error);
   },
 
   getMembers: async (params?: { search?: string; role?: string; page?: number; limit?: number }) => {
@@ -3299,6 +3337,8 @@ export interface UpdateLocationInput {
   enabledModules?: string[];
   workflowId?: string;
   workModel?: string;
+  notifyRoleIds?: string[];
+  contactRoleIds?: string[];
 }
 
 export interface LocationAssignment {

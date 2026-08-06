@@ -766,6 +766,13 @@ export class AttendanceService {
       include: { spaceRole: { select: { permissions: true } } },
     });
     if ((membership?.spaceRole?.permissions as any)?.canApproveOvertime === true) return true;
+    // Unified space assignment grant (Phase 2) — spaceId is the resource's own,
+    // never client-supplied, so this only grants where the user is truly assigned.
+    const assignment = await this.prisma.spaceAssignment.findFirst({
+      where: { userId, spaceId, organizationId, role: { isActive: true } },
+      include: { role: { select: { permissions: true } } },
+    });
+    if ((assignment?.role?.permissions as any)?.canApproveOvertime === true) return true;
     // Org admins / user managers can always approve.
     const admin = await this.prisma.user.findFirst({
       where: {
@@ -1239,13 +1246,21 @@ export class AttendanceService {
     organizationId: string,
     permission: 'canApproveOvertime' | 'canReconcileAttendance',
   ): Promise<string[]> {
-    const members = await this.prisma.spaceMember.findMany({
-      where: { spaceId, spaceRole: { isActive: true } },
-      include: { spaceRole: { select: { permissions: true } } },
-    });
-    const leaderIds = members
-      .filter((m) => (m.spaceRole?.permissions as any)?.[permission] === true)
-      .map((m) => m.userId);
+    const [members, assignments] = await Promise.all([
+      this.prisma.spaceMember.findMany({
+        where: { spaceId, spaceRole: { isActive: true } },
+        include: { spaceRole: { select: { permissions: true } } },
+      }),
+      // Unified space assignments (Phase 2) — same permission gate.
+      this.prisma.spaceAssignment.findMany({
+        where: { spaceId, organizationId, role: { isActive: true } },
+        include: { role: { select: { permissions: true } } },
+      }),
+    ]);
+    const leaderIds = [
+      ...members.filter((m) => (m.spaceRole?.permissions as any)?.[permission] === true).map((m) => m.userId),
+      ...assignments.filter((a) => (a.role?.permissions as any)?.[permission] === true).map((a) => a.userId),
+    ];
     if (leaderIds.length > 0) return [...new Set(leaderIds)];
 
     // Fallback: org admins / user managers.

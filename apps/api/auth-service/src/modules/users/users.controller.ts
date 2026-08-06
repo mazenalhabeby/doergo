@@ -162,6 +162,30 @@ export class UsersController {
     );
   }
 
+  @MessagePattern({ cmd: 'list_access_roles' })
+  async listAccessRoles(@Payload() data: { organizationId: string; scope?: 'org' | 'space' }) {
+    return this.usersService.listAccessRoles(data);
+  }
+
+  @MessagePattern({ cmd: 'create_access_role' })
+  async createAccessRole(
+    @Payload() data: { organizationId: string; name: string; description?: string; color?: string; permissions?: unknown },
+  ) {
+    return this.usersService.createAccessRole(data);
+  }
+
+  @MessagePattern({ cmd: 'update_access_role' })
+  async updateAccessRole(
+    @Payload() data: { organizationId: string; roleId: string; name?: string; description?: string; color?: string; permissions?: unknown },
+  ) {
+    return this.usersService.updateAccessRole(data);
+  }
+
+  @MessagePattern({ cmd: 'delete_access_role' })
+  async deleteAccessRole(@Payload() data: { organizationId: string; roleId: string }) {
+    return this.usersService.deleteAccessRole(data);
+  }
+
   @MessagePattern({ cmd: 'update_own_profile' })
   async updateOwnProfile(
     @Payload() data: { userId: string; dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string } },

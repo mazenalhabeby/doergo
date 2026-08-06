@@ -2109,10 +2109,10 @@
       "contact": "Contact",
       "allowRemote": "Autoriser le pointage à distance",
       "allowRemoteHint": "Peut pointer depuis n'importe où (télétravail / en déplacement) sans géorepérage de site. La localisation est tout de même capturée.",
-      "subRole": "Sous-rôle / intitulé",
       "showInManagement": "Afficher dans Gestion",
-      "showInManagementHint": "Répertorie cette personne (avec son sous-rôle) pour que les collègues puissent la joindre de n'importe où.",
-      "showInManagementAdmin": "Les administrateurs apparaissent toujours dans l'annuaire de Gestion."
+      "showInManagementHint": "Affiche cette personne (avec son poste) pour que ses collègues puissent la joindre de partout.",
+      "showInManagementAdmin": "Les administrateurs apparaissent toujours dans l'annuaire de Gestion.",
+      "jobTitle": "Poste"
     },
     "detail": {
       "backToTeam": "Retour à l'équipe",
@@ -3402,7 +3402,12 @@
     "applyToAll": "Appliquer à tous",
     "bulkSubtitle": "Applique ces valeurs d’accès aux {{count}} membres sélectionnés.",
     "bulkAppliedDesc": "Accès appliqué à {{count}} membres",
-    "selectedMembers": "membres sélectionnés"
+    "selectedMembers": "membres sélectionnés",
+    "orgRole": "Rôle",
+    "noRole": "Aucun rôle",
+    "roleGrants": "Accorde",
+    "roleMember": "Membre",
+    "fullAccess": "Accès complet"
   },
   "customFields": {
     "fieldTypes": {
@@ -5107,7 +5112,28 @@
   },
   "roles": {
     "admin": "Administrateur",
-    "manager": "Responsable"
+    "manager": "Responsable",
+    "manage": "Rôles",
+    "title": "Rôles",
+    "subtitle": "Un rôle accorde un ensemble de permissions à l’échelle de l’organisation à chaque membre qui le détient.",
+    "builtIn": "Intégré",
+    "noPermissions": "Aucune permission",
+    "new": "Nouveau rôle",
+    "edit": "Modifier le rôle",
+    "name": "Nom",
+    "color": "Couleur",
+    "permissions": "Permissions",
+    "nameRequired": "Le nom est requis",
+    "created": "Rôle créé",
+    "updated": "Rôle mis à jour",
+    "deleted": "Rôle supprimé",
+    "domains": {
+      "tasks": "Tâches",
+      "members": "Membres",
+      "reports": "Rapports",
+      "attendance": "Présence"
+    },
+    "permissionCount": "{{count}} permissions"
   },
   "support": {
     "title": "Support",
@@ -5525,6 +5551,16 @@
       "openHoursNote": "Rien d’autre à configurer — les membres pointent selon leurs propres horaires.",
       "geofenceOn": "Le pointage sur site est vérifié dans un rayon de {{radius}} m autour du repère.",
       "geofenceOff": "Pointage sans localisation — aucun géorepérage défini pour cet espace."
+    },
+    "routing": {
+      "heading": "Notifications et contact",
+      "intro": "Choisissez quels rôles de l'espace sont notifiés à propos des membres ici, et quels rôles les membres peuvent contacter. Vide = les responsables de l'espace.",
+      "saved": "Routage mis à jour",
+      "noRoles": "Aucun rôle d'espace défini pour le moment.",
+      "notifyTitle": "Notifiés à propos des membres ici",
+      "contactTitle": "Contactables par les membres ici",
+      "notifyEmpty": "Par défaut : les responsables de l'espace",
+      "contactEmpty": "Par défaut : les responsables de l'espace"
     }
   }
 }

@@ -2109,10 +2109,10 @@
       "contact": "Kontakt",
       "allowRemote": "Remote-Einstempeln erlauben",
       "allowRemoteHint": "Kann von überall einstempeln (Homeoffice/unterwegs) ohne Standort-Geofence. Der Standort wird trotzdem erfasst.",
-      "subRole": "Unterrolle / Titel",
       "showInManagement": "In Management anzeigen",
-      "showInManagementHint": "Zeigt diese Person (mit ihrer Unterrolle) an, damit Teammitglieder sie von überall erreichen können.",
-      "showInManagementAdmin": "Admins erscheinen immer im Management-Verzeichnis."
+      "showInManagementHint": "Führt diese Person (mit ihrer Position) auf, damit Teamkollegen sie von überall erreichen können.",
+      "showInManagementAdmin": "Admins erscheinen immer im Management-Verzeichnis.",
+      "jobTitle": "Position"
     },
     "detail": {
       "backToTeam": "Zurück zum Team",
@@ -3402,7 +3402,12 @@
     "applyToAll": "Auf alle anwenden",
     "bulkSubtitle": "Wendet diese Zugriffswerte auf {{count}} ausgewählte Mitglieder an.",
     "bulkAppliedDesc": "Zugriff auf {{count}} Mitglieder angewendet",
-    "selectedMembers": "ausgewählte Mitglieder"
+    "selectedMembers": "ausgewählte Mitglieder",
+    "orgRole": "Rolle",
+    "noRole": "Keine Rolle",
+    "roleGrants": "Gewährt",
+    "roleMember": "Mitglied",
+    "fullAccess": "Vollzugriff"
   },
   "customFields": {
     "fieldTypes": {
@@ -5107,7 +5112,28 @@
   },
   "roles": {
     "admin": "Admin",
-    "manager": "Manager"
+    "manager": "Manager",
+    "manage": "Rollen",
+    "title": "Rollen",
+    "subtitle": "Eine Rolle gewährt jedem Mitglied, das sie besitzt, organisationsweit Berechtigungen.",
+    "builtIn": "Integriert",
+    "noPermissions": "Keine Berechtigungen",
+    "new": "Neue Rolle",
+    "edit": "Rolle bearbeiten",
+    "name": "Name",
+    "color": "Farbe",
+    "permissions": "Berechtigungen",
+    "nameRequired": "Name ist erforderlich",
+    "created": "Rolle erstellt",
+    "updated": "Rolle aktualisiert",
+    "deleted": "Rolle gelöscht",
+    "domains": {
+      "tasks": "Aufgaben",
+      "members": "Mitglieder",
+      "reports": "Berichte",
+      "attendance": "Anwesenheit"
+    },
+    "permissionCount": "{{count}} Berechtigungen"
   },
   "support": {
     "title": "Support",
@@ -5525,6 +5551,16 @@
       "openHoursNote": "Nichts weiter einzurichten — Mitglieder stempeln zu ihren eigenen Zeiten ein und aus.",
       "geofenceOn": "Vor-Ort-Zeiterfassung wird im Umkreis von {{radius}} m um die Markierung geprüft.",
       "geofenceOff": "Standortfreie Zeiterfassung — für diesen Bereich ist kein Geofence festgelegt."
+    },
+    "routing": {
+      "heading": "Benachrichtigungen & Kontakt",
+      "intro": "Wählen Sie, welche Space-Rollen über Mitglieder hier benachrichtigt werden und welche Rollen Mitglieder hier kontaktieren dürfen. Leer = die Leiter des Space.",
+      "saved": "Weiterleitung aktualisiert",
+      "noRoles": "Noch keine Space-Rollen definiert.",
+      "notifyTitle": "Über Mitglieder hier benachrichtigt",
+      "contactTitle": "Von Mitgliedern hier kontaktierbar",
+      "notifyEmpty": "Standard: die Leiter des Space",
+      "contactEmpty": "Standard: die Leiter des Space"
     }
   }
 }

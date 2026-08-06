@@ -78,8 +78,6 @@ export class AccessProfileDto {
 
   @IsOptional() @IsArray() @IsString({ each: true }) contactAllowedIds?: string[];
 
-  @IsOptional() @IsBoolean() showInManagement?: boolean;
-
   @IsOptional() @IsBoolean() canViewReports?: boolean;
 
   @IsOptional() @IsBoolean() allowRemote?: boolean;
@@ -158,6 +156,11 @@ export class CreateInvitationDto {
   @IsString()
   @IsOptional()
   spaceId?: string;
+
+  @ApiPropertyOptional({ description: 'Pre-assigned org role (AccessRole id) applied on accept' })
+  @IsString()
+  @IsOptional()
+  memberRoleId?: string;
 
   @ApiPropertyOptional({
     type: AccessProfileDto,

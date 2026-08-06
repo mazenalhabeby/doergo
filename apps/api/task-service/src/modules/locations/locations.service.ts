@@ -178,6 +178,8 @@ export class LocationsService {
     workflowId?: string;
     workModel?: string;
     timezone?: string;
+    notifyRoleIds?: string[];
+    contactRoleIds?: string[];
   }) {
     // Verify location exists and belongs to organization
     const existing = await this.prisma.companyLocation.findFirst({
@@ -201,6 +203,14 @@ export class LocationsService {
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
     if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;
     if (data.workModel !== undefined) updateData.workModel = data.workModel;
+    // Space-driven routing (Phase 3): which roles are notified about / contactable
+    // by members here. Whitelist to string arrays (fail closed).
+    if (Array.isArray(data.notifyRoleIds)) {
+      updateData.notifyRoleIds = data.notifyRoleIds.filter((x): x is string => typeof x === 'string');
+    }
+    if (Array.isArray(data.contactRoleIds)) {
+      updateData.contactRoleIds = data.contactRoleIds.filter((x): x is string => typeof x === 'string');
+    }
     // Timezone: an explicit value wins; otherwise, when coordinates change,
     // re-derive the space's timezone from the new location.
     if (data.timezone !== undefined) {

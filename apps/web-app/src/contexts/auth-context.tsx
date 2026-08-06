@@ -53,6 +53,8 @@ export interface User {
   // Custom role
   orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
   rolePermissions?: Record<string, boolean>;
+  // Unified resolved access (Phase 2): org-wide ∪ per-space permission grants.
+  access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> };
 }
 
 // Token info type
@@ -324,10 +326,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check if user has a specific permission
   const hasPermission = useCallback((perm: string) => {
     if (!user) return false;
-    // Check direct user fields first (backward compat)
-    if (perm in user) return (user as any)[perm] === true;
-    // Then check role permissions
-    return user.rolePermissions?.[perm] === true;
+    // Satisfied by ANY source (superset — never narrower than before):
+    // a direct user flag, a legacy role grant, or the unified org access.
+    if ((user as any)[perm] === true) return true;
+    if (user.rolePermissions?.[perm] === true) return true;
+    return user.access?.org?.[perm] === true;
   }, [user]);
 
   // Manual refresh function

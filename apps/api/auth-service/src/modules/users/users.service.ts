@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TaskStatus, getDefaultModules } from '@hbcfield/shared';
+import { Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, type PermissionSet } from '@hbcfield/shared';
 import * as bcrypt from 'bcrypt';
 import {
   CreateEmployeeDto,
@@ -682,13 +682,14 @@ export class UsersService {
       return { success: true, data: [] };
     }
 
-    // Directory = admins (always) + members flagged "Show in Management".
+    // Directory = admins (always) + managers / members holding a named role.
+    // (Replaces the retired "Show in Management" flag — a role IS management.)
     const candidates = await this.prisma.user.findMany({
       where: {
         organizationId,
         isActive: true,
         id: { not: userId },
-        OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { showInManagement: true }],
+        OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { memberRoleId: { not: null } }],
       },
       select: {
         id: true,
@@ -766,6 +767,9 @@ export class UsersService {
         contactAllowedIds: true,
         showInManagement: true,
         lastActiveAt: true,
+        // Unified org role (Phase 4) — drives the list Role column + Access selector.
+        memberRoleId: true,
+        memberRole: { select: { id: true, name: true, color: true } },
       },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       skip: (page - 1) * limit,
@@ -1003,9 +1007,23 @@ export class UsersService {
     if ((dto as any).contactable !== undefined) data.contactable = (dto as any).contactable;
     if ((dto as any).contactScope !== undefined) data.contactScope = (dto as any).contactScope;
     if ((dto as any).contactAllowedIds !== undefined) data.contactAllowedIds = (dto as any).contactAllowedIds;
-    if ((dto as any).showInManagement !== undefined) data.showInManagement = (dto as any).showInManagement;
     if ((dto as any).canViewReports !== undefined) data.canViewReports = (dto as any).canViewReports;
     if ((dto as any).allowRemote !== undefined) data.allowRemote = (dto as any).allowRemote;
+    // Unified org-wide role (Phase 4). Validated against the org + ORG scope so a
+    // member can never be pointed at another org's role or a space-only role.
+    if ((dto as any).memberRoleId !== undefined) {
+      const roleId = (dto as any).memberRoleId as string | null;
+      if (roleId === null || roleId === '') {
+        data.memberRoleId = null;
+      } else {
+        const role = await this.prisma.accessRole.findFirst({
+          where: { id: roleId, organizationId, isActive: true, scope: { in: ['ORG', 'BOTH'] } },
+          select: { id: true },
+        });
+        if (!role) throw new BadRequestException('Invalid role');
+        data.memberRoleId = role.id;
+      }
+    }
 
     // Role/permission fields — only if role is provided
     if (dto.role !== undefined) {
@@ -1074,10 +1092,145 @@ export class UsersService {
         canViewAllTasks: true,
         canAssignTasks: true,
         canManageUsers: true,
+        memberRoleId: true,
       },
     });
 
     return { success: true, data: updated };
+  }
+
+  /**
+   * List assignable roles, lazily seeding ALL built-ins so a fresh org always has
+   * them. `scope='space'` → space roles (Space Manager / Shift Leader / …) for the
+   * space pickers; default → org roles (Admin / Manager / custom) for the Access
+   * panel. Org-scoped: id always from the caller's token.
+   */
+  async listAccessRoles(data: { organizationId: string; scope?: 'org' | 'space' }) {
+    for (const p of BUILTIN_ROLES) {
+      await this.prisma.accessRole.upsert({
+        where: { organizationId_slug: { organizationId: data.organizationId, slug: p.slug } },
+        update: {},
+        create: {
+          organizationId: data.organizationId,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          color: p.color,
+          scope: p.scope as any,
+          isSystem: true,
+          permissions: p.permissions as any,
+        },
+      });
+    }
+    const scopes = data.scope === 'space' ? ['SPACE', 'BOTH'] : ['ORG', 'BOTH'];
+    const roles = await this.prisma.accessRole.findMany({
+      where: { organizationId: data.organizationId, isActive: true, scope: { in: scopes as any } },
+      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
+    });
+    return { success: true, data: roles };
+  }
+
+  /** Whitelist an incoming permissions object to the known keys (fail-closed). */
+  private sanitizeRolePermissions(input: unknown): PermissionSet {
+    const out: PermissionSet = {};
+    if (input && typeof input === 'object' && !Array.isArray(input)) {
+      const r = input as Record<string, unknown>;
+      for (const key of PERMISSION_KEYS) if (r[key] === true) out[key] = true;
+    }
+    return out;
+  }
+
+  private async uniqueRoleSlug(organizationId: string, name: string, excludeId?: string): Promise<string> {
+    const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'role';
+    let slug = base;
+    let n = 1;
+    while (true) {
+      const clash = await this.prisma.accessRole.findFirst({
+        where: { organizationId, slug, ...(excludeId ? { id: { not: excludeId } } : {}) },
+        select: { id: true },
+      });
+      if (!clash) return slug;
+      slug = `${base}-${++n}`;
+    }
+  }
+
+  /** Create a custom ORG-wide role. Permissions are whitelisted to known keys. */
+  async createAccessRole(data: {
+    organizationId: string;
+    name: string;
+    description?: string;
+    color?: string;
+    permissions?: unknown;
+  }) {
+    const name = (data.name || '').trim();
+    if (!name) throw new BadRequestException('Role name is required');
+    const slug = await this.uniqueRoleSlug(data.organizationId, name);
+    const max = await this.prisma.accessRole.aggregate({
+      where: { organizationId: data.organizationId },
+      _max: { position: true },
+    });
+    const role = await this.prisma.accessRole.create({
+      data: {
+        organizationId: data.organizationId,
+        name,
+        slug,
+        description: data.description?.trim() || null,
+        color: data.color || '#6b7280',
+        scope: 'ORG',
+        isSystem: false,
+        permissions: this.sanitizeRolePermissions(data.permissions) as any,
+        position: (max._max.position ?? -1) + 1,
+      },
+      select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
+    });
+    return { success: true, data: role, message: 'Role created' };
+  }
+
+  /** Update a role. Built-in roles: name/permissions editable, slug kept stable. */
+  async updateAccessRole(data: {
+    organizationId: string;
+    roleId: string;
+    name?: string;
+    description?: string;
+    color?: string;
+    permissions?: unknown;
+  }) {
+    const role = await this.prisma.accessRole.findFirst({
+      where: { id: data.roleId, organizationId: data.organizationId },
+    });
+    if (!role) throw new NotFoundException('Role not found');
+    const patch: Record<string, unknown> = {};
+    if (data.name !== undefined) {
+      const name = data.name.trim();
+      if (!name) throw new BadRequestException('Role name cannot be empty');
+      patch.name = name;
+      if (!role.isSystem) patch.slug = await this.uniqueRoleSlug(data.organizationId, name, role.id);
+    }
+    if (data.description !== undefined) patch.description = data.description?.trim() || null;
+    if (data.color !== undefined) patch.color = data.color;
+    if (data.permissions !== undefined) patch.permissions = this.sanitizeRolePermissions(data.permissions) as any;
+    const updated = await this.prisma.accessRole.update({
+      where: { id: role.id },
+      data: patch,
+      select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
+    });
+    return { success: true, data: updated, message: 'Role updated' };
+  }
+
+  /** Delete a custom role. System roles are protected; in-use roles are blocked. */
+  async deleteAccessRole(data: { organizationId: string; roleId: string }) {
+    const role = await this.prisma.accessRole.findFirst({
+      where: { id: data.roleId, organizationId: data.organizationId },
+    });
+    if (!role) throw new NotFoundException('Role not found');
+    if (role.isSystem) throw new BadRequestException('Built-in roles cannot be deleted');
+    const inUse = await this.prisma.user.count({ where: { memberRoleId: role.id } });
+    if (inUse > 0) {
+      throw new BadRequestException(`This role is assigned to ${inUse} member(s). Reassign them first.`);
+    }
+    await this.prisma.accessRole.delete({ where: { id: role.id } });
+    return { success: true, data: { id: role.id }, message: 'Role deleted' };
   }
 
   /**
@@ -1537,7 +1690,7 @@ export class UsersService {
             id: { in: unique },
             organizationId,
             isActive: true,
-            OR: [{ role: Role.ADMIN }, { showInManagement: true }],
+            OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { memberRoleId: { not: null } }],
           },
           select: { id: true },
         })

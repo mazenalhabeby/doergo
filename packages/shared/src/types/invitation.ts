@@ -72,6 +72,8 @@ export interface CreateInvitationInput {
   maxDailyJobs?: number;
   /** Pre-assigned space (CompanyLocation id) — user is assigned to it on accept. */
   spaceId?: string;
+  /** Pre-assigned org role (AccessRole id) — applied to the member on accept. */
+  memberRoleId?: string;
   /** Customer-portal invite (targetRole=CUSTOMER): the Customer + optional unit. */
   customerId?: string;
   unitId?: string;

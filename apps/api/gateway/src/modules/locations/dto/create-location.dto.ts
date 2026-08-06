@@ -96,4 +96,16 @@ export class CreateLocationDto {
   @IsString()
   @IsOptional()
   workflowId?: string;
+
+  @ApiPropertyOptional({ type: [String], description: 'Role ids notified about members in this space (empty = space leaders)' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  notifyRoleIds?: string[];
+
+  @ApiPropertyOptional({ type: [String], description: 'Role ids contactable by members in this space (empty = space leaders)' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  contactRoleIds?: string[];
 }

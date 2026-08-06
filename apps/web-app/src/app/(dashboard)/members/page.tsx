@@ -20,6 +20,7 @@ import {
   ChevronUp,
   Plus,
   Trash2,
+  Shield,
   ShieldCheck,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
@@ -28,6 +29,7 @@ import { useTranslation } from "react-i18next"
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
+import { ManageRolesDialog } from "@/components/roles/manage-roles-dialog"
 import { EditMemberDialog } from "./_components/edit-member-dialog"
 import { AccessBuilder } from "@/components/access-builder"
 import { cn } from "@/lib/utils"
@@ -243,17 +245,21 @@ const TABLE_GRID =
 
 function RoleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
-  if (member.orgRole) {
-    return (
-      <Badge
-        variant="outline"
-        className="text-xs font-medium border gap-1.5"
-        style={{ borderColor: member.orgRole.color || undefined, color: member.orgRole.color || undefined }}
-      >
-        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: member.orgRole.color || "#6b7280" }} />
-        {member.orgRole.name}
-      </Badge>
-    )
+  // Admin (system tier) always shows as Admin, even if it also carries a role row.
+  if (member.role !== "ADMIN") {
+    const named = member.memberRole || member.orgRole
+    if (named) {
+      return (
+        <Badge
+          variant="outline"
+          className="text-xs font-medium border gap-1.5"
+          style={{ borderColor: named.color || undefined, color: named.color || undefined }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: named.color || "#6b7280" }} />
+          {named.name}
+        </Badge>
+      )
+    }
   }
   const conf = ROLE_CONFIG[member.role] || ROLE_CONFIG.EMPLOYEE!
   return <Badge variant="outline" className={cn("text-xs font-medium border", conf.className)}>{t(ROLE_LABEL_KEY[member.role] || "members.roles.employee")}</Badge>
@@ -448,6 +454,7 @@ export default function MembersPage() {
   const [removeTarget, setRemoveTarget] = useState<OrgMember | null>(null)
   const [bulkAccessIds, setBulkAccessIds] = useState<string[] | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [rolesOpen, setRolesOpen] = useState(false)
 
   // Pending invitations
   const [showPending, setShowPending] = useState(true)
@@ -656,6 +663,19 @@ export default function MembersPage() {
                 <SelectItem value="EMPLOYEE">{t("members.roles.employee")}</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Manage roles */}
+            {isAdmin && (
+              <Button
+                onClick={() => setRolesOpen(true)}
+                size="sm"
+                variant="outline"
+                className="h-9 px-4 rounded-lg font-medium"
+              >
+                <Shield className="h-4 w-4 mr-1.5" />
+                {t("roles.manage", "Roles")}
+              </Button>
+            )}
 
             {/* Invite */}
             {isAdmin && (
@@ -877,6 +897,7 @@ export default function MembersPage() {
 
       {/* ── Invite Dialog (shared component) ─────────────────────────── */}
       <CreateInvitationDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <ManageRolesDialog open={rolesOpen} onOpenChange={setRolesOpen} />
 
       {/* ── Remove Confirmation ────────────────────────────────────────── */}
       <AlertDialog

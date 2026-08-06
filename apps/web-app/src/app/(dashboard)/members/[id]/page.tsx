@@ -254,23 +254,25 @@ export default function MemberProfilePage({
                     <span className="text-sm text-muted-foreground">{member.position}</span>
                   )}
                   {member.position && <span className="text-muted-foreground/40">·</span>}
-                  {member.orgRole ? (
-                    <Badge
-                      variant="outline"
-                      className="text-xs font-medium border gap-1"
-                      style={{ borderColor: member.orgRole.color || undefined, color: member.orgRole.color || undefined }}
-                    >
-                      <div
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: member.orgRole.color || "#6b7280" }}
-                      />
-                      {member.orgRole.name}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className={cn("text-xs font-medium border", roleConfig.className)}>
-                      {t(roleConfig.labelKey)}
-                    </Badge>
-                  )}
+                  {(() => {
+                    // Admin (system tier) always shows Admin; otherwise the named
+                    // org role (Manager/custom); otherwise the plain tier label.
+                    const named = member.role !== "ADMIN" ? (member.memberRole || member.orgRole) : null
+                    return named ? (
+                      <Badge
+                        variant="outline"
+                        className="text-xs font-medium border gap-1"
+                        style={{ borderColor: named.color || undefined, color: named.color || undefined }}
+                      >
+                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: named.color || "#6b7280" }} />
+                        {named.name}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className={cn("text-xs font-medium border", roleConfig.className)}>
+                        {t(roleConfig.labelKey)}
+                      </Badge>
+                    )
+                  })()}
                   {scheduleLabel && (
                     <>
                       <span className="text-muted-foreground/40">·</span>

@@ -21,13 +21,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -204,7 +197,6 @@ export function EditMemberDialog({
   const [scheduleType, setScheduleType] = useState("NONE")
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
-  const [role, setRole] = useState("")
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -216,7 +208,6 @@ export function EditMemberDialog({
     setPosition(member.position || "")
     setScheduleType(member.scheduleType || "NONE")
     setMonthlyHourBudget(member.monthlyHourBudget ?? "")
-    setRole(member.role)
     setScheduleRows(createDefaultSchedule())
     setTempPassword(null)
     setCopied(false)
@@ -340,9 +331,7 @@ export function EditMemberDialog({
         scheduleType,
         monthlyHourBudget:
           scheduleType === "FLEXIBLE" && monthlyHourBudget !== "" ? Number(monthlyHourBudget) : undefined,
-        // Omit role when editing yourself — the backend rejects any own-role change
-        // (even an unchanged value), and the selector is disabled for self anyway.
-        ...(isSelf ? {} : { role }),
+        // Role is managed on the Access tab now — not sent from this profile editor.
       },
     })
   }
@@ -394,12 +383,11 @@ export function EditMemberDialog({
             </div>
           </div>
 
-          {/* Sub-role / title — a free-text designation (e.g. "Logistics Manager",
-              "Team Lead") independent of the permission role. "Show in Management"
-              now lives in the Access Builder (its own showInManagement field). */}
+          {/* Job title — a free-text designation (e.g. "Logistics Manager",
+              "Team Lead") independent of the permission role. */}
           <div className="space-y-2.5 rounded-lg border border-border/60 p-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.subRole", "Sub-role / title")}</Label>
+              <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.jobTitle", "Job title")}</Label>
               <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
             </div>
           </div>
@@ -415,23 +403,8 @@ export function EditMemberDialog({
             onMonthlyHourBudgetChange={setMonthlyHourBudget}
           />
 
-          {/* Remote clock-in moved to the member's Access tab (single config home). */}
-
-          <EditSection label={t("members.memberEditor.sectionRoleAccess")} />
-
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.role")}</Label>
-            <Select value={role} onValueChange={setRole} disabled={isSelf}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
-                <SelectItem value="EMPLOYEE">{t("members.roles.employee")}</SelectItem>
-              </SelectContent>
-            </Select>
-            {isSelf && (
-              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.cantChangeOwnRole", "You can't change your own role.")}</p>
-            )}
-          </div>
+          {/* Role & remote clock-in now live on the member's Access tab — the
+              single home for role + permissions. This dialog stays profile-only. */}
 
           {member && (
             <>

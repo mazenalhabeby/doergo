@@ -226,6 +226,11 @@ export class UpdateMemberDto {
   @IsEnum(['ADMIN', 'EMPLOYEE'])
   role?: string;
 
+  @ApiPropertyOptional({ description: 'Org-wide role id (AccessRole), or null to clear' })
+  @IsOptional()
+  @IsString()
+  memberRoleId?: string | null;
+
   @ApiPropertyOptional({ description: 'Can create tasks' })
   @IsOptional()
   @IsBoolean()
@@ -264,11 +269,6 @@ export class UpdateMemberDto {
   @IsOptional()
   @IsBoolean()
   contactable?: boolean;
-
-  @ApiPropertyOptional({ description: 'Listed in the org Management directory (reach leadership)' })
-  @IsOptional()
-  @IsBoolean()
-  showInManagement?: boolean;
 
   @ApiPropertyOptional({ enum: ['NONE', 'ALL', 'SELECTED'], description: 'Who this member may contact' })
   @IsOptional()

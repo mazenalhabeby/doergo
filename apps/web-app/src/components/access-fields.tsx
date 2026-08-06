@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Smartphone, Monitor, Layers, MessageCircle } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
+import { ACCESS_PERMISSION_SCHEMA } from "@hbcfield/shared/client"
 import type { AccessDraft, MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -44,6 +45,11 @@ const TASK_SCOPES = [
   { key: "ORG", labelKey: "accessBuilder.taskScopes.org" },
 ]
 
+// Permission key → short label (for the "Grants: …" role summary line).
+const ORG_PERM_LABEL: Record<string, string> = Object.fromEntries(
+  ACCESS_PERMISSION_SCHEMA.map((p) => [p.key, p.label]),
+)
+
 /**
  * AccessFields — the controlled, presentational editor for every access value
  * (platform, permissions, feature tabs, attendance, space scope, messaging,
@@ -56,20 +62,27 @@ export function AccessFields({
   value,
   onChange,
   excludeContactId,
-  lockManagementForAdmin = false,
+  showRole = true,
+  lockRole = false,
+  allowAdmin = true,
 }: {
   value: AccessDraft
   /** Emit a partial patch; the parent owns the draft. */
   onChange: (patch: Partial<AccessDraft>) => void
   /** Member id to hide from the "Specific contacts" picker (omit when inviting). */
   excludeContactId?: string
-  /** Force Show-in-Management ON + disabled (editing an actual ADMIN member). */
-  lockManagementForAdmin?: boolean
+  /** Show the Role selector (member edit + invite). */
+  showRole?: boolean
+  /** Lock the Role selector (editing your own row — can't change your own role). */
+  lockRole?: boolean
+  /** Offer the Admin option (member edit). Invites can't create admins → false. */
+  allowAdmin?: boolean
 }) {
   const { t } = useTranslation()
 
-  // Contacts this member could be allowed to reach: ONLY admins + members flagged
-  // "Show in Management" (chat is open-by-default, so contactable alone is not it).
+  // Contacts this member could be allowed to reach: leadership — admins, managers
+  // (canViewAllTasks), and anyone holding a named role. (Replaces the retired
+  // "Show in Management" flag: a role IS management.)
   const { data: membersData } = useQuery({
     queryKey: ["orgMembers", "accessContacts"],
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
@@ -78,12 +91,29 @@ export function AccessFields({
   const candidateContacts = useMemo(
     () =>
       (membersData?.data || []).filter(
-        (m) => m.id !== excludeContactId && m.isActive && (m.role === "ADMIN" || m.showInManagement),
+        (m) => m.id !== excludeContactId && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || !!m.memberRole),
       ),
     [membersData, excludeContactId],
   )
 
-  const showManagement = value.showInManagement || lockManagementForAdmin
+  // Org-wide roles (Admin / Manager / custom) for the role selector.
+  const { data: orgRoles } = useQuery({
+    queryKey: ["orgAccessRoles"],
+    queryFn: () => organizationsApi.getRoles(),
+    staleTime: 60000,
+  })
+  // Current selector value: "admin" (system), a role id, or "member" (no role).
+  const ADMIN = "__admin__"
+  const MEMBER = "__member__"
+  const roleValue = value.systemRole === "ADMIN" ? ADMIN : (value.memberRoleId ?? MEMBER)
+  // Only EMPLOYEE-assignable roles (Admin is its own top option).
+  const assignableRoles = (orgRoles || []).filter((r) => r.slug !== "admin")
+  const selectedRole = assignableRoles.find((r) => r.id === value.memberRoleId)
+  const rolePerms = value.systemRole === "ADMIN"
+    ? [t("accessBuilder.fullAccess", "Full access")]
+    : selectedRole?.permissions
+    ? Object.entries(selectedRole.permissions).filter(([, v]) => v === true).map(([k]) => ORG_PERM_LABEL[k] || k)
+    : []
 
   const toggleModule = (m: MobileModule) =>
     onChange({
@@ -94,6 +124,43 @@ export function AccessFields({
 
   return (
     <div className="space-y-6">
+      {/* Role — ONE selector: Admin (org owner), a named role (Manager/custom
+          grants a permission preset org-wide), or Member (no named role). This is
+          the single home for a member's role; the profile editor has none. */}
+      {showRole && (
+      <Field dataTour="access-role" label={t("accessBuilder.orgRole", "Role")}>
+        <Select
+          value={roleValue}
+          disabled={lockRole}
+          onValueChange={(v) => {
+            if (v === ADMIN) onChange({ systemRole: "ADMIN" })
+            else if (v === MEMBER) onChange({ systemRole: "EMPLOYEE", memberRoleId: null })
+            else onChange({ systemRole: "EMPLOYEE", memberRoleId: v })
+          }}
+        >
+          <SelectTrigger className="h-9 w-full max-w-sm text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {allowAdmin && (
+              <SelectItem value={ADMIN} className="text-sm">{t("members.roles.admin", "Admin")}</SelectItem>
+            )}
+            {assignableRoles.map((r) => (
+              <SelectItem key={r.id} value={r.id} className="text-sm">{r.name}</SelectItem>
+            ))}
+            <SelectItem value={MEMBER} className="text-sm">{t("accessBuilder.roleMember", "Member")}</SelectItem>
+          </SelectContent>
+        </Select>
+        {lockRole ? (
+          <p className="mt-1.5 text-xs text-muted-foreground">{t("members.memberEditor.cantChangeOwnRole", "You can't change your own role.")}</p>
+        ) : rolePerms.length > 0 ? (
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {t("accessBuilder.roleGrants", "Grants")}: {rolePerms.join(", ")}
+          </p>
+        ) : null}
+      </Field>
+      )}
+
       {/* Platform */}
       <Field dataTour="access-platform" label={t("accessBuilder.platformAccess")}>
         <div className="inline-flex rounded-lg bg-muted p-1">
@@ -155,6 +222,12 @@ export function AccessFields({
             desc={t("accessBuilder.perms.manage.desc")}
             checked={value.canManageUsers}
             onChange={(v) => onChange({ canManageUsers: v })}
+          />
+          <PermissionRow
+            title={t("accessBuilder.canViewReports.title", "Allow reports")}
+            desc={t("accessBuilder.canViewReports.desc", "Let this member build and run reports.")}
+            checked={value.canViewReports}
+            onChange={(v) => onChange({ canViewReports: v })}
           />
         </div>
       </Field>
@@ -299,43 +372,6 @@ export function AccessFields({
               </div>
             )}
           </div>
-        </div>
-      </Field>
-
-      {/* Show in Management — SEPARATE from chat: lists this member in the org
-          Management directory (reach leadership). Own field `showInManagement`.
-          A single admin is always shown (toggle locked ON). */}
-      <Field dataTour="access-management" label={t("accessBuilder.managementLabel", "Management directory")}>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{t("members.memberEditor.showInManagement", "Show in Management")}</p>
-              <p className="text-xs text-muted-foreground">
-                {lockManagementForAdmin
-                  ? t("members.memberEditor.showInManagementAdmin", "Admins always appear in the Management directory.")
-                  : t("members.memberEditor.showInManagementHint", "Lists this person (with their sub-role) so teammates can reach them from anywhere.")}
-              </p>
-            </div>
-            <Switch
-              checked={showManagement}
-              disabled={lockManagementForAdmin}
-              onCheckedChange={(v) => onChange({ showInManagement: v })}
-            />
-          </div>
-          {/* Reports access — only offered to Management members. */}
-          {showManagement && (
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{t("accessBuilder.canViewReports.title", "Allow reports")}</p>
-                <p className="text-xs text-muted-foreground">{t("accessBuilder.canViewReports.desc", "Let this member build and run reports.")}</p>
-              </div>
-              <Switch
-                checked={lockManagementForAdmin ? true : value.canViewReports}
-                disabled={lockManagementForAdmin}
-                onCheckedChange={(v) => onChange({ canViewReports: v })}
-              />
-            </div>
-          )}
         </div>
       </Field>
     </div>

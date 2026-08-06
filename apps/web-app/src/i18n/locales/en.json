@@ -2109,10 +2109,10 @@
       "contact": "Contact",
       "allowRemote": "Allow remote clock-in",
       "allowRemoteHint": "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured.",
-      "subRole": "Sub-role / title",
       "showInManagement": "Show in Management",
-      "showInManagementHint": "Lists this person (with their sub-role) so teammates can reach them from anywhere.",
-      "showInManagementAdmin": "Admins always appear in the Management directory."
+      "showInManagementHint": "Lists this person (with their job title) so teammates can reach them from anywhere.",
+      "showInManagementAdmin": "Admins always appear in the Management directory.",
+      "jobTitle": "Job title"
     },
     "detail": {
       "backToTeam": "Back to Team",
@@ -3402,7 +3402,12 @@
     "applyToAll": "Apply to all",
     "bulkSubtitle": "Applies these access values to {{count}} selected members.",
     "bulkAppliedDesc": "Access applied to {{count}} members",
-    "selectedMembers": "selected members"
+    "selectedMembers": "selected members",
+    "orgRole": "Role",
+    "noRole": "No role",
+    "roleGrants": "Grants",
+    "roleMember": "Member",
+    "fullAccess": "Full access"
   },
   "customFields": {
     "fieldTypes": {
@@ -5107,7 +5112,28 @@
   },
   "roles": {
     "admin": "Admin",
-    "manager": "Manager"
+    "manager": "Manager",
+    "manage": "Roles",
+    "title": "Roles",
+    "subtitle": "A role grants a set of permissions org-wide to every member who holds it.",
+    "builtIn": "Built-in",
+    "noPermissions": "No permissions",
+    "new": "New role",
+    "edit": "Edit role",
+    "name": "Name",
+    "color": "Color",
+    "permissions": "Permissions",
+    "nameRequired": "Name is required",
+    "created": "Role created",
+    "updated": "Role updated",
+    "deleted": "Role deleted",
+    "domains": {
+      "tasks": "Tasks",
+      "members": "Members",
+      "reports": "Reports",
+      "attendance": "Attendance"
+    },
+    "permissionCount": "{{count}} permissions"
   },
   "support": {
     "title": "Support",
@@ -5525,6 +5551,16 @@
       "openHoursNote": "Nothing else to set up — members clock in and out on their own hours.",
       "geofenceOn": "On-site clock-in is verified within {{radius}} m of the location pin.",
       "geofenceOff": "Location-free clock-in — no geofence set for this space."
+    },
+    "routing": {
+      "heading": "Notifications & contact",
+      "intro": "Choose which space roles are notified about members here, and which roles members here can contact. Empty = the space's leaders.",
+      "saved": "Routing updated",
+      "noRoles": "No space roles defined yet.",
+      "notifyTitle": "Notified about members here",
+      "contactTitle": "Contactable by members here",
+      "notifyEmpty": "Default: the space's leaders",
+      "contactEmpty": "Default: the space's leaders"
     }
   }
 }

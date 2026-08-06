@@ -2109,10 +2109,10 @@
       "contact": "Contacto",
       "allowRemote": "Permitir registro de entrada remoto",
       "allowRemoteHint": "Puede registrar entrada desde cualquier lugar (teletrabajo o en ruta) sin una geocerca de sitio. La ubicación se sigue capturando.",
-      "subRole": "Subrol / puesto",
       "showInManagement": "Mostrar en Gestión",
-      "showInManagementHint": "Muestra a esta persona (con su subrol) para que sus compañeros puedan localizarla desde cualquier lugar.",
-      "showInManagementAdmin": "Los administradores siempre aparecen en el directorio de Gestión."
+      "showInManagementHint": "Muestra a esta persona (con su puesto) para que sus compañeros puedan contactarla desde cualquier lugar.",
+      "showInManagementAdmin": "Los administradores siempre aparecen en el directorio de Gestión.",
+      "jobTitle": "Puesto"
     },
     "detail": {
       "backToTeam": "Volver a Equipo",
@@ -3402,7 +3402,12 @@
     "applyToAll": "Aplicar a todos",
     "bulkSubtitle": "Aplica estos valores de acceso a {{count}} miembros seleccionados.",
     "bulkAppliedDesc": "Acceso aplicado a {{count}} miembros",
-    "selectedMembers": "miembros seleccionados"
+    "selectedMembers": "miembros seleccionados",
+    "orgRole": "Rol",
+    "noRole": "Sin rol",
+    "roleGrants": "Concede",
+    "roleMember": "Miembro",
+    "fullAccess": "Acceso completo"
   },
   "customFields": {
     "fieldTypes": {
@@ -5107,7 +5112,28 @@
   },
   "roles": {
     "admin": "Administrador",
-    "manager": "Responsable"
+    "manager": "Responsable",
+    "manage": "Roles",
+    "title": "Roles",
+    "subtitle": "Un rol concede un conjunto de permisos a nivel de organización a cada miembro que lo tiene.",
+    "builtIn": "Integrado",
+    "noPermissions": "Sin permisos",
+    "new": "Nuevo rol",
+    "edit": "Editar rol",
+    "name": "Nombre",
+    "color": "Color",
+    "permissions": "Permisos",
+    "nameRequired": "El nombre es obligatorio",
+    "created": "Rol creado",
+    "updated": "Rol actualizado",
+    "deleted": "Rol eliminado",
+    "domains": {
+      "tasks": "Tareas",
+      "members": "Miembros",
+      "reports": "Informes",
+      "attendance": "Asistencia"
+    },
+    "permissionCount": "{{count}} permisos"
   },
   "support": {
     "title": "Soporte",
@@ -5525,6 +5551,16 @@
       "openHoursNote": "No hay nada más que configurar: los miembros fichan según su propio horario.",
       "geofenceOn": "El fichaje en el sitio se verifica dentro de {{radius}} m del pin de ubicación.",
       "geofenceOff": "Fichaje sin ubicación: no hay geovalla para este espacio."
+    },
+    "routing": {
+      "heading": "Notificaciones y contacto",
+      "intro": "Elige qué roles del espacio reciben notificaciones sobre los miembros de aquí y a qué roles pueden contactar. Vacío = los responsables del espacio.",
+      "saved": "Enrutamiento actualizado",
+      "noRoles": "Aún no hay roles de espacio definidos.",
+      "notifyTitle": "Notificados sobre los miembros de aquí",
+      "contactTitle": "Contactables por los miembros de aquí",
+      "notifyEmpty": "Predeterminado: los responsables del espacio",
+      "contactEmpty": "Predeterminado: los responsables del espacio"
     }
   }
 }

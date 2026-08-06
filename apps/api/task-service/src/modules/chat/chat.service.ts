@@ -2,6 +2,7 @@ import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nest
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, directConversationKey, canContactColleagues } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { spaceIdsForUser, spaceRoleHolders } from '../../common/space-access.util';
 
 type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
 
@@ -30,21 +31,33 @@ export class ChatService {
       },
       orderBy: [{ firstName: 'asc' }],
     });
-    const reachable = all.filter((u) => this.canReach(me as any, u as any));
+    // Space-driven contact targets for `me` (leaders in the spaces I belong to),
+    // resolved once server-side and reused for every target below.
+    const spaceTargets = await this.myContactTargets(data.userId, data.organizationId);
+    const reachable = all.filter((u) => this.canReach(me as any, u as any, spaceTargets));
     return { data: reachable };
   }
 
+  /** User ids `me` may contact via their space(s) — holders of a contact role. */
+  private myContactTargets(userId: string, organizationId: string): Promise<Set<string>> {
+    return spaceIdsForUser(this.prisma, userId).then((spaceIds) =>
+      spaceRoleHolders(this.prisma, organizationId, spaceIds, 'contact'),
+    );
+  }
+
   /**
-   * Contact-permission rule: may `me` message `target`? Open within the org by
-   * default (defaults are contactable:true / contactScope:ALL / canContact:≠false),
-   * so anyone can message anyone. Admins restrict via the Access Builder:
-   * `canContact:false` blocks a member from messaging at all, `contactable:false`
-   * hides a member from being reached, and `contactScope: NONE | SELECTED` limits
-   * who a member may reach. Admins are always reachable and may reach anyone.
+   * Contact-permission rule: may `me` message `target`? Admins/managers reach
+   * anyone and are always reachable. Otherwise a member reaches: their
+   * space-driven targets (leader roles in a shared space — the new default),
+   * plus whatever their `contactScope` allows (ALL = everyone, SELECTED = their
+   * allow-list). `contactScope: NONE` (the default) means space targets only.
+   * `spaceTargets` is resolved server-side from the caller's OWN spaces, so it
+   * can't be spoofed.
    */
   private canReach(
     me: { role: string; enabledModules: unknown; contactScope: string; contactAllowedIds: string[]; canManageUsers?: boolean },
     target: { id: string; role: string; contactable: boolean; canManageUsers?: boolean },
+    spaceTargets: Set<string>,
   ): boolean {
     // External customers are never part of member chat (neither direction).
     if (me.role === 'CUSTOMER' || target.role === 'CUSTOMER') return false;
@@ -54,9 +67,11 @@ export class ChatService {
     if (meIsManager) return true;
     if (!canContactColleagues({ enabledModules: me.enabledModules })) return false; // admin disabled messaging
     if (!(target.contactable || targetIsManager)) return false;
-    if (me.contactScope === 'NONE') return false;
+    // Space-driven: a leader in a space we share is always reachable.
+    if (spaceTargets.has(target.id)) return true;
     if (me.contactScope === 'SELECTED') return (me.contactAllowedIds ?? []).includes(target.id);
-    return true; // ALL
+    if (me.contactScope === 'ALL') return true;
+    return false; // NONE and not a space target
   }
 
   // ── open (or create) a 1:1 conversation with another member ─────────────────
@@ -79,7 +94,9 @@ export class ChatService {
     // through to an unintended row. Also re-check self by resolved id.
     if (!me || !other || other.id !== data.otherUserId) throw new NotFoundException('Member not found');
     if (other.id === data.userId) throw new ForbiddenException('Cannot message yourself');
-    if (!this.canReach(me as any, other as any)) {
+    // Server-side authorization — recompute space targets, never trust the client.
+    const spaceTargets = await this.myContactTargets(data.userId, data.organizationId);
+    if (!this.canReach(me as any, other as any, spaceTargets)) {
       throw new ForbiddenException('You are not allowed to contact this member');
     }
 

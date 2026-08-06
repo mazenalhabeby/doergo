@@ -230,6 +230,10 @@ export const FEATURE_TAB_MODULES: MobileModule[] = ['tasks', 'clock', 'time_off'
 
 /** Everything an admin can set for a member, as editable UI state. */
 export interface AccessDraft {
+  /** System role tier. ADMIN = org owner (all access). EMPLOYEE = everyone else. */
+  systemRole: 'ADMIN' | 'EMPLOYEE';
+  /** Org-wide role (AccessRole id) — e.g. Manager. null = no named role. */
+  memberRoleId: string | null;
   modules: MobileModule[];
   platforms: AccessPlatform;
   spaceScope: SpaceScope;
@@ -242,13 +246,13 @@ export interface AccessDraft {
   contactable: boolean;
   contactScope: string; // NONE | ALL | SELECTED
   contactAllowedIds: string[];
-  showInManagement: boolean;
   canViewReports: boolean;
   allowRemote: boolean;
 }
 
 /** The persisted shape written to the User (and pre-stored on an Invitation). */
 export interface AccessPersisted {
+  memberRoleId: string | null;
   enabledModules: {
     modules: MobileModule[];
     platforms: AccessPlatform;
@@ -263,7 +267,6 @@ export interface AccessPersisted {
   contactable: boolean;
   contactScope: string;
   contactAllowedIds: string[];
-  showInManagement: boolean;
   canViewReports: boolean;
   allowRemote: boolean;
 }
@@ -271,6 +274,8 @@ export interface AccessPersisted {
 /** Least-privilege defaults for a brand-new member (optionally seeded by position). */
 export function defaultAccessDraft(opts?: { position?: string | null }): AccessDraft {
   return {
+    systemRole: 'EMPLOYEE',
+    memberRoleId: null,
     modules: getDefaultModules(opts?.position),
     platforms: 'both',
     spaceScope: 'own',
@@ -281,9 +286,11 @@ export function defaultAccessDraft(opts?: { position?: string | null }): AccessD
     canViewAllTasks: false,
     canManageUsers: false,
     contactable: true,
-    contactScope: 'ALL',
+    // Default to "no one": a new member hand-picks nobody. Their real contacts
+    // come from the space(s) they're assigned to (space-driven contact) — the
+    // space's leader roles. Admins can still widen to ALL/SELECTED per member.
+    contactScope: 'NONE',
     contactAllowedIds: [],
-    showInManagement: false,
     canViewReports: false,
     allowRemote: false,
   };
@@ -291,10 +298,11 @@ export function defaultAccessDraft(opts?: { position?: string | null }): AccessD
 
 /** Fields an Access Draft is read from on an existing member-like object. */
 type AccessMemberLike = { enabledModules?: unknown } & UserPermissionFields & {
+  role?: string;
+  memberRoleId?: string | null;
   contactable?: boolean;
   contactScope?: string | null;
   contactAllowedIds?: string[] | null;
-  showInManagement?: boolean;
   canViewReports?: boolean;
   allowRemote?: boolean;
 };
@@ -303,6 +311,8 @@ type AccessMemberLike = { enabledModules?: unknown } & UserPermissionFields & {
 export function readAccessDraft(member: AccessMemberLike): AccessDraft {
   const scope = (member.taskCreationScope as string) || 'SELF';
   return {
+    systemRole: member.role === 'ADMIN' ? 'ADMIN' : 'EMPLOYEE',
+    memberRoleId: member.memberRoleId ?? null,
     modules: getModules(member).filter((m) => FEATURE_TAB_MODULES.includes(m)),
     platforms: getAccessPlatforms(member),
     spaceScope: getSpaceScope(member),
@@ -315,7 +325,6 @@ export function readAccessDraft(member: AccessMemberLike): AccessDraft {
     contactable: !!member.contactable,
     contactScope: member.contactScope || 'NONE',
     contactAllowedIds: member.contactAllowedIds || [],
-    showInManagement: !!member.showInManagement,
     canViewReports: !!member.canViewReports,
     allowRemote: !!member.allowRemote,
   };
@@ -326,10 +335,10 @@ export function readAccessDraft(member: AccessMemberLike): AccessDraft {
  * every writer (member edit, invite pre-config, backend accept) agrees:
  *   • task scope only when create is on
  *   • allowed-contact list only when scope is SELECTED
- *   • reports only when surfaced in Management
  */
 export function serializeAccessDraft(d: AccessDraft): AccessPersisted {
   return {
+    memberRoleId: d.memberRoleId ?? null,
     enabledModules: {
       modules: d.modules,
       platforms: d.platforms,
@@ -344,8 +353,7 @@ export function serializeAccessDraft(d: AccessDraft): AccessPersisted {
     contactable: d.contactable,
     contactScope: d.contactScope,
     contactAllowedIds: d.contactScope === 'SELECTED' ? d.contactAllowedIds : [],
-    showInManagement: d.showInManagement,
-    canViewReports: d.showInManagement ? d.canViewReports : false,
+    canViewReports: d.canViewReports,
     allowRemote: d.allowRemote,
   };
 }
@@ -387,8 +395,9 @@ export function normalizeAccessProfile(raw: unknown): AccessPersisted | null {
   const contactScope = _CONTACT_SCOPES.includes(r.contactScope as string)
     ? (r.contactScope as string)
     : 'ALL';
-  const showInManagement = _bool(r.showInManagement);
   return {
+    // Untrusted invite JSON never carries a validated role assignment.
+    memberRoleId: null,
     enabledModules: { modules, platforms, spaceScope, canContact: _bool(em.canContact, true) },
     canCreateTasks,
     taskCreationScope: canCreateTasks ? taskScope : 'NONE',
@@ -401,8 +410,7 @@ export function normalizeAccessProfile(raw: unknown): AccessPersisted | null {
       contactScope === 'SELECTED' && Array.isArray(r.contactAllowedIds)
         ? (r.contactAllowedIds as unknown[]).filter((x): x is string => typeof x === 'string')
         : [],
-    showInManagement,
-    canViewReports: showInManagement ? _bool(r.canViewReports) : false,
+    canViewReports: _bool(r.canViewReports),
     allowRemote: _bool(r.allowRemote),
   };
 }

@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
+import { RoutingSection } from "./routing-section"
 
 const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
@@ -63,6 +64,8 @@ export function MembersTab({ spaceId }: { spaceId: string }) {
       <SubRolesSection />
       <Separator />
       <SpaceMembersSection spaceId={spaceId} />
+      <Separator />
+      <RoutingSection spaceId={spaceId} />
     </div>
   )
 }

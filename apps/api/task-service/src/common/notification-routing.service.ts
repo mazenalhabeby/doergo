@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
+import { spaceIdsForUser, spaceRoleHolders } from './space-access.util';
 
 export type NotificationCategory = 'attendance' | 'tasks';
 
@@ -12,14 +13,14 @@ function prefEnabled(prefs: unknown, category: string): boolean {
 /**
  * Central, DRY resolver for "who should be notified ABOUT this employee".
  *
- * Replaces the old flat `role=ADMIN OR canViewAllTasks` blast. Every
- * manager-alert event (attendance approval, geofence, and future per-employee
- * alerts) resolves recipients here, applying three layers in order:
- *   1. Explicit per-employee **watchers** (NotificationWatch) → override.
- *   2. Default: org **admins** + **managers assigned to the employee's space(s)**
- *      (self-maintaining; falls back to all managers if the employee has no space).
- *   3. Each recipient's **notificationPrefs** opt-out for the category.
- * The subject is always excluded.
+ * Space-driven (Phase 3): recipients are the UNION of
+ *   1. Explicit per-employee **watchers** (NotificationWatch) — default: none.
+ *   2. The **leader roles in the employee's space(s)** — whoever holds a notify
+ *      role there (the space's `notifyRoleIds`, or by default any space leader).
+ * then filtered by each recipient's **notificationPrefs** opt-out; the subject is
+ * always excluded. If BOTH layers are empty, a last-resort safety floor routes to
+ * the org **owners (ADMINs only)** — never a broad manager blast, and never a
+ * silent nowhere. `explicitOnly` keeps ONLY layer 1 (no space default, no floor).
  */
 @Injectable()
 export class NotificationRoutingService {
@@ -43,42 +44,41 @@ export class NotificationRoutingService {
         },
       },
     });
-    let candidates: Array<{ id: string; email: string; notificationPrefs: unknown }> = watches
-      .map((w) => w.watcher)
-      .filter((w) => w.isActive)
-      .map((w) => ({ id: w.id, email: w.email, notificationPrefs: w.notificationPrefs }));
+    const byId = new Map<string, { id: string; email: string; notificationPrefs: unknown }>();
+    for (const w of watches) {
+      if (w.watcher.isActive) {
+        byId.set(w.watcher.id, { id: w.watcher.id, email: w.watcher.email, notificationPrefs: w.watcher.notificationPrefs });
+      }
+    }
 
-    // 2. Default routing when no explicit watchers: admins + space managers.
-    if (candidates.length === 0 && !explicitOnly) {
-      const spaces = await this.prisma.technicianAssignment.findMany({
-        where: {
-          userId: subjectUserId,
-          OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
-        },
-        select: { locationId: true },
-      });
-      const spaceIds = spaces.map((s) => s.locationId);
+    // 2. Space-driven default: leaders in the subject's space(s). Added to (not
+    // replacing) the explicit watchers, so both get notified. Skipped for
+    // explicitOnly (e.g. routine task assignments).
+    if (!explicitOnly) {
+      const spaceIds = await spaceIdsForUser(this.prisma, subjectUserId);
+      const recipientIds = await spaceRoleHolders(this.prisma, organizationId, spaceIds, 'notify');
+      const missing = [...recipientIds].filter((id) => id !== subjectUserId && !byId.has(id));
+      if (missing.length) {
+        const users = await this.prisma.user.findMany({
+          where: { id: { in: missing }, isActive: true },
+          select: { id: true, email: true, notificationPrefs: true },
+        });
+        for (const u of users) byId.set(u.id, u);
+      }
 
-      const users = await this.prisma.user.findMany({
-        where: {
-          organizationId,
-          isActive: true,
-          OR: [
-            { role: 'ADMIN' }, // org owners always receive
-            spaceIds.length
-              ? // managers who share one of the subject's spaces
-                { canViewAllTasks: true, assignments: { some: { locationId: { in: spaceIds } } } }
-              : // subject has no space → fall back to all managers (previous behaviour)
-                { canViewAllTasks: true },
-          ],
-        },
-        select: { id: true, email: true, notificationPrefs: true },
-      });
-      candidates = users;
+      // Safety floor: never blackhole a member's alerts. With no watcher and no
+      // space leader, route to the org OWNERS (ADMINs only — not a manager blast).
+      if (byId.size === 0) {
+        const admins = await this.prisma.user.findMany({
+          where: { organizationId, isActive: true, role: 'ADMIN' },
+          select: { id: true, email: true, notificationPrefs: true },
+        });
+        for (const a of admins) byId.set(a.id, a);
+      }
     }
 
     // 3. Drop the subject + anyone who opted out of this category.
-    const enabled = candidates.filter(
+    const enabled = [...byId.values()].filter(
       (c) => c.id !== subjectUserId && prefEnabled(c.notificationPrefs, category),
     );
     return { ids: enabled.map((c) => c.id), emails: enabled.map((c) => c.email) };

@@ -2109,10 +2109,10 @@
       "contact": "Contatto",
       "allowRemote": "Consenti timbratura da remoto",
       "allowRemoteHint": "Può timbrare da qualsiasi luogo (smart working/in viaggio) senza il geofence di una sede. La posizione viene comunque acquisita.",
-      "subRole": "Sotto-ruolo / qualifica",
       "showInManagement": "Mostra in Gestione",
-      "showInManagementHint": "Elenca questa persona (con il suo sotto-ruolo) così i colleghi possono raggiungerla da qualsiasi luogo.",
-      "showInManagementAdmin": "Gli amministratori appaiono sempre nella rubrica Gestione."
+      "showInManagementHint": "Elenca questa persona (con la sua qualifica) così i colleghi possono raggiungerla ovunque.",
+      "showInManagementAdmin": "Gli amministratori appaiono sempre nella rubrica Gestione.",
+      "jobTitle": "Qualifica"
     },
     "detail": {
       "backToTeam": "Torna al team",
@@ -3402,7 +3402,12 @@
     "applyToAll": "Applica a tutti",
     "bulkSubtitle": "Applica questi valori di accesso ai {{count}} membri selezionati.",
     "bulkAppliedDesc": "Accesso applicato a {{count}} membri",
-    "selectedMembers": "membri selezionati"
+    "selectedMembers": "membri selezionati",
+    "orgRole": "Ruolo",
+    "noRole": "Nessun ruolo",
+    "roleGrants": "Concede",
+    "roleMember": "Membro",
+    "fullAccess": "Accesso completo"
   },
   "customFields": {
     "fieldTypes": {
@@ -5107,7 +5112,28 @@
   },
   "roles": {
     "admin": "Amministratore",
-    "manager": "Responsabile"
+    "manager": "Responsabile",
+    "manage": "Ruoli",
+    "title": "Ruoli",
+    "subtitle": "Un ruolo concede un insieme di permessi a livello di organizzazione a ogni membro che lo possiede.",
+    "builtIn": "Integrato",
+    "noPermissions": "Nessun permesso",
+    "new": "Nuovo ruolo",
+    "edit": "Modifica ruolo",
+    "name": "Nome",
+    "color": "Colore",
+    "permissions": "Permessi",
+    "nameRequired": "Il nome è obbligatorio",
+    "created": "Ruolo creato",
+    "updated": "Ruolo aggiornato",
+    "deleted": "Ruolo eliminato",
+    "domains": {
+      "tasks": "Attività",
+      "members": "Membri",
+      "reports": "Report",
+      "attendance": "Presenze"
+    },
+    "permissionCount": "{{count}} permessi"
   },
   "support": {
     "title": "Assistenza",
@@ -5525,6 +5551,16 @@
       "openHoursNote": "Nient’altro da configurare: i membri timbrano secondo i propri orari.",
       "geofenceOn": "La timbratura in sede è verificata entro {{radius}} m dal segnaposto.",
       "geofenceOff": "Timbratura senza posizione — nessun geofence impostato per questo spazio."
+    },
+    "routing": {
+      "heading": "Notifiche e contatti",
+      "intro": "Scegli quali ruoli dello spazio ricevono notifiche sui membri qui e quali ruoli i membri possono contattare. Vuoto = i responsabili dello spazio.",
+      "saved": "Instradamento aggiornato",
+      "noRoles": "Nessun ruolo dello spazio ancora definito.",
+      "notifyTitle": "Notificati sui membri qui",
+      "contactTitle": "Contattabili dai membri qui",
+      "notifyEmpty": "Predefinito: i responsabili dello spazio",
+      "contactEmpty": "Predefinito: i responsabili dello spazio"
     }
   }
 }

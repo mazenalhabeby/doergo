@@ -60,6 +60,8 @@ export class InvitationService {
     specialty?: string;
     maxDailyJobs?: number;
     spaceId?: string;
+    // Pre-assigned org role (AccessRole id) applied to the member on accept.
+    memberRoleId?: string;
     // Full pre-configured Access Profile (applied to the member on accept).
     accessProfile?: unknown;
     // Customer-portal invite (targetRole = CUSTOMER)
@@ -116,6 +118,25 @@ export class InvitationService {
           return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Unit not found in this organization' };
         }
       }
+    }
+
+    // Validate a pre-assigned org role (EMPLOYEE invites only): must be an
+    // active ORG/BOTH-scoped role in THIS org. Fail closed — never trust the id.
+    let validMemberRoleId: string | null = null;
+    if (data.memberRoleId && data.targetRole === Role.EMPLOYEE) {
+      const role = await this.prisma.accessRole.findFirst({
+        where: {
+          id: data.memberRoleId,
+          organizationId: data.organizationId,
+          isActive: true,
+          scope: { in: ['ORG', 'BOTH'] },
+        },
+        select: { id: true },
+      });
+      if (!role) {
+        return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Invalid role' };
+      }
+      validMemberRoleId = role.id;
     }
 
     // Check pending invitation count for org
@@ -189,6 +210,8 @@ export class InvitationService {
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
         // Pre-assigned space — applied to the user on accept.
         spaceId: isTechnician ? (data.spaceId || null) : null,
+        // Pre-assigned org role (validated above) — applied to the user on accept.
+        memberRoleId: isTechnician ? validMemberRoleId : null,
         // Pre-configured Access Profile — sanitized here, re-sanitized on accept.
         accessProfile: isTechnician
           ? ((normalizeAccessProfile(data.accessProfile) as unknown as Prisma.InputJsonValue) ?? undefined)
@@ -387,6 +410,9 @@ export class InvitationService {
                 monthlyHourBudget: invitation.monthlyHourBudget ?? null,
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
+                // Pre-assigned org role (validated at invite time) → the member's
+                // named role from their first login. Null when none was chosen.
+                memberRoleId: invitation.memberRoleId ?? null,
                 ...(accessProfile
                   ? {
                       // Admin pre-configured the access → apply it verbatim so the
@@ -401,7 +427,6 @@ export class InvitationService {
                       contactable: accessProfile.contactable,
                       contactScope: accessProfile.contactScope,
                       contactAllowedIds: accessProfile.contactAllowedIds,
-                      showInManagement: accessProfile.showInManagement,
                       canViewReports: accessProfile.canViewReports,
                       allowRemote: accessProfile.allowRemote,
                     }

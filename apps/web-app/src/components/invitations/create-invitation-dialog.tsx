@@ -107,7 +107,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       input.monthlyHourBudget = Number(monthlyHourBudget)
     }
     if (spaceId && spaceId !== "none") input.spaceId = spaceId
-    // Pre-configured access → applied to the new member on accept.
+    // Pre-assigned role (validated server-side) + pre-configured access → both
+    // applied to the new member on accept, so their first screen already matches.
+    if (access.memberRoleId) input.memberRoleId = access.memberRoleId
     input.accessProfile = serializeAccessDraft(access)
     createMutation.mutate(input)
   }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, createMutation])
@@ -344,7 +346,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             </button>
             {accessOpen && (
               <div className="border-t border-border px-3 py-4">
-                <AccessFields value={access} onChange={patchAccess} />
+                <AccessFields value={access} onChange={patchAccess} allowAdmin={false} />
               </div>
             )}
           </div>

@@ -29,7 +29,7 @@ export function MemberWatchers({ memberId, memberName }: { memberId: string; mem
   const managers = useMemo(
     () =>
       ((membersResp?.data || []) as OrgMember[]).filter(
-        (m) => m.id !== memberId && m.isActive && (m.role === "ADMIN" || m.showInManagement),
+        (m) => m.id !== memberId && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || !!m.memberRole),
       ),
     [membersResp, memberId],
   )
