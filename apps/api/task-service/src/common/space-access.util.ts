@@ -7,19 +7,17 @@
 import { isSpaceLeaderPermissions } from '@hbcfield/shared';
 import type { PrismaService } from './prisma/prisma.service';
 
-/** All active space ids a user belongs to (unified assignment + legacy tables). */
+/** All active space ids a user belongs to (unified assignment + technician assignment). */
 export async function spaceIdsForUser(prisma: PrismaService, userId: string): Promise<string[]> {
   const now = new Date();
   const effective = { OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] };
-  const [assignments, techAssigns, members] = await Promise.all([
+  const [assignments, techAssigns] = await Promise.all([
     prisma.spaceAssignment.findMany({ where: { userId, ...effective }, select: { spaceId: true } }),
     prisma.technicianAssignment.findMany({ where: { userId, ...effective }, select: { locationId: true } }),
-    prisma.spaceMember.findMany({ where: { userId }, select: { spaceId: true } }),
   ]);
   const set = new Set<string>();
   for (const a of assignments) set.add(a.spaceId);
   for (const t of techAssigns) set.add(t.locationId);
-  for (const m of members) set.add(m.spaceId);
   return [...set];
 }
 
@@ -45,22 +43,11 @@ export async function spaceRoleHolders(
     spaces.map((s) => [s.id, kind === 'notify' ? s.notifyRoleIds : s.contactRoleIds]),
   );
 
-  const [members, assignments] = await Promise.all([
-    prisma.spaceMember.findMany({
-      where: { spaceId: { in: spaceIds }, spaceRole: { isActive: true } },
-      select: { userId: true, spaceRole: { select: { permissions: true } } },
-    }),
-    prisma.spaceAssignment.findMany({
-      where: { spaceId: { in: spaceIds }, organizationId, role: { isActive: true } },
-      select: { userId: true, spaceId: true, roleId: true, role: { select: { permissions: true } } },
-    }),
-  ]);
+  const assignments = await prisma.spaceAssignment.findMany({
+    where: { spaceId: { in: spaceIds }, organizationId, role: { isActive: true } },
+    select: { userId: true, spaceId: true, roleId: true, role: { select: { permissions: true } } },
+  });
 
-  // Legacy space members resolve by the leader-permission default only (their
-  // roles are separate ids from the unified config).
-  for (const m of members) {
-    if (isSpaceLeaderPermissions(m.spaceRole?.permissions)) out.add(m.userId);
-  }
   // Unified assignments: explicit role-id config wins, else leader default.
   for (const a of assignments) {
     const cfg = cfgBySpace.get(a.spaceId) ?? [];

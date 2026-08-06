@@ -728,13 +728,13 @@ export class AttendanceService {
   async listPendingExtraTime(data: { userId: string; organizationId: string; isAdmin?: boolean }) {
     let spaceFilter: { locationId?: { in: string[] } } = {};
     if (!data.isAdmin) {
-      const memberships = await this.prisma.spaceMember.findMany({
-        where: { userId: data.userId, organizationId: data.organizationId, spaceRole: { isActive: true } },
-        include: { spaceRole: { select: { permissions: true } } },
+      const assignments = await this.prisma.spaceAssignment.findMany({
+        where: { userId: data.userId, organizationId: data.organizationId, role: { isActive: true } },
+        include: { role: { select: { permissions: true } } },
       });
-      const spaceIds = memberships
-        .filter((m) => (m.spaceRole?.permissions as any)?.canApproveOvertime === true)
-        .map((m) => m.spaceId);
+      const spaceIds = assignments
+        .filter((a) => (a.role?.permissions as any)?.canApproveOvertime === true)
+        .map((a) => a.spaceId);
       if (spaceIds.length === 0) return success([], 'No pending extra-time requests');
       spaceFilter = { locationId: { in: spaceIds } };
     }
@@ -761,13 +761,8 @@ export class AttendanceService {
     spaceId: string,
     organizationId: string,
   ): Promise<boolean> {
-    const membership = await this.prisma.spaceMember.findFirst({
-      where: { userId, spaceId, organizationId, spaceRole: { isActive: true } },
-      include: { spaceRole: { select: { permissions: true } } },
-    });
-    if ((membership?.spaceRole?.permissions as any)?.canApproveOvertime === true) return true;
-    // Unified space assignment grant (Phase 2) — spaceId is the resource's own,
-    // never client-supplied, so this only grants where the user is truly assigned.
+    // Unified space assignment grant — spaceId is the resource's own, never
+    // client-supplied, so this only grants where the user is truly assigned.
     const assignment = await this.prisma.spaceAssignment.findFirst({
       where: { userId, spaceId, organizationId, role: { isActive: true } },
       include: { role: { select: { permissions: true } } },
@@ -1246,21 +1241,13 @@ export class AttendanceService {
     organizationId: string,
     permission: 'canApproveOvertime' | 'canReconcileAttendance',
   ): Promise<string[]> {
-    const [members, assignments] = await Promise.all([
-      this.prisma.spaceMember.findMany({
-        where: { spaceId, spaceRole: { isActive: true } },
-        include: { spaceRole: { select: { permissions: true } } },
-      }),
-      // Unified space assignments (Phase 2) — same permission gate.
-      this.prisma.spaceAssignment.findMany({
-        where: { spaceId, organizationId, role: { isActive: true } },
-        include: { role: { select: { permissions: true } } },
-      }),
-    ]);
-    const leaderIds = [
-      ...members.filter((m) => (m.spaceRole?.permissions as any)?.[permission] === true).map((m) => m.userId),
-      ...assignments.filter((a) => (a.role?.permissions as any)?.[permission] === true).map((a) => a.userId),
-    ];
+    const assignments = await this.prisma.spaceAssignment.findMany({
+      where: { spaceId, organizationId, role: { isActive: true } },
+      include: { role: { select: { permissions: true } } },
+    });
+    const leaderIds = assignments
+      .filter((a) => (a.role?.permissions as any)?.[permission] === true)
+      .map((a) => a.userId);
     if (leaderIds.length > 0) return [...new Set(leaderIds)];
 
     // Fallback: org admins / user managers.

@@ -293,7 +293,6 @@ export class AuthService {
           // Unified roles (Phase 2) → resolved `access` on the login response.
           memberRole: { select: { permissions: true } },
           spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
-          spaceMemberships: { select: { spaceId: true, spaceRole: { select: { permissions: true } } } },
         },
       });
 
@@ -484,10 +483,7 @@ export class AuthService {
               },
               orgRolePermissions: user.orgRole?.permissions,
               memberRolePermissions: user.memberRole?.permissions,
-              spaces: [
-                ...user.spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
-                ...user.spaceMemberships.map((m) => ({ spaceId: m.spaceId, permissions: m.spaceRole?.permissions })),
-              ],
+              spaces: user.spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
             }),
           },
           ...tokens,
@@ -1032,7 +1028,6 @@ export class AuthService {
           // also read so per-space grants resolve before the backfill runs.
           memberRole: { select: { permissions: true } },
           spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
-          spaceMemberships: { select: { spaceId: true, spaceRole: { select: { permissions: true } } } },
         },
       });
 
@@ -1047,7 +1042,7 @@ export class AuthService {
         .update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
         .catch(() => undefined);
 
-      const { organization, profileBadges, orgRole, enabledModules: userModules, memberRole, spaceAssignments, spaceMemberships, ...userData } = user;
+      const { organization, profileBadges, orgRole, enabledModules: userModules, memberRole, spaceAssignments, ...userData } = user;
       // Resolve the member's access ONCE here (server-side, from their own
       // roles/assignments). Cached with the validated user on the gateway.
       const access = buildResolvedAccess({
@@ -1060,10 +1055,7 @@ export class AuthService {
         },
         orgRolePermissions: orgRole?.permissions,
         memberRolePermissions: memberRole?.permissions,
-        spaces: [
-          ...spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
-          ...spaceMemberships.map((m) => ({ spaceId: m.spaceId, permissions: m.spaceRole?.permissions })),
-        ],
+        spaces: spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
       });
       return {
         valid: true,

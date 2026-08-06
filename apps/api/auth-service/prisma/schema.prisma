@@ -379,8 +379,6 @@ model Organization {
   // Shift scheduling (space-centric attendance)
   shifts           Shift[]
   shiftAssignments ShiftAssignment[]
-  spaceRoles       SpaceRole[] // Dynamic per-space sub-roles (org-defined, space-assigned)
-  spaceMembers     SpaceMember[]
 
   // Organization delegation relationships
   grantedAccess  OrganizationAccess[] @relation("Grantor") // Access this org has granted to others
@@ -610,7 +608,6 @@ model User {
 
   // Shift scheduling (space-centric attendance)
   shiftAssignments ShiftAssignment[] // Rota: shifts this member is assigned to
-  spaceMemberships SpaceMember[] // Per-space membership + dynamic sub-role
 
   // Availability management
   schedules        TechnicianSchedule[] // Weekly recurring schedule
@@ -1368,7 +1365,6 @@ model CompanyLocation {
   // Shift scheduling (space-centric attendance)
   shifts           Shift[] // Shift definitions scoped to this space
   shiftAssignments ShiftAssignment[] // Rota: members assigned to shifts here
-  spaceMembers     SpaceMember[] // Per-space membership + dynamic sub-role
 
   // Time entries at this location
   timeEntries TimeEntry[]
@@ -1676,61 +1672,9 @@ model ShiftAssignment {
   @@map("shift_assignments")
 }
 
-// Dynamic per-space sub-role (e.g. "Space Manager", "Shift Leader",
-// "Team Leader"). Org-defined + reusable across spaces; carries attendance
-// permission flags in `permissions`. Follows the OrgRole pattern.
-model SpaceRole {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  name        String // "Shift Leader"
-  slug        String
-  description String?
-  color       String? @default("#6b7280")
-  isSystem    Boolean @default(false) // Seeded, non-deletable built-in role
-
-  // { canApproveOvertime, canManageRota, canReconcileAttendance, canViewSpaceAttendance }
-  permissions Json
-  position    Int     @default(0)
-  isActive    Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  members SpaceMember[]
-
-  @@unique([organizationId, slug])
-  @@index([organizationId])
-  @@map("space_roles")
-}
-
-// Membership of a user in a space, with an optional dynamic sub-role.
-// Drives overtime-approval routing + escalation targets for that space.
-model SpaceMember {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  spaceId String
-  space   CompanyLocation @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-
-  spaceRoleId String?
-  spaceRole   SpaceRole? @relation(fields: [spaceRoleId], references: [id], onDelete: SetNull)
-
-  createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, spaceId])
-  @@index([spaceId])
-  @@index([organizationId])
-  @@index([spaceRoleId])
-  @@map("space_members")
-}
+// SpaceRole + SpaceMember retired (Phase 5) — fully replaced by AccessRole
+// (scope SPACE) + SpaceAssignment. Tables dropped in migration
+// 20260807140000_drop_legacy_space_role_member.
 
 // ==================== UNIFIED ROLE MODEL (Phase 1) ====================
 // One role entity for BOTH org-wide and per-space roles, carrying the unified
