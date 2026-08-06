@@ -30,6 +30,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { AccessFields } from "@/components/access-fields"
+import { defaultAccessDraft, serializeAccessDraft } from "@hbcfield/shared/client"
+import type { AccessDraft } from "@hbcfield/shared/client"
 
 const SPECIALTY_OPTIONS = [
   "Electrical", "Plumbing", "Mechanical", "HVAC", "General", "Other",
@@ -54,6 +57,8 @@ export default function InviteMemberPage() {
   const [expiresInHours, setExpiresInHours] = useState("168")
   const [specialty, setSpecialty] = useState("")
   const [maxDailyJobs, setMaxDailyJobs] = useState("")
+  const [access, setAccess] = useState<AccessDraft>(() => defaultAccessDraft())
+  const patchAccess = (p: Partial<AccessDraft>) => setAccess((cur) => ({ ...cur, ...p }))
 
   // Success state
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
@@ -92,6 +97,7 @@ export default function InviteMemberPage() {
     if (isEmployee) {
       if (specialty) input.specialty = specialty
       if (maxDailyJobs) input.maxDailyJobs = parseInt(maxDailyJobs)
+      input.accessProfile = serializeAccessDraft(access)
     }
 
     createMutation.mutate(input)
@@ -283,6 +289,15 @@ export default function InviteMemberPage() {
                       value={maxDailyJobs}
                       onChange={(e) => setMaxDailyJobs(e.target.value)}
                     />
+                  </div>
+                </div>
+
+                {/* Access & permissions — pre-configured so the member's first
+                    screen already matches their final access. */}
+                <div className="space-y-2 pt-2">
+                  <h3 className="text-sm font-medium text-foreground">{t("invitations.inviteDialog.accessTitle", "Access & permissions")}</h3>
+                  <div className="rounded-2xl border border-border bg-card p-5">
+                    <AccessFields value={access} onChange={patchAccess} />
                   </div>
                 </div>
               </div>

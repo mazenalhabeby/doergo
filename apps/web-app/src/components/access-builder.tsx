@@ -3,57 +3,36 @@
 import { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Smartphone, Monitor, Layers, MessageCircle, Save, Bell } from "lucide-react"
+import { Save, Bell } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
 import type { OrgMember } from "@/lib/api"
-import { getModules, getSpaceScope, getAccessPlatforms, canContactColleagues } from "@hbcfield/shared/client"
-import type { MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
+import { readAccessDraft, serializeAccessDraft } from "@hbcfield/shared/client"
+import type { AccessDraft } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UserAvatar } from "@/components/user-avatar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { AccessFields, Field } from "@/components/access-fields"
 import { notify } from "@/lib/toast"
 
-// Feature tabs only — `create_task` and `manage` are NOT stored here; they
-// derive from the Create / Manage permissions below (single source of truth).
-const FEATURE_TABS: { key: MobileModule; labelKey: string }[] = [
-  { key: "tasks", labelKey: "accessBuilder.featureTabs.tasks" },
-  { key: "clock", labelKey: "accessBuilder.featureTabs.clock" },
-  { key: "time_off", labelKey: "accessBuilder.featureTabs.timeOff" },
-]
-
-const PLATFORMS: { key: AccessPlatform; labelKey: string; icon: typeof Monitor }[] = [
-  { key: "web", labelKey: "accessBuilder.platforms.webOnly", icon: Monitor },
-  { key: "mobile", labelKey: "accessBuilder.platforms.mobileOnly", icon: Smartphone },
-  { key: "both", labelKey: "accessBuilder.platforms.both", icon: Layers },
-]
-
-const SCOPES: { key: SpaceScope; labelKey: string; descKey: string }[] = [
-  { key: "own", labelKey: "accessBuilder.scopes.own.label", descKey: "accessBuilder.scopes.own.desc" },
-  { key: "tasks", labelKey: "accessBuilder.scopes.tasks.label", descKey: "accessBuilder.scopes.tasks.desc" },
-  { key: "all", labelKey: "accessBuilder.scopes.all.label", descKey: "accessBuilder.scopes.all.desc" },
-]
-
-const TASK_SCOPES = [
-  { key: "SELF", labelKey: "accessBuilder.taskScopes.self" },
-  { key: "SPACE", labelKey: "accessBuilder.taskScopes.space" },
-  { key: "ORG", labelKey: "accessBuilder.taskScopes.org" },
-]
+/** Stable, order-insensitive canonical form of a draft's PERSISTED shape — so
+ *  dirty tracking ignores field ordering and collapsed values (e.g. task scope
+ *  when create is off). Reuses `serializeAccessDraft` (single source of truth). */
+function canon(d: AccessDraft): string {
+  const p = serializeAccessDraft(d)
+  return JSON.stringify({
+    ...p,
+    enabledModules: { ...p.enabledModules, modules: [...p.enabledModules.modules].sort() },
+    contactAllowedIds: [...p.contactAllowedIds].sort(),
+  })
+}
 
 /**
  * Access Builder — the single place to configure a member: reach (platform,
  * space visibility, collaboration), feature tabs, AND the enforced permissions
  * (create / assign / view-all / manage). Saving writes the Access Profile and
  * the permission fields together, so the navigation UI and the server-side
- * permission guard can never disagree.
+ * permission guard can never disagree. Field rendering is delegated to the
+ * shared <AccessFields>, which also powers the invitation pre-config.
  */
 export function AccessBuilder({
   member,
@@ -70,44 +49,14 @@ export function AccessBuilder({
 }) {
   const isBulk = Array.isArray(applyToIds) && applyToIds.length > 0
   const { t } = useTranslation()
-  const initial = useMemo(() => ({
-    modules: getModules(member as any).filter((m) =>
-      FEATURE_TABS.some((t) => t.key === m),
-    ),
-    platforms: getAccessPlatforms(member as any),
-    spaceScope: getSpaceScope(member as any),
-    canContact: canContactColleagues(member as any),
-    canCreateTasks: !!member.canCreateTasks,
-    taskScope: (member.taskCreationScope as string) || "SELF",
-    canAssignTasks: !!member.canAssignTasks,
-    canViewAllTasks: !!member.canViewAllTasks,
-    canManageUsers: !!member.canManageUsers,
-    contactable: !!member.contactable,
-    contactScope: member.contactScope || "NONE",
-    contactAllowedIds: member.contactAllowedIds || [],
-    showInManagement: !!member.showInManagement,
-    canViewReports: !!member.canViewReports,
-    allowRemote: !!member.allowRemote,
-  }), [member])
 
-  const [modules, setModules] = useState<MobileModule[]>(initial.modules)
-  const [platforms, setPlatforms] = useState<AccessPlatform>(initial.platforms)
-  const [spaceScope, setSpaceScope] = useState<SpaceScope>(initial.spaceScope)
-  const [canContact, setCanContact] = useState<boolean>(initial.canContact)
-  const [canCreateTasks, setCanCreateTasks] = useState<boolean>(initial.canCreateTasks)
-  const [taskScope, setTaskScope] = useState<string>(
-    initial.taskScope === "NONE" ? "SELF" : initial.taskScope,
-  )
-  const [canAssignTasks, setCanAssignTasks] = useState<boolean>(initial.canAssignTasks)
-  const [canViewAllTasks, setCanViewAllTasks] = useState<boolean>(initial.canViewAllTasks)
-  const [canManageUsers, setCanManageUsers] = useState<boolean>(initial.canManageUsers)
-  const [contactable, setContactable] = useState<boolean>(initial.contactable)
-  const [contactScope, setContactScope] = useState<string>(initial.contactScope)
-  const [contactAllowedIds, setContactAllowedIds] = useState<string[]>(initial.contactAllowedIds)
-  const [showInManagement, setShowInManagement] = useState<boolean>(initial.showInManagement)
-  const [canViewReports, setCanViewReports] = useState<boolean>(initial.canViewReports)
-  const [allowRemote, setAllowRemote] = useState<boolean>(initial.allowRemote)
+  const initial = useMemo(() => readAccessDraft(member), [member])
+  const [draft, setDraft] = useState<AccessDraft>(initial)
+  const patch = (p: Partial<AccessDraft>) => setDraft((cur) => ({ ...cur, ...p }))
   const [saving, setSaving] = useState(false)
+
+  // Re-seed when the member (or bulk template) changes.
+  useEffect(() => { setDraft(initial) }, [initial])
 
   // ── Notification watchers (who is alerted ABOUT this member) ────────────────
   // Persisted together with the access on Save — NOT per-toggle. In bulk mode we
@@ -128,23 +77,13 @@ export function AccessBuilder({
     setWatcherIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
 
-  // Contacts this member could be allowed to reach: ONLY admins + members flagged
-  // "Show in Management". NOT every contactable member (chat is open-by-default →
-  // contactable=true for all) and NOT plain managers unless they're flagged.
+  // Eligible watchers = admins + Show-in-Management members. In single mode
+  // exclude the member itself; in bulk keep all (the backend drops self per-subject).
   const { data: membersData } = useQuery({
     queryKey: ["orgMembers", "positions"],
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
     staleTime: 60000,
   })
-  const candidateContacts = useMemo(
-    () => (membersData?.data || []).filter(
-      (m) => m.id !== member.id && m.isActive && (m.role === "ADMIN" || m.showInManagement),
-    ),
-    [membersData, member.id],
-  )
-  // Eligible watchers = admins + Show-in-Management members (same rule as the
-  // contacts picker). In single mode exclude the member itself; in bulk keep all
-  // (the backend drops self per-subject).
   const watcherCandidates = useMemo(
     () => (membersData?.data || []).filter(
       (m) => (isBulk || m.id !== member.id) && m.isActive && (m.role === "ADMIN" || m.showInManagement),
@@ -152,45 +91,12 @@ export function AccessBuilder({
     [membersData, member.id, isBulk],
   )
 
-  const toggleModule = (m: MobileModule) =>
-    setModules((cur) => (cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m]))
-
-  const dirty =
-    JSON.stringify(modules.slice().sort()) !== JSON.stringify(initial.modules.slice().sort()) ||
-    platforms !== initial.platforms ||
-    spaceScope !== initial.spaceScope ||
-    canContact !== initial.canContact ||
-    canCreateTasks !== initial.canCreateTasks ||
-    (canCreateTasks && taskScope !== initial.taskScope) ||
-    canAssignTasks !== initial.canAssignTasks ||
-    canViewAllTasks !== initial.canViewAllTasks ||
-    canManageUsers !== initial.canManageUsers ||
-    contactable !== initial.contactable ||
-    contactScope !== initial.contactScope ||
-    showInManagement !== initial.showInManagement ||
-    canViewReports !== initial.canViewReports ||
-    allowRemote !== initial.allowRemote ||
-    watchersTouched ||
-    (contactScope === "SELECTED" && JSON.stringify(contactAllowedIds.slice().sort()) !== JSON.stringify(initial.contactAllowedIds.slice().sort()))
+  const dirty = canon(draft) !== canon(initial) || watchersTouched
 
   const save = async () => {
     try {
       setSaving(true)
-      const payload = {
-        enabledModules: { modules, platforms, spaceScope, canContact },
-        canCreateTasks,
-        taskCreationScope: canCreateTasks ? taskScope : "NONE",
-        canAssignTasks,
-        canViewAllTasks,
-        canManageUsers,
-        contactable,
-        contactScope,
-        contactAllowedIds: contactScope === "SELECTED" ? contactAllowedIds : [],
-        showInManagement,
-        // Report access follows Show-in-Management: only meaningful when surfaced.
-        canViewReports: showInManagement ? canViewReports : false,
-        allowRemote,
-      }
+      const payload = serializeAccessDraft(draft)
       // Bulk: apply the same access to every selected member. Single: just this one.
       const targetIds = isBulk ? (applyToIds as string[]) : [member.id]
       await Promise.all(targetIds.map((id) => organizationsApi.updateMember(id, payload)))
@@ -231,239 +137,12 @@ export function AccessBuilder({
       </div>
 
       <div className="p-5 space-y-6">
-        {/* Platform */}
-        <Field dataTour="access-platform" label={t("accessBuilder.platformAccess")}>
-          <div className="inline-flex rounded-lg bg-muted p-1">
-            {PLATFORMS.map((p) => (
-              <button
-                key={p.key}
-                onClick={() => setPlatforms(p.key)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                  platforms === p.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <p.icon className="h-3.5 w-3.5" />
-                {t(p.labelKey)}
-              </button>
-            ))}
-          </div>
-        </Field>
-
-        {/* Permissions — the enforced authorization toggles */}
-        <Field dataTour="access-permissions" label={t("accessBuilder.permissions")}>
-          <div className="space-y-2">
-            <PermissionRow
-              title={t("accessBuilder.perms.create.title")}
-              desc={t("accessBuilder.perms.create.desc")}
-              checked={canCreateTasks}
-              onChange={setCanCreateTasks}
-            >
-              {canCreateTasks && (
-                <Select value={taskScope} onValueChange={setTaskScope}>
-                  <SelectTrigger className="h-8 w-[190px] text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TASK_SCOPES.map((s) => (
-                      <SelectItem key={s.key} value={s.key} className="text-xs">
-                        {t(s.labelKey)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </PermissionRow>
-            <PermissionRow
-              title={t("accessBuilder.perms.assign.title")}
-              desc={t("accessBuilder.perms.assign.desc")}
-              checked={canAssignTasks}
-              onChange={setCanAssignTasks}
-            />
-            <PermissionRow
-              title={t("accessBuilder.perms.viewAll.title")}
-              desc={t("accessBuilder.perms.viewAll.desc")}
-              checked={canViewAllTasks}
-              onChange={setCanViewAllTasks}
-            />
-            <PermissionRow
-              title={t("accessBuilder.perms.manage.title")}
-              desc={t("accessBuilder.perms.manage.desc")}
-              checked={canManageUsers}
-              onChange={setCanManageUsers}
-            />
-          </div>
-        </Field>
-
-        {/* Feature tabs */}
-        <Field dataTour="access-features" label={t("accessBuilder.featureTabsLabel")}>
-          <div className="flex flex-wrap gap-2">
-            {FEATURE_TABS.map((m) => {
-              const on = modules.includes(m.key)
-              return (
-                <button
-                  key={m.key}
-                  onClick={() => toggleModule(m.key)}
-                  className={cn(
-                    "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                    on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {t(m.labelKey)} {on ? "✓" : ""}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
-
-        {/* Attendance — remote clock-in. Always shown; disabled with a hint when
-            the Clock module is off (remote clock-in needs clock access). */}
-        <Field dataTour="access-attendance" label={t("accessBuilder.attendance", "Attendance")}>
-          <div className={cn(
-            "flex items-center justify-between rounded-xl border border-border px-4 py-3",
-            !modules.includes("clock") && "opacity-70",
-          )}>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{t("members.memberEditor.allowRemote", "Allow remote clock-in")}</p>
-              <p className="text-xs text-muted-foreground">
-                {modules.includes("clock")
-                  ? t("members.memberEditor.allowRemoteHint", "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured.")
-                  : t("accessBuilder.allowRemoteNeedsClock", "Enable the Clock module above to use remote clock-in.")}
-              </p>
-            </div>
-            <Switch checked={allowRemote} onCheckedChange={setAllowRemote} disabled={!modules.includes("clock")} />
-          </div>
-        </Field>
-
-        {/* Space scope */}
-        <Field dataTour="access-spaces" label={t("accessBuilder.spaceVisibility")}>
-          <div className="space-y-2">
-            {SCOPES.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setSpaceScope(s.key)}
-                className={cn(
-                  "flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
-                  spaceScope === s.key ? "border-primary bg-primary/[0.07]" : "border-border hover:bg-accent/40",
-                )}
-              >
-                <span className={cn(
-                  "mt-0.5 h-4 w-4 shrink-0 rounded-full border-2",
-                  spaceScope === s.key ? "border-primary bg-primary" : "border-muted-foreground/40",
-                )} />
-                <span>
-                  <span className="block text-sm font-medium text-foreground">{t(s.labelKey)}</span>
-                  <span className="block text-xs text-muted-foreground">{t(s.descKey)}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </Field>
-
-        {/* Messaging — ONE symmetric switch: being able to reach teammates and
-            being reachable by them are the same capability. Drives both
-            canContact (outbound) and contactable (inbound) together. */}
-        <Field dataTour="access-collaboration" label={t("accessBuilder.collaboration")}>
-          <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-foreground">{t("accessBuilder.contact.title")}</p>
-                <p className="text-xs text-muted-foreground">{t("accessBuilder.contact.desc")}</p>
-              </div>
-            </div>
-            <Switch
-              checked={canContact && contactable}
-              onCheckedChange={(v) => { setCanContact(v); setContactable(v) }}
-            />
-          </div>
-        </Field>
-
-        {/* Contact management — a SEPARATE control: scopes WHO this member may
-            reach (No one / All / Specific). Independent of the on/off above. */}
-        <Field dataTour="access-contact" label={t("accessBuilder.contactAccess", "Contact access")}>
-          <div className="space-y-2">
-            <div className="space-y-2.5 rounded-xl border border-border px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{t("accessBuilder.canContact.title", "Can contact")}</p>
-                  <p className="text-xs text-muted-foreground">{t("accessBuilder.canContact.desc", "Who this member may reach. Open to all teammates by default; restrict to specific people if needed.")}</p>
-                </div>
-                <Select value={contactScope} onValueChange={setContactScope}>
-                  <SelectTrigger className="h-8 w-[168px] shrink-0 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE" className="text-xs">{t("accessBuilder.contactScope.none", "No one")}</SelectItem>
-                    <SelectItem value="ALL" className="text-xs">{t("accessBuilder.contactScope.all", "All contacts")}</SelectItem>
-                    <SelectItem value="SELECTED" className="text-xs">{t("accessBuilder.contactScope.selected", "Specific contacts…")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {contactScope === "SELECTED" && (
-                <div className="max-h-44 space-y-0.5 overflow-y-auto rounded-lg border border-border p-1.5">
-                  {candidateContacts.length === 0 ? (
-                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">{t("accessBuilder.noContacts", "No contacts available")}</p>
-                  ) : (
-                    candidateContacts.map((c) => {
-                      const checked = contactAllowedIds.includes(c.id)
-                      return (
-                        <label key={c.id} className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent">
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(v) => setContactAllowedIds((prev) => (v ? [...prev, c.id] : prev.filter((id) => id !== c.id)))}
-                          />
-                          <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="sm" />
-                          <span className="min-w-0 flex-1 truncate text-sm">{c.firstName} {c.lastName}</span>
-                          <span className="shrink-0 text-[11px] text-muted-foreground">
-                            {c.role === "ADMIN" ? t("members.roles.admin") : (c.position || t("accessBuilder.contactLabel", "Contact"))}
-                          </span>
-                        </label>
-                      )
-                    })
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </Field>
-
-        {/* Show in Management — SEPARATE from chat: lists this member in the org
-            Management directory (reach leadership). Own field `showInManagement`,
-            independent of chat contactable. A single admin is always shown (toggle
-            locked ON) — but NOT in bulk mode, where the template may be an admin
-            yet the switch must stay editable for the whole selection. */}
-        <Field dataTour="access-management" label={t("accessBuilder.managementLabel", "Management directory")}>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{t("members.memberEditor.showInManagement", "Show in Management")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {!isBulk && member.role === "ADMIN"
-                    ? t("members.memberEditor.showInManagementAdmin", "Admins always appear in the Management directory.")
-                    : t("members.memberEditor.showInManagementHint", "Lists this person (with their sub-role) so teammates can reach them from anywhere.")}
-                </p>
-              </div>
-              <Switch
-                checked={!isBulk && member.role === "ADMIN" ? true : showInManagement}
-                disabled={!isBulk && member.role === "ADMIN"}
-                onCheckedChange={setShowInManagement}
-              />
-            </div>
-            {/* Reports access — only offered to Management members. */}
-            {(showInManagement || (!isBulk && member.role === "ADMIN")) && (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{t("accessBuilder.canViewReports.title", "Allow reports")}</p>
-                  <p className="text-xs text-muted-foreground">{t("accessBuilder.canViewReports.desc", "Let this member build and run reports.")}</p>
-                </div>
-                <Switch
-                  checked={!isBulk && member.role === "ADMIN" ? true : canViewReports}
-                  disabled={!isBulk && member.role === "ADMIN"}
-                  onCheckedChange={setCanViewReports}
-                />
-              </div>
-            )}
-          </div>
-        </Field>
+        <AccessFields
+          value={draft}
+          onChange={patch}
+          excludeContactId={isBulk ? undefined : member.id}
+          lockManagementForAdmin={!isBulk && member.role === "ADMIN"}
+        />
 
         {/* Notifications about — who is alerted ABOUT this member (approvals,
             geofence, …). Selection is held locally and persisted on Save/Apply,
@@ -500,42 +179,6 @@ export function AccessBuilder({
           </div>
         </Field>
       </div>
-    </div>
-  )
-}
-
-function PermissionRow({
-  title,
-  desc,
-  checked,
-  onChange,
-  children,
-}: {
-  title: string
-  desc: string
-  checked: boolean
-  onChange: (v: boolean) => void
-  children?: React.ReactNode
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-xs text-muted-foreground">{desc}</p>
-      </div>
-      <div className="flex items-center gap-3 shrink-0">
-        {children}
-        <Switch checked={checked} onCheckedChange={onChange} />
-      </div>
-    </div>
-  )
-}
-
-function Field({ label, children, dataTour }: { label: string; children: React.ReactNode; dataTour?: string }) {
-  return (
-    <div data-tour={dataTour}>
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      {children}
     </div>
   )
 }

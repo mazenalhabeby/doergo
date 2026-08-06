@@ -8,6 +8,7 @@ import {
   BCRYPT_COST_FACTOR,
   DEFAULT_PERMISSIONS,
   getDefaultModules,
+  normalizeAccessProfile,
   Role,
   INVITATION_CODE_LENGTH,
   INVITATION_CODE_CHARSET,
@@ -59,6 +60,8 @@ export class InvitationService {
     specialty?: string;
     maxDailyJobs?: number;
     spaceId?: string;
+    // Full pre-configured Access Profile (applied to the member on accept).
+    accessProfile?: unknown;
     // Customer-portal invite (targetRole = CUSTOMER)
     customerId?: string;
     unitId?: string;
@@ -186,6 +189,10 @@ export class InvitationService {
         maxDailyJobs: isTechnician ? data.maxDailyJobs || null : null,
         // Pre-assigned space — applied to the user on accept.
         spaceId: isTechnician ? (data.spaceId || null) : null,
+        // Pre-configured Access Profile — sanitized here, re-sanitized on accept.
+        accessProfile: isTechnician
+          ? ((normalizeAccessProfile(data.accessProfile) as unknown as Prisma.InputJsonValue) ?? undefined)
+          : undefined,
         // Customer-portal invite target (bound to the new login on accept).
         customerId: isCustomerInvite ? (data.customerId || null) : null,
         unitId: isCustomerInvite ? (data.unitId || null) : null,
@@ -350,6 +357,14 @@ export class InvitationService {
     const role = invitation.targetRole as Role;
     const defaultPerms = DEFAULT_PERMISSIONS[role];
 
+    // Pre-configured Access Profile (EMPLOYEE only). When present it OVERRIDES the
+    // role defaults, so the member's very first screen already matches their final
+    // access. Re-sanitized here (never trust the stored JSON blindly).
+    const accessProfile =
+      invitation.targetRole === 'EMPLOYEE'
+        ? normalizeAccessProfile(invitation.accessProfile)
+        : null;
+
     // Create user and mark invitation as accepted in a transaction
     const user = await this.prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
@@ -372,12 +387,32 @@ export class InvitationService {
                 monthlyHourBudget: invitation.monthlyHourBudget ?? null,
                 specialty: invitation.specialty,
                 maxDailyJobs: invitation.maxDailyJobs || 5,
-                // New members start LEAST-PRIVILEGE: their own assigned spaces
-                // only (admins widen to all via the Access tab). Standard tabs.
-                enabledModules: {
-                  modules: getDefaultModules(invitation.position),
-                  spaceScope: 'own',
-                },
+                ...(accessProfile
+                  ? {
+                      // Admin pre-configured the access → apply it verbatim so the
+                      // first screen already matches (overrides the role defaults
+                      // set above).
+                      enabledModules: accessProfile.enabledModules,
+                      canCreateTasks: accessProfile.canCreateTasks,
+                      taskCreationScope: accessProfile.taskCreationScope as any,
+                      canAssignTasks: accessProfile.canAssignTasks,
+                      canViewAllTasks: accessProfile.canViewAllTasks,
+                      canManageUsers: accessProfile.canManageUsers,
+                      contactable: accessProfile.contactable,
+                      contactScope: accessProfile.contactScope,
+                      contactAllowedIds: accessProfile.contactAllowedIds,
+                      showInManagement: accessProfile.showInManagement,
+                      canViewReports: accessProfile.canViewReports,
+                      allowRemote: accessProfile.allowRemote,
+                    }
+                  : {
+                      // No pre-config → LEAST-PRIVILEGE: own assigned spaces only
+                      // (admins widen later via the Access tab). Standard tabs.
+                      enabledModules: {
+                        modules: getDefaultModules(invitation.position),
+                        spaceScope: 'own',
+                      },
+                    }),
               }
             : {}),
           // Customer-portal login: bind to the Customer + optional default unit.

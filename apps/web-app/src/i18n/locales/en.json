@@ -2214,7 +2214,9 @@
       "noSpace": "No space",
       "sending": "Sending...",
       "sendInvitation": "Send Invitation",
-      "generateCode": "Generate Code"
+      "generateCode": "Generate Code",
+      "accessTitle": "Access & permissions",
+      "accessFeatureCount": "{{count}} features"
     }
   },
   "joinRequests": {
@@ -3286,7 +3288,8 @@
     "savedToClipboard": "Saved to clipboard",
     "billingLoadFailed": "Couldn't load billing details.",
     "billingUpdated": "Billing updated.",
-    "checkoutFailed": "Couldn't start checkout."
+    "checkoutFailed": "Couldn't start checkout.",
+    "accessUpdated": "Your access was updated"
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",

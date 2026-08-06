@@ -1,3 +1,5 @@
+import type { AccessPersisted } from './modules';
+
 // Invitation status enum (mirrors Prisma enum)
 export enum InvitationStatus {
   PENDING = 'PENDING',
@@ -73,6 +75,12 @@ export interface CreateInvitationInput {
   /** Customer-portal invite (targetRole=CUSTOMER): the Customer + optional unit. */
   customerId?: string;
   unitId?: string;
+  /**
+   * Pre-configured Access Profile applied to the member on accept, so their
+   * first screen already matches their final access (no post-registration
+   * "screen change"). Produced by `serializeAccessDraft`.
+   */
+  accessProfile?: AccessPersisted;
 }
 
 // Accept invitation input (from mobile/web registration)

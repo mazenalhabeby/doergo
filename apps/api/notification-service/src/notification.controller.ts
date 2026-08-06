@@ -88,6 +88,17 @@ export class NotificationController {
     this.websocketGateway.forceDisconnectUser(data.userId);
   }
 
+  // An admin changed this member's access/role. Signal the member's own sockets
+  // (web + mobile) to re-fetch their profile so nav/screens re-render in place —
+  // no reload, no re-login. Reaches ONLY that member via their user room.
+  @EventPattern('member_access_updated')
+  async handleMemberAccessUpdated(@Payload() data: { memberId: string; organizationId: string }) {
+    this.logger.log(`Member access updated: ${data.memberId} in org ${data.organizationId}`);
+    this.websocketGateway.emitToUser(data.memberId, 'member.access_updated', {
+      organizationId: data.organizationId,
+    });
+  }
+
   // =========================================================================
   // INVITATION EVENTS
   // =========================================================================

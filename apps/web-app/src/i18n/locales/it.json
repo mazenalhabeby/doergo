@@ -2214,7 +2214,9 @@
       "noSpace": "Nessuno spazio",
       "sending": "Invio in corso...",
       "sendInvitation": "Invia invito",
-      "generateCode": "Genera codice"
+      "generateCode": "Genera codice",
+      "accessTitle": "Accesso e autorizzazioni",
+      "accessFeatureCount": "{{count}} funzioni"
     }
   },
   "joinRequests": {
@@ -3286,7 +3288,8 @@
     "savedToClipboard": "Salvato negli appunti",
     "billingLoadFailed": "Impossibile caricare i dati di fatturazione.",
     "billingUpdated": "Fatturazione aggiornata.",
-    "checkoutFailed": "Impossibile avviare il pagamento."
+    "checkoutFailed": "Impossibile avviare il pagamento.",
+    "accessUpdated": "I tuoi permessi di accesso sono stati aggiornati"
   },
   "errors": {
     "somethingWentWrong": "Qualcosa è andato storto",

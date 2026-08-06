@@ -1767,6 +1767,10 @@ model Invitation {
   schedule          Json? // Weekly rows when FIXED: [{dayOfWeek,startTime,endTime,isActive}]
   monthlyHourBudget Int? // When FLEXIBLE
   enabledModules    Json?
+  // Full pre-configured Access Profile (platform, permissions, feature tabs,
+  // space scope, contact/management flags) applied to the member on accept — so
+  // their first screen already matches their final access. Shape = AccessPersisted.
+  accessProfile     Json?
   specialty         String?
   maxDailyJobs      Int?
 

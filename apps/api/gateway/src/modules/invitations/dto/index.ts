@@ -32,6 +32,59 @@ export class InvitationScheduleEntryDto {
   isActive: boolean;
 }
 
+// ── Access Profile (pre-configured on the invite, applied on accept) ──────────
+// Mirrors the AccessPersisted shape produced by `serializeAccessDraft`. Values
+// are re-sanitized server-side via `normalizeAccessProfile`, so this validation
+// is a first line of defence, not the only one.
+
+export class EnabledModulesDto {
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  modules?: string[];
+
+  @IsOptional()
+  @IsIn(['web', 'mobile', 'both'])
+  platforms?: string;
+
+  @IsOptional()
+  @IsIn(['own', 'tasks', 'all'])
+  spaceScope?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  canContact?: boolean;
+}
+
+export class AccessProfileDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EnabledModulesDto)
+  enabledModules?: EnabledModulesDto;
+
+  @IsOptional() @IsBoolean() canCreateTasks?: boolean;
+
+  @IsOptional() @IsIn(['NONE', 'SELF', 'SPACE', 'ORG']) taskCreationScope?: string;
+
+  @IsOptional() @IsBoolean() canAssignTasks?: boolean;
+
+  @IsOptional() @IsBoolean() canViewAllTasks?: boolean;
+
+  @IsOptional() @IsBoolean() canManageUsers?: boolean;
+
+  @IsOptional() @IsBoolean() contactable?: boolean;
+
+  @IsOptional() @IsIn(['NONE', 'ALL', 'SELECTED']) contactScope?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true }) contactAllowedIds?: string[];
+
+  @IsOptional() @IsBoolean() showInManagement?: boolean;
+
+  @IsOptional() @IsBoolean() canViewReports?: boolean;
+
+  @IsOptional() @IsBoolean() allowRemote?: boolean;
+}
+
 export class CreateInvitationDto {
   @ApiProperty({
     enum: ['ADMIN', 'EMPLOYEE', 'CUSTOMER'],
@@ -105,6 +158,15 @@ export class CreateInvitationDto {
   @IsString()
   @IsOptional()
   spaceId?: string;
+
+  @ApiPropertyOptional({
+    type: AccessProfileDto,
+    description: 'Pre-configured Access Profile applied to the member on accept',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AccessProfileDto)
+  accessProfile?: AccessProfileDto;
 
   // Customer-portal invite (only for targetRole=CUSTOMER)
 

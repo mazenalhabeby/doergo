@@ -190,6 +190,14 @@ export class OrganizationsController {
     // logout/login required.
     await this.authCache.invalidateUser(memberId);
 
+    // Push a live signal to the member's own sockets (web + mobile) so their
+    // nav/screens re-render in place with the new access — no reload, no
+    // re-login, and no waiting for the next foreground resume.
+    this.notificationClient.emit('member_access_updated', {
+      memberId,
+      organizationId: user.organizationId,
+    });
+
     // Access/role change may flip this member between office and field seat.
     this.syncSeats(user.organizationId);
 

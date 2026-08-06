@@ -17,6 +17,9 @@ export {
   getFeatureModules, hasFeatureModule, DEFAULT_ORG_MODULES,
   type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform, type WebScreen,
   DEFAULT_MODULES, ALL_MODULES,
+  // Editable access draft — shared by member-edit, invite pre-config, backend accept
+  FEATURE_TAB_MODULES, defaultAccessDraft, readAccessDraft, serializeAccessDraft, normalizeAccessProfile,
+  type AccessDraft, type AccessPersisted,
 } from './modules';
 export * from './schedule';
 export * from './task-flow';
@@ -77,6 +80,8 @@ export const SocketEvents = {
   BREAK_ENDED: 'break.ended',
   // Availability status (Available/Busy/Away) changed
   PRESENCE_CHANGED: 'presence.changed',
+  // An admin changed this member's access/role → member should refresh profile
+  MEMBER_ACCESS_UPDATED: 'member.access_updated',
   // Support events
   SUPPORT_MESSAGE: 'support.message', // new message on a ticket
   SUPPORT_TICKET_UPDATED: 'support.ticketUpdated', // status/assignment/SLA change
