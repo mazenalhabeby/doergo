@@ -1799,6 +1799,15 @@ model SpaceAssignment {
   effectiveFrom DateTime  @default(now())
   effectiveTo   DateTime?
 
+  // Per-member, per-space routing OVERRIDE (Phase 4d). Who is notified ABOUT this
+  // member / who this member may CONTACT, within THIS space — as space roles
+  // (AccessRole ids) and/or specific users. Empty on a kind = fall back to the
+  // space default (CompanyLocation.notify/contactRoleIds), else the space leaders.
+  notifyRoleIds  String[] @default([])
+  notifyUserIds  String[] @default([])
+  contactRoleIds String[] @default([])
+  contactUserIds String[] @default([])
+
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

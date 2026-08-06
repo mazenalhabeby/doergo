@@ -2,7 +2,7 @@ import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nest
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, directConversationKey, canContactColleagues } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { spaceIdsForUser, spaceRoleHolders } from '../../common/space-access.util';
+import { resolveMemberRouting } from '../../common/space-access.util';
 
 type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
 
@@ -38,11 +38,10 @@ export class ChatService {
     return { data: reachable };
   }
 
-  /** User ids `me` may contact via their space(s) — holders of a contact role. */
+  /** User ids `me` may contact via their space(s) — per-member override, else the
+   *  space default (holders of a contact role). */
   private myContactTargets(userId: string, organizationId: string): Promise<Set<string>> {
-    return spaceIdsForUser(this.prisma, userId).then((spaceIds) =>
-      spaceRoleHolders(this.prisma, organizationId, spaceIds, 'contact'),
-    );
+    return resolveMemberRouting(this.prisma, organizationId, userId, 'contact');
   }
 
   /**

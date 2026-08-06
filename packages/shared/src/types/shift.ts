@@ -132,16 +132,16 @@ export interface SpaceRole {
 
 export interface SpaceMember {
   id: string;
-  organizationId: string;
   userId: string;
-  spaceId: string;
-  spaceRoleId?: string | null;
-  createdById?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  spaceId?: string;
   // Populated relations (optional)
   user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null };
   spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions'> | null;
+  // Per-member, per-space routing override (Phase 4d). Empty = space default.
+  notifyRoleIds?: string[];
+  notifyUserIds?: string[];
+  contactRoleIds?: string[];
+  contactUserIds?: string[];
 }
 
 // Whether a member (via their space role) holds a given space permission.

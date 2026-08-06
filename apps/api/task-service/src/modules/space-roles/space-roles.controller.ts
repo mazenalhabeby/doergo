@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SpaceRolesService } from './space-roles.service';
-import type { SpaceRolePermissions } from '@hbcfield/shared';
+import type { PermissionSet } from '@hbcfield/shared';
 
 @Controller()
 export class SpaceRolesController {
@@ -21,7 +21,7 @@ export class SpaceRolesController {
       name: string;
       description?: string;
       color?: string;
-      permissions?: Partial<SpaceRolePermissions>;
+      permissions?: PermissionSet;
     },
   ) {
     return this.service.createRole(data);
@@ -36,7 +36,7 @@ export class SpaceRolesController {
       name?: string;
       description?: string;
       color?: string;
-      permissions?: Partial<SpaceRolePermissions>;
+      permissions?: PermissionSet;
       isActive?: boolean;
     },
   ) {
@@ -71,5 +71,21 @@ export class SpaceRolesController {
   @MessagePattern({ cmd: 'remove_space_member' })
   removeMember(@Payload() data: { organizationId: string; spaceId: string; memberId: string }) {
     return this.service.removeMember(data);
+  }
+
+  @MessagePattern({ cmd: 'update_space_member_routing' })
+  updateMemberRouting(
+    @Payload()
+    data: {
+      organizationId: string;
+      spaceId: string;
+      memberId: string;
+      notifyRoleIds?: string[];
+      notifyUserIds?: string[];
+      contactRoleIds?: string[];
+      contactUserIds?: string[];
+    },
+  ) {
+    return this.service.updateMemberRouting(data);
   }
 }

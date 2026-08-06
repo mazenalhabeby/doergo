@@ -5560,7 +5560,12 @@
       "notifyTitle": "Über Mitglieder hier benachrichtigt",
       "contactTitle": "Von Mitgliedern hier kontaktierbar",
       "notifyEmpty": "Standard: die Leiter des Space",
-      "contactEmpty": "Standard: die Leiter des Space"
+      "contactEmpty": "Standard: die Leiter des Space",
+      "perMember": "Weiterleitung",
+      "roles": "Rollen",
+      "people": "Bestimmte Personen",
+      "memberNotify": "Benachrichtigt über {{name}}",
+      "memberContact": "{{name}} kann kontaktieren"
     }
   }
 }

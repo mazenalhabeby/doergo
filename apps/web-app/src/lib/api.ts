@@ -3601,6 +3601,15 @@ export const spaceMembersApi = {
     if (res.error) throw new Error(res.error);
     return res.data;
   },
+  updateRouting: async (
+    spaceId: string,
+    memberId: string,
+    data: { notifyRoleIds?: string[]; notifyUserIds?: string[]; contactRoleIds?: string[]; contactUserIds?: string[] },
+  ) => {
+    const res = await api.patch<{ success: boolean; data: unknown }>(`/spaces/${spaceId}/members/${memberId}/routing`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
 };
 
 export interface Colleague {

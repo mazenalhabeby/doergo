@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, X, Lock } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, X, Lock, SlidersHorizontal } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { spaceRolesApi, spaceMembersApi, employeesApi } from "@/lib/api"
@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { RoutingSection } from "./routing-section"
+import { MemberRoutingEditor } from "./member-routing-editor"
 
 const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
@@ -326,6 +327,7 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
   const queryClient = useQueryClient()
   const [selectedUserId, setSelectedUserId] = useState("")
   const [selectedRoleId, setSelectedRoleId] = useState(NO_ROLE)
+  const [routingOpen, setRoutingOpen] = useState<string | null>(null)
 
   const { data: members, isLoading } = useQuery({
     queryKey: ["space-members", spaceId],
@@ -396,41 +398,54 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
       ) : (
         <div className="space-y-2">
           {members.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center justify-between gap-4 rounded-xl border p-3 transition-colors hover:bg-muted/50"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Avatar className="h-8 w-8">
-                  {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
-                  <AvatarFallback className="text-xs">
-                    {(m.user?.firstName?.[0] || "") + (m.user?.lastName?.[0] || "")}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <span className="text-sm font-medium text-foreground truncate block">
-                    {m.user ? `${m.user.firstName} ${m.user.lastName}` : t("scheduling.members.unknownMember")}
-                  </span>
-                  {m.spaceRole && (
-                    <Badge
-                      variant="outline"
-                      className="text-[11px] mt-0.5"
-                      style={m.spaceRole.color ? { borderColor: `${m.spaceRole.color}66`, color: m.spaceRole.color } : undefined}
-                    >
-                      {m.spaceRole.name}
-                    </Badge>
-                  )}
+            <div key={m.id} className="rounded-xl border p-3 transition-colors hover:bg-muted/50">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-8 w-8">
+                    {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
+                    <AvatarFallback className="text-xs">
+                      {(m.user?.firstName?.[0] || "") + (m.user?.lastName?.[0] || "")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-foreground truncate block">
+                      {m.user ? `${m.user.firstName} ${m.user.lastName}` : t("scheduling.members.unknownMember")}
+                    </span>
+                    {m.spaceRole && (
+                      <Badge
+                        variant="outline"
+                        className="text-[11px] mt-0.5"
+                        style={m.spaceRole.color ? { borderColor: `${m.spaceRole.color}66`, color: m.spaceRole.color } : undefined}
+                      >
+                        {m.spaceRole.name}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant={routingOpen === m.id ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={() => setRoutingOpen(routingOpen === m.id ? null : m.id)}
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    {t("scheduling.routing.perMember", "Routing")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                    onClick={() => removeMutation.mutate(m.id)}
+                    disabled={removeMutation.isPending}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-red-600 shrink-0"
-                onClick={() => removeMutation.mutate(m.id)}
-                disabled={removeMutation.isPending}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              {routingOpen === m.id && (
+                <MemberRoutingEditor spaceId={spaceId} member={m} roles={roles || []} roster={members} />
+              )}
             </div>
           ))}
         </div>

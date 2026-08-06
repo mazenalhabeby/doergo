@@ -54,7 +54,7 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'canCreateTasks', label: 'Create tasks', description: 'Create new tasks', domain: 'tasks', scopes: ['org', 'space'] },
   { key: 'canViewAllTasks', label: 'View all tasks', description: 'See every task in scope, not just own/assigned', domain: 'tasks', scopes: ['org', 'space'] },
   { key: 'canAssignTasks', label: 'Assign tasks', description: 'Assign tasks to members', domain: 'tasks', scopes: ['org', 'space'] },
-  { key: 'canManageUsers', label: 'Manage members', description: 'Invite, edit and remove members', domain: 'members', scopes: ['org'] },
+  { key: 'canManageUsers', label: 'Manage members', description: 'Invite, edit and remove members (org) / manage this space’s members (space)', domain: 'members', scopes: ['org', 'space'] },
   { key: 'canViewReports', label: 'View reports', description: 'Build and run reports', domain: 'reports', scopes: ['org', 'space'] },
   { key: 'canApproveOvertime', label: 'Approve overtime', description: 'Approve extra-time requests', domain: 'attendance', scopes: ['org', 'space'] },
   { key: 'canManageRota', label: 'Manage rota', description: 'Create shifts and assign members to shifts', domain: 'attendance', scopes: ['org', 'space'] },
@@ -111,10 +111,11 @@ export const BUILTIN_ROLES: RolePreset[] = [
   {
     slug: 'space-manager',
     name: 'Space Manager',
-    description: 'Full authority within their assigned space(s)',
+    description: 'Full authority within their assigned space(s) — incl. managing members',
     color: '#2563eb',
     scope: 'SPACE',
     permissions: {
+      canManageUsers: true, // manages members + routing WITHIN this space (delegation)
       canCreateTasks: true,
       canViewAllTasks: true,
       canAssignTasks: true,

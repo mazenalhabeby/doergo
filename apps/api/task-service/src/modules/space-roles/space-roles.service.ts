@@ -2,21 +2,28 @@ import { Injectable, BadRequestException, NotFoundException, Logger } from '@nes
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
-  BUILTIN_SPACE_ROLES,
-  SPACE_ROLE_PERMISSION_SCHEMA,
-  type SpaceRolePermissions,
+  BUILTIN_ROLES,
+  ACCESS_PERMISSION_SCHEMA,
+  type PermissionSet,
 } from '@hbcfield/shared';
 
-const PERMISSION_KEYS = SPACE_ROLE_PERMISSION_SCHEMA.map((p) => p.key);
+// Permission keys that make sense on a SPACE role.
+const SPACE_PERMISSION_KEYS = ACCESS_PERMISSION_SCHEMA
+  .filter((p) => p.scopes.includes('space'))
+  .map((p) => p.key);
+
+const userSelect = { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } };
+const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true } };
 
 /**
- * Dynamic per-space sub-roles (e.g. "Shift Leader", "Team Leader") and the
- * membership that assigns them to people in a space. These drive overtime
- * approval + escalation routing in the attendance reminder engine.
+ * Space roles + space membership on the UNIFIED model (AccessRole scope=SPACE +
+ * SpaceAssignment). Replaces the legacy SpaceRole/SpaceMember stack. Also stores
+ * the per-member, per-space routing override (who is notified about / who this
+ * member may contact within the space).
  *
- * Everything is org-scoped: the organizationId always comes from the caller's
- * token (never the request body), and any spaceId/userId is verified to belong
- * to that org before use.
+ * Org-scoped: organizationId always from the caller's token; spaceId/userId are
+ * verified in-org before use. Delegation (space-manager) is enforced at the
+ * gateway against the resource's own spaceId.
  */
 @Injectable()
 export class SpaceRolesService {
@@ -24,24 +31,16 @@ export class SpaceRolesService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── Roles ────────────────────────────────────────────────────────────────
+  // ── Roles (AccessRole, scope SPACE) ────────────────────────────────────────
 
-  /** List an org's space roles (lazily seeding the built-ins on first access). */
   async listRoles(data: { organizationId: string }) {
-    const query = () =>
-      this.prisma.spaceRole.findMany({
-        where: { organizationId: data.organizationId },
-        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-        include: { _count: { select: { members: true } } },
-      });
-    // Fetch first; only seed (and re-fetch) when the org has no roles yet — avoids
-    // a permanent extra count() on every list once seeded.
-    let roles = await query();
-    if (roles.length === 0) {
-      await this.ensureBuiltInRoles(data.organizationId);
-      roles = await query();
-    }
-    return success(roles);
+    await this.ensureBuiltInRoles(data.organizationId);
+    const roles = await this.prisma.accessRole.findMany({
+      where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] } },
+      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+      include: { _count: { select: { spaceAssignments: true } } },
+    });
+    return success(roles.map((r) => ({ ...r, _count: { members: r._count.spaceAssignments } })));
   }
 
   async createRole(data: {
@@ -49,22 +48,23 @@ export class SpaceRolesService {
     name: string;
     description?: string;
     color?: string;
-    permissions?: Partial<SpaceRolePermissions>;
+    permissions?: PermissionSet;
   }) {
     const name = (data.name || '').trim();
     if (!name) throw new BadRequestException('Role name is required');
-
     const slug = await this.uniqueSlug(data.organizationId, name);
-    const role = await this.prisma.spaceRole.create({
+    const max = await this.prisma.accessRole.aggregate({ where: { organizationId: data.organizationId }, _max: { position: true } });
+    const role = await this.prisma.accessRole.create({
       data: {
         organizationId: data.organizationId,
         name,
         slug,
         description: data.description?.trim() || null,
         color: data.color || '#6b7280',
+        scope: 'SPACE',
         isSystem: false,
-        permissions: this.normalizePermissions(data.permissions),
-        position: await this.nextPosition(data.organizationId),
+        permissions: this.normalizePermissions(data.permissions) as any,
+        position: (max._max.position ?? -1) + 1,
       },
     });
     return success(role, 'Space role created');
@@ -76,17 +76,15 @@ export class SpaceRolesService {
     name?: string;
     description?: string;
     color?: string;
-    permissions?: Partial<SpaceRolePermissions>;
+    permissions?: PermissionSet;
     isActive?: boolean;
   }) {
     const role = await this.getOwnedRole(data.organizationId, data.roleId);
-
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) {
       const name = data.name.trim();
       if (!name) throw new BadRequestException('Role name cannot be empty');
       patch.name = name;
-      // Re-slug only for custom roles; keep built-in slugs stable (routing depends on them).
       if (!role.isSystem) patch.slug = await this.uniqueSlug(data.organizationId, name, role.id);
     }
     if (data.description !== undefined) patch.description = data.description?.trim() || null;
@@ -94,155 +92,164 @@ export class SpaceRolesService {
     if (data.isActive !== undefined) patch.isActive = data.isActive;
     if (data.permissions !== undefined) {
       patch.permissions = this.normalizePermissions({
-        ...(role.permissions as SpaceRolePermissions),
+        ...(role.permissions as PermissionSet),
         ...data.permissions,
-      });
+      }) as any;
     }
-
-    const updated = await this.prisma.spaceRole.update({ where: { id: role.id }, data: patch });
+    const updated = await this.prisma.accessRole.update({ where: { id: role.id }, data: patch });
     return success(updated, 'Space role updated');
   }
 
   async deleteRole(data: { organizationId: string; roleId: string }) {
     const role = await this.getOwnedRole(data.organizationId, data.roleId);
-    if (role.isSystem) {
-      throw new BadRequestException('Built-in roles cannot be deleted (you can deactivate them instead)');
-    }
-    // Members keep their row; their spaceRoleId is set null by the FK (onDelete: SetNull).
-    await this.prisma.spaceRole.delete({ where: { id: role.id } });
+    if (role.isSystem) throw new BadRequestException('Built-in roles cannot be deleted (deactivate instead)');
+    const inUse = await this.prisma.spaceAssignment.count({ where: { roleId: role.id } });
+    if (inUse > 0) throw new BadRequestException(`This role is assigned to ${inUse} member(s). Reassign them first.`);
+    await this.prisma.accessRole.delete({ where: { id: role.id } });
     return success({ id: role.id }, 'Space role deleted');
   }
 
-  // ── Members ──────────────────────────────────────────────────────────────
+  // ── Members (SpaceAssignment) ───────────────────────────────────────────────
 
   async listMembers(data: { organizationId: string; spaceId: string }) {
     await this.assertSpaceInOrg(data.organizationId, data.spaceId);
-    const members = await this.prisma.spaceMember.findMany({
+    const members = await this.prisma.spaceAssignment.findMany({
       where: { organizationId: data.organizationId, spaceId: data.spaceId },
-      include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
-        spaceRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
-      },
+      include: { user: userSelect, role: roleSelect },
       orderBy: { createdAt: 'asc' },
     });
-    return success(members);
+    // Shape to match the old response (spaceRole → role, + routing arrays).
+    return success(
+      members.map((m) => ({
+        id: m.id,
+        userId: m.userId,
+        spaceId: m.spaceId,
+        user: m.user,
+        spaceRole: m.role,
+        notifyRoleIds: m.notifyRoleIds,
+        notifyUserIds: m.notifyUserIds,
+        contactRoleIds: m.contactRoleIds,
+        contactUserIds: m.contactUserIds,
+      })),
+    );
   }
 
-  /** Assign (or re-assign) a member to a space with a sub-role. Idempotent per (user, space). */
+  /** Assign (or re-assign) a member to a space with a space role. Idempotent. */
   async assignMember(data: {
     organizationId: string;
     spaceId: string;
     userId: string;
-    spaceRoleId?: string | null;
+    spaceRoleId?: string | null; // AccessRole (space) id — name kept for API compat
     createdById?: string;
   }) {
     await this.assertSpaceInOrg(data.organizationId, data.spaceId);
     await this.assertUserInOrg(data.organizationId, data.userId);
     if (data.spaceRoleId) await this.getOwnedRole(data.organizationId, data.spaceRoleId);
 
-    const member = await this.prisma.spaceMember.upsert({
+    const member = await this.prisma.spaceAssignment.upsert({
       where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
       create: {
         organizationId: data.organizationId,
         spaceId: data.spaceId,
         userId: data.userId,
-        spaceRoleId: data.spaceRoleId ?? null,
+        roleId: data.spaceRoleId ?? null,
         createdById: data.createdById,
       },
-      update: { spaceRoleId: data.spaceRoleId ?? null },
-      include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
-        spaceRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
-      },
+      update: { roleId: data.spaceRoleId ?? null },
+      include: { user: userSelect, role: roleSelect },
     });
-    return success(member, 'Member assigned');
+    return success({ id: member.id, userId: member.userId, user: member.user, spaceRole: member.role }, 'Member assigned');
   }
 
   async removeMember(data: { organizationId: string; spaceId: string; memberId: string }) {
-    const member = await this.prisma.spaceMember.findFirst({
+    const member = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
     });
     if (!member) throw new NotFoundException('Space member not found');
-    await this.prisma.spaceMember.delete({ where: { id: member.id } });
+    await this.prisma.spaceAssignment.delete({ where: { id: member.id } });
     return success({ id: member.id }, 'Member removed');
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  /** Set the per-member, per-space routing override. Whitelists ids to arrays. */
+  async updateMemberRouting(data: {
+    organizationId: string;
+    spaceId: string;
+    memberId: string;
+    notifyRoleIds?: string[];
+    notifyUserIds?: string[];
+    contactRoleIds?: string[];
+    contactUserIds?: string[];
+  }) {
+    const member = await this.prisma.spaceAssignment.findFirst({
+      where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
+    });
+    if (!member) throw new NotFoundException('Space member not found');
+    const arr = (v?: string[]) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined);
+    const updated = await this.prisma.spaceAssignment.update({
+      where: { id: member.id },
+      data: {
+        notifyRoleIds: arr(data.notifyRoleIds),
+        notifyUserIds: arr(data.notifyUserIds),
+        contactRoleIds: arr(data.contactRoleIds),
+        contactUserIds: arr(data.contactUserIds),
+      },
+      select: { id: true, notifyRoleIds: true, notifyUserIds: true, contactRoleIds: true, contactUserIds: true },
+    });
+    return success(updated, 'Routing updated');
+  }
 
-  /** Seed the built-in roles for an org exactly once (idempotent by slug). */
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
   private async ensureBuiltInRoles(organizationId: string) {
-    const existing = await this.prisma.spaceRole.count({ where: { organizationId } });
-    if (existing > 0) return;
-    try {
-      await this.prisma.spaceRole.createMany({
-        data: BUILTIN_SPACE_ROLES.map((r, i) => ({
+    // Seed any missing built-ins (idempotent by slug). Covers fresh orgs.
+    for (const p of BUILTIN_ROLES) {
+      await this.prisma.accessRole.upsert({
+        where: { organizationId_slug: { organizationId, slug: p.slug } },
+        update: {},
+        create: {
           organizationId,
-          name: r.name,
-          slug: r.slug,
-          description: r.description,
-          color: r.color,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          color: p.color,
+          scope: p.scope as any,
           isSystem: true,
-          permissions: r.permissions,
-          position: i,
-        })),
-        skipDuplicates: true,
+          permissions: p.permissions as any,
+        },
       });
-      this.logger.log(`Seeded ${BUILTIN_SPACE_ROLES.length} built-in space roles for org ${organizationId}`);
-    } catch (err) {
-      // A concurrent request may have seeded them first — safe to ignore.
-      this.logger.warn(`Built-in space role seed skipped for org ${organizationId}: ${err}`);
     }
   }
 
-  private normalizePermissions(input?: Partial<SpaceRolePermissions>): SpaceRolePermissions {
-    const out = {} as SpaceRolePermissions;
-    for (const key of PERMISSION_KEYS) out[key] = input?.[key] === true;
+  private normalizePermissions(input?: PermissionSet): PermissionSet {
+    const out: PermissionSet = {};
+    for (const key of SPACE_PERMISSION_KEYS) if (input?.[key] === true) out[key] = true;
     return out;
   }
 
   private async getOwnedRole(organizationId: string, roleId: string) {
-    const role = await this.prisma.spaceRole.findFirst({ where: { id: roleId, organizationId } });
+    const role = await this.prisma.accessRole.findFirst({
+      where: { id: roleId, organizationId, scope: { in: ['SPACE', 'BOTH'] } },
+    });
     if (!role) throw new NotFoundException('Space role not found');
     return role;
   }
 
   private async assertSpaceInOrg(organizationId: string, spaceId: string) {
-    const space = await this.prisma.companyLocation.findFirst({
-      where: { id: spaceId, organizationId },
-      select: { id: true },
-    });
+    const space = await this.prisma.companyLocation.findFirst({ where: { id: spaceId, organizationId }, select: { id: true } });
     if (!space) throw new NotFoundException('Space not found');
   }
 
   private async assertUserInOrg(organizationId: string, userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, organizationId },
-      select: { id: true },
-    });
+    const user = await this.prisma.user.findFirst({ where: { id: userId, organizationId }, select: { id: true } });
     if (!user) throw new NotFoundException('User not found in this organization');
   }
 
-  private async nextPosition(organizationId: string): Promise<number> {
-    const max = await this.prisma.spaceRole.aggregate({
-      where: { organizationId },
-      _max: { position: true },
-    });
-    return (max._max.position ?? -1) + 1;
-  }
-
-  /** Slugify a name and guarantee uniqueness within the org (excluding one role id). */
   private async uniqueSlug(organizationId: string, name: string, excludeId?: string): Promise<string> {
-    const base =
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 40) || 'role';
+    const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'role';
     let slug = base;
     let n = 1;
-    // Rare collision loop; org role counts are tiny.
     while (true) {
-      const clash = await this.prisma.spaceRole.findFirst({
+      const clash = await this.prisma.accessRole.findFirst({
         where: { organizationId, slug, ...(excludeId ? { id: { not: excludeId } } : {}) },
         select: { id: true },
       });

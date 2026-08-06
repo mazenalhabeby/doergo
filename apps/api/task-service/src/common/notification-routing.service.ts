@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
-import { spaceIdsForUser, spaceRoleHolders } from './space-access.util';
+import { resolveMemberRouting } from './space-access.util';
 
 export type NotificationCategory = 'attendance' | 'tasks';
 
@@ -55,8 +55,8 @@ export class NotificationRoutingService {
     // replacing) the explicit watchers, so both get notified. Skipped for
     // explicitOnly (e.g. routine task assignments).
     if (!explicitOnly) {
-      const spaceIds = await spaceIdsForUser(this.prisma, subjectUserId);
-      const recipientIds = await spaceRoleHolders(this.prisma, organizationId, spaceIds, 'notify');
+      // Per-member override (their space assignment) → else the space default.
+      const recipientIds = await resolveMemberRouting(this.prisma, organizationId, subjectUserId, 'notify');
       const missing = [...recipientIds].filter((id) => id !== subjectUserId && !byId.has(id));
       if (missing.length) {
         const users = await this.prisma.user.findMany({

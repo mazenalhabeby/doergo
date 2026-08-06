@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, BaseGatewayService, type SpaceRolePermissions } from '@hbcfield/shared';
+import { SERVICE_NAMES, BaseGatewayService, type PermissionSet } from '@hbcfield/shared';
 
 @Injectable()
 export class SpaceRolesService extends BaseGatewayService {
@@ -17,7 +17,7 @@ export class SpaceRolesService extends BaseGatewayService {
     name: string;
     description?: string;
     color?: string;
-    permissions?: Partial<SpaceRolePermissions>;
+    permissions?: PermissionSet;
   }) {
     return this.send({ cmd: 'create_space_role' }, data);
   }
@@ -27,7 +27,7 @@ export class SpaceRolesService extends BaseGatewayService {
     name?: string;
     description?: string;
     color?: string;
-    permissions?: Partial<SpaceRolePermissions>;
+    permissions?: PermissionSet;
     isActive?: boolean;
   }) {
     return this.send({ cmd: 'update_space_role' }, data);
@@ -51,5 +51,16 @@ export class SpaceRolesService extends BaseGatewayService {
   }
   removeMember(data: { organizationId: string; spaceId: string; memberId: string }) {
     return this.send({ cmd: 'remove_space_member' }, data);
+  }
+  updateMemberRouting(data: {
+    organizationId: string;
+    spaceId: string;
+    memberId: string;
+    notifyRoleIds?: string[];
+    notifyUserIds?: string[];
+    contactRoleIds?: string[];
+    contactUserIds?: string[];
+  }) {
+    return this.send({ cmd: 'update_space_member_routing' }, data);
   }
 }

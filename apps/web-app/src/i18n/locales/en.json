@@ -5560,7 +5560,12 @@
       "notifyTitle": "Notified about members here",
       "contactTitle": "Contactable by members here",
       "notifyEmpty": "Default: the space's leaders",
-      "contactEmpty": "Default: the space's leaders"
+      "contactEmpty": "Default: the space's leaders",
+      "perMember": "Routing",
+      "roles": "Roles",
+      "people": "Specific people",
+      "memberNotify": "Notified about {{name}}",
+      "memberContact": "{{name}} can contact"
     }
   }
 }

@@ -33,7 +33,12 @@ export default function SpaceSettingsPage() {
   const params = useParams()
   const spaceId = params.id as string
   const { user } = useAuth()
-  const canManage = !!user?.canManageUsers
+  // Org-wide managers OR the space's own manager (per-space canManageUsers, from
+  // their space-role) may open this space's settings (delegation).
+  const canManage =
+    !!user?.canManageUsers ||
+    (user as any)?.access?.org?.canManageUsers === true ||
+    (user as any)?.access?.perSpace?.[spaceId]?.canManageUsers === true
 
   const [activeTab, setActiveTab] = useState("general")
 

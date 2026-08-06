@@ -5560,7 +5560,12 @@
       "notifyTitle": "Notificados sobre los miembros de aquí",
       "contactTitle": "Contactables por los miembros de aquí",
       "notifyEmpty": "Predeterminado: los responsables del espacio",
-      "contactEmpty": "Predeterminado: los responsables del espacio"
+      "contactEmpty": "Predeterminado: los responsables del espacio",
+      "perMember": "Enrutamiento",
+      "roles": "Roles",
+      "people": "Personas específicas",
+      "memberNotify": "Notificados sobre {{name}}",
+      "memberContact": "{{name}} puede contactar"
     }
   }
 }
