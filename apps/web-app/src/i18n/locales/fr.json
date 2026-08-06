@@ -5536,7 +5536,10 @@
         "removed": "Membre retiré",
         "addFailed": "Impossible d’ajouter le membre",
         "removeFailed": "Impossible de retirer le membre"
-      }
+      },
+      "remove": "Retirer",
+      "removeTitle": "Retirer de l espace ?",
+      "removeConfirm": "{{name}} perdra son rôle et son routage dans cet espace. Cela ne le retire pas de l organisation."
     },
     "attendanceTab": {
       "heading": "Présence",
@@ -5565,7 +5568,8 @@
       "roles": "Rôles",
       "people": "Personnes spécifiques",
       "memberNotify": "Notifiés à propos de {{name}}",
-      "memberContact": "{{name}} peut contacter"
+      "memberContact": "{{name}} peut contacter",
+      "noPeople": "Aucun autre membre avec un rôle dans cet espace."
     }
   }
 }

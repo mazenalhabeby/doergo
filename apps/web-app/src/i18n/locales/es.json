@@ -5536,7 +5536,10 @@
         "removed": "Miembro eliminado",
         "addFailed": "No se pudo añadir el miembro",
         "removeFailed": "No se pudo eliminar el miembro"
-      }
+      },
+      "remove": "Quitar",
+      "removeTitle": "¿Quitar del espacio?",
+      "removeConfirm": "{{name}} perderá su rol y enrutamiento en este espacio. Esto no lo elimina de la organización."
     },
     "attendanceTab": {
       "heading": "Asistencia",
@@ -5565,7 +5568,8 @@
       "roles": "Roles",
       "people": "Personas específicas",
       "memberNotify": "Notificados sobre {{name}}",
-      "memberContact": "{{name}} puede contactar"
+      "memberContact": "{{name}} puede contactar",
+      "noPeople": "No hay otros miembros con un rol en este espacio."
     }
   }
 }

@@ -3,13 +3,15 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, X, Lock, SlidersHorizontal } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, Lock, SlidersHorizontal, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
 import { spaceRolesApi, spaceMembersApi, employeesApi } from "@/lib/api"
 import {
   SPACE_ROLE_PERMISSION_SCHEMA,
   type SpaceRole,
+  type SpaceMember,
   type SpaceRolePermissions,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
@@ -328,6 +330,7 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
   const [selectedUserId, setSelectedUserId] = useState("")
   const [selectedRoleId, setSelectedRoleId] = useState(NO_ROLE)
   const [routingOpen, setRoutingOpen] = useState<string | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<SpaceMember | null>(null)
 
   const { data: members, isLoading } = useQuery({
     queryKey: ["space-members", spaceId],
@@ -422,29 +425,32 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <Button
                     variant={routingOpen === m.id ? "secondary" : "ghost"}
                     size="sm"
-                    className="h-7 gap-1.5 text-xs"
+                    className="h-8 gap-1.5 text-xs"
                     onClick={() => setRoutingOpen(routingOpen === m.id ? null : m.id)}
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     {t("scheduling.routing.perMember", "Routing")}
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", routingOpen === m.id && "rotate-180")} />
                   </Button>
+                  {/* Remove is a destructive action, visually separated + confirmed,
+                      so it can't be hit by mistake when collapsing the panel. */}
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-red-600"
-                    onClick={() => removeMutation.mutate(m.id)}
-                    disabled={removeMutation.isPending}
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
+                    onClick={() => setRemoveTarget(m)}
                   >
-                    <X className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only">{t("scheduling.members.remove", "Remove")}</span>
                   </Button>
                 </div>
               </div>
               {routingOpen === m.id && (
-                <MemberRoutingEditor spaceId={spaceId} member={m} roles={roles || []} roster={members} />
+                <MemberRoutingEditor spaceId={spaceId} member={m} roster={members} />
               )}
             </div>
           ))}
@@ -506,6 +512,37 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
           {t("scheduling.members.addButton")}
         </Button>
       </div>
+
+      {/* Confirm before removing — prevents accidental removal (the old X next to
+          Routing was easy to hit while trying to collapse the panel). */}
+      <AlertDialog open={!!removeTarget} onOpenChange={(open) => { if (!open) setRemoveTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("scheduling.members.removeTitle", "Remove from space?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("scheduling.members.removeConfirm", "{{name}} will lose their role and routing in this space. This does not remove them from the organization.", {
+                name: removeTarget?.user ? `${removeTarget.user.firstName} ${removeTarget.user.lastName}` : t("scheduling.members.unknownMember"),
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeMutation.isPending}>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={(e) => {
+                e.preventDefault()
+                if (!removeTarget) return
+                if (routingOpen === removeTarget.id) setRoutingOpen(null)
+                removeMutation.mutate(removeTarget.id, { onSuccess: () => setRemoveTarget(null) })
+              }}
+              disabled={removeMutation.isPending}
+            >
+              {removeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("scheduling.members.remove", "Remove")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

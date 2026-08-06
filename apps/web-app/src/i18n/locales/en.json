@@ -5536,7 +5536,10 @@
         "removed": "Member removed",
         "addFailed": "Failed to add member",
         "removeFailed": "Failed to remove member"
-      }
+      },
+      "remove": "Remove",
+      "removeTitle": "Remove from space?",
+      "removeConfirm": "{{name}} will lose their role and routing in this space. This does not remove them from the organization."
     },
     "attendanceTab": {
       "heading": "Attendance",
@@ -5565,7 +5568,8 @@
       "roles": "Roles",
       "people": "Specific people",
       "memberNotify": "Notified about {{name}}",
-      "memberContact": "{{name}} can contact"
+      "memberContact": "{{name}} can contact",
+      "noPeople": "No other members with a role in this space."
     }
   }
 }

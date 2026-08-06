@@ -5536,7 +5536,10 @@
         "removed": "Mitglied entfernt",
         "addFailed": "Mitglied konnte nicht hinzugefügt werden",
         "removeFailed": "Mitglied konnte nicht entfernt werden"
-      }
+      },
+      "remove": "Entfernen",
+      "removeTitle": "Aus dem Space entfernen?",
+      "removeConfirm": "{{name}} verliert die Rolle und Weiterleitung in diesem Space. Aus der Organisation wird die Person dadurch nicht entfernt."
     },
     "attendanceTab": {
       "heading": "Anwesenheit",
@@ -5565,7 +5568,8 @@
       "roles": "Rollen",
       "people": "Bestimmte Personen",
       "memberNotify": "Benachrichtigt über {{name}}",
-      "memberContact": "{{name}} kann kontaktieren"
+      "memberContact": "{{name}} kann kontaktieren",
+      "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space."
     }
   }
 }
