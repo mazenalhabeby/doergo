@@ -519,6 +519,9 @@ export default function EmployeeDetailPage() {
               </div>
             </div>
 
+            {/* Employment type only exists when the org distinguishes in-house vs
+                external field workers (opt-in capability). Hidden otherwise. */}
+            {user?.orgUsesExternalWorkers && (
             <div className="space-y-2">
               <Label>{t('technicians.detail.editDialog.employmentTypeLabel')}</Label>
               <Select value={editEmploymentType} onValueChange={setEditEmploymentType}>
@@ -541,6 +544,7 @@ export default function EmployeeDetailPage() {
                 )}
               </p>
             </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="edit-specialty">{t('technicians.detail.editDialog.jobTitleLabel')}</Label>

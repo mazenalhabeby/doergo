@@ -2329,7 +2329,11 @@
       "selectCountry": "Selecciona un país",
       "emailPlaceholder": "p. ej. oficina@empresa.com",
       "websitePlaceholder": "https://www.empresa.com",
-      "addCustom": "Agregar “{{query}}”"
+      "addCustom": "Agregar “{{query}}”",
+      "externalWorkers": {
+        "label": "Trabajamos con técnicos de campo externos / autónomos",
+        "hint": "Actívalo para marcar a los técnicos de campo como internos o externos. Las plazas de campo internas se facturan a la tarifa con descuento de 9 €; las externas, 15 €. Déjalo desactivado si todos tus técnicos son iguales."
+      }
     },
     "members": {
       "defaultPermissions": "Permisos por defecto",

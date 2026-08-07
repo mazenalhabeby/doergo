@@ -2329,7 +2329,11 @@
       "selectCountry": "Select country",
       "emailPlaceholder": "e.g. office@company.com",
       "websitePlaceholder": "https://www.company.com",
-      "addCustom": "Add “{{query}}”"
+      "addCustom": "Add “{{query}}”",
+      "externalWorkers": {
+        "label": "We use external / freelance field workers",
+        "hint": "Turn on to mark field technicians as in-house or external. In-house field seats are billed at the discounted €9 rate; external at €15. Leave off if all your field techs are the same."
+      }
     },
     "members": {
       "defaultPermissions": "Default Permissions",

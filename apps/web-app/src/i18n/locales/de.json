@@ -2329,7 +2329,11 @@
       "selectCountry": "Land auswählen",
       "emailPlaceholder": "z. B. office@firma.com",
       "websitePlaceholder": "https://www.firma.com",
-      "addCustom": "„{{query}}“ hinzufügen"
+      "addCustom": "„{{query}}“ hinzufügen",
+      "externalWorkers": {
+        "label": "Wir arbeiten mit externen / freiberuflichen Außendienstmitarbeitern",
+        "hint": "Aktivieren, um Außendiensttechniker als intern oder extern zu kennzeichnen. Interne Feldplätze werden zum vergünstigten Satz von 9 € abgerechnet, externe zu 15 €. Aus lassen, wenn alle Techniker gleich sind."
+      }
     },
     "members": {
       "defaultPermissions": "Standardberechtigungen",

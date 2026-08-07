@@ -17,6 +17,7 @@ import {
   getDefaultModules,
   hashCode,
   generateSecureCode,
+  industryUsesExternalWorkers,
 } from '@hbcfield/shared';
 
 @Injectable()
@@ -890,6 +891,7 @@ export class OnboardingService {
         id: true,
         name: true,
         industry: true,
+        usesExternalWorkers: true,
         address: true,
         addressLine1: true,
         addressLine2: true,
@@ -920,7 +922,9 @@ export class OnboardingService {
   }
 
   async updateOrgProfile(organizationId: string, updates: any) {
-    const allowedFields = ['name', 'industry', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'enabledModules'];
+    // `usesExternalWorkers` (the in-house/external field-worker capability) is
+    // settable directly by the Settings toggle.
+    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'enabledModules'];
     const data: any = {};
 
     for (const key of allowedFields) {
@@ -933,10 +937,19 @@ export class OnboardingService {
       return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'No valid fields to update' };
     }
 
+    if (typeof data.usesExternalWorkers !== 'undefined') {
+      data.usesExternalWorkers = !!data.usesExternalWorkers;
+    } else if (typeof data.industry === 'string') {
+      // Industry set (e.g. during setup) without an explicit toggle → pre-default
+      // the capability from the industry (trades on, IT/office off). An explicit
+      // toggle in the payload always wins (handled above).
+      data.usesExternalWorkers = industryUsesExternalWorkers(data.industry);
+    }
+
     const org = await this.prisma.organization.update({
       where: { id: organizationId },
       data,
-      select: { id: true, name: true, industry: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, enabledModules: true },
+      select: { id: true, name: true, industry: true, usesExternalWorkers: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, enabledModules: true },
     });
 
     return { success: true, data: org };

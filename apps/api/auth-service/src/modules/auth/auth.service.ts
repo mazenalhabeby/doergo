@@ -288,7 +288,7 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true } },
           // Unified roles (Phase 2) → resolved `access` on the login response.
           memberRole: { select: { permissions: true } },
           spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
@@ -439,6 +439,7 @@ export class AuthService {
             organizationId: user.organizationId,
             organizationName: user.organization?.name || null,
             organizationTimezone: user.organization?.timezone || null,
+            orgUsesExternalWorkers: user.organization?.usesExternalWorkers ?? false,
             onboardingCompleted: user.onboardingCompleted,
             avatarUrl: user.avatarUrl,
             // Permission fields
@@ -527,7 +528,7 @@ export class AuthService {
         include: {
           user: {
             include: {
-              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
+              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true } },
             },
           },
         },
@@ -1012,7 +1013,7 @@ export class AuthService {
           // CustomerScopeGuard + portal endpoints scope to the caller's own data.
           customerId: true,
           unitId: true,
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true, usesExternalWorkers: true } },
           // Custom role
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
@@ -1060,6 +1061,9 @@ export class AuthService {
           // Org timezone — the default display zone for all times on the client
           // (attendance times override per-entry with the location's timezone).
           organizationTimezone: organization?.timezone || null,
+          // Opt-in capability: does this org distinguish in-house vs external
+          // field workers? Gates the employment-type UI + the €9 in-house seat.
+          orgUsesExternalWorkers: organization?.usesExternalWorkers ?? false,
           profileBadges: resolveProfileBadges(profileBadges, organization?.profileBadges),
           // Per-user Access Profile overrides the org-wide modules when set.
           enabledModules: (userModules ?? organization?.enabledModules) || [],

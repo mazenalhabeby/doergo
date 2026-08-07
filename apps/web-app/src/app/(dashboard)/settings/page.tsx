@@ -319,6 +319,8 @@ function GeneralSection() {
   const [form, setForm] = useState({
     name: "", industry: "", phone: "", email: "", website: "", timezone: "",
     addressLine1: "", addressLine2: "", city: "", state: "", postalCode: "", country: "",
+    // Opt-in capability: distinguish in-house vs external field workers.
+    usesExternalWorkers: false as boolean,
   })
   const [initialized, setInitialized] = useState(false)
 
@@ -333,13 +335,14 @@ function GeneralSection() {
         addressLine2: profile.addressLine2 ?? "",
         city: profile.city ?? "", state: profile.state ?? "",
         postalCode: profile.postalCode ?? "", country: profile.country ?? "",
+        usesExternalWorkers: profile.usesExternalWorkers ?? false,
       })
       setInitialized(true)
     }
   }, [profile, initialized])
 
   const updateMutation = useMutation({
-    mutationFn: (updates: Record<string, string>) => organizationsApi.updateProfile(updates),
+    mutationFn: (updates: Record<string, unknown>) => organizationsApi.updateProfile(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
       notify.success(t("settings.general.saved"))
@@ -461,6 +464,29 @@ function GeneralSection() {
                 createLabel={q => t("settings.general.addCustom", { query: q })}
               />
             </FormField>
+          </div>
+
+          {/* Opt-in: only orgs that mix employed + freelance field workers turn
+              this on; when off, the whole in-house/external concept is hidden. */}
+          <div className="flex items-start justify-between gap-4 rounded-xl border border-border p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                {t("settings.general.externalWorkers.label", "We use external / freelance field workers")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t(
+                  "settings.general.externalWorkers.hint",
+                  "Turn on to mark field technicians as in-house or external. In-house field seats are billed at the discounted €9 rate; external at €15. Leave off if all your field techs are the same.",
+                )}
+              </p>
+            </div>
+            <Switch
+              checked={form.usesExternalWorkers}
+              onCheckedChange={v => setForm(prev => ({ ...prev, usesExternalWorkers: v }))}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
             <FormField icon={Clock} label={t("settings.general.timezone")}>
               <Combobox

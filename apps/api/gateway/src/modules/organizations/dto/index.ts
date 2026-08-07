@@ -61,6 +61,11 @@ export class UpdateOrgProfileDto {
   @IsString()
   industry?: string;
 
+  @ApiPropertyOptional({ description: 'Org distinguishes in-house vs external field workers' })
+  @IsOptional()
+  @IsBoolean()
+  usesExternalWorkers?: boolean;
+
   @ApiPropertyOptional({ description: 'Address (legacy single line)' })
   @IsOptional()
   @IsString()

@@ -2329,7 +2329,11 @@
       "selectCountry": "Sélectionner un pays",
       "emailPlaceholder": "ex. bureau@entreprise.com",
       "websitePlaceholder": "https://www.entreprise.com",
-      "addCustom": "Ajouter « {{query}} »"
+      "addCustom": "Ajouter « {{query}} »",
+      "externalWorkers": {
+        "label": "Nous employons des techniciens de terrain externes / indépendants",
+        "hint": "Activez pour marquer les techniciens de terrain comme internes ou externes. Les sièges terrain internes sont facturés au tarif réduit de 9 € ; les externes, 15 €. Laissez désactivé si tous vos techniciens sont identiques."
+      }
     },
     "members": {
       "defaultPermissions": "Autorisations par défaut",

@@ -310,6 +310,12 @@ model Organization {
 
   // Organization profile
   industry     String? // e.g. "HVAC", "Plumbing", "Electrical", "General Contracting"
+  // Opt-in capability: this org distinguishes in-house (employed) vs external
+  // (freelance) FIELD workers. When false (default), the concept is hidden
+  // everywhere and every field seat bills at the standard rate; when true, field
+  // members carry an employmentType and in-house ones get the €9 seat. Defaulted
+  // from industry at setup (trades on, IT/office off), toggleable in Settings.
+  usesExternalWorkers Boolean @default(false)
   address      String? // Legacy single-line address (kept for back-compat)
   addressLine1 String? // Street address
   addressLine2 String? // Suite / floor / unit (optional)

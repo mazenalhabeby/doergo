@@ -26,6 +26,9 @@ export interface User {
   /** IANA timezone of the org — the default display zone for all times on the
    *  client (attendance times override per-entry with the location's zone). */
   organizationTimezone?: string | null;
+  /** Org opted into the in-house vs external field-worker distinction — gates the
+   *  employment-type UI + the €9 in-house seat. */
+  orgUsesExternalWorkers?: boolean;
   /** False for a freshly-registered "orphan" user who must complete onboarding. */
   onboardingCompleted?: boolean;
   // Permission fields

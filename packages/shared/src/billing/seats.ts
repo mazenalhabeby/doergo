@@ -25,6 +25,31 @@ import type { SeatType } from './plans';
 /** A member employed in-house by the org gets the discounted field seat. */
 export type EmploymentType = 'IN_HOUSE' | 'EXTERNAL';
 
+/**
+ * Trades that commonly mix EMPLOYED + FREELANCE field workers → the sensible
+ * DEFAULT for `Organization.usesExternalWorkers` at setup. IT / logistics /
+ * general default OFF. This is only a default — every org flips it in Settings,
+ * so an office-only IT company never sees the concept while a trade that uses
+ * subcontractors gets it out of the box. Matches the setup catalog's industry
+ * KEY or its canonical label (the org stores the label), kept self-contained
+ * here so the backend can import it from the billing barrel.
+ */
+const EXTERNAL_WORKER_INDUSTRIES = new Set<string>([
+  'repairs', 'Repairs & trades',
+  'machines', 'Machines & maintenance',
+  'facilities', 'Buildings & facilities',
+  'cleaning', 'Cleaning',
+  'security', 'Security & guarding',
+  'grounds', 'Gardens & grounds',
+  'construction', 'Construction',
+  'solar', 'Solar & energy',
+  'pest', 'Pest control',
+]);
+export function industryUsesExternalWorkers(industryKeyOrLabel?: string | null): boolean {
+  if (!industryKeyOrLabel) return false;
+  return EXTERNAL_WORKER_INDUSTRIES.has(industryKeyOrLabel.trim());
+}
+
 /** Minimal shape needed to classify a user's seat. */
 export interface SeatClassifiable {
   role?: string | null;
@@ -47,18 +72,31 @@ export function isInHouse(user: SeatClassifiable): boolean {
 }
 
 /**
+ * Org-level seat options. The in-house/external distinction is an OPT-IN
+ * capability (`usesExternalWorkers`): most orgs never use it and their field
+ * seats are all billed at the one standard field rate. Only when an org enables
+ * it (they mix employed + freelance field workers) does a member's
+ * `employmentType` split the field seat into in-house (€9) vs external (€15).
+ */
+export interface SeatOptions {
+  /** Org distinguishes in-house vs external field workers (default: false). */
+  usesExternalWorkers?: boolean;
+}
+
+/**
  * Classify a single user into a billable seat type.
  * Admins are always office seats; everyone else is office if they can reach the
- * web portal. A mobile-only member is a field seat — in-house (discounted) when
- * `employmentType === 'IN_HOUSE'`, otherwise external.
+ * web portal. A mobile-only member is a field seat — split into in-house
+ * (discounted) vs external ONLY when the org opted into `usesExternalWorkers`;
+ * otherwise every field seat is the standard `field` rate.
  */
-export function classifySeat(user: SeatClassifiable): SeatType {
+export function classifySeat(user: SeatClassifiable, opts?: SeatOptions): SeatType {
   if (isAdminRole(user.role)) return 'office';
   // getAccessPlatforms defaults to 'both' when a user has no explicit Access
   // Profile — so unconfigured members count as office (safe, higher-priced) until
   // an admin scopes them to mobile-only.
   if (getAccessPlatforms(user) !== 'mobile') return 'office';
-  return isInHouse(user) ? 'field_inhouse' : 'field';
+  return opts?.usesExternalWorkers && isInHouse(user) ? 'field_inhouse' : 'field';
 }
 
 export interface SeatCounts {
@@ -75,13 +113,13 @@ export interface SeatCounts {
  * Only ACTIVE users are billed (isActive !== false). Deactivated members free
  * their seat.
  */
-export function countSeats(users: SeatClassifiable[]): SeatCounts {
+export function countSeats(users: SeatClassifiable[], opts?: SeatOptions): SeatCounts {
   let office = 0;
   let field = 0;
   let fieldInhouse = 0;
   for (const u of users) {
     if (u.isActive === false) continue;
-    const seat = classifySeat(u);
+    const seat = classifySeat(u, opts);
     if (seat === 'office') office += 1;
     else if (seat === 'field_inhouse') fieldInhouse += 1;
     else field += 1;

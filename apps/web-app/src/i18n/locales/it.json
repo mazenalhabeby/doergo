@@ -2329,7 +2329,11 @@
       "selectCountry": "Seleziona paese",
       "emailPlaceholder": "es. office@company.com",
       "websitePlaceholder": "https://www.company.com",
-      "addCustom": "Aggiungi “{{query}}”"
+      "addCustom": "Aggiungi “{{query}}”",
+      "externalWorkers": {
+        "label": "Lavoriamo con tecnici sul campo esterni / freelance",
+        "hint": "Attiva per contrassegnare i tecnici sul campo come interni o esterni. Le postazioni sul campo interne sono fatturate alla tariffa scontata di 9 €; quelle esterne a 15 €. Lascia disattivato se tutti i tecnici sono uguali."
+      }
     },
     "members": {
       "defaultPermissions": "Autorizzazioni predefinite",

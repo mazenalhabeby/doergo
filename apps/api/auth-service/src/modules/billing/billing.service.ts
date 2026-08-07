@@ -150,11 +150,19 @@ export class BillingService {
 
   // ── seat counting ──────────────────────────────────────────────────────────
   private async countOrgSeats(organizationId: string): Promise<SeatCounts> {
-    const users = await this.prisma.user.findMany({
-      where: { organizationId, isActive: true },
-      select: { role: true, isActive: true, enabledModules: true, employmentType: true },
-    });
-    return countSeats(users);
+    const [org, users] = await Promise.all([
+      this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { usesExternalWorkers: true },
+      }),
+      this.prisma.user.findMany({
+        where: { organizationId, isActive: true },
+        select: { role: true, isActive: true, enabledModules: true, employmentType: true },
+      }),
+    ]);
+    // Only split field seats into in-house/external when the org opted in;
+    // otherwise every field seat bills at the standard rate.
+    return countSeats(users, { usesExternalWorkers: org?.usesExternalWorkers ?? false });
   }
 
   // ── trial (called on org creation) ───────────────────────────────────────────

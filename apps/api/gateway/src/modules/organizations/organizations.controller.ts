@@ -412,6 +412,14 @@ export class OrganizationsController {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
     }
 
+    // Toggling the in-house/external capability (or changing industry, which can
+    // re-default it) changes how field seats are classified → re-sync to Stripe.
+    if ((dto as any).usesExternalWorkers !== undefined || (dto as any).industry !== undefined) {
+      firstValueFrom(
+        this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId: user.organizationId }),
+      ).catch(() => {});
+    }
+
     return result;
   }
 
