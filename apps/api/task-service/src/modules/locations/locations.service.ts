@@ -121,7 +121,7 @@ export class LocationsService {
           _count: { select: { tasks: true } },
           // Active member assignments — lets clients render each location's
           // roster without an extra request per location (avoids N+1).
-          assignments: {
+          spaceAssignments: {
             where: {
               OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
             },
@@ -132,7 +132,14 @@ export class LocationsService {
       this.prisma.companyLocation.count({ where }),
     ]);
 
-    return paginated(locations, { page, limit, total });
+    // Keep the legacy `assignments` key on each location for client compat
+    // (storage moved to the unified space_assignments table in Phase 5b).
+    const shaped = locations.map(({ spaceAssignments, ...l }) => ({
+      ...l,
+      assignments: spaceAssignments,
+    }));
+
+    return paginated(shaped, { page, limit, total });
   }
 
   /**
@@ -404,7 +411,7 @@ export class LocationsService {
 
     // If setting as primary, unset other primary assignments for this user
     if (data.isPrimary) {
-      await this.prisma.technicianAssignment.updateMany({
+      await this.prisma.spaceAssignment.updateMany({
         where: {
           userId: data.userId,
           isPrimary: true,
@@ -413,12 +420,14 @@ export class LocationsService {
       });
     }
 
-    // Create the assignment (upsert to handle existing assignment)
-    const assignment = await this.prisma.technicianAssignment.upsert({
+    // Create the assignment (upsert to handle existing assignment). Storage is the
+    // unified space_assignments table (Phase 5b); `roleId`/routing overrides set
+    // via the space-roles path are left untouched by this upsert.
+    const assignment = await this.prisma.spaceAssignment.upsert({
       where: {
-        userId_locationId: {
+        userId_spaceId: {
           userId: data.userId,
-          locationId: data.locationId,
+          spaceId: data.locationId,
         },
       },
       update: {
@@ -428,15 +437,16 @@ export class LocationsService {
         effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
       },
       create: {
+        organizationId: data.organizationId,
         userId: data.userId,
-        locationId: data.locationId,
+        spaceId: data.locationId,
         isPrimary: data.isPrimary ?? false,
         schedule: data.schedule ?? [],
         effectiveFrom: data.effectiveFrom ? new Date(data.effectiveFrom) : new Date(),
         effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
       },
       include: {
-        location: true,
+        space: true,
         user: {
           select: {
             id: true,
@@ -450,7 +460,12 @@ export class LocationsService {
     });
 
     this.logger.log(`Member assignment created/updated: ${assignment.id}`);
-    return success(assignment, 'Member assigned to location successfully');
+    // Alias to the legacy shape (locationId/location) for client compat.
+    const { space, spaceId, ...rest } = assignment;
+    return success(
+      { ...rest, locationId: spaceId, location: space },
+      'Member assigned to location successfully',
+    );
   }
 
   /**
@@ -475,25 +490,25 @@ export class LocationsService {
       });
       locationIds = locs.map((l) => l.id);
     } else {
-      const mine = await this.prisma.technicianAssignment.findMany({
-        where: { userId: data.userId, location: { organizationId: data.organizationId } },
-        select: { locationId: true },
+      const mine = await this.prisma.spaceAssignment.findMany({
+        where: { userId: data.userId, organizationId: data.organizationId },
+        select: { spaceId: true },
       });
-      locationIds = mine.map((a) => a.locationId);
+      locationIds = mine.map((a) => a.spaceId);
     }
 
     if (locationIds.length === 0) return success([]);
 
-    const rosters = await this.prisma.technicianAssignment.findMany({
+    const rosters = await this.prisma.spaceAssignment.findMany({
       where: {
-        locationId: { in: locationIds },
+        spaceId: { in: locationIds },
         // Drop ghosts of users removed from the org (org nulled / deactivated).
         user: { is: { organizationId: data.organizationId, isActive: true } },
         OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
       },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, presence: true, contactable: true } },
-        location: { select: { id: true, name: true } },
+        space: { select: { id: true, name: true } },
       },
     });
 
@@ -502,7 +517,7 @@ export class LocationsService {
     for (const r of rosters) {
       if (!r.user || r.user.id === data.userId) continue;
       if (!byUser.has(r.user.id)) {
-        byUser.set(r.user.id, { ...r.user, spaceName: r.location?.name || null });
+        byUser.set(r.user.id, { ...r.user, spaceName: r.space?.name || null });
       }
     }
     return success([...byUser.values()]);
@@ -524,9 +539,9 @@ export class LocationsService {
       throw new NotFoundException('Company location not found');
     }
 
-    const assignments = await this.prisma.technicianAssignment.findMany({
+    const assignments = await this.prisma.spaceAssignment.findMany({
       where: {
-        locationId: data.locationId,
+        spaceId: data.locationId,
         // Only active members still in this org (drop removed-user ghosts)
         user: { is: { organizationId: data.organizationId, isActive: true } },
         // Only show active assignments (not expired)
@@ -580,8 +595,9 @@ export class LocationsService {
       }
     }
 
-    const enriched = assignments.map((a) => ({
+    const enriched = assignments.map(({ spaceId, ...a }) => ({
       ...a,
+      locationId: spaceId, // legacy alias
       currentTask: taskByUser.get(a.userId)?.title ?? null,
       currentTaskStatus: taskByUser.get(a.userId)?.status ?? null,
     }));
@@ -606,9 +622,9 @@ export class LocationsService {
     const validIds = locs.map((l) => l.id);
     if (!validIds.length) return success([]);
 
-    const assignments = await this.prisma.technicianAssignment.findMany({
+    const assignments = await this.prisma.spaceAssignment.findMany({
       where: {
-        locationId: { in: validIds },
+        spaceId: { in: validIds },
         // Drop ghosts of users removed from the org (org nulled / deactivated).
         user: { is: { organizationId: data.organizationId, isActive: true } },
         OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
@@ -636,9 +652,9 @@ export class LocationsService {
         taskByKey.set(key, { title: t.title, status: t.status });
       }
     }
-    const enriched = assignments.map((a) => {
-      const t = taskByKey.get(`${a.userId}:${a.locationId}`);
-      return { ...a, currentTask: t?.title ?? null, currentTaskStatus: t?.status ?? null };
+    const enriched = assignments.map(({ spaceId, ...a }) => {
+      const t = taskByKey.get(`${a.userId}:${spaceId}`);
+      return { ...a, locationId: spaceId, currentTask: t?.title ?? null, currentTaskStatus: t?.status ?? null };
     });
     return success(enriched);
   }
@@ -662,7 +678,7 @@ export class LocationsService {
       throw new NotFoundException('User not found in organization');
     }
 
-    const assignments = await this.prisma.technicianAssignment.findMany({
+    const assignments = await this.prisma.spaceAssignment.findMany({
       where: {
         userId: data.userId,
         // Only show active assignments (not expired)
@@ -672,12 +688,19 @@ export class LocationsService {
         ],
       },
       include: {
-        location: true,
+        space: true,
       },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
 
-    return success(assignments);
+    // Alias to the legacy shape (locationId/location) for client compat.
+    const shaped = assignments.map(({ space, spaceId, ...a }) => ({
+      ...a,
+      locationId: spaceId,
+      location: space,
+    }));
+
+    return success(shaped);
   }
 
   /**
@@ -692,18 +715,11 @@ export class LocationsService {
     effectiveTo?: Date | string;
   }) {
     // Find the assignment and verify organization ownership
-    const assignment = await this.prisma.technicianAssignment.findFirst({
+    const assignment = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.assignmentId },
-      include: {
-        location: true,
-      },
     });
 
-    if (!assignment) {
-      throw new NotFoundException('Assignment not found');
-    }
-
-    if (assignment.location.organizationId !== data.organizationId) {
+    if (!assignment || assignment.organizationId !== data.organizationId) {
       throw new NotFoundException('Assignment not found');
     }
 
@@ -719,7 +735,7 @@ export class LocationsService {
 
     // If setting as primary, unset other primary assignments for this user
     if (data.isPrimary) {
-      await this.prisma.technicianAssignment.updateMany({
+      await this.prisma.spaceAssignment.updateMany({
         where: {
           userId: assignment.userId,
           isPrimary: true,
@@ -737,11 +753,11 @@ export class LocationsService {
     if (data.effectiveTo !== undefined)
       updateData.effectiveTo = data.effectiveTo ? new Date(data.effectiveTo) : null;
 
-    const updated = await this.prisma.technicianAssignment.update({
+    const updated = await this.prisma.spaceAssignment.update({
       where: { id: data.assignmentId },
       data: updateData,
       include: {
-        location: true,
+        space: true,
         user: {
           select: {
             id: true,
@@ -755,7 +771,12 @@ export class LocationsService {
     });
 
     this.logger.log(`Assignment updated: ${updated.id}`);
-    return success(updated, 'Assignment updated successfully');
+    // Alias to the legacy shape (locationId/location) for client compat.
+    const { space, spaceId, ...rest } = updated;
+    return success(
+      { ...rest, locationId: spaceId, location: space },
+      'Assignment updated successfully',
+    );
   }
 
   /**
@@ -763,22 +784,15 @@ export class LocationsService {
    */
   async removeAssignment(data: { assignmentId: string; organizationId: string }) {
     // Find the assignment and verify organization ownership
-    const assignment = await this.prisma.technicianAssignment.findFirst({
+    const assignment = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.assignmentId },
-      include: {
-        location: true,
-      },
     });
 
-    if (!assignment) {
+    if (!assignment || assignment.organizationId !== data.organizationId) {
       throw new NotFoundException('Assignment not found');
     }
 
-    if (assignment.location.organizationId !== data.organizationId) {
-      throw new NotFoundException('Assignment not found');
-    }
-
-    await this.prisma.technicianAssignment.delete({
+    await this.prisma.spaceAssignment.delete({
       where: { id: data.assignmentId },
     });
 

@@ -173,10 +173,10 @@ export class AttendanceService {
     }
 
     // Verify user has an active assignment to this location
-    const assignment = await this.prisma.technicianAssignment.findFirst({
+    const assignment = await this.prisma.spaceAssignment.findFirst({
       where: {
         userId: data.userId,
-        locationId: data.locationId,
+        spaceId: data.locationId,
         OR: [
           { effectiveTo: null },
           { effectiveTo: { gte: new Date() } },
@@ -876,7 +876,7 @@ export class AttendanceService {
     });
 
     // Get assigned locations
-    const assignments = await this.prisma.technicianAssignment.findMany({
+    const assignments = await this.prisma.spaceAssignment.findMany({
       where: {
         userId: data.userId,
         OR: [
@@ -885,12 +885,12 @@ export class AttendanceService {
         ],
       },
       include: {
-        location: true,
+        space: true,
       },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
 
-    const assignedLocations = assignments.map((a) => a.location);
+    const assignedLocations = assignments.map((a) => a.space);
 
     return success({
       isClockedIn: !!currentEntry,
@@ -978,8 +978,8 @@ export class AttendanceService {
     // Authorization: full-access roles see any location; otherwise the requester
     // must be a roster member of this location (employees viewing their own space).
     if (!data.requesterCanViewAll) {
-      const member = await this.prisma.technicianAssignment.findFirst({
-        where: { locationId: data.locationId, userId: data.requesterId },
+      const member = await this.prisma.spaceAssignment.findFirst({
+        where: { spaceId: data.locationId, userId: data.requesterId },
         select: { id: true },
       });
       if (!member) {
@@ -1085,11 +1085,11 @@ export class AttendanceService {
     let validIds = locs.map((l) => l.id);
 
     if (!data.requesterCanViewAll && validIds.length) {
-      const memberships = await this.prisma.technicianAssignment.findMany({
-        where: { userId: data.requesterId, locationId: { in: validIds } },
-        select: { locationId: true },
+      const memberships = await this.prisma.spaceAssignment.findMany({
+        where: { userId: data.requesterId, spaceId: { in: validIds } },
+        select: { spaceId: true },
       });
-      const allowed = new Set(memberships.map((m) => m.locationId));
+      const allowed = new Set(memberships.map((m) => m.spaceId));
       validIds = validIds.filter((id) => allowed.has(id));
     }
     if (!validIds.length) return success([]);

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { TasksService } from '../tasks.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
+import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { Role, TaskStatus, TaskEventType } from '@hbcfield/shared';
 
 describe('TasksService', () => {
@@ -100,7 +101,7 @@ describe('TasksService', () => {
       findMany: jest.fn().mockResolvedValue([]),
       createMany: jest.fn(),
     },
-    technicianAssignment: {
+    spaceAssignment: {
       findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -125,6 +126,7 @@ describe('TasksService', () => {
         { provide: 'NOTIFICATION_SERVICE', useValue: mockNotificationClient },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
+        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
       ],
     }).compile();
 

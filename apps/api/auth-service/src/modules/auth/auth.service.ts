@@ -289,7 +289,6 @@ export class AuthService {
         where: { email },
         include: {
           organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
-          orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
           // Unified roles (Phase 2) → resolved `access` on the login response.
           memberRole: { select: { permissions: true } },
           spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
@@ -469,9 +468,10 @@ export class AuthService {
             // Billing tier + subscription status (lowercase) — drives plan gating.
             subStatus: (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
-            // Custom role
-            orgRole: user.orgRole ? { id: user.orgRole.id, name: user.orgRole.name, slug: user.orgRole.slug, color: user.orgRole.color } : null,
-            rolePermissions: (user.orgRole?.permissions as Record<string, boolean>) || {},
+            // Legacy custom-role fields retired (Phase 5b) — kept null for
+            // back-compat; role now comes from memberRole + resolved access.
+            orgRole: null,
+            rolePermissions: {},
             // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
             access: buildResolvedAccess({
               userFlags: {
@@ -481,7 +481,6 @@ export class AuthService {
                 canManageUsers: user.canManageUsers,
                 canViewReports: user.canViewReports,
               },
-              orgRolePermissions: user.orgRole?.permissions,
               memberRolePermissions: user.memberRole?.permissions,
               spaces: user.spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
             }),
@@ -533,7 +532,6 @@ export class AuthService {
           user: {
             include: {
               organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true } },
-              orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
             },
           },
         },
@@ -750,8 +748,8 @@ export class AuthService {
             orgModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
             subStatus: (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
-            orgRole: storedToken.user.orgRole ? { id: storedToken.user.orgRole.id, name: storedToken.user.orgRole.name, slug: storedToken.user.orgRole.slug, color: storedToken.user.orgRole.color } : null,
-            rolePermissions: (storedToken.user.orgRole?.permissions as Record<string, boolean>) || {},
+            orgRole: null,
+            rolePermissions: {},
           },
         },
       };
@@ -1022,7 +1020,6 @@ export class AuthService {
           unitId: true,
           organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true } },
           // Custom role
-          orgRole: { select: { id: true, name: true, slug: true, color: true, permissions: true } },
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
           // also read so per-space grants resolve before the backfill runs.
@@ -1042,7 +1039,7 @@ export class AuthService {
         .update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
         .catch(() => undefined);
 
-      const { organization, profileBadges, orgRole, enabledModules: userModules, memberRole, spaceAssignments, ...userData } = user;
+      const { organization, profileBadges, enabledModules: userModules, memberRole, spaceAssignments, ...userData } = user;
       // Resolve the member's access ONCE here (server-side, from their own
       // roles/assignments). Cached with the validated user on the gateway.
       const access = buildResolvedAccess({
@@ -1053,7 +1050,6 @@ export class AuthService {
           canManageUsers: userData.canManageUsers,
           canViewReports: userData.canViewReports,
         },
-        orgRolePermissions: orgRole?.permissions,
         memberRolePermissions: memberRole?.permissions,
         spaces: spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
       });
@@ -1079,8 +1075,8 @@ export class AuthService {
           // the read-only lock with zero extra DB reads (cached with the user).
           subStatus: (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
           planTier: organization?.planTier ? organization.planTier.toString().toLowerCase() : null,
-          orgRole: orgRole ? { id: orgRole.id, name: orgRole.name, slug: orgRole.slug, color: orgRole.color } : null,
-          rolePermissions: (orgRole?.permissions as Record<string, boolean>) || {},
+          orgRole: null,
+          rolePermissions: {},
           // Org-level portal opt-in (customers only exist when enabled).
           customerPortalEnabled: organization?.customerPortalEnabled ?? false,
         },

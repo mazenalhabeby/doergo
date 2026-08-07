@@ -806,11 +806,11 @@ export class TechniciansService {
           },
         },
         // Include space assignments for grouping
-        assignments: {
+        spaceAssignments: {
           where: { effectiveTo: null }, // Only active assignments
           select: {
             isPrimary: true,
-            location: { select: { id: true, name: true, timezone: true } },
+            space: { select: { id: true, name: true, timezone: true } },
           },
         },
       },
@@ -830,9 +830,9 @@ export class TechniciansService {
         const hasSchedule = schedule !== null;
 
         // Resolve primary space
-        const primaryAssignment = tech.assignments?.find((a: any) => a.isPrimary);
-        const firstAssignment = tech.assignments?.[0];
-        const space = primaryAssignment?.location || firstAssignment?.location || null;
+        const primaryAssignment = tech.spaceAssignments?.find((a: any) => a.isPrimary);
+        const firstAssignment = tech.spaceAssignments?.[0];
+        const space = primaryAssignment?.space || firstAssignment?.space || null;
 
         return {
           id: tech.id,

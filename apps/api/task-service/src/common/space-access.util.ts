@@ -7,18 +7,15 @@
 import { isSpaceLeaderPermissions } from '@hbcfield/shared';
 import type { PrismaService } from './prisma/prisma.service';
 
-/** All active space ids a user belongs to (unified assignment + technician assignment). */
+/** All active space ids a user belongs to (unified space_assignments). */
 export async function spaceIdsForUser(prisma: PrismaService, userId: string): Promise<string[]> {
   const now = new Date();
   const effective = { OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] };
-  const [assignments, techAssigns] = await Promise.all([
-    prisma.spaceAssignment.findMany({ where: { userId, ...effective }, select: { spaceId: true } }),
-    prisma.technicianAssignment.findMany({ where: { userId, ...effective }, select: { locationId: true } }),
-  ]);
-  const set = new Set<string>();
-  for (const a of assignments) set.add(a.spaceId);
-  for (const t of techAssigns) set.add(t.locationId);
-  return [...set];
+  const assignments = await prisma.spaceAssignment.findMany({
+    where: { userId, ...effective },
+    select: { spaceId: true },
+  });
+  return [...new Set(assignments.map((a) => a.spaceId))];
 }
 
 /**

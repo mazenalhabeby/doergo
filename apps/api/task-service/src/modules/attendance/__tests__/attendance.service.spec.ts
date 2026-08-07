@@ -78,7 +78,7 @@ describe('AttendanceService', () => {
     companyLocation: {
       findFirst: jest.fn(),
     },
-    technicianAssignment: {
+    spaceAssignment: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
     },
@@ -170,7 +170,7 @@ describe('AttendanceService', () => {
 
     it('should clock in successfully within geofence', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue(mockTechnician);
-      mockPrismaService.technicianAssignment.findFirst.mockResolvedValue(mockAssignment);
+      mockPrismaService.spaceAssignment.findFirst.mockResolvedValue(mockAssignment);
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
       mockPrismaService.companyLocation.findFirst.mockResolvedValue(mockLocation);
       mockPrismaService.timeEntry.create.mockResolvedValue(mockTimeEntry);
@@ -202,14 +202,14 @@ describe('AttendanceService', () => {
 
     it('should throw BadRequestException if not assigned to location', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue(mockTechnician);
-      mockPrismaService.technicianAssignment.findFirst.mockResolvedValue(null);
+      mockPrismaService.spaceAssignment.findFirst.mockResolvedValue(null);
 
       await expect(service.clockIn(clockInData)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException if already clocked in', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue(mockTechnician);
-      mockPrismaService.technicianAssignment.findFirst.mockResolvedValue(mockAssignment);
+      mockPrismaService.spaceAssignment.findFirst.mockResolvedValue(mockAssignment);
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
 
       await expect(service.clockIn(clockInData)).rejects.toThrow(BadRequestException);
@@ -217,7 +217,7 @@ describe('AttendanceService', () => {
 
     it('should throw BadRequestException for low GPS accuracy', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue(mockTechnician);
-      mockPrismaService.technicianAssignment.findFirst.mockResolvedValue(mockAssignment);
+      mockPrismaService.spaceAssignment.findFirst.mockResolvedValue(mockAssignment);
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
       mockPrismaService.companyLocation.findFirst.mockResolvedValue(mockLocation);
 
@@ -231,7 +231,7 @@ describe('AttendanceService', () => {
 
     it('should throw NotFoundException for inactive location', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue(mockTechnician);
-      mockPrismaService.technicianAssignment.findFirst.mockResolvedValue(mockAssignment);
+      mockPrismaService.spaceAssignment.findFirst.mockResolvedValue(mockAssignment);
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
       mockPrismaService.companyLocation.findFirst.mockResolvedValue(null);
 
@@ -307,7 +307,7 @@ describe('AttendanceService', () => {
   describe('getStatus', () => {
     it('should return clocked in status', async () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
-      mockPrismaService.technicianAssignment.findMany.mockResolvedValue([
+      mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
         { ...mockAssignment, location: mockLocation },
       ]);
 
@@ -323,7 +323,7 @@ describe('AttendanceService', () => {
 
     it('should return not clocked in status', async () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
-      mockPrismaService.technicianAssignment.findMany.mockResolvedValue([]);
+      mockPrismaService.spaceAssignment.findMany.mockResolvedValue([]);
 
       const result = await service.getStatus({
         userId: 'tech-123',
@@ -420,9 +420,9 @@ describe('AttendanceService', () => {
     it('escalates to a space leader after max reminders, then stops nudging', async () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]); // already at max=3
       mockPrismaService.timeEntry.update.mockResolvedValue({});
-      mockPrismaService.spaceMember.findMany.mockResolvedValue([
-        { userId: 'leader-1', spaceRole: { permissions: { canReconcileAttendance: true } } },
-        { userId: 'other', spaceRole: { permissions: { canReconcileAttendance: false } } },
+      mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
+        { userId: 'leader-1', role: { permissions: { canReconcileAttendance: true } } },
+        { userId: 'other', role: { permissions: { canReconcileAttendance: false } } },
       ]);
 
       const result = (await service.runShiftReminders()) as any;
@@ -443,7 +443,7 @@ describe('AttendanceService', () => {
     it('falls back to org admins when the space has no reconcile leaders', async () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]);
       mockPrismaService.timeEntry.update.mockResolvedValue({});
-      mockPrismaService.spaceMember.findMany.mockResolvedValue([]); // no space leaders
+      mockPrismaService.spaceAssignment.findMany.mockResolvedValue([]); // no space leaders
       mockPrismaService.user.findMany.mockResolvedValue([{ id: 'admin-1' }]);
 
       await service.runShiftReminders();
@@ -542,8 +542,8 @@ describe('AttendanceService', () => {
       it('sets OVERTIME_PENDING, stops reminders, and routes to approvers', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
         mockPrismaService.timeEntry.update.mockResolvedValue({});
-        mockPrismaService.spaceMember.findMany.mockResolvedValue([
-          { userId: 'leader-1', spaceRole: { permissions: { canApproveOvertime: true } } },
+        mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
+          { userId: 'leader-1', role: { permissions: { canApproveOvertime: true } } },
         ]);
 
         const result = (await service.requestExtraTime({
@@ -569,7 +569,7 @@ describe('AttendanceService', () => {
           openEntry({ expectedClockOutAt: new Date('2026-08-03T15:00:00Z') }),
         );
         mockPrismaService.timeEntry.update.mockResolvedValue({});
-        mockPrismaService.spaceMember.findFirst.mockResolvedValue(null); // no space role
+        mockPrismaService.spaceAssignment.findFirst.mockResolvedValue(null); // no space role
         mockPrismaService.user.findFirst.mockResolvedValue({ id: 'admin-1' }); // admin fallback
 
         const result = (await service.approveExtraTime({
@@ -593,7 +593,7 @@ describe('AttendanceService', () => {
 
       it('forbids approval when the user lacks the permission', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
-        mockPrismaService.spaceMember.findFirst.mockResolvedValue(null);
+        mockPrismaService.spaceAssignment.findFirst.mockResolvedValue(null);
         mockPrismaService.user.findFirst.mockResolvedValue(null); // not an admin either
 
         await expect(
@@ -612,8 +612,8 @@ describe('AttendanceService', () => {
       it('re-arms an immediate reminder and notifies the worker', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue({ id: 'entry-123', locationId: 'loc-123', userId: 'tech-123' });
         mockPrismaService.timeEntry.update.mockResolvedValue({});
-        mockPrismaService.spaceMember.findFirst.mockResolvedValue({
-          spaceRole: { permissions: { canApproveOvertime: true } },
+        mockPrismaService.spaceAssignment.findFirst.mockResolvedValue({
+          role: { permissions: { canApproveOvertime: true } },
         });
 
         const result = (await service.rejectExtraTime({

@@ -108,8 +108,8 @@ export class TasksService {
 
       // SPACE scope validation — user must be assigned to the space
       if (data.taskCreationScope === 'SPACE') {
-        const assignment = await this.prisma.technicianAssignment.findFirst({
-          where: { userId: data.userId, locationId: data.spaceId },
+        const assignment = await this.prisma.spaceAssignment.findFirst({
+          where: { userId: data.userId, spaceId: data.spaceId },
         });
         if (!assignment) {
           throw new ForbiddenException('You can only create tasks in spaces you are assigned to');

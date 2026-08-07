@@ -301,10 +301,10 @@ export class InvitationService {
       select: { id: true },
     });
     if (!space) return;
-    await tx.technicianAssignment.upsert({
-      where: { userId_locationId: { userId, locationId: spaceId } },
+    await tx.spaceAssignment.upsert({
+      where: { userId_spaceId: { userId, spaceId } },
       update: { isPrimary: true, effectiveTo: null },
-      create: { userId, locationId: spaceId, isPrimary: true },
+      create: { organizationId, userId, spaceId, isPrimary: true },
     });
   }
 

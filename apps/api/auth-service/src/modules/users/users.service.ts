@@ -946,7 +946,7 @@ export class UsersService {
     // Remove from org and clean up org-scoped associations so the user no
     // longer appears in space rosters, schedules, or dashboards.
     await this.prisma.$transaction([
-      this.prisma.technicianAssignment.deleteMany({ where: { userId: memberId } }),
+      this.prisma.spaceAssignment.deleteMany({ where: { userId: memberId } }),
       this.prisma.technicianSchedule.deleteMany({ where: { technicianId: memberId } }),
       // Unassign their still-active tasks so they stop showing in activity/pending;
       // completed/closed/canceled tasks keep the assignee for history.

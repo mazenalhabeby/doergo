@@ -470,10 +470,10 @@ export class OnboardingService {
           select: { id: true },
         });
         if (space) {
-          await tx.technicianAssignment.upsert({
-            where: { userId_locationId: { userId, locationId: invitation.spaceId } },
+          await tx.spaceAssignment.upsert({
+            where: { userId_spaceId: { userId, spaceId: invitation.spaceId } },
             update: { isPrimary: true, effectiveTo: null },
-            create: { userId, locationId: invitation.spaceId, isPrimary: true },
+            create: { organizationId: invitation.organizationId, userId, spaceId: invitation.spaceId, isPrimary: true },
           });
         }
       }

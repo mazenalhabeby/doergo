@@ -40,6 +40,9 @@ describe('AuthService', () => {
       id: 'org-123',
       name: 'Test Org',
     },
+    // Unified role/permission relations (Phase 5) — resolved into access on login.
+    memberRole: null,
+    spaceAssignments: [],
   };
 
   const mockPrismaService: Record<string, any> = {

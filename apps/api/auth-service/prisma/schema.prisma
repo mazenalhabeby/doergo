@@ -298,29 +298,8 @@ enum SprintStatus {
 
 // Models
 
-// Custom organization role with JSON permissions
-model OrgRole {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String
-  slug           String
-  description    String?
-  color          String?      @default("#6b7280")
-  isSystem       Boolean      @default(false)
-  legacyRole     String? // Maps to Role enum for backward compat (ADMIN, DISPATCHER, TECHNICIAN)
-  position       Int          @default(0)
-  isActive       Boolean      @default(true)
-  permissions    Json // { canCreateTasks: bool, canViewAllTasks: bool, ... }
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  users          User[]
-  invitations    Invitation[]
-
-  @@unique([organizationId, slug])
-  @@index([organizationId])
-  @@map("org_roles")
-}
+// OrgRole retired (Phase 5b) — replaced by AccessRole (scope ORG) + User.memberRoleId.
+// Table dropped in migration 20260807150000_drop_legacy_orgrole.
 
 model Organization {
   id        String   @id @default(cuid())
@@ -368,9 +347,6 @@ model Organization {
 
   users User[]
   tasks Task[]
-
-  // Custom roles
-  orgRoles OrgRole[]
 
   // Unified role model (Phase 1) — supersedes orgRoles + spaceRoles
   accessRoles      AccessRole[]
@@ -570,10 +546,6 @@ model User {
   unitId     String?
   unit       CustomerUnit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
-  // Custom role assignment
-  orgRoleId String?
-  orgRole   OrgRole? @relation(fields: [orgRoleId], references: [id], onDelete: SetNull)
-
   // Unified org-wide role (Phase 1) — supersedes orgRole
   memberRoleId String?
   memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
@@ -591,7 +563,6 @@ model User {
   serviceReports      ServiceReport[]
   reportDefinitions   ReportDefinition[]     @relation("ReportCreator") // saved reports created
   reportSchedules     ReportSchedule[]       @relation("ReportScheduleCreator")
-  assignments         TechnicianAssignment[] // Technician location assignments
   spaceAssignments    SpaceAssignment[] // Unified per-space assignments (Phase 1)
   timeEntries         TimeEntry[] // Clock-in/clock-out records
   approvedTimeEntries TimeEntry[]            @relation("ApprovedTimeEntries") // Time entries approved by this user
@@ -645,7 +616,6 @@ model User {
   @@index([organizationId])
   @@index([role])
   @@index([email])
-  @@index([orgRoleId])
   @@index([memberRoleId])
   @@index([organizationId, role, isActive]) // list technicians/members in org
   @@index([customerId]) // customer portal: a customer's login users
@@ -1357,7 +1327,6 @@ model CompanyLocation {
   recurringTemplates RecurringTaskTemplate[]
 
   // Technicians assigned to this location
-  assignments TechnicianAssignment[]
 
   // Unified space assignments (Phase 1) — merges assignments + spaceMembers
   spaceAssignments SpaceAssignment[]
@@ -1382,29 +1351,9 @@ model CompanyLocation {
 }
 
 // Technician assignment to company location (many-to-many)
-model TechnicianAssignment {
-  id String @id @default(cuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  locationId String
-  location   CompanyLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
-
-  isPrimary Boolean  @default(false) // Main work location
-  schedule  String[] @default([]) // Work days: ["MON", "TUE", "WED", "THU", "FRI"]
-
-  effectiveFrom DateTime  @default(now()) // Assignment start date
-  effectiveTo   DateTime? // Assignment end date (null = indefinite)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, locationId]) // One assignment per user-location pair
-  @@index([userId])
-  @@index([locationId])
-  @@map("technician_assignments")
-}
+// TechnicianAssignment retired (Phase 5b) — merged into the unified
+// SpaceAssignment model. Table dropped in migration
+// 20260807160000_drop_legacy_technician_assignment.
 
 // Per-employee notification routing override: a manager/admin (watcher) is
 // subscribed to notifications ABOUT a specific employee (subject). When a
@@ -1807,10 +1756,6 @@ model Invitation {
   targetRole     Role
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  // Custom role assignment (optional — overrides targetRole permissions)
-  targetOrgRoleId String?
-  targetOrgRole   OrgRole? @relation(fields: [targetOrgRoleId], references: [id], onDelete: SetNull)
 
   // Unified org-wide role (AccessRole) pre-assigned at invite (e.g. Manager),
   // validated server-side + applied to the member's memberRoleId on accept.
