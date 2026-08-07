@@ -30,11 +30,11 @@ export type BillingInterval = 'monthly' | 'annual';
 export const PLAN_TIERS: PlanTier[] = ['starter', 'professional', 'business', 'enterprise'];
 
 /** External/freelancer field (mobile-only) seat — flat across all paid tiers. */
-export const FIELD_SEAT_MONTHLY_CENTS = 1500; // €15 / technician / month
+export const FIELD_SEAT_MONTHLY_CENTS = 1900; // HOLD: live €19 until Stripe #5 prices set
 export const FIELD_SEAT_ANNUAL_CENTS = FIELD_SEAT_MONTHLY_CENTS * 10; // 2 months free
 
 /** In-house (employed) field (mobile-only) seat — discounted, flat across tiers. */
-export const IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS = 900; // €9 / in-house technician / month
+export const IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS = 1900; // HOLD: = external until Stripe in-house price + env set
 export const IN_HOUSE_FIELD_SEAT_ANNUAL_CENTS = IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS * 10; // 2 months free
 
 export const CURRENCY = 'eur';
@@ -115,8 +115,8 @@ export const PLANS: Record<PlanTier, PlanDef> = {
   starter: {
     tier: 'starter',
     name: 'Starter',
-    officeMonthlyCents: 1900,
-    officeAnnualCents: 19000, // €19 × 10
+    officeMonthlyCents: 2900,
+    officeAnnualCents: 29000, // €19 × 10
     modules: STARTER_MODULES,
     capabilities: STARTER_CAPS,
     custom: false,
@@ -124,8 +124,8 @@ export const PLANS: Record<PlanTier, PlanDef> = {
   professional: {
     tier: 'professional',
     name: 'Professional',
-    officeMonthlyCents: 4900,
-    officeAnnualCents: 49000,
+    officeMonthlyCents: 5900,
+    officeAnnualCents: 59000,
     modules: PROFESSIONAL_MODULES,
     capabilities: PROFESSIONAL_CAPS,
     custom: false,

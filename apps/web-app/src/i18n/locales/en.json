@@ -224,7 +224,7 @@
         ],
         "sumLabel": "Three separate subscriptions",
         "sumCost": "€60–90 / user",
-        "sumUs": "one platform · from €19 / user"
+        "sumUs": "one platform · from €29 / user"
       },
       "diffLabel": "And things the others charge extra for — or don't have at all",
       "diffs": [
@@ -411,11 +411,11 @@
       "popular": "Popular",
       "perUser": "/ user / mo",
       "cta": "Start free",
-      "note": "Prices per office seat · Field / technician seats €15 each (€9 for in-house/employed) · Enterprise from €199/mo or custom quote · Annual billing = 2 months free · 14-day trial, no card.",
+      "note": "Prices per office seat · Field / technician seats €19 each · Enterprise from €199/mo or custom quote · Annual billing = 2 months free · 14-day trial, no card.",
       "plans": [
         {
           "name": "Starter",
-          "price": "€19",
+          "price": "€29",
           "popular": false,
           "desc": "Tasks, attendance, GPS, schedules & mobile.",
           "features": [
@@ -427,7 +427,7 @@
         },
         {
           "name": "Professional",
-          "price": "€49",
+          "price": "€59",
           "popular": true,
           "desc": "Everything in Starter, plus the full field toolkit.",
           "features": [
@@ -494,7 +494,7 @@
         },
         {
           "q": "How much does HBCField cost?",
-          "a": "Per-seat pricing in euros with a 14-day free trial and no credit card required. Field (mobile-only) seats start at €15 per month; office seats are tiered."
+          "a": "Per-seat pricing in euros with a 14-day free trial and no credit card required. Field (mobile-only) seats start at €19 per month; office seats are tiered."
         },
         {
           "q": "Does HBCField replace separate tools?",
@@ -4010,13 +4010,13 @@
       "seats": "Billing is per seat, not per bundle. Every active Member counts as a seat: an office seat (any Member with web-portal access, including the Admin) is priced at the tier rate, while a field seat (a mobile-only Member) is charged at a flat rate. A Member's seat type follows their access — if you grant or revoke web access, their seat type changes accordingly, and your seat counts re-sync.",
       "plansTitle": "Plans & pricing (excl. VAT)",
       "starterLabel": "Starter",
-      "starterText": "€19 per office seat / month (€190 / year).",
+      "starterText": "€29 per office seat / month (€290 / year).",
       "proLabel": "Professional",
-      "proText": "€49 per office seat / month (€490 / year).",
+      "proText": "€59 per office seat / month (€590 / year).",
       "businessLabel": "Business",
       "businessText": "€99 per office seat / month (€990 / year).",
       "fieldLabel": "Field seat",
-      "fieldText": "€15 per mobile-only seat / month (€150 / year), on any tier.",
+      "fieldText": "€19 per mobile-only seat / month (€190 / year), on any tier.",
       "plansNote": "Prices are exclusive of VAT and may be updated for future terms with notice. Your current plan and seat counts are always shown in Settings → Billing."
     },
     "s6": {

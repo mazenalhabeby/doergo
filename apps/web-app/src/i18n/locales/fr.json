@@ -224,7 +224,7 @@
         ],
         "sumLabel": "Trois abonnements distincts",
         "sumCost": "60–90 € / utilisateur",
-        "sumUs": "une seule plateforme · à partir de 19 € / utilisateur"
+        "sumUs": "une seule plateforme · à partir de 29 € / utilisateur"
       },
       "diffLabel": "Et ce que les autres facturent en supplément — ou n'ont tout simplement pas",
       "diffs": [
@@ -411,11 +411,11 @@
       "popular": "Populaire",
       "perUser": "/ utilisateur / mois",
       "cta": "Commencer gratuitement",
-      "note": "Tarifs par siège bureau · Sièges terrain / technicien 15 € chacun (9 € en interne/salarié) · Enterprise à partir de 199 €/mois ou devis sur mesure · Facturation annuelle = 2 mois offerts · Essai de 14 jours, sans carte.",
+      "note": "Tarifs par siège bureau · Sièges terrain / technicien 19 € chacun · Enterprise à partir de 199 €/mois ou devis sur mesure · Facturation annuelle = 2 mois offerts · Essai de 14 jours, sans carte.",
       "plans": [
         {
           "name": "Starter",
-          "price": "19 €",
+          "price": "29 €",
           "popular": false,
           "desc": "Tâches, présences, GPS, plannings et mobile.",
           "features": [
@@ -427,7 +427,7 @@
         },
         {
           "name": "Professional",
-          "price": "49 €",
+          "price": "59 €",
           "popular": true,
           "desc": "Tout le contenu de Starter, plus la boîte à outils terrain complète.",
           "features": [
@@ -494,7 +494,7 @@
         },
         {
           "q": "Combien coûte HBCField ?",
-          "a": "Une tarification par siège en euros avec un essai gratuit de 14 jours, sans carte bancaire. Les sièges terrain (mobile uniquement) commencent à 15 € par mois ; les sièges bureau sont par paliers."
+          "a": "Une tarification par siège en euros avec un essai gratuit de 14 jours, sans carte bancaire. Les sièges terrain (mobile uniquement) commencent à 19 € par mois ; les sièges bureau sont par paliers."
         },
         {
           "q": "HBCField remplace-t-il des outils séparés ?",
@@ -4010,13 +4010,13 @@
       "seats": "La facturation se fait par licence, et non par lot. Chaque Membre actif compte comme une licence : une licence bureau (tout Membre disposant d’un accès au portail web, y compris l’Administrateur) est tarifée au tarif du niveau, tandis qu’une licence terrain (un Membre en accès mobile uniquement) est facturée à un tarif forfaitaire. Le type de licence d’un Membre suit son accès — si vous accordez ou révoquez l’accès web, son type de licence change en conséquence, et vos décomptes de licences se resynchronisent.",
       "plansTitle": "Forfaits et tarifs (hors TVA)",
       "starterLabel": "Starter",
-      "starterText": "19 € par licence bureau / mois (190 € / an).",
+      "starterText": "29 € par licence bureau / mois (290 € / an).",
       "proLabel": "Professional",
-      "proText": "49 € par licence bureau / mois (490 € / an).",
+      "proText": "59 € par licence bureau / mois (590 € / an).",
       "businessLabel": "Business",
       "businessText": "99 € par licence bureau / mois (990 € / an).",
       "fieldLabel": "Licence terrain",
-      "fieldText": "15 € par licence mobile uniquement / mois (150 € / an), sur tout niveau.",
+      "fieldText": "19 € par licence mobile uniquement / mois (190 € / an), sur tout niveau.",
       "plansNote": "Les prix sont hors TVA et peuvent être révisés pour les périodes futures avec préavis. Votre forfait actuel et vos décomptes de licences sont toujours affichés dans Paramètres → Facturation."
     },
     "s6": {

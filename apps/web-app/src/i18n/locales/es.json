@@ -224,7 +224,7 @@
         ],
         "sumLabel": "Tres suscripciones separadas",
         "sumCost": "€60–90 / usuario",
-        "sumUs": "una plataforma · desde €19 / usuario"
+        "sumUs": "una plataforma · desde €29 / usuario"
       },
       "diffLabel": "Y cosas que los demás cobran aparte, o que ni siquiera tienen",
       "diffs": [
@@ -411,11 +411,11 @@
       "popular": "Popular",
       "perUser": "/ usuario / mes",
       "cta": "Empezar gratis",
-      "note": "Precios por asiento de oficina · Asientos de campo / técnico €15 cada uno (€9 internos/empleados) · Enterprise desde €199/mes o cotización a medida · Facturación anual = 2 meses gratis · Prueba de 14 días, sin tarjeta.",
+      "note": "Precios por asiento de oficina · Asientos de campo / técnico €19 cada uno · Enterprise desde €199/mes o cotización a medida · Facturación anual = 2 meses gratis · Prueba de 14 días, sin tarjeta.",
       "plans": [
         {
           "name": "Starter",
-          "price": "€19",
+          "price": "€29",
           "popular": false,
           "desc": "Tareas, asistencia, GPS, horarios y móvil.",
           "features": [
@@ -427,7 +427,7 @@
         },
         {
           "name": "Professional",
-          "price": "€49",
+          "price": "€59",
           "popular": true,
           "desc": "Todo lo de Starter, más el kit completo para el terreno.",
           "features": [
@@ -494,7 +494,7 @@
         },
         {
           "q": "¿Cuánto cuesta HBCField?",
-          "a": "Precios por asiento en euros con una prueba gratuita de 14 días y sin tarjeta de crédito. Los asientos de campo (solo móvil) empiezan en 15 € al mes; los de oficina son por niveles."
+          "a": "Precios por asiento en euros con una prueba gratuita de 14 días y sin tarjeta de crédito. Los asientos de campo (solo móvil) empiezan en 19 € al mes; los de oficina son por niveles."
         },
         {
           "q": "¿HBCField reemplaza a herramientas separadas?",
@@ -4010,13 +4010,13 @@
       "seats": "La facturación es por licencia, no por paquete. Cada Miembro activo cuenta como una licencia: una licencia de oficina (cualquier Miembro con acceso al portal web, incluido el Administrador) se cobra según la tarifa del nivel, mientras que una licencia de campo (un Miembro con acceso solo móvil) se cobra a una tarifa fija. El tipo de licencia de un Miembro sigue su acceso: si otorgas o revocas el acceso web, su tipo de licencia cambia en consecuencia y el número de licencias se vuelve a sincronizar.",
       "plansTitle": "Planes y precios (sin IVA)",
       "starterLabel": "Starter",
-      "starterText": "19 € por licencia de oficina / mes (190 € / año).",
+      "starterText": "29 € por licencia de oficina / mes (290 € / año).",
       "proLabel": "Professional",
-      "proText": "49 € por licencia de oficina / mes (490 € / año).",
+      "proText": "59 € por licencia de oficina / mes (590 € / año).",
       "businessLabel": "Business",
       "businessText": "99 € por licencia de oficina / mes (990 € / año).",
       "fieldLabel": "Licencia de campo",
-      "fieldText": "15 € por licencia solo móvil / mes (150 € / año), en cualquier nivel.",
+      "fieldText": "19 € por licencia solo móvil / mes (190 € / año), en cualquier nivel.",
       "plansNote": "Los precios no incluyen IVA y pueden actualizarse para periodos futuros con previo aviso. Tu plan actual y el número de licencias se muestran siempre en Ajustes → Facturación."
     },
     "s6": {

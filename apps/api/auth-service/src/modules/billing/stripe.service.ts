@@ -44,7 +44,13 @@ export class StripeService {
     } else if (tier === 'starter' || tier === 'professional' || tier === 'business') {
       envKey = STRIPE_PRICE_ENV_KEYS[tier].office[interval];
     }
-    const id = envKey ? this.config.get<string>(envKey) : undefined;
+    let id = envKey ? this.config.get<string>(envKey) : undefined;
+    // Safety net: until a dedicated in-house Stripe price is configured, an
+    // in-house field seat bills at the standard field price (no missing-env
+    // error, no discount). Once STRIPE_PRICE_FIELD_INHOUSE_* is set it takes over.
+    if (!id && seat === 'field_inhouse') {
+      id = this.config.get<string>(STRIPE_PRICE_ENV_KEYS.field[interval]);
+    }
     if (!id) {
       throw new InternalServerErrorException(
         `Missing Stripe price for ${seat}/${tier}/${interval} (env ${envKey ?? 'n/a'})`,
