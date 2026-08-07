@@ -99,6 +99,16 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  /** Escape a string for safe interpolation into report-email HTML (L5). */
+  private esc(v: unknown): string {
+    return String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   private fmt(v: unknown, format?: string): string {
     if (v == null) return '—';
     if (format === 'hours') return `${Number(v).toFixed(1)}h`;
@@ -111,14 +121,14 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
   }
 
   private renderHtml(name: string, columns: Array<{ key: string; label: string; kind: string; format?: string }>, rows: Array<Record<string, unknown>>): string {
-    const th = columns.map((c) => `<th style="text-align:${c.kind === 'measure' ? 'right' : 'left'};padding:8px 12px;border-bottom:2px solid #e2e8f0;font-size:12px;color:#64748b;text-transform:uppercase;">${c.label}</th>`).join('');
+    const th = columns.map((c) => `<th style="text-align:${c.kind === 'measure' ? 'right' : 'left'};padding:8px 12px;border-bottom:2px solid #e2e8f0;font-size:12px;color:#64748b;text-transform:uppercase;">${this.esc(c.label)}</th>`).join('');
     const trs = rows.slice(0, 200).map((r) => {
-      const tds = columns.map((c) => `<td style="text-align:${c.kind === 'measure' ? 'right' : 'left'};padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:14px;">${this.fmt(r[c.key], c.format)}</td>`).join('');
+      const tds = columns.map((c) => `<td style="text-align:${c.kind === 'measure' ? 'right' : 'left'};padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:14px;">${this.esc(this.fmt(r[c.key], c.format))}</td>`).join('');
       return `<tr>${tds}</tr>`;
     }).join('');
     return `
       <div style="font-family:Inter,system-ui,sans-serif;color:#1e293b;">
-        <h2 style="margin:0 0 4px;">${name}</h2>
+        <h2 style="margin:0 0 4px;">${this.esc(name)}</h2>
         <p style="margin:0 0 16px;color:#64748b;font-size:13px;">Generated ${new Date().toUTCString()}</p>
         ${rows.length === 0 ? '<p style="color:#64748b;">No data for this period.</p>' : `<table style="border-collapse:collapse;width:100%;"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`}
         <p style="margin-top:20px;color:#94a3b8;font-size:12px;">HBCField — scheduled report</p>

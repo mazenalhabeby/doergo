@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, Request, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -41,6 +41,14 @@ export class AnalyticsController {
   @Get('worker-costs')
   @ApiOperation({ summary: 'Per-worker labor cost for a month (hourly × hours, or fixed monthly) + org total' })
   async workerCosts(@Request() req: any, @Query('month') month?: string) {
+    // Payroll is more sensitive than the rest of analytics: an ops user who can
+    // view all tasks (ReportAccessGuard) should NOT automatically see wages.
+    // Require admin OR the explicit canViewReports permission for this route (L4).
+    const isAdmin = req.user?.role === 'ADMIN';
+    const canViewReports = req.user?.access?.org?.canViewReports === true;
+    if (!isAdmin && !canViewReports) {
+      throw new ForbiddenException('You do not have permission to view labor costs');
+    }
     return firstValueFrom(
       this.taskClient.send({ cmd: 'analytics_worker_costs' }, { organizationId: req.user.organizationId, month }),
     );

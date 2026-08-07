@@ -587,8 +587,17 @@ export class AuthService {
         const now = new Date();
 
         if (now > gracePeriodEnd) {
-          // Beyond grace period - reject
-          this.logger.warn(`Token already used at ${storedToken.usedAt}, grace period expired`);
+          // Beyond grace period → this is a rotated token being replayed, a strong
+          // signal the token was stolen. Revoke the user's ENTIRE refresh-token
+          // chain so the attacker (and the victim) are forced to re-authenticate,
+          // and record a security event (L9).
+          this.logger.warn(
+            `[SECURITY] Refresh-token reuse detected for user ${storedToken.userId} ` +
+            `(token used at ${storedToken.usedAt}, grace expired). Revoking token chain.`,
+          );
+          await this.prisma.refreshToken
+            .deleteMany({ where: { userId: storedToken.userId } })
+            .catch((e) => this.logger.error('Failed to revoke token chain on reuse', e));
           return {
             success: false,
             statusCode: HttpStatus.UNAUTHORIZED,
@@ -987,7 +996,9 @@ export class AuthService {
 
   async validateToken(token: string) {
     try {
-      const payload = this.jwtService.verify(token);
+      // Pin the algorithm so a token can't be verified under a different scheme
+      // (none-alg / algorithm-confusion) — defense-in-depth (L10).
+      const payload = this.jwtService.verify(token, { algorithms: ['HS256'] });
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
         select: {

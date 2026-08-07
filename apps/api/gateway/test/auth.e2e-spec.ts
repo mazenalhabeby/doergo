@@ -94,6 +94,12 @@ describe('AuthController (e2e)', () => {
           useValue: mockAuthClient,
         },
         {
+          // AuthController also injects the notification client (welcome emails,
+          // etc.). Provide a no-op mock so the test module compiles.
+          provide: 'NOTIFICATION_SERVICE',
+          useValue: { send: jest.fn(), emit: jest.fn(), connect: jest.fn() },
+        },
+        {
           provide: APP_GUARD,
           useClass: ThrottlerGuard,
         },

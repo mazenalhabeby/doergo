@@ -42,7 +42,10 @@ import { PortalModule } from './modules/portal/portal.module';
         }
         return {
           secret,
-          signOptions: { expiresIn: configService.get('JWT_ACCESS_EXPIRATION', '15m') },
+          // Pin HS256 on both sign and verify so tokens can't be minted/accepted
+          // under a different algorithm (none-alg / algorithm-confusion) (L10).
+          signOptions: { expiresIn: configService.get('JWT_ACCESS_EXPIRATION', '15m'), algorithm: 'HS256' },
+          verifyOptions: { algorithms: ['HS256'] },
         };
       },
     }),

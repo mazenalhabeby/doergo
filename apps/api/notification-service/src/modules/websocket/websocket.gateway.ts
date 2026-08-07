@@ -280,7 +280,9 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     // Verify JWT token
     let decoded: any;
     try {
-      decoded = jwt.verify(token, this.jwtSecret);
+      // Pin the algorithm so a token can't force verification under a different
+      // scheme (none-alg / RS↔HS confusion) — defense-in-depth (L10).
+      decoded = jwt.verify(token, this.jwtSecret, { algorithms: ['HS256'] });
     } catch (err: any) {
       this.logger.warn(`[AUTH] Client ${client.id} rejected: invalid/expired token - ${err.message}`);
       return { success: false, error: 'Invalid or expired token' };
@@ -432,7 +434,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   }
 
   @SubscribeMessage('join_task')
-  handleJoinTask(client: Socket, payload: { taskId: string }) {
+  async handleJoinTask(client: Socket, payload: { taskId: string }) {
     const clientInfo = this.connectedClients.get(client.id);
 
     if (!clientInfo || !clientInfo.organizationId) {
@@ -446,6 +448,21 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     if (taskRoomCount >= 50) {
       this.logger.warn(`[JOIN] Client ${client.id} rejected: task-room limit reached`);
       return { success: false, error: 'Too many task subscriptions' };
+    }
+
+    // Tenant isolation (L1): the task room carries task.created/updated/status
+    // events, so a client must only join rooms for tasks in its OWN org. Verify
+    // ownership before joining — a bare task id must never grant cross-org access.
+    if (!payload?.taskId || typeof payload.taskId !== 'string') {
+      return { success: false, error: 'taskId is required' };
+    }
+    const task = await this.prisma.task.findFirst({
+      where: { id: payload.taskId, organizationId: clientInfo.organizationId },
+      select: { id: true },
+    });
+    if (!task) {
+      this.logger.warn(`[JOIN] Client ${client.id} (org: ${clientInfo.organizationId}) rejected: task ${payload.taskId} not in org`);
+      return { success: false, error: 'Task not found' };
     }
 
     const roomName = `task:${payload.taskId}`;
@@ -491,7 +508,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     }
     const token = authHeader.slice(7);
     try {
-      const decoded: any = jwt.verify(token, this.jwtSecret);
+      const decoded: any = jwt.verify(token, this.jwtSecret, { algorithms: ['HS256'] });
       // Only ADMIN can view socket stats (the token carries no fine-grained flags).
       return decoded.role === 'ADMIN';
     } catch {
