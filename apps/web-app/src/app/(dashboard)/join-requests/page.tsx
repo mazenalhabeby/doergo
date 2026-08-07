@@ -116,7 +116,6 @@ export default function JoinRequestsPage() {
   // Approve form state
   const [approveRole, setApproveRole] = useState<"EMPLOYEE">("EMPLOYEE")
   const [approveSpecialty, setApproveSpecialty] = useState<string>("")
-  const [approveMaxDailyJobs, setApproveMaxDailyJobs] = useState("")
 
   // Reject form state
   const [rejectReason, setRejectReason] = useState("")
@@ -171,7 +170,6 @@ export default function JoinRequestsPage() {
     setSelectedRequest(request)
     setApproveRole("EMPLOYEE")
     setApproveSpecialty("")
-    setApproveMaxDailyJobs("")
     setApproveDialogOpen(true)
   }
 
@@ -199,7 +197,6 @@ export default function JoinRequestsPage() {
     }
 
     if (approveSpecialty) data.specialty = approveSpecialty
-    if (approveMaxDailyJobs) data.maxDailyJobs = parseInt(approveMaxDailyJobs)
 
     approveMutation.mutate({ id: selectedRequest.id, data })
   }
@@ -457,17 +454,6 @@ export default function JoinRequestsPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{t("joinRequests.approveDialog.maxDailyJobsLabel")}</Label>
-                  <Input
-                    type="number"
-                    placeholder={t("joinRequests.approveDialog.maxDailyJobsPlaceholder")}
-                    value={approveMaxDailyJobs}
-                    onChange={(e) => setApproveMaxDailyJobs(e.target.value)}
-                    min={1}
-                    max={20}
-                  />
-                </div>
               </>
             )}
           </div>

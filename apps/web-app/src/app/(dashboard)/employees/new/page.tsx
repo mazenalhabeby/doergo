@@ -64,7 +64,6 @@ export default function NewTechnicianPage() {
   const [password, setPassword] = useState("")
   const [position, setPosition] = useState<string>("technician")
   const [specialty, setSpecialty] = useState("")
-  const [maxDailyJobs, setMaxDailyJobs] = useState(5)
 
   // UI state
   const [showPassword, setShowPassword] = useState(false)
@@ -115,7 +114,6 @@ export default function NewTechnicianPage() {
       password: password.trim() || undefined,
       
       specialty: specialty || undefined,
-      maxDailyJobs,
     })
   }
 
@@ -304,20 +302,6 @@ export default function NewTechnicianPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="maxJobs">{t('technicians.create.maxDailyJobsLabel')}</Label>
-                <Input
-                  id="maxJobs"
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={maxDailyJobs}
-                  onChange={(e) => setMaxDailyJobs(parseInt(e.target.value) || 5)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('technicians.create.maxDailyJobsHint')}
-                </p>
-              </div>
             </div>
 
             {/* Actions */}

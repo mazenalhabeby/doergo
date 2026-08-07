@@ -1854,7 +1854,6 @@ export class TasksService {
         specialty: true,
         rating: true,
         ratingCount: true,
-        maxDailyJobs: true,
         lastLocation: {
           select: { lat: true, lng: true, updatedAt: true },
         },
@@ -1900,13 +1899,42 @@ export class TasksService {
       }
     }
 
+    // Derive each candidate's DAILY CAPACITY from their OWN recent throughput —
+    // the busy-day rate (90th-percentile completed jobs/day over the last 30 days),
+    // instead of a manually-typed number. Self-adjusting; a new/no-history worker
+    // falls back to DEFAULT_CAPACITY. ONE grouped query (no N+1), org-scoped with
+    // bound params, clamped to a sane [1,20]. `updatedAt` marks the COMPLETED/CLOSED
+    // transition (there is no completedAt column) — a good proxy for finished date.
+    const DEFAULT_CAPACITY = 5;
+    const derivedCapacityMap = new Map<string, number>();
+    if (techIds.length > 0) {
+      const capacityRows = await this.prisma.$queryRawUnsafe<Array<{ assignedToId: string; capacity: number }>>(
+        `SELECT daily."assignedToId",
+                GREATEST(1, LEAST(20, percentile_disc(0.9) WITHIN GROUP (ORDER BY daily.cnt))) AS capacity
+         FROM (
+           SELECT "assignedToId", ("updatedAt")::date AS d, count(*)::int AS cnt
+           FROM "tasks"
+           WHERE "organizationId" = $1
+             AND "assignedToId" = ANY($2::text[])
+             AND status IN ('COMPLETED', 'CLOSED')
+             AND "updatedAt" >= NOW() - INTERVAL '30 days'
+           GROUP BY "assignedToId", ("updatedAt")::date
+         ) daily
+         GROUP BY daily."assignedToId"`,
+        data.organizationId,
+        techIds,
+      );
+      for (const r of capacityRows) derivedCapacityMap.set(r.assignedToId, Number(r.capacity));
+    }
+
     // Calculate scores for each technician
     const scoredTechnicians = technicians.map((tech) => {
         const todayCompletedCount = completedCountMap.get(tech.id) || 0;
 
         const activeTaskCount = tech._count.assignedTasks;
         const todayTaskCount = activeTaskCount + todayCompletedCount;
-        const maxDailyJobs = tech.maxDailyJobs || 5;
+        // Automatic capacity (see above); no longer the manual maxDailyJobs field.
+        const maxDailyJobs = derivedCapacityMap.get(tech.id) ?? DEFAULT_CAPACITY;
 
         // Calculate individual scores (0-100 scale)
         const distanceScore = this.calculateDistanceScore(task, tech.lastLocation);

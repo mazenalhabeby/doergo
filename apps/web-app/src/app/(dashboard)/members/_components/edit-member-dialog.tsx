@@ -210,7 +210,6 @@ export function EditMemberDialog({
   const [employmentType, setEmploymentType] = useState("EXTERNAL")
   const [costType, setCostType] = useState("") // "" | HOURLY | FIXED
   const [costAmount, setCostAmount] = useState("") // euros
-  const [maxDailyJobs, setMaxDailyJobs] = useState<number>(5)
 
   // Initialize form whenever a (new) member is opened.
   useEffect(() => {
@@ -227,7 +226,6 @@ export function EditMemberDialog({
     setEmploymentType(member.employmentType || "EXTERNAL")
     setCostType(member.costType || "")
     setCostAmount(member.costRateCents != null ? (member.costRateCents / 100).toString() : "")
-    setMaxDailyJobs(member.maxDailyJobs ?? 5)
   }, [member])
 
   // ── Data (self-contained; shared query keys dedupe across pages) ──
@@ -362,7 +360,6 @@ export function EditMemberDialog({
     const workerPatch: UpdateEmployeeInput = {
       specialty: specialty.trim() || undefined,
       employmentType,
-      maxDailyJobs,
     }
     if (canSeeCost) {
       const costed = costType === "HOURLY" || costType === "FIXED"
@@ -428,25 +425,20 @@ export function EditMemberDialog({
               <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Employment type — only when the org distinguishes in-house vs external. */}
-              {user?.orgUsesExternalWorkers && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">{t("technicians.detail.editDialog.employmentTypeLabel", "Employment type")}</Label>
-                  <Select value={employmentType} onValueChange={setEmploymentType}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="EXTERNAL">{t("technicians.detail.editDialog.employmentType.external", "External / freelancer")}</SelectItem>
-                      <SelectItem value="IN_HOUSE">{t("technicians.detail.editDialog.employmentType.inHouse", "In-house (employed)")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            {/* Employment type — only when the org distinguishes in-house vs external.
+                (Capacity/"max daily jobs" is now derived automatically from throughput.) */}
+            {user?.orgUsesExternalWorkers && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">{t("technicians.detail.editDialog.maxDailyJobsLabel", "Max daily jobs")}</Label>
-                <Input type="number" min={1} max={20} value={maxDailyJobs} onChange={(e) => setMaxDailyJobs(parseInt(e.target.value) || 5)} className="h-9" />
+                <Label className="text-xs font-medium text-muted-foreground">{t("technicians.detail.editDialog.employmentTypeLabel", "Employment type")}</Label>
+                <Select value={employmentType} onValueChange={setEmploymentType}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EXTERNAL">{t("technicians.detail.editDialog.employmentType.external", "External / freelancer")}</SelectItem>
+                    <SelectItem value="IN_HOUSE">{t("technicians.detail.editDialog.employmentType.inHouse", "In-house (employed)")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
+            )}
 
             {/* Labor cost — money, managers only. Feeds the monthly Costs view. */}
             {canSeeCost && (

@@ -111,6 +111,9 @@ describe('TasksService', () => {
   };
   // $transaction runs its callback with the mock itself acting as the tx client.
   (mockPrismaService as any).$transaction = jest.fn(async (cb: any) => cb(mockPrismaService));
+  // Derived-capacity raw query in the suggestion flow → no history in tests
+  // (every candidate falls back to DEFAULT_CAPACITY).
+  (mockPrismaService as any).$queryRawUnsafe = jest.fn().mockResolvedValue([]);
 
   const mockNotificationClient = {
     emit: jest.fn(),

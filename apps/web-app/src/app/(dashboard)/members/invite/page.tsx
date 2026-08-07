@@ -56,7 +56,6 @@ export default function InviteMemberPage() {
   const [email, setEmail] = useState("")
   const [expiresInHours, setExpiresInHours] = useState("168")
   const [specialty, setSpecialty] = useState("")
-  const [maxDailyJobs, setMaxDailyJobs] = useState("")
   const [access, setAccess] = useState<AccessDraft>(() => defaultAccessDraft())
   const patchAccess = (p: Partial<AccessDraft>) => setAccess((cur) => ({ ...cur, ...p }))
 
@@ -96,7 +95,6 @@ export default function InviteMemberPage() {
 
     if (isEmployee) {
       if (specialty) input.specialty = specialty
-      if (maxDailyJobs) input.maxDailyJobs = parseInt(maxDailyJobs)
       if (access.memberRoleId) input.memberRoleId = access.memberRoleId
       input.accessProfile = serializeAccessDraft(access)
     }
@@ -279,17 +277,6 @@ export default function InviteMemberPage() {
                     <datalist id="specialty-list">
                       {SPECIALTY_OPTIONS.map(s => <option key={s} value={s} />)}
                     </datalist>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t("members.invite.maxDailyJobsLabel")}</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={20}
-                      placeholder="5"
-                      value={maxDailyJobs}
-                      onChange={(e) => setMaxDailyJobs(e.target.value)}
-                    />
                   </div>
                 </div>
 
