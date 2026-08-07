@@ -199,9 +199,7 @@ export default function MemberProfilePage({
     )
   }
 
-  const roleConfig = member.orgRole
-    ? { labelKey: "members.roles.employee", className: "", gradient: "from-gray-500 to-gray-600" }
-    : ROLE_CONFIG[member.role] || ROLE_CONFIG.TECHNICIAN!
+  const roleConfig = ROLE_CONFIG[member.role] || ROLE_CONFIG.TECHNICIAN!
   const scheduleLabel = member.scheduleType === "FIXED"
     ? t("members.detail.fixedSchedule")
     : member.scheduleType === "FLEXIBLE"
@@ -257,7 +255,7 @@ export default function MemberProfilePage({
                   {(() => {
                     // Admin (system tier) always shows Admin; otherwise the named
                     // org role (Manager/custom); otherwise the plain tier label.
-                    const named = member.role !== "ADMIN" ? (member.memberRole || member.orgRole) : null
+                    const named = member.role !== "ADMIN" ? member.memberRole : null
                     return named ? (
                       <Badge
                         variant="outline"

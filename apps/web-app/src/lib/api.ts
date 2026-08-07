@@ -372,9 +372,6 @@ export const authApi = {
         canManageUsers: boolean;
         enabledModules?: string[] | Record<string, unknown>;
         orgModules?: string[];
-        // Custom role
-        orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
-        rolePermissions?: Record<string, boolean>;
       };
     }>('/auth/me');
 
@@ -3062,8 +3059,6 @@ export interface OrgMember {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   canViewReports?: boolean;
-  orgRoleId?: string | null;
-  orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
   /** Unified org-wide role (AccessRole id) — e.g. Manager. */
   memberRoleId?: string | null;
   memberRole?: { id: string; name: string; color?: string | null } | null;

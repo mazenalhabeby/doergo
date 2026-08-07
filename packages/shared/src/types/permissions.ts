@@ -180,7 +180,7 @@ export function permissionsFromUserFlags(u: {
   return out;
 }
 
-/** Legacy `OrgRole.permissions` JSON → unified set (same key names). */
+/** A role's `permissions` JSON (org or space AccessRole) → whitelisted set. */
 export function permissionsFromOrgRole(raw: unknown): PermissionSet {
   return pickPermissions(raw);
 }
@@ -244,18 +244,16 @@ export interface ResolvedAccess {
  * the whitelisting mappers, so unknown/injected JSON keys are dropped — only the
  * known permission vocabulary can ever grant anything.
  *
- * org = user flags ∪ legacy orgRole ∪ unified memberRole  (a strict SUPERSET of
- * today's flags, so nothing a user can do today is ever removed).
+ * org = user flags ∪ unified memberRole  (a strict SUPERSET of today's flags, so
+ * nothing a user can do today is ever removed).
  */
 export function buildResolvedAccess(input: {
   userFlags?: Parameters<typeof permissionsFromUserFlags>[0];
-  orgRolePermissions?: unknown; // legacy OrgRole.permissions
   memberRolePermissions?: unknown; // unified AccessRole.permissions (org-scoped)
-  spaces?: { spaceId: string; permissions?: unknown }[]; // unified + legacy space grants
+  spaces?: { spaceId: string; permissions?: unknown }[]; // unified space grants
 }): ResolvedAccess {
   const org = mergePermissions(
     input.userFlags ? permissionsFromUserFlags(input.userFlags) : undefined,
-    permissionsFromOrgRole(input.orgRolePermissions),
     permissionsFromOrgRole(input.memberRolePermissions),
   );
   const perSpace: Record<string, PermissionSet> = {};

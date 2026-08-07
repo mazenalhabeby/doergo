@@ -50,9 +50,6 @@ export interface User {
   subStatus?: string;
   // Avatar
   avatarUrl?: string | null;
-  // Custom role
-  orgRole?: { id: string; name: string; slug: string; color?: string | null } | null;
-  rolePermissions?: Record<string, boolean>;
   // Unified resolved access (Phase 2): org-wide ∪ per-space permission grants.
   access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> };
 }
@@ -170,8 +167,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
           orgModules: userData.orgModules || [],
-          orgRole: userData.orgRole || null,
-          rolePermissions: userData.rolePermissions || {},
         });
         updateTokenInfo();
       }
@@ -236,8 +231,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       avatarUrl: u.avatarUrl || null,
       enabledModules: u.enabledModules || [],
       orgModules: u.orgModules || [],
-      orgRole: u.orgRole || null,
-      rolePermissions: u.rolePermissions || {},
     });
     updateTokenInfo();
   }, [updateTokenInfo, queryClient]);
@@ -268,8 +261,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
           orgModules: userData.orgModules || [],
-          orgRole: userData.orgRole || null,
-          rolePermissions: userData.rolePermissions || {},
         });
       }
     } catch {
@@ -326,10 +317,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check if user has a specific permission
   const hasPermission = useCallback((perm: string) => {
     if (!user) return false;
-    // Satisfied by ANY source (superset — never narrower than before):
-    // a direct user flag, a legacy role grant, or the unified org access.
+    // Satisfied by EITHER a direct user flag or the unified org access (a
+    // superset of the flags — never narrower).
     if ((user as any)[perm] === true) return true;
-    if (user.rolePermissions?.[perm] === true) return true;
     return user.access?.org?.[perm] === true;
   }, [user]);
 

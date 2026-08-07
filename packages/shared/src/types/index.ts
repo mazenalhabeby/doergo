@@ -717,22 +717,6 @@ export const PERMISSION_SCHEMA = [
 
 export type PermissionKey = typeof PERMISSION_SCHEMA[number]['permissions'][number]['key'];
 
-export interface OrgRoleData {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  color: string | null;
-  isSystem: boolean;
-  legacyRole: string | null;
-  position: number;
-  isActive: boolean;
-  permissions: Record<string, any>;
-  createdAt: string;
-  updatedAt: string;
-  _count?: { users: number };
-}
-
 // Export attendance types
 export * from './attendance';
 

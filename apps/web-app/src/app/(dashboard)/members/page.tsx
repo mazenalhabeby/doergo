@@ -247,7 +247,7 @@ function RoleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
   // Admin (system tier) always shows as Admin, even if it also carries a role row.
   if (member.role !== "ADMIN") {
-    const named = member.memberRole || member.orgRole
+    const named = member.memberRole
     if (named) {
       return (
         <Badge

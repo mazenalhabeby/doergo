@@ -468,10 +468,6 @@ export class AuthService {
             // Billing tier + subscription status (lowercase) — drives plan gating.
             subStatus: (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
-            // Legacy custom-role fields retired (Phase 5b) — kept null for
-            // back-compat; role now comes from memberRole + resolved access.
-            orgRole: null,
-            rolePermissions: {},
             // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
             access: buildResolvedAccess({
               userFlags: {
@@ -748,8 +744,6 @@ export class AuthService {
             orgModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
             subStatus: (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
-            orgRole: null,
-            rolePermissions: {},
           },
         },
       };
@@ -1075,8 +1069,6 @@ export class AuthService {
           // the read-only lock with zero extra DB reads (cached with the user).
           subStatus: (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
           planTier: organization?.planTier ? organization.planTier.toString().toLowerCase() : null,
-          orgRole: null,
-          rolePermissions: {},
           // Org-level portal opt-in (customers only exist when enabled).
           customerPortalEnabled: organization?.customerPortalEnabled ?? false,
         },

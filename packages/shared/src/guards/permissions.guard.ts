@@ -54,17 +54,16 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    // A permission is satisfied by ANY of: the legacy user flag, a legacy
-    // custom-role grant, or the unified resolved ORG access (which is itself a
-    // superset of the flags). Only ORG-level access is honored here — per-space
-    // grants are enforced in the service layer against the resource's own space,
-    // never a client-supplied one, so this guard can never be tricked into
-    // approving an action on a space the caller doesn't control.
+    // A permission is satisfied by EITHER the legacy user flag or the unified
+    // resolved ORG access (which is itself a superset of the flags). Only
+    // ORG-level access is honored here — per-space grants are enforced in the
+    // service layer against the resource's own space, never a client-supplied
+    // one, so this guard can never be tricked into approving an action on a
+    // space the caller doesn't control.
     const access = (user.access as ResolvedAccess | undefined) ?? undefined;
     const missingPermissions = requiredPermissions.filter(
       (permission) =>
         user[permission] !== true &&
-        user.rolePermissions?.[permission] !== true &&
         !accessAllows(access, permission as AccessPermissionKey),
     );
 
