@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from '@hbcfield/shared';
+import { RetentionService } from './common/retention/retention.service';
 import { EmailModule } from './modules/email/email.module';
 import { PushModule } from './modules/push/push.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
@@ -19,6 +21,7 @@ import { NotificationStore } from './common/notification-store.service';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     EmailModule,
     PushModule,
@@ -33,6 +36,6 @@ import { NotificationStore } from './common/notification-store.service';
     ChatNotificationHandler,
     ReportNotificationHandler,
   ],
-  providers: [NotificationStore],
+  providers: [NotificationStore, RetentionService],
 })
 export class AppModule {}

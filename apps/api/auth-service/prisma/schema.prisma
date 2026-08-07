@@ -1956,6 +1956,8 @@ model NotificationDelivery {
   @@index([recipientId, readAt])
   @@index([channel, status])
   @@index([eventType])
+  // Retention sweep filters on createdAt alone — index it (H4).
+  @@index([createdAt])
   @@map("notification_deliveries")
 }
 

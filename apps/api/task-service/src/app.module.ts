@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
 import {
@@ -30,6 +31,7 @@ import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.
 import { SupportModule } from './modules/support/support.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { RetentionService } from './common/retention/retention.service';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     // BullMQ for job processing
     BullModule.forRootAsync(createBullMQConfig()),
     BullModule.registerQueue({
@@ -84,5 +87,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     ChatModule,
     AnalyticsModule,
   ],
+  providers: [RetentionService],
 })
 export class AppModule {}
