@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { AuthSkeleton } from '@/components/auth';
+import { AnimatedLogo } from '@hbcfield/shared/components';
 
 /**
  * Onboarding shell. Sits between auth and the app: a signed-in user who hasn't
@@ -42,7 +43,15 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="force-light fixed inset-0 z-10 overflow-y-auto bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 text-slate-900">
-      {children}
+      {/* Brand header — shown on every onboarding step (path chooser, create/join
+          org, invitation, choose plan, pending approval) so the flow stays
+          consistently branded. */}
+      <div className="flex min-h-full flex-col">
+        <header className="flex shrink-0 justify-center px-4 pb-1 pt-8 sm:pt-10">
+          <AnimatedLogo size="small" />
+        </header>
+        <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+      </div>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Building2, Users, Ticket, ArrowRight, LogOut } from 'lucide-react';
-import { AnimatedLogo } from '@hbcfield/shared/components';
 import { Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi } from '@/lib/api';
@@ -77,7 +76,6 @@ export default function ChoosePathPage() {
   return (
     <div className="mx-auto flex min-h-full w-full max-w-xl flex-col justify-center px-4 py-10 sm:px-6">
       <div className="mb-8 flex flex-col items-center text-center">
-        <AnimatedLogo size="default" className="mb-5" />
         <h1 className="text-2xl font-semibold text-slate-900">
           {t('onboarding.choosePath.welcome', { name: user?.firstName ?? '' })}
         </h1>
