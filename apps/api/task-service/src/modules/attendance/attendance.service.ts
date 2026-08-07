@@ -172,14 +172,18 @@ export class AttendanceService {
       throw new BadRequestException('A location is required to clock in on site.');
     }
 
-    // Verify user has an active assignment to this location
+    // Verify user has an assignment to this location that is active RIGHT NOW —
+    // started (effectiveFrom <= now) and not expired (effectiveTo null or future).
+    // Without the effectiveFrom bound a future-dated assignment could clock in early (L3).
+    const now = new Date();
     const assignment = await this.prisma.spaceAssignment.findFirst({
       where: {
         userId: data.userId,
         spaceId: data.locationId,
+        effectiveFrom: { lte: now },
         OR: [
           { effectiveTo: null },
-          { effectiveTo: { gte: new Date() } },
+          { effectiveTo: { gte: now } },
         ],
       },
     });

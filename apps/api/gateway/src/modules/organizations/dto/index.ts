@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, Min, Max } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 /**
  * Update organization settings DTO
@@ -37,10 +37,17 @@ export class ListMembersQueryDto {
 
   @ApiPropertyOptional({ description: 'Page number' })
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
   page?: number;
 
-  @ApiPropertyOptional({ description: 'Items per page' })
+  @ApiPropertyOptional({ description: 'Items per page (max 200)' })
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(200)
   limit?: number;
 }
 

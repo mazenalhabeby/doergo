@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Inject, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Inject, Request, Query } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -68,12 +68,20 @@ export class TrackingController {
   @Get('workers/:id/history')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get employee location history' })
-  async getWorkerHistory(@Param('id') id: string, @Request() req: any) {
+  async getWorkerHistory(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_worker_history' }, {
         workerId: id,
         dispatcherId: req.user.id,
         organizationId: req.user.organizationId,
+        // Forwarded to the service; when both are omitted it defaults to last 24h (M2).
+        startDate,
+        endDate,
       }),
     );
   }

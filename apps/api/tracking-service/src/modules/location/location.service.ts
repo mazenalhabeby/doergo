@@ -32,20 +32,20 @@ export class LocationService {
     const BATCH = 5000;
 
     let totalDeleted = 0;
+    // Delete in capped batches so no single DELETE holds a long lock. Each batch
+    // is one round-trip: a self-join to a LIMITed CTE deletes up to BATCH rows
+    // by ctid without ever loading ids into the app (was findMany+deleteMany).
     // Cap iterations as a safety backstop (≤ 1M rows per run).
     for (let i = 0; i < 200; i++) {
-      const batch = await this.prisma.locationHistory.findMany({
-        where: { timestamp: { lt: cutoff } },
-        select: { id: true },
-        take: BATCH,
-      });
-      if (batch.length === 0) break;
-
-      const res = await this.prisma.locationHistory.deleteMany({
-        where: { id: { in: batch.map((b) => b.id) } },
-      });
-      totalDeleted += res.count;
-      if (batch.length < BATCH) break;
+      const deleted = await this.prisma.$executeRaw`
+        DELETE FROM location_history
+        WHERE ctid IN (
+          SELECT ctid FROM location_history
+          WHERE timestamp < ${cutoff}
+          LIMIT ${BATCH}
+        )`;
+      totalDeleted += deleted;
+      if (deleted < BATCH) break;
     }
 
     if (totalDeleted > 0) {
@@ -376,11 +376,13 @@ export class LocationService {
       if (!worker) return success([]);
     }
 
-    const dateFilter = buildDateRangeFilter(startDate, endDate);
-    const where: any = { userId: workerId };
-    if (dateFilter) {
-      where.timestamp = dateFilter;
+    // Default to the last 24h when no range is given, so an open-ended call can't
+    // stream a worker's entire location history (M2).
+    let dateFilter = buildDateRangeFilter(startDate, endDate);
+    if (!dateFilter) {
+      dateFilter = { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
     }
+    const where: any = { userId: workerId, timestamp: dateFilter };
 
     const history = await this.prisma.locationHistory.findMany({
       where,
@@ -392,6 +394,8 @@ export class LocationService {
         timestamp: true,
         taskId: true,
       },
+      // Hard cap so a very active worker/wide range can't blow up memory (M2).
+      take: 10000,
     });
 
     return success(history);
@@ -471,10 +475,12 @@ export class LocationService {
       return success(null);
     }
 
-    // Get location points for this task
+    // Get location points for this task (capped like getTaskRoute to bound memory
+    // on a very long active route) (M3).
     const points = await this.prisma.locationHistory.findMany({
       where: { taskId: task.id },
       orderBy: { timestamp: 'asc' },
+      take: 5000,
       select: {
         lat: true,
         lng: true,

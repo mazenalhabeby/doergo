@@ -727,7 +727,10 @@ export class UsersService {
    * List all members of an organization with filtering and pagination
    */
   async listOrgMembers(dto: ListOrgMembersDto) {
-    const { organizationId, search, role, page = 1, limit = 10 } = dto;
+    const { organizationId, search, role } = dto;
+    // Clamp pagination server-side so a client can't request an unbounded page (M6).
+    const page = Math.max(1, Number(dto.page) || 1);
+    const limit = Math.min(200, Math.max(1, Number(dto.limit) || 10));
 
     // Members = staff only. Portal customers (they carry a customerId) live in
     // Clients Portals, not here — excluding them keeps admins from accidentally
@@ -1563,22 +1566,23 @@ export class UsersService {
       byPriority[pc.priority] = pc._count.priority;
     }
 
-    // For on-time rate, sample recent completed tasks (last 90 days) to avoid unbounded query
+    // On-time rate over recent completed tasks (last 90 days). A single filtered
+    // count (field-ref updatedAt <= dueDate) replaces a take:200 findMany+JS filter,
+    // removing the silent 200-row cap and keeping the work in the DB (M5).
     let completedOnTime = 0;
     if (completed > 0) {
       const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      const recentCompleted = await this.prisma.task.findMany({
+      completedOnTime = await this.prisma.task.count({
         where: {
           assignedToId: employeeId,
           status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
           createdAt: { gte: ninetyDaysAgo },
+          OR: [
+            { dueDate: null },
+            { updatedAt: { lte: this.prisma.task.fields.dueDate } },
+          ],
         },
-        select: { dueDate: true, updatedAt: true },
-        take: 200, // Cap to prevent memory issues
       });
-      completedOnTime = recentCompleted.filter(
-        (t) => !t.dueDate || t.updatedAt <= t.dueDate,
-      ).length;
     }
 
     return {

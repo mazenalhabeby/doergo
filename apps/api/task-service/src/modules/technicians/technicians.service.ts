@@ -24,43 +24,41 @@ export class TechniciansService {
   async getStats(dto: GetEmployeeStatsDto) {
     const { id, organizationId } = dto;
 
-    const tasks = await this.prisma.task.findMany({
-      where: {
-        assignedToId: id,
-        organizationId,
-      },
-      select: {
-        status: true,
-        dueDate: true,
-        updatedAt: true,
-      },
-    });
+    // Aggregate in the DB instead of loading every task and counting in JS (M5).
+    // One grouped count by status (served by the [assignedToId, status] index) +
+    // one filtered count for on-time completions (field-ref updatedAt <= dueDate).
+    const [statusGroups, completedOnTime] = await Promise.all([
+      this.prisma.task.groupBy({
+        by: ['status'],
+        where: { assignedToId: id, organizationId },
+        _count: { _all: true },
+      }),
+      this.prisma.task.count({
+        where: {
+          assignedToId: id,
+          organizationId,
+          status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
+          // On-time = no due date, or finished (updatedAt) on/before the due date.
+          OR: [
+            { dueDate: null },
+            { updatedAt: { lte: this.prisma.task.fields.dueDate } },
+          ],
+        },
+      }),
+    ]);
 
-    const total = tasks.length;
-    const completed = tasks.filter(
-      (t) =>
-        t.status === TaskStatus.COMPLETED || t.status === TaskStatus.CLOSED,
-    ).length;
-    const inProgress = tasks.filter(
-      (t) =>
-        t.status === TaskStatus.IN_PROGRESS ||
-        t.status === TaskStatus.ACCEPTED ||
-        t.status === TaskStatus.EN_ROUTE ||
-        t.status === TaskStatus.ARRIVED,
-    ).length;
-    const blocked = tasks.filter(
-      (t) => t.status === TaskStatus.BLOCKED,
-    ).length;
+    const countByStatus = new Map<string, number>();
+    for (const g of statusGroups) countByStatus.set(g.status, g._count._all);
+    const c = (s: TaskStatus) => countByStatus.get(s) || 0;
 
-    // Calculate on-time completion rate
-    const completedTasks = tasks.filter(
-      (t) =>
-        t.status === TaskStatus.COMPLETED || t.status === TaskStatus.CLOSED,
-    );
-    const completedOnTime = completedTasks.filter((t) => {
-      if (!t.dueDate) return true;
-      return new Date(t.updatedAt) <= new Date(t.dueDate);
-    }).length;
+    const total = [...countByStatus.values()].reduce((a, b) => a + b, 0);
+    const completed = c(TaskStatus.COMPLETED) + c(TaskStatus.CLOSED);
+    const inProgress =
+      c(TaskStatus.IN_PROGRESS) +
+      c(TaskStatus.ACCEPTED) +
+      c(TaskStatus.EN_ROUTE) +
+      c(TaskStatus.ARRIVED);
+    const blocked = c(TaskStatus.BLOCKED);
 
     return success({
       total,
@@ -68,10 +66,7 @@ export class TechniciansService {
       inProgress,
       blocked,
       completionRate: total > 0 ? (completed / total) * 100 : 0,
-      onTimeRate:
-        completedTasks.length > 0
-          ? (completedOnTime / completedTasks.length) * 100
-          : 0,
+      onTimeRate: completed > 0 ? (completedOnTime / completed) * 100 : 0,
     });
   }
 
@@ -770,6 +765,13 @@ export class TechniciansService {
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
+      // Cap the span so a far-future endDate can't expand into a huge day loop and
+      // an N-days × M-technicians fan-out (L8). 92 days ≈ one quarter.
+      const MAX_SPAN_DAYS = 92;
+      const spanDays = Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+      if (spanDays > MAX_SPAN_DAYS) {
+        throw new BadRequestException(`Date range too large (max ${MAX_SPAN_DAYS} days)`);
+      }
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         dates.push(new Date(d));
       }

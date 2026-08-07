@@ -1,5 +1,6 @@
 import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Prisma } from '@prisma/client';
 import { SERVICE_NAMES, directConversationKey, canContactColleagues } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveMemberRouting } from '../../common/space-access.util';
@@ -128,25 +129,26 @@ export class ChatService {
       },
     });
 
-    // Unread per conversation = messages after my lastReadAt, not mine. One query.
-    const myMemberships = await this.prisma.conversationMember.findMany({
-      where: { userId: data.userId, conversationId: { in: rows.map((r) => r.id) } },
-      select: { conversationId: true, lastReadAt: true },
-    });
-    const readMap = new Map(myMemberships.map((m) => [m.conversationId, m.lastReadAt]));
-    const unread = await Promise.all(
-      rows.map((r) =>
-        this.prisma.message.count({
-          where: {
-            conversationId: r.id,
-            senderId: { not: data.userId },
-            ...(readMap.get(r.id) ? { createdAt: { gt: readMap.get(r.id)! } } : {}),
-          },
-        }),
-      ),
-    );
+    // Unread per conversation = messages after my lastReadAt, not mine. ONE grouped
+    // query (was a per-conversation count fan-out): join messages to my membership
+    // row and count those past my lastReadAt (M4). Skipped when I have no threads.
+    const convIds = rows.map((r) => r.id);
+    const unreadMap = new Map<string, number>();
+    if (convIds.length > 0) {
+      const unreadRows = await this.prisma.$queryRaw<Array<{ conversationId: string; unread: bigint }>>(Prisma.sql`
+        SELECT m."conversationId" AS "conversationId", COUNT(*)::bigint AS unread
+        FROM "messages" m
+        JOIN "conversation_members" cm
+          ON cm."conversationId" = m."conversationId" AND cm."userId" = ${data.userId}
+        WHERE m."conversationId" IN (${Prisma.join(convIds)})
+          AND m."senderId" <> ${data.userId}
+          AND (cm."lastReadAt" IS NULL OR m."createdAt" > cm."lastReadAt")
+        GROUP BY m."conversationId"
+      `);
+      for (const u of unreadRows) unreadMap.set(u.conversationId, Number(u.unread));
+    }
 
-    const data2 = rows.map((r, i) => ({ ...this.shape(r, data.userId), unread: unread[i] }));
+    const data2 = rows.map((r) => ({ ...this.shape(r, data.userId), unread: unreadMap.get(r.id) ?? 0 }));
     return { data: data2 };
   }
 

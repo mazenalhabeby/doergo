@@ -290,8 +290,17 @@ export class AuthService {
         include: {
           organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true } },
           // Unified roles (Phase 2) → resolved `access` on the login response.
-          memberRole: { select: { permissions: true } },
-          spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
+          // isActive so a deactivated role stops granting (M1). Space grants are
+          // filtered to their effective window so expired/future grants don't
+          // contribute per-space permissions (L2).
+          memberRole: { select: { permissions: true, isActive: true } },
+          spaceAssignments: {
+            where: {
+              effectiveFrom: { lte: new Date() },
+              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+            },
+            select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
+          },
         },
       });
 
@@ -478,8 +487,11 @@ export class AuthService {
                 canManageUsers: user.canManageUsers,
                 canViewReports: user.canViewReports,
               },
-              memberRolePermissions: user.memberRole?.permissions,
-              spaces: user.spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
+              memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
+              spaces: user.spaceAssignments.map((a) => ({
+                spaceId: a.spaceId,
+                permissions: a.role?.isActive ? a.role.permissions : undefined,
+              })),
             }),
           },
           ...tokens,
@@ -1018,8 +1030,17 @@ export class AuthService {
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
           // also read so per-space grants resolve before the backfill runs.
-          memberRole: { select: { permissions: true } },
-          spaceAssignments: { select: { spaceId: true, role: { select: { permissions: true } } } },
+          // isActive so a deactivated role stops granting (M1); space grants are
+          // filtered to their effective window so expired/future grants don't
+          // contribute per-space permissions (L2).
+          memberRole: { select: { permissions: true, isActive: true } },
+          spaceAssignments: {
+            where: {
+              effectiveFrom: { lte: new Date() },
+              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+            },
+            select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
+          },
         },
       });
 
@@ -1045,8 +1066,11 @@ export class AuthService {
           canManageUsers: userData.canManageUsers,
           canViewReports: userData.canViewReports,
         },
-        memberRolePermissions: memberRole?.permissions,
-        spaces: spaceAssignments.map((a) => ({ spaceId: a.spaceId, permissions: a.role?.permissions })),
+        memberRolePermissions: memberRole?.isActive ? memberRole.permissions : undefined,
+        spaces: spaceAssignments.map((a) => ({
+          spaceId: a.spaceId,
+          permissions: a.role?.isActive ? a.role.permissions : undefined,
+        })),
       });
       return {
         valid: true,

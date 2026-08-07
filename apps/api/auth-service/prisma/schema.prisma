@@ -793,6 +793,7 @@ model Task {
   @@index([organizationId, status])
   @@index([organizationId, status, createdAt])
   @@index([assignedToId, status]) // technician task stats groupBy, suggested technicians _count
+  @@index([assignedToId, status, updatedAt]) // suggested-tech 30d/percentile capacity query (assignedToId + status + updatedAt range)
   @@index([dueDate]) // due date filtering/sorting
   @@index([parentId]) // subtask queries
   @@index([phaseId]) // phase filtering
@@ -922,6 +923,9 @@ model LocationHistory {
 
   @@index([userId, timestamp])
   @@index([taskId, timestamp])
+  // Retention sweep filters on timestamp alone (no user/task prefix) — index it
+  // so the nightly prune uses an index scan instead of a full table scan.
+  @@index([timestamp])
   @@map("location_history")
 }
 
