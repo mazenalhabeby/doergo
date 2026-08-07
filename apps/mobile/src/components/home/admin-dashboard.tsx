@@ -28,7 +28,7 @@ import type { TimeEntry } from '../../lib/api/types';
 import { ErrorState, Skeleton, ScreenContainer } from '../../components';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
-import { hasAccessModule } from '@hbcfield/shared/client';
+import { hasAccessModule, isFieldWorker } from '@hbcfield/shared/client';
 import { styles as homeStyles, SPACING, COLORS } from './home-styles';
 import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
 import { type PersonNodeData } from './workspace/person-node';
@@ -253,14 +253,14 @@ export function AdminDashboard() {
           isOnline: online,
           presence: m.presence,
           isRemote: attendanceRemoteMap.get(userId) ?? false,
-          isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
+          isOnRoad: isFieldWorker(m),
         });
         const node = toNode(m, status, tag);
 
         if (!clocked) {
           // Off the clock → Off-shift (online/reachable) vs Off Duty (offline).
           (online ? offShift : offDuty).push(node);
-        } else if ((m.workMode || 'HYBRID') === 'ON_ROAD') {
+        } else if (isFieldWorker(m)) {
           onRoad.push(node);
         } else if (clockedLoc && clockedLoc !== loc.id) {
           remote.push(node);
@@ -305,7 +305,7 @@ export function AdminDashboard() {
           isOnline: memberOnline(m),
           presence: m.presence,
           isRemote: attendanceRemoteMap.get(userId) ?? false,
-          isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
+          isOnRoad: isFieldWorker(m),
         });
         onTask.push(toNode(m, status, tag));
       } else if (task.assignedTo) {
@@ -347,7 +347,7 @@ export function AdminDashboard() {
           isOnline: online,
           presence: m.presence,
           isRemote: attendanceRemoteMap.get(m.id) ?? false,
-          isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
+          isOnRoad: isFieldWorker(m),
         });
         onClock.push(toNode(m, status, tag));
       } else if (!activeTaskMap.has(m.id)) {
@@ -485,7 +485,7 @@ export function AdminDashboard() {
       isOnline: memberOnline(m),
       presence: m.presence,
       isRemote: attendanceRemoteMap.get(m.id) ?? false,
-      isOnRoad: (m.workMode || 'HYBRID') === 'ON_ROAD',
+      isOnRoad: isFieldWorker(m),
     });
     return {
       userId: m.id,

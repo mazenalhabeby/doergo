@@ -56,7 +56,7 @@ export function getEmployeeStatus(opts: {
   isOnline: boolean; // app-active within the last few minutes
   presence?: string | null; // AVAILABLE / BUSY / AWAY (defaults to Available)
   isRemote?: boolean; // clocked in via remote / WFH
-  isOnRoad?: boolean; // workMode ON_ROAD (driving / field)
+  isOnRoad?: boolean; // field worker (mobile-only access) → in the field
 }): { status: WorkerStatus; tag?: PersonTag } {
   // Genuinely offline: not app-active AND not on the clock.
   if (!opts.isOnline && !opts.isClockedIn) return { status: 'off' };

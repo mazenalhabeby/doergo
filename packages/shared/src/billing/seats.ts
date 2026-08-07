@@ -99,6 +99,17 @@ export function classifySeat(user: SeatClassifiable, opts?: SeatOptions): SeatTy
   return opts?.usesExternalWorkers && isInHouse(user) ? 'field_inhouse' : 'field';
 }
 
+/**
+ * Is this member a FIELD worker (mobile-only access)? The single source of truth
+ * for "office vs field" everywhere — billing seats AND the dashboards' on-site vs
+ * in-field grouping. Derived from the Access Profile (the removed `workMode` /
+ * `technicianType` are NOT used). Admins + anyone with web access → office/false;
+ * mobile-only → field/true. Reuses classifySeat so it can never drift from billing.
+ */
+export function isFieldWorker(user: SeatClassifiable): boolean {
+  return classifySeat(user) !== 'office';
+}
+
 export interface SeatCounts {
   office: number;
   /** External/freelancer field seats (€15). */

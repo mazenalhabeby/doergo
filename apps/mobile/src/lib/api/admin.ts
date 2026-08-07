@@ -36,7 +36,9 @@ export interface OrgMember {
   avatarUrl?: string | null;
   position?: string | null;
   specialty?: string | null;
-  workMode?: string;
+  // Access Profile blob — read via the shared getAccessPlatforms/isFieldWorker
+  // helpers (drives office-vs-field). Replaces the removed `workMode`.
+  enabledModules?: string[] | Record<string, unknown> | null;
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
   lastActiveAt?: string | null;
   canCreateTasks: boolean;

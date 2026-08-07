@@ -71,7 +71,6 @@ export interface User {
   planTier?: 'starter' | 'professional' | 'business' | 'enterprise' | null;
   // Technician-specific fields
   position?: string | null;
-  technicianType?: string | null;
   // Manual availability override (null = auto from task).
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
   // Per-user clock display preference ("12h" | "24h"); display-only.

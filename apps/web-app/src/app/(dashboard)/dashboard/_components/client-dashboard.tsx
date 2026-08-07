@@ -7,7 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Plus, Users } from "lucide-react"
 
-import { getSpaceScope } from "@hbcfield/shared/client"
+import { getSpaceScope, isFieldWorker } from "@hbcfield/shared/client"
 import i18n from "@/i18n"
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -61,7 +61,7 @@ function getEmployeeStatus(opts: {
   isOnline: boolean // app-active within the last few minutes
   presence?: string | null // availability status (defaults to Available)
   isRemote?: boolean // clocked in via remote / WFH (not on-site)
-  isOnRoad?: boolean // workMode ON_ROAD (driving / field work)
+  isOnRoad?: boolean // field worker (mobile-only access) → in the field
 }): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
   // Genuinely offline: not app-active AND not on the clock. Their stored
   // availability doesn't apply because they aren't currently reachable.
@@ -439,7 +439,9 @@ export function ClientDashboard() {
         const activeTaskTitle = ownTask?.title ?? rosterTask?.title
         const isCurrentlyClockedIn = clockedInUserIds.has(userId)
         const clockedInLocationId = attendanceLocationMap.get(userId)
-        const workMode = member.workMode || "HYBRID"
+        // Field worker = mobile-only access (single source of truth, shared with
+        // billing). Replaces the removed workMode ON_ROAD signal.
+        const onRoad = isFieldWorker(member)
 
         const isOnBreak = onBreakUserIds.has(userId)
 
@@ -449,7 +451,7 @@ export function ClientDashboard() {
           isOnline: memberOnline(member),
           presence: member.presence,
           isRemote: attendanceRemoteMap.get(userId) ?? false,
-          isOnRoad: workMode === "ON_ROAD",
+          isOnRoad: onRoad,
         })
 
         const node = memberToPersonNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
@@ -465,7 +467,7 @@ export function ClientDashboard() {
           } else {
             offDutyPeople.push(memberToPersonNode(member, status, tag))
           }
-        } else if (workMode === "ON_ROAD") {
+        } else if (onRoad) {
           // Clocked in, working on the road → "In Field" group (node.tag already
           // reads "In Field" from getEmployeeStatus).
           onRoadPeople.push(node)
@@ -547,7 +549,7 @@ export function ClientDashboard() {
         isOnline: memberOnline(member),
         presence: member.presence,
         isRemote: attendanceRemoteMap.get(userId) ?? false,
-        isOnRoad: (member.workMode || "HYBRID") === "ON_ROAD",
+        isOnRoad: isFieldWorker(member),
       })
       onTaskPeople.push(memberToPersonNode(member, status, tag, task.title, isClockedIn))
     }
@@ -586,7 +588,7 @@ export function ClientDashboard() {
           isOnline: online,
           presence: worker.presence,
           isRemote: attendanceRemoteMap.get(worker.id) ?? false,
-          isOnRoad: (worker.workMode || "HYBRID") === "ON_ROAD",
+          isOnRoad: isFieldWorker(worker),
         })
         onClockPeople.push(memberToPersonNode(worker, status, tag, undefined, true))
       } else if (!activeTaskMap.has(worker.id)) {
