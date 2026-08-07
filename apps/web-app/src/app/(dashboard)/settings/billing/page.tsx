@@ -10,6 +10,7 @@ import { billingApi } from '@/lib/api';
 import {
   PLANS,
   officeSeatPriceCents,
+  FIELD_SEAT_MONTHLY_CENTS,
   TIER_RANK,
   type PlanTier,
   type BillingInterval,
@@ -85,7 +86,7 @@ export default function BillingPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Billing & plan</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Office seats are billed by plan; field (mobile-only) technicians are €19 each.
+            Office seats are billed by plan; field (mobile-only) technicians are {eur(FIELD_SEAT_MONTHLY_CENTS)} each.
           </p>
         </div>
 

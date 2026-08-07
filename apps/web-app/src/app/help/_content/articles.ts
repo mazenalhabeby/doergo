@@ -499,8 +499,8 @@ Sehen Sie Stempelhistorie, Stunden und Standort pro Person im Profil. Die Zeiter
       en: `HBCField is priced **per seat**, and a seat's type is decided by how a person works — not by a manual setting.
 
 ### Two seat types
-- **Office seat** — anyone with **web access** (including you, the admin owner). Priced by plan tier: **Starter €29 / Professional €59 / Business €99** per office seat per month.
-- **Field seat** — a **mobile-only** technician. A flat **€19** per field seat per month, on every tier.
+- **Office seat** — anyone with **web access** (including you, the admin owner). Priced by plan tier: **Starter €19 / Professional €49 / Business €99** per office seat per month.
+- **Field seat** — a **mobile-only** technician. A flat **€15** per field seat per month, on every tier.
 
 Annual billing gives you **two months free** (monthly × 10 per year).
 
@@ -518,8 +518,8 @@ See the full feature comparison on our pricing page.`,
       de: `HBCField wird **pro Platz** abgerechnet, und der Platztyp ergibt sich daraus, wie eine Person arbeitet — nicht aus einer manuellen Einstellung.
 
 ### Zwei Platztypen
-- **Büroplatz** — jede Person mit **Web-Zugriff** (auch Sie als Admin-Inhaber). Preis nach Plan-Stufe: **Starter 29 € / Professional 59 € / Business 99 €** pro Büroplatz und Monat.
-- **Feldplatz** — ein **rein mobiler** Techniker. Pauschal **19 €** pro Feldplatz und Monat, in jeder Stufe.
+- **Büroplatz** — jede Person mit **Web-Zugriff** (auch Sie als Admin-Inhaber). Preis nach Plan-Stufe: **Starter 19 € / Professional 49 € / Business 99 €** pro Büroplatz und Monat.
+- **Feldplatz** — ein **rein mobiler** Techniker. Pauschal **15 €** pro Feldplatz und Monat, in jeder Stufe.
 
 Jährliche Abrechnung bringt **zwei Monate gratis** (monatlich × 10 pro Jahr).
 

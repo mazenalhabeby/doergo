@@ -224,7 +224,7 @@
         ],
         "sumLabel": "Drei separate Abonnements",
         "sumCost": "60–90 € / Nutzer",
-        "sumUs": "eine Plattform · ab 29 € / Nutzer"
+        "sumUs": "eine Plattform · ab 19 € / Nutzer"
       },
       "diffLabel": "Und Dinge, für die andere extra kassieren — oder die es gar nicht gibt",
       "diffs": [
@@ -411,11 +411,11 @@
       "popular": "Beliebt",
       "perUser": "/ Nutzer / Mon.",
       "cta": "Kostenlos starten",
-      "note": "Preise je Büro-Platz · Feld-/Techniker-Plätze je 19 € · Enterprise ab 199 €/Mon. oder individuelles Angebot · Jahresabrechnung = 2 Monate gratis · 14 Tage testen, keine Karte.",
+      "note": "Preise je Büro-Platz · Feld-/Techniker-Plätze je 15 € · Enterprise ab 199 €/Mon. oder individuelles Angebot · Jahresabrechnung = 2 Monate gratis · 14 Tage testen, keine Karte.",
       "plans": [
         {
           "name": "Starter",
-          "price": "29 €",
+          "price": "19 €",
           "popular": false,
           "desc": "Aufgaben, Anwesenheit, GPS, Dienstpläne & Mobil.",
           "features": [
@@ -427,7 +427,7 @@
         },
         {
           "name": "Professional",
-          "price": "59 €",
+          "price": "49 €",
           "popular": true,
           "desc": "Alles aus Starter, plus das komplette Feld-Toolkit.",
           "features": [
@@ -494,7 +494,7 @@
         },
         {
           "q": "Was kostet HBCField?",
-          "a": "Preise pro Platz in Euro mit 14 Tagen kostenloser Testphase, ohne Kreditkarte. Feld-Plätze (nur mobil) beginnen bei 19 € pro Monat; Büro-Plätze sind gestaffelt."
+          "a": "Preise pro Platz in Euro mit 14 Tagen kostenloser Testphase, ohne Kreditkarte. Feld-Plätze (nur mobil) beginnen bei 15 € pro Monat; Büro-Plätze sind gestaffelt."
         },
         {
           "q": "Ersetzt HBCField mehrere Einzeltools?",
@@ -3992,13 +3992,13 @@
       "seats": "Die Abrechnung erfolgt pro Platz, nicht als Paket. Jedes aktive Mitglied zählt als Platz: ein Büroplatz (jedes Mitglied mit Zugang zum Webportal, einschließlich des Admins) wird zum Tarifpreis berechnet, ein Feldplatz (nur mobiler Zugang) zu einem Pauschalpreis. Der Platztyp eines Mitglieds richtet sich nach seinem Zugang — wenn Sie den Web-Zugang gewähren oder entziehen, ändert sich der Platztyp entsprechend und Ihre Platzanzahlen werden neu synchronisiert.",
       "plansTitle": "Tarife & Preise (zzgl. USt.)",
       "starterLabel": "Starter",
-      "starterText": "29 € pro Büroplatz / Monat (290 € / Jahr).",
+      "starterText": "19 € pro Büroplatz / Monat (190 € / Jahr).",
       "proLabel": "Professional",
-      "proText": "59 € pro Büroplatz / Monat (590 € / Jahr).",
+      "proText": "49 € pro Büroplatz / Monat (490 € / Jahr).",
       "businessLabel": "Business",
       "businessText": "99 € pro Büroplatz / Monat (990 € / Jahr).",
       "fieldLabel": "Feldplatz",
-      "fieldText": "19 € pro reinem Mobilplatz / Monat (190 € / Jahr), in jeder Stufe.",
+      "fieldText": "15 € pro reinem Mobilplatz / Monat (150 € / Jahr), in jeder Stufe.",
       "plansNote": "Die Preise verstehen sich zzgl. USt. und können für künftige Laufzeiten mit Vorankündigung angepasst werden. Ihr aktueller Tarif und Ihre Platzanzahlen werden stets unter Einstellungen → Abrechnung angezeigt."
     },
     "s6": {

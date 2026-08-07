@@ -224,7 +224,7 @@
         ],
         "sumLabel": "Tre abbonamenti separati",
         "sumCost": "€60–90 / utente",
-        "sumUs": "un'unica piattaforma · da €29 / utente"
+        "sumUs": "un'unica piattaforma · da €19 / utente"
       },
       "diffLabel": "E funzionalità che gli altri fanno pagare a parte — o non hanno affatto",
       "diffs": [
@@ -411,11 +411,11 @@
       "popular": "Popolare",
       "perUser": "/ utente / mese",
       "cta": "Inizia gratis",
-      "note": "Prezzi per postazione d'ufficio · Postazioni per il campo / tecnici €19 ciascuna · Enterprise da €199/mese o preventivo personalizzato · Fatturazione annuale = 2 mesi gratis · Prova di 14 giorni, senza carta.",
+      "note": "Prezzi per postazione d'ufficio · Postazioni per il campo / tecnici €15 ciascuna · Enterprise da €199/mese o preventivo personalizzato · Fatturazione annuale = 2 mesi gratis · Prova di 14 giorni, senza carta.",
       "plans": [
         {
           "name": "Starter",
-          "price": "€29",
+          "price": "€19",
           "popular": false,
           "desc": "Attività, presenze, GPS, pianificazioni e mobile.",
           "features": [
@@ -427,7 +427,7 @@
         },
         {
           "name": "Professional",
-          "price": "€59",
+          "price": "€49",
           "popular": true,
           "desc": "Tutto ciò che c'è in Starter, più il toolkit completo per il campo.",
           "features": [
@@ -494,7 +494,7 @@
         },
         {
           "q": "Quanto costa HBCField?",
-          "a": "Prezzi per postazione in euro con una prova gratuita di 14 giorni e senza carta di credito. Le postazioni sul campo (solo mobile) partono da 19 € al mese; quelle da ufficio sono a livelli."
+          "a": "Prezzi per postazione in euro con una prova gratuita di 14 giorni e senza carta di credito. Le postazioni sul campo (solo mobile) partono da 15 € al mese; quelle da ufficio sono a livelli."
         },
         {
           "q": "HBCField sostituisce strumenti separati?",
@@ -3992,13 +3992,13 @@
       "seats": "La fatturazione è per postazione, non per pacchetto. Ogni Membro attivo conta come una postazione: una postazione d'ufficio (qualsiasi Membro con accesso al portale web, incluso l'Amministratore) è tariffata alla tariffa del livello, mentre una postazione sul campo (un Membro solo mobile) è addebitata a una tariffa fissa. Il tipo di postazione di un Membro segue il suo accesso — se concede o revoca l'accesso web, il suo tipo di postazione cambia di conseguenza e il conteggio delle postazioni viene ricalcolato.",
       "plansTitle": "Piani e prezzi (IVA esclusa)",
       "starterLabel": "Starter",
-      "starterText": "29 € per postazione d'ufficio / mese (290 € / anno).",
+      "starterText": "19 € per postazione d'ufficio / mese (190 € / anno).",
       "proLabel": "Professional",
-      "proText": "59 € per postazione d'ufficio / mese (590 € / anno).",
+      "proText": "49 € per postazione d'ufficio / mese (490 € / anno).",
       "businessLabel": "Business",
       "businessText": "99 € per postazione d'ufficio / mese (990 € / anno).",
       "fieldLabel": "Postazione sul campo",
-      "fieldText": "19 € per postazione solo mobile / mese (190 € / anno), su qualsiasi livello.",
+      "fieldText": "15 € per postazione solo mobile / mese (150 € / anno), su qualsiasi livello.",
       "plansNote": "I prezzi sono IVA esclusa e potranno essere aggiornati per periodi futuri con preavviso. Il piano corrente e il conteggio delle postazioni sono sempre visibili in Impostazioni → Fatturazione."
     },
     "s6": {
