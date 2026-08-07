@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES } from '@hbcfield/shared';
+import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES, buildJobError } from '@hbcfield/shared';
 import { AttendanceService } from './attendance.service';
 
 @Processor(QUEUE_NAMES.ATTENDANCE)
@@ -19,13 +19,8 @@ export class AttendanceProcessor extends WorkerHost {
       return await this.handleJob(job);
     } catch (error: any) {
       this.logger.error(`Job ${job.id} failed: ${error.message}`, error.stack);
-      // Re-throw with structured error for gateway to parse
-      throw new Error(
-        JSON.stringify({
-          message: error.message,
-          statusCode: error.status || error.statusCode || 500,
-        }),
-      );
+      // Structured error for the gateway; 4xx → no retry (H3).
+      throw buildJobError(error);
     }
   }
 

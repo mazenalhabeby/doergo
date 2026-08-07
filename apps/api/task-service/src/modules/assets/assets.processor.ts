@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, ASSET_JOB_TYPES } from '@hbcfield/shared';
+import { QUEUE_NAMES, ASSET_JOB_TYPES, buildJobError } from '@hbcfield/shared';
 import { AssetsService } from './assets.service';
 
 @Processor(QUEUE_NAMES.ASSETS)
@@ -19,13 +19,8 @@ export class AssetsProcessor extends WorkerHost {
       return await this.handleJob(job);
     } catch (error) {
       this.logger.error(`Job ${job.id} failed: ${error.message}`);
-      // Wrap error for gateway parsing
-      throw new Error(
-        JSON.stringify({
-          message: error.message,
-          statusCode: error.status || 500,
-        }),
-      );
+      // Structured error for the gateway; 4xx → no retry (H3).
+      throw buildJobError(error);
     }
   }
 
