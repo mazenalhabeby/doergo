@@ -161,7 +161,7 @@ export class OrganizationsController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'create_access_role' }, { ...body, organizationId: user.organizationId }),
+      this.authClient.send({ cmd: 'create_access_role' }, { ...body, organizationId: user.organizationId, requesterId: user.id }),
     );
     if (result && result.success === false) {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
@@ -178,7 +178,7 @@ export class OrganizationsController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'update_access_role' }, { ...body, roleId, organizationId: user.organizationId }),
+      this.authClient.send({ cmd: 'update_access_role' }, { ...body, roleId, organizationId: user.organizationId, requesterId: user.id }),
     );
     if (result && result.success === false) {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);

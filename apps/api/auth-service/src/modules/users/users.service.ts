@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, type PermissionSet } from '@hbcfield/shared';
+import { Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, type PermissionSet } from '@hbcfield/shared';
 import * as bcrypt from 'bcrypt';
 import {
   CreateEmployeeDto,
@@ -833,6 +833,68 @@ export class UsersService {
     }
   }
 
+  /**
+   * Resolve the requester's OWN effective org-wide permission set (legacy user
+   * flags ∪ their active memberRole). Returns `isAdmin` so callers can short-circuit
+   * the ceiling check for true admins. Mirrors buildResolvedAccess's org branch.
+   */
+  private async resolveRequesterOrgPerms(
+    requesterId: string,
+    organizationId: string,
+  ): Promise<{ isAdmin: boolean; perms: PermissionSet }> {
+    const requester = await this.prisma.user.findFirst({
+      where: { id: requesterId, organizationId },
+      select: {
+        role: true,
+        canCreateTasks: true,
+        canViewAllTasks: true,
+        canAssignTasks: true,
+        canManageUsers: true,
+        canViewReports: true,
+        memberRole: { select: { permissions: true, isActive: true } },
+      },
+    });
+    if (!requester) {
+      throw new ForbiddenException('Requester not found in organization');
+    }
+    const perms = mergePermissions(
+      permissionsFromUserFlags(requester),
+      requester.memberRole?.isActive
+        ? permissionsFromOrgRole(requester.memberRole.permissions)
+        : undefined,
+    );
+    return { isAdmin: requester.role === Role.ADMIN, perms };
+  }
+
+  /**
+   * Ceiling guard for pointing a member (or invitation) at a permission-bearing
+   * AccessRole. A true ADMIN may assign any role. Anyone else — including a
+   * non-admin custom role that merely holds `canManageUsers` — may only assign a
+   * role whose permission set is a SUBSET of their own; otherwise they could
+   * escalate past their ceiling by selecting the built-in admin role.
+   */
+  private async assertCanAssignMemberRole(
+    requesterId: string,
+    organizationId: string,
+    roleId: string,
+  ) {
+    const { isAdmin, perms } = await this.resolveRequesterOrgPerms(
+      requesterId,
+      organizationId,
+    );
+    if (isAdmin) return;
+    const targetRole = await this.prisma.accessRole.findFirst({
+      where: { id: roleId, organizationId },
+      select: { permissions: true },
+    });
+    if (!targetRole) return; // invalid id → caller's own tenancy check throws
+    if (permissionsExceed(perms, permissionsFromOrgRole(targetRole.permissions))) {
+      throw new ForbiddenException(
+        'You cannot assign a role with permissions beyond your own',
+      );
+    }
+  }
+
   async updateMemberRole(
     memberId: string,
     organizationId: string,
@@ -1002,6 +1064,25 @@ export class UsersService {
       throw new NotFoundException('Member not found');
     }
 
+    // Self-mutation guard: a member can never change their OWN role, permissions,
+    // or assigned role via this admin endpoint (their own profile edits go through
+    // updateOwnProfile). memberRoleId is included — it points at a permission-bearing
+    // role, so a self { memberRoleId: adminRoleId } would be an escalation.
+    const touchesPrivilege =
+      dto.role !== undefined ||
+      dto.canManageUsers !== undefined ||
+      dto.canCreateTasks !== undefined ||
+      dto.canViewAllTasks !== undefined ||
+      dto.canAssignTasks !== undefined ||
+      (dto as any).taskCreationScope !== undefined ||
+      (dto as any).canViewReports !== undefined ||
+      (dto as any).memberRoleId !== undefined;
+    if (touchesPrivilege && memberId === requesterId) {
+      throw new BadRequestException(
+        'You cannot change your own role or permissions',
+      );
+    }
+
     // Block privilege escalation when role/permissions are being changed.
     if (dto.role !== undefined || dto.canManageUsers !== undefined) {
       await this.assertCanGrantRoleAndPerms(requesterId, organizationId, member, dto);
@@ -1035,16 +1116,16 @@ export class UsersService {
           select: { id: true },
         });
         if (!role) throw new BadRequestException('Invalid role');
+        // Ceiling guard: a non-admin can't point a member at a role that grants
+        // more than the requester holds (privilege escalation via memberRoleId).
+        await this.assertCanAssignMemberRole(requesterId, organizationId, role.id);
         data.memberRoleId = role.id;
       }
     }
 
     // Role/permission fields — only if role is provided
     if (dto.role !== undefined) {
-      // Can't change own role
-      if (memberId === requesterId) {
-        throw new BadRequestException('You cannot change your own role');
-      }
+      // Self-role change already blocked by the privilege self-mutation guard above.
 
       // If demoting from ADMIN, check there's at least one other active ADMIN
       if (member.role === Role.ADMIN && dto.role !== Role.ADMIN) {
@@ -1169,9 +1250,31 @@ export class UsersService {
     }
   }
 
+  /**
+   * Whitelist incoming permissions AND cap them at the requester's own ceiling.
+   * A true ADMIN may author any permission; anyone else can only grant what they
+   * already hold — so a non-admin `canManageUsers` holder can't mint a super-role.
+   */
+  private async sanitizeRolePermissionsForRequester(
+    input: unknown,
+    requesterId: string | undefined,
+    organizationId: string,
+  ): Promise<PermissionSet> {
+    const requested = this.sanitizeRolePermissions(input);
+    if (!requesterId) return requested; // no requester context → whitelist only
+    const { isAdmin, perms } = await this.resolveRequesterOrgPerms(requesterId, organizationId);
+    if (isAdmin) return requested;
+    const capped: PermissionSet = {};
+    for (const key of PERMISSION_KEYS) {
+      if (requested[key] === true && perms[key] === true) capped[key] = true;
+    }
+    return capped;
+  }
+
   /** Create a custom ORG-wide role. Permissions are whitelisted to known keys. */
   async createAccessRole(data: {
     organizationId: string;
+    requesterId?: string;
     name: string;
     description?: string;
     color?: string;
@@ -1184,6 +1287,11 @@ export class UsersService {
       where: { organizationId: data.organizationId },
       _max: { position: true },
     });
+    const permissions = await this.sanitizeRolePermissionsForRequester(
+      data.permissions,
+      data.requesterId,
+      data.organizationId,
+    );
     const role = await this.prisma.accessRole.create({
       data: {
         organizationId: data.organizationId,
@@ -1193,7 +1301,7 @@ export class UsersService {
         color: data.color || '#6b7280',
         scope: 'ORG',
         isSystem: false,
-        permissions: this.sanitizeRolePermissions(data.permissions) as any,
+        permissions: permissions as any,
         position: (max._max.position ?? -1) + 1,
       },
       select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
@@ -1204,6 +1312,7 @@ export class UsersService {
   /** Update a role. Built-in roles: name/permissions editable, slug kept stable. */
   async updateAccessRole(data: {
     organizationId: string;
+    requesterId?: string;
     roleId: string;
     name?: string;
     description?: string;
@@ -1223,7 +1332,12 @@ export class UsersService {
     }
     if (data.description !== undefined) patch.description = data.description?.trim() || null;
     if (data.color !== undefined) patch.color = data.color;
-    if (data.permissions !== undefined) patch.permissions = this.sanitizeRolePermissions(data.permissions) as any;
+    if (data.permissions !== undefined)
+      patch.permissions = (await this.sanitizeRolePermissionsForRequester(
+        data.permissions,
+        data.requesterId,
+        data.organizationId,
+      )) as any;
     const updated = await this.prisma.accessRole.update({
       where: { id: role.id },
       data: patch,

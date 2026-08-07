@@ -213,6 +213,24 @@ export function permissionAllows(
 }
 
 /**
+ * Ceiling check: does `targetPerms` grant any permission `requesterPerms` lacks?
+ * Used to stop a non-admin from assigning/authoring a role that would grant more
+ * than they themselves hold (privilege escalation via memberRoleId / role authoring
+ * / invitation pre-assignment). A true ADMIN bypasses this entirely at the caller.
+ */
+export function permissionsExceed(
+  requesterPerms: PermissionSet | null | undefined,
+  targetPerms: PermissionSet | null | undefined,
+): boolean {
+  const req = requesterPerms ?? {};
+  const tgt = targetPerms ?? {};
+  for (const key of PERMISSION_KEYS) {
+    if (tgt[key] === true && req[key] !== true) return true;
+  }
+  return false;
+}
+
+/**
  * The permission that marks a role as a space "leader" — the default recipient
  * for notifications ABOUT members in the space, and the default contact target
  * for those members. All three built-in space roles (space-manager, shift-leader,

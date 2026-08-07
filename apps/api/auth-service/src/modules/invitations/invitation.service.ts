@@ -16,6 +16,10 @@ import {
   INVITATION_MAX_EXPIRY_HOURS,
   INVITATION_MIN_EXPIRY_HOURS,
   INVITATION_MAX_PENDING_PER_ORG,
+  permissionsFromUserFlags,
+  permissionsFromOrgRole,
+  mergePermissions,
+  permissionsExceed,
 } from '@hbcfield/shared';
 
 function hashCode(code: string): string {
@@ -27,6 +31,30 @@ export class InvitationService {
   private readonly logger = new Logger(InvitationService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Cap an Access Profile's permission flags at the creator's ceiling. For a true
+   * admin the profile passes through unchanged; otherwise any permission flag the
+   * creator does not hold is forced false, so an invite can never grant more than
+   * its creator (privilege escalation via the Access Profile).
+   */
+  private capAccessProfilePerms(
+    profile: ReturnType<typeof normalizeAccessProfile>,
+    isAdmin: boolean,
+    creatorPerms: Record<string, boolean | undefined>,
+  ): ReturnType<typeof normalizeAccessProfile> {
+    if (!profile || isAdmin) return profile;
+    const canCreateTasks = profile.canCreateTasks && creatorPerms.canCreateTasks === true;
+    return {
+      ...profile,
+      canCreateTasks,
+      taskCreationScope: canCreateTasks ? profile.taskCreationScope : 'NONE',
+      canAssignTasks: profile.canAssignTasks && creatorPerms.canAssignTasks === true,
+      canViewAllTasks: profile.canViewAllTasks && creatorPerms.canViewAllTasks === true,
+      canManageUsers: profile.canManageUsers && creatorPerms.canManageUsers === true,
+      canViewReports: profile.canViewReports && creatorPerms.canViewReports === true,
+    };
+  }
 
   /**
    * Generate a short alphanumeric code using secure randomness.
@@ -120,6 +148,31 @@ export class InvitationService {
       }
     }
 
+    // Resolve the creator's OWN effective org permissions once (non-admins only).
+    // Used as the ceiling for both a pre-assigned role and the Access Profile flags,
+    // so a non-admin can never mint an account more privileged than themselves.
+    let creatorPerms: ReturnType<typeof mergePermissions> = {};
+    const creatorIsAdmin = data.creatorRole === Role.ADMIN;
+    if (!creatorIsAdmin) {
+      const creator = await this.prisma.user.findFirst({
+        where: { id: data.createdById, organizationId: data.organizationId },
+        select: {
+          canCreateTasks: true,
+          canViewAllTasks: true,
+          canAssignTasks: true,
+          canManageUsers: true,
+          canViewReports: true,
+          memberRole: { select: { permissions: true, isActive: true } },
+        },
+      });
+      creatorPerms = mergePermissions(
+        creator ? permissionsFromUserFlags(creator) : undefined,
+        creator?.memberRole?.isActive
+          ? permissionsFromOrgRole(creator.memberRole.permissions)
+          : undefined,
+      );
+    }
+
     // Validate a pre-assigned org role (EMPLOYEE invites only): must be an
     // active ORG/BOTH-scoped role in THIS org. Fail closed — never trust the id.
     let validMemberRoleId: string | null = null;
@@ -135,6 +188,21 @@ export class InvitationService {
       });
       if (!role) {
         return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Invalid role' };
+      }
+      // Ceiling guard: a non-admin creator cannot pre-assign a role that grants
+      // more than they hold (privilege escalation via invitation pre-assignment).
+      if (!creatorIsAdmin) {
+        const targetRole = await this.prisma.accessRole.findFirst({
+          where: { id: role.id, organizationId: data.organizationId },
+          select: { permissions: true },
+        });
+        if (permissionsExceed(creatorPerms, permissionsFromOrgRole(targetRole?.permissions))) {
+          return {
+            success: false,
+            statusCode: HttpStatus.FORBIDDEN,
+            message: 'You cannot assign a role with permissions beyond your own',
+          };
+        }
       }
       validMemberRoleId = role.id;
     }
@@ -213,8 +281,14 @@ export class InvitationService {
         // Pre-assigned org role (validated above) — applied to the user on accept.
         memberRoleId: isTechnician ? validMemberRoleId : null,
         // Pre-configured Access Profile — sanitized here, re-sanitized on accept.
+        // For non-admin creators, permission flags are capped at the creator's own
+        // ceiling so the profile can't grant more than the creator holds.
         accessProfile: isTechnician
-          ? ((normalizeAccessProfile(data.accessProfile) as unknown as Prisma.InputJsonValue) ?? undefined)
+          ? ((this.capAccessProfilePerms(
+              normalizeAccessProfile(data.accessProfile),
+              creatorIsAdmin,
+              creatorPerms,
+            ) as unknown as Prisma.InputJsonValue) ?? undefined)
           : undefined,
         // Customer-portal invite target (bound to the new login on accept).
         customerId: isCustomerInvite ? (data.customerId || null) : null,

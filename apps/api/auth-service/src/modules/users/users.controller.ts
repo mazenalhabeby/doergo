@@ -169,14 +169,14 @@ export class UsersController {
 
   @MessagePattern({ cmd: 'create_access_role' })
   async createAccessRole(
-    @Payload() data: { organizationId: string; name: string; description?: string; color?: string; permissions?: unknown },
+    @Payload() data: { organizationId: string; requesterId?: string; name: string; description?: string; color?: string; permissions?: unknown },
   ) {
     return this.usersService.createAccessRole(data);
   }
 
   @MessagePattern({ cmd: 'update_access_role' })
   async updateAccessRole(
-    @Payload() data: { organizationId: string; roleId: string; name?: string; description?: string; color?: string; permissions?: unknown },
+    @Payload() data: { organizationId: string; requesterId?: string; roleId: string; name?: string; description?: string; color?: string; permissions?: unknown },
   ) {
     return this.usersService.updateAccessRole(data);
   }
