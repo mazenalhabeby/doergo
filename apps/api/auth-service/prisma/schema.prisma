@@ -509,6 +509,10 @@ model User {
   scheduleType      String? @default("NONE") // "FIXED", "FLEXIBLE", "NONE"
   monthlyHourBudget Float? // For FLEXIBLE: target hours per month (e.g., 160)
   enabledModules    Json? // Mobile modules: ["tasks", "clock", "time_off"]
+  // Employment relationship — drives the FIELD seat price for mobile-only members:
+  // "IN_HOUSE" (the org employs them) → discounted €9 seat; "EXTERNAL"
+  // (freelancer/contractor, default) → €15 seat. Office seats ignore this.
+  employmentType    String? @default("EXTERNAL") // "IN_HOUSE" | "EXTERNAL"
 
   // Employee fields
   specialty    String? // e.g., "Electrical", "Plumbing", "Mechanical", "General"
@@ -2608,8 +2612,9 @@ model Subscription {
   status               SubscriptionStatus @default(TRIALING)
   interval             BillingInterval    @default(MONTHLY)
 
-  officeSeats Int @default(0)
-  fieldSeats  Int @default(0)
+  officeSeats       Int @default(0)
+  fieldSeats        Int @default(0) // external/freelancer field seats (€15)
+  fieldInhouseSeats Int @default(0) // in-house/employed field seats (€9)
 
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?

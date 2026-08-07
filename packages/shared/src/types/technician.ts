@@ -29,6 +29,8 @@ export interface EmployeeProfile {
   specialty: string | null;
   position?: string | null;
   enabledModules?: string[] | null;
+  /** 'IN_HOUSE' (employed → €9 field seat) | 'EXTERNAL' (freelancer → €15). */
+  employmentType?: string | null;
   rating: number;
   ratingCount: number;
   maxDailyJobs: number;
@@ -224,6 +226,8 @@ export interface UpdateEmployeeInput {
   position?: string;
   enabledModules?: string[];
   specialty?: string;
+  /** 'IN_HOUSE' (€9 field seat) | 'EXTERNAL' (€15). */
+  employmentType?: string;
   maxDailyJobs?: number;
   isActive?: boolean;
   rating?: number;

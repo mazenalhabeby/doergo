@@ -111,6 +111,7 @@ export default function EmployeeDetailPage() {
   const [editLastName, setEditLastName] = useState("")
   const [editWorkMode, setEditWorkMode] = useState<string>("position")
   const [editSpecialty, setEditSpecialty] = useState("")
+  const [editEmploymentType, setEditEmploymentType] = useState<string>("EXTERNAL")
   const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
   const [editCanCreateTasks, setEditCanCreateTasks] = useState(false)
   const [editUseOrgBadgeDefaults, setEditUseOrgBadgeDefaults] = useState(true)
@@ -206,6 +207,7 @@ export default function EmployeeDetailPage() {
       setEditLastName(employee.lastName)
       setEditWorkMode(employee.position || "employee")
       setEditSpecialty(employee.specialty || "")
+      setEditEmploymentType(employee.employmentType || "EXTERNAL")
       setEditMaxDailyJobs(employee.maxDailyJobs || 5)
       setEditCanCreateTasks(employee.canCreateTasks ?? false)
       const badges = employee.profileBadges
@@ -232,6 +234,7 @@ export default function EmployeeDetailPage() {
       lastName: editLastName.trim(),
       position: editWorkMode,
       specialty: editSpecialty.trim() || undefined,
+      employmentType: editEmploymentType,
       maxDailyJobs: editMaxDailyJobs,
       canCreateTasks: editCanCreateTasks,
       profileBadges: editUseOrgBadgeDefaults
@@ -516,18 +519,27 @@ export default function EmployeeDetailPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t('technicians.detail.editDialog.employmentTypeLabel')}</Label>
-                <Select
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>{t('technicians.detail.editDialog.employmentTypeLabel')}</Label>
+              <Select value={editEmploymentType} onValueChange={setEditEmploymentType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EXTERNAL">
+                    {t('technicians.detail.editDialog.employmentType.external', 'External / freelancer')}
+                  </SelectItem>
+                  <SelectItem value="IN_HOUSE">
+                    {t('technicians.detail.editDialog.employmentType.inHouse', 'In-house (employed)')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  'technicians.detail.editDialog.employmentType.hint',
+                  'In-house field technicians are billed at the discounted €9 seat; external at €15.',
+                )}
+              </p>
             </div>
 
             <div className="space-y-2">

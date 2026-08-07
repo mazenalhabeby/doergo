@@ -28,6 +28,7 @@ export interface UpdateEmployeeDto {
   position?: string;
   enabledModules?: string[];
   specialty?: string;
+  employmentType?: string; // "IN_HOUSE" | "EXTERNAL"
   maxDailyJobs?: number;
   isActive?: boolean;
   rating?: number;

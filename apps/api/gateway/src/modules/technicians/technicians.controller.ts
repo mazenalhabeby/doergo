@@ -376,7 +376,7 @@ export class EmployeesController {
     @Body() dto: UpdateEmployeeDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return firstValueFrom(
+    const result = await firstValueFrom(
       this.authClient.send(
         { cmd: 'update_technician' },
         {
@@ -386,6 +386,10 @@ export class EmployeesController {
         },
       ),
     );
+    // employmentType (and access) changes can flip a member's billable seat type
+    // (in-house ⇄ external field), so re-sync seats to Stripe after the edit.
+    this.syncSeats(user.organizationId);
+    return result;
   }
 
   // ============================================================================

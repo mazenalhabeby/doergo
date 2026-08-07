@@ -6,7 +6,9 @@
  *
  * Pricing model (matches the marketing site):
  *   • Office seat  — priced BY TIER (Starter €19 / Professional €49 / Business €99)
- *   • Field seat   — FLAT €15 per technician, regardless of tier
+ *   • Field seat   — external/freelancer technician, FLAT €15 regardless of tier
+ *   • In-house field seat — the org's OWN (employed) technician, FLAT €9 —
+ *     a discount that rewards bringing techs in-house
  *   • Enterprise   — custom quote (from €199/mo)
  *   • Annual       — 2 months free  (=> monthly × 10 per year)
  *
@@ -16,14 +18,24 @@
  */
 
 export type PlanTier = 'starter' | 'professional' | 'business' | 'enterprise';
-export type SeatType = 'office' | 'field';
+/**
+ * A billable seat type:
+ *   • office        — anyone with web access (priced by tier)
+ *   • field         — external/freelancer, mobile-only technician (flat €15)
+ *   • field_inhouse — the org's own employed, mobile-only technician (flat €9)
+ */
+export type SeatType = 'office' | 'field' | 'field_inhouse';
 export type BillingInterval = 'monthly' | 'annual';
 
 export const PLAN_TIERS: PlanTier[] = ['starter', 'professional', 'business', 'enterprise'];
 
-/** Field (mobile-only technician) seat — flat across all paid tiers. */
+/** External/freelancer field (mobile-only) seat — flat across all paid tiers. */
 export const FIELD_SEAT_MONTHLY_CENTS = 1500; // €15 / technician / month
 export const FIELD_SEAT_ANNUAL_CENTS = FIELD_SEAT_MONTHLY_CENTS * 10; // 2 months free
+
+/** In-house (employed) field (mobile-only) seat — discounted, flat across tiers. */
+export const IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS = 900; // €9 / in-house technician / month
+export const IN_HOUSE_FIELD_SEAT_ANNUAL_CENTS = IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS * 10; // 2 months free
 
 export const CURRENCY = 'eur';
 
@@ -199,9 +211,14 @@ export function officeSeatPriceCents(tier: PlanTier, interval: BillingInterval):
   return interval === 'annual' ? p.officeAnnualCents : p.officeMonthlyCents;
 }
 
-/** Field-seat price, EUR cents (flat across tiers). */
+/** External field-seat price, EUR cents (flat across tiers). */
 export function fieldSeatPriceCents(interval: BillingInterval): number {
   return interval === 'annual' ? FIELD_SEAT_ANNUAL_CENTS : FIELD_SEAT_MONTHLY_CENTS;
+}
+
+/** In-house field-seat price, EUR cents (flat across tiers). */
+export function inHouseFieldSeatPriceCents(interval: BillingInterval): number {
+  return interval === 'annual' ? IN_HOUSE_FIELD_SEAT_ANNUAL_CENTS : IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS;
 }
 
 /**
@@ -213,10 +230,15 @@ export function subscriptionTotalCents(
   interval: BillingInterval,
   officeSeats: number,
   fieldSeats: number,
+  fieldInhouseSeats = 0,
 ): number | null {
   const office = officeSeatPriceCents(tier, interval);
   if (office === null) return null; // enterprise / custom
-  return office * officeSeats + fieldSeatPriceCents(interval) * fieldSeats;
+  return (
+    office * officeSeats +
+    fieldSeatPriceCents(interval) * fieldSeats +
+    inHouseFieldSeatPriceCents(interval) * fieldInhouseSeats
+  );
 }
 
 /**
@@ -234,8 +256,11 @@ export const STRIPE_PRICE_ENV_KEYS = {
   business: {
     office: { monthly: 'STRIPE_PRICE_BUSINESS_OFFICE_MONTHLY', annual: 'STRIPE_PRICE_BUSINESS_OFFICE_ANNUAL' },
   },
-  // field seat price is flat; one price per interval reused across tiers
+  // field seat prices are flat; one price per interval reused across tiers.
+  // `field` = external/freelancer (€15); `fieldInhouse` = the org's own employed
+  // technician (€9 discount).
   field: { monthly: 'STRIPE_PRICE_FIELD_MONTHLY', annual: 'STRIPE_PRICE_FIELD_ANNUAL' },
+  fieldInhouse: { monthly: 'STRIPE_PRICE_FIELD_INHOUSE_MONTHLY', annual: 'STRIPE_PRICE_FIELD_INHOUSE_ANNUAL' },
 } as const;
 
 /** Trial length (days) — matches the marketing site ("14-day trial, no card"). */

@@ -411,7 +411,7 @@
       "popular": "Populaire",
       "perUser": "/ utilisateur / mois",
       "cta": "Commencer gratuitement",
-      "note": "Tarifs par siège bureau · Sièges terrain / technicien 15 € chacun · Enterprise à partir de 199 €/mois ou devis sur mesure · Facturation annuelle = 2 mois offerts · Essai de 14 jours, sans carte.",
+      "note": "Tarifs par siège bureau · Sièges terrain / technicien 15 € chacun (9 € en interne/salarié) · Enterprise à partir de 199 €/mois ou devis sur mesure · Facturation annuelle = 2 mois offerts · Essai de 14 jours, sans carte.",
       "plans": [
         {
           "name": "Starter",
@@ -1696,7 +1696,12 @@
         "jobTitlePlaceholder": "p. ex. Électricien, Plombier, Technicien CVC...",
         "maxDailyJobsLabel": "Nombre max. de tâches par jour",
         "canCreateTasksLabel": "Peut créer des tâches",
-        "canCreateTasksDescription": "Autoriser cet employé à créer de nouvelles tâches depuis l'application mobile"
+        "canCreateTasksDescription": "Autoriser cet employé à créer de nouvelles tâches depuis l'application mobile",
+        "employmentType": {
+          "external": "Externe / indépendant",
+          "inHouse": "Interne (salarié)",
+          "hint": "Les techniciens de terrain internes sont facturés au tarif réduit de 9 € par siège ; les externes, 15 €."
+        }
       },
       "profileBadges": "Badges de profil",
       "useOrgDefaults": "Utiliser les valeurs par défaut de l'organisation",

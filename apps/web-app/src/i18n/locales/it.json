@@ -411,7 +411,7 @@
       "popular": "Popolare",
       "perUser": "/ utente / mese",
       "cta": "Inizia gratis",
-      "note": "Prezzi per postazione d'ufficio · Postazioni per il campo / tecnici €15 ciascuna · Enterprise da €199/mese o preventivo personalizzato · Fatturazione annuale = 2 mesi gratis · Prova di 14 giorni, senza carta.",
+      "note": "Prezzi per postazione d'ufficio · Postazioni per il campo / tecnici €15 ciascuna (€9 interni/dipendenti) · Enterprise da €199/mese o preventivo personalizzato · Fatturazione annuale = 2 mesi gratis · Prova di 14 giorni, senza carta.",
       "plans": [
         {
           "name": "Starter",
@@ -1696,7 +1696,12 @@
         "jobTitlePlaceholder": "es. elettricista, idraulico, tecnico HVAC...",
         "maxDailyJobsLabel": "Numero massimo di attività giornaliere",
         "canCreateTasksLabel": "Può creare attività",
-        "canCreateTasksDescription": "Consente a questo dipendente di creare nuove attività dall'app mobile"
+        "canCreateTasksDescription": "Consente a questo dipendente di creare nuove attività dall'app mobile",
+        "employmentType": {
+          "external": "Esterno / freelance",
+          "inHouse": "Interno (dipendente)",
+          "hint": "I tecnici sul campo interni sono fatturati con la postazione scontata da 9 €; quelli esterni a 15 €."
+        }
       },
       "profileBadges": "Distintivi del profilo",
       "useOrgDefaults": "Usa le impostazioni predefinite dell'organizzazione",

@@ -411,7 +411,7 @@
       "popular": "Beliebt",
       "perUser": "/ Nutzer / Mon.",
       "cta": "Kostenlos starten",
-      "note": "Preise je Büro-Platz · Feld-/Techniker-Plätze je 15 € · Enterprise ab 199 €/Mon. oder individuelles Angebot · Jahresabrechnung = 2 Monate gratis · 14 Tage testen, keine Karte.",
+      "note": "Preise je Büro-Platz · Feld-/Techniker-Plätze je 15 € (9 € intern/angestellt) · Enterprise ab 199 €/Mon. oder individuelles Angebot · Jahresabrechnung = 2 Monate gratis · 14 Tage testen, keine Karte.",
       "plans": [
         {
           "name": "Starter",
@@ -1696,7 +1696,12 @@
         "jobTitlePlaceholder": "z. B. Elektriker, Klempner, HLK-Techniker...",
         "maxDailyJobsLabel": "Max. tägliche Aufträge",
         "canCreateTasksLabel": "Kann Aufgaben erstellen",
-        "canCreateTasksDescription": "Diesem Mitarbeiter erlauben, neue Aufgaben über die mobile App zu erstellen"
+        "canCreateTasksDescription": "Diesem Mitarbeiter erlauben, neue Aufgaben über die mobile App zu erstellen",
+        "employmentType": {
+          "external": "Extern / freiberuflich",
+          "inHouse": "Intern (angestellt)",
+          "hint": "Interne Außendiensttechniker werden mit dem vergünstigten Platz zu 9 € abgerechnet; externe zu 15 €."
+        }
       },
       "profileBadges": "Profilabzeichen",
       "useOrgDefaults": "Organisationsstandards verwenden",

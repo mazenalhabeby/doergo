@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsNumber,
   IsBoolean,
+  IsIn,
   Min,
   Max,
   MinLength,
@@ -39,6 +40,16 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @MaxLength(50)
   specialty?: string;
+
+  @ApiPropertyOptional({
+    example: 'IN_HOUSE',
+    enum: ['IN_HOUSE', 'EXTERNAL'],
+    description: 'Employment relationship — drives the field seat price (IN_HOUSE €9 / EXTERNAL €15)',
+  })
+  @IsString()
+  @IsOptional()
+  @IsIn(['IN_HOUSE', 'EXTERNAL'])
+  employmentType?: string;
 
   @ApiPropertyOptional({
     example: 5,

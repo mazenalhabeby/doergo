@@ -411,7 +411,7 @@
       "popular": "Popular",
       "perUser": "/ usuario / mes",
       "cta": "Empezar gratis",
-      "note": "Precios por asiento de oficina · Asientos de campo / técnico €15 cada uno · Enterprise desde €199/mes o cotización a medida · Facturación anual = 2 meses gratis · Prueba de 14 días, sin tarjeta.",
+      "note": "Precios por asiento de oficina · Asientos de campo / técnico €15 cada uno (€9 internos/empleados) · Enterprise desde €199/mes o cotización a medida · Facturación anual = 2 meses gratis · Prueba de 14 días, sin tarjeta.",
       "plans": [
         {
           "name": "Starter",
@@ -1696,7 +1696,12 @@
         "jobTitlePlaceholder": "p. ej. electricista, fontanero, técnico de climatización…",
         "maxDailyJobsLabel": "Máx. de tareas diarias",
         "canCreateTasksLabel": "Puede crear tareas",
-        "canCreateTasksDescription": "Permite que este empleado cree nuevas tareas desde la app móvil"
+        "canCreateTasksDescription": "Permite que este empleado cree nuevas tareas desde la app móvil",
+        "employmentType": {
+          "external": "Externo / autónomo",
+          "inHouse": "Interno (empleado)",
+          "hint": "Los técnicos de campo internos se facturan con la plaza con descuento de 9 €; los externos, 15 €."
+        }
       },
       "profileBadges": "Insignias del perfil",
       "useOrgDefaults": "Usar valores predeterminados de la organización",

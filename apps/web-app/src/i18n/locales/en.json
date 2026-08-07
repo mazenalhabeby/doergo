@@ -411,7 +411,7 @@
       "popular": "Popular",
       "perUser": "/ user / mo",
       "cta": "Start free",
-      "note": "Prices per office seat · Field / technician seats €15 each · Enterprise from €199/mo or custom quote · Annual billing = 2 months free · 14-day trial, no card.",
+      "note": "Prices per office seat · Field / technician seats €15 each (€9 for in-house/employed) · Enterprise from €199/mo or custom quote · Annual billing = 2 months free · 14-day trial, no card.",
       "plans": [
         {
           "name": "Starter",
@@ -1696,7 +1696,12 @@
         "jobTitlePlaceholder": "e.g. Electrician, Plumber, HVAC Tech...",
         "maxDailyJobsLabel": "Max Daily Jobs",
         "canCreateTasksLabel": "Can create tasks",
-        "canCreateTasksDescription": "Allow this employee to create new tasks from the mobile app"
+        "canCreateTasksDescription": "Allow this employee to create new tasks from the mobile app",
+        "employmentType": {
+          "external": "External / freelancer",
+          "inHouse": "In-house (employed)",
+          "hint": "In-house field technicians are billed at the discounted €9 seat; external at €15."
+        }
       },
       "profileBadges": "Profile Badges",
       "useOrgDefaults": "Use organization defaults",

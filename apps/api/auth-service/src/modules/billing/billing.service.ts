@@ -152,7 +152,7 @@ export class BillingService {
   private async countOrgSeats(organizationId: string): Promise<SeatCounts> {
     const users = await this.prisma.user.findMany({
       where: { organizationId, isActive: true },
-      select: { role: true, isActive: true, enabledModules: true },
+      select: { role: true, isActive: true, enabledModules: true, employmentType: true },
     });
     return countSeats(users);
   }
@@ -190,6 +190,7 @@ export class BillingService {
           interval: 'MONTHLY',
           officeSeats: seats.office,
           fieldSeats: seats.field,
+          fieldInhouseSeats: seats.fieldInhouse,
           trialEndsAt,
         },
         update: {},
@@ -250,7 +251,12 @@ export class BillingService {
     const tier = tierFromPrisma(org.planTier);
     const interval = intervalFromPrisma(org.billingInterval);
     const seats: SeatCounts = org.subscription
-      ? { office: org.subscription.officeSeats, field: org.subscription.fieldSeats, total: org.subscription.officeSeats + org.subscription.fieldSeats }
+      ? {
+          office: org.subscription.officeSeats,
+          field: org.subscription.fieldSeats,
+          fieldInhouse: org.subscription.fieldInhouseSeats,
+          total: org.subscription.officeSeats + org.subscription.fieldSeats + org.subscription.fieldInhouseSeats,
+        }
       : await this.countOrgSeats(organizationId);
 
     const view: SubscriptionView = {
@@ -259,7 +265,8 @@ export class BillingService {
       interval,
       officeSeats: seats.office,
       fieldSeats: seats.field,
-      totalCents: tier ? subscriptionTotalCents(tier, interval, seats.office, seats.field) : null,
+      fieldInhouseSeats: seats.fieldInhouse,
+      totalCents: tier ? subscriptionTotalCents(tier, interval, seats.office, seats.field, seats.fieldInhouse) : null,
       trialEndsAt: org.trialEndsAt ? org.trialEndsAt.toISOString() : null,
       currentPeriodEnd: org.currentPeriodEnd ? org.currentPeriodEnd.toISOString() : null,
       cancelAtPeriodEnd: org.cancelAtPeriodEnd,
@@ -294,6 +301,7 @@ export class BillingService {
       interval: req.interval,
       officeSeats: seats.office,
       fieldSeats: seats.field,
+      fieldInhouseSeats: seats.fieldInhouse,
       successUrl,
       cancelUrl,
       trialEnd,
@@ -341,7 +349,10 @@ export class BillingService {
       return ok(seats);
     }
     const sub = org.subscription;
-    const changed = sub.officeSeats !== seats.office || sub.fieldSeats !== seats.field;
+    const changed =
+      sub.officeSeats !== seats.office ||
+      sub.fieldSeats !== seats.field ||
+      sub.fieldInhouseSeats !== seats.fieldInhouse;
 
     // Nothing to do — many member edits (rename, schedule) don't touch seat
     // counts, so we skip the DB write AND the Stripe round-trip entirely.
@@ -349,7 +360,7 @@ export class BillingService {
 
     await this.prisma.subscription.update({
       where: { organizationId },
-      data: { officeSeats: seats.office, fieldSeats: seats.field },
+      data: { officeSeats: seats.office, fieldSeats: seats.field, fieldInhouseSeats: seats.fieldInhouse },
     });
 
     // Push the new quantities to Stripe only when there's a live subscription and
@@ -361,8 +372,8 @@ export class BillingService {
       // Charge immediately only for an annual INCREASE (a mid-year added seat).
       // Annual DECREASES and all monthly changes bank the proration → the credit
       // (or charge) lands on the next invoice/renewal.
-      const oldTotal = subscriptionTotalCents(tier, interval, sub.officeSeats, sub.fieldSeats) ?? 0;
-      const newTotal = subscriptionTotalCents(tier, interval, seats.office, seats.field) ?? 0;
+      const oldTotal = subscriptionTotalCents(tier, interval, sub.officeSeats, sub.fieldSeats, sub.fieldInhouseSeats) ?? 0;
+      const newTotal = subscriptionTotalCents(tier, interval, seats.office, seats.field, seats.fieldInhouse) ?? 0;
       const invoiceNow = interval === 'annual' && newTotal > oldTotal;
 
       await this.stripe.setSubscriptionQuantities(
@@ -372,6 +383,8 @@ export class BillingService {
           officeQty: seats.office,
           fieldPriceId: this.stripe.priceId('field', tier, interval),
           fieldQty: seats.field,
+          fieldInhousePriceId: this.stripe.priceId('field_inhouse', tier, interval),
+          fieldInhouseQty: seats.fieldInhouse,
         },
         { invoiceNow },
       );

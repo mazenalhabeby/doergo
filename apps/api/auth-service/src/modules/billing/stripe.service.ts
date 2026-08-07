@@ -39,6 +39,8 @@ export class StripeService {
     let envKey: string | undefined;
     if (seat === 'field') {
       envKey = STRIPE_PRICE_ENV_KEYS.field[interval];
+    } else if (seat === 'field_inhouse') {
+      envKey = STRIPE_PRICE_ENV_KEYS.fieldInhouse[interval];
     } else if (tier === 'starter' || tier === 'professional' || tier === 'business') {
       envKey = STRIPE_PRICE_ENV_KEYS[tier].office[interval];
     }
@@ -74,6 +76,7 @@ export class StripeService {
     interval: BillingInterval;
     officeSeats: number;
     fieldSeats: number;
+    fieldInhouseSeats: number;
     successUrl: string;
     cancelUrl: string;
     trialEnd?: number | null;
@@ -83,6 +86,9 @@ export class StripeService {
     ];
     if (p.fieldSeats > 0) {
       line_items.push({ price: this.priceId('field', p.tier, p.interval), quantity: p.fieldSeats });
+    }
+    if (p.fieldInhouseSeats > 0) {
+      line_items.push({ price: this.priceId('field_inhouse', p.tier, p.interval), quantity: p.fieldInhouseSeats });
     }
     return this.stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -154,7 +160,14 @@ export class StripeService {
    */
   async setSubscriptionQuantities(
     subscriptionId: string,
-    lines: { officePriceId: string; officeQty: number; fieldPriceId: string; fieldQty: number },
+    lines: {
+      officePriceId: string;
+      officeQty: number;
+      fieldPriceId: string;
+      fieldQty: number;
+      fieldInhousePriceId: string;
+      fieldInhouseQty: number;
+    },
     opts?: { invoiceNow?: boolean },
   ): Promise<Stripe.Subscription> {
     const sub = await this.stripe.subscriptions.retrieve(subscriptionId);
@@ -164,12 +177,18 @@ export class StripeService {
     const office = findItem(lines.officePriceId);
     items.push(office ? { id: office.id, quantity: Math.max(1, lines.officeQty) } : { price: lines.officePriceId, quantity: Math.max(1, lines.officeQty) });
 
-    const field = findItem(lines.fieldPriceId);
-    if (lines.fieldQty > 0) {
-      items.push(field ? { id: field.id, quantity: lines.fieldQty } : { price: lines.fieldPriceId, quantity: lines.fieldQty });
-    } else if (field) {
-      items.push({ id: field.id, deleted: true });
-    }
+    // A field line is added/updated when its quantity is > 0, or deleted when it
+    // drops to 0 (so a fully-external or fully-in-house org has no stray line).
+    const syncField = (priceId: string, qty: number) => {
+      const existing = findItem(priceId);
+      if (qty > 0) {
+        items.push(existing ? { id: existing.id, quantity: qty } : { price: priceId, quantity: qty });
+      } else if (existing) {
+        items.push({ id: existing.id, deleted: true });
+      }
+    };
+    syncField(lines.fieldPriceId, lines.fieldQty);
+    syncField(lines.fieldInhousePriceId, lines.fieldInhouseQty);
 
     const proration_behavior: Stripe.SubscriptionUpdateParams.ProrationBehavior =
       opts?.invoiceNow ? 'always_invoice' : 'create_prorations';
@@ -177,7 +196,7 @@ export class StripeService {
     return this.stripe.subscriptions.update(
       subscriptionId,
       { items, proration_behavior },
-      { idempotencyKey: `seats_${subscriptionId}_${lines.officeQty}_${lines.fieldQty}` },
+      { idempotencyKey: `seats_${subscriptionId}_${lines.officeQty}_${lines.fieldQty}_${lines.fieldInhouseQty}` },
     );
   }
 

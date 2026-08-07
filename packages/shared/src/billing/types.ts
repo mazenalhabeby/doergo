@@ -17,7 +17,10 @@ export interface SubscriptionView {
   status: SubStatus;
   interval: BillingInterval;
   officeSeats: number;
+  /** External/freelancer field seats (€15). */
   fieldSeats: number;
+  /** In-house (employed) field seats (€9 discount). */
+  fieldInhouseSeats: number;
   /** Recurring total for the current line-up (null for enterprise/custom). */
   totalCents: number | null;
   trialEndsAt: string | null; // ISO
