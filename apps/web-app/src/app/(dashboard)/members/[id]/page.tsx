@@ -15,6 +15,10 @@ import {
   Timer,
   LayoutGrid,
   ShieldCheck,
+  ClipboardList,
+  Calendar,
+  Umbrella,
+  BarChart3,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -25,6 +29,15 @@ import { AccessBuilder } from "@/components/access-builder"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { EditMemberDialog } from "../_components/edit-member-dialog"
 import { AuditTrail } from "@/components/audit-trail"
+// Worker tabs — consolidated from the retired /employees page (single member page).
+import {
+  TasksTab,
+  AttendanceTab,
+  LocationsTab,
+  ScheduleTab,
+  TimeOffTab,
+  PerformanceTab,
+} from "./_components"
 import {
   organizationsApi,
   employeesApi,
@@ -89,6 +102,10 @@ export default function MemberProfilePage({
   const router = useRouter()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
+  // Manager+ may see the operational tabs (tasks/attendance/schedule/perf) and
+  // manage schedules/attendance — same gate the retired /employees page used.
+  const canViewOps = isAdmin || !!user?.canViewAllTasks
+  const canManage = isAdmin || !!user?.canViewAllTasks
   const [editOpen, setEditOpen] = useState(false)
   // Controlled so the guided tour can open the Access tab: Radix tabs don't switch
   // on a synthetic .click(), but a plain onClick on the trigger (below) does fire.
@@ -151,6 +168,32 @@ export default function MemberProfilePage({
     if (!allAssignments) return []
     return allAssignments.map((a: any) => a.locationName).filter(Boolean)
   }, [allAssignments])
+
+  // ── Operational tabs (manager+ only) — each fetches ONLY when its tab is open ──
+  const { data: fullTasks } = useQuery({
+    queryKey: ["memberTasksFull", memberId],
+    queryFn: () => employeesApi.getTasks(memberId),
+    enabled: !!memberId && canViewOps && activeTab === "tasks",
+    staleTime: 30_000,
+  })
+  const { data: attendance } = useQuery({
+    queryKey: ["memberAttendance", memberId],
+    queryFn: () => employeesApi.getAttendance(memberId),
+    enabled: !!memberId && canViewOps && activeTab === "attendance",
+    staleTime: 30_000,
+  })
+  const { data: performance } = useQuery({
+    queryKey: ["memberPerformance", memberId],
+    queryFn: () => employeesApi.getPerformance(memberId),
+    enabled: !!memberId && canViewOps && activeTab === "performance",
+    staleTime: 30_000,
+  })
+  const { data: memberAssignments } = useQuery({
+    queryKey: ["memberLocationAssignments", memberId],
+    queryFn: () => employeesApi.getAssignments(memberId),
+    enabled: !!memberId && canViewOps && activeTab === "locations",
+    staleTime: 30_000,
+  })
 
   const schedule = scheduleData?.schedule || []
   const member = memberData
@@ -493,27 +536,53 @@ export default function MemberProfilePage({
             </div>
           )
 
-          if (!showAccessTab) return overview
+          // No tabs to show (plain member viewing a peer / self) → just the overview.
+          if (!showAccessTab && !canViewOps) return overview
+
+          const triggerCls =
+            "data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all gap-1.5"
 
           return (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
-                <TabsTrigger
-                  value="overview"
-                  className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
-                >
-                  <LayoutGrid className="size-3.5 mr-1.5" />
+              <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto flex-wrap">
+                <TabsTrigger value="overview" className={triggerCls}>
+                  <LayoutGrid className="size-3.5" />
                   {t("members.detail.overview")}
                 </TabsTrigger>
-                <TabsTrigger
-                  data-tour="access-tab"
-                  value="access"
-                  onClick={() => setActiveTab("access")}
-                  className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
-                >
-                  <ShieldCheck className="size-3.5 mr-1.5" />
-                  {t("members.detail.access")}
-                </TabsTrigger>
+                {showAccessTab && (
+                  <TabsTrigger data-tour="access-tab" value="access" onClick={() => setActiveTab("access")} className={triggerCls}>
+                    <ShieldCheck className="size-3.5" />
+                    {t("members.detail.access")}
+                  </TabsTrigger>
+                )}
+                {canViewOps && (
+                  <>
+                    <TabsTrigger value="tasks" className={triggerCls}>
+                      <ClipboardList className="size-3.5" />
+                      {t("technicians.detail.tabs.tasks")}
+                    </TabsTrigger>
+                    <TabsTrigger value="attendance" className={triggerCls}>
+                      <Clock className="size-3.5" />
+                      {t("technicians.detail.tabs.attendance")}
+                    </TabsTrigger>
+                    <TabsTrigger value="locations" className={triggerCls}>
+                      <MapPin className="size-3.5" />
+                      {t("technicians.detail.tabs.locations")}
+                    </TabsTrigger>
+                    <TabsTrigger value="schedule" className={triggerCls}>
+                      <Calendar className="size-3.5" />
+                      {t("technicians.detail.tabs.schedule")}
+                    </TabsTrigger>
+                    <TabsTrigger value="time-off" className={triggerCls}>
+                      <Umbrella className="size-3.5" />
+                      {t("technicians.detail.tabs.timeOff")}
+                    </TabsTrigger>
+                    <TabsTrigger value="performance" className={triggerCls}>
+                      <BarChart3 className="size-3.5" />
+                      {t("technicians.detail.tabs.performance")}
+                    </TabsTrigger>
+                  </>
+                )}
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -524,12 +593,41 @@ export default function MemberProfilePage({
                 </div>
               </TabsContent>
 
-              <TabsContent value="access" className="mt-6">
-                <div className="space-y-6">
-                  {/* Notification watchers now live inside the Access Builder. */}
-                  <AccessBuilder member={member} onSaved={() => refetchMember()} />
-                </div>
-              </TabsContent>
+              {showAccessTab && (
+                <TabsContent value="access" className="mt-6">
+                  <div className="space-y-6">
+                    <AccessBuilder member={member} onSaved={() => refetchMember()} />
+                  </div>
+                </TabsContent>
+              )}
+
+              {canViewOps && (
+                <>
+                  <TabsContent value="tasks" className="mt-6">
+                    <TasksTab tasks={fullTasks} />
+                  </TabsContent>
+                  <TabsContent value="attendance" className="mt-6">
+                    <AttendanceTab
+                      attendance={attendance}
+                      employeeId={memberId}
+                      employeeName={`${member.firstName} ${member.lastName}`.trim()}
+                      canManage={canManage}
+                    />
+                  </TabsContent>
+                  <TabsContent value="locations" className="mt-6">
+                    <LocationsTab assignments={memberAssignments} />
+                  </TabsContent>
+                  <TabsContent value="schedule" className="mt-6">
+                    <ScheduleTab employeeId={memberId} canManage={canManage} />
+                  </TabsContent>
+                  <TabsContent value="time-off" className="mt-6">
+                    <TimeOffTab employeeId={memberId} canManage={canManage} />
+                  </TabsContent>
+                  <TabsContent value="performance" className="mt-6">
+                    <PerformanceTab performance={performance} />
+                  </TabsContent>
+                </>
+              )}
             </Tabs>
           )
         })()}

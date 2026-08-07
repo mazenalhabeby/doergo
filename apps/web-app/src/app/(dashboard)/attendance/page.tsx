@@ -11,7 +11,7 @@ import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEnt
 import { ApprovalsTab } from "./_components/approvals-tab"
 import { BreaksTab } from "./_components/breaks-tab"
 import { TrackingTab } from "./_components/tracking-tab"
-import { AddAttendanceDialog } from "../employees/[id]/_components/add-attendance-dialog"
+import { AddAttendanceDialog } from "../members/[id]/_components/add-attendance-dialog"
 import { AddDayOffDialog } from "./_components/add-dayoff-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"

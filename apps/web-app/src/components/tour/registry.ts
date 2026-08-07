@@ -277,7 +277,7 @@ export const TOURS: TourDef[] = [
   },
 
   // ── PAGE HINTS — a one-line "what is this screen" guide on every page. ──
-  ...pageTour("pageEmployees", "employees", "team", "/employees", "page-employees", (c) => c.hasPermission("canViewAllTasks")),
+  // (pageEmployees retired — /employees redirects to /members.)
   ...pageTour("pageInvoices", "invoices", "reports", "/invoices", "page-invoices", (c) => c.isAdmin),
   ...pageTour("pageAssets", "assets", "spaces", "/assets", "page-assets", (c) => c.hasPermission("canViewAllTasks")),
   ...pageTour("pagePayments", "payments", "reports", "/payments", "page-payments", (c) => c.isAdmin),
@@ -362,14 +362,8 @@ export const TOURS: TourDef[] = [
   },
 
   // Detail pages — prefix routes (trailing slash excludes the list route).
-  {
-    id: "employeeDetailTour",
-    titleKey: "tours.pages.employeeDetail.title",
-    icon: "team",
-    autoRunOn: "/employees/",
-    gate: (c) => c.hasPermission("canViewAllTasks"),
-    steps: [{ target: "employee-detail-tabs", titleKey: "tours.pages.employeeDetail.title", bodyKey: "tours.pages.employeeDetail.body" }],
-  },
+  // (employeeDetailTour retired — /employees/[id] now redirects to /members/[id];
+  //  the member detail tour below covers the consolidated page.)
   // Member detail — profile + a DEEP walk of the Access tab (every permission).
   {
     id: "memberDetailTour",

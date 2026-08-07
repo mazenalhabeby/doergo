@@ -3059,6 +3059,12 @@ export interface OrgMember {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   canViewReports?: boolean;
+  /** 'IN_HOUSE' | 'EXTERNAL' — field seat pricing. */
+  employmentType?: string | null;
+  /** Labor cost: 'HOURLY' | 'FIXED' | null + rate in cents. */
+  costType?: string | null;
+  costRateCents?: number | null;
+  maxDailyJobs?: number | null;
   /** Unified org-wide role (AccessRole id) — e.g. Manager. */
   memberRoleId?: string | null;
   memberRole?: { id: string; name: string; color?: string | null } | null;
