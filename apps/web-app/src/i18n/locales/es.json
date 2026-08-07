@@ -820,7 +820,8 @@
     "myTasks": "Mis tareas",
     "tokenTest": "Prueba de token",
     "help": "Ayuda",
-    "customerPortal": "Portales de clientes"
+    "customerPortal": "Portales de clientes",
+    "costs": "Costes"
   },
   "dashboard": {
     "admin": {
@@ -1701,6 +1702,14 @@
           "external": "Externo / autónomo",
           "inHouse": "Interno (empleado)",
           "hint": "Los técnicos de campo internos se facturan con la plaza con descuento de 9 €; los externos, 15 €."
+        },
+        "cost": {
+          "label": "Coste laboral",
+          "none": "Sin coste",
+          "hourly": "Por hora (€/hora)",
+          "fixed": "Fijo (€/mes)",
+          "perHour": "/ hora",
+          "perMonth": "/ mes"
         }
       },
       "profileBadges": "Insignias del perfil",
@@ -5580,5 +5589,18 @@
       "memberContact": "{{name}} puede contactar",
       "noPeople": "No hay otros miembros con un rol en este espacio."
     }
+  },
+  "costs": {
+    "title": "Costes de personal",
+    "subtitle": "Lo que te cuesta cada trabajador este mes: por hora (horas × tarifa) o fijo mensual.",
+    "monthTotal": "Total del mes",
+    "workerCount": "{{count}} con coste",
+    "worker": "Trabajador",
+    "rate": "Tarifa",
+    "hours": "Horas",
+    "cost": "Coste",
+    "perHour": "/ hora",
+    "perMonth": "/ mes",
+    "empty": "Ningún trabajador tiene un coste definido. Añade un coste por hora o fijo mensual desde el diálogo Editar de un miembro."
   }
 }

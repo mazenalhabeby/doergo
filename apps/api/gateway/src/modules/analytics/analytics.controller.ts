@@ -38,6 +38,14 @@ export class AnalyticsController {
     );
   }
 
+  @Get('worker-costs')
+  @ApiOperation({ summary: 'Per-worker labor cost for a month (hourly × hours, or fixed monthly) + org total' })
+  async workerCosts(@Request() req: any, @Query('month') month?: string) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'analytics_worker_costs' }, { organizationId: req.user.organizationId, month }),
+    );
+  }
+
   // ── Saved reports (custom builder). View = all tiers; build = Pro+. ──────────
   @Get('reports')
   @ApiOperation({ summary: 'List saved reports (org-shared + your own)' })

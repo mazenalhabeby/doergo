@@ -112,6 +112,9 @@ export default function EmployeeDetailPage() {
   const [editWorkMode, setEditWorkMode] = useState<string>("position")
   const [editSpecialty, setEditSpecialty] = useState("")
   const [editEmploymentType, setEditEmploymentType] = useState<string>("EXTERNAL")
+  // Labor cost: "" (not costed) | "HOURLY" | "FIXED"; amount entered in euros.
+  const [editCostType, setEditCostType] = useState<string>("")
+  const [editCostAmount, setEditCostAmount] = useState<string>("")
   const [editMaxDailyJobs, setEditMaxDailyJobs] = useState(5)
   const [editCanCreateTasks, setEditCanCreateTasks] = useState(false)
   const [editUseOrgBadgeDefaults, setEditUseOrgBadgeDefaults] = useState(true)
@@ -208,6 +211,8 @@ export default function EmployeeDetailPage() {
       setEditWorkMode(employee.position || "employee")
       setEditSpecialty(employee.specialty || "")
       setEditEmploymentType(employee.employmentType || "EXTERNAL")
+      setEditCostType(employee.costType || "")
+      setEditCostAmount(employee.costRateCents != null ? (employee.costRateCents / 100).toString() : "")
       setEditMaxDailyJobs(employee.maxDailyJobs || 5)
       setEditCanCreateTasks(employee.canCreateTasks ?? false)
       const badges = employee.profileBadges
@@ -235,6 +240,12 @@ export default function EmployeeDetailPage() {
       position: editWorkMode,
       specialty: editSpecialty.trim() || undefined,
       employmentType: editEmploymentType,
+      // Labor cost: send the type + amount (euros→cents), or clear both when "not costed".
+      costType: editCostType === "HOURLY" || editCostType === "FIXED" ? editCostType : null,
+      costRateCents:
+        (editCostType === "HOURLY" || editCostType === "FIXED") && editCostAmount.trim() !== ""
+          ? Math.round(parseFloat(editCostAmount) * 100)
+          : null,
       maxDailyJobs: editMaxDailyJobs,
       canCreateTasks: editCanCreateTasks,
       profileBadges: editUseOrgBadgeDefaults
@@ -572,6 +583,43 @@ export default function EmployeeDetailPage() {
                 value={editMaxDailyJobs}
                 onChange={(e) => setEditMaxDailyJobs(parseInt(e.target.value) || 5)}
               />
+            </div>
+
+            {/* Labor cost — what the org pays this worker (feeds the monthly Costs
+                view + future invoicing). Hourly = €/hour × hours; Fixed = €/month. */}
+            <div className="space-y-2">
+              <Label>{t('technicians.detail.editDialog.cost.label', 'Labor cost')}</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Select value={editCostType || "NONE"} onValueChange={(v) => setEditCostType(v === "NONE" ? "" : v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">{t('technicians.detail.editDialog.cost.none', 'Not costed')}</SelectItem>
+                    <SelectItem value="HOURLY">{t('technicians.detail.editDialog.cost.hourly', 'Hourly (€/hour)')}</SelectItem>
+                    <SelectItem value="FIXED">{t('technicians.detail.editDialog.cost.fixed', 'Fixed (€/month)')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(editCostType === "HOURLY" || editCostType === "FIXED") && (
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      className="pl-6"
+                      value={editCostAmount}
+                      onChange={(e) => setEditCostAmount(e.target.value)}
+                      placeholder={editCostType === "HOURLY" ? "22.00" : "3000.00"}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      {editCostType === "HOURLY"
+                        ? t('technicians.detail.editDialog.cost.perHour', '/ hour')
+                        : t('technicians.detail.editDialog.cost.perMonth', '/ month')}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-3 rounded-lg border border-border p-3">

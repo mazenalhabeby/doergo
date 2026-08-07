@@ -26,6 +26,11 @@ export class AnalyticsController {
     return this.analytics.timesheetDetail(data);
   }
 
+  @MessagePattern({ cmd: 'analytics_worker_costs' })
+  workerCosts(@Payload() data: { organizationId: string; month?: string }) {
+    return this.analytics.getWorkerCosts(data);
+  }
+
   @MessagePattern({ cmd: 'analytics_list_saved' })
   listSaved(@Payload() data: { organizationId: string; userId: string }) {
     return this.analytics.listSaved(data);

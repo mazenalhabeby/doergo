@@ -820,7 +820,8 @@
     "myTasks": "Meine Aufgaben",
     "tokenTest": "Token-Test",
     "help": "Hilfe",
-    "customerPortal": "Kundenportale"
+    "customerPortal": "Kundenportale",
+    "costs": "Kosten"
   },
   "dashboard": {
     "admin": {
@@ -1701,6 +1702,14 @@
           "external": "Extern / freiberuflich",
           "inHouse": "Intern (angestellt)",
           "hint": "Interne Außendiensttechniker werden mit dem vergünstigten Platz zu 9 € abgerechnet; externe zu 15 €."
+        },
+        "cost": {
+          "label": "Personalkosten",
+          "none": "Nicht erfasst",
+          "hourly": "Stündlich (€/Std.)",
+          "fixed": "Fest (€/Monat)",
+          "perHour": "/ Std.",
+          "perMonth": "/ Monat"
         }
       },
       "profileBadges": "Profilabzeichen",
@@ -5580,5 +5589,18 @@
       "memberContact": "{{name}} kann kontaktieren",
       "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space."
     }
+  },
+  "costs": {
+    "title": "Mitarbeiterkosten",
+    "subtitle": "Was Sie jeder Mitarbeiter diesen Monat kostet — stündlich (Stunden × Satz) oder monatlich fest.",
+    "monthTotal": "Gesamt für den Monat",
+    "workerCount": "{{count}} erfasst",
+    "worker": "Mitarbeiter",
+    "rate": "Satz",
+    "hours": "Stunden",
+    "cost": "Kosten",
+    "perHour": "/ Std.",
+    "perMonth": "/ Monat",
+    "empty": "Für keinen Mitarbeiter ist ein Kostensatz festgelegt. Fügen Sie im Bearbeiten-Dialog eines Mitglieds einen Stunden- oder monatlichen Fixkostensatz hinzu."
   }
 }

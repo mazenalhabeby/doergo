@@ -313,6 +313,21 @@ export function TopNavbar() {
           </Link>
         )}
 
+        {/* Worker costs — same manager+ gate as Reports (sensitive money data). */}
+        {showReports && (
+          <Link
+            href="/costs"
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/costs")
+                ? cn(navItemActiveStyle, bottomIndicator)
+                : navItemInactive,
+            )}
+          >
+            {t("nav.costs", "Costs")}
+          </Link>
+        )}
+
         {/* Employee module-driven items */}
         {showMyTimeOff && (
           <Link href="/my/time-off" data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>

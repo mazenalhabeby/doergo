@@ -820,7 +820,8 @@
     "myTasks": "My Tasks",
     "tokenTest": "Token Test",
     "help": "Help",
-    "customerPortal": "Clients Portals"
+    "customerPortal": "Clients Portals",
+    "costs": "Costs"
   },
   "dashboard": {
     "admin": {
@@ -1701,6 +1702,14 @@
           "external": "External / freelancer",
           "inHouse": "In-house (employed)",
           "hint": "In-house field technicians are billed at the discounted €9 seat; external at €15."
+        },
+        "cost": {
+          "label": "Labor cost",
+          "none": "Not costed",
+          "hourly": "Hourly (€/hour)",
+          "fixed": "Fixed (€/month)",
+          "perHour": "/ hour",
+          "perMonth": "/ month"
         }
       },
       "profileBadges": "Profile Badges",
@@ -5580,5 +5589,18 @@
       "memberContact": "{{name}} can contact",
       "noPeople": "No other members with a role in this space."
     }
+  },
+  "costs": {
+    "title": "Worker costs",
+    "subtitle": "What each worker costs you this month — hourly (hours × rate) or fixed monthly.",
+    "monthTotal": "Total for the month",
+    "workerCount": "{{count}} costed",
+    "worker": "Worker",
+    "rate": "Rate",
+    "hours": "Hours",
+    "cost": "Cost",
+    "perHour": "/ hour",
+    "perMonth": "/ month",
+    "empty": "No worker has a cost set yet. Add an hourly or fixed monthly cost from a member’s Edit dialog."
   }
 }

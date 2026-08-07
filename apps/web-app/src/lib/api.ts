@@ -4520,6 +4520,20 @@ export interface ReportDefinition {
 export interface ReportColumn { key: string; label: string; kind: "dimension" | "measure" | "period"; format?: string }
 export interface ReportResult { columns: ReportColumn[]; rows: Array<Record<string, unknown>> }
 
+export interface WorkerCostRow {
+  userId: string
+  name: string
+  costType: "HOURLY" | "FIXED" | null
+  costRateCents: number | null
+  hours: number
+  costCents: number
+}
+export interface WorkerCostsResult {
+  month: string // YYYY-MM
+  workers: WorkerCostRow[]
+  totalCents: number
+}
+
 export interface ReportTemplate { key: string; name: string; description: string; def: ReportDefinition }
 export interface DatasetMeta {
   key: string;
@@ -4554,6 +4568,13 @@ export const analyticsApi = {
   timesheet: async (userId: string, params?: { from?: string; to?: string }) => {
     const qs = buildUrlWithQuery("/analytics/timesheet", { userId, ...(params || {}) });
     const res = await api.get<{ data: ReportResult & { userName: string } }>(qs);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  /** Per-worker labor cost for a month (YYYY-MM; defaults to current). */
+  workerCosts: async (month?: string) => {
+    const qs = buildUrlWithQuery("/analytics/worker-costs", month ? { month } : {});
+    const res = await api.get<{ data: WorkerCostsResult }>(qs);
     if (res.error) throw new Error(res.error);
     return res.data!.data;
   },

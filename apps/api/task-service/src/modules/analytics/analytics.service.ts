@@ -1,5 +1,6 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { workerMonthlyCostCents } from '@hbcfield/shared';
 import { compile, ReportDefinition } from './query-engine';
 import { datasetCatalog } from './registry';
 import { TEMPLATES } from './templates';
@@ -29,6 +30,81 @@ export class AnalyticsService {
     });
 
     return { data: { columns, rows: normalized } };
+  }
+
+  /**
+   * Worker labor cost for ONE month — the single source of truth reused by the
+   * Costs view and (later) the invoice system. Per active worker with a cost
+   * configured: HOURLY → hours worked that month × rate; FIXED → the flat monthly
+   * rate. Hours come from attendance (time_entries); cost is computed via the
+   * shared `workerMonthlyCostCents`. Always org-scoped.
+   *
+   * `month` = "YYYY-MM" (defaults to the current month, UTC).
+   */
+  async getWorkerCosts(data: { organizationId: string; month?: string }) {
+    // Resolve the month window [start, nextMonth) in UTC.
+    const now = new Date();
+    let year = now.getUTCFullYear();
+    let mon = now.getUTCMonth(); // 0-based
+    if (data.month) {
+      const m = /^(\d{4})-(\d{2})$/.exec(data.month.trim());
+      if (!m) throw new BadRequestException('month must be YYYY-MM');
+      year = Number(m[1]);
+      mon = Number(m[2]) - 1;
+      if (mon < 0 || mon > 11) throw new BadRequestException('Invalid month');
+    }
+    const start = new Date(Date.UTC(year, mon, 1));
+    const end = new Date(Date.UTC(year, mon + 1, 1));
+    const monthStr = `${year}-${String(mon + 1).padStart(2, '0')}`;
+
+    // Active workers with a cost configured (uncosted members are excluded from
+    // the money totals — nothing to bill for them yet).
+    const workers = await this.prisma.user.findMany({
+      where: {
+        organizationId: data.organizationId,
+        isActive: true,
+        costType: { in: ['HOURLY', 'FIXED'] },
+      },
+      select: { id: true, firstName: true, lastName: true, costType: true, costRateCents: true },
+    });
+    if (workers.length === 0) {
+      return { data: { month: monthStr, workers: [], totalCents: 0 } };
+    }
+
+    // Hours worked that month, per worker (one grouped query, org-scoped).
+    const grouped = await this.prisma.timeEntry.groupBy({
+      by: ['userId'],
+      where: {
+        organizationId: data.organizationId,
+        userId: { in: workers.map((w) => w.id) },
+        clockInAt: { gte: start, lt: end },
+      },
+      _sum: { totalMinutes: true },
+    });
+    const minutesByUser = new Map<string, number>();
+    for (const g of grouped) minutesByUser.set(g.userId, g._sum.totalMinutes ?? 0);
+
+    let totalCents = 0;
+    const rows = workers.map((w) => {
+      const hours = (minutesByUser.get(w.id) ?? 0) / 60;
+      const costCents = workerMonthlyCostCents(
+        { costType: w.costType, costRateCents: w.costRateCents },
+        hours,
+      );
+      totalCents += costCents;
+      return {
+        userId: w.id,
+        name: `${w.firstName} ${w.lastName}`.trim(),
+        costType: w.costType,
+        costRateCents: w.costRateCents,
+        hours: Math.round(hours * 100) / 100,
+        costCents,
+      };
+    });
+    // Highest cost first — most useful default for a costs view.
+    rows.sort((a, b) => b.costCents - a.costCents);
+
+    return { data: { month: monthStr, workers: rows, totalCents } };
   }
 
   /**

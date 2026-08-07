@@ -820,7 +820,8 @@
     "myTasks": "Mes tâches",
     "tokenTest": "Test de jeton",
     "help": "Aide",
-    "customerPortal": "Portails clients"
+    "customerPortal": "Portails clients",
+    "costs": "Coûts"
   },
   "dashboard": {
     "admin": {
@@ -1701,6 +1702,14 @@
           "external": "Externe / indépendant",
           "inHouse": "Interne (salarié)",
           "hint": "Les techniciens de terrain internes sont facturés au tarif réduit de 9 € par siège ; les externes, 15 €."
+        },
+        "cost": {
+          "label": "Coût de main-d’œuvre",
+          "none": "Non chiffré",
+          "hourly": "Horaire (€/heure)",
+          "fixed": "Fixe (€/mois)",
+          "perHour": "/ heure",
+          "perMonth": "/ mois"
         }
       },
       "profileBadges": "Badges de profil",
@@ -5580,5 +5589,18 @@
       "memberContact": "{{name}} peut contacter",
       "noPeople": "Aucun autre membre avec un rôle dans cet espace."
     }
+  },
+  "costs": {
+    "title": "Coûts du personnel",
+    "subtitle": "Ce que chaque employé vous coûte ce mois-ci — horaire (heures × taux) ou forfait mensuel.",
+    "monthTotal": "Total du mois",
+    "workerCount": "{{count}} chiffrés",
+    "worker": "Employé",
+    "rate": "Taux",
+    "hours": "Heures",
+    "cost": "Coût",
+    "perHour": "/ heure",
+    "perMonth": "/ mois",
+    "empty": "Aucun employé n’a de coût défini. Ajoutez un coût horaire ou mensuel fixe depuis la fenêtre Modifier d’un membre."
   }
 }

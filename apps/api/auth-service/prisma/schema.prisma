@@ -519,6 +519,14 @@ model User {
   // "IN_HOUSE" (the org employs them) → discounted €9 seat; "EXTERNAL"
   // (freelancer/contractor, default) → €15 seat. Office seats ignore this.
   employmentType    String? @default("EXTERNAL") // "IN_HOUSE" | "EXTERNAL"
+  // Labor cost (what the ORG pays this worker — internal costing, feeds the
+  // monthly cost view + the future invoice system). Fully per-worker:
+  //   costType "HOURLY" → costRateCents = € per hour  (× hours worked that month)
+  //   costType "FIXED"  → costRateCents = € per month (flat while active)
+  //   null              → not costed (ignored in totals)
+  // Money stored as integer EUR cents to avoid float rounding.
+  costType          String? // "HOURLY" | "FIXED" | null
+  costRateCents     Int? // €/hour or €/month (per costType), in cents
 
   // Employee fields
   specialty    String? // e.g., "Electrical", "Plumbing", "Mechanical", "General"

@@ -820,7 +820,8 @@
     "myTasks": "Le mie attività",
     "tokenTest": "Test token",
     "help": "Aiuto",
-    "customerPortal": "Portali clienti"
+    "customerPortal": "Portali clienti",
+    "costs": "Costi"
   },
   "dashboard": {
     "admin": {
@@ -1701,6 +1702,14 @@
           "external": "Esterno / freelance",
           "inHouse": "Interno (dipendente)",
           "hint": "I tecnici sul campo interni sono fatturati con la postazione scontata da 9 €; quelli esterni a 15 €."
+        },
+        "cost": {
+          "label": "Costo del lavoro",
+          "none": "Nessun costo",
+          "hourly": "Orario (€/ora)",
+          "fixed": "Fisso (€/mese)",
+          "perHour": "/ ora",
+          "perMonth": "/ mese"
         }
       },
       "profileBadges": "Distintivi del profilo",
@@ -5580,5 +5589,18 @@
       "memberContact": "{{name}} può contattare",
       "noPeople": "Nessun altro membro con un ruolo in questo spazio."
     }
+  },
+  "costs": {
+    "title": "Costi del personale",
+    "subtitle": "Quanto ti costa ogni lavoratore questo mese — orario (ore × tariffa) o fisso mensile.",
+    "monthTotal": "Totale del mese",
+    "workerCount": "{{count}} con costo",
+    "worker": "Lavoratore",
+    "rate": "Tariffa",
+    "hours": "Ore",
+    "cost": "Costo",
+    "perHour": "/ ora",
+    "perMonth": "/ mese",
+    "empty": "Nessun lavoratore ha un costo impostato. Aggiungi un costo orario o fisso mensile dalla finestra Modifica di un membro."
   }
 }
