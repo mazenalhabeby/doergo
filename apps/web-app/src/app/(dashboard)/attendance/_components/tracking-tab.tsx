@@ -522,13 +522,7 @@ export function TrackingTab({
                           </span>
                         </TableCell>
                         <TableCell>
-                          {off.reason ? (
-                            <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={off.reason}>
-                              {off.reason}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                          <NoteCell note={off.reason} />
                         </TableCell>
                         {isAdmin && (
                           <TableCell className="text-right">

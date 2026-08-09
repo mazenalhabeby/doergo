@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { toDate, StatusBadge, WorkerCell, ClockCell, ApprovalCell } from "./attendance-helpers"
+import { toDate, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { useTimeFormat } from "@/hooks"
 
 interface ApprovalsTabProps {
@@ -106,13 +106,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                   <ApprovalCell entry={entry} />
                 </TableCell>
                 <TableCell>
-                  {entry.notes ? (
-                    <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={entry.notes}>
-                      {entry.notes}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  <NoteCell note={entry.notes} />
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">

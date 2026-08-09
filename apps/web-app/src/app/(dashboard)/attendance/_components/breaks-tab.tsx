@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause, RefreshCw, CheckCircle2, Calendar } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { StatCard, formatTime } from "./attendance-helpers"
+import { StatCard, formatTime, NoteCell } from "./attendance-helpers"
 import { countryFromTz } from "@hbcfield/shared/client"
 import { useTimeFormat } from "@/hooks"
 
@@ -377,13 +377,7 @@ export function BreaksTab({
                           {formatDurationMinutes(breakItem.durationMinutes)}
                         </TableCell>
                         <TableCell>
-                          {breakItem.notes ? (
-                            <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={breakItem.notes}>
-                              {breakItem.notes}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          <NoteCell note={breakItem.notes} />
                         </TableCell>
                       </TableRow>
                     ))}
