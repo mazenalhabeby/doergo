@@ -22,6 +22,7 @@ import {
   haversineDistance,
   ATTENDANCE_CONSTANTS,
   SHIFT_REMINDER_DEFAULTS,
+  UNSCHEDULED_SESSION_DEFAULTS,
   SERVICE_NAMES,
   QUEUE_NAMES,
   buildSingleDayFilter,
@@ -74,7 +75,7 @@ export class AttendanceService {
   ): Promise<{ shiftId?: string; expectedClockOutAt?: Date; nextRemindAt?: Date }> {
     try {
       const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt });
-      if (!resolved) return {};
+      if (!resolved) return this.unscheduledStamp(clockInAt);
       return {
         ...(resolved.shiftId ? { shiftId: resolved.shiftId } : {}),
         expectedClockOutAt: resolved.expectedClockOutAt,
@@ -82,8 +83,20 @@ export class AttendanceService {
       };
     } catch (err) {
       this.logger.error(`Shift resolution failed for user=${userId} space=${space.id}: ${err}`);
-      return {};
+      // Even on resolver failure, arm the safety-net so the session can't run silently forever.
+      return this.unscheduledStamp(clockInAt);
     }
+  }
+
+  /**
+   * Safety-net stamp for a clock-in with NO resolved shift: leave shiftId /
+   * expectedClockOutAt null (marks it "unscheduled") but arm nextRemindAt at
+   * SOFT_HOURS so the reminder sweep picks it up and can't let it run to 71h.
+   */
+  private unscheduledStamp(clockInAt: Date): { nextRemindAt: Date } {
+    return {
+      nextRemindAt: new Date(clockInAt.getTime() + UNSCHEDULED_SESSION_DEFAULTS.SOFT_HOURS * 3_600_000),
+    };
   }
 
   /**
@@ -1155,8 +1168,15 @@ export class AttendanceService {
     const toRemind: { entry: Due; nextCount: number; intervalMin: number; maxReminders: number }[] = [];
     const toEscalate: Due[] = [];
     for (const entry of dueEntries) {
-      const intervalMin = entry.shift?.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES;
-      const maxReminders = entry.shift?.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS;
+      // No expected end → this was an unscheduled clock-in armed by the safety net;
+      // use the slower unscheduled cadence, not the tight shift cadence.
+      const isUnscheduled = !entry.expectedClockOutAt;
+      const intervalMin = isUnscheduled
+        ? UNSCHEDULED_SESSION_DEFAULTS.REMINDER_INTERVAL_MINUTES
+        : (entry.shift?.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES);
+      const maxReminders = isUnscheduled
+        ? UNSCHEDULED_SESSION_DEFAULTS.MAX_REMINDERS
+        : (entry.shift?.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS);
       const nextCount = entry.reminderCount + 1;
       if (nextCount <= maxReminders) toRemind.push({ entry, nextCount, intervalMin, maxReminders });
       else toEscalate.push(entry);
@@ -1191,6 +1211,8 @@ export class AttendanceService {
           locationName: entry.location?.name || 'your shift',
           expectedClockOutAt: entry.expectedClockOutAt?.toISOString() ?? null,
           reminderCount: nextCount,
+          unscheduled: !entry.expectedClockOutAt,
+          hoursOpen: Math.round((now.getTime() - entry.clockInAt.getTime()) / 3_600_000),
           organizationId: entry.organizationId,
         });
         this.logger.log(`Shift reminder ${nextCount}/${maxReminders}: entry=${entry.id}, user=${userName}`);
@@ -1212,6 +1234,8 @@ export class AttendanceService {
           locationId: entry.locationId,
           locationName: entry.location?.name || 'a shift',
           expectedClockOutAt: entry.expectedClockOutAt?.toISOString() ?? null,
+          unscheduled: !entry.expectedClockOutAt,
+          hoursOpen: Math.round((now.getTime() - entry.clockInAt.getTime()) / 3_600_000),
           leaderIds,
           organizationId: entry.organizationId,
         });

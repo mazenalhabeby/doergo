@@ -221,8 +221,12 @@ export class PushService {
     entryId: string;
     locationName: string;
     reminderCount: number;
+    unscheduled?: boolean;
+    hoursOpen?: number;
   }) {
-    const body = `Your shift at ${data.locationName} has ended — did you forget to clock out, or are you working extra time?`;
+    const body = data.unscheduled
+      ? `You've been clocked in at ${data.locationName} for ~${data.hoursOpen ?? '?'}h — did you forget to clock out?`
+      : `Your shift at ${data.locationName} has ended — did you forget to clock out, or are you working extra time?`;
     return this.sendToUser(data.userId, 'Still clocked in?', body, {
       type: 'shift_reminder',
       entryId: data.entryId,
@@ -237,8 +241,12 @@ export class PushService {
     userName: string;
     locationName: string;
     entryId: string;
+    unscheduled?: boolean;
+    hoursOpen?: number;
   }) {
-    const body = `${data.userName} is still clocked in at ${data.locationName} after their shift ended and hasn't responded. Please review.`;
+    const body = data.unscheduled
+      ? `${data.userName} has been clocked in at ${data.locationName} for ~${data.hoursOpen ?? '?'}h with no scheduled shift. Review and approve/adjust their hours.`
+      : `${data.userName} is still clocked in at ${data.locationName} after their shift ended and hasn't responded. Please review.`;
 
     const allTokens: string[] = [];
     for (const leaderId of data.leaderIds) {
@@ -246,7 +254,7 @@ export class PushService {
       allTokens.push(...tokens);
     }
 
-    return this.sendPushNotification(allTokens, 'Open shift needs review', body, {
+    return this.sendPushNotification(allTokens, data.unscheduled ? 'Long open session' : 'Open shift needs review', body, {
       type: 'shift_escalation',
       userName: data.userName,
       entryId: data.entryId,

@@ -59,6 +59,18 @@ export const SHIFT_REMINDER_DEFAULTS = {
   MAX_REMINDERS: 3,          // Reminders before escalating to a space leader
 } as const;
 
+// Safety net for UNSCHEDULED open sessions (a clock-in with no resolved shift →
+// no expected end). Without this, such a session runs forever with no reminder
+// (the "71h" bug). We arm a synthetic reminder at SOFT_HOURS so it flows through
+// the SAME indexed reminder sweep: nudge the worker every REMINDER_INTERVAL, then
+// after MAX_REMINDERS escalate to the responsible space leader to review/approve.
+// It NEVER force-closes — same philosophy as the shift engine.
+export const UNSCHEDULED_SESSION_DEFAULTS = {
+  SOFT_HOURS: 8,               // Hours open (no shift) before the first nudge
+  REMINDER_INTERVAL_MINUTES: 60, // Then remind hourly (not the 5-min shift cadence)
+  MAX_REMINDERS: 3,            // Nudges before escalating to the responsible leader (~11h)
+} as const;
+
 // Flag reasons for smart auto-approval
 export const ATTENDANCE_FLAG_REASONS = {
   OVERTIME: 'OVERTIME',

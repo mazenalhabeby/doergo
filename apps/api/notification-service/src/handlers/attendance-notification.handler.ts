@@ -95,6 +95,8 @@ export class AttendanceNotificationHandler {
     locationName: string;
     expectedClockOutAt: string | null;
     reminderCount: number;
+    unscheduled?: boolean;
+    hoursOpen?: number;
     organizationId: string;
   }) {
     this.logger.log(`Shift reminder: user=${data.userName}, entry=${data.entryId}, count=${data.reminderCount}`);
@@ -105,6 +107,8 @@ export class AttendanceNotificationHandler {
         entryId: data.entryId,
         locationName: data.locationName,
         reminderCount: data.reminderCount,
+        unscheduled: data.unscheduled,
+        hoursOpen: data.hoursOpen,
       });
     } catch (error) {
       this.logger.error(`Failed to send shift-reminder push: ${error}`);
@@ -129,6 +133,8 @@ export class AttendanceNotificationHandler {
     locationId: string;
     locationName: string;
     expectedClockOutAt: string | null;
+    unscheduled?: boolean;
+    hoursOpen?: number;
     leaderIds: string[];
     organizationId: string;
   }) {
@@ -141,6 +147,8 @@ export class AttendanceNotificationHandler {
         userName: data.userName,
         locationName: data.locationName,
         entryId: data.entryId,
+        unscheduled: data.unscheduled,
+        hoursOpen: data.hoursOpen,
       });
     } catch (error) {
       this.logger.error(`Failed to send shift-escalation push: ${error}`);
@@ -166,8 +174,10 @@ export class AttendanceNotificationHandler {
       recipientIds: leaderIds,
       organizationId: data.organizationId,
       eventType: 'attendance_shift_escalation',
-      title: 'Open shift needs review',
-      body: `${data.userName} is still clocked in at ${data.locationName} after their shift and hasn't responded`,
+      title: data.unscheduled ? 'Long open session needs review' : 'Open shift needs review',
+      body: data.unscheduled
+        ? `${data.userName} has been clocked in at ${data.locationName} for ~${data.hoursOpen ?? "?"}h with no scheduled shift and hasn't responded — review and approve/adjust their hours`
+        : `${data.userName} is still clocked in at ${data.locationName} after their shift and hasn't responded`,
       link: '/attendance',
     });
   }
