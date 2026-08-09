@@ -295,7 +295,7 @@ export default function MemberProfilePage({
           className="-ml-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-1.5" />
-          Back to Team
+          {t("members.detail.backToTeam")}
         </Button>
 
         {/* ── Header Card ──────────────────────────────────────────────── */}

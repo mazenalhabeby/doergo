@@ -1,10 +1,10 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { format } from "date-fns"
 import { ClipboardList } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
+import { useTimeFormat } from "@/hooks"
 import { type Task } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -31,6 +31,7 @@ interface TasksTabProps {
 export function TasksTab({ tasks }: TasksTabProps) {
   const router = useRouter()
   const { t } = useTranslation()
+  const { formatDate } = useTimeFormat()
 
   return (
     <Card>
@@ -69,12 +70,10 @@ export function TasksTab({ tasks }: TasksTabProps) {
                     </TableCell>
                     <TableCell className="capitalize">{task.priority?.toLowerCase()}</TableCell>
                     <TableCell>
-                      {task.dueDate
-                        ? format(new Date(task.dueDate), "MMM d, yyyy")
-                        : "—"}
+                      {task.dueDate ? formatDate(task.dueDate) : "—"}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(task.createdAt), "MMM d, yyyy")}
+                      {formatDate(task.createdAt)}
                     </TableCell>
                   </TableRow>
                 )

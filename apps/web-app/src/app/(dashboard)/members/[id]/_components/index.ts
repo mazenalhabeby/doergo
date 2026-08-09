@@ -1,4 +1,3 @@
-export { OverviewTab } from "./overview-tab"
 export { TasksTab } from "./tasks-tab"
 export { AttendanceTab } from "./attendance-tab"
 export { LocationsTab } from "./locations-tab"

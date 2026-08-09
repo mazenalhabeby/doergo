@@ -15,6 +15,8 @@ import {
 import { notify } from "@/lib/toast"
 import { useTranslation } from "react-i18next"
 
+import { useTimeFormat } from "@/hooks"
+
 import {
   employeesApi,
   type TimeOffRequest,
@@ -101,6 +103,7 @@ interface TimeOffTabProps {
 
 export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
   const { t } = useTranslation()
+  const { formatDate } = useTimeFormat()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -363,8 +366,8 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
                   return (
                     <TableRow key={request.id}>
                       <TableCell>
-                        {format(new Date(request.startDate), "MMM d, yyyy")} -{" "}
-                        {format(new Date(request.endDate), "MMM d, yyyy")}
+                        {formatDate(request.startDate)} -{" "}
+                        {formatDate(request.endDate)}
                       </TableCell>
                       <TableCell>
                         {getDurationDays(request.startDate, request.endDate)}{" "}

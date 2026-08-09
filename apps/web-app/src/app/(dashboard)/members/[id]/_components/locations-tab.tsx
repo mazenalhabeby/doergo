@@ -1,9 +1,9 @@
 "use client"
 
-import { format } from "date-fns"
 import { MapPin } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
+import { useTimeFormat } from "@/hooks"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -34,6 +34,7 @@ interface LocationsTabProps {
 
 export function LocationsTab({ assignments }: LocationsTabProps) {
   const { t } = useTranslation()
+  const { formatDate } = useTimeFormat()
 
   return (
     <Card>
@@ -70,7 +71,7 @@ export function LocationsTab({ assignments }: LocationsTabProps) {
                     {t('technicians.locationsTab.schedule', { days: assignment.schedule?.join(", ") || t('technicians.locationsTab.allDays') })}
                   </p>
                   <p>
-                    {t('technicians.locationsTab.effectiveFrom', { date: format(new Date(assignment.effectiveFrom), "MMM d, yyyy") })}
+                    {t('technicians.locationsTab.effectiveFrom', { date: formatDate(assignment.effectiveFrom) })}
                   </p>
                 </div>
               </div>
