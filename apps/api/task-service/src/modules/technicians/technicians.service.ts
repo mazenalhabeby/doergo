@@ -104,10 +104,12 @@ export class TechniciansService {
       },
     });
 
-    // Get time entries in date range
+    // Get time entries in date range — org-scoped so a foreign userId can't leak
+    // another tenant's worked hours (S2). TimeEntry carries organizationId.
     const timeEntries = await this.prisma.timeEntry.findMany({
       where: {
         userId: id,
+        organizationId,
         clockInAt: {
           gte: start,
           lte: end,

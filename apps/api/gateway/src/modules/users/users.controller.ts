@@ -324,15 +324,17 @@ export class UsersController {
     }
 
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'find_user' }, { id }),
+      this.authClient.send({ cmd: 'find_user' }, { id, organizationId: user.organizationId }),
     );
 
     if (!result?.data) {
       throw new NotFoundException('User not found');
     }
 
-    // Non-admin privileged accessors are limited to their own organization.
-    if (user.role !== Role.ADMIN && result.data.organizationId !== user.organizationId) {
+    // Tenant isolation (S1): EVERY accessor — including an org ADMIN — is limited
+    // to their own organization. An org owner is not a platform superadmin, so
+    // there is no legitimate cross-tenant read. (find_user is also org-scoped now.)
+    if (result.data.organizationId !== user.organizationId) {
       throw new ForbiddenException('You can only access users in your organization');
     }
 
@@ -355,7 +357,7 @@ export class UsersController {
 
     if (privileged && user.id !== id) {
       const workerResult = await firstValueFrom(
-        this.authClient.send({ cmd: 'find_user' }, { id }),
+        this.authClient.send({ cmd: 'find_user' }, { id, organizationId: user.organizationId }),
       );
 
       if (!workerResult?.data) {
@@ -368,7 +370,7 @@ export class UsersController {
     }
 
     return firstValueFrom(
-      this.authClient.send({ cmd: 'get_worker_tasks' }, { workerId: id }),
+      this.authClient.send({ cmd: 'get_worker_tasks' }, { workerId: id, organizationId: user.organizationId }),
     );
   }
 
@@ -381,7 +383,7 @@ export class UsersController {
   ) {
     // Verify user is in the same organization
     const targetUser = await firstValueFrom(
-      this.authClient.send({ cmd: 'find_user' }, { id }),
+      this.authClient.send({ cmd: 'find_user' }, { id, organizationId: user.organizationId }),
     );
 
     if (!targetUser?.data) {

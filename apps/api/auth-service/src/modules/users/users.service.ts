@@ -15,7 +15,6 @@ import {
   GetEmployeeDetailDto,
   GetEmployeePerformanceDto,
   ListOrgMembersDto,
-  UpdateMemberRoleDto,
   UpdateMemberProfileDto,
   RemoveMemberDto,
 } from './dto';
@@ -26,9 +25,12 @@ const BCRYPT_COST_FACTOR = 12;
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+  async findOne(id: string, organizationId?: string) {
+    // Tenant isolation (S1): when the caller's org is supplied, scope the lookup
+    // to it so a user in another org can never be read by id — defense-in-depth
+    // behind the gateway's own org check.
+    const user = await this.prisma.user.findFirst({
+      where: { id, ...(organizationId ? { organizationId } : {}) },
       select: {
         id: true,
         email: true,
@@ -63,11 +65,12 @@ export class UsersService {
   }
 
   async getWorkers(organizationId?: string) {
-    const where: any = { isActive: true };
-
-    if (organizationId) {
-      where.organizationId = organizationId;
+    // Tenant floor (S3): never list users without an org scope. A missing org id
+    // must fail closed, not fall through to every active user in every tenant.
+    if (!organizationId) {
+      throw new BadRequestException('organizationId is required');
     }
+    const where: any = { isActive: true, organizationId };
 
     const workers = await this.prisma.user.findMany({
       where,
@@ -87,9 +90,11 @@ export class UsersService {
     return { success: true, data: workers };
   }
 
-  async getWorkerTasks(workerId: string) {
+  async getWorkerTasks(workerId: string, organizationId?: string) {
     const tasks = await this.prisma.task.findMany({
-      where: { assignedToId: workerId },
+      // Org-scoped when the caller's org is supplied (defense-in-depth): a foreign
+      // workerId can't surface another tenant's tasks.
+      where: { assignedToId: workerId, ...(organizationId ? { organizationId } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 100, // Limit to prevent unbounded queries
       select: {
@@ -898,91 +903,9 @@ export class UsersService {
     }
   }
 
-  async updateMemberRole(
-    memberId: string,
-    organizationId: string,
-    requesterId: string,
-    dto: UpdateMemberRoleDto,
-  ) {
-    // Can't change own role
-    if (memberId === requesterId) {
-      throw new BadRequestException('You cannot change your own role');
-    }
-
-    // Verify member exists and belongs to the organization
-    const member = await this.prisma.user.findFirst({
-      where: { id: memberId, organizationId },
-    });
-
-    if (!member) {
-      throw new NotFoundException('Member not found');
-    }
-
-    // Portal customers are managed in Clients Portals, never as staff members.
-    // Re-roling one (e.g. → ADMIN) strands their portal login (customerId set but
-    // role no longer CUSTOMER), so block it from both directions.
-    if (member.customerId || member.role === Role.CUSTOMER) {
-      throw new BadRequestException(
-        'This is a portal customer account — manage it in Clients Portals, not Members.',
-      );
-    }
-    if ((dto.role as any) === Role.CUSTOMER) {
-      throw new BadRequestException(
-        'Customers are added through a portal invite, not by changing a member’s role.',
-      );
-    }
-
-    await this.assertCanGrantRoleAndPerms(requesterId, organizationId, member, dto);
-
-    // If demoting from ADMIN, check there's at least one other active ADMIN
-    if (member.role === Role.ADMIN && dto.role !== Role.ADMIN) {
-      const adminCount = await this.prisma.user.count({
-        where: {
-          organizationId,
-          role: Role.ADMIN,
-          isActive: true,
-          id: { not: memberId },
-        },
-      });
-
-      if (adminCount === 0) {
-        throw new BadRequestException(
-          'Cannot demote the last admin. Promote another member to admin first.',
-        );
-      }
-    }
-
-    const updated = await this.prisma.user.update({
-      where: { id: memberId },
-      data: {
-        role: dto.role as any,
-
-        canCreateTasks: dto.canCreateTasks ?? (dto.role === Role.ADMIN),
-        canViewAllTasks:
-          dto.canViewAllTasks ??
-          dto.role === Role.ADMIN,
-        canAssignTasks:
-          dto.canAssignTasks ??
-          dto.role === Role.ADMIN,
-        canManageUsers: dto.canManageUsers ?? (dto.role === Role.ADMIN),
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatarUrl: true,
-        role: true,
-        isActive: true,
-        canCreateTasks: true,
-        canViewAllTasks: true,
-        canAssignTasks: true,
-        canManageUsers: true,
-      },
-    });
-
-    return { success: true, data: updated };
-  }
+  // updateMemberRole removed (dead code): it was never wired to a gateway route
+  // and skipped the memberRoleId ceiling guard. All member role/permission changes
+  // go through updateMemberProfile, which carries the full guard stack.
 
   /**
    * Remove a member from the organization
@@ -1350,12 +1273,20 @@ export class UsersService {
   }
 
   /** Delete a custom role. System roles are protected; in-use roles are blocked. */
-  async deleteAccessRole(data: { organizationId: string; roleId: string }) {
+  async deleteAccessRole(data: { organizationId: string; requesterId?: string; roleId: string }) {
     const role = await this.prisma.accessRole.findFirst({
       where: { id: data.roleId, organizationId: data.organizationId },
     });
     if (!role) throw new NotFoundException('Role not found');
     if (role.isSystem) throw new BadRequestException('Built-in roles cannot be deleted');
+    // Ceiling guard (S4): a non-admin may only delete a role whose permissions are
+    // within their own — consistent with create/update authoring.
+    if (data.requesterId) {
+      const { isAdmin, perms } = await this.resolveRequesterOrgPerms(data.requesterId, data.organizationId);
+      if (!isAdmin && permissionsExceed(perms, permissionsFromOrgRole(role.permissions))) {
+        throw new ForbiddenException('You cannot delete a role with permissions beyond your own');
+      }
+    }
     const inUse = await this.prisma.user.count({ where: { memberRoleId: role.id } });
     if (inUse > 0) {
       throw new BadRequestException(`This role is assigned to ${inUse} member(s). Reassign them first.`);

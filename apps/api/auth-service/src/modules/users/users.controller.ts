@@ -8,7 +8,6 @@ import {
   GetEmployeeDetailDto,
   GetEmployeePerformanceDto,
   ListOrgMembersDto,
-  UpdateMemberRoleDto,
   UpdateMemberProfileDto,
 } from './dto';
 
@@ -21,8 +20,8 @@ export class UsersController {
   // ============================================================================
 
   @MessagePattern({ cmd: 'find_user' })
-  async findOne(@Payload() data: { id: string }) {
-    return this.usersService.findOne(data.id);
+  async findOne(@Payload() data: { id: string; organizationId?: string }) {
+    return this.usersService.findOne(data.id, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_profile' })
@@ -36,8 +35,8 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: 'get_worker_tasks' })
-  async getWorkerTasks(@Payload() data: { workerId: string }) {
-    return this.usersService.getWorkerTasks(data.workerId);
+  async getWorkerTasks(@Payload() data: { workerId: string; organizationId?: string }) {
+    return this.usersService.getWorkerTasks(data.workerId, data.organizationId);
   }
 
   // ============================================================================
@@ -92,23 +91,9 @@ export class UsersController {
     return this.usersService.listOrgContacts(data.organizationId, data.userId);
   }
 
-  @MessagePattern({ cmd: 'update_member_role' })
-  async updateMemberRole(
-    @Payload()
-    data: {
-      memberId: string;
-      organizationId: string;
-      requesterId: string;
-      dto: UpdateMemberRoleDto;
-    },
-  ) {
-    return this.usersService.updateMemberRole(
-      data.memberId,
-      data.organizationId,
-      data.requesterId,
-      data.dto,
-    );
-  }
+  // update_member_role removed — it was never wired to a gateway route and lacked
+  // the memberRoleId ceiling guard that update_member_profile has. Member role
+  // changes go through update_member_profile (the single guarded path).
 
   @MessagePattern({ cmd: 'get_member_watchers' })
   async getMemberWatchers(@Payload() data: { memberId: string; organizationId: string }) {
@@ -182,7 +167,7 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: 'delete_access_role' })
-  async deleteAccessRole(@Payload() data: { organizationId: string; roleId: string }) {
+  async deleteAccessRole(@Payload() data: { organizationId: string; requesterId?: string; roleId: string }) {
     return this.usersService.deleteAccessRole(data);
   }
 

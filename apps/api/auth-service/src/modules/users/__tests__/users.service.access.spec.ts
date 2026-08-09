@@ -13,8 +13,8 @@ describe('UsersService access ceiling (C1)', () => {
   let service: UsersService;
 
   const prisma: Record<string, any> = {
-    user: { findFirst: jest.fn(), update: jest.fn(), count: jest.fn() },
-    accessRole: { findFirst: jest.fn(), aggregate: jest.fn(), create: jest.fn() },
+    user: { findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn(), count: jest.fn() },
+    accessRole: { findFirst: jest.fn(), aggregate: jest.fn(), create: jest.fn(), delete: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -137,6 +137,37 @@ describe('UsersService access ceiling (C1)', () => {
       });
       const created = prisma.accessRole.create.mock.calls[0][0].data.permissions;
       expect(created).toEqual({ canManageUsers: true, canAssignTasks: true });
+    });
+  });
+
+  describe('tenant isolation (S1/S3)', () => {
+    it('findOne scopes to the org when organizationId is supplied', async () => {
+      prisma.user.findFirst.mockResolvedValueOnce({ id: 'u1', organizationId: 'org-1' });
+      await service.findOne('u1', 'org-1');
+      const where = prisma.user.findFirst.mock.calls[0][0].where;
+      expect(where).toEqual({ id: 'u1', organizationId: 'org-1' });
+    });
+
+    it('getWorkers fails closed without an organizationId', async () => {
+      await expect(service.getWorkers(undefined)).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.user.findMany).not.toHaveBeenCalled();
+    });
+
+    it('getWorkers scopes to the org when supplied', async () => {
+      prisma.user.findMany.mockResolvedValueOnce([]);
+      await service.getWorkers('org-1');
+      expect(prisma.user.findMany.mock.calls[0][0].where).toMatchObject({ organizationId: 'org-1', isActive: true });
+    });
+  });
+
+  describe('deleteAccessRole ceiling (S4)', () => {
+    it('blocks a non-admin from deleting a role beyond their ceiling', async () => {
+      prisma.accessRole.findFirst.mockResolvedValueOnce({ id: 'r1', isSystem: false, permissions: { canManageUsers: true } });
+      prisma.user.findFirst.mockResolvedValueOnce({ role: Role.EMPLOYEE, canViewAllTasks: true, memberRole: null });
+      await expect(
+        service.deleteAccessRole({ organizationId: 'org-1', requesterId: 'req-1', roleId: 'r1' }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.accessRole.delete).not.toHaveBeenCalled();
     });
   });
 });

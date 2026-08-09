@@ -191,7 +191,7 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Delete a custom role' })
   async deleteRole(@Param('id') roleId: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'delete_access_role' }, { roleId, organizationId: user.organizationId }),
+      this.authClient.send({ cmd: 'delete_access_role' }, { roleId, organizationId: user.organizationId, requesterId: user.id }),
     );
     if (result && result.success === false) {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
