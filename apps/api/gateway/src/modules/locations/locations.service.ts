@@ -18,6 +18,7 @@ export class LocationsService extends BaseGatewayService {
     page?: number;
     limit?: number;
     includeInactive?: boolean;
+    kind?: string;
   }) {
     return this.send({ cmd: 'find_all_locations' }, data);
   }

@@ -1388,7 +1388,7 @@ model CompanyLocation {
 
   @@index([organizationId])
   @@index([isActive])
-  @@index([organizationId, kind]) // filter/group spaces by ownership kind
+  @@index([organizationId, kind, name]) // filter by kind + name-sorted lists (pickers, customer directory)
   @@map("company_locations")
 }
 

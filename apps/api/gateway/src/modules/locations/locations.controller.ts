@@ -56,10 +56,12 @@ export class LocationsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'includeInactive', required: false, type: Boolean })
+  @ApiQuery({ name: 'kind', required: false, description: "PROJECT | COMPANY | CUSTOMER | 'all'. Default hides CUSTOMER spaces from work pickers." })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('includeInactive') includeInactive?: boolean,
+    @Query('kind') kind?: string,
     @Request() req?: any,
   ) {
     const result: any = await this.locationsService.findAll({
@@ -67,6 +69,8 @@ export class LocationsController {
       page: page ? Math.max(1, Number(page) || 1) : 1,
       limit: Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500),
       includeInactive: includeInactive === true || includeInactive === 'true' as any,
+      // Default (undefined) excludes CUSTOMER; the Spaces directory passes 'all'.
+      kind: kind || undefined,
     });
     // Scope by the employee's Access Profile (admins/managers keep full view):
     //   'all'   → every space   ·   'own' → only their assigned spaces

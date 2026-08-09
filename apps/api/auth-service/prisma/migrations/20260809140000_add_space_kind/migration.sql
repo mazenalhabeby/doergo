@@ -11,4 +11,5 @@ ALTER TABLE "company_locations" ADD COLUMN IF NOT EXISTS "contactName" TEXT;
 ALTER TABLE "company_locations" ADD COLUMN IF NOT EXISTS "contactEmail" TEXT;
 ALTER TABLE "company_locations" ADD COLUMN IF NOT EXISTS "contactPhone" TEXT;
 
-CREATE INDEX IF NOT EXISTS "company_locations_organizationId_kind_idx" ON "company_locations" ("organizationId", "kind");
+-- Serves kind filtering AND name-sorted space lists (pickers + customer directory).
+CREATE INDEX IF NOT EXISTS "company_locations_organizationId_kind_name_idx" ON "company_locations" ("organizationId", "kind", "name");

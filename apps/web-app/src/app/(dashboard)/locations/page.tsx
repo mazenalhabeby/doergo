@@ -86,8 +86,10 @@ export default function SpacesPage() {
   const [resyncAllOpen, setResyncAllOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
+    // The Spaces directory shows EVERY kind (incl. customer companies); work
+    // pickers elsewhere default to hiding CUSTOMER.
     queryKey: ["locations", "all"],
-    queryFn: () => locationsApi.list({ limit: 100, includeInactive: true }),
+    queryFn: () => locationsApi.list({ limit: 100, includeInactive: true, kind: "all" }),
   })
 
   const { data: workflows } = useQuery({

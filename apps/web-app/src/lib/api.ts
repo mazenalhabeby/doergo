@@ -3402,11 +3402,13 @@ export interface UpdateAssignmentInput {
 }
 
 export const locationsApi = {
-  list: async (params?: { page?: number; limit?: number; includeInactive?: boolean; search?: string }) => {
+  list: async (params?: { page?: number; limit?: number; includeInactive?: boolean; search?: string; kind?: string }) => {
     const endpoint = buildUrlWithQuery('/locations', {
       page: params?.page,
       limit: params?.limit,
       includeInactive: params?.includeInactive,
+      // Default (omitted) hides CUSTOMER spaces from work pickers; pass 'all' for the directory.
+      kind: params?.kind,
     });
 
     const response = await api.get<{

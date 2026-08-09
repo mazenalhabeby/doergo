@@ -92,6 +92,7 @@ export class LocationsService {
     limit?: number;
     includeInactive?: boolean;
     search?: string;
+    kind?: string;
   }) {
     const page = data.page ?? 1;
     const limit = data.limit ?? 20;
@@ -104,6 +105,17 @@ export class LocationsService {
       // real Space/work location — schema marks it "hidden from pickers".
       isRemote: false,
     };
+
+    // Ownership-kind scope. DEFAULT excludes CUSTOMER so customer-company spaces
+    // don't pollute the work pickers (task-assign / attendance / member / schedule).
+    // `kind: 'all'` includes everything (the Spaces directory); a specific kind
+    // narrows to it (e.g. a future customer directory). Served by
+    // @@index([organizationId, kind, name]).
+    if (data.kind && data.kind !== 'all') {
+      where.kind = data.kind;
+    } else if (!data.kind) {
+      where.kind = { not: 'CUSTOMER' };
+    }
 
     // By default, only show active locations
     if (!data.includeInactive) {
@@ -143,10 +155,15 @@ export class LocationsService {
 
     // Keep the legacy `assignments` key on each location for client compat
     // (storage moved to the unified space_assignments table in Phase 5b).
-    const shaped = locations.map(({ spaceAssignments, ...l }) => ({
-      ...l,
-      assignments: spaceAssignments,
-    }));
+    // Strip customer contact PII from the LIST projection — it's least-privilege
+    // sensitive and the list never needs it (the config/detail view uses the
+    // canViewAllTasks-gated findOne, which keeps the contact fields) (M3).
+    const shaped = locations.map(
+      ({ spaceAssignments, contactName, contactEmail, contactPhone, ...l }) => ({
+        ...l,
+        assignments: spaceAssignments,
+      }),
+    );
 
     return paginated(shaped, { page, limit, total });
   }
