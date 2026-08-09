@@ -14,7 +14,6 @@ import {
   Building2,
   Shield,
   FileText,
-  History,
   CreditCard,
   MapPin,
   Calendar,
@@ -121,7 +120,7 @@ function usePrefetchRoutes() {
 // TopNavbar
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
-  const { user, logout, hasPlanFeature } = useAuth()
+  const { user, logout } = useAuth()
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
@@ -141,6 +140,10 @@ export function TopNavbar() {
   const showAttendance = user.canViewAllTasks
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
   const showCustomers = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher/manager
+  // Invoices: admins bill their customers. Shown for admins regardless of tier —
+  // the /invoices page enforces the Professional+ 'invoicing' capability (and
+  // shows an upgrade panel under-tier), so this stays discoverable.
+  const showInvoices = user.canManageUsers
 
   // Personal, module-driven items (Access Profile). These are ADDITIVE — a
   // member who ALSO manages people keeps their own Time Off / clock. Driven by
@@ -176,6 +179,7 @@ export function TopNavbar() {
         showSchedule={showSchedule}
         showAttendance={showAttendance}
         showReports={showReports}
+        showInvoices={showInvoices}
         showCustomers={showCustomers}
         showMyTimeOff={showMyTimeOff}
         showMyAttendance={showMyAttendance}
@@ -263,35 +267,11 @@ export function TopNavbar() {
           </Link>
         )}
 
-        {/* Reports */}
-        {showReports && (
-          <Link
-            href="/reports"
-            data-tour="nav-reports"
-            className={cn(
-              navItemBase,
-              isActive(pathname, "/reports")
-                ? cn(navItemActiveStyle, bottomIndicator)
-                : navItemInactive,
-            )}
-          >
-            {t("nav.reports", "Reports")}
-          </Link>
-        )}
-
-        {/* Worker costs — same manager+ gate as Reports (sensitive money data). */}
-        {showReports && (
-          <Link
-            href="/costs"
-            className={cn(
-              navItemBase,
-              isActive(pathname, "/costs")
-                ? cn(navItemActiveStyle, bottomIndicator)
-                : navItemInactive,
-            )}
-          >
-            {t("nav.costs", "Costs")}
-          </Link>
+        {/* Ledger — Reports + Invoices grouped. Reports = analytics/builder;
+            Invoices = customer billing (enforces Professional+ tier on its page).
+            Subscription / system billing stays in the avatar menu. */}
+        {(showReports || showInvoices) && (
+          <LedgerDropdown pathname={pathname} showReports={showReports} showInvoices={showInvoices} />
         )}
 
         {/* Employee module-driven items. Personal Time Off shows standalone only
@@ -331,7 +311,6 @@ export function TopNavbar() {
           fullName={fullName}
           avatarUrl={user.avatarUrl}
           canManageUsers={user.canManageUsers}
-          canInvoice={user.canManageUsers && hasPlanFeature('invoicing')}
           onLogout={logout}
         /></span>
       </div>
@@ -368,6 +347,52 @@ function CommandPaletteButton() {
 // ---------------------------------------------------------------------------
 // Team Dropdown
 // ---------------------------------------------------------------------------
+function LedgerDropdown({
+  pathname,
+  showReports,
+  showInvoices,
+}: {
+  pathname: string
+  showReports: boolean
+  showInvoices: boolean
+}) {
+  const { t } = useTranslation()
+  const items = ["/reports", "/invoices"]
+  const active = isDropdownActive(pathname, items)
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        data-tour="nav-reports"
+        className={cn(
+          navItemBase,
+          "cursor-pointer select-none outline-none",
+          active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
+        )}
+      >
+        {t("nav.ledger", "Ledger")}
+        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" sideOffset={10} className="min-w-[180px] rounded-lg p-1">
+        {showReports && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+            <Link href="/reports" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              {t("nav.reports", "Reports")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showInvoices && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+            <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              {t("nav.sidebar.invoices")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => void }) {
   const { t } = useTranslation()
   const items = ["/members", "/invitations", "/join-requests"]
@@ -485,6 +510,7 @@ function MobileMenu({
   showSchedule,
   showAttendance,
   showReports,
+  showInvoices,
   showCustomers,
   showMyTimeOff,
   showMyAttendance,
@@ -496,6 +522,7 @@ function MobileMenu({
   showSchedule: boolean
   showAttendance: boolean
   showReports: boolean
+  showInvoices: boolean
   showCustomers: boolean
   showMyTimeOff: boolean
   showMyAttendance: boolean
@@ -674,6 +701,15 @@ function MobileMenu({
             </Link>
           </DropdownMenuItem>
         )}
+        {showInvoices && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/invoices" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/invoices") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <FileText className="h-4 w-4" />
+              {t("nav.sidebar.invoices")}
+            </Link>
+          </DropdownMenuItem>
+        )}
         {showManage && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
             <Link href="/manage" onClick={() => setOpen(false)}
@@ -758,7 +794,6 @@ function UserDropdown({
   fullName,
   avatarUrl,
   canManageUsers,
-  canInvoice,
   onLogout,
 }: {
   user: { email: string; role: string; firstName?: string; lastName?: string }
@@ -766,7 +801,6 @@ function UserDropdown({
   fullName: string
   avatarUrl?: string | null
   canManageUsers: boolean
-  canInvoice: boolean
   onLogout: () => void
 }) {
   const { t } = useTranslation()
@@ -850,23 +884,9 @@ function UserDropdown({
             </DropdownMenuItem>
           )}
 
-          {/* Customer invoicing (bill your clients) — admins only, Professional+ */}
-          {canInvoice && (
-            <>
-              <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-                <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  {t("nav.sidebar.invoices")}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-                <Link href="/payments" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-                  <History className="h-4 w-4 text-muted-foreground" />
-                  {t("nav.sidebar.paymentHistory")}
-                </Link>
-              </DropdownMenuItem>
-            </>
-          )}
+          {/* Customer invoicing (Invoices + received payments) moved to the main
+              navbar Invoices dropdown; the avatar menu keeps subscription/system
+              billing above. */}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
 

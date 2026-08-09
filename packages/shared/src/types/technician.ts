@@ -31,10 +31,6 @@ export interface EmployeeProfile {
   enabledModules?: string[] | null;
   /** 'IN_HOUSE' (employed → €9 field seat) | 'EXTERNAL' (freelancer → €15). */
   employmentType?: string | null;
-  /** Labor cost model: 'HOURLY' | 'FIXED' | null. */
-  costType?: string | null;
-  /** €/hour (HOURLY) or €/month (FIXED), in cents. */
-  costRateCents?: number | null;
   rating: number;
   ratingCount: number;
   maxDailyJobs: number;
@@ -232,10 +228,6 @@ export interface UpdateEmployeeInput {
   specialty?: string;
   /** 'IN_HOUSE' (€9 field seat) | 'EXTERNAL' (€15). */
   employmentType?: string;
-  /** Labor cost model: 'HOURLY' | 'FIXED' | null (not costed). */
-  costType?: string | null;
-  /** €/hour (HOURLY) or €/month (FIXED), in cents. */
-  costRateCents?: number | null;
   maxDailyJobs?: number;
   isActive?: boolean;
   rating?: number;

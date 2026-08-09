@@ -822,8 +822,7 @@
     "myTasks": "Mes tâches",
     "tokenTest": "Test de jeton",
     "help": "Aide",
-    "customerPortal": "Portails clients",
-    "costs": "Coûts"
+    "customerPortal": "Portails clients"
   },
   "dashboard": {
     "admin": {
@@ -1704,14 +1703,6 @@
           "external": "Externe / indépendant",
           "inHouse": "Interne (salarié)",
           "hint": "Les techniciens de terrain internes sont facturés au tarif réduit de 9 € par siège ; les externes, 15 €."
-        },
-        "cost": {
-          "label": "Coût de main-d’œuvre",
-          "none": "Non chiffré",
-          "hourly": "Horaire (€/heure)",
-          "fixed": "Fixe (€/mois)",
-          "perHour": "/ heure",
-          "perMonth": "/ mois"
         }
       },
       "profileBadges": "Badges de profil",
@@ -2345,7 +2336,11 @@
       "externalWorkers": {
         "label": "Nous employons des techniciens de terrain externes / indépendants",
         "hint": "Activez pour marquer les techniciens de terrain comme internes ou externes. Les sièges terrain internes sont facturés au tarif réduit de 9 € ; les externes, 15 €. Laissez désactivé si tous vos techniciens sont identiques."
-      }
+      },
+      "vatId": "Numéro de TVA / UID",
+      "vatIdPlaceholder": "ex. ATU12345678",
+      "billableRate": "Taux facturable par défaut (par heure)",
+      "billableRatePlaceholder": "ex. 85"
     },
     "members": {
       "defaultPermissions": "Autorisations par défaut",
@@ -3213,7 +3208,10 @@
       "customerContact": "Contact client",
       "contactName": "Nom du contact",
       "contactEmail": "E-mail du contact",
-      "contactPhone": "Téléphone du contact"
+      "contactPhone": "Téléphone du contact",
+      "billableRate": "Taux facturable (par heure)",
+      "billableRatePlaceholder": "Utilise la valeur par défaut de l’organisation si vide",
+      "billableRateHint": "Calcule automatiquement les lignes de main-d’œuvre sur les factures de ce client. Laissez vide pour utiliser la valeur par défaut de l’organisation."
     },
     "toast": {
       "deactivated": "Espace désactivé",
@@ -3689,7 +3687,8 @@
       "amount": "Montant",
       "issueDate": "Date d'émission",
       "dueDate": "Date d'échéance",
-      "status": "Statut"
+      "status": "Statut",
+      "description": "Description"
     },
     "statuses": {
       "draft": "Brouillon",
@@ -3704,11 +3703,64 @@
     "actions": {
       "view": "Voir",
       "send": "Envoyer",
-      "markPaid": "Marquer comme payée"
+      "markPaid": "Marquer comme payée",
+      "print": "Imprimer",
+      "pdf": "PDF"
     },
     "toast": {
       "statusUpdated": "Statut de la facture mis à jour",
       "deleted": "Facture supprimée"
+    },
+    "outstanding": "En souffrance",
+    "notFound": "Facture introuvable",
+    "emptyForSpace": "Aucune facture pour {{name}} pour l’instant",
+    "emptyForSpaceHint": "Créez-en une ou intégrez le travail terminé dans un brouillon.",
+    "detail": {
+      "billTo": "Facturer à",
+      "noItems": "Aucune ligne"
+    },
+    "create": {
+      "title": "Nouvelle facture",
+      "forSpace": "Pour {{name}}",
+      "pullFromWork": "Intégrer depuis le travail",
+      "clientName": "Nom du client",
+      "clientEmail": "E-mail du client",
+      "clientAddress": "Adresse du client",
+      "issueDate": "Date d’émission",
+      "dueDate": "Date d’échéance",
+      "currency": "Devise",
+      "taxRate": "Taux de TVA (%)",
+      "qty": "Qté",
+      "unitPrice": "Prix unitaire",
+      "descriptionPlaceholder": "Description du travail ou de l’article",
+      "addLine": "Ajouter une ligne",
+      "subtotal": "Sous-total",
+      "discount": "Remise",
+      "tax": "Taxe",
+      "total": "Total",
+      "notes": "Notes",
+      "notesPlaceholder": "Conditions de paiement, numéro de commande, message de remerciement…",
+      "saveDraft": "Enregistrer le brouillon",
+      "created": "Facture créée",
+      "pulled": "{{count}} tâche(s) terminée(s) ajoutée(s)",
+      "nothingToPull": "Aucun travail terminé et non facturé à intégrer",
+      "rate": "Tarif (par heure)",
+      "ratePlaceholder": "p. ex. 85",
+      "hoursByWorker": "Heures par intervenant",
+      "totalHours": "{{hours}} h au total",
+      "noHours": "Aucune heure enregistrée pour le moment",
+      "billableWork": "Travail facturable",
+      "jobsSelected": "{{count}} sur {{total}} sélectionnés",
+      "noWork": "Aucun travail terminé et non facturé",
+      "noWorkHint": "Les travaux terminés pour ce client apparaissent ici pour la facturation.",
+      "unassignedWorker": "Non attribué",
+      "partsCount": "{{count}} pièce(s)",
+      "hideDetails": "Masquer les détails",
+      "showDetails": "Détails",
+      "parts": "Pièces",
+      "billParts": "Facturer les pièces",
+      "extraLines": "Lignes supplémentaires",
+      "noExtraLines": "Aucune ligne supplémentaire. Ajoutez ici des frais ponctuels."
     }
   },
   "overtime": {
@@ -5602,18 +5654,5 @@
       "memberContact": "{{name}} peut contacter",
       "noPeople": "Aucun autre membre avec un rôle dans cet espace."
     }
-  },
-  "costs": {
-    "title": "Coûts du personnel",
-    "subtitle": "Ce que chaque employé vous coûte ce mois-ci — horaire (heures × taux) ou forfait mensuel.",
-    "monthTotal": "Total du mois",
-    "workerCount": "{{count}} chiffrés",
-    "worker": "Employé",
-    "rate": "Taux",
-    "hours": "Heures",
-    "cost": "Coût",
-    "perHour": "/ heure",
-    "perMonth": "/ mois",
-    "empty": "Aucun employé n’a de coût défini. Ajoutez un coût horaire ou mensuel fixe depuis la fenêtre Modifier d’un membre."
   }
 }

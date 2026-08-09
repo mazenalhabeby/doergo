@@ -822,8 +822,7 @@
     "myTasks": "My Tasks",
     "tokenTest": "Token Test",
     "help": "Help",
-    "customerPortal": "Clients Portals",
-    "costs": "Costs"
+    "customerPortal": "Clients Portals"
   },
   "dashboard": {
     "admin": {
@@ -1704,14 +1703,6 @@
           "external": "External / freelancer",
           "inHouse": "In-house (employed)",
           "hint": "In-house field technicians are billed at the discounted €9 seat; external at €15."
-        },
-        "cost": {
-          "label": "Labor cost",
-          "none": "Not costed",
-          "hourly": "Hourly (€/hour)",
-          "fixed": "Fixed (€/month)",
-          "perHour": "/ hour",
-          "perMonth": "/ month"
         }
       },
       "profileBadges": "Profile Badges",
@@ -2345,7 +2336,11 @@
       "externalWorkers": {
         "label": "We use external / freelance field workers",
         "hint": "Turn on to mark field technicians as in-house or external. In-house field seats are billed at the discounted €9 rate; external at €15. Leave off if all your field techs are the same."
-      }
+      },
+      "vatId": "VAT / UID number",
+      "vatIdPlaceholder": "e.g. ATU12345678",
+      "billableRate": "Default billable rate (per hour)",
+      "billableRatePlaceholder": "e.g. 85"
     },
     "members": {
       "defaultPermissions": "Default Permissions",
@@ -3213,7 +3208,10 @@
       "customerContact": "Customer contact",
       "contactName": "Contact name",
       "contactEmail": "Contact email",
-      "contactPhone": "Contact phone"
+      "contactPhone": "Contact phone",
+      "billableRate": "Billable rate (per hour)",
+      "billableRatePlaceholder": "Uses org default if empty",
+      "billableRateHint": "Auto-prices labor lines on this customer's invoices. Leave empty to use the organization default."
     },
     "toast": {
       "deactivated": "Space deactivated",
@@ -3689,7 +3687,8 @@
       "amount": "Amount",
       "issueDate": "Issue Date",
       "dueDate": "Due Date",
-      "status": "Status"
+      "status": "Status",
+      "description": "Description"
     },
     "statuses": {
       "draft": "Draft",
@@ -3704,11 +3703,64 @@
     "actions": {
       "view": "View",
       "send": "Send",
-      "markPaid": "Mark Paid"
+      "markPaid": "Mark Paid",
+      "print": "Print",
+      "pdf": "PDF"
     },
     "toast": {
       "statusUpdated": "Invoice status updated",
       "deleted": "Invoice deleted"
+    },
+    "outstanding": "Outstanding",
+    "notFound": "Invoice not found",
+    "emptyForSpace": "No invoices for {{name}} yet",
+    "emptyForSpaceHint": "Create one, or pull completed work into a draft.",
+    "detail": {
+      "billTo": "Bill to",
+      "noItems": "No line items"
+    },
+    "create": {
+      "title": "New Invoice",
+      "forSpace": "For {{name}}",
+      "pullFromWork": "Pull from work",
+      "clientName": "Client name",
+      "clientEmail": "Client email",
+      "clientAddress": "Client address",
+      "issueDate": "Issue date",
+      "dueDate": "Due date",
+      "currency": "Currency",
+      "taxRate": "Tax rate (%)",
+      "qty": "Qty",
+      "unitPrice": "Unit price",
+      "descriptionPlaceholder": "Description of work or item",
+      "addLine": "Add line",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "tax": "Tax",
+      "total": "Total",
+      "notes": "Notes",
+      "notesPlaceholder": "Payment terms, PO number, thank-you note…",
+      "saveDraft": "Save draft",
+      "created": "Invoice created",
+      "pulled": "Added {{count}} completed job(s)",
+      "nothingToPull": "No completed, unbilled work to pull",
+      "rate": "Rate (per hour)",
+      "ratePlaceholder": "e.g. 85",
+      "hoursByWorker": "Hours by worker",
+      "totalHours": "{{hours}}h total",
+      "noHours": "No tracked hours yet",
+      "billableWork": "Billable work",
+      "jobsSelected": "{{count}} of {{total}} selected",
+      "noWork": "No completed, unbilled work",
+      "noWorkHint": "Completed jobs for this customer appear here to bill.",
+      "unassignedWorker": "Unassigned",
+      "partsCount": "{{count}} part(s)",
+      "hideDetails": "Hide details",
+      "showDetails": "Details",
+      "parts": "Parts",
+      "billParts": "Bill parts",
+      "extraLines": "Extra lines",
+      "noExtraLines": "No extra lines. Add ad-hoc charges here."
     }
   },
   "overtime": {
@@ -5602,18 +5654,5 @@
       "memberContact": "{{name}} can contact",
       "noPeople": "No other members with a role in this space."
     }
-  },
-  "costs": {
-    "title": "Worker costs",
-    "subtitle": "What each worker costs you this month — hourly (hours × rate) or fixed monthly.",
-    "monthTotal": "Total for the month",
-    "workerCount": "{{count}} costed",
-    "worker": "Worker",
-    "rate": "Rate",
-    "hours": "Hours",
-    "cost": "Cost",
-    "perHour": "/ hour",
-    "perMonth": "/ month",
-    "empty": "No worker has a cost set yet. Add an hourly or fixed monthly cost from a member’s Edit dialog."
   }
 }

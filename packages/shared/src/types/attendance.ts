@@ -32,6 +32,9 @@ export interface CompanyLocation {
   contactName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
+  // CUSTOMER kind: per-space billable rate override (EUR cents/hour; null =
+  // fall back to the org default). Used to auto-price invoice labor lines.
+  billableRateCents?: number | null;
   // Space-driven routing (Phase 3): role ids notified about / contactable by
   // members here. Empty = default to the space's leader roles.
   notifyRoleIds?: string[] | null;

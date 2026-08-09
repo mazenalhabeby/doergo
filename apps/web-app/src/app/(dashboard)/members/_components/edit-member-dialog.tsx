@@ -194,8 +194,6 @@ export function EditMemberDialog({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  // Cost is money → only managers/report-viewers see & set it.
-  const canSeeCost = user?.role === "ADMIN" || !!user?.canManageUsers || !!user?.canViewReports
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -208,8 +206,6 @@ export function EditMemberDialog({
   // Worker fields (consolidated from the retired /employees editor).
   const [specialty, setSpecialty] = useState("")
   const [employmentType, setEmploymentType] = useState("EXTERNAL")
-  const [costType, setCostType] = useState("") // "" | HOURLY | FIXED
-  const [costAmount, setCostAmount] = useState("") // euros
 
   // Initialize form whenever a (new) member is opened.
   useEffect(() => {
@@ -224,8 +220,6 @@ export function EditMemberDialog({
     setCopied(false)
     setSpecialty(member.specialty || "")
     setEmploymentType(member.employmentType || "EXTERNAL")
-    setCostType(member.costType || "")
-    setCostAmount(member.costRateCents != null ? (member.costRateCents / 100).toString() : "")
   }, [member])
 
   // ── Data (self-contained; shared query keys dedupe across pages) ──
@@ -361,12 +355,6 @@ export function EditMemberDialog({
       specialty: specialty.trim() || undefined,
       employmentType,
     }
-    if (canSeeCost) {
-      const costed = costType === "HOURLY" || costType === "FIXED"
-      workerPatch.costType = costed ? costType : null
-      workerPatch.costRateCents =
-        costed && costAmount.trim() !== "" ? Math.round(parseFloat(costAmount) * 100) : null
-    }
     workerMutation.mutate(workerPatch)
   }
 
@@ -437,31 +425,6 @@ export function EditMemberDialog({
                     <SelectItem value="IN_HOUSE">{t("technicians.detail.editDialog.employmentType.inHouse", "In-house (employed)")}</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            )}
-
-            {/* Labor cost — money, managers only. Feeds the monthly Costs view. */}
-            {canSeeCost && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">{t("technicians.detail.editDialog.cost.label", "Labor cost")}</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <Select value={costType || "NONE"} onValueChange={(v) => setCostType(v === "NONE" ? "" : v)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NONE">{t("technicians.detail.editDialog.cost.none", "Not costed")}</SelectItem>
-                      <SelectItem value="HOURLY">{t("technicians.detail.editDialog.cost.hourly", "Hourly (€/hour)")}</SelectItem>
-                      <SelectItem value="FIXED">{t("technicians.detail.editDialog.cost.fixed", "Fixed (€/month)")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {(costType === "HOURLY" || costType === "FIXED") && (
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
-                      <Input type="number" min={0} step="0.01" className="h-9 pl-6" value={costAmount}
-                        onChange={(e) => setCostAmount(e.target.value)}
-                        placeholder={costType === "HOURLY" ? "22.00" : "3000.00"} />
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </div>

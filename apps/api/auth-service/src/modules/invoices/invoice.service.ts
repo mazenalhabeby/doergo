@@ -9,7 +9,8 @@ export class InvoiceService {
   async create(data: {
     organizationId: string;
     createdById: string;
-    clientName: string;
+    spaceId?: string;
+    clientName?: string;
     clientEmail?: string;
     clientAddress?: string;
     currency?: string;
@@ -26,6 +27,30 @@ export class InvoiceService {
       reportId?: string;
     }[];
   }) {
+    // When tied to a CUSTOMER space, snapshot its contact details as fallbacks so
+    // the invoice stays stable even if the space changes later.
+    let clientName = data.clientName;
+    let clientEmail = data.clientEmail;
+    let clientAddress = data.clientAddress;
+    if (data.spaceId) {
+      const space = await this.prisma.companyLocation.findFirst({
+        where: { id: data.spaceId, organizationId: data.organizationId },
+        select: { name: true, contactName: true, contactEmail: true, address: true },
+      });
+      if (space) {
+        clientName = clientName || space.contactName || space.name;
+        clientEmail = clientEmail ?? space.contactEmail ?? undefined;
+        clientAddress = clientAddress ?? space.address ?? undefined;
+      }
+    }
+    if (!clientName || !clientName.trim()) {
+      return {
+        success: false,
+        message: 'A client name (or a customer space) is required',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+
     const items = (data.items || []).map((item) => {
       const quantity = item.quantity ?? 1;
       const unitPrice = item.unitPrice ?? 0;
@@ -56,10 +81,11 @@ export class InvoiceService {
         invoice = await this.prisma.invoice.create({
           data: {
             invoiceNumber,
-            clientName: data.clientName,
-            clientEmail: data.clientEmail,
-            clientAddress: data.clientAddress,
-            currency: data.currency ?? 'USD',
+            spaceId: data.spaceId,
+            clientName,
+            clientEmail,
+            clientAddress,
+            currency: data.currency ?? 'EUR',
             taxRate,
             discount,
             subtotal,
@@ -95,6 +121,7 @@ export class InvoiceService {
   async findAll(query: {
     organizationId: string;
     status?: string;
+    spaceId?: string;
     page?: number;
     limit?: number;
   }) {
@@ -105,6 +132,9 @@ export class InvoiceService {
     const where: any = { organizationId: query.organizationId };
     if (query.status) {
       where.status = query.status;
+    }
+    if (query.spaceId) {
+      where.spaceId = query.spaceId;
     }
 
     const [invoices, total] = await Promise.all([
@@ -417,6 +447,143 @@ export class InvoiceService {
     });
 
     return { success: true, data: updated };
+  }
+
+  /**
+   * Build (but do NOT persist) a rich, system-sourced view of a CUSTOMER space's
+   * completed, not-yet-invoiced work — one entry per completed job carrying the
+   * WORKER who did it (service-report completedBy, else the assignee), the HOURS
+   * worked (tracked duration), the work NOTES, and the PARTS used. Labor is
+   * priced from the resolved billable rate (space override → org default → blank
+   * for manual entry). Tasks already billed on a live (non-canceled) invoice are
+   * skipped so nothing is double-billed. Also returns a per-worker hours summary.
+   * The builder UI renders these as selectable cards and flattens the chosen ones
+   * into invoice line items on save.
+   */
+  async gatherFromSpace(data: { organizationId: string; spaceId: string }) {
+    const space = await this.prisma.companyLocation.findFirst({
+      where: { id: data.spaceId, organizationId: data.organizationId },
+      select: {
+        id: true,
+        name: true,
+        contactName: true,
+        contactEmail: true,
+        address: true,
+        billableRateCents: true,
+      },
+    });
+    if (!space) {
+      return { success: false, message: 'Space not found', statusCode: HttpStatus.NOT_FOUND };
+    }
+
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { billableRateCents: true },
+    });
+    const rateCents = space.billableRateCents ?? org?.billableRateCents ?? null;
+    const rate = rateCents != null ? rateCents / 100 : null; // currency units/hour
+
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        organizationId: data.organizationId,
+        spaceId: data.spaceId,
+        status: { in: ['COMPLETED', 'CLOSED'] },
+      },
+      select: {
+        id: true,
+        title: true,
+        updatedAt: true,
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        serviceReport: {
+          select: {
+            id: true,
+            summary: true,
+            workPerformed: true,
+            workDuration: true,
+            completedAt: true,
+            completedBy: { select: { id: true, firstName: true, lastName: true } },
+            partsUsed: {
+              select: { name: true, partNumber: true, quantity: true, unitCost: true },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'asc' },
+    });
+
+    // Exclude tasks already billed on a live invoice (any status except CANCELED).
+    const taskIds = tasks.map((t) => t.id);
+    const alreadyBilled = taskIds.length
+      ? await this.prisma.invoiceItem.findMany({
+          where: {
+            taskId: { in: taskIds },
+            invoice: { organizationId: data.organizationId, status: { not: 'CANCELED' } },
+          },
+          select: { taskId: true },
+        })
+      : [];
+    const billed = new Set(alreadyBilled.map((i) => i.taskId).filter(Boolean) as string[]);
+
+    const fullName = (u?: { firstName: string | null; lastName: string | null } | null) =>
+      u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || null : null;
+
+    const workEntries: any[] = [];
+    const workerHours = new Map<string, { name: string; hours: number }>();
+
+    for (const t of tasks) {
+      if (billed.has(t.id)) continue;
+      const report = t.serviceReport;
+      const worker = report?.completedBy ?? t.assignedTo ?? null;
+      const workerName = fullName(worker);
+      const hours =
+        report && report.workDuration > 0
+          ? Math.round((report.workDuration / 3600) * 100) / 100
+          : 0;
+      const parts = (report?.partsUsed ?? []).map((p) => ({
+        name: p.name,
+        partNumber: p.partNumber ?? null,
+        quantity: p.quantity ?? 1,
+        unitCost: p.unitCost ?? 0,
+        amount: (p.quantity ?? 1) * (p.unitCost ?? 0),
+      }));
+
+      workEntries.push({
+        taskId: t.id,
+        taskTitle: t.title,
+        reportId: report?.id ?? null,
+        workerId: worker?.id ?? null,
+        workerName,
+        hours,
+        laborAmount: rate != null ? Math.round(hours * rate * 100) / 100 : 0,
+        completedAt: report?.completedAt ?? t.updatedAt ?? null,
+        notes: report?.workPerformed || report?.summary || null,
+        parts,
+        hasReport: !!report,
+      });
+
+      if (worker?.id && hours > 0) {
+        const prev = workerHours.get(worker.id) ?? { name: workerName ?? 'Worker', hours: 0 };
+        prev.hours = Math.round((prev.hours + hours) * 100) / 100;
+        workerHours.set(worker.id, prev);
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        spaceId: space.id,
+        clientName: space.contactName || space.name,
+        clientEmail: space.contactEmail ?? null,
+        clientAddress: space.address ?? null,
+        currency: 'EUR',
+        billableRateCents: rateCents,
+        rate,
+        taskCount: workEntries.length,
+        totalHours: Array.from(workerHours.values()).reduce((s, w) => s + w.hours, 0),
+        workerSummary: Array.from(workerHours.values()).sort((a, b) => b.hours - a.hours),
+        workEntries,
+      },
+    };
   }
 
   private async generateInvoiceNumber(organizationId: string): Promise<string> {

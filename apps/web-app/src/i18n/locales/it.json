@@ -822,8 +822,7 @@
     "myTasks": "Le mie attività",
     "tokenTest": "Test token",
     "help": "Aiuto",
-    "customerPortal": "Portali clienti",
-    "costs": "Costi"
+    "customerPortal": "Portali clienti"
   },
   "dashboard": {
     "admin": {
@@ -1704,14 +1703,6 @@
           "external": "Esterno / freelance",
           "inHouse": "Interno (dipendente)",
           "hint": "I tecnici sul campo interni sono fatturati con la postazione scontata da 9 €; quelli esterni a 15 €."
-        },
-        "cost": {
-          "label": "Costo del lavoro",
-          "none": "Nessun costo",
-          "hourly": "Orario (€/ora)",
-          "fixed": "Fisso (€/mese)",
-          "perHour": "/ ora",
-          "perMonth": "/ mese"
         }
       },
       "profileBadges": "Distintivi del profilo",
@@ -2345,7 +2336,11 @@
       "externalWorkers": {
         "label": "Lavoriamo con tecnici sul campo esterni / freelance",
         "hint": "Attiva per contrassegnare i tecnici sul campo come interni o esterni. Le postazioni sul campo interne sono fatturate alla tariffa scontata di 9 €; quelle esterne a 15 €. Lascia disattivato se tutti i tecnici sono uguali."
-      }
+      },
+      "vatId": "Partita IVA / UID",
+      "vatIdPlaceholder": "es. ATU12345678",
+      "billableRate": "Tariffa fatturabile predefinita (all’ora)",
+      "billableRatePlaceholder": "es. 85"
     },
     "members": {
       "defaultPermissions": "Autorizzazioni predefinite",
@@ -3213,7 +3208,10 @@
       "customerContact": "Contatto cliente",
       "contactName": "Nome contatto",
       "contactEmail": "Email contatto",
-      "contactPhone": "Telefono contatto"
+      "contactPhone": "Telefono contatto",
+      "billableRate": "Tariffa fatturabile (all’ora)",
+      "billableRatePlaceholder": "Usa il valore predefinito dell’organizzazione se vuoto",
+      "billableRateHint": "Calcola automaticamente le voci di manodopera sulle fatture di questo cliente. Lascia vuoto per usare il valore predefinito dell’organizzazione."
     },
     "toast": {
       "deactivated": "Spazio disattivato",
@@ -3689,7 +3687,8 @@
       "amount": "Importo",
       "issueDate": "Data di emissione",
       "dueDate": "Data di scadenza",
-      "status": "Stato"
+      "status": "Stato",
+      "description": "Descrizione"
     },
     "statuses": {
       "draft": "Bozza",
@@ -3704,11 +3703,64 @@
     "actions": {
       "view": "Visualizza",
       "send": "Invia",
-      "markPaid": "Segna come pagata"
+      "markPaid": "Segna come pagata",
+      "print": "Stampa",
+      "pdf": "PDF"
     },
     "toast": {
       "statusUpdated": "Stato della fattura aggiornato",
       "deleted": "Fattura eliminata"
+    },
+    "outstanding": "Da incassare",
+    "notFound": "Fattura non trovata",
+    "emptyForSpace": "Ancora nessuna fattura per {{name}}",
+    "emptyForSpaceHint": "Creane una o incorpora il lavoro completato in una bozza.",
+    "detail": {
+      "billTo": "Intestatario",
+      "noItems": "Nessuna voce"
+    },
+    "create": {
+      "title": "Nuova fattura",
+      "forSpace": "Per {{name}}",
+      "pullFromWork": "Incorpora dal lavoro",
+      "clientName": "Nome del cliente",
+      "clientEmail": "Email del cliente",
+      "clientAddress": "Indirizzo del cliente",
+      "issueDate": "Data di emissione",
+      "dueDate": "Data di scadenza",
+      "currency": "Valuta",
+      "taxRate": "Aliquota IVA (%)",
+      "qty": "Qtà",
+      "unitPrice": "Prezzo unitario",
+      "descriptionPlaceholder": "Descrizione del lavoro o dell’articolo",
+      "addLine": "Aggiungi riga",
+      "subtotal": "Subtotale",
+      "discount": "Sconto",
+      "tax": "Imposta",
+      "total": "Totale",
+      "notes": "Note",
+      "notesPlaceholder": "Termini di pagamento, numero d’ordine, ringraziamento…",
+      "saveDraft": "Salva bozza",
+      "created": "Fattura creata",
+      "pulled": "{{count}} lavoro/i completato/i aggiunto/i",
+      "nothingToPull": "Nessun lavoro completato e non fatturato da incorporare",
+      "rate": "Tariffa (all'ora)",
+      "ratePlaceholder": "es. 85",
+      "hoursByWorker": "Ore per operatore",
+      "totalHours": "{{hours}} h totali",
+      "noHours": "Nessuna ora registrata finora",
+      "billableWork": "Lavoro fatturabile",
+      "jobsSelected": "{{count}} di {{total}} selezionati",
+      "noWork": "Nessun lavoro completato e non fatturato",
+      "noWorkHint": "I lavori completati per questo cliente compaiono qui per la fatturazione.",
+      "unassignedWorker": "Non assegnato",
+      "partsCount": "{{count}} pezzo/i",
+      "hideDetails": "Nascondi dettagli",
+      "showDetails": "Dettagli",
+      "parts": "Pezzi",
+      "billParts": "Fattura pezzi",
+      "extraLines": "Righe aggiuntive",
+      "noExtraLines": "Nessuna riga aggiuntiva. Aggiungi qui addebiti occasionali."
     }
   },
   "overtime": {
@@ -5602,18 +5654,5 @@
       "memberContact": "{{name}} può contattare",
       "noPeople": "Nessun altro membro con un ruolo in questo spazio."
     }
-  },
-  "costs": {
-    "title": "Costi del personale",
-    "subtitle": "Quanto ti costa ogni lavoratore questo mese — orario (ore × tariffa) o fisso mensile.",
-    "monthTotal": "Totale del mese",
-    "workerCount": "{{count}} con costo",
-    "worker": "Lavoratore",
-    "rate": "Tariffa",
-    "hours": "Ore",
-    "cost": "Costo",
-    "perHour": "/ ora",
-    "perMonth": "/ mese",
-    "empty": "Nessun lavoratore ha un costo impostato. Aggiungi un costo orario o fisso mensile dalla finestra Modifica di un membro."
   }
 }

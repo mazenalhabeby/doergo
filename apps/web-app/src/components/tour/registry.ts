@@ -280,7 +280,6 @@ export const TOURS: TourDef[] = [
   // (pageEmployees retired — /employees redirects to /members.)
   ...pageTour("pageInvoices", "invoices", "reports", "/invoices", "page-invoices", (c) => c.isAdmin),
   ...pageTour("pageAssets", "assets", "spaces", "/assets", "page-assets", (c) => c.hasPermission("canViewAllTasks")),
-  ...pageTour("pagePayments", "payments", "reports", "/payments", "page-payments", (c) => c.isAdmin),
   // Time Off (your own) — request flow + your requests list.
   {
     id: "pageMyTimeoff",

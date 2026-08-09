@@ -16,6 +16,11 @@ export class InvoiceController {
     return this.invoiceService.findAll(data);
   }
 
+  @MessagePattern({ cmd: 'invoice_gather' })
+  async gather(@Payload() data: { organizationId: string; spaceId: string }) {
+    return this.invoiceService.gatherFromSpace(data);
+  }
+
   @MessagePattern({ cmd: 'invoice_get' })
   async findOne(@Payload() data: { id: string; organizationId: string }) {
     return this.invoiceService.findOne(data.id, data.organizationId);

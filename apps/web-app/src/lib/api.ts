@@ -3061,9 +3061,6 @@ export interface OrgMember {
   canViewReports?: boolean;
   /** 'IN_HOUSE' | 'EXTERNAL' — field seat pricing. */
   employmentType?: string | null;
-  /** Labor cost: 'HOURLY' | 'FIXED' | null + rate in cents. */
-  costType?: string | null;
-  costRateCents?: number | null;
   maxDailyJobs?: number | null;
   /** Unified org-wide role (AccessRole id) — e.g. Manager. */
   memberRoleId?: string | null;
@@ -3340,6 +3337,7 @@ export interface CreateLocationInput {
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  billableRateCents?: number | null;
 }
 
 export interface UpdateLocationInput {
@@ -3357,6 +3355,7 @@ export interface UpdateLocationInput {
   contactName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
+  billableRateCents?: number | null;
   notifyRoleIds?: string[];
   contactRoleIds?: string[];
 }
@@ -4146,11 +4145,17 @@ export const epicsApi = {
 };
 
 export const invoicesApi = {
-  list: async (params?: { status?: string; page?: number; limit?: number }) => {
+  list: async (params?: { status?: string; spaceId?: string; page?: number; limit?: number }) => {
     const endpoint = buildUrlWithQuery('/invoices', params ?? {});
     const response = await api.get<any>(endpoint);
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+  /** Build (unsaved) draft line items from a customer space's completed work. */
+  gather: async (spaceId: string) => {
+    const response = await api.get<any>(buildUrlWithQuery('/invoices/gather', { spaceId }));
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
   },
   getById: async (id: string) => {
     const response = await api.get<any>(`/invoices/${id}`);
@@ -4547,20 +4552,6 @@ export interface ReportDefinition {
 export interface ReportColumn { key: string; label: string; kind: "dimension" | "measure" | "period"; format?: string }
 export interface ReportResult { columns: ReportColumn[]; rows: Array<Record<string, unknown>> }
 
-export interface WorkerCostRow {
-  userId: string
-  name: string
-  costType: "HOURLY" | "FIXED" | null
-  costRateCents: number | null
-  hours: number
-  costCents: number
-}
-export interface WorkerCostsResult {
-  month: string // YYYY-MM
-  workers: WorkerCostRow[]
-  totalCents: number
-}
-
 export interface ReportTemplate { key: string; name: string; description: string; def: ReportDefinition }
 export interface DatasetMeta {
   key: string;
@@ -4595,13 +4586,6 @@ export const analyticsApi = {
   timesheet: async (userId: string, params?: { from?: string; to?: string }) => {
     const qs = buildUrlWithQuery("/analytics/timesheet", { userId, ...(params || {}) });
     const res = await api.get<{ data: ReportResult & { userName: string } }>(qs);
-    if (res.error) throw new Error(res.error);
-    return res.data!.data;
-  },
-  /** Per-worker labor cost for a month (YYYY-MM; defaults to current). */
-  workerCosts: async (month?: string) => {
-    const qs = buildUrlWithQuery("/analytics/worker-costs", month ? { month } : {});
-    const res = await api.get<{ data: WorkerCostsResult }>(qs);
     if (res.error) throw new Error(res.error);
     return res.data!.data;
   },

@@ -28,6 +28,8 @@ import {
   Image as ImageIcon,
   Upload,
   Trash2,
+  Receipt,
+  Euro,
 } from "lucide-react"
 import NextLink from "next/link"
 import { notify } from "@/lib/toast"
@@ -319,6 +321,8 @@ function GeneralSection() {
   const [form, setForm] = useState({
     name: "", industry: "", phone: "", email: "", website: "", timezone: "",
     addressLine1: "", addressLine2: "", city: "", state: "", postalCode: "", country: "",
+    // Invoicing: VAT/UID for the invoice header + default billable rate (euros/hour).
+    vatId: "", billableRate: "",
     // Opt-in capability: distinguish in-house vs external field workers.
     usesExternalWorkers: false as boolean,
   })
@@ -335,6 +339,8 @@ function GeneralSection() {
         addressLine2: profile.addressLine2 ?? "",
         city: profile.city ?? "", state: profile.state ?? "",
         postalCode: profile.postalCode ?? "", country: profile.country ?? "",
+        vatId: profile.vatId ?? "",
+        billableRate: profile.billableRateCents != null ? (profile.billableRateCents / 100).toString() : "",
         usesExternalWorkers: profile.usesExternalWorkers ?? false,
       })
       setInitialized(true)
@@ -568,7 +574,40 @@ function GeneralSection() {
             />
           </FormField>
 
-          <SaveBar onSave={() => updateMutation.mutate(form)} isPending={updateMutation.isPending} t={t} />
+          {/* Invoicing details — shown on invoices; billable rate auto-prices labor lines. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField icon={Receipt} label={t("settings.general.vatId", "VAT / UID number")}>
+              <Input
+                value={form.vatId}
+                onChange={e => set("vatId", e.target.value)}
+                placeholder={t("settings.general.vatIdPlaceholder", "e.g. ATU12345678")}
+                className="h-11 rounded-xl"
+              />
+            </FormField>
+            <FormField icon={Euro} label={t("settings.general.billableRate", "Default billable rate (per hour)")}>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.billableRate}
+                onChange={e => set("billableRate", e.target.value)}
+                placeholder={t("settings.general.billableRatePlaceholder", "e.g. 85")}
+                className="h-11 rounded-xl"
+              />
+            </FormField>
+          </div>
+
+          <SaveBar
+            onSave={() => {
+              const { billableRate, ...rest } = form
+              updateMutation.mutate({
+                ...rest,
+                billableRateCents: billableRate.trim() && parseFloat(billableRate) > 0 ? Math.round(parseFloat(billableRate) * 100) : null,
+              })
+            }}
+            isPending={updateMutation.isPending}
+            t={t}
+          />
         </div>
       </SettingCard>
     </div>

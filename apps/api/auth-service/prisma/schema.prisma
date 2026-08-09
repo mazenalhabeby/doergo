@@ -362,6 +362,12 @@ model Organization {
   billingEmail      String?
   vatId             String?
 
+  // Customer invoicing: default billable labor rate (what you CHARGE a customer
+  // per hour, distinct from internal worker cost). Integer EUR cents. Null = no
+  // default → labor lines start blank for manual entry. A CUSTOMER space may
+  // override this via CompanyLocation.billableRateCents.
+  billableRateCents Int?
+
   users User[]
   tasks Task[]
 
@@ -530,14 +536,6 @@ model User {
   // "IN_HOUSE" (the org employs them) → discounted €9 seat; "EXTERNAL"
   // (freelancer/contractor, default) → €15 seat. Office seats ignore this.
   employmentType    String? @default("EXTERNAL") // "IN_HOUSE" | "EXTERNAL"
-  // Labor cost (what the ORG pays this worker — internal costing, feeds the
-  // monthly cost view + the future invoice system). Fully per-worker:
-  //   costType "HOURLY" → costRateCents = € per hour  (× hours worked that month)
-  //   costType "FIXED"  → costRateCents = € per month (flat while active)
-  //   null              → not costed (ignored in totals)
-  // Money stored as integer EUR cents to avoid float rounding.
-  costType          String? // "HOURLY" | "FIXED" | null
-  costRateCents     Int? // €/hour or €/month (per costType), in cents
 
   // Employee fields
   specialty    String? // e.g., "Electrical", "Plumbing", "Mechanical", "General"
@@ -1344,6 +1342,9 @@ model CompanyLocation {
   // marker, no FK). Makes the one-off backfill idempotent by id (never merges two
   // same-named customers) and links a customer-space back to its Customer record.
   sourceCustomerId String?
+  // CUSTOMER kind: per-space override of the org's default billable labor rate
+  // (integer EUR cents). Null → fall back to Organization.billableRateCents.
+  billableRateCents Int?
   isActive       Boolean @default(true)
   isDefault      Boolean @default(false) // The org's default space (holds otherwise-unassigned tasks)
   isRemote       Boolean @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
@@ -2398,7 +2399,12 @@ model Invoice {
   invoiceNumber String // Auto-generated: INV-YYYY-XXXX
   status        InvoiceStatus @default(DRAFT)
 
-  // Client info
+  // The CUSTOMER-kind space this invoice bills (plain marker, no FK — mirrors
+  // InvoiceItem.taskId/reportId). Null = ad-hoc invoice not tied to a space.
+  spaceId       String?
+
+  // Client info (auto-filled from the space's contact fields at create time,
+  // then editable — snapshotted so the invoice is stable if the space changes)
   clientName    String
   clientEmail   String?
   clientAddress String?
@@ -2433,6 +2439,7 @@ model Invoice {
   @@unique([organizationId, invoiceNumber]) // backstop: no duplicate invoice numbers per org
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
+  @@index([organizationId, spaceId]) // list a customer space's invoices fast
   @@map("invoices")
 }
 

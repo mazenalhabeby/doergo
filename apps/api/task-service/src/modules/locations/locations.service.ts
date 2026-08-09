@@ -43,6 +43,7 @@ export class LocationsService {
     contactName?: string;
     contactEmail?: string;
     contactPhone?: string;
+    billableRateCents?: number;
     enabledModules?: string[];
     workflowId?: string;
     organizationId: string;
@@ -74,6 +75,10 @@ export class LocationsService {
         contactName: data.contactName ?? undefined,
         contactEmail: data.contactEmail ?? undefined,
         contactPhone: data.contactPhone ?? undefined,
+        billableRateCents:
+          data.billableRateCents != null && data.billableRateCents > 0
+            ? Math.round(data.billableRateCents)
+            : undefined,
         organizationId: data.organizationId,
         isDefault: existingDefault === 0,
       },
@@ -215,6 +220,7 @@ export class LocationsService {
     contactName?: string;
     contactEmail?: string;
     contactPhone?: string;
+    billableRateCents?: number;
     notifyRoleIds?: string[];
     contactRoleIds?: string[];
   }) {
@@ -245,6 +251,11 @@ export class LocationsService {
     if (data.contactName !== undefined) updateData.contactName = data.contactName || null;
     if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail || null;
     if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone || null;
+    if (data.billableRateCents !== undefined)
+      updateData.billableRateCents =
+        data.billableRateCents != null && data.billableRateCents > 0
+          ? Math.round(data.billableRateCents)
+          : null;
     // Space-driven routing (Phase 3): which roles are notified about / contactable
     // by members here. Whitelist to string arrays (fail closed).
     if (Array.isArray(data.notifyRoleIds)) {

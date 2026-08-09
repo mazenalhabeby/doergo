@@ -822,8 +822,7 @@
     "myTasks": "Mis tareas",
     "tokenTest": "Prueba de token",
     "help": "Ayuda",
-    "customerPortal": "Portales de clientes",
-    "costs": "Costes"
+    "customerPortal": "Portales de clientes"
   },
   "dashboard": {
     "admin": {
@@ -1704,14 +1703,6 @@
           "external": "Externo / autónomo",
           "inHouse": "Interno (empleado)",
           "hint": "Los técnicos de campo internos se facturan con la plaza con descuento de 9 €; los externos, 15 €."
-        },
-        "cost": {
-          "label": "Coste laboral",
-          "none": "Sin coste",
-          "hourly": "Por hora (€/hora)",
-          "fixed": "Fijo (€/mes)",
-          "perHour": "/ hora",
-          "perMonth": "/ mes"
         }
       },
       "profileBadges": "Insignias del perfil",
@@ -2345,7 +2336,11 @@
       "externalWorkers": {
         "label": "Trabajamos con técnicos de campo externos / autónomos",
         "hint": "Actívalo para marcar a los técnicos de campo como internos o externos. Las plazas de campo internas se facturan a la tarifa con descuento de 9 €; las externas, 15 €. Déjalo desactivado si todos tus técnicos son iguales."
-      }
+      },
+      "vatId": "NIF / IVA (UID)",
+      "vatIdPlaceholder": "p. ej. ATU12345678",
+      "billableRate": "Tarifa facturable predeterminada (por hora)",
+      "billableRatePlaceholder": "p. ej. 85"
     },
     "members": {
       "defaultPermissions": "Permisos por defecto",
@@ -3213,7 +3208,10 @@
       "customerContact": "Contacto del cliente",
       "contactName": "Nombre de contacto",
       "contactEmail": "Correo de contacto",
-      "contactPhone": "Teléfono de contacto"
+      "contactPhone": "Teléfono de contacto",
+      "billableRate": "Tarifa facturable (por hora)",
+      "billableRatePlaceholder": "Usa el valor predeterminado de la organización si se deja vacío",
+      "billableRateHint": "Calcula automáticamente las líneas de mano de obra en las facturas de este cliente. Déjalo vacío para usar el valor predeterminado de la organización."
     },
     "toast": {
       "deactivated": "Espacio desactivado",
@@ -3689,7 +3687,8 @@
       "amount": "Importe",
       "issueDate": "Fecha de emisión",
       "dueDate": "Fecha de vencimiento",
-      "status": "Estado"
+      "status": "Estado",
+      "description": "Descripción"
     },
     "statuses": {
       "draft": "Borrador",
@@ -3704,11 +3703,64 @@
     "actions": {
       "view": "Ver",
       "send": "Enviar",
-      "markPaid": "Marcar como pagada"
+      "markPaid": "Marcar como pagada",
+      "print": "Imprimir",
+      "pdf": "PDF"
     },
     "toast": {
       "statusUpdated": "Estado de la factura actualizado",
       "deleted": "Factura eliminada"
+    },
+    "outstanding": "Pendiente de cobro",
+    "notFound": "Factura no encontrada",
+    "emptyForSpace": "Aún no hay facturas para {{name}}",
+    "emptyForSpaceHint": "Crea una o incorpora trabajo completado a un borrador.",
+    "detail": {
+      "billTo": "Facturar a",
+      "noItems": "Sin líneas"
+    },
+    "create": {
+      "title": "Nueva factura",
+      "forSpace": "Para {{name}}",
+      "pullFromWork": "Incorporar del trabajo",
+      "clientName": "Nombre del cliente",
+      "clientEmail": "Correo del cliente",
+      "clientAddress": "Dirección del cliente",
+      "issueDate": "Fecha de emisión",
+      "dueDate": "Fecha de vencimiento",
+      "currency": "Moneda",
+      "taxRate": "Tipo impositivo (%)",
+      "qty": "Cant.",
+      "unitPrice": "Precio unitario",
+      "descriptionPlaceholder": "Descripción del trabajo o artículo",
+      "addLine": "Añadir línea",
+      "subtotal": "Subtotal",
+      "discount": "Descuento",
+      "tax": "Impuesto",
+      "total": "Total",
+      "notes": "Notas",
+      "notesPlaceholder": "Condiciones de pago, número de pedido, agradecimiento…",
+      "saveDraft": "Guardar borrador",
+      "created": "Factura creada",
+      "pulled": "{{count}} trabajo(s) completado(s) añadido(s)",
+      "nothingToPull": "No hay trabajo completado y sin facturar para incorporar",
+      "rate": "Tarifa (por hora)",
+      "ratePlaceholder": "p. ej. 85",
+      "hoursByWorker": "Horas por trabajador",
+      "totalHours": "{{hours}} h en total",
+      "noHours": "Aún no hay horas registradas",
+      "billableWork": "Trabajo facturable",
+      "jobsSelected": "{{count}} de {{total}} seleccionados",
+      "noWork": "No hay trabajo completado y sin facturar",
+      "noWorkHint": "Los trabajos completados de este cliente aparecen aquí para facturar.",
+      "unassignedWorker": "Sin asignar",
+      "partsCount": "{{count}} pieza(s)",
+      "hideDetails": "Ocultar detalles",
+      "showDetails": "Detalles",
+      "parts": "Piezas",
+      "billParts": "Facturar piezas",
+      "extraLines": "Líneas adicionales",
+      "noExtraLines": "No hay líneas adicionales. Añada aquí cargos puntuales."
     }
   },
   "overtime": {
@@ -5602,18 +5654,5 @@
       "memberContact": "{{name}} puede contactar",
       "noPeople": "No hay otros miembros con un rol en este espacio."
     }
-  },
-  "costs": {
-    "title": "Costes de personal",
-    "subtitle": "Lo que te cuesta cada trabajador este mes: por hora (horas × tarifa) o fijo mensual.",
-    "monthTotal": "Total del mes",
-    "workerCount": "{{count}} con coste",
-    "worker": "Trabajador",
-    "rate": "Tarifa",
-    "hours": "Horas",
-    "cost": "Coste",
-    "perHour": "/ hora",
-    "perMonth": "/ mes",
-    "empty": "Ningún trabajador tiene un coste definido. Añade un coste por hora o fijo mensual desde el diálogo Editar de un miembro."
   }
 }

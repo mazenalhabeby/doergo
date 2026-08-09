@@ -9,6 +9,7 @@ import {
   Blocks,
   Building2,
   CalendarClock,
+  FileText,
   Loader2,
   ShieldAlert,
   UserCog,
@@ -26,6 +27,7 @@ import { AttendanceTab } from "./_components/attendance-tab"
 import { ModulesTab } from "./_components/modules-tab"
 import { WorkflowTab } from "./_components/workflow-tab"
 import { MembersTab } from "./_components/members-tab"
+import { InvoicesTab } from "./_components/invoices-tab"
 
 export default function SpaceSettingsPage() {
   const { t } = useTranslation()
@@ -128,6 +130,13 @@ export default function SpaceSettingsPage() {
                 <UserCog className="h-4 w-4" />
                 {t("scheduling.tabs.members")}
               </TabsTrigger>
+              {/* Invoices tab only for CUSTOMER-kind spaces (customer companies). */}
+              {space?.kind === "CUSTOMER" && (
+                <TabsTrigger value="invoices" className="gap-1.5">
+                  <FileText className="h-4 w-4" />
+                  {t("invoices.title")}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="general" className="mt-6">
@@ -151,6 +160,13 @@ export default function SpaceSettingsPage() {
             <TabsContent value="members" className="mt-6">
               <MembersTab spaceId={spaceId} />
             </TabsContent>
+            {space?.kind === "CUSTOMER" && (
+              <TabsContent value="invoices" className="mt-6">
+                <PlanGate feature="invoicing">
+                  <InvoicesTab spaceId={spaceId} spaceName={space.name} />
+                </PlanGate>
+              </TabsContent>
+            )}
           </Tabs>
         )}
       </div>

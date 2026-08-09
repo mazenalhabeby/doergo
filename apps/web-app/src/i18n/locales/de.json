@@ -822,8 +822,7 @@
     "myTasks": "Meine Aufgaben",
     "tokenTest": "Token-Test",
     "help": "Hilfe",
-    "customerPortal": "Kundenportale",
-    "costs": "Kosten"
+    "customerPortal": "Kundenportale"
   },
   "dashboard": {
     "admin": {
@@ -1704,14 +1703,6 @@
           "external": "Extern / freiberuflich",
           "inHouse": "Intern (angestellt)",
           "hint": "Interne Außendiensttechniker werden mit dem vergünstigten Platz zu 9 € abgerechnet; externe zu 15 €."
-        },
-        "cost": {
-          "label": "Personalkosten",
-          "none": "Nicht erfasst",
-          "hourly": "Stündlich (€/Std.)",
-          "fixed": "Fest (€/Monat)",
-          "perHour": "/ Std.",
-          "perMonth": "/ Monat"
         }
       },
       "profileBadges": "Profilabzeichen",
@@ -2345,7 +2336,11 @@
       "externalWorkers": {
         "label": "Wir arbeiten mit externen / freiberuflichen Außendienstmitarbeitern",
         "hint": "Aktivieren, um Außendiensttechniker als intern oder extern zu kennzeichnen. Interne Feldplätze werden zum vergünstigten Satz von 9 € abgerechnet, externe zu 15 €. Aus lassen, wenn alle Techniker gleich sind."
-      }
+      },
+      "vatId": "USt-IdNr. / UID",
+      "vatIdPlaceholder": "z. B. ATU12345678",
+      "billableRate": "Standard-Stundensatz (pro Stunde)",
+      "billableRatePlaceholder": "z. B. 85"
     },
     "members": {
       "defaultPermissions": "Standardberechtigungen",
@@ -3213,7 +3208,10 @@
       "customerContact": "Kundenkontakt",
       "contactName": "Ansprechpartner",
       "contactEmail": "Kontakt-E-Mail",
-      "contactPhone": "Kontakt-Telefon"
+      "contactPhone": "Kontakt-Telefon",
+      "billableRate": "Stundensatz (pro Stunde)",
+      "billableRatePlaceholder": "Nutzt den Organisationsstandard, wenn leer",
+      "billableRateHint": "Berechnet automatisch die Arbeitspositionen auf den Rechnungen dieses Kunden. Leer lassen, um den Organisationsstandard zu verwenden."
     },
     "toast": {
       "deactivated": "Bereich deaktiviert",
@@ -3689,7 +3687,8 @@
       "amount": "Betrag",
       "issueDate": "Rechnungsdatum",
       "dueDate": "Fälligkeitsdatum",
-      "status": "Status"
+      "status": "Status",
+      "description": "Beschreibung"
     },
     "statuses": {
       "draft": "Entwurf",
@@ -3704,11 +3703,64 @@
     "actions": {
       "view": "Ansehen",
       "send": "Senden",
-      "markPaid": "Als bezahlt markieren"
+      "markPaid": "Als bezahlt markieren",
+      "print": "Drucken",
+      "pdf": "PDF"
     },
     "toast": {
       "statusUpdated": "Rechnungsstatus aktualisiert",
       "deleted": "Rechnung gelöscht"
+    },
+    "outstanding": "Offen",
+    "notFound": "Rechnung nicht gefunden",
+    "emptyForSpace": "Noch keine Rechnungen für {{name}}",
+    "emptyForSpaceHint": "Erstellen Sie eine oder übernehmen Sie abgeschlossene Arbeiten in einen Entwurf.",
+    "detail": {
+      "billTo": "Rechnungsempfänger",
+      "noItems": "Keine Positionen"
+    },
+    "create": {
+      "title": "Neue Rechnung",
+      "forSpace": "Für {{name}}",
+      "pullFromWork": "Aus Arbeiten übernehmen",
+      "clientName": "Kundenname",
+      "clientEmail": "Kunden-E-Mail",
+      "clientAddress": "Kundenadresse",
+      "issueDate": "Rechnungsdatum",
+      "dueDate": "Fälligkeitsdatum",
+      "currency": "Währung",
+      "taxRate": "Steuersatz (%)",
+      "qty": "Menge",
+      "unitPrice": "Einzelpreis",
+      "descriptionPlaceholder": "Beschreibung der Arbeit oder Position",
+      "addLine": "Position hinzufügen",
+      "subtotal": "Zwischensumme",
+      "discount": "Rabatt",
+      "tax": "Steuer",
+      "total": "Gesamt",
+      "notes": "Notizen",
+      "notesPlaceholder": "Zahlungsbedingungen, Bestellnummer, Dankeschön…",
+      "saveDraft": "Entwurf speichern",
+      "created": "Rechnung erstellt",
+      "pulled": "{{count}} abgeschlossene Auftrag/Aufträge hinzugefügt",
+      "nothingToPull": "Keine abgeschlossenen, nicht abgerechneten Arbeiten zum Übernehmen",
+      "rate": "Satz (pro Stunde)",
+      "ratePlaceholder": "z. B. 85",
+      "hoursByWorker": "Stunden nach Mitarbeiter",
+      "totalHours": "{{hours}} Std. gesamt",
+      "noHours": "Noch keine erfassten Stunden",
+      "billableWork": "Abrechenbare Arbeit",
+      "jobsSelected": "{{count}} von {{total}} ausgewählt",
+      "noWork": "Keine abgeschlossene, nicht abgerechnete Arbeit",
+      "noWorkHint": "Abgeschlossene Aufträge für diesen Kunden erscheinen hier zur Abrechnung.",
+      "unassignedWorker": "Nicht zugewiesen",
+      "partsCount": "{{count}} Teil(e)",
+      "hideDetails": "Details ausblenden",
+      "showDetails": "Details",
+      "parts": "Teile",
+      "billParts": "Teile abrechnen",
+      "extraLines": "Zusätzliche Positionen",
+      "noExtraLines": "Keine zusätzlichen Positionen. Fügen Sie hier Ad-hoc-Posten hinzu."
     }
   },
   "overtime": {
@@ -5602,18 +5654,5 @@
       "memberContact": "{{name}} kann kontaktieren",
       "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space."
     }
-  },
-  "costs": {
-    "title": "Mitarbeiterkosten",
-    "subtitle": "Was Sie jeder Mitarbeiter diesen Monat kostet — stündlich (Stunden × Satz) oder monatlich fest.",
-    "monthTotal": "Gesamt für den Monat",
-    "workerCount": "{{count}} erfasst",
-    "worker": "Mitarbeiter",
-    "rate": "Satz",
-    "hours": "Stunden",
-    "cost": "Kosten",
-    "perHour": "/ Std.",
-    "perMonth": "/ Monat",
-    "empty": "Für keinen Mitarbeiter ist ein Kostensatz festgelegt. Fügen Sie im Bearbeiten-Dialog eines Mitglieds einen Stunden- oder monatlichen Fixkostensatz hinzu."
   }
 }

@@ -2,6 +2,7 @@
 
 import { PlanGate } from "@/components/plan-gate"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
@@ -63,6 +64,7 @@ export default function InvoicesPage() {
 function InvoicesPageInner() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const router = useRouter()
   const queryClient = useQueryClient()
   const isAdmin = user?.role === "ADMIN"
 
@@ -121,7 +123,7 @@ function InvoicesPageInner() {
             <p className="text-sm text-muted-foreground mt-1">{t("invoices.subtitle")}</p>
           </div>
           {isAdmin && (
-            <Button size="sm" className="gap-1.5">
+            <Button size="sm" className="gap-1.5" onClick={() => router.push("/invoices/new")}>
               <Plus className="size-3.5" /> {t("invoices.newInvoice")}
             </Button>
           )}
@@ -200,7 +202,7 @@ function InvoicesPageInner() {
             filtered.map((inv: any) => {
               const status = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
               return (
-                <div key={inv.id} className="grid grid-cols-[100px_1fr_120px_100px_100px_80px_40px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center">
+                <div key={inv.id} onClick={() => router.push(`/invoices/${inv.id}`)} className="grid grid-cols-[100px_1fr_120px_100px_100px_80px_40px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center cursor-pointer">
                   <span className="text-sm font-mono font-medium text-foreground">{inv.invoiceNumber}</span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{inv.clientName}</p>
@@ -213,12 +215,12 @@ function InvoicesPageInner() {
                   {isAdmin && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="size-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                        <button onClick={(e) => e.stopPropagation()} className="size-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
                           <MoreHorizontal className="size-3.5" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem><Eye className="size-3.5 mr-2" /> {t("invoices.actions.view")}</DropdownMenuItem>
+                      <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem onClick={() => router.push(`/invoices/${inv.id}`)}><Eye className="size-3.5 mr-2" /> {t("invoices.actions.view")}</DropdownMenuItem>
                         {inv.status === "DRAFT" && (
                           <DropdownMenuItem onClick={() => statusMutation.mutate({ id: inv.id, status: "SENT" })}>
                             <Send className="size-3.5 mr-2" /> {t("invoices.actions.send")}

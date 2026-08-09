@@ -904,6 +904,8 @@ export class OnboardingService {
         website: true,
         timezone: true,
         logoUrl: true,
+        vatId: true,
+        billableRateCents: true,
         joinPolicy: true,
         profileBadges: true,
         notificationPrefs: true,
@@ -924,13 +926,19 @@ export class OnboardingService {
   async updateOrgProfile(organizationId: string, updates: any) {
     // `usesExternalWorkers` (the in-house/external field-worker capability) is
     // settable directly by the Settings toggle.
-    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'enabledModules'];
+    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'enabledModules'];
     const data: any = {};
 
     for (const key of allowedFields) {
       if (updates[key] !== undefined) {
         data[key] = updates[key];
       }
+    }
+
+    // Billable rate: coerce to a non-negative integer (EUR cents) or null to clear.
+    if (data.billableRateCents !== undefined) {
+      const n = Number(data.billableRateCents);
+      data.billableRateCents = Number.isFinite(n) && n > 0 ? Math.round(n) : null;
     }
 
     if (Object.keys(data).length === 0) {
@@ -949,7 +957,7 @@ export class OnboardingService {
     const org = await this.prisma.organization.update({
       where: { id: organizationId },
       data,
-      select: { id: true, name: true, industry: true, usesExternalWorkers: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, enabledModules: true },
+      select: { id: true, name: true, industry: true, usesExternalWorkers: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, enabledModules: true },
     });
 
     return { success: true, data: org };

@@ -133,6 +133,18 @@ export class UpdateOrgProfileDto {
   @IsString()
   logoUrl?: string;
 
+  @ApiPropertyOptional({ description: 'VAT / UID number (shown on invoices)' })
+  @IsOptional()
+  @IsString()
+  vatId?: string;
+
+  @ApiPropertyOptional({ description: 'Default billable labor rate charged to customers, in EUR cents/hour (0 or null clears)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100000000)
+  billableRateCents?: number;
+
   @ApiPropertyOptional({ description: 'Enabled modules', type: [String] })
   @IsOptional()
   @IsString({ each: true })

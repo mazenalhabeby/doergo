@@ -3,7 +3,6 @@ import {
   IsString,
   IsOptional,
   IsNumber,
-  IsInt,
   IsBoolean,
   IsIn,
   Min,
@@ -51,25 +50,6 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsIn(['IN_HOUSE', 'EXTERNAL'])
   employmentType?: string;
-
-  @ApiPropertyOptional({
-    example: 'HOURLY',
-    enum: ['HOURLY', 'FIXED'],
-    description: 'Labor cost model: HOURLY (€/hour × hours) or FIXED (€/month). Send null to clear.',
-  })
-  @IsOptional()
-  @IsIn(['HOURLY', 'FIXED'])
-  costType?: string | null;
-
-  @ApiPropertyOptional({
-    example: 2200,
-    description: 'Labor cost in EUR cents — €/hour (HOURLY) or €/month (FIXED).',
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(100000000)
-  costRateCents?: number | null;
 
   @ApiPropertyOptional({
     example: 5,

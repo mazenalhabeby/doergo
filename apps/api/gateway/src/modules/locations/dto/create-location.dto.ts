@@ -107,6 +107,13 @@ export class CreateLocationDto {
   @MaxLength(50)
   contactPhone?: string;
 
+  @ApiPropertyOptional({ description: 'CUSTOMER kind: billable rate override (EUR cents/hour; null falls back to org default)' })
+  @IsNumber()
+  @Min(0)
+  @Max(100000000)
+  @IsOptional()
+  billableRateCents?: number;
+
   @ApiPropertyOptional({
     example: ['time_tracking', 'sprints'],
     description: 'Enabled modules for this space (overrides org defaults)',

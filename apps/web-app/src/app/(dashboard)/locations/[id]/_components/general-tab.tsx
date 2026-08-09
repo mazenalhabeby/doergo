@@ -57,6 +57,9 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const [contactName, setContactName] = useState(space.contactName || "")
   const [contactEmail, setContactEmail] = useState(space.contactEmail || "")
   const [contactPhone, setContactPhone] = useState(space.contactPhone || "")
+  const [billableRate, setBillableRate] = useState(
+    space.billableRateCents != null ? (space.billableRateCents / 100).toString() : "",
+  )
 
   const isPhysical = type === "physical"
   const KIND_OPTIONS = [
@@ -104,6 +107,10 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       contactName: kind === "CUSTOMER" ? contactName.trim() || null : null,
       contactEmail: kind === "CUSTOMER" ? contactEmail.trim() || null : null,
       contactPhone: kind === "CUSTOMER" ? contactPhone.trim() || null : null,
+      billableRateCents:
+        kind === "CUSTOMER" && billableRate.trim() && parseFloat(billableRate) > 0
+          ? Math.round(parseFloat(billableRate) * 100)
+          : null,
       // Physical → persist the pin/address/geofence. Workspace → clear the
       // physical attributes (null) so the space becomes a logical one.
       ...(isPhysical
@@ -277,6 +284,19 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                   <Label htmlFor="cfg-contact-phone">{t("locations.form.contactPhone", "Contact phone")}</Label>
                   <Input id="cfg-contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cfg-billable-rate">{t("locations.form.billableRate", "Billable rate (per hour)")}</Label>
+                <Input
+                  id="cfg-billable-rate"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={billableRate}
+                  onChange={(e) => setBillableRate(e.target.value)}
+                  placeholder={t("locations.form.billableRatePlaceholder", "Uses org default if empty")}
+                />
+                <p className="text-[11px] text-muted-foreground">{t("locations.form.billableRateHint", "Auto-prices labor lines on this customer's invoices. Leave empty to use the organization default.")}</p>
               </div>
             </div>
           )}

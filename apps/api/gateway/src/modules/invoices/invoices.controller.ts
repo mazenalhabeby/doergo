@@ -57,17 +57,44 @@ export class InvoicesController {
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List invoices' })
   async findAll(
-    @Query() query: { status?: string; page?: string; limit?: string },
+    @Query() query: { status?: string; spaceId?: string; page?: string; limit?: string },
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
       this.authClient.send({ cmd: 'invoice_list' }, {
         organizationId: user.organizationId,
         status: query.status,
+        spaceId: query.spaceId,
         page: query.page ? Number(query.page) : undefined,
         limit: query.limit ? Number(query.limit) : undefined,
       }),
     );
+  }
+
+  // NOTE: must be declared BEFORE the ':id' route so "gather" isn't captured as an id.
+  @Get('gather')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: "Build draft invoice lines from a customer space's completed work" })
+  async gather(
+    @Query('spaceId') spaceId: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    if (!spaceId) {
+      throw new HttpException({ message: 'spaceId is required' }, HttpStatus.BAD_REQUEST);
+    }
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'invoice_gather' }, {
+        organizationId: user.organizationId,
+        spaceId,
+      }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return result;
   }
 
   @Get(':id')

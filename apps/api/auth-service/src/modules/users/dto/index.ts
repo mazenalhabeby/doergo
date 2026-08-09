@@ -29,8 +29,6 @@ export interface UpdateEmployeeDto {
   enabledModules?: string[];
   specialty?: string;
   employmentType?: string; // "IN_HOUSE" | "EXTERNAL"
-  costType?: string | null; // "HOURLY" | "FIXED" | null
-  costRateCents?: number | null;
   maxDailyJobs?: number;
   isActive?: boolean;
   rating?: number;
