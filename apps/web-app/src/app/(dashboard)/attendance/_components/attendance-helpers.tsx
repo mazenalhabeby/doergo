@@ -1,10 +1,11 @@
 import React from "react"
 import { useTranslation } from "react-i18next"
-import { AlertCircle, CheckCircle2, Clock, XCircle, type LucideIcon } from "lucide-react"
+import { AlertCircle, CheckCircle2, Clock, XCircle, StickyNote, type LucideIcon } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { cn, formatTimeOfDay } from "@/lib/utils"
 import { type TimeEntry } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { countryFromTz } from "@hbcfield/shared/client"
 
 // Flag reason badge config for smart auto-approval.
@@ -215,5 +216,36 @@ export function StatCard({
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Notes cell for attendance tables. Keeps the row compact — a single truncated
+ * line with a subtle dotted underline hinting there's more — and reveals the FULL
+ * note in an elegant HoverCard on hover/focus (scrolls if very long). No layout
+ * shift, no row growth: the table stays intact while long notes stay readable.
+ */
+export function NoteCell({ note, maxWidth = 180 }: { note?: string | null; maxWidth?: number }) {
+  const { t } = useTranslation()
+  if (!note || !note.trim()) return <span className="text-muted-foreground">-</span>
+  return (
+    <HoverCard openDelay={120} closeDelay={80}>
+      <HoverCardTrigger asChild>
+        <button
+          type="button"
+          style={{ maxWidth }}
+          className="block truncate text-left text-sm text-muted-foreground underline decoration-dotted decoration-muted-foreground/40 underline-offset-4 transition-colors hover:text-foreground cursor-help"
+        >
+          {note}
+        </button>
+      </HoverCardTrigger>
+      <HoverCardContent align="start" side="top" className="w-80 max-h-64 overflow-y-auto">
+        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <StickyNote className="size-3.5 text-brand-600" />
+          {t("attendance.notes")}
+        </div>
+        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{note}</p>
+      </HoverCardContent>
+    </HoverCard>
   )
 }

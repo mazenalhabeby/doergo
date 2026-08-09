@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertCircle, CheckCircle2, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { StatCard, toDate, formatTime, StatusBadge, WorkerCell, ClockCell, ApprovalCell } from "./attendance-helpers"
+import { StatCard, toDate, formatTime, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { useTimeFormat } from "@/hooks"
@@ -592,16 +592,7 @@ export function TrackingTab({
                         <ApprovalCell entry={entry} />
                       </TableCell>
                       <TableCell>
-                        {entry.notes ? (
-                          <span
-                            className="text-sm text-muted-foreground truncate max-w-[150px] block"
-                            title={entry.notes}
-                          >
-                            {entry.notes}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
+                        <NoteCell note={entry.notes} />
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
