@@ -26,6 +26,12 @@ export interface CompanyLocation {
   enabledModules?: string[] | null;
   workflowId?: string | null;
   workModel?: string | null; // NONE | SHIFT | FIXED | TASK — how attendance is interpreted
+  // Ownership classification — PROJECT | COMPANY | CUSTOMER (orthogonal to
+  // physical-vs-workspace). CUSTOMER spaces carry the contact fields below.
+  kind?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   // Space-driven routing (Phase 3): role ids notified about / contactable by
   // members here. Empty = default to the space's leader roles.
   notifyRoleIds?: string[] | null;

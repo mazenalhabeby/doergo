@@ -7,7 +7,7 @@ export {
   DependencyType, SprintStatus, EpicStatus,
   CustomFieldType, RecurrenceFrequency,
   TaskCreationScope, TimeOffStatus, InvoiceStatus,
-  WorkModel, ShiftReminderState, ShiftRecurrence,
+  WorkModel, SpaceKind, ShiftReminderState, ShiftRecurrence,
 } from './enums';
 
 export {

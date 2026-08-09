@@ -191,6 +191,15 @@ export enum WorkModel {
   TASK = 'TASK',   // Task-based, no scheduled end (safety net only)
 }
 
+// Ownership classification of a space (CompanyLocation) — orthogonal to its
+// physical/workspace nature (derived from coords). CUSTOMER = a customer company
+// you do work for (carries contact fields); replaces the retired B2B directory.
+export enum SpaceKind {
+  PROJECT = 'PROJECT',
+  COMPANY = 'COMPANY',
+  CUSTOMER = 'CUSTOMER',
+}
+
 // Lifecycle of a still-open clock-in relative to its expected shift end.
 // The engine NEVER force-closes — it nudges and escalates.
 export enum ShiftReminderState {

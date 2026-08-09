@@ -124,6 +124,17 @@ enum WorkModel {
   TASK // Task-based, no scheduled end (safety net only)
 }
 
+// Ownership classification of a Space — orthogonal to its physical/workspace
+// nature (which is derived from lat/lng). A CUSTOMER space represents a customer
+// company you do work for (carries contact fields); it replaces the retired
+// standalone B2B "Customers" directory. Portal residents are NOT this — they stay
+// on the Customer model.
+enum SpaceKind {
+  PROJECT // A project space
+  COMPANY // Your own company / internal work area (default for existing spaces)
+  CUSTOMER // A customer company you do work for
+}
+
 // Lifecycle of a still-open clock-in relative to its expected shift end.
 // The engine NEVER force-closes — it nudges and escalates.
 enum ShiftReminderState {
@@ -1322,6 +1333,13 @@ model CompanyLocation {
   geofenceRadius Int     @default(15) // Radius in meters for clock-in zone
   timezone       String  @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   workModel      WorkModel @default(NONE) // How attendance is interpreted for this space
+  // Ownership classification (project / my company / customer company). Orthogonal
+  // to physical-vs-workspace (derived from lat/lng). CUSTOMER spaces carry the
+  // contact fields below and represent a customer you do work for.
+  kind           SpaceKind @default(COMPANY)
+  contactName    String? // CUSTOMER kind: primary contact
+  contactEmail   String? // CUSTOMER kind: contact email
+  contactPhone   String? // CUSTOMER kind: contact phone
   isActive       Boolean @default(true)
   isDefault      Boolean @default(false) // The org's default space (holds otherwise-unassigned tasks)
   isRemote       Boolean @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
@@ -1370,6 +1388,7 @@ model CompanyLocation {
 
   @@index([organizationId])
   @@index([isActive])
+  @@index([organizationId, kind]) // filter/group spaces by ownership kind
   @@map("company_locations")
 }
 
