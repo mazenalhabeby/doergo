@@ -604,10 +604,14 @@ export default function MemberProfilePage({
                       <MapPin className="size-3.5" />
                       {t("technicians.detail.tabs.locations")}
                     </TabsTrigger>
-                    <TabsTrigger value="schedule" className={triggerCls}>
-                      <Calendar className="size-3.5" />
-                      {t("technicians.detail.tabs.schedule")}
-                    </TabsTrigger>
+                    {/* Weekly schedule only applies to FIXED-hours members; flexible/
+                        none members work to a monthly budget, so hide the tab. */}
+                    {member.scheduleType === "FIXED" && (
+                      <TabsTrigger value="schedule" className={triggerCls}>
+                        <Calendar className="size-3.5" />
+                        {t("technicians.detail.tabs.schedule")}
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger value="time-off" className={triggerCls}>
                       <Umbrella className="size-3.5" />
                       {t("technicians.detail.tabs.timeOff")}
@@ -673,9 +677,11 @@ export default function MemberProfilePage({
                   <TabsContent value="locations" className="mt-6">
                     <LocationsTab assignments={memberAssignments} />
                   </TabsContent>
-                  <TabsContent value="schedule" className="mt-6">
-                    <ScheduleTab employeeId={memberId} canManage={canManage} />
-                  </TabsContent>
+                  {member.scheduleType === "FIXED" && (
+                    <TabsContent value="schedule" className="mt-6">
+                      <ScheduleTab employeeId={memberId} canManage={canManage} />
+                    </TabsContent>
+                  )}
                   <TabsContent value="time-off" className="mt-6">
                     <TimeOffTab employeeId={memberId} canManage={canManage} />
                   </TabsContent>
