@@ -18,28 +18,20 @@ export class SearchService {
     const take = Math.min(Math.max(1, data.limit ?? 6), 10);
     const contains = { contains: q, mode: 'insensitive' as const };
 
-    const [members, customers] = await Promise.all([
-      this.prisma.user.findMany({
-        where: {
-          organizationId: data.organizationId,
-          role: { not: Role.CUSTOMER }, // staff only, never portal-customer accounts
-          OR: [{ firstName: contains }, { lastName: contains }, { email: contains }],
-        },
-        select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
-        orderBy: [{ firstName: 'asc' }],
-        take,
-      }),
-      this.prisma.customer.findMany({
-        where: {
-          organizationId: data.organizationId,
-          OR: [{ name: contains }, { contactName: contains }, { email: contains }],
-        },
-        select: { id: true, name: true, contactName: true },
-        orderBy: [{ name: 'asc' }],
-        take,
-      }),
-    ]);
+    const members = await this.prisma.user.findMany({
+      where: {
+        organizationId: data.organizationId,
+        role: { not: Role.CUSTOMER }, // staff only, never portal-customer accounts
+        OR: [{ firstName: contains }, { lastName: contains }, { email: contains }],
+      },
+      select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
+      orderBy: [{ firstName: 'asc' }],
+      take,
+    });
 
-    return { members, customers };
+    // The B2B Customers directory was retired (customers are now Spaces); the
+    // command palette no longer renders a customers group, so we skip that query.
+    // Field kept empty for response-shape compatibility.
+    return { members, customers: [] as { id: string; name: string; contactName: string | null }[] };
   }
 }

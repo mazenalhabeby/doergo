@@ -520,7 +520,9 @@ export class LocationsService {
     let locationIds: string[];
     if (data.spaceScope === 'all') {
       const locs = await this.prisma.companyLocation.findMany({
-        where: { organizationId: data.organizationId, isActive: true },
+        // Exclude customer-company spaces — they hold no members, so they add
+        // nothing to a colleague scan (and shouldn't be treated as work areas).
+        where: { organizationId: data.organizationId, isActive: true, kind: { not: 'CUSTOMER' } },
         select: { id: true },
       });
       locationIds = locs.map((l) => l.id);

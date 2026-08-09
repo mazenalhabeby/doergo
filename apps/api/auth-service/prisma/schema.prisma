@@ -1340,6 +1340,10 @@ model CompanyLocation {
   contactName    String? // CUSTOMER kind: primary contact
   contactEmail   String? // CUSTOMER kind: contact email
   contactPhone   String? // CUSTOMER kind: contact phone
+  // Provenance: the legacy Customer this CUSTOMER space was migrated from (plain
+  // marker, no FK). Makes the one-off backfill idempotent by id (never merges two
+  // same-named customers) and links a customer-space back to its Customer record.
+  sourceCustomerId String?
   isActive       Boolean @default(true)
   isDefault      Boolean @default(false) // The org's default space (holds otherwise-unassigned tasks)
   isRemote       Boolean @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
@@ -1389,6 +1393,7 @@ model CompanyLocation {
   @@index([organizationId])
   @@index([isActive])
   @@index([organizationId, kind, name]) // filter by kind + name-sorted lists (pickers, customer directory)
+  @@index([sourceCustomerId]) // backfill idempotency + customer-space ↔ Customer lookup
   @@map("company_locations")
 }
 
