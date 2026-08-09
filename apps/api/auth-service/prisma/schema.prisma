@@ -33,6 +33,40 @@ enum AccessLevel {
   FULL // Can view everything + assign
 }
 
+// Cross-org SPACE sharing (a space owned by org A shared with guest org B).
+// Level maps to the unified permission keys for THAT space only:
+//   VIEW       → canViewAllTasks (read board/tasks + owner-toggled extras)
+//   CONTRIBUTE → VIEW + canCreateTasks (add tasks/requests, can't reassign)
+//   CONTROL    → CONTRIBUTE + canAssignTasks (full task/worker control)
+enum SpaceShareLevel {
+  VIEW
+  CONTRIBUTE
+  CONTROL
+}
+
+// Share lifecycle. PENDING until the guest org accepts (invite+accept handshake);
+// ACTIVE grants access; REVOKED/DECLINED are inert (never merged into a session).
+enum SpaceShareStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+  DECLINED
+}
+
+// A guest's "please add …" ask against a shared space (used when the guest can't
+// act directly, or the owner keeps requests on). Discrete + human-approved →
+// no auto-retrigger, no loop.
+enum ShareRequestType {
+  TASK
+  WORKER
+}
+
+enum ShareRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum TaskStatus {
   DRAFT
   NEW
@@ -487,6 +521,68 @@ model OrganizationAccess {
   @@index([grantorOrgId])
   @@index([granteeOrgId])
   @@map("organization_access")
+}
+
+// Cross-org share of ONE space. Owner org (space.organizationId) shares a space
+// with a guest org at a level + owner-configurable visibility scope. Plain-string
+// fk-less ids (mirrors sourceCustomerId/taskId precedent) — cleanup handled in the
+// share service. The security invariant: this is the ONLY thing that lets a guest
+// org's session reach a foreign space, and only while status = ACTIVE.
+model SpaceShare {
+  id         String           @id @default(cuid())
+  spaceId    String // the shared CompanyLocation (belongs to ownerOrgId)
+  ownerOrgId String // = space.organizationId, denormalized for fast owner-side lists
+  guestOrgId String // the org receiving access
+  level      SpaceShareLevel  @default(VIEW)
+  status     SpaceShareStatus @default(PENDING)
+
+  // Owner-configurable visibility scope (dynamic — editable any time).
+  showWorkers    Boolean @default(true)
+  showAttendance Boolean @default(false)
+  showTracking   Boolean @default(false)
+  showReports    Boolean @default(false)
+  allowRequests  Boolean @default(true)
+
+  createdById  String
+  acceptedById String?
+  acceptedAt   DateTime?
+  expiresAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requests SpaceShareRequest[]
+
+  @@unique([spaceId, guestOrgId]) // one share per (space, guest)
+  @@index([guestOrgId, status]) // guest session-grant lookup (hot path)
+  @@index([ownerOrgId, status]) // owner-side share list
+  @@index([spaceId])
+  @@map("space_shares")
+}
+
+// A guest's request for more work/workers on a shared space. One row, one owner
+// decision; a resolved request never re-fires (no loop).
+model SpaceShareRequest {
+  id            String             @id @default(cuid())
+  shareId       String
+  share         SpaceShare         @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  spaceId       String
+  guestOrgId    String
+  requestedById String
+  type          ShareRequestType
+  title         String // requested task title, or role/skill needed
+  note          String?
+  status        ShareRequestStatus @default(PENDING)
+  resolvedById  String?
+  resolvedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spaceId, status])
+  @@index([guestOrgId, status])
+  @@index([shareId])
+  @@map("space_share_requests")
 }
 
 model User {

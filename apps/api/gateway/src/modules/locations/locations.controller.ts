@@ -111,13 +111,16 @@ export class LocationsController {
     });
   }
 
+  // No @RequirePermission: the service fully scopes this read to the caller's own
+  // org OR a space cross-org-shared with them (server-authoritative sharedSpaceIds).
+  // A space a caller has no claim to returns NotFound.
   @Get(':id')
-  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a company location by ID' })
   async findOne(@Param('id') id: string, @Request() req: any) {
     return this.locationsService.findOne({
       id,
       organizationId: req.user.organizationId,
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s: any) => s.spaceId),
     });
   }
 

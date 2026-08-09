@@ -499,7 +499,10 @@ export class TasksService {
       canViewAllTasks,
       organizationId,
       spaceId,
+      sharedSpaceIds, // server-authoritative cross-org shared spaces (from the token grant)
     } = query;
+    // Is this a query for a foreign space shared with the caller's org?
+    const isSharedSpace = !!spaceId && Array.isArray(sharedSpaceIds) && sharedSpaceIds.includes(spaceId);
     const safePage = Math.max(1, Number(page) || 1);
     const safeLimit = Math.min(Math.max(1, Number(limit) || 20), 500);
     const skip = (safePage - 1) * safeLimit;
@@ -514,30 +517,40 @@ export class TasksService {
     // Priority filter
     if (priority) where.priority = priority;
 
-    // Visibility (new access-flag model): ADMIN or anyone granted "view all
-    // tasks" sees the whole org; everyone else sees only tasks they're on.
-    if (userRole === Role.ADMIN || canViewAllTasks) {
-      where.organizationId = organizationId;
-    } else {
-      // Sees tasks assigned to them — as the LEAD (legacy assignedToId, incl.
-      // seed data) OR as any multi-assignee MEMBER. Wrapped in AND so it
-      // composes with other OR filters below.
-      where.AND = [
-        ...(where.AND || []),
-        { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
-      ];
-    }
-
-    // Space filter — verify it belongs to the user's org before applying
-    if (spaceId) {
-      const space = await this.prisma.companyLocation.findUnique({
-        where: { id: spaceId },
-        select: { organizationId: true },
-      });
-      if (!space || space.organizationId !== organizationId) {
-        throw new ForbiddenException('Access denied to this space');
-      }
+    if (isSharedSpace) {
+      // Cross-org shared space: the grant is server-authoritative (validated in
+      // auth-service, forwarded on the token). Scope strictly to that ONE space —
+      // NO org filter (the space itself is the boundary) and NO own-tasks
+      // restriction (the share confers view-all within the space). This is the
+      // only place the org isolation filter is intentionally bypassed, and only
+      // for a spaceId proven to be in the caller's received-shares set.
       where.spaceId = spaceId;
+    } else {
+      // Visibility (new access-flag model): ADMIN or anyone granted "view all
+      // tasks" sees the whole org; everyone else sees only tasks they're on.
+      if (userRole === Role.ADMIN || canViewAllTasks) {
+        where.organizationId = organizationId;
+      } else {
+        // Sees tasks assigned to them — as the LEAD (legacy assignedToId, incl.
+        // seed data) OR as any multi-assignee MEMBER. Wrapped in AND so it
+        // composes with other OR filters below.
+        where.AND = [
+          ...(where.AND || []),
+          { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
+        ];
+      }
+
+      // Space filter — verify it belongs to the user's org before applying
+      if (spaceId) {
+        const space = await this.prisma.companyLocation.findUnique({
+          where: { id: spaceId },
+          select: { organizationId: true },
+        });
+        if (!space || space.organizationId !== organizationId) {
+          throw new ForbiddenException('Access denied to this space');
+        }
+        where.spaceId = spaceId;
+      }
     }
 
     // Build AND conditions for date range and search

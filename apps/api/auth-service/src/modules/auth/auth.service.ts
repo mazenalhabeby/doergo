@@ -1067,8 +1067,46 @@ export class AuthService {
         .catch(() => undefined);
 
       const { organization, profileBadges, enabledModules: userModules, memberRole, spaceAssignments, ...userData } = user;
+
+      // Cross-org space shares RECEIVED by this user's org (ACTIVE only). Indexed
+      // on [guestOrgId, status] → returns 0 rows for the vast majority of users
+      // (one cheap round-trip, and the whole validate result is token-cached ~60s).
+      // These are the ONLY foreign spaces this session can reach.
+      const sharedGrants = userData.organizationId
+        ? await this.prisma.spaceShare.findMany({
+            where: { guestOrgId: userData.organizationId, status: 'ACTIVE' },
+            select: {
+              spaceId: true, ownerOrgId: true, level: true,
+              showWorkers: true, showAttendance: true, showTracking: true, showReports: true, allowRequests: true,
+            },
+          })
+        : [];
+      let sharedSpaces: any[] | undefined;
+      if (sharedGrants.length) {
+        const spaceIds = sharedGrants.map((g) => g.spaceId);
+        const ownerOrgIds = [...new Set(sharedGrants.map((g) => g.ownerOrgId))];
+        const [spaces, orgs] = await Promise.all([
+          this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
+          this.prisma.organization.findMany({ where: { id: { in: ownerOrgIds } }, select: { id: true, name: true } }),
+        ]);
+        const spaceName = new Map(spaces.map((s) => [s.id, s.name]));
+        const orgName = new Map(orgs.map((o) => [o.id, o.name]));
+        sharedSpaces = sharedGrants.map((g) => ({
+          spaceId: g.spaceId,
+          ownerOrgId: g.ownerOrgId,
+          ownerOrgName: orgName.get(g.ownerOrgId),
+          spaceName: spaceName.get(g.spaceId),
+          level: g.level,
+          showWorkers: g.showWorkers,
+          showAttendance: g.showAttendance,
+          showTracking: g.showTracking,
+          showReports: g.showReports,
+          allowRequests: g.allowRequests,
+        }));
+      }
+
       // Resolve the member's access ONCE here (server-side, from their own
-      // roles/assignments). Cached with the validated user on the gateway.
+      // roles/assignments + any cross-org shares). Cached with the validated user.
       const access = buildResolvedAccess({
         userFlags: {
           canCreateTasks: userData.canCreateTasks,
@@ -1082,6 +1120,7 @@ export class AuthService {
           spaceId: a.spaceId,
           permissions: a.role?.isActive ? a.role.permissions : undefined,
         })),
+        sharedSpaces,
       });
       return {
         valid: true,

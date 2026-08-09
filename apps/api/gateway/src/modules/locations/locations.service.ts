@@ -26,7 +26,7 @@ export class LocationsService extends BaseGatewayService {
   /**
    * Get a single company location by ID
    */
-  async findOne(data: { id: string; organizationId: string }) {
+  async findOne(data: { id: string; organizationId: string; sharedSpaceIds?: string[] }) {
     return this.send({ cmd: 'find_one_location' }, data);
   }
 

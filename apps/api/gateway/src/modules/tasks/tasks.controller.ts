@@ -168,6 +168,9 @@ export class TasksController {
       canViewAllTasks: req.user.canViewAllTasks,
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
+      // Cross-org shared spaces the caller may view (server-authoritative, from
+      // the resolved token grant — never client input).
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s: any) => s.spaceId),
     });
   }
 

@@ -250,11 +250,60 @@ export function isSpaceLeaderPermissions(perms: unknown): boolean {
 // guards. Never assembled from client input — so a caller can't claim a space
 // permission they don't hold.
 
+/** Cross-org share level (mirrors the Prisma SpaceShareLevel enum as a union). */
+export type SpaceShareLevel = 'VIEW' | 'CONTRIBUTE' | 'CONTROL';
+
+/**
+ * Map a cross-org share level → the space-scoped permissions it confers. Uses ONLY
+ * the existing task permission keys, so a shared grant rides the exact same
+ * per-space enforcement (`accessAllows(access, key, spaceId)`) as a native space
+ * role — nothing bespoke, nothing that could widen beyond the space.
+ *   VIEW       → read the board/tasks
+ *   CONTRIBUTE → + create tasks / raise requests
+ *   CONTROL    → + assign tasks & workers
+ */
+export function spaceShareLevelToPermissions(level: SpaceShareLevel): PermissionSet {
+  switch (level) {
+    case 'CONTROL':
+      return { canViewAllTasks: true, canCreateTasks: true, canAssignTasks: true };
+    case 'CONTRIBUTE':
+      return { canViewAllTasks: true, canCreateTasks: true };
+    case 'VIEW':
+    default:
+      return { canViewAllTasks: true };
+  }
+}
+
+/**
+ * A foreign space this session may reach via a cross-org share. Carried on the
+ * resolved access for (a) the guest UI ("Shared from {org}" + capabilities) and
+ * (b) server-side widening — the set of `spaceId`s a guest's queries may include
+ * IN ADDITION to their own org. Built ONLY from ACTIVE shares at session time.
+ */
+export interface SharedSpaceGrant {
+  spaceId: string;
+  ownerOrgId: string;
+  ownerOrgName?: string;
+  spaceName?: string;
+  level: SpaceShareLevel;
+  showWorkers: boolean;
+  showAttendance: boolean;
+  showTracking: boolean;
+  showReports: boolean;
+  allowRequests: boolean;
+}
+
 export interface ResolvedAccess {
   /** Permissions that apply org-wide (everywhere). */
   org: PermissionSet;
   /** Permissions that apply only within a given space id. */
   perSpace: Record<string, PermissionSet>;
+  /**
+   * Foreign spaces reachable via a cross-org share (empty/absent for most users).
+   * The `spaceId`s here are the ONLY foreign spaces a guest may touch; services
+   * widen their org filter to exactly these, never further.
+   */
+  sharedSpaces?: SharedSpaceGrant[];
 }
 
 /**
@@ -269,6 +318,7 @@ export function buildResolvedAccess(input: {
   userFlags?: Parameters<typeof permissionsFromUserFlags>[0];
   memberRolePermissions?: unknown; // unified AccessRole.permissions (org-scoped)
   spaces?: { spaceId: string; permissions?: unknown }[]; // unified space grants
+  sharedSpaces?: SharedSpaceGrant[]; // cross-org shares received by this user's org (ACTIVE only)
 }): ResolvedAccess {
   const org = mergePermissions(
     input.userFlags ? permissionsFromUserFlags(input.userFlags) : undefined,
@@ -279,7 +329,15 @@ export function buildResolvedAccess(input: {
     if (!s?.spaceId) continue;
     perSpace[s.spaceId] = mergePermissions(perSpace[s.spaceId], permissionsFromOrgRole(s.permissions));
   }
-  return { org, perSpace };
+  // Cross-org shares: merge the level's space-scoped permissions for each foreign
+  // space. These are the ONLY foreign spaces this session can reach.
+  for (const g of input.sharedSpaces ?? []) {
+    if (!g?.spaceId) continue;
+    perSpace[g.spaceId] = mergePermissions(perSpace[g.spaceId], spaceShareLevelToPermissions(g.level));
+  }
+  const access: ResolvedAccess = { org, perSpace };
+  if (input.sharedSpaces && input.sharedSpaces.length) access.sharedSpaces = input.sharedSpaces;
+  return access;
 }
 
 /**

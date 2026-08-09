@@ -176,12 +176,13 @@ export class LocationsService {
   /**
    * Get a single company location by ID
    */
-  async findOne(data: { id: string; organizationId: string }) {
+  async findOne(data: { id: string; organizationId: string; sharedSpaceIds?: string[] }) {
+    // A guest org may open a space shared with it: if the id is in the caller's
+    // server-authoritative received-shares set, scope by id alone (the space is
+    // foreign); otherwise keep the strict org filter.
+    const isShared = Array.isArray(data.sharedSpaceIds) && data.sharedSpaceIds.includes(data.id);
     const location = await this.prisma.companyLocation.findFirst({
-      where: {
-        id: data.id,
-        organizationId: data.organizationId,
-      },
+      where: isShared ? { id: data.id } : { id: data.id, organizationId: data.organizationId },
       include: {
         workflow: {
           include: {
