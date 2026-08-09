@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2 } from "lucide-react"
+import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2, Briefcase, Building2, Handshake } from "lucide-react"
 import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
@@ -53,6 +53,12 @@ export function SpaceForm({
 
   const [name, setName] = useState("")
   const [type, setType] = useState<"workspace" | "physical">("workspace")
+  // Ownership classification — orthogonal to workspace/physical. CUSTOMER reveals
+  // contact fields (a customer-company space you do work for).
+  const [kind, setKind] = useState<"PROJECT" | "COMPANY" | "CUSTOMER">("COMPANY")
+  const [contactName, setContactName] = useState("")
+  const [contactEmail, setContactEmail] = useState("")
+  const [contactPhone, setContactPhone] = useState("")
   const [address, setAddress] = useState("")
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
@@ -113,8 +119,19 @@ export function SpaceForm({
       timezone: timezone || undefined,
       enabledModules,
       workflowId: workflowId || defaultWorkflow?.id || undefined,
+      // Ownership kind + customer contact fields (only sent for CUSTOMER).
+      kind,
+      contactName: kind === "CUSTOMER" ? contactName.trim() || undefined : undefined,
+      contactEmail: kind === "CUSTOMER" ? contactEmail.trim() || undefined : undefined,
+      contactPhone: kind === "CUSTOMER" ? contactPhone.trim() || undefined : undefined,
     })
   }
+
+  const KIND_OPTIONS = [
+    { value: "PROJECT" as const, icon: Briefcase, label: t("locations.form.kindProject", "My project") },
+    { value: "COMPANY" as const, icon: Building2, label: t("locations.form.kindCompany", "My company") },
+    { value: "CUSTOMER" as const, icon: Handshake, label: t("locations.form.kindCustomer", "Customer company") },
+  ]
 
   return (
     <div className="space-y-5">
@@ -168,6 +185,57 @@ export function SpaceForm({
           </button>
         </div>
       </div>
+
+      {/* Ownership — my project / my company / customer company (separate axis) */}
+      <div className="space-y-2" data-tour="spaces-form-ownership">
+        <Label>{t("locations.form.ownership", "Ownership")}</Label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {KIND_OPTIONS.map((opt) => {
+            const Icon = opt.icon
+            const active = kind === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setKind(opt.value)}
+                className={cn(
+                  "rounded-xl border p-3 text-left transition-all",
+                  active
+                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800"
+                    : "border-border hover:border-muted-foreground/30",
+                )}
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Icon className="h-4 w-4 text-blue-600" /> {opt.label}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Customer-company only: contact details */}
+      {kind === "CUSTOMER" && (
+        <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
+          <p className="text-xs font-medium text-muted-foreground">
+            {t("locations.form.customerContact", "Customer contact")}
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="cust-contact-name">{t("locations.form.contactName", "Contact name")}</Label>
+            <Input id="cust-contact-name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="cust-contact-email">{t("locations.form.contactEmail", "Contact email")}</Label>
+              <Input id="cust-contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cust-contact-phone">{t("locations.form.contactPhone", "Contact phone")}</Label>
+              <Input id="cust-contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Physical-only: address + map + geofence */}
       {isPhysical && (

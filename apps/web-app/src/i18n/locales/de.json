@@ -3205,7 +3205,15 @@
       "geofenceHint": "Mitarbeiter können innerhalb dieser Entfernung vom Pin einstempeln.",
       "advancedModules": "Erweitert — Module",
       "enabledCount": "{{count}} aktiviert",
-      "modulesIntro": "Module fügen den Aufgaben dieses Bereichs optionale Funktionen hinzu (Checklisten, GPS-Tracking, Sprints…). Beginnen Sie mit einer Voreinstellung und passen Sie sie unten an."
+      "modulesIntro": "Module fügen den Aufgaben dieses Bereichs optionale Funktionen hinzu (Checklisten, GPS-Tracking, Sprints…). Beginnen Sie mit einer Voreinstellung und passen Sie sie unten an.",
+      "ownership": "Zugehörigkeit",
+      "kindProject": "Mein Projekt",
+      "kindCompany": "Mein Unternehmen",
+      "kindCustomer": "Kundenunternehmen",
+      "customerContact": "Kundenkontakt",
+      "contactName": "Ansprechpartner",
+      "contactEmail": "Kontakt-E-Mail",
+      "contactPhone": "Kontakt-Telefon"
     },
     "toast": {
       "deactivated": "Bereich deaktiviert",
@@ -3269,7 +3277,9 @@
       "deleting": "Wird gelöscht…",
       "deleted": "Bereich gelöscht",
       "deleteFailed": "Bereich konnte nicht gelöscht werden"
-    }
+    },
+    "ownershipSection": "Zugehörigkeit",
+    "ownershipHint": "Ist dies ein Projekt, Ihr eigenes Unternehmen oder ein Kundenunternehmen, für das Sie arbeiten?"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

@@ -10,7 +10,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { ATTENDANCE_CONSTANTS, WorkModel } from '@hbcfield/shared';
+import { ATTENDANCE_CONSTANTS, WorkModel, SpaceKind } from '@hbcfield/shared';
 
 export class CreateLocationDto {
   @ApiProperty({
@@ -79,6 +79,33 @@ export class CreateLocationDto {
   @IsIn(Object.values(WorkModel))
   @IsOptional()
   workModel?: WorkModel;
+
+  @ApiPropertyOptional({
+    enum: SpaceKind,
+    description: 'Ownership classification: PROJECT | COMPANY | CUSTOMER (a customer company you do work for)',
+    default: SpaceKind.COMPANY,
+  })
+  @IsIn(Object.values(SpaceKind))
+  @IsOptional()
+  kind?: SpaceKind;
+
+  @ApiPropertyOptional({ description: 'CUSTOMER kind: primary contact name' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  contactName?: string;
+
+  @ApiPropertyOptional({ description: 'CUSTOMER kind: contact email' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  contactEmail?: string;
+
+  @ApiPropertyOptional({ description: 'CUSTOMER kind: contact phone' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  contactPhone?: string;
 
   @ApiPropertyOptional({
     example: ['time_tracking', 'sprints'],

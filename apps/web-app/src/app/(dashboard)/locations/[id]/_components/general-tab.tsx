@@ -4,7 +4,7 @@ import { useState, useRef } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Boxes, Building2, CheckCircle2, Loader2, MapPin, PauseCircle } from "lucide-react"
+import { Boxes, Building2, CheckCircle2, Loader2, MapPin, PauseCircle, Briefcase, Handshake } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -50,8 +50,20 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const [radius, setRadius] = useState(space.geofenceRadius.toString())
   const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
   const [isActive, setIsActive] = useState(space.isActive)
+  // Ownership classification (separate axis from workspace/physical).
+  const [kind, setKind] = useState<"PROJECT" | "COMPANY" | "CUSTOMER">(
+    (space.kind as "PROJECT" | "COMPANY" | "CUSTOMER") || "COMPANY",
+  )
+  const [contactName, setContactName] = useState(space.contactName || "")
+  const [contactEmail, setContactEmail] = useState(space.contactEmail || "")
+  const [contactPhone, setContactPhone] = useState(space.contactPhone || "")
 
   const isPhysical = type === "physical"
+  const KIND_OPTIONS = [
+    { value: "PROJECT" as const, icon: Briefcase, label: t("locations.form.kindProject", "My project") },
+    { value: "COMPANY" as const, icon: Building2, label: t("locations.form.kindCompany", "My company") },
+    { value: "CUSTOMER" as const, icon: Handshake, label: t("locations.form.kindCustomer", "Customer company") },
+  ]
   const clampRadius = () => Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
 
   // Remember the last coords we auto-derived a timezone for, so a save/re-render
@@ -87,6 +99,11 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       name: name.trim(),
       timezone,
       isActive,
+      // Ownership kind + customer contact fields (cleared when not CUSTOMER).
+      kind,
+      contactName: kind === "CUSTOMER" ? contactName.trim() || null : null,
+      contactEmail: kind === "CUSTOMER" ? contactEmail.trim() || null : null,
+      contactPhone: kind === "CUSTOMER" ? contactPhone.trim() || null : null,
       // Physical → persist the pin/address/geofence. Workspace → clear the
       // physical attributes (null) so the space becomes a logical one.
       ...(isPhysical
@@ -204,6 +221,65 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
               <p className="mt-1 text-xs text-muted-foreground">{t("locations.form.physicalHint")}</p>
             </button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Ownership (project / my company / customer company) ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
+              <Handshake className="h-[18px] w-[18px]" />
+            </span>
+            <div>
+              <CardTitle className="text-base">{t("locations.ownershipSection", "Ownership")}</CardTitle>
+              <CardDescription>{t("locations.ownershipHint", "Is this a project, your own company, or a customer company you do work for?")}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {KIND_OPTIONS.map((opt) => {
+              const Icon = opt.icon
+              const active = kind === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setKind(opt.value)}
+                  className={cn(
+                    "rounded-xl border p-3 text-left transition-all",
+                    active
+                      ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
+                      : "border-border hover:border-muted-foreground/30",
+                  )}
+                >
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Icon className="h-4 w-4 text-blue-600" /> {opt.label}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          {kind === "CUSTOMER" && (
+            <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+              <p className="text-xs font-medium text-muted-foreground">{t("locations.form.customerContact", "Customer contact")}</p>
+              <div className="space-y-1.5">
+                <Label htmlFor="cfg-contact-name">{t("locations.form.contactName", "Contact name")}</Label>
+                <Input id="cfg-contact-name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="cfg-contact-email">{t("locations.form.contactEmail", "Contact email")}</Label>
+                  <Input id="cfg-contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cfg-contact-phone">{t("locations.form.contactPhone", "Contact phone")}</Label>
+                  <Input id="cfg-contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

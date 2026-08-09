@@ -16,6 +16,8 @@ import {
   ChevronRight,
   RefreshCw,
   SlidersHorizontal,
+  Handshake,
+  Briefcase,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
@@ -355,6 +357,19 @@ const SpaceCard = memo(function SpaceCard({
             >
               {space.isActive ? t("common.active") : t("common.inactive")}
             </Badge>
+            {/* Ownership kind — badge the non-default kinds (COMPANY is implicit). */}
+            {space.kind === "CUSTOMER" && (
+              <Badge variant="outline" className="gap-1 text-xs font-medium border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                <Handshake className="h-3 w-3" />
+                {t("locations.form.kindCustomer", "Customer company")}
+              </Badge>
+            )}
+            {space.kind === "PROJECT" && (
+              <Badge variant="outline" className="gap-1 text-xs font-medium border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                <Briefcase className="h-3 w-3" />
+                {t("locations.form.kindProject", "My project")}
+              </Badge>
+            )}
             {memberCount > 0 && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />

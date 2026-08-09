@@ -3205,7 +3205,15 @@
       "geofenceHint": "I lavoratori possono timbrare l'ingresso entro questa distanza dal segnaposto.",
       "advancedModules": "Avanzate — Moduli",
       "enabledCount": "{{count}} abilitati",
-      "modulesIntro": "I moduli aggiungono funzionalità opzionali alle attività di questo spazio (checklist, tracciamento GPS, sprint…). Iniziare da un preset, quindi affinare le impostazioni qui sotto."
+      "modulesIntro": "I moduli aggiungono funzionalità opzionali alle attività di questo spazio (checklist, tracciamento GPS, sprint…). Iniziare da un preset, quindi affinare le impostazioni qui sotto.",
+      "ownership": "Appartenenza",
+      "kindProject": "Il mio progetto",
+      "kindCompany": "La mia azienda",
+      "kindCustomer": "Azienda cliente",
+      "customerContact": "Contatto cliente",
+      "contactName": "Nome contatto",
+      "contactEmail": "Email contatto",
+      "contactPhone": "Telefono contatto"
     },
     "toast": {
       "deactivated": "Spazio disattivato",
@@ -3269,7 +3277,9 @@
       "deleting": "Eliminazione…",
       "deleted": "Spazio eliminato",
       "deleteFailed": "Impossibile eliminare lo spazio"
-    }
+    },
+    "ownershipSection": "Appartenenza",
+    "ownershipHint": "È un progetto, la tua azienda o un'azienda cliente per cui lavori?"
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",

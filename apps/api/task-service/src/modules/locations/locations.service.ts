@@ -39,6 +39,10 @@ export class LocationsService {
     lng?: number;
     geofenceRadius?: number;
     timezone?: string;
+    kind?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
     enabledModules?: string[];
     workflowId?: string;
     organizationId: string;
@@ -65,6 +69,11 @@ export class LocationsService {
         // default (the org-level Modules tab was removed — modules live on spaces).
         enabledModules: data.enabledModules ?? DEFAULT_ORG_MODULES,
         workflowId: data.workflowId ?? undefined,
+        // Ownership kind + customer contact fields (only meaningful for CUSTOMER).
+        kind: (data.kind as any) ?? undefined,
+        contactName: data.contactName ?? undefined,
+        contactEmail: data.contactEmail ?? undefined,
+        contactPhone: data.contactPhone ?? undefined,
         organizationId: data.organizationId,
         isDefault: existingDefault === 0,
       },
@@ -185,6 +194,10 @@ export class LocationsService {
     workflowId?: string;
     workModel?: string;
     timezone?: string;
+    kind?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
     notifyRoleIds?: string[];
     contactRoleIds?: string[];
   }) {
@@ -210,6 +223,11 @@ export class LocationsService {
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
     if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;
     if (data.workModel !== undefined) updateData.workModel = data.workModel;
+    // Ownership kind + customer contact fields.
+    if (data.kind !== undefined) updateData.kind = data.kind;
+    if (data.contactName !== undefined) updateData.contactName = data.contactName || null;
+    if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail || null;
+    if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone || null;
     // Space-driven routing (Phase 3): which roles are notified about / contactable
     // by members here. Whitelist to string arrays (fail closed).
     if (Array.isArray(data.notifyRoleIds)) {

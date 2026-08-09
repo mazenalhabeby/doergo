@@ -3205,7 +3205,15 @@
       "geofenceHint": "Los trabajadores pueden registrar entrada dentro de esta distancia del punto.",
       "advancedModules": "Avanzado — Módulos",
       "enabledCount": "{{count}} activados",
-      "modulesIntro": "Los módulos agregan funciones opcionales a las tareas de este espacio (listas de verificación, rastreo GPS, sprints…). Empieza con un preajuste y luego ajústalo abajo."
+      "modulesIntro": "Los módulos agregan funciones opcionales a las tareas de este espacio (listas de verificación, rastreo GPS, sprints…). Empieza con un preajuste y luego ajústalo abajo.",
+      "ownership": "Propiedad",
+      "kindProject": "Mi proyecto",
+      "kindCompany": "Mi empresa",
+      "kindCustomer": "Empresa cliente",
+      "customerContact": "Contacto del cliente",
+      "contactName": "Nombre de contacto",
+      "contactEmail": "Correo de contacto",
+      "contactPhone": "Teléfono de contacto"
     },
     "toast": {
       "deactivated": "Espacio desactivado",
@@ -3269,7 +3277,9 @@
       "deleting": "Eliminando…",
       "deleted": "Espacio eliminado",
       "deleteFailed": "No se pudo eliminar el espacio"
-    }
+    },
+    "ownershipSection": "Propiedad",
+    "ownershipHint": "¿Es un proyecto, tu propia empresa o una empresa cliente para la que trabajas?"
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",

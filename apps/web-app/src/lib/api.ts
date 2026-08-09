@@ -3335,6 +3335,11 @@ export interface CreateLocationInput {
   timezone?: string;
   enabledModules?: string[];
   workflowId?: string;
+  // Ownership classification + customer contact fields (CUSTOMER kind).
+  kind?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
 }
 
 export interface UpdateLocationInput {
@@ -3348,6 +3353,10 @@ export interface UpdateLocationInput {
   enabledModules?: string[];
   workflowId?: string;
   workModel?: string;
+  kind?: string;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   notifyRoleIds?: string[];
   contactRoleIds?: string[];
 }

@@ -3205,7 +3205,15 @@
       "geofenceHint": "Les employés peuvent pointer à cette distance du point.",
       "advancedModules": "Avancé — Modules",
       "enabledCount": "{{count}} activé(s)",
-      "modulesIntro": "Les modules ajoutent des fonctionnalités facultatives aux tâches de cet espace (listes de contrôle, suivi GPS, sprints…). Partez d'un préréglage, puis affinez ci-dessous."
+      "modulesIntro": "Les modules ajoutent des fonctionnalités facultatives aux tâches de cet espace (listes de contrôle, suivi GPS, sprints…). Partez d'un préréglage, puis affinez ci-dessous.",
+      "ownership": "Appartenance",
+      "kindProject": "Mon projet",
+      "kindCompany": "Mon entreprise",
+      "kindCustomer": "Entreprise cliente",
+      "customerContact": "Contact client",
+      "contactName": "Nom du contact",
+      "contactEmail": "E-mail du contact",
+      "contactPhone": "Téléphone du contact"
     },
     "toast": {
       "deactivated": "Espace désactivé",
@@ -3269,7 +3277,9 @@
       "deleting": "Suppression…",
       "deleted": "Espace supprimé",
       "deleteFailed": "Impossible de supprimer l’espace"
-    }
+    },
+    "ownershipSection": "Appartenance",
+    "ownershipHint": "S'agit-il d'un projet, de votre propre entreprise ou d'une entreprise cliente pour laquelle vous travaillez ?"
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",
