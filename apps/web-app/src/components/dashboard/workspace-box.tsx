@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
-const APPLE_EASE_CLASS = "ease-[cubic-bezier(0.32,0.72,0,1)]"
+const APPLE_EASE_CLASS = "ease-apple"
 
 export interface WorkspaceBoxProps {
   title: string

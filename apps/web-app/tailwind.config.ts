@@ -70,6 +70,12 @@ const config: Config = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
+  		transitionTimingFunction: {
+  			// Named easings (avoids ambiguous arbitrary `ease-[cubic-bezier(...)]`
+  			// classes, whose inner commas Tailwind can't disambiguate).
+  			apple: 'cubic-bezier(0.32, 0.72, 0, 1)',
+  			overshoot: 'cubic-bezier(0.68, -0.15, 0.32, 1.15)'
+  		},
   		keyframes: {
   			shimmer: {
   				'100%': {

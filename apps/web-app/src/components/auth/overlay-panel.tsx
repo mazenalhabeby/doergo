@@ -15,7 +15,7 @@ export function OverlayPanel({ isLoginActive, onToggle }: OverlayPanelProps) {
   return (
     <div
       className={cn(
-        'absolute top-0 w-1/2 h-full transition-transform duration-700 ease-[cubic-bezier(0.68,-0.15,0.32,1.15)] z-10',
+        'absolute top-0 w-1/2 h-full transition-transform duration-700 ease-overshoot z-10',
         isLoginActive ? 'translate-x-0' : 'translate-x-full'
       )}
     >
