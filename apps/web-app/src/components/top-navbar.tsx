@@ -234,37 +234,15 @@ export function TopNavbar() {
           </Link>
         )}
 
-        {/* Schedule */}
-        {showSchedule && (
-          <Link
-            href="/schedule"
-            data-tour="nav-schedule"
-            className={cn(
-              navItemBase,
-              isActive(pathname, "/schedule") || isActive(pathname, "/employees/availability")
-                ? cn(navItemActiveStyle, bottomIndicator)
-                : navItemInactive,
-            )}
-          >
-            {t("nav.sidebar.schedule")}
-          </Link>
-        )}
-
-        {/* Attendance */}
-        {showAttendance && (
-          <Link
-            href="/attendance"
-            data-tour="nav-attendance"
-            onMouseEnter={prefetch.prefetchAttendance}
-            className={cn(
-              navItemBase,
-              isActive(pathname, "/attendance")
-                ? cn(navItemActiveStyle, bottomIndicator)
-                : navItemInactive,
-            )}
-          >
-            {t("nav.sidebar.attendance")}
-          </Link>
+        {/* Time & Attendance dropdown (attendance + schedule + personal time-off) */}
+        {(showSchedule || showAttendance) && (
+          <TimeAttendanceDropdown
+            pathname={pathname}
+            showSchedule={showSchedule}
+            showAttendance={showAttendance}
+            showMyTimeOff={showMyTimeOff}
+            onOpen={prefetch.prefetchAttendance}
+          />
         )}
 
         {/* Customers (B2B) */}
@@ -328,8 +306,10 @@ export function TopNavbar() {
           </Link>
         )}
 
-        {/* Employee module-driven items */}
-        {showMyTimeOff && (
+        {/* Employee module-driven items. Personal Time Off shows standalone only
+            when the user has no Time & Attendance dropdown to host it (i.e. a
+            non-management member); managers get it inside that dropdown. */}
+        {showMyTimeOff && !(showSchedule || showAttendance) && (
           <Link href="/my/time-off" data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.timeOff")}
           </Link>
@@ -434,6 +414,72 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
             {t("nav.sidebar.joinRequests")}
           </Link>
         </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Time & Attendance Dropdown (management: attendance + schedule + time-off)
+// ---------------------------------------------------------------------------
+function TimeAttendanceDropdown({
+  pathname,
+  showSchedule,
+  showAttendance,
+  showMyTimeOff,
+  onOpen,
+}: {
+  pathname: string
+  showSchedule: boolean
+  showAttendance: boolean
+  showMyTimeOff: boolean
+  onOpen?: () => void
+}) {
+  const { t } = useTranslation()
+  // Trigger is active on any of the grouped routes (schedule also covers its
+  // legacy /employees/availability target; my/time-off is the personal time-off page).
+  const active = isDropdownActive(pathname, ["/attendance", "/schedule", "/employees/availability", "/my/time-off"])
+
+  return (
+    <DropdownMenu onOpenChange={(open) => { if (open && onOpen) onOpen() }}>
+      <DropdownMenuTrigger
+        data-tour="nav-time-attendance"
+        className={cn(
+          navItemBase,
+          "cursor-pointer select-none outline-none",
+          active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
+        )}
+      >
+        {t("nav.timeAttendance")}
+        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" sideOffset={10} className="min-w-[200px] rounded-lg p-1">
+        {showAttendance && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+            <Link href="/attendance" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              {t("nav.sidebar.attendance")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showSchedule && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+            <Link href="/schedule" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              {t("nav.sidebar.schedule")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {/* Personal time-off (distinct page). Management time-off is a tab on
+            Schedule above, so it isn't duplicated here. */}
+        {showMyTimeOff && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+            <Link href="/my/time-off" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              {t("nav.timeOff")}
+            </Link>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -552,39 +598,61 @@ function MobileMenu({
           </DropdownMenuItem>
         )}
 
-        {showSchedule && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link
-              href="/schedule"
-              onClick={() => setOpen(false)}
-              className={cn(
-                mobileItemBase,
-                isActive(pathname, "/schedule") || isActive(pathname, "/employees/availability")
-                  ? mobileItemActiveStyle
-                  : mobileItemInactive,
-              )}
-            >
-              <Calendar className="h-4 w-4" />
-              {t("nav.sidebar.schedule")}
-            </Link>
-          </DropdownMenuItem>
+        {(showSchedule || showAttendance) && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="px-3 py-1 text-xs font-medium text-muted-foreground">
+              {t("nav.timeAttendance")}
+            </DropdownMenuLabel>
+            {showAttendance && (
+              <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+                <Link
+                  href="/attendance"
+                  onClick={() => setOpen(false)}
+                  className={cn(mobileItemBase, "pl-5", isActive(pathname, "/attendance") ? mobileItemActiveStyle : mobileItemInactive)}
+                >
+                  <Clock className="h-4 w-4" />
+                  {t("nav.sidebar.attendance")}
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {showSchedule && (
+              <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+                <Link
+                  href="/schedule"
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    mobileItemBase,
+                    "pl-5",
+                    isActive(pathname, "/schedule") || isActive(pathname, "/employees/availability")
+                      ? mobileItemActiveStyle
+                      : mobileItemInactive,
+                  )}
+                >
+                  <Calendar className="h-4 w-4" />
+                  {t("nav.sidebar.schedule")}
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {/* Personal time-off (distinct page); management time-off is a tab on Schedule. */}
+            {showMyTimeOff && (
+              <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+                <Link
+                  href="/my/time-off"
+                  onClick={() => setOpen(false)}
+                  className={cn(mobileItemBase, "pl-5", isActive(pathname, "/my/time-off") ? mobileItemActiveStyle : mobileItemInactive)}
+                >
+                  <Calendar className="h-4 w-4" />
+                  {t("nav.timeOff")}
+                </Link>
+              </DropdownMenuItem>
+            )}
+          </>
         )}
 
-        {showAttendance && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link
-              href="/attendance"
-              onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/attendance") ? mobileItemActiveStyle : mobileItemInactive)}
-            >
-              <Clock className="h-4 w-4" />
-              {t("nav.sidebar.attendance")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-
-        {/* Employee module-driven items */}
-        {showMyTimeOff && (
+        {/* Employee module-driven items. Personal Time Off shows standalone only
+            when there's no Time & Attendance group above to host it. */}
+        {showMyTimeOff && !(showSchedule || showAttendance) && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
             <Link href="/my/time-off" onClick={() => setOpen(false)}
               className={cn(mobileItemBase, isActive(pathname, "/my/time-off") ? mobileItemActiveStyle : mobileItemInactive)}>

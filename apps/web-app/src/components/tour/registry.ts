@@ -79,8 +79,8 @@ export const TOURS: TourDef[] = [
     steps: [
       step("welcomeManager", "dashboard", "nav-dashboard"),
       step("welcomeManager", "tasks", "nav-tasks"),
-      step("welcomeManager", "schedule", "nav-schedule"),
-      step("welcomeManager", "attendance", "nav-attendance"),
+      step("welcomeManager", "schedule", "nav-time-attendance"),
+      step("welcomeManager", "attendance", "nav-time-attendance"),
       step("welcomeManager", "reports", "nav-reports"),
       step("welcomeManager", "command", "nav-command"),
       step("welcomeManager", "help", "nav-support"),
