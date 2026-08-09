@@ -1526,17 +1526,17 @@ export class UsersService {
       byPriority[pc.priority] = pc._count.priority;
     }
 
-    // On-time rate over recent completed tasks (last 90 days). A single filtered
-    // count (field-ref updatedAt <= dueDate) replaces a take:200 findMany+JS filter,
-    // removing the silent 200-row cap and keeping the work in the DB (M5).
+    // On-time rate: a single filtered count (field-ref updatedAt <= dueDate) over
+    // the SAME all-time set as `completed`, so numerator and denominator share a
+    // window (D7 — was a 90-day numerator over an all-time denominator, which
+    // understated on-time for anyone with older completions). Replaces the old
+    // take:200 findMany+JS filter (M5).
     let completedOnTime = 0;
     if (completed > 0) {
-      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
       completedOnTime = await this.prisma.task.count({
         where: {
           assignedToId: employeeId,
           status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
-          createdAt: { gte: ninetyDaysAgo },
           OR: [
             { dueDate: null },
             { updatedAt: { lte: this.prisma.task.fields.dueDate } },

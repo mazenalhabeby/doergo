@@ -2085,7 +2085,8 @@
       "assignedToSpace": "{{count}} membre(s) attribué(s) à l'espace",
       "assignFailed": "Échec de l'attribution à l'espace",
       "removedCount": "{{count}} membre(s) supprimé(s)",
-      "removeMembersFailed": "Échec de la suppression des membres"
+      "removeMembersFailed": "Échec de la suppression des membres",
+      "bulkPartial": "{{ok}} mis à jour, {{failed}} échoués"
     },
     "memberEditor": {
       "positionPlaceholder": "Sélectionnez ou saisissez un intitulé...",

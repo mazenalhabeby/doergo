@@ -467,6 +467,11 @@ export default function MembersPage() {
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // Selection is per visible page — reset it when the page/search/filter changes
+  // so a bulk action can never apply to members you can't see (D4).
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [debouncedSearch, roleFilter, page])
 
   // ── Queries ──────────────────────────────────────────────────────────
 
@@ -487,24 +492,22 @@ export default function MembersPage() {
     staleTime: 60000,
   })
 
-  // Fetch all assignments per location to build member->spaces map
+  // Fetch all assignments to build member->spaces map
   const locations = locationsData?.data || []
 
+  // Stable key = sorted location ids, so adding+removing a space (same count)
+  // still busts the cache (was keyed on locations.length — fragile) (D3).
+  const locationIds = useMemo(() => locations.map((l) => l.id).sort(), [locations])
+  const locNameById = useMemo(
+    () => Object.fromEntries(locations.map((l) => [l.id, l.name])) as Record<string, string>,
+    [locations],
+  )
+
   const { data: allAssignments } = useQuery({
-    queryKey: ["all-location-assignments", locations.length],
-    queryFn: async () => {
-      // Fetch all location assignments in parallel (not sequentially)
-      const results = await Promise.allSettled(
-        locations.map(async (loc) => {
-          const assignments = await locationsApi.getAssignedMembers(loc.id)
-          return assignments.map((a) => ({ ...a, locationName: loc.name }))
-        })
-      )
-      return results
-        .filter((r): r is PromiseFulfilledResult<any[]> => r.status === "fulfilled")
-        .flatMap(r => r.value)
-    },
-    enabled: locations.length > 0,
+    // ONE batched request for every space's roster (was an N+1 fan-out) (P2).
+    queryKey: ["all-location-assignments", locationIds.join(",")],
+    queryFn: () => locationsApi.getRosters(locationIds),
+    enabled: locationIds.length > 0,
     staleTime: 60000,
   })
 
@@ -515,13 +518,14 @@ export default function MembersPage() {
     for (const a of allAssignments) {
       const userId = a.userId || a.user?.id
       if (!userId) continue
+      const locationName = a.location?.name || locNameById[a.locationId]
       if (!map[userId]) map[userId] = []
-      if (a.locationName && !map[userId]!.includes(a.locationName)) {
-        map[userId]!.push(a.locationName)
+      if (locationName && !map[userId]!.includes(locationName)) {
+        map[userId]!.push(locationName)
       }
     }
     return map
-  }, [allAssignments])
+  }, [allAssignments, locNameById])
 
   const { data: pendingInvitationsData } = useQuery({
     queryKey: ["pendingInvitations"],
@@ -581,12 +585,17 @@ export default function MembersPage() {
 
   const handleBulkRoleChange = useCallback(async (memberIds: string[], role: string) => {
     try {
-      await Promise.all(
+      // allSettled so one failure doesn't abort the rest, silently leaving the org
+      // half-changed with the selection intact (D4). Always invalidate + clear.
+      const results = await Promise.allSettled(
         memberIds.map((id) => organizationsApi.updateMember(id, { role }))
       )
+      const ok = results.filter((r) => r.status === "fulfilled").length
+      const failed = results.length - ok
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setSelectedIds(new Set())
-      notify.bulk(memberIds.length, t("members.toast.roleUpdated"))
+      if (failed === 0) notify.bulk(ok, t("members.toast.roleUpdated"))
+      else notify.error(t("members.toast.bulkPartial", { ok, failed }))
     } catch (error: any) {
       notify.error(error.message || t("members.toast.updateRolesFailed"))
     }
@@ -594,12 +603,15 @@ export default function MembersPage() {
 
   const handleBulkSpaceAssign = useCallback(async (memberIds: string[], locationId: string) => {
     try {
-      await Promise.all(
+      const results = await Promise.allSettled(
         memberIds.map((id) => locationsApi.assignMember(locationId, { userId: id }))
       )
+      const ok = results.filter((r) => r.status === "fulfilled").length
+      const failed = results.length - ok
       queryClient.invalidateQueries({ queryKey: ["all-location-assignments"] })
       setSelectedIds(new Set())
-      notify.success(t("members.toast.assignedToSpace", { count: memberIds.length }))
+      if (failed === 0) notify.success(t("members.toast.assignedToSpace", { count: ok }))
+      else notify.error(t("members.toast.bulkPartial", { ok, failed }))
     } catch (error: any) {
       notify.error(error.message || t("members.toast.assignFailed"))
     }
@@ -607,10 +619,13 @@ export default function MembersPage() {
 
   const handleBulkRemove = useCallback(async (memberIds: string[]) => {
     try {
-      await Promise.all(memberIds.map((id) => organizationsApi.removeMember(id)))
+      const results = await Promise.allSettled(memberIds.map((id) => organizationsApi.removeMember(id)))
+      const ok = results.filter((r) => r.status === "fulfilled").length
+      const failed = results.length - ok
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setSelectedIds(new Set())
-      notify.success(t("members.toast.removedCount", { count: memberIds.length }))
+      if (failed === 0) notify.success(t("members.toast.removedCount", { count: ok }))
+      else notify.error(t("members.toast.bulkPartial", { ok, failed }))
     } catch (error: any) {
       notify.error(error.message || t("members.toast.removeMembersFailed"))
     }

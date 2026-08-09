@@ -2085,7 +2085,8 @@
       "assignedToSpace": "Assigned {{count}} member(s) to space",
       "assignFailed": "Failed to assign to space",
       "removedCount": "Removed {{count}} member(s)",
-      "removeMembersFailed": "Failed to remove members"
+      "removeMembersFailed": "Failed to remove members",
+      "bulkPartial": "{{ok}} updated, {{failed}} failed"
     },
     "memberEditor": {
       "positionPlaceholder": "Select or type a title...",

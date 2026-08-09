@@ -62,6 +62,20 @@ export function useTimeFormat() {
     [hour12],
   )
 
+  // Date-only, locale- AND timezone-aware. Use this for a date column that sits
+  // next to a zoned time (e.g. attendance) so both agree on the calendar day and
+  // the month name follows the active language (was hardcoded en-US, browser-local).
+  const formatDate = useCallback(
+    (input: string | number | Date, tz?: string | null) =>
+      new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        timeZone: tz === null ? undefined : tz ?? orgTz,
+      }).format(input instanceof Date ? input : new Date(input)),
+    [locale, orgTz],
+  )
+
   return {
     /** true when the user prefers 12-hour (AM/PM) display. */
     hour12,
@@ -71,6 +85,8 @@ export function useTimeFormat() {
     formatTime,
     /** "Jan 15, 2:30 PM" or "Jan 15, 14:30" from a Date/ISO/epoch. */
     formatDateTime,
+    /** "Jan 15, 2025" — date only, locale + timezone aware. */
+    formatDate,
     /** "5:30 PM" or "17:30" from a raw "HH:MM" schedule string. */
     formatSchedule,
     /** date-fns token for the preference: "h:mm a" (12h) / "HH:mm" (24h). */

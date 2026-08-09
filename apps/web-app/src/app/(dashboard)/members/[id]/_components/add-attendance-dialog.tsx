@@ -122,9 +122,11 @@ export function AddAttendanceDialog({
         notes: notes.trim() || undefined,
       }),
     onSuccess: (res) => {
-      // Refresh both the per-employee tab and the org-wide management table.
+      // Refresh the member-detail Attendance tab (its query key is
+      // ["memberAttendance", id]) AND the org-wide management table (D1). The old
+      // ["employeeAttendance", …] key was a dead leftover from the retired page.
       queryClient.invalidateQueries({
-        queryKey: ["employeeAttendance", effectiveEmployeeId],
+        queryKey: ["memberAttendance", effectiveEmployeeId],
       })
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       const created = res?.created ?? 0

@@ -2085,7 +2085,8 @@
       "assignedToSpace": "Se asignaron {{count}} miembro(s) al espacio",
       "assignFailed": "No se pudo asignar al espacio",
       "removedCount": "Se quitaron {{count}} miembro(s)",
-      "removeMembersFailed": "No se pudieron quitar los miembros"
+      "removeMembersFailed": "No se pudieron quitar los miembros",
+      "bulkPartial": "{{ok}} actualizados, {{failed}} fallidos"
     },
     "memberEditor": {
       "positionPlaceholder": "Selecciona o escribe un puesto…",

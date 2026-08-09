@@ -2085,7 +2085,8 @@
       "assignedToSpace": "{{count}} Mitglied(er) dem Bereich zugewiesen",
       "assignFailed": "Zuweisung zum Bereich fehlgeschlagen",
       "removedCount": "{{count}} Mitglied(er) entfernt",
-      "removeMembersFailed": "Mitglieder konnten nicht entfernt werden"
+      "removeMembersFailed": "Mitglieder konnten nicht entfernt werden",
+      "bulkPartial": "{{ok}} aktualisiert, {{failed}} fehlgeschlagen"
     },
     "memberEditor": {
       "positionPlaceholder": "Titel auswählen oder eingeben...",

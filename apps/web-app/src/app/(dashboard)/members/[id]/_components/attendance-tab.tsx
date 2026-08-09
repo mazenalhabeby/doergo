@@ -1,6 +1,5 @@
 "use client"
 
-import { format } from "date-fns"
 import { Clock } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -39,7 +38,7 @@ export function AttendanceTab({
   canManage,
 }: AttendanceTabProps) {
   const { t } = useTranslation()
-  const { formatTime, locale } = useTimeFormat()
+  const { formatTime, formatDate, locale } = useTimeFormat()
 
   return (
     <Card>
@@ -75,7 +74,7 @@ export function AttendanceTab({
                 <TableRow key={entry.id}>
                   <TableCell>
                     <div>
-                      {format(new Date(entry.clockInAt), "MMM d, yyyy")}
+                      {formatDate(entry.clockInAt, entry.timezone ?? entry.location?.timezone)}
                       {countryFromTz((entry.timezone ?? entry.location?.timezone), locale)
                         ? ` / ${countryFromTz((entry.timezone ?? entry.location?.timezone), locale)}`
                         : ""}

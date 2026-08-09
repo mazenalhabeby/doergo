@@ -549,8 +549,10 @@ export class EmployeesController {
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
   ) {
-    // Employees can only view their own schedule
-    if (user.role === Role.EMPLOYEE && user.id !== id) {
+    // Managers (EMPLOYEE + canViewAllTasks) can view any member; plain employees
+    // only their own (D9 — was ADMIN-only, which locked managers out).
+    const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
+    if (!privileged && user.id !== id) {
       throw new ForbiddenException('You can only view your own schedule');
     }
 
@@ -602,8 +604,10 @@ export class EmployeesController {
     @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
     @CurrentUser() user?: CurrentUserData,
   ) {
-    // Employees can only view their own time-off
-    if (user?.role === Role.EMPLOYEE && user?.id !== id) {
+    // Managers (EMPLOYEE + canViewAllTasks) can view any member's time-off;
+    // plain employees only their own (D9).
+    const privileged = user?.role === Role.ADMIN || !!user?.canViewAllTasks;
+    if (!privileged && user?.id !== id) {
       throw new ForbiddenException('You can only view your own time-off requests');
     }
 

@@ -1,9 +1,9 @@
 "use client"
 
-import { use, useMemo, useState } from "react"
+import { use, useMemo, useState, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import {
@@ -118,6 +118,8 @@ export default function MemberProfilePage({
   // on a synthetic .click(), but a plain onClick on the trigger (below) does fire.
   const [activeTab, setActiveTab] = useState("overview")
 
+  const queryClient = useQueryClient()
+
   // Tasks tab pagination (P3) and attendance window (P4) — bound the per-member
   // history so a long-tenured member doesn't stream thousands of rows per open.
   const [tasksPage, setTasksPage] = useState(1)
@@ -135,6 +137,23 @@ export default function MemberProfilePage({
     queryFn: () => organizationsApi.getMember(memberId),
     enabled: !!memberId,
   })
+
+  // After an edit / access change, refresh the member AND its dependent tabs
+  // (schedule, assignments, tasks, attendance, performance) — editing can change
+  // any of them, so refetching only the member left siblings stale (D5).
+  const handleMemberSaved = useCallback(() => {
+    refetchMember()
+    for (const key of [
+      "employeeSchedule",
+      "memberLocationAssignments",
+      "memberTasks",
+      "memberTasksFull",
+      "memberAttendance",
+      "memberPerformance",
+    ]) {
+      queryClient.invalidateQueries({ queryKey: [key, memberId] })
+    }
+  }, [queryClient, refetchMember, memberId])
 
   // Fetch tasks assigned to this member
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
@@ -383,7 +402,7 @@ export default function MemberProfilePage({
             <EditMemberDialog
               member={editOpen ? member : null}
               onClose={() => setEditOpen(false)}
-              onSaved={() => refetchMember()}
+              onSaved={handleMemberSaved}
             />
           </div>
         </div>
@@ -612,7 +631,7 @@ export default function MemberProfilePage({
               {showAccessTab && (
                 <TabsContent value="access" className="mt-6">
                   <div className="space-y-6">
-                    <AccessBuilder member={member} onSaved={() => refetchMember()} />
+                    <AccessBuilder member={member} onSaved={handleMemberSaved} />
                   </div>
                 </TabsContent>
               )}

@@ -88,17 +88,18 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                     }))}
                     margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey="dateLabel"
-                      tick={{ fontSize: 12, fill: "#64748b" }}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                     />
-                    <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
+                    <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #e2e8f0",
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
                       }}
                     />
                     <Line
@@ -142,26 +143,27 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                     }))}
                     margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey="dateLabel"
-                      tick={{ fontSize: 12, fill: "#64748b" }}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                     />
                     <YAxis
                       yAxisId="left"
-                      tick={{ fontSize: 12, fill: "#64748b" }}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                       domain={[0, 100]}
                     />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
-                      tick={{ fontSize: 12, fill: "#64748b" }}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #e2e8f0",
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
                       }}
                     />
                     <Legend />
