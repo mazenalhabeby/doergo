@@ -29,6 +29,7 @@ import { AccessBuilder } from "@/components/access-builder"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { EditMemberDialog } from "../_components/edit-member-dialog"
 import { AuditTrail } from "@/components/audit-trail"
+import dynamic from "next/dynamic"
 // Worker tabs — consolidated from the retired /employees page (single member page).
 import {
   TasksTab,
@@ -36,13 +37,16 @@ import {
   LocationsTab,
   ScheduleTab,
   TimeOffTab,
-  PerformanceTab,
 } from "./_components"
+// Performance tab pulls in recharts — load it as its own chunk only when the tab
+// is opened, so every other visitor doesn't pay for the chart lib (P11).
+const PerformanceTab = dynamic(
+  () => import("./_components/performance-tab").then((m) => m.PerformanceTab),
+  { ssr: false },
+)
 import {
   organizationsApi,
   employeesApi,
-  locationsApi,
-  type OrgMember,
   type Task,
   type ScheduleEntry,
 } from "@/lib/api"
@@ -54,6 +58,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+
+// Tasks tab page size (P3) — bounds the per-member task fetch + render.
+const TASKS_PAGE_SIZE = 20
 
 const ROLE_CONFIG: Record<string, { labelKey: string; className: string; gradient: string }> = {
   ADMIN: {
@@ -111,15 +118,22 @@ export default function MemberProfilePage({
   // on a synthetic .click(), but a plain onClick on the trigger (below) does fire.
   const [activeTab, setActiveTab] = useState("overview")
 
-  // Fetch member info from org members list
-  const { data: memberData, isLoading: memberLoading, refetch: refetchMember } = useQuery({
+  // Tasks tab pagination (P3) and attendance window (P4) — bound the per-member
+  // history so a long-tenured member doesn't stream thousands of rows per open.
+  const [tasksPage, setTasksPage] = useState(1)
+  const attendanceRange = useMemo(() => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - 90)
+    return { startDate: start.toISOString().slice(0, 10), endDate: end.toISOString().slice(0, 10) }
+  }, [])
+
+  // Fetch this one member by id (single row, same shape as a list row) — no more
+  // pulling the whole org and find()-ing it, which broke past 200 members (P1).
+  const { data: memberData, isLoading: memberLoading, isError: memberError, refetch: refetchMember } = useQuery({
     queryKey: ["orgMember", memberId],
-    queryFn: async () => {
-      // Fetch org members and find this one
-      const result = await organizationsApi.getMembers({ limit: 200 })
-      const member = result?.data?.find((m: OrgMember) => m.id === memberId)
-      return member || null
-    },
+    queryFn: () => organizationsApi.getMember(memberId),
+    enabled: !!memberId,
   })
 
   // Fetch tasks assigned to this member
@@ -136,49 +150,31 @@ export default function MemberProfilePage({
     enabled: !!memberId,
   })
 
-  // Fetch locations to build space assignments
-  const { data: locationsData } = useQuery({
-    queryKey: ["locations-all"],
-    queryFn: () => locationsApi.list({ limit: 100 }),
+  // This member's space assignments in ONE call (was an N+1 fan-out over every
+  // location just to build the header badges). Feeds both the header spaceNames
+  // and the Locations tab (P2).
+  const { data: memberAssignments = [] } = useQuery({
+    queryKey: ["memberLocationAssignments", memberId],
+    queryFn: () => employeesApi.getAssignments(memberId),
+    enabled: !!memberId,
+    staleTime: 30_000,
   })
 
-  const locations = locationsData?.data || []
-
-  const { data: allAssignments } = useQuery({
-    queryKey: ["member-assignments", memberId, locations.map((l) => l.id).join(",")],
-    queryFn: async () => {
-      const results = await Promise.all(
-        locations.map(async (loc) => {
-          try {
-            const assignments = await locationsApi.getAssignedMembers(loc.id)
-            return assignments
-              .filter((a: any) => (a.userId || a.user?.id) === memberId)
-              .map((a: any) => ({ ...a, locationName: loc.name }))
-          } catch {
-            return []
-          }
-        })
-      )
-      return results.flat()
-    },
-    enabled: locations.length > 0,
-  })
-
-  const spaceNames = useMemo(() => {
-    if (!allAssignments) return []
-    return allAssignments.map((a: any) => a.locationName).filter(Boolean)
-  }, [allAssignments])
+  const spaceNames = useMemo(
+    () => memberAssignments.map((a: any) => a.location?.name).filter(Boolean),
+    [memberAssignments],
+  )
 
   // ── Operational tabs (manager+ only) — each fetches ONLY when its tab is open ──
   const { data: fullTasks } = useQuery({
-    queryKey: ["memberTasksFull", memberId],
-    queryFn: () => employeesApi.getTasks(memberId),
+    queryKey: ["memberTasksFull", memberId, tasksPage],
+    queryFn: () => employeesApi.getTasks(memberId, { page: tasksPage, limit: TASKS_PAGE_SIZE }),
     enabled: !!memberId && canViewOps && activeTab === "tasks",
     staleTime: 30_000,
   })
   const { data: attendance } = useQuery({
-    queryKey: ["memberAttendance", memberId],
-    queryFn: () => employeesApi.getAttendance(memberId),
+    queryKey: ["memberAttendance", memberId, attendanceRange.startDate, attendanceRange.endDate],
+    queryFn: () => employeesApi.getAttendance(memberId, attendanceRange.startDate, attendanceRange.endDate),
     enabled: !!memberId && canViewOps && activeTab === "attendance",
     staleTime: 30_000,
   })
@@ -186,12 +182,6 @@ export default function MemberProfilePage({
     queryKey: ["memberPerformance", memberId],
     queryFn: () => employeesApi.getPerformance(memberId),
     enabled: !!memberId && canViewOps && activeTab === "performance",
-    staleTime: 30_000,
-  })
-  const { data: memberAssignments } = useQuery({
-    queryKey: ["memberLocationAssignments", memberId],
-    queryFn: () => employeesApi.getAssignments(memberId),
-    enabled: !!memberId && canViewOps && activeTab === "locations",
     staleTime: 30_000,
   })
 
@@ -212,6 +202,32 @@ export default function MemberProfilePage({
                 <Skeleton className="h-4 w-40" />
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Distinguish a genuine load error (network / permission) from a real
+  // not-found — an error must not silently render as "member doesn't exist" (D6).
+  if (memberError) {
+    return (
+      <div className="min-h-full bg-background">
+        <div className="max-w-[1440px] mx-auto px-6 py-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/members")}
+            className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
+            {t("members.detail.backToTeam")}
+          </Button>
+          <div className="text-center py-20">
+            <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("common.somethingWentWrong")}</h3>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => refetchMember()}>
+              {t("common.retry")}
+            </Button>
           </div>
         </div>
       </div>
@@ -605,6 +621,27 @@ export default function MemberProfilePage({
                 <>
                   <TabsContent value="tasks" className="mt-6">
                     <TasksTab tasks={fullTasks} />
+                    {(tasksPage > 1 || (fullTasks?.length ?? 0) >= TASKS_PAGE_SIZE) && (
+                      <div className="mt-4 flex items-center justify-between">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={tasksPage <= 1}
+                          onClick={() => setTasksPage((p) => Math.max(1, p - 1))}
+                        >
+                          {t("common.previous")}
+                        </Button>
+                        <span className="text-xs text-muted-foreground">{tasksPage}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={(fullTasks?.length ?? 0) < TASKS_PAGE_SIZE}
+                          onClick={() => setTasksPage((p) => p + 1)}
+                        >
+                          {t("common.next")}
+                        </Button>
+                      </div>
+                    )}
                   </TabsContent>
                   <TabsContent value="attendance" className="mt-6">
                     <AttendanceTab

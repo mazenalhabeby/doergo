@@ -86,6 +86,11 @@ export class UsersController {
     return this.usersService.listOrgMembers(data);
   }
 
+  @MessagePattern({ cmd: 'get_org_member' })
+  async getOrgMember(@Payload() data: { memberId: string; organizationId: string }) {
+    return this.usersService.getOrgMemberById(data.memberId, data.organizationId);
+  }
+
   @MessagePattern({ cmd: 'list_org_contacts' })
   async listOrgContacts(@Payload() data: { organizationId: string; userId: string }) {
     return this.usersService.listOrgContacts(data.organizationId, data.userId);

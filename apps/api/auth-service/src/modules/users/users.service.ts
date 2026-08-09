@@ -21,6 +21,44 @@ import {
 
 const BCRYPT_COST_FACTOR = 12;
 
+// Single source of truth for the fields the Members list + a single member share,
+// so a member detail page can fetch ONE row in the same shape as a list row
+// (instead of pulling the whole org and finding it client-side).
+const ORG_MEMBER_SELECT = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  role: true,
+  isActive: true,
+  avatarUrl: true,
+  createdAt: true,
+  position: true,
+  presence: true,
+  scheduleType: true,
+  monthlyHourBudget: true,
+  enabledModules: true,
+  specialty: true,
+  employmentType: true,
+  costType: true,
+  costRateCents: true,
+  maxDailyJobs: true,
+  canCreateTasks: true,
+  taskCreationScope: true,
+  canViewAllTasks: true,
+  canAssignTasks: true,
+  canManageUsers: true,
+  canViewReports: true,
+  allowRemote: true,
+  contactable: true,
+  contactScope: true,
+  contactAllowedIds: true,
+  showInManagement: true,
+  lastActiveAt: true,
+  memberRoleId: true,
+  memberRole: { select: { id: true, name: true, color: true } },
+} as const;
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -602,16 +640,24 @@ export class UsersService {
       throw new NotFoundException('Employee not found');
     }
 
-    // Default to last 30 days if no date range provided
+    // Default to last 30 days if no date range provided, and clamp the span to a
+    // year so a far-back startDate can't load a member's entire history into an
+    // O(days × tasks) trend build (P5/P6).
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate
+    let start = startDate
       ? new Date(startDate)
       : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const MAX_SPAN_MS = 366 * 24 * 60 * 60 * 1000;
+    if (end.getTime() - start.getTime() > MAX_SPAN_MS) {
+      start = new Date(end.getTime() - MAX_SPAN_MS);
+    }
+    const ROW_CAP = 5000;
 
-    // Get tasks in date range
+    // Get tasks in date range (capped)
     const tasks = await this.prisma.task.findMany({
       where: {
         assignedToId: id,
+        organizationId,
         createdAt: {
           gte: start,
           lte: end,
@@ -624,12 +670,14 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
       },
+      take: ROW_CAP,
     });
 
-    // Get time entries in date range
+    // Get time entries in date range — org-scoped (defense-in-depth) + capped.
     const timeEntries = await this.prisma.timeEntry.findMany({
       where: {
         userId: id,
+        organizationId,
         clockInAt: {
           gte: start,
           lte: end,
@@ -639,6 +687,7 @@ export class UsersService {
         totalMinutes: true,
         clockInAt: true,
       },
+      take: ROW_CAP,
     });
 
     // Calculate metrics
@@ -758,41 +807,7 @@ export class UsersService {
 
     const members = await this.prisma.user.findMany({
       where,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        isActive: true,
-        avatarUrl: true,
-        createdAt: true,
-        position: true,
-        presence: true,
-        scheduleType: true,
-        monthlyHourBudget: true,
-        enabledModules: true,
-        specialty: true,
-        employmentType: true,
-        costType: true,
-        costRateCents: true,
-        maxDailyJobs: true,
-        canCreateTasks: true,
-        taskCreationScope: true,
-        canViewAllTasks: true,
-        canAssignTasks: true,
-        canManageUsers: true,
-        canViewReports: true,
-        allowRemote: true,
-        contactable: true,
-        contactScope: true,
-        contactAllowedIds: true,
-        showInManagement: true,
-        lastActiveAt: true,
-        // Unified org role (Phase 4) — drives the list Role column + Access selector.
-        memberRoleId: true,
-        memberRole: { select: { id: true, name: true, color: true } },
-      },
+      select: ORG_MEMBER_SELECT,
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,
@@ -808,6 +823,20 @@ export class UsersService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Fetch a SINGLE org member by id, in the same shape as a list row. Org-scoped;
+   * excludes portal customers. Lets the member detail page fetch one row instead
+   * of pulling the whole org and finding it client-side (P1).
+   */
+  async getOrgMemberById(memberId: string, organizationId: string) {
+    const member = await this.prisma.user.findFirst({
+      where: { id: memberId, organizationId, customerId: null },
+      select: ORG_MEMBER_SELECT,
+    });
+    if (!member) throw new NotFoundException('Member not found');
+    return { success: true, data: member };
   }
 
   /**

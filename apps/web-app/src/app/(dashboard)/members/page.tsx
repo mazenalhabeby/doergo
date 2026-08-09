@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo, memo } from "react"
+import { useState, useCallback, useMemo, memo, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -446,6 +446,12 @@ export default function MembersPage() {
   const isAdmin = user?.role === "ADMIN"
 
   const [search, setSearch] = useState("")
+  // Debounced value drives the query so typing doesn't mint a request per keystroke (P7).
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
   const [roleFilter, setRoleFilter] = useState("all")
   const [page, setPage] = useState(1)
 
@@ -465,10 +471,10 @@ export default function MembersPage() {
   // ── Queries ──────────────────────────────────────────────────────────
 
   const { data, isLoading } = useQuery({
-    queryKey: ["orgMembers", search, roleFilter, page],
+    queryKey: ["orgMembers", debouncedSearch, roleFilter, page],
     queryFn: () =>
       organizationsApi.getMembers({
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         role: roleFilter,
         page,
         limit: 20,

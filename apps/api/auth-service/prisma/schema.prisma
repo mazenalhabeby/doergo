@@ -891,6 +891,7 @@ model TaskEvent {
   @@index([eventType])
   @@index([createdAt])
   @@index([taskId, createdAt]) // timeline queries
+  @@index([userId, createdAt]) // per-member recent-activity (getRecentActivityForEmployee)
   @@map("task_events")
 }
 

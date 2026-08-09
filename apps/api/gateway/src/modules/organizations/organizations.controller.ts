@@ -129,6 +129,28 @@ export class OrganizationsController {
     return result;
   }
 
+  @Get('members/:id')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Get a single organization member (same shape as the list row)' })
+  async getMember(
+    @Param('id') memberId: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'get_org_member' }, {
+        memberId,
+        organizationId: user.organizationId,
+      }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException(
+        { message: result.message },
+        result.statusCode || HttpStatus.NOT_FOUND,
+      );
+    }
+    return result;
+  }
+
   @Get('contacts')
   @ApiOperation({ summary: 'List the org admins/managers to contact — any org member' })
   @ApiResponse({ status: 200, description: 'Contacts list' })

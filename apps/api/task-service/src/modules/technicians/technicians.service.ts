@@ -598,6 +598,9 @@ export class TechniciansService {
           select: { id: true, firstName: true, lastName: true },
         },
       },
+      // Bound the payload — the approvals view shows recent/pending, not all-time
+      // history (P6). Newest 500 by the order above.
+      take: 500,
     });
 
     return success(timeOffs);

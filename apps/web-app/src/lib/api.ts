@@ -3181,6 +3181,16 @@ export const organizationsApi = {
     return response.data;
   },
 
+  // Fetch a SINGLE member by id (same shape as a list row) — for the member
+  // detail page, so it doesn't pull the whole org and find() one (P1).
+  getMember: async (memberId: string) => {
+    const response = await api.get<{ success: boolean; data: OrgMember }>(
+      `/organizations/members/${memberId}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? null;
+  },
+
   // Contacts directory — any org member can reach the org's admins/managers.
   getContacts: async () => {
     const response = await api.get<{ success: boolean; data: OrgMember[] }>('/organizations/contacts');
