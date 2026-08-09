@@ -1,7 +1,16 @@
 "use client"
 
 import { format, parseISO } from "date-fns"
-import { BarChart3 } from "lucide-react"
+import {
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  ListChecks,
+  Activity,
+  GitCompareArrows,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react"
 import { useTranslation } from "react-i18next"
 import {
   LineChart,
@@ -15,70 +24,110 @@ import {
 } from "recharts"
 
 import { type PerformanceMetrics } from "@/lib/api"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface PerformanceTabProps {
   performance: PerformanceMetrics | undefined
 }
 
+// Small green/red delta pill with a directional arrow, used on the stat tiles
+// and inside the period-comparison card.
+function Delta({ value, label }: { value: number; label: string }) {
+  const up = value >= 0
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 text-xs font-medium",
+        up ? "text-green-600" : "text-red-600"
+      )}
+    >
+      {up ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+      {up ? "+" : ""}
+      {label}
+    </span>
+  )
+}
+
 export function PerformanceTab({ performance }: PerformanceTabProps) {
   const { t } = useTranslation()
 
+  const comparison = performance?.comparison
+
   return (
     <div className="space-y-6">
-      {/* Performance Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.completionRate')}</p>
-              <p className="text-3xl font-bold text-green-600">
-                {performance?.summary.completionRate?.toFixed(0) || 0}%
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
-              <p className="text-3xl font-bold text-blue-600">
-                {performance?.summary.onTimeRate?.toFixed(0) || 0}%
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
-              <p className="text-3xl font-bold text-purple-600">
-                {performance?.summary.tasksCompleted || 0}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* ── Stat tiles ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+          <p className="mt-3 text-2xl font-bold text-foreground">
+            {performance?.summary.completionRate?.toFixed(0) || 0}%
+          </p>
+          <div className="mt-0.5 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">{t('technicians.performanceTab.completionRate')}</p>
+            {comparison && (
+              <Delta
+                value={comparison.completionRateChange}
+                label={`${comparison.completionRateChange.toFixed(1)}%`}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Clock className="h-4 w-4" />
+          </div>
+          <p className="mt-3 text-2xl font-bold text-foreground">
+            {performance?.summary.onTimeRate?.toFixed(0) || 0}%
+          </p>
+          <div className="mt-0.5 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">{t('technicians.performanceTab.onTimeRate')}</p>
+            {comparison && (
+              <Delta
+                value={comparison.onTimeRateChange}
+                label={`${comparison.onTimeRateChange.toFixed(1)}%`}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <ListChecks className="h-4 w-4" />
+          </div>
+          <p className="mt-3 text-2xl font-bold text-foreground">
+            {performance?.summary.tasksCompleted || 0}
+          </p>
+          <div className="mt-0.5 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">{t('technicians.performanceTab.tasksCompleted')}</p>
+            {comparison && (
+              <Delta
+                value={comparison.tasksCompletedChange}
+                label={`${comparison.tasksCompletedChange.toFixed(0)}%`}
+              />
+            )}
+          </div>
+        </div>
+
       </div>
 
-      {/* Performance Charts */}
+      {/* ── Charts ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Tasks Completed Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('technicians.performanceTab.tasksCompletedChart')}</CardTitle>
-            <CardDescription>
-              {t('technicians.performanceTab.dailyTaskCompletion')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {performance?.trends && performance.trends.length > 0 ? (
+        <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <BarChart3 className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">{t('technicians.performanceTab.tasksCompletedChart')}</h2>
+              <p className="text-xs text-muted-foreground">{t('technicians.performanceTab.dailyTaskCompletion')}</p>
+            </div>
+          </div>
+          {performance?.trends && performance.trends.length > 0 ? (
+            <div className="p-5">
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
@@ -113,27 +162,30 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-muted-foreground bg-muted rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p>{t('technicians.performanceTab.noPerformanceData')}</p>
-                </div>
+            </div>
+          ) : (
+            <div className="px-5 py-14 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
+                <BarChart3 className="h-6 w-6" />
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-sm text-muted-foreground">{t('technicians.performanceTab.noPerformanceData')}</p>
+            </div>
+          )}
+        </div>
 
         {/* On-Time Rate & Hours Worked Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('technicians.performanceTab.performanceMetrics')}</CardTitle>
-            <CardDescription>
-              {t('technicians.performanceTab.onTimeRateAndHours')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {performance?.trends && performance.trends.length > 0 ? (
+        <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Activity className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">{t('technicians.performanceTab.performanceMetrics')}</h2>
+              <p className="text-xs text-muted-foreground">{t('technicians.performanceTab.onTimeRateAndHours')}</p>
+            </div>
+          </div>
+          {performance?.trends && performance.trends.length > 0 ? (
+            <div className="p-5">
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
@@ -188,88 +240,83 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-muted-foreground bg-muted rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p>{t('technicians.performanceTab.noPerformanceData')}</p>
-                </div>
+            </div>
+          ) : (
+            <div className="px-5 py-14 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
+                <BarChart3 className="h-6 w-6" />
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-sm text-muted-foreground">{t('technicians.performanceTab.noPerformanceData')}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Period Comparison */}
-      {performance?.comparison && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('technicians.performanceTab.periodComparison')}</CardTitle>
-            <CardDescription>
-              {t('technicians.performanceTab.changeComparedToPrevious')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* ── Period Comparison ────────────────────────────────────── */}
+      {comparison && (
+        <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <GitCompareArrows className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">{t('technicians.performanceTab.periodComparison')}</h2>
+              <p className="text-xs text-muted-foreground">{t('technicians.performanceTab.changeComparedToPrevious')}</p>
+            </div>
+          </div>
+          <div className="p-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.completionRate')}</p>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground mb-1.5">{t('technicians.performanceTab.completionRate')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
-                    performance.comparison.completionRateChange >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
+                    comparison.completionRateChange >= 0 ? "text-green-600" : "text-red-600"
                   )}
                 >
-                  {performance.comparison.completionRateChange >= 0 ? "+" : ""}
-                  {performance.comparison.completionRateChange.toFixed(1)}%
+                  {comparison.completionRateChange >= 0 ? "+" : ""}
+                  {comparison.completionRateChange.toFixed(1)}%
                 </p>
               </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.onTimeRate')}</p>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground mb-1.5">{t('technicians.performanceTab.onTimeRate')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
-                    performance.comparison.onTimeRateChange >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
+                    comparison.onTimeRateChange >= 0 ? "text-green-600" : "text-red-600"
                   )}
                 >
-                  {performance.comparison.onTimeRateChange >= 0 ? "+" : ""}
-                  {performance.comparison.onTimeRateChange.toFixed(1)}%
+                  {comparison.onTimeRateChange >= 0 ? "+" : ""}
+                  {comparison.onTimeRateChange.toFixed(1)}%
                 </p>
               </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.rating')}</p>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground mb-1.5">{t('technicians.performanceTab.rating')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
-                    performance.comparison.ratingChange >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
+                    comparison.ratingChange >= 0 ? "text-green-600" : "text-red-600"
                   )}
                 >
-                  {performance.comparison.ratingChange >= 0 ? "+" : ""}
-                  {performance.comparison.ratingChange.toFixed(2)}
+                  {comparison.ratingChange >= 0 ? "+" : ""}
+                  {comparison.ratingChange.toFixed(2)}
                 </p>
               </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">{t('technicians.performanceTab.tasksCompleted')}</p>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground mb-1.5">{t('technicians.performanceTab.tasksCompleted')}</p>
                 <p
                   className={cn(
                     "text-xl font-semibold",
-                    performance.comparison.tasksCompletedChange >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
+                    comparison.tasksCompletedChange >= 0 ? "text-green-600" : "text-red-600"
                   )}
                 >
-                  {performance.comparison.tasksCompletedChange >= 0 ? "+" : ""}
-                  {performance.comparison.tasksCompletedChange.toFixed(0)}%
+                  {comparison.tasksCompletedChange >= 0 ? "+" : ""}
+                  {comparison.tasksCompletedChange.toFixed(0)}%
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   )

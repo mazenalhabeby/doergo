@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { format, differenceInCalendarDays } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import {
-  Umbrella,
+  CalendarOff,
   Plus,
   MoreHorizontal,
   Check,
@@ -24,26 +24,10 @@ import {
 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -82,14 +66,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-const STATUS_BADGES: Record<
+const STATUS_PILLS: Record<
   TimeOffStatus,
-  { labelKey: string; className: string }
+  { labelKey: string; hex: string }
 > = {
-  PENDING: { labelKey: "common.pending", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  APPROVED: { labelKey: "common.approved", className: "bg-green-500/15 text-green-600 dark:text-green-400" },
-  REJECTED: { labelKey: "common.rejected", className: "bg-red-500/15 text-red-600 dark:text-red-400" },
-  CANCELED: { labelKey: "common.canceled", className: "bg-muted text-muted-foreground" },
+  PENDING: { labelKey: "common.pending", hex: "#ca8a04" },
+  APPROVED: { labelKey: "common.approved", hex: "#16a34a" },
+  REJECTED: { labelKey: "common.rejected", hex: "#dc2626" },
+  CANCELED: { labelKey: "common.canceled", hex: "#64748b" },
 }
 
 function getDurationDays(start: string, end: string): number {
@@ -219,34 +203,41 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-4 w-64" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
+      <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
+          <Skeleton className="h-8 w-8 rounded-lg" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-56" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="divide-y divide-border/60">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="px-5 py-3.5 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+              <Skeleton className="h-5 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
     )
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{t('technicians.timeOffTab.title')}</CardTitle>
-              <CardDescription>
-                {t('technicians.timeOffTab.description')}
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
+      <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <CalendarOff className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">{t('technicians.timeOffTab.title')}</h2>
+            <p className="text-xs text-muted-foreground">{t('technicians.timeOffTab.description')}</p>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder={t('common.filterByStatus')} />
@@ -343,94 +334,94 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
                   </DialogContent>
                 </Dialog>
               )}
-            </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {timeOffRequests && timeOffRequests.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('technicians.timeOffTab.datesColumn')}</TableHead>
-                  <TableHead>{t('technicians.timeOffTab.durationColumn')}</TableHead>
-                  <TableHead>{t('technicians.timeOffTab.reasonColumn')}</TableHead>
-                  <TableHead>{t('technicians.timeOffTab.statusColumn')}</TableHead>
-                  <TableHead>{t('technicians.timeOffTab.reviewedByColumn')}</TableHead>
-                  <TableHead className="w-16"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {timeOffRequests.map((request) => {
-                  const badge = STATUS_BADGES[request.status]
-                  const isPending = request.status === "PENDING"
-                  return (
-                    <TableRow key={request.id}>
-                      <TableCell>
-                        {formatDate(request.startDate)} -{" "}
-                        {formatDate(request.endDate)}
-                      </TableCell>
-                      <TableCell>
+        </div>
+
+        {timeOffRequests && timeOffRequests.length > 0 ? (
+          <div className="divide-y divide-border/60">
+            {timeOffRequests.map((request) => {
+              const pill = STATUS_PILLS[request.status]
+              const isPending = request.status === "PENDING"
+              return (
+                <div
+                  key={request.id}
+                  className="px-5 py-3.5 hover:bg-accent/40 transition-colors flex items-center gap-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {formatDate(request.startDate)} - {formatDate(request.endDate)}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="flex-shrink-0">
                         {getDurationDays(request.startDate, request.endDate)}{" "}
                         {t('technicians.timeOffTab.days')}
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate text-muted-foreground">
-                        {request.reason || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={badge.className}>
-                          {t(badge.labelKey)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {request.approvedBy
-                          ? `${request.approvedBy.firstName} ${request.approvedBy.lastName}`
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        {(canManage && isPending) && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => setApproveTarget(request)}
-                              >
-                                <Check className="h-4 w-4 mr-2 text-green-600" />
-                                {t('common.approved')}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => setRejectTarget(request)}
-                              >
-                                <X className="h-4 w-4 mr-2 text-red-600" />
-                                {t('common.rejected')}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  cancelMutation.mutate(request.id)
-                                }
-                              >
-                                {t('technicians.timeOffTab.cancelRequest')}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Umbrella className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p>{t('technicians.timeOffTab.noRequests')}</p>
+                      </span>
+                      {request.reason && (
+                        <>
+                          <span className="text-muted-foreground/40">·</span>
+                          <span className="truncate">{request.reason}</span>
+                        </>
+                      )}
+                      {request.approvedBy && (
+                        <>
+                          <span className="text-muted-foreground/40">·</span>
+                          <span className="truncate">
+                            {request.approvedBy.firstName} {request.approvedBy.lastName}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium flex-shrink-0"
+                    style={{ borderColor: `${pill.hex}33`, color: pill.hex, backgroundColor: `${pill.hex}14` }}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: pill.hex }} />
+                    {t(pill.labelKey)}
+                  </span>
+                  {(canManage && isPending) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="flex-shrink-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => setApproveTarget(request)}
+                        >
+                          <Check className="h-4 w-4 mr-2 text-green-600" />
+                          {t('common.approved')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setRejectTarget(request)}
+                        >
+                          <X className="h-4 w-4 mr-2 text-red-600" />
+                          {t('common.rejected')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            cancelMutation.mutate(request.id)
+                          }
+                        >
+                          {t('technicians.timeOffTab.cancelRequest')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="px-5 py-14 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
+              <CalendarOff className="h-6 w-6" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <p className="text-sm text-muted-foreground">{t('technicians.timeOffTab.noRequests')}</p>
+          </div>
+        )}
+      </div>
 
       {/* Approve Confirmation Dialog */}
       <AlertDialog
