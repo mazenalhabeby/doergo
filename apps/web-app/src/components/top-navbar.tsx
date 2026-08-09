@@ -445,7 +445,6 @@ function TimeAttendanceDropdown({
         {showAttendance && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
             <Link href="/attendance" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
               {t("nav.sidebar.attendance")}
             </Link>
           </DropdownMenuItem>
@@ -453,7 +452,6 @@ function TimeAttendanceDropdown({
         {showSchedule && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
             <Link href="/schedule" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
               {t("nav.sidebar.schedule")}
             </Link>
           </DropdownMenuItem>
@@ -463,7 +461,6 @@ function TimeAttendanceDropdown({
         {showMyTimeOff && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
             <Link href="/my/time-off" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
               {t("nav.timeOff")}
             </Link>
           </DropdownMenuItem>
