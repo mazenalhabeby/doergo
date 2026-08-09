@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight, Workflow, Building2 } from "lucide-react"
+import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight, Workflow } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { hasAccessModule } from "@hbcfield/shared/client"
@@ -29,7 +29,6 @@ export default function ManagePage() {
     { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
     { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: !!user?.canViewAllTasks },
     { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
-    { href: "/customers", label: t('manage.items.customers.label', 'Customers'), desc: t('manage.items.customers.desc', 'The people and companies you do work for'), icon: Building2, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
     { href: "/task-types", label: t('manage.items.taskTypes.label'), desc: t('manage.items.taskTypes.desc'), icon: Workflow, show: !!user?.canManageUsers },
   ]
   const visible = items.filter((i) => i.show)

@@ -19,7 +19,6 @@ import {
   Plus,
   Search,
   Archive,
-  Building2,
   type LucideIcon,
 } from "lucide-react"
 
@@ -305,11 +304,6 @@ export function CommandPalette() {
         {results?.spaces?.length ? (
           <CommandGroup heading={t("commandPalette.groups.spaces", "Spaces")}>
             {results.spaces.map((s) => resultRow(`space-${s.id}`, MapPin, s.name, s.address, () => navigate(`/locations/${s.id}`)))}
-          </CommandGroup>
-        ) : null}
-        {results?.customers?.length ? (
-          <CommandGroup heading={t("commandPalette.groups.customers", "Customers")}>
-            {results.customers.map((c) => resultRow(`customer-${c.id}`, Building2, c.name, c.contactName, () => navigate(`/customers/${c.id}`)))}
           </CommandGroup>
         ) : null}
 

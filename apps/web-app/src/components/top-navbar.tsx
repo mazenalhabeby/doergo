@@ -245,20 +245,8 @@ export function TopNavbar() {
           />
         )}
 
-        {/* Customers (B2B) */}
-        {showCustomers && (
-          <Link
-            href="/customers"
-            className={cn(
-              navItemBase,
-              isActive(pathname, "/customers")
-                ? cn(navItemActiveStyle, bottomIndicator)
-                : navItemInactive,
-            )}
-          >
-            {t("nav.customers", "Customers")}
-          </Link>
-        )}
+        {/* B2B "Customers" directory retired — a customer is now a Space of kind
+            CUSTOMER (see Spaces). Clients Portals (B2C) stays below. */}
 
         {/* Customer Portal (B2C) */}
         {showCustomers && (
@@ -670,15 +658,7 @@ function MobileMenu({
             </Link>
           </DropdownMenuItem>
         )}
-        {showCustomers && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/customers" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/customers") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <Building2 className="h-4 w-4" />
-              {t("nav.customers", "Customers")}
-            </Link>
-          </DropdownMenuItem>
-        )}
+        {/* B2B "Customers" directory retired → a customer is now a Space (kind CUSTOMER). */}
         {showCustomers && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
             <Link href="/customer-portal" onClick={() => setOpen(false)}

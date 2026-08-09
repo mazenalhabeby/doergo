@@ -391,17 +391,5 @@ export const TOURS: TourDef[] = [
     ],
   },
 
-  // Customers has a create action, so it gets a 2-step tour.
-  {
-    id: "pageCustomers",
-    titleKey: "tours.pages.customers.title",
-    icon: "team",
-    autoRunOn: "/customers",
-    autoRunExact: true,
-    gate: (c) => c.hasPermission("canViewAllTasks"),
-    steps: [
-      { target: "page-customers", titleKey: "tours.pages.customers.title", bodyKey: "tours.pages.customers.body" },
-      { target: "customers-create", titleKey: "tours.pages.customers.createTitle", bodyKey: "tours.pages.customers.createBody", action: "click" },
-    ],
-  },
+  // (Customers directory retired — its page tour was removed; customers are Spaces now.)
 ]
