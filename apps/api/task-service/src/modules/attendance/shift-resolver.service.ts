@@ -191,6 +191,36 @@ export class ShiftResolverService {
     }
   }
 
+  /**
+   * MATERIALIZATION helper (no clock-in): does this rota assignment run on the
+   * given local calendar date, and if so, the shift's absolute UTC start/end?
+   * Used to precompute expected shifts for no-show detection. `tz` is the space's
+   * tz (physical) or the member's/org tz (logical).
+   */
+  matchAndWindowForDate(
+    assignment: {
+      recurrence: string;
+      daysOfWeek: number[];
+      daysOfMonth: number[];
+      dates: Date[];
+      shift: { startLocal: string; endLocal: string; crossesMidnight: boolean };
+    },
+    tz: string,
+    dateStr: string, // YYYY-MM-DD in tz
+  ): { expectedClockInAt: Date; expectedClockOutAt: Date } | null {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dow = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
+    const local: LocalDate = { dateStr, dow, dom: d!, minutesOfDay: 0 };
+    if (!this.recurrenceMatches(assignment, local)) return null;
+
+    const [sH, sM] = this.parseHm(assignment.shift.startLocal);
+    const [eH, eM] = this.parseHm(assignment.shift.endLocal);
+    const expectedClockInAt = this.zonedWallTimeToUtc(dateStr, sH, sM, tz);
+    const endDateStr = assignment.shift.crossesMidnight ? this.addDays(dateStr, 1) : dateStr;
+    const expectedClockOutAt = this.zonedWallTimeToUtc(endDateStr, eH, eM, tz);
+    return { expectedClockInAt, expectedClockOutAt };
+  }
+
   // ────────────────────────────────────────────────────────────────────────
   // Timezone-aware date math (dependency-free, DST-safe)
   // ────────────────────────────────────────────────────────────────────────
