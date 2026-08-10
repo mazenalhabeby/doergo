@@ -4636,6 +4636,13 @@ export const portalAdminApi = {
     return res.data!;
   },
 
+  // Re-send a pending client's invite by email (uses the existing code).
+  resendInvite: async (customerId: string) => {
+    const res = await api.post<{ success: boolean; data?: { sentTo: string } }>(`/portal/admin/residents/${customerId}/resend-invite`, {});
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+
   // ── Units + requests (per resident) ──
   listUnits: async (customerId?: string) => {
     const res = await api.get<PortalCustomerUnit[]>(buildUrlWithQuery("/portal/admin/units", { customerId }));

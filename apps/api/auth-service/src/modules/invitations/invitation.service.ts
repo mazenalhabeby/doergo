@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   BCRYPT_COST_FACTOR,
@@ -30,7 +32,10 @@ function hashCode(code: string): string {
 export class InvitationService {
   private readonly logger = new Logger(InvitationService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+  ) {}
 
   /**
    * Cap an Access Profile's permission flags at the creator's ceiling. For a true
@@ -95,6 +100,8 @@ export class InvitationService {
     // Customer-portal invite (targetRole = CUSTOMER)
     customerId?: string;
     unitId?: string;
+    // When present, the invite code is ALSO emailed to this address automatically.
+    email?: string;
   }) {
     const isCustomerInvite = data.targetRole === Role.CUSTOMER;
 
@@ -302,6 +309,23 @@ export class InvitationService {
 
     this.logger.log(`Invitation created for ${data.targetRole} in org ${data.organizationId} by ${data.createdById}`);
 
+    // Dynamic email invite: if an address was supplied, email the code + sign-in
+    // link automatically (fire-and-forget — the invite already succeeded; a mail
+    // hiccup must not fail the request, and the code is still shown in the UI).
+    if (data.email && data.email.trim()) {
+      try {
+        this.notificationClient.emit('invitation_created', {
+          recipientEmail: data.email.trim(),
+          organizationName: invitation.organization?.name ?? 'Your organization',
+          invitationCode: code,
+          targetRole: invitation.targetRole,
+          expiresAt: invitation.expiresAt.toISOString(),
+        });
+      } catch (e) {
+        this.logger.warn(`Failed to queue invitation email to ${data.email}: ${e}`);
+      }
+    }
+
     // Return the plain code to the creator (only available at creation time)
     return {
       success: true,
@@ -326,6 +350,37 @@ export class InvitationService {
    * Validate an invitation code (public endpoint).
    * Returns org name and target role if valid.
    */
+  /**
+   * Re-send the pending invite for a portal client by email (uses the stored
+   * plaintext code — no new code minted). Org-scoped; requires the client to have
+   * an email and a PENDING invitation.
+   */
+  async resendInvitation(data: { organizationId: string; customerId: string }) {
+    const invitation = await this.prisma.invitation.findFirst({
+      where: { customerId: data.customerId, organizationId: data.organizationId, status: 'PENDING' },
+      include: { organization: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!invitation) {
+      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'No pending invitation for this client' };
+    }
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: data.customerId, organizationId: data.organizationId },
+      select: { email: true },
+    });
+    if (!customer?.email) {
+      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'This client has no email address' };
+    }
+    this.notificationClient.emit('invitation_created', {
+      recipientEmail: customer.email,
+      organizationName: invitation.organization?.name ?? 'Your organization',
+      invitationCode: invitation.code,
+      targetRole: invitation.targetRole,
+      expiresAt: invitation.expiresAt.toISOString(),
+    });
+    return { success: true, data: { sentTo: customer.email } };
+  }
+
   async validateCode(code: string) {
     const codeHashValue = hashCode(code.toUpperCase().trim());
     const invitation = await this.prisma.invitation.findUnique({

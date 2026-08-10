@@ -154,6 +154,16 @@ export class PortalAdminController {
     return { customer, unit, code: inviteRes?.data?.code, invite: inviteRes };
   }
 
+  @Post('residents/:customerId/resend-invite')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Re-send a pending client's invite by email" })
+  async resendResidentInvite(@Param('customerId') customerId: string, @Request() req: any) {
+    return this.auth('resend_invitation', {
+      organizationId: req.user.organizationId,
+      customerId,
+    });
+  }
+
   // ── Unit CRUD (per resident) ──
 
   @Post('units')

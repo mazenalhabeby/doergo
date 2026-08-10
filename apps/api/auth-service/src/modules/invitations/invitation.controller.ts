@@ -26,6 +26,11 @@ export class InvitationController {
     return this.invitationService.listInvitations(data);
   }
 
+  @MessagePattern({ cmd: 'resend_invitation' })
+  async resend(@Payload() data: { organizationId: string; customerId: string }) {
+    return this.invitationService.resendInvitation(data);
+  }
+
   @MessagePattern({ cmd: 'revoke_invitation' })
   async revoke(@Payload() data: any) {
     return this.invitationService.revokeInvitation(data);
