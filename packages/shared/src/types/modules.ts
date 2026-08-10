@@ -122,6 +122,7 @@ export function hasModule(user: { enabledModules?: unknown }, module: MobileModu
 
 /** Permission fields read off a user for access resolution. */
 export interface UserPermissionFields {
+  role?: string | null;
   canCreateTasks?: boolean;
   canAssignTasks?: boolean;
   canViewAllTasks?: boolean;
@@ -148,6 +149,12 @@ export function hasAccessModule(
   user: { enabledModules?: unknown } & UserPermissionFields,
   module: MobileModule,
 ): boolean {
+  // Admins have full access by definition — every module, always, regardless of
+  // any stored per-user access profile. This keeps "admin = full access" true and
+  // immune to a stale/partial enabledModules profile (there are no admin access
+  // choices to configure — see AccessBuilder).
+  const role = (user.role || '').toUpperCase();
+  if (role === 'ADMIN' || role === 'CLIENT') return true;
   if (module === 'create_task') return user.canCreateTasks === true;
   if (module === 'manage') return user.canManageUsers === true;
   const profile = asProfile(user.enabledModules);
