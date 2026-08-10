@@ -37,8 +37,18 @@ export class AttendanceProcessor extends WorkerHost {
       case ATTENDANCE_JOB_TYPES.SHIFT_REMINDER:
       // Route any stray legacy job (queued in Redis before the upgrade) to the
       // reminder engine too, so it never throws "Unknown job type".
-      case ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT:
-        return this.attendanceService.runShiftReminders(data);
+      case ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT: {
+        // One tick drives BOTH the forgot-to-clock-out (reminder) sweep and the
+        // no-show sweep — each is a single indexed query returning only due rows.
+        const [clockOut, noShow] = await Promise.all([
+          this.attendanceService.runShiftReminders(data),
+          this.attendanceService.runNoShowSweep(),
+        ]);
+        return { clockOut, noShow };
+      }
+
+      case ATTENDANCE_JOB_TYPES.SHIFT_MATERIALIZE:
+        return this.attendanceService.materializeShiftInstances();
 
       case ATTENDANCE_JOB_TYPES.HEARTBEAT:
         return this.attendanceService.heartbeat(data);

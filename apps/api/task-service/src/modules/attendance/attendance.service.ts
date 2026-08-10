@@ -354,6 +354,14 @@ export class AttendanceService {
       `Clock in successful: entry=${entry.id}, user=${data.userId}, location=${location.name}, withinGeofence=${withinGeofence}, flags=[${flagReasons.join(',')}], approval=${approvalStatus}`,
     );
 
+    // Fulfill the matching expected shift so it isn't flagged as a no-show. Never
+    // let a fulfillment hiccup block the clock-in itself.
+    if (scheduled && stampCols.shiftId) {
+      await this.markShiftInstancePresent(data.userId, data.locationId, stampCols.shiftId, entry.id, clockInTime).catch(
+        (e) => this.logger.warn(`markShiftInstancePresent failed for entry=${entry.id}: ${e}`),
+      );
+    }
+
     // Emit real-time event for dashboard/team updates
     this.notificationClient.emit('attendance_clock_in', {
       userId: data.userId,
@@ -1276,6 +1284,220 @@ export class AttendanceService {
       entryIds: [...toRemind.map((r) => r.entry.id), ...toEscalate.map((e) => e.id)],
       message: `Reminded ${toRemind.length}, escalated ${toEscalate.length}`,
     });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // NO-SHOW ENGINE (clock-in parity): materialize expected shifts → fulfill on
+  // clock-in → sweep the unfulfilled ones (remind worker, escalate to a leader).
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /** Local YYYY-MM-DD days (in tz) spanning [from, to] — a 2–3 element set. */
+  private localDaysInWindow(from: Date, to: Date, tz: string): string[] {
+    let fmt: Intl.DateTimeFormat;
+    try {
+      fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch {
+      fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+    const days = new Set<string>();
+    for (let t = from.getTime(); t <= to.getTime(); t += 6 * 3_600_000) days.add(fmt.format(new Date(t)));
+    days.add(fmt.format(to));
+    return [...days];
+  }
+
+  /**
+   * Rolling materialization: ensure a ShiftInstance exists for every rota shift
+   * in the next `windowHours`. Idempotent (upsert; never overwrites lifecycle
+   * state). Physical spaces anchor to the site tz; logical to the member's tz
+   * (falling back to org). Bounded scan over active assignments — no per-minute
+   * cost (runs on a slow cron).
+   */
+  async materializeShiftInstances(windowHours = 36) {
+    const now = new Date();
+    const horizon = new Date(now.getTime() + windowHours * 3_600_000);
+    const assignments = await this.prisma.shiftAssignment.findMany({
+      where: {
+        isActive: true,
+        effectiveFrom: { lte: horizon },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
+      },
+      include: {
+        shift: true,
+        space: { select: { id: true, organizationId: true, timezone: true, lat: true, lng: true } },
+        user: { select: { id: true, timezone: true, organization: { select: { timezone: true } } } },
+      },
+      take: 5000,
+    });
+
+    let upserted = 0;
+    for (const a of assignments) {
+      if (!a.shift?.isActive) continue;
+      const physical = a.space.lat != null && a.space.lng != null;
+      const tz = physical
+        ? a.space.timezone || 'UTC'
+        : a.user.timezone || a.user.organization?.timezone || 'UTC';
+      for (const dateStr of this.localDaysInWindow(now, horizon, tz)) {
+        const win = this.shiftResolver.matchAndWindowForDate(a as any, tz, dateStr);
+        if (!win) continue;
+        if (win.expectedClockOutAt.getTime() < now.getTime()) continue; // already over
+        const graceMin = a.shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
+        const nextRemindAt = new Date(win.expectedClockInAt.getTime() + graceMin * 60_000);
+        try {
+          await this.prisma.shiftInstance.upsert({
+            where: {
+              userId_spaceId_shiftId_localDate: {
+                userId: a.userId,
+                spaceId: a.spaceId,
+                shiftId: a.shiftId,
+                localDate: dateStr,
+              },
+            },
+            create: {
+              organizationId: a.space.organizationId,
+              spaceId: a.spaceId,
+              userId: a.userId,
+              shiftId: a.shiftId,
+              localDate: dateStr,
+              expectedClockInAt: win.expectedClockInAt,
+              expectedClockOutAt: win.expectedClockOutAt,
+              nextRemindAt,
+            },
+            update: {}, // never clobber lifecycle/reminders on re-materialize
+          });
+          upserted++;
+        } catch {
+          /* unique race on concurrent materialize — safe to ignore */
+        }
+      }
+    }
+    return success({ processed: assignments.length, upserted });
+  }
+
+  /** Clock-in fulfillment: mark the member's matching expected shift PRESENT. */
+  private async markShiftInstancePresent(
+    userId: string,
+    spaceId: string,
+    shiftId: string,
+    timeEntryId: string,
+    clockInAt: Date,
+  ) {
+    const w = 12 * 3_600_000; // the instance whose start is within ±12h of this clock-in
+    await this.prisma.shiftInstance.updateMany({
+      where: {
+        userId,
+        spaceId,
+        shiftId,
+        state: { in: ['PENDING', 'REMINDED', 'ESCALATED'] },
+        expectedClockInAt: { gte: new Date(clockInAt.getTime() - w), lte: new Date(clockInAt.getTime() + w) },
+      },
+      data: { state: 'PRESENT', nextRemindAt: null, timeEntryId },
+    });
+  }
+
+  /**
+   * No-show sweep (runs in the same 1-min tick as the clock-out reminder sweep):
+   * drain expected shifts past their grace with no clock-in — nudge the worker,
+   * then after MAX_REMINDERS escalate to a space leader. Members on approved
+   * time-off are marked EXCUSED, not chased.
+   */
+  async runNoShowSweep() {
+    const now = new Date();
+    const due = await this.prisma.shiftInstance.findMany({
+      where: { state: { in: ['PENDING', 'REMINDED'] }, nextRemindAt: { not: null, lte: now } },
+      orderBy: { nextRemindAt: 'asc' },
+      take: 500,
+    });
+    if (due.length === 0) return success({ remindedCount: 0, escalatedCount: 0, excusedCount: 0 });
+
+    const interval = SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES;
+    const maxReminders = SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS;
+
+    // Batch-load names + approved time-off (ShiftInstance is fk-less by design).
+    const userIds = [...new Set(due.map((d) => d.userId))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    const nameById = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
+    const leaves = await this.prisma.timeOff.findMany({
+      where: { technicianId: { in: userIds }, status: 'APPROVED' },
+      select: { technicianId: true, startDate: true, endDate: true },
+    });
+    const onLeave = (userId: string, at: Date) =>
+      leaves.some((l) => l.technicianId === userId && l.startDate <= at && l.endDate >= at);
+
+    const toRemind: { inst: (typeof due)[number]; nextCount: number }[] = [];
+    const toEscalate: (typeof due)[number][] = [];
+    const toExcuse: string[] = [];
+    for (const inst of due) {
+      if (onLeave(inst.userId, inst.expectedClockInAt)) {
+        toExcuse.push(inst.id);
+        continue;
+      }
+      const nextCount = inst.reminderCount + 1;
+      if (nextCount <= maxReminders) toRemind.push({ inst, nextCount });
+      else toEscalate.push(inst);
+    }
+
+    if (toExcuse.length) {
+      await this.prisma.shiftInstance.updateMany({
+        where: { id: { in: toExcuse } },
+        data: { state: 'EXCUSED', nextRemindAt: null },
+      });
+    }
+
+    const leadersBySpace = new Map<string, string[]>();
+    await Promise.all(
+      [...new Set(toEscalate.map((e) => e.spaceId))].map(async (spaceId) => {
+        const e = toEscalate.find((x) => x.spaceId === spaceId)!;
+        leadersBySpace.set(spaceId, await this.resolveSpaceLeaders(spaceId, e.organizationId, 'canReconcileAttendance'));
+      }),
+    );
+
+    const tasks: Array<() => Promise<void>> = [];
+    for (const { inst, nextCount } of toRemind) {
+      const userName = nameById.get(inst.userId) ?? 'A worker';
+      const nextRemindAt = new Date(now.getTime() + interval * 60_000);
+      tasks.push(async () => {
+        await this.prisma.shiftInstance.update({
+          where: { id: inst.id },
+          data: { state: 'REMINDED', reminderCount: nextCount, nextRemindAt },
+        });
+        this.notificationClient.emit('attendance_noshow_reminder', {
+          instanceId: inst.id,
+          userId: inst.userId,
+          userName,
+          spaceId: inst.spaceId,
+          expectedClockInAt: inst.expectedClockInAt.toISOString(),
+          reminderCount: nextCount,
+          organizationId: inst.organizationId,
+        });
+      });
+    }
+    for (const inst of toEscalate) {
+      const userName = nameById.get(inst.userId) ?? 'A worker';
+      const leaderIds = leadersBySpace.get(inst.spaceId) ?? [];
+      tasks.push(async () => {
+        await this.prisma.shiftInstance.update({
+          where: { id: inst.id },
+          data: { state: 'ESCALATED', nextRemindAt: null },
+        });
+        this.notificationClient.emit('attendance_noshow_escalation', {
+          instanceId: inst.id,
+          userId: inst.userId,
+          userName,
+          spaceId: inst.spaceId,
+          expectedClockInAt: inst.expectedClockInAt.toISOString(),
+          leaderIds,
+          organizationId: inst.organizationId,
+        });
+      });
+    }
+    const CONCURRENCY = 20;
+    for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+      await Promise.all(tasks.slice(i, i + CONCURRENCY).map((fn) => fn()));
+    }
+    return success({ remindedCount: toRemind.length, escalatedCount: toEscalate.length, excusedCount: toExcuse.length });
   }
 
   /**

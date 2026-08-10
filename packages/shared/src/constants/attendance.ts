@@ -47,6 +47,12 @@ export const ATTENDANCE_CONSTANTS = {
   // so a tight cadence is cheap and gives ~1-min reminder precision.
   SHIFT_REMINDER_SWEEP_INTERVAL_MS: 60 * 1000,   // Every 1 minute
   SHIFT_REMINDER_JOB_ID: 'shift-reminder-sweep',
+
+  // No-show materialization: rolling upsert of expected shifts. Slow cadence
+  // (bounded scan over the rota); the actual no-show sweep rides the 1-min tick.
+  SHIFT_MATERIALIZE_INTERVAL_MS: 30 * 60 * 1000,  // Every 30 minutes
+  SHIFT_MATERIALIZE_JOB_ID: 'shift-materialize',
+  SHIFT_MATERIALIZE_WINDOW_HOURS: 36,
 } as const;
 
 // Shift reminder engine defaults (space-centric attendance).

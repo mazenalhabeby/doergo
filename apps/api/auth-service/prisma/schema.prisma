@@ -650,6 +650,10 @@ model User {
   // Display-only; does not affect stored timestamps or any server logic.
   timeFormat String? @default("24h")
 
+  // Member's home IANA timezone. Used to anchor shifts / detect no-shows for a
+  // LOGICAL space (no GPS on a no-show); falls back to the org timezone.
+  timezone String?
+
   // Onboarding flag (false = orphan user needs to complete onboarding wizard)
   onboardingCompleted Boolean @default(true)
 
@@ -1777,6 +1781,37 @@ model ShiftAssignment {
   @@index([spaceId])
   @@index([organizationId])
   @@map("shift_assignments")
+}
+
+/// A materialized expected shift occurrence for one member on one local day —
+/// generated from the rota so a NO-SHOW (scheduled shift with no clock-in) can be
+/// detected by the same indexed reminder sweep as forgot-to-clock-out. Clock-in
+/// flips it PRESENT; the sweep reminds the worker then escalates to a space leader.
+model ShiftInstance {
+  id             String @id @default(cuid())
+  organizationId String
+  spaceId        String
+  userId         String
+  shiftId        String // rota shift (no-show is only materialized for rota shifts)
+
+  localDate          String // YYYY-MM-DD in the resolution timezone (the shift's local day)
+  expectedClockInAt  DateTime
+  expectedClockOutAt DateTime
+
+  // Lifecycle: PENDING → PRESENT (clocked in) | REMINDED → ESCALATED (no-show) | EXCUSED (time-off)
+  state         String    @default("PENDING")
+  reminderCount Int       @default(0)
+  nextRemindAt  DateTime? // when the sweep should next act (set to grace-until at create; null when resolved)
+  timeEntryId   String? // the fulfilling clock-in, when PRESENT
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, spaceId, shiftId, localDate]) // idempotent materialization
+  @@index([state, nextRemindAt]) // the no-show sweep (drain due rows)
+  @@index([userId, localDate]) // clock-in fulfillment lookup
+  @@index([organizationId, spaceId, localDate]) // admin/no-show listing
+  @@map("shift_instances")
 }
 
 // SpaceRole + SpaceMember retired (Phase 5) — fully replaced by AccessRole

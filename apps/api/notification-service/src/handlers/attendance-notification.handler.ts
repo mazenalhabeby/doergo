@@ -182,6 +182,80 @@ export class AttendanceNotificationHandler {
     });
   }
 
+  // No-show engine: a worker's shift started but they never clocked in. Nudge the
+  // worker (push) + live-update the org dashboard.
+  @EventPattern('attendance_noshow_reminder')
+  async handleNoShowReminder(@Payload() data: {
+    instanceId: string;
+    userId: string;
+    userName: string;
+    spaceId: string;
+    expectedClockInAt: string | null;
+    reminderCount: number;
+    organizationId: string;
+  }) {
+    this.logger.log(`No-show reminder: user=${data.userName}, instance=${data.instanceId}, count=${data.reminderCount}`);
+    try {
+      await this.pushService.sendNoShowReminderPush({
+        userId: data.userId,
+        instanceId: data.instanceId,
+        reminderCount: data.reminderCount,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send no-show reminder push: ${error}`);
+    }
+    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_noshow_reminder', {
+      instanceId: data.instanceId,
+      userId: data.userId,
+      userName: data.userName,
+      reminderCount: data.reminderCount,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Reminders exhausted → notify the space leaders that the worker is a no-show.
+  @EventPattern('attendance_noshow_escalation')
+  async handleNoShowEscalation(@Payload() data: {
+    instanceId: string;
+    userId: string;
+    userName: string;
+    spaceId: string;
+    expectedClockInAt: string | null;
+    leaderIds: string[];
+    organizationId: string;
+  }) {
+    const leaderIds = data.leaderIds || [];
+    this.logger.log(`No-show escalation: user=${data.userName}, instance=${data.instanceId}, leaders=${leaderIds.length}`);
+    try {
+      await this.pushService.sendNoShowEscalationPush({
+        leaderIds,
+        userName: data.userName,
+        instanceId: data.instanceId,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send no-show escalation push: ${error}`);
+    }
+    const payload = {
+      instanceId: data.instanceId,
+      userId: data.userId,
+      userName: data.userName,
+      timestamp: new Date().toISOString(),
+    };
+    if (leaderIds.length) {
+      for (const id of leaderIds) this.websocketGateway.emitToUser(id, 'attendance_noshow_escalation', payload);
+    } else {
+      this.websocketGateway.emitToRole('ADMIN', 'attendance_noshow_escalation', payload);
+    }
+    await this.store.record({
+      recipientIds: leaderIds,
+      organizationId: data.organizationId,
+      eventType: 'attendance_noshow_escalation',
+      title: 'No-show',
+      body: `${data.userName} hasn't clocked in for their shift and hasn't responded — follow up or mark absent`,
+      link: '/attendance',
+    });
+  }
+
   // Worker asked to keep working past their shift → notify overtime approvers.
   @EventPattern('attendance_overtime_request')
   async handleOvertimeRequest(@Payload() data: {

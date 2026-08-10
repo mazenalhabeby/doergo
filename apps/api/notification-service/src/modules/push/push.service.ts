@@ -261,6 +261,33 @@ export class PushService {
     });
   }
 
+  // No-show engine: nudge the worker whose shift has started but who hasn't
+  // clocked in. Tapping should open the clock-in screen.
+  async sendNoShowReminderPush(data: { userId: string; instanceId: string; reminderCount: number }) {
+    return this.sendToUser(
+      data.userId,
+      'Shift started — clock in',
+      `Your shift has started and you're not clocked in yet. Tap to clock in.`,
+      { type: 'noshow_reminder', instanceId: data.instanceId, reminderCount: data.reminderCount },
+    );
+  }
+
+  // No-show escalation: the worker never clocked in → ask a space leader to
+  // follow up (call the worker / mark absent / reconcile).
+  async sendNoShowEscalationPush(data: { leaderIds: string[]; userName: string; instanceId: string }) {
+    const allTokens: string[] = [];
+    for (const leaderId of data.leaderIds) {
+      const tokens = await this.getUserTokens(leaderId);
+      allTokens.push(...tokens);
+    }
+    return this.sendPushNotification(
+      allTokens,
+      'No-show',
+      `${data.userName} hasn't clocked in for their shift and isn't responding. Please follow up.`,
+      { type: 'noshow_escalation', userName: data.userName, instanceId: data.instanceId },
+    );
+  }
+
   // A worker asked to keep working past their shift — notify the space's
   // overtime approvers so they can grant/deny extra minutes.
   async sendOvertimeRequestPush(data: {

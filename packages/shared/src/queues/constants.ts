@@ -103,6 +103,9 @@ export const ATTENDANCE_JOB_TYPES = {
   // Shift reminder engine sweep: nudges open shifts past their expected end,
   // then escalates to a space leader. Never clocks anyone out.
   SHIFT_REMINDER: 'attendance.shiftReminder',
+  // Rolling materialization of expected shifts (rota → ShiftInstance) for no-show
+  // detection. Slow cadence; bounded scan.
+  SHIFT_MATERIALIZE: 'attendance.shiftMaterialize',
   HEARTBEAT: 'attendance.heartbeat',
 } as const;
 

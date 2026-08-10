@@ -56,6 +56,27 @@ export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
         `Scheduled shift reminder sweep (every ${ATTENDANCE_CONSTANTS.SHIFT_REMINDER_SWEEP_INTERVAL_MS / 60000} min)`,
       );
 
+      // No-show materialization — slow rolling upsert of expected shifts.
+      await this.attendanceQueue.add(
+        ATTENDANCE_JOB_TYPES.SHIFT_MATERIALIZE,
+        { triggeredAt: new Date().toISOString() },
+        {
+          repeat: { every: ATTENDANCE_CONSTANTS.SHIFT_MATERIALIZE_INTERVAL_MS },
+          jobId: ATTENDANCE_CONSTANTS.SHIFT_MATERIALIZE_JOB_ID,
+          removeOnComplete: true,
+          removeOnFail: { age: 86400 },
+        },
+      );
+      // Seed once now so instances exist immediately (not only after 30 min).
+      await this.attendanceQueue.add(
+        ATTENDANCE_JOB_TYPES.SHIFT_MATERIALIZE,
+        { triggeredAt: new Date().toISOString(), seed: true },
+        { removeOnComplete: true, removeOnFail: { age: 3600 } },
+      );
+      this.logger.log(
+        `Scheduled shift materialization (every ${ATTENDANCE_CONSTANTS.SHIFT_MATERIALIZE_INTERVAL_MS / 60000} min)`,
+      );
+
       const repeatableJobs = await this.attendanceQueue.getRepeatableJobs();
       this.logger.log(
         `Active repeatable jobs: ${repeatableJobs.map((j) => `${j.name}(${j.every || j.pattern})`).join(', ')}`,
@@ -68,6 +89,7 @@ export class AttendanceScheduler implements OnModuleInit, OnModuleDestroy {
   private async removeExistingRepeatableJobs() {
     const stale: string[] = [
       ATTENDANCE_JOB_TYPES.SHIFT_REMINDER,
+      ATTENDANCE_JOB_TYPES.SHIFT_MATERIALIZE, // re-registered below (avoid dup on restart)
       ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT, // deprecated force-close sweep
     ];
     const repeatableJobs = await this.attendanceQueue.getRepeatableJobs();
