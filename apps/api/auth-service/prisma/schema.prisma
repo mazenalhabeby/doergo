@@ -1184,6 +1184,7 @@ model Portal {
   accent      String?
   features    Json? // PortalFeatureFlags
   isActive    Boolean @default(true)
+  coverImageUrl String? // optional hero/background photo for the client home
 
   categories IntakeCategory[]
   customers  Customer[]

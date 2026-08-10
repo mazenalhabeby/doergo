@@ -9,11 +9,17 @@ import {
   Query,
   Request,
   Inject,
+  BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { RequirePermission } from '@hbcfield/shared';
+import { join } from 'path';
+import { mkdir, writeFile } from 'fs/promises';
 
 /**
  * Office-facing multi-portal management (staff, canManageUsers). Org always from
@@ -66,6 +72,42 @@ export class PortalAdminController {
         { organizationId: req.user.organizationId, portalId: id },
       ),
     );
+  }
+
+  /** Upload a portal cover/hero image (shown as the client-home background). */
+  @Post('portals/:id/cover')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Upload the portal cover/hero image' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadCover(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: any,
+  ) {
+    if (!file) throw new BadRequestException('No file provided');
+    if (file.size > 8 * 1024 * 1024) throw new BadRequestException('File too large (max 8MB)');
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
+    }
+    // Ownership: the setter below is org-scoped, but write into a portal-scoped dir.
+    const dir = join(process.cwd(), 'uploads', 'portals', id);
+    await mkdir(dir, { recursive: true });
+    const ext = file.originalname.split('.').pop() || 'jpg';
+    const fileName = `${Date.now()}.${ext}`;
+    await writeFile(join(dir, fileName), file.buffer);
+    const coverImageUrl = `/uploads/portals/${id}/${fileName}`;
+    await this.auth('portal_update', { id, organizationId: req.user.organizationId, coverImageUrl });
+    return { success: true, data: { coverImageUrl } };
+  }
+
+  /** Remove the portal cover image. */
+  @Delete('portals/:id/cover')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Remove the portal cover image' })
+  removeCover(@Param('id') id: string, @Request() req: any) {
+    return this.auth('portal_update', { id, organizationId: req.user.organizationId, coverImageUrl: null });
   }
 
   /** Route a pending request → a live task: pick space + flow + priority + worker. */

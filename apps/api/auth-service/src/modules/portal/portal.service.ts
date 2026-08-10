@@ -46,6 +46,7 @@ export class PortalService {
       entityLabel: portal.entityLabel ?? 'Unit',
       contactLabel: portal.contactLabel ?? 'Support',
       accent: portal.accent ?? 'emerald',
+      coverImageUrl: portal.coverImageUrl ?? null,
       features: { ...DEFAULT_PORTAL_FEATURES, ...((portal.features as Record<string, boolean>) || {}) },
       categories,
     };
@@ -129,6 +130,7 @@ export class PortalService {
     name?: string;
     templateKey?: string;
     reseed?: boolean;
+    coverImageUrl?: string | null;
   }) {
     const portal = await this.prisma.portal.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
@@ -163,7 +165,10 @@ export class PortalService {
     } else {
       await this.prisma.portal.update({
         where: { id: portal.id },
-        data: { ...(data.name !== undefined ? { name: data.name } : {}) },
+        data: {
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.coverImageUrl !== undefined ? { coverImageUrl: data.coverImageUrl } : {}),
+        },
       });
     }
     configCache.delete(portal.id);
@@ -191,6 +196,7 @@ export class PortalService {
       entityLabel: 'Unit',
       contactLabel: 'Support',
       accent: 'emerald',
+      coverImageUrl: null,
       features: DEFAULT_PORTAL_FEATURES,
       categories: [] as unknown[],
     };

@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat, Upload, ImageIcon } from "lucide-react"
 
 import { portalAdminApi, locationsApi, workflowsApi, organizationsApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
@@ -116,6 +116,19 @@ export default function PortalDetailPage() {
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
+  // Cover image (client-home background)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const uploadCoverM = useMutation({
+    mutationFn: (file: File) => portalAdminApi.uploadCover(String(id), file),
+    onSuccess: () => { inv("portal"); notify.success(t("portal.coverUpdated", "Cover image updated")) },
+    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
+  })
+  const removeCoverM = useMutation({
+    mutationFn: () => portalAdminApi.removeCover(String(id)),
+    onSuccess: () => { inv("portal"); notify.success(t("portal.coverRemoved", "Cover image removed")) },
+    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
+  })
+
   // Invite client
   const [inviteOpen, setInviteOpen] = useState(false)
   const [res, setRes] = useState({ name: "", email: "", unitName: "", unitAddress: "" })
@@ -164,6 +177,42 @@ export default function PortalDetailPage() {
             </Button>
             <Button onClick={() => setInviteOpen(true)} className="h-11 rounded-xl shadow-sm gap-1.5"><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>
           </div>
+        </div>
+
+        {/* Cover image — the client-home background */}
+        <div className="mb-6">
+          <div className="relative h-40 rounded-2xl overflow-hidden border border-border bg-muted">
+            {portal?.coverImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={portal.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                <ImageIcon className="h-6 w-6" />
+                <span className="text-sm">{t("portal.noCover", "No cover image")}</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+            <div className="absolute bottom-3 right-3 flex gap-2">
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCoverM.mutate(f); e.currentTarget.value = "" }}
+              />
+              <Button size="sm" className="gap-1.5" disabled={uploadCoverM.isPending} onClick={() => coverInputRef.current?.click()}>
+                {uploadCoverM.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {portal?.coverImageUrl ? t("portal.changeCover", "Change") : t("portal.uploadCover", "Upload cover")}
+              </Button>
+              {portal?.coverImageUrl && (
+                <Button size="sm" variant="secondary" className="gap-1.5" disabled={removeCoverM.isPending} onClick={() => removeCoverM.mutate()}>
+                  {removeCoverM.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  {t("common.remove", "Remove")}
+                </Button>
+              )}
+            </div>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">{t("portal.coverHint", "Shown as the background on the client's home screen. Landscape works best.")}</p>
         </div>
 
         <Tabs defaultValue="requests" className="w-full">

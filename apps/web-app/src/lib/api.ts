@@ -4549,6 +4549,7 @@ export interface PortalDetail {
   entityLabel: string;
   contactLabel: string;
   accent: string;
+  coverImageUrl?: string | null;
   features: PortalFeatureFlags;
   categories: PortalIntakeCategory[];
 }
@@ -4678,6 +4679,31 @@ export const portalAdminApi = {
     body: { spaceId: string; workflowId?: string | null; priority?: string; assignedToId?: string | null },
   ) => {
     const res = await api.post(`/portal/admin/requests/${requestId}/triage`, body);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+
+  /** Upload a portal cover/hero image (client-home background). */
+  uploadCover: async (portalId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const token = getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/portal/admin/portals/${portalId}/cover`, {
+      method: "POST",
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData,
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.message || "Upload failed");
+    }
+    const data = await response.json();
+    return data.data as { coverImageUrl: string };
+  },
+
+  removeCover: async (portalId: string) => {
+    const res = await api.delete(`/portal/admin/portals/${portalId}/cover`);
     if (res.error) throw new Error(res.error);
     return res.data;
   },
