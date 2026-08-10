@@ -4480,6 +4480,7 @@ export interface Customer {
   notes?: string | null;
   isActive: boolean;
   isPortalResident?: boolean;
+  portalId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

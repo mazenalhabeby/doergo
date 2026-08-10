@@ -35,6 +35,17 @@ export default function CustomerDetailPage() {
   const unitsQ = useQuery({ queryKey: ["portalUnits", id], queryFn: () => portalAdminApi.listUnits(id) })
   const requestsQ = useQuery({ queryKey: ["portalRequests", id], queryFn: () => portalAdminApi.requests(id) })
 
+  // Terminology adapts to the client's portal TYPE: rental → Apartment,
+  // logistics → Order, workplace → Workspace (falls back to a generic "Unit").
+  const portalId = customerQ.data?.portalId
+  const portalQ = useQuery({
+    queryKey: ["portal", portalId],
+    queryFn: () => portalAdminApi.getPortal(portalId as string),
+    enabled: !!portalId,
+  })
+  const entity = portalQ.data?.entityLabel || t("portal.entityFallback", "Unit")
+  const entityLower = entity.toLowerCase()
+
   // Units
   const [unitOpen, setUnitOpen] = useState(false)
   const [unitName, setUnitName] = useState("")
@@ -110,14 +121,14 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {/* Units */}
-        <Section title={t("portal.units", "Units")} action={
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setUnitOpen(true)}><Plus className="h-3.5 w-3.5" />{t("portal.addUnit", "Add unit")}</Button>
+        {/* Units — labelled by the portal type (Apartments / Orders / Workspaces) */}
+        <Section title={`${entity}s`} action={
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setUnitOpen(true)}><Plus className="h-3.5 w-3.5" />{t("portal.addEntity", "Add {{entity}}", { entity: entityLower })}</Button>
         }>
           {unitsQ.isLoading ? (
             <Empty text={t("common.loading", "Loading…")} />
           ) : (unitsQ.data?.length ?? 0) === 0 ? (
-            <Empty text={t("portal.noUnits", "No units yet. Add the apartment / order / workspace this customer is tied to.")} />
+            <Empty text={t("portal.noEntities", "No {{entity}}s yet. Add the {{entity}} this client is tied to.", { entity: entityLower })} />
           ) : (
             <div className="divide-y divide-border/60">
               {unitsQ.data!.map((u: PortalCustomerUnit) => (
@@ -162,9 +173,9 @@ export default function CustomerDetailPage() {
       {/* Add unit dialog */}
       <Dialog open={unitOpen} onOpenChange={(o) => !o && setUnitOpen(false)}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{t("portal.addUnit", "Add unit")}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("portal.addEntity", "Add {{entity}}", { entity: entityLower })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{t("portal.unitName", "Name")}</Label><Input value={unitName} onChange={(e) => setUnitName(e.target.value)} placeholder="Apartment 12A" /></div>
+            <div><Label>{t("portal.unitName", "Name")}</Label><Input value={unitName} onChange={(e) => setUnitName(e.target.value)} placeholder={`${entity} 12A`} /></div>
             <div><Label>{t("portal.unitAddress", "Address")}</Label><Input value={unitAddress} onChange={(e) => setUnitAddress(e.target.value)} placeholder={t("portal.optional", "Optional")} /></div>
           </div>
           <DialogFooter>
@@ -196,7 +207,7 @@ export default function CustomerDetailPage() {
                 <p className="mt-1 text-[11px] text-muted-foreground">{t("portal.inviteEmailHint", "If set, the invite code is emailed to the client automatically.")}</p>
               </div>
               <div>
-                <Label>{t("portal.defaultUnit", "Default unit (optional)")}</Label>
+                <Label>{t("portal.defaultEntity", "Default {{entity}} (optional)", { entity: entityLower })}</Label>
                 <select
                   value={inviteUnit}
                   onChange={(e) => setInviteUnit(e.target.value)}
