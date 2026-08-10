@@ -203,6 +203,32 @@ export default function MemberProfilePage({
     enabled: !!memberId && canViewOps && activeTab === "performance",
     staleTime: 30_000,
   })
+  // Header stats (Score · Done · Active · This Week) — one call carries the lot.
+  const { data: memberProfile } = useQuery({
+    queryKey: ["employeeProfile", memberId],
+    queryFn: () => employeesApi.getById(memberId),
+    enabled: !!memberId && canViewOps,
+    staleTime: 60_000,
+  })
+  const hs = memberProfile?.stats
+  const headerStats = hs
+    ? (() => {
+        const byStatus = (hs.tasks?.byStatus || {}) as Record<string, number>
+        const active = ["ASSIGNED", "ACCEPTED", "EN_ROUTE", "ARRIVED", "IN_PROGRESS", "BLOCKED", "NEW"].reduce(
+          (n, k) => n + (byStatus[k] || 0),
+          0,
+        )
+        const ratingCount = hs.performance?.ratingCount ?? 0
+        const rating = hs.performance?.customerRating
+        const hours = hs.attendance?.totalHoursThisWeek
+        return [
+          { key: "score", label: t("members.stats.score", "Score"), value: ratingCount > 0 && rating != null ? rating.toFixed(1) : "—" },
+          { key: "done", label: t("members.stats.done", "Done"), value: String(hs.tasks?.completed ?? 0) },
+          { key: "active", label: t("members.stats.active", "Active"), value: String(active) },
+          { key: "week", label: t("members.stats.thisWeek", "This Week"), value: hours != null ? `${Math.round(hours)}h` : "0h" },
+        ]
+      })()
+    : null
 
   const schedule = scheduleData?.schedule || []
   const member = memberData
@@ -405,6 +431,18 @@ export default function MemberProfilePage({
               onSaved={handleMemberSaved}
             />
           </div>
+
+          {/* Quick stats — Score · Done · Active · This Week */}
+          {headerStats && (
+            <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border/60 pt-4 sm:grid-cols-4">
+              {headerStats.map((s) => (
+                <div key={s.key} className="rounded-xl bg-muted/40 px-3 py-2.5 text-center">
+                  <p className="text-xl font-bold tabular-nums text-foreground leading-none">{s.value}</p>
+                  <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Tabbed content ───────────────────────────────────────────── */}

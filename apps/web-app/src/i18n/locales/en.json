@@ -1939,6 +1939,7 @@
     }
   },
   "members": {
+    "stats": { "score": "Score", "done": "Done", "active": "Active", "thisWeek": "This Week" },
     "title": "Organization Members",
     "subtitle": "Manage your team members, roles, and permissions",
     "searchPlaceholder": "Search by name or email...",

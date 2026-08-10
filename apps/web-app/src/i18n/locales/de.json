@@ -1939,6 +1939,7 @@
     }
   },
   "members": {
+    "stats": { "score": "Bewertung", "done": "Erledigt", "active": "Aktiv", "thisWeek": "Diese Woche" },
     "title": "Organisationsmitglieder",
     "subtitle": "Verwalten Sie Ihre Teammitglieder, Rollen und Berechtigungen",
     "searchPlaceholder": "Nach Name oder E-Mail suchen...",
