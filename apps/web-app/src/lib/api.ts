@@ -4550,6 +4550,7 @@ export interface PortalDetail {
   contactLabel: string;
   accent: string;
   coverImageUrl?: string | null;
+  spaceId?: string | null;
   features: PortalFeatureFlags;
   categories: PortalIntakeCategory[];
 }
@@ -4593,7 +4594,7 @@ export const portalAdminApi = {
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
-  updatePortal: async (id: string, input: { name?: string; templateKey?: string; reseed?: boolean }) => {
+  updatePortal: async (id: string, input: { name?: string; templateKey?: string; reseed?: boolean; spaceId?: string | null }) => {
     const res = await api.patch<PortalDetail>(`/portal/admin/portals/${id}`, input);
     if (res.error) throw new Error(res.error);
     return res.data!;

@@ -47,6 +47,7 @@ export class PortalService {
       contactLabel: portal.contactLabel ?? 'Support',
       accent: portal.accent ?? 'emerald',
       coverImageUrl: portal.coverImageUrl ?? null,
+      spaceId: portal.spaceId ?? null,
       features: { ...DEFAULT_PORTAL_FEATURES, ...((portal.features as Record<string, boolean>) || {}) },
       categories,
     };
@@ -131,12 +132,22 @@ export class PortalService {
     templateKey?: string;
     reseed?: boolean;
     coverImageUrl?: string | null;
+    spaceId?: string | null;
   }) {
     const portal = await this.prisma.portal.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
       select: { id: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
+
+    // Validate the routing space belongs to this org (fk-less link, defence in depth).
+    if (data.spaceId) {
+      const space = await this.prisma.companyLocation.findFirst({
+        where: { id: data.spaceId, organizationId: data.organizationId },
+        select: { id: true },
+      });
+      if (!space) throw new NotFoundException('Space not found');
+    }
 
     if (data.reseed && data.templateKey) {
       // Switch type: replace config + categories (office confirmed the reset).
@@ -168,6 +179,7 @@ export class PortalService {
         data: {
           ...(data.name !== undefined ? { name: data.name } : {}),
           ...(data.coverImageUrl !== undefined ? { coverImageUrl: data.coverImageUrl } : {}),
+          ...(data.spaceId !== undefined ? { spaceId: data.spaceId } : {}),
         },
       });
     }
@@ -197,6 +209,7 @@ export class PortalService {
       contactLabel: 'Support',
       accent: 'emerald',
       coverImageUrl: null,
+      spaceId: null,
       features: DEFAULT_PORTAL_FEATURES,
       categories: [] as unknown[],
     };

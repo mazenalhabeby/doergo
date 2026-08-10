@@ -116,6 +116,11 @@ export interface CustomerRequestView {
   spaceName?: string | null;
   assignedToId?: string | null;
   description?: string | null;
+  // The client's unit address (the apartment the request is about) + the portal's
+  // linked routing space (pre-fills triage). See portal↔space link.
+  unitAddress?: string | null;
+  suggestedSpaceId?: string | null;
+  suggestedSpaceName?: string | null;
 }
 
 /** Create a customer portal invitation (office → resident). */

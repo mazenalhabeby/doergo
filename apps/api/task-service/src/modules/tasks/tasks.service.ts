@@ -454,9 +454,18 @@ export class TasksService {
     // belongs to the caller's org so ownership never rests on an implicit join.
     const ownsPortal = await this.prisma.portal.findFirst({
       where: { id: data.portalId, organizationId: data.organizationId },
-      select: { id: true },
+      select: { id: true, spaceId: true },
     });
     if (!ownsPortal) return success([]);
+
+    // The portal's routing space (if linked) — pre-fills triage so the admin
+    // doesn't re-pick the space for every request from this property.
+    const suggestedSpace = ownsPortal.spaceId
+      ? await this.prisma.companyLocation.findFirst({
+          where: { id: ownsPortal.spaceId, organizationId: data.organizationId },
+          select: { id: true, name: true },
+        })
+      : null;
 
     const tasks = await this.prisma.task.findMany({
       where: {
@@ -466,7 +475,7 @@ export class TasksService {
       },
       orderBy: [{ triaged: 'asc' }, { createdAt: 'desc' }], // pending-triage first
       include: {
-        unit: { select: { id: true, name: true } },
+        unit: { select: { id: true, name: true, address: true } },
         customer: { select: { id: true, name: true } },
         space: { select: { id: true, name: true } },
         workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
@@ -478,6 +487,9 @@ export class TasksService {
         description: t.description ?? null,
         customerId: t.customerId ?? null,
         customerName: (t as any).customer?.name ?? null,
+        unitAddress: (t as any).unit?.address ?? null,
+        suggestedSpaceId: suggestedSpace?.id ?? null,
+        suggestedSpaceName: suggestedSpace?.name ?? null,
       })),
     );
   }
@@ -585,8 +597,17 @@ export class TasksService {
       if (firstStatus) initialStatus = firstStatus.key;
     }
 
-    const adoptLocation =
-      task.locationLat == null && task.locationLng == null && !task.locationAddress;
+    // Location = the CLIENT's unit (the apartment the request is about), so the
+    // worker is dispatched to the tenant — not the space's office. Fall back to
+    // the space address if the unit has none. Coords come from the space (units
+    // are address-only today) to give the map a rough pin at the property.
+    const unit = task.unitId
+      ? await this.prisma.customerUnit.findFirst({
+          where: { id: task.unitId, organizationId: data.organizationId },
+          select: { address: true, name: true },
+        })
+      : null;
+    const routedAddress = unit?.address || task.locationAddress || space.address || null;
 
     const updated = await this.prisma.task.update({
       where: { id: data.id },
@@ -597,8 +618,10 @@ export class TasksService {
         priority: (data.priority as any) || task.priority,
         assignedToId,
         triaged: true,
-        ...(adoptLocation
-          ? { locationLat: space.lat, locationLng: space.lng, locationAddress: space.address }
+        locationAddress: routedAddress,
+        // Keep any coords the task already had; else use the space's as a rough pin.
+        ...(task.locationLat == null && task.locationLng == null
+          ? { locationLat: space.lat, locationLng: space.lng }
           : {}),
       },
       include: {

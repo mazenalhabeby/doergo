@@ -100,7 +100,9 @@ export default function PortalDetailPage() {
   const [triageReq, setTriageReq] = useState<PortalRequestView | null>(null)
   const [triageForm, setTriageForm] = useState<{ spaceId: string; workflowId: string; priority: string; assignedToId: string }>({ spaceId: "", workflowId: "", priority: "", assignedToId: "" })
   const openTriage = (r: PortalRequestView) => {
-    setTriageForm({ spaceId: r.spaceId ?? "", workflowId: "", priority: r.priority || "MEDIUM", assignedToId: r.assignedToId ?? "" })
+    // Pre-route to the portal's linked space (if any) so the admin only confirms
+    // the flow + assigns — no re-picking the space for every request.
+    setTriageForm({ spaceId: r.suggestedSpaceId ?? r.spaceId ?? "", workflowId: "", priority: r.priority || "MEDIUM", assignedToId: r.assignedToId ?? "" })
     setTriageReq(r)
   }
   const triageM = useMutation({
@@ -126,6 +128,13 @@ export default function PortalDetailPage() {
   const removeCoverM = useMutation({
     mutationFn: () => portalAdminApi.removeCover(String(id)),
     onSuccess: () => { inv("portal"); notify.success(t("portal.coverRemoved", "Cover image removed")) },
+    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
+  })
+
+  // Route-to-space link: which space this portal's requests pre-route to.
+  const linkSpaceM = useMutation({
+    mutationFn: (spaceId: string | null) => portalAdminApi.updatePortal(String(id), { spaceId }),
+    onSuccess: () => { inv("portal"); notify.success(t("portal.spaceLinked", "Routing updated")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -213,6 +222,25 @@ export default function PortalDetailPage() {
             </div>
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">{t("portal.coverHint", "Shown as the background on the client's home screen. Landscape works best.")}</p>
+        </div>
+
+        {/* Routing — the space this portal's requests pre-route to */}
+        <div className="mb-6 rounded-2xl border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">{t("portal.routingTitle", "Routes to space")}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("portal.routingHint", "New requests pre-route to this space (inheriting its flow). Leave unset to pick the space manually per request.")}</p>
+            </div>
+            <select
+              value={portal?.spaceId ?? ""}
+              disabled={linkSpaceM.isPending}
+              onChange={(e) => linkSpaceM.mutate(e.target.value || null)}
+              className="h-10 rounded-md border border-border bg-background px-3 text-sm min-w-[220px]"
+            >
+              <option value="">{t("portal.routingNone", "Manual triage (no space)")}</option>
+              {spaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
@@ -441,6 +469,7 @@ export default function PortalDetailPage() {
               <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
                 <p className="text-sm font-medium text-foreground truncate">{triageReq.title}</p>
                 <p className="text-xs text-muted-foreground truncate mt-0.5"><span className="font-mono">{triageReq.reference}</span>{triageReq.customerName ? ` · ${triageReq.customerName}` : ""}{triageReq.unitName ? ` · ${triageReq.unitName}` : ""}</p>
+                {triageReq.unitAddress && <p className="text-xs text-muted-foreground mt-1">📍 {triageReq.unitAddress}</p>}
                 {triageReq.description && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-wrap line-clamp-4">{triageReq.description}</p>}
               </div>
               <div><Label>{t("portal.triageSpace", "Space")} <span className="text-red-500">*</span></Label>

@@ -1186,6 +1186,12 @@ model Portal {
   isActive    Boolean @default(true)
   coverImageUrl String? // optional hero/background photo for the client home
 
+  // Optional: the space this portal routes to. When set, a client request is
+  // pre-routed to this space (inherits its workflow) and triage becomes just
+  // "confirm/edit flow + assign". When null, requests go to the manual triage
+  // inbox (admin picks the space). fk-less (validated in the service).
+  spaceId String?
+
   categories IntakeCategory[]
   customers  Customer[]
   units      CustomerUnit[]
