@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl, Image, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -9,10 +9,22 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
+import { resolveMediaUrl } from '../../../src/lib/api';
 import { portalColor, portalTint, portalIcon } from '../../../src/lib/portal-ui';
 import { RequestRow } from '../../../src/components/customer/request-bits';
 
 const CLOSED = /COMPLET|CLOSED|CANCEL|RESOLV|DONE/i;
+
+// Per-accent tile palette (dark + light) — a colored icon on a softly tinted
+// card, matching the premium grid look. fg = icon colour.
+type AccentKey = 'blue' | 'green' | 'purple' | 'teal' | 'amber';
+const ACCENTS: Record<AccentKey, { dark: [string, string]; light: [string, string]; fg: string }> = {
+  blue:   { dark: ['#18293f', '#0f1a2a'], light: ['#eaf1fe', '#dce8fd'], fg: '#3b82f6' },
+  green:  { dark: ['#123227', '#0c2019'], light: ['#e7f7ef', '#d6f0e2'], fg: '#10b981' },
+  purple: { dark: ['#241d3a', '#171226'], light: ['#f1ecfb', '#e6def8'], fg: '#8b5cf6' },
+  teal:   { dark: ['#123236', '#0c2124'], light: ['#e6f5f4', '#d4efeb'], fg: '#14b8a6' },
+  amber:  { dark: ['#332810', '#201908'], light: ['#fdf3e0', '#fae8cb'], fg: '#f59e0b' },
+};
 
 export default function CustomerHome() {
   const insets = useSafeAreaInsets();
@@ -20,6 +32,7 @@ export default function CustomerHome() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
 
   const configQ = useQuery({ queryKey: ['portal', 'config'], queryFn: portalApi.config });
   const unitsQ = useQuery({ queryKey: ['portal', 'units'], queryFn: portalApi.units });
@@ -38,84 +51,89 @@ export default function CustomerHome() {
   const refreshing = configQ.isFetching || unitsQ.isFetching || requestsQ.isFetching;
   const onRefresh = () => { configQ.refetch(); unitsQ.refetch(); requestsQ.refetch(); };
 
+  // Optional per-portal cover photo; falls back to a premium gradient.
+  const heroImage = resolveMediaUrl((cfg as any)?.coverImageUrl || (cfg as any)?.heroImageUrl);
+  const officeLabel = cfg?.contactLabel || t('portal.office', 'the office');
+
+  // Premium action grid — wired to what this portal actually does. Messages is
+  // gated on the portal feature flag so we never show a dead tile.
+  const tiles: { key: string; label: string; icon: string; accent: AccentKey; badge?: number; onPress: () => void }[] = [
+    { key: 'report', label: t('portal.tileReport', 'Report a Maintenance Issue'), icon: 'wrench', accent: 'blue', onPress: () => router.push('/(customer)/report') },
+    { key: 'requests', label: t('portal.tileRequests', 'My Requests'), icon: 'clipboard-text-outline', accent: 'green', badge: openCount || undefined, onPress: () => router.push('/(customer)/(tabs)/requests') },
+    ...(cfg?.features?.messages !== false
+      ? [{ key: 'messages', label: t('portal.tileContact', 'Contact {{office}}', { office: officeLabel }), icon: 'message-text-outline', accent: 'purple' as AccentKey, onPress: () => router.push('/(customer)/(tabs)/messages') }]
+      : []),
+    { key: 'profile', label: t('portal.tileProfile', 'My Account'), icon: 'account-circle-outline', accent: 'teal', onPress: () => router.push('/(customer)/(tabs)/profile') },
+  ];
+  const tileW = (width - SPACING.lg * 2 - SPACING.md) / 2;
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
-        contentContainerStyle={{ paddingTop: insets.top + SPACING.sm, paddingBottom: SPACING.xxxl * 1.5 }}
+        contentContainerStyle={{ paddingBottom: SPACING.xxxl * 1.5 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} progressViewOffset={insets.top + 40} />}
       >
-        {/* Top bar */}
-        <View style={styles.topBar}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.greet, { color: colors.textMuted }]}>{greeting},</Text>
-            <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>{user?.firstName || t('portal.client', 'Client')}</Text>
+        {/* ── Hero header (photo or premium gradient) ── */}
+        <View style={styles.hero}>
+          {heroImage ? (
+            <Image source={{ uri: heroImage }} style={StyleSheet.absoluteFill as any} resizeMode="cover" />
+          ) : null}
+          {/* Dark wash so text stays legible over any image, + brand tint */}
+          <LinearGradient
+            colors={heroImage
+              ? ['rgba(6,10,16,0.55)', 'rgba(6,10,16,0.35)', colors.background]
+              : (isDark ? ['#0f2a22', '#0c1a20', colors.background] : ['#0e3d31', '#0c2f2a', colors.background])}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          {!heroImage ? <><View style={styles.blob1} /><View style={styles.blob2} /></> : null}
+
+          <View style={[styles.heroContent, { paddingTop: insets.top + SPACING.md }]}>
+            <View style={styles.heroTopRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.greet}>{greeting},</Text>
+                <Text style={styles.name} numberOfLines={1}>{user?.firstName || t('portal.client', 'Client')}</Text>
+              </View>
+              <Pressable style={styles.avatar} onPress={() => router.push('/(customer)/(tabs)/profile')} hitSlop={8}>
+                <Text style={styles.avatarText}>{user?.firstName?.[0]?.toUpperCase() || '?'}</Text>
+              </Pressable>
+            </View>
+            {cfg?.name ? <Text style={styles.propName} numberOfLines={1}>{cfg.name}</Text> : null}
+            {unit?.name ? <Text style={styles.propUnit} numberOfLines={1}>{unit.name}</Text> : null}
           </View>
-          <Pressable style={[styles.avatar, { backgroundColor: COLORS.primary }]} onPress={() => router.push('/(customer)/(tabs)/profile')}>
-            <Text style={styles.avatarText}>{user?.firstName?.[0]?.toUpperCase() || '?'}</Text>
-          </Pressable>
         </View>
 
-        {unit ? (
-          <View style={[styles.unitChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Ionicons name="location" size={13} color={COLORS.primary} />
-            <Text style={[styles.unitText, { color: colors.textSecondary }]} numberOfLines={1}>
-              {cfg?.name ? `${cfg.name} · ` : ''}{unit.name}
-            </Text>
-          </View>
-        ) : null}
+        {/* ── Action grid ── */}
+        <View style={styles.grid}>
+          {tiles.map((tile) => {
+            const a = ACCENTS[tile.accent];
+            return (
+              <Pressable key={tile.key} style={[styles.tile, { width: tileW }]} onPress={tile.onPress}>
+                <LinearGradient colors={isDark ? a.dark : a.light} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tileBg}>
+                  <View style={[styles.tileIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#ffffffcc' }]}>
+                    <MaterialCommunityIcons name={tile.icon as any} size={26} color={a.fg} />
+                    {tile.badge ? (
+                      <View style={[styles.tileBadge, { backgroundColor: a.fg }]}>
+                        <Text style={styles.tileBadgeText}>{tile.badge > 9 ? '9+' : tile.badge}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.tileLabel, { color: isDark ? '#f1f5f9' : colors.textPrimary }]} numberOfLines={2}>{tile.label}</Text>
+                </LinearGradient>
+              </Pressable>
+            );
+          })}
+        </View>
 
-        {/* Hero CTA */}
-        <Pressable style={styles.heroWrap} onPress={() => router.push('/(customer)/report')}>
-          <LinearGradient
-            colors={['#10B981', '#059669', '#047857']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.hero}
-          >
-            <View style={styles.heroBlob1} />
-            <View style={styles.heroBlob2} />
-            <View style={styles.heroBadge}>
-              <MaterialCommunityIcons name="plus" size={26} color="#fff" />
-            </View>
-            <Text style={styles.heroTitle}>{t('portal.reportIssue', 'Report an issue')}</Text>
-            <Text style={styles.heroSub}>{t('portal.heroSub', 'Tell us what’s wrong — we’ll take it from here.')}</Text>
-            <View style={styles.heroCta}>
-              <Text style={styles.heroCtaText}>{t('portal.startNow', 'Start now')}</Text>
-              <Ionicons name="arrow-forward" size={16} color={COLORS.primaryDark} />
-            </View>
-          </LinearGradient>
-        </Pressable>
-
-        {/* Active requests banner */}
-        {openCount > 0 ? (
-          <Pressable
-            style={[styles.banner, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push('/(customer)/(tabs)/requests')}
-          >
-            <View style={[styles.bannerDot, { backgroundColor: COLORS.primary }]} />
-            <Text style={[styles.bannerText, { color: colors.textPrimary }]}>
-              {t('portal.openCount', '{{count}} in progress', { count: openCount })}
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
-
-        {/* Quick report categories */}
+        {/* ── Quick report categories ── */}
         {categories.length > 0 ? (
           <>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('portal.quickReport', 'Quick report')}</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.md }}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.md }}>
               {categories.map((c) => (
-                <Pressable
-                  key={c.key}
-                  style={styles.catChip}
-                  onPress={() => router.push(`/(customer)/report?category=${encodeURIComponent(c.key)}`)}
-                >
+                <Pressable key={c.key} style={styles.catChip} onPress={() => router.push(`/(customer)/report?category=${encodeURIComponent(c.key)}`)}>
                   <View style={[styles.catIcon, { backgroundColor: portalTint(c.color) }]}>
                     <MaterialCommunityIcons name={portalIcon(c.icon)} size={26} color={portalColor(c.color)} />
                   </View>
@@ -126,7 +144,7 @@ export default function CustomerHome() {
           </>
         ) : null}
 
-        {/* Recent */}
+        {/* ── Recent ── */}
         <View style={styles.sectionRow}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginHorizontal: 0, marginTop: 0 }]}>{t('portal.recent', 'Recent')}</Text>
           {requests.length > 3 ? (
@@ -140,15 +158,7 @@ export default function CustomerHome() {
           <ActivityIndicator style={{ marginTop: SPACING.lg }} color={COLORS.primary} />
         ) : recent.length > 0 ? (
           recent.map((r) => (
-            <RequestRow
-              key={r.id}
-              title={r.title}
-              reference={r.reference}
-              status={r.status}
-              icon={r.icon}
-              color={r.color}
-              onPress={() => router.push(`/(customer)/request/${r.id}`)}
-            />
+            <RequestRow key={r.id} title={r.title} reference={r.reference} status={r.status} icon={r.icon} color={r.color} onPress={() => router.push(`/(customer)/request/${r.id}`)} />
           ))
         ) : (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -159,64 +169,37 @@ export default function CustomerHome() {
             <Text style={[styles.emptySub, { color: colors.textMuted }]}>{t('portal.allClearSub', 'No open requests. Tap above if something needs fixing.')}</Text>
           </View>
         )}
-
-        {/* Contact office */}
-        {cfg?.features?.messages !== false ? (
-          <Pressable
-            style={[styles.contact, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push('/(customer)/(tabs)/messages')}
-          >
-            <View style={[styles.contactIcon, { backgroundColor: portalTint('cyan') }]}>
-              <Ionicons name="chatbubble-ellipses" size={20} color={portalColor('cyan')} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.contactTitle, { color: colors.textPrimary }]}>{t('portal.contact', 'Contact')} {cfg?.contactLabel || ''}</Text>
-              <Text style={[styles.contactSub, { color: colors.textMuted }]}>{t('portal.contactSub', 'Chat with the team')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
       </ScrollView>
     </View>
   );
 }
 
-const shadow = {
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 8 },
-  shadowOpacity: 0.12,
-  shadowRadius: 16,
-  elevation: 6,
-};
-
 const styles = StyleSheet.create({
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, marginBottom: SPACING.sm },
-  greet: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base },
-  name: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.title, marginTop: 1 },
-  avatar: { width: 46, height: 46, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.xl, color: '#fff' },
-  unitChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.md, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
-  unitText: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.xs, maxWidth: 260 },
-
   // Hero
-  heroWrap: { marginHorizontal: SPACING.lg, marginBottom: SPACING.lg, borderRadius: 26, ...shadow, shadowColor: '#047857', shadowOpacity: 0.35 },
-  hero: { borderRadius: 26, padding: SPACING.lg, overflow: 'hidden' },
-  heroBlob1: { position: 'absolute', top: -40, right: -30, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.13)' },
-  heroBlob2: { position: 'absolute', bottom: -50, right: 40, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(255,255,255,0.08)' },
-  heroBadge: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md },
-  heroTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: 24, color: '#fff' },
-  heroSub: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, color: 'rgba(255,255,255,0.9)', marginTop: 4, marginBottom: SPACING.md, maxWidth: '86%' },
-  heroCta: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.full },
-  heroCtaText: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.base, color: COLORS.primaryDark },
+  hero: { minHeight: 210, paddingBottom: SPACING.xl, overflow: 'hidden' },
+  blob1: { position: 'absolute', top: -50, right: -40, width: 190, height: 190, borderRadius: 95, backgroundColor: 'rgba(16,185,129,0.16)' },
+  blob2: { position: 'absolute', top: 40, right: 90, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(45,212,191,0.10)' },
+  heroContent: { paddingHorizontal: SPACING.lg },
+  heroTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  greet: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, color: 'rgba(255,255,255,0.85)' },
+  name: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.title, color: '#fff', marginTop: 1 },
+  avatar: { width: 46, height: 46, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
+  avatarText: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.xl, color: '#fff' },
+  propName: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.lg, color: '#fff', marginTop: SPACING.md, fontWeight: '600' },
+  propUnit: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
 
-  // Active banner
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: SPACING.lg, marginBottom: SPACING.lg, paddingHorizontal: SPACING.md, paddingVertical: 13, borderRadius: RADIUS.lg, borderWidth: 1 },
-  bannerDot: { width: 8, height: 8, borderRadius: 4 },
-  bannerText: { flex: 1, fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, fontWeight: '600' },
+  // Grid
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, paddingHorizontal: SPACING.lg, marginTop: -SPACING.sm },
+  tile: { borderRadius: 22, overflow: 'hidden' },
+  tileBg: { minHeight: 132, borderRadius: 22, padding: SPACING.md, justifyContent: 'space-between' },
+  tileIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  tileBadge: { position: 'absolute', top: -6, right: -6, minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
+  tileBadgeText: { color: '#fff', fontFamily: 'Outfit_800ExtraBold', fontSize: 11 },
+  tileLabel: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.base, lineHeight: 20, marginTop: SPACING.sm },
 
   // Sections
-  sectionTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.lg, marginHorizontal: SPACING.lg, marginTop: SPACING.sm, marginBottom: SPACING.md },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: SPACING.lg, marginTop: SPACING.lg, marginBottom: SPACING.md },
+  sectionTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.lg, marginHorizontal: SPACING.lg, marginTop: SPACING.xl, marginBottom: SPACING.md },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: SPACING.lg, marginTop: SPACING.xl, marginBottom: SPACING.md },
   seeAll: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, fontWeight: '600' },
 
   // Category chips
@@ -229,10 +212,4 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.sm },
   emptyTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.base },
   emptySub: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, textAlign: 'center', marginTop: 3, lineHeight: 18 },
-
-  // Contact
-  contact: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: SPACING.lg, marginTop: SPACING.lg, padding: SPACING.md, borderRadius: RADIUS.lg, borderWidth: 1 },
-  contactIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  contactTitle: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, fontWeight: '600' },
-  contactSub: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, marginTop: 1 },
 });
