@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat } from "lucide-react"
 
 import { portalAdminApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
@@ -54,6 +54,7 @@ export default function PortalDetailPage() {
   const inv = (k: string) => qc.invalidateQueries({ queryKey: [k, id] })
 
   // Switch type / delete portal
+  const [typePickerOpen, setTypePickerOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState<string | null>(null)
   const switchM = useMutation({
     mutationFn: (templateKey: string) => portalAdminApi.updatePortal(String(id), { templateKey, reseed: true }),
@@ -131,10 +132,9 @@ export default function PortalDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <select onChange={(e) => e.target.value && setSwitchOpen(e.target.value)} value="" className="h-11 rounded-xl border border-border bg-background px-3 text-sm text-muted-foreground hover:bg-accent/40 transition-colors">
-              <option value="">{t("portal.switchType", "Switch type…")}</option>
-              {TEMPLATES.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
-            </select>
+            <Button variant="outline" className="h-11 rounded-xl gap-1.5" onClick={() => setTypePickerOpen(true)}>
+              <Repeat className="h-4 w-4" />{t("portal.changeType", "Change type")}
+            </Button>
             <Button onClick={() => setInviteOpen(true)} className="h-11 rounded-xl shadow-sm gap-1.5"><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>
           </div>
         </div>
@@ -253,6 +253,36 @@ export default function PortalDetailPage() {
       </div>
 
       {/* Switch type */}
+      {/* Change type picker — shows the current type; picking another flows into
+          the reseed confirm below. */}
+      <Dialog open={typePickerOpen} onOpenChange={setTypePickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{t("portal.changeType", "Change type")}</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
+            {TEMPLATES.map((x) => {
+              const isCurrent = x.key === meta.key
+              return (
+                <button
+                  key={x.key}
+                  disabled={isCurrent}
+                  onClick={() => { setTypePickerOpen(false); setSwitchOpen(x.key) }}
+                  className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors ${isCurrent ? "border-primary/40 bg-primary/5 cursor-default" : "border-border hover:bg-accent/40"}`}
+                >
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(x.accent)}`}>{x.badge}</span>
+                    <span className="text-sm text-foreground truncate">{x.label}</span>
+                  </span>
+                  {isCurrent
+                    ? <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary shrink-0"><Check className="h-3.5 w-3.5" />{t("portal.currentType", "Current")}</span>
+                    : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-muted-foreground">{t("portal.changeTypeHint", "Switching replaces the issue categories with the new type's defaults. Clients and their requests are kept.")}</p>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!switchOpen} onOpenChange={(o) => !o && setSwitchOpen(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" />{t("portal.switchTitle", "Switch portal type?")}</AlertDialogTitle>
