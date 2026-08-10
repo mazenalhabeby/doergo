@@ -711,6 +711,7 @@ export interface UpdateTaskInput {
   storyPoints?: number | null;
   epicId?: string | null;
   spaceId?: string | null;
+  workflowId?: string | null;
   position?: number;
 }
 

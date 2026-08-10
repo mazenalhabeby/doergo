@@ -557,30 +557,27 @@ export class TasksService {
       if (!wf) throw new NotFoundException('Flow not found');
     }
 
-    // Assignee (optional): a member of the org, or someone assigned to the space.
+    // Assignee (optional): MUST be a member of the space we're routing to — you
+    // can only hand the job to someone actually on that space's roster (active
+    // assignment window). Mirrors the triage UI, which only offers space members.
     let assignedToId: string | null = null;
     let workerName = '';
     if (data.assignedToId) {
-      let worker = await this.prisma.user.findFirst({
+      const member = await this.prisma.spaceAssignment.findFirst({
+        where: {
+          spaceId: data.spaceId,
+          userId: data.assignedToId,
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+        },
+        select: { id: true },
+      });
+      if (!member) {
+        throw new BadRequestException('The worker must be a member of the selected space');
+      }
+      const worker = await this.prisma.user.findFirst({
         where: { id: data.assignedToId, organizationId: data.organizationId, isActive: true },
         select: { id: true, firstName: true, lastName: true },
       });
-      if (!worker) {
-        const member = await this.prisma.spaceAssignment.findFirst({
-          where: {
-            spaceId: data.spaceId,
-            userId: data.assignedToId,
-            OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
-          },
-          select: { id: true },
-        });
-        if (member) {
-          worker = await this.prisma.user.findFirst({
-            where: { id: data.assignedToId, isActive: true },
-            select: { id: true, firstName: true, lastName: true },
-          });
-        }
-      }
       if (!worker) throw new NotFoundException('Worker not found or not in your organization');
       assignedToId = worker.id;
       workerName = `${worker.firstName} ${worker.lastName}`;
@@ -959,9 +956,36 @@ export class TasksService {
       throw new BadRequestException('Cannot update a completed, closed, or canceled task');
     }
 
+    // Changing the FLOW (task type / workflow). Validate the target belongs to the
+    // org, then keep the current status if it still exists in the new flow, else
+    // drop to the new flow's first status (or canonical NEW/ASSIGNED when cleared).
+    let statusOverride: string | undefined;
+    if (updateData.workflowId !== undefined) {
+      const wfId: string | null = updateData.workflowId || null;
+      if (wfId) {
+        const wf = await this.prisma.statusWorkflow.findFirst({
+          where: { id: wfId, organizationId: existingTask.organizationId },
+          select: { id: true },
+        });
+        if (!wf) throw new NotFoundException('Flow not found');
+        const statuses = await this.prisma.workflowStatus.findMany({
+          where: { workflowId: wfId },
+          orderBy: { position: 'asc' },
+          select: { key: true, isCanceled: true },
+        });
+        if (!statuses.some((s) => s.key === existingTask.status)) {
+          statusOverride = (statuses.find((s) => !s.isCanceled) || statuses[0])?.key;
+        }
+      } else {
+        statusOverride = existingTask.assignedToId ? TaskStatus.ASSIGNED : TaskStatus.NEW;
+      }
+    }
+
     const task = await this.prisma.task.update({
       where: { id },
       data: {
+        ...(updateData.workflowId !== undefined && { workflowId: updateData.workflowId || null }),
+        ...(statusOverride && { status: statusOverride }),
         ...(updateData.title && { title: updateData.title }),
         ...(updateData.description !== undefined && { description: updateData.description }),
         ...(updateData.priority && { priority: updateData.priority }),

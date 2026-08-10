@@ -6,7 +6,7 @@ import { format } from "date-fns"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react"
 
-import { tasksApi, phasesApi, sprintsApi, type Task, type Phase, type Sprint, type UpdateTaskInput } from "@/lib/api"
+import { tasksApi, phasesApi, sprintsApi, workflowsApi, type Task, type Phase, type Sprint, type UpdateTaskInput } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -63,8 +63,16 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
   )
   const [phaseId, setPhaseId] = useState<string>(task.phaseId || "none")
   const [sprintId, setSprintId] = useState<string>(task.sprintId || "none")
+  // Flow (task type / workflow) — "none" = simple canonical flow.
+  const [workflowId, setWorkflowId] = useState<string>(task.workflowId || "none")
 
-  // Fetch phases and sprints
+  // Fetch phases, sprints, and the org's flows (task types)
+  const { data: flows } = useQuery({
+    queryKey: ["workflows"],
+    queryFn: () => workflowsApi.list(),
+    enabled: open,
+    staleTime: 60000,
+  })
   const { data: phases } = useQuery({
     queryKey: ["phases"],
     queryFn: () => phasesApi.list(),
@@ -91,6 +99,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
       setLocationAddress(task.locationAddress || "")
       setPhaseId(task.phaseId || "none")
       setSprintId(task.sprintId || "none")
+      setWorkflowId(task.workflowId || "none")
     }
   }, [open, task])
 
@@ -124,6 +133,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
       locationAddress: locationAddress.trim() || undefined,
       phaseId: phaseId === "none" ? null : phaseId,
       sprintId: sprintId === "none" ? null : sprintId,
+      workflowId: workflowId === "none" ? null : workflowId,
     })
   }
 
@@ -272,6 +282,23 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
               onChange={setPriority}
               disabled={updateMutation.isPending}
             />
+          </div>
+
+          {/* Flow (task type / workflow) */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-foreground">{t("tasks.edit.flow", "Flow")}</Label>
+            <Select value={workflowId} onValueChange={setWorkflowId} disabled={updateMutation.isPending}>
+              <SelectTrigger className="h-10 rounded-lg border-border bg-card">
+                <SelectValue placeholder={t("tasks.edit.flowSimple", "Simple flow")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{t("tasks.edit.flowSimple", "Simple flow")}</SelectItem>
+                {(flows || []).map((wf) => (
+                  <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{t("tasks.edit.flowHint", "Changing the flow updates the task's stages. Its status moves to the new flow's first stage if the current one doesn't exist there.")}</p>
           </div>
 
           {/* Phase & Sprint */}

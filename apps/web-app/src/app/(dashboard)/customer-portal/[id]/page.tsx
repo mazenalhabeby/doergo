@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat, Upload, ImageIcon } from "lucide-react"
 
-import { portalAdminApi, locationsApi, workflowsApi, organizationsApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
+import { portalAdminApi, locationsApi, workflowsApi, spaceMembersApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
@@ -51,10 +51,8 @@ export default function PortalDetailPage() {
   // Triage lookups (spaces to route to, flows/task-types, workers). Small + cached.
   const spacesQ = useQuery({ queryKey: ["triageSpaces"], queryFn: () => locationsApi.list({ limit: 100 }), staleTime: 60000 })
   const flowsQ = useQuery({ queryKey: ["triageFlows"], queryFn: () => workflowsApi.list(), staleTime: 60000 })
-  const workersQ = useQuery({ queryKey: ["triageWorkers"], queryFn: () => organizationsApi.getMembers({ limit: 200 }), staleTime: 60000 })
   const spaces = spacesQ.data?.data ?? []
   const flows = flowsQ.data ?? []
-  const workers = workersQ.data?.data ?? []
   const portal = portalQ.data
   const categories = portal?.categories ?? []
   const meta = TPL_BY_KEY[portal?.templateKey ?? ""] ?? TPL_BY_KEY.rental
@@ -105,6 +103,17 @@ export default function PortalDetailPage() {
     setTriageForm({ spaceId: r.suggestedSpaceId ?? r.spaceId ?? "", workflowId: "", priority: r.priority || "MEDIUM", assignedToId: r.assignedToId ?? "" })
     setTriageReq(r)
   }
+  // Assignable workers = ONLY the roster of the space being routed to.
+  const spaceMembersQ = useQuery({
+    queryKey: ["triageSpaceMembers", triageForm.spaceId],
+    queryFn: () => spaceMembersApi.list(triageForm.spaceId),
+    enabled: !!triageReq && !!triageForm.spaceId,
+    staleTime: 30000,
+  })
+  const spaceWorkers = spaceMembersQ.data ?? []
+  // Changing the space invalidates a previously-picked worker (may not be on the
+  // new roster) — clear it so we never submit a cross-space assignee.
+  const setTriageSpace = (spaceId: string) => setTriageForm((f) => ({ ...f, spaceId, assignedToId: "" }))
   const triageM = useMutation({
     mutationFn: () => portalAdminApi.triageRequest(triageReq!.id, {
       spaceId: triageForm.spaceId,
@@ -473,7 +482,7 @@ export default function PortalDetailPage() {
                 {triageReq.description && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-wrap line-clamp-4">{triageReq.description}</p>}
               </div>
               <div><Label>{t("portal.triageSpace", "Space")} <span className="text-red-500">*</span></Label>
-                <select value={triageForm.spaceId} onChange={(e) => setTriageForm({ ...triageForm, spaceId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                <select value={triageForm.spaceId} onChange={(e) => setTriageSpace(e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
                   <option value="">{t("portal.triagePickSpace", "Pick a space…")}</option>
                   {spaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select></div>
@@ -489,10 +498,14 @@ export default function PortalDetailPage() {
                   </select></div>
               </div>
               <div><Label>{t("portal.triageWorker", "Assign worker")}</Label>
-                <select value={triageForm.assignedToId} onChange={(e) => setTriageForm({ ...triageForm, assignedToId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
-                  <option value="">{t("portal.triageUnassigned", "Leave unassigned")}</option>
-                  {workers.filter((w) => w.isActive).map((w) => <option key={w.id} value={w.id}>{w.firstName} {w.lastName}</option>)}
-                </select></div>
+                <select value={triageForm.assignedToId} disabled={!triageForm.spaceId} onChange={(e) => setTriageForm({ ...triageForm, assignedToId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm disabled:opacity-50">
+                  <option value="">{!triageForm.spaceId ? t("portal.triagePickSpaceFirst", "Pick a space first") : t("portal.triageUnassigned", "Leave unassigned")}</option>
+                  {spaceWorkers.map((m) => <option key={m.userId} value={m.userId}>{m.user?.firstName} {m.user?.lastName}</option>)}
+                </select>
+                {triageForm.spaceId && !spaceMembersQ.isLoading && spaceWorkers.length === 0 ? (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t("portal.triageNoMembers", "No workers assigned to this space yet. Add members to the space, or leave unassigned.")}</p>
+                ) : null}
+              </div>
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setTriageReq(null)}>{t("common.cancel", "Cancel")}</Button>
