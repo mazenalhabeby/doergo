@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -227,6 +228,34 @@ export class AttendanceController {
   async getActiveEntries(@Request() req: any) {
     return this.attendanceService.getActiveEntries({
       organizationId: req.user.organizationId,
+    });
+  }
+
+  @Get('no-shows')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Recent no-shows (scheduled shift, no clock-in) for review' })
+  @ApiQuery({ name: 'days', required: false, type: Number })
+  @ApiQuery({ name: 'spaceId', required: false, type: String })
+  async listNoShows(@Query('days') days?: number, @Query('spaceId') spaceId?: string, @Request() req?: any) {
+    return this.attendanceService.listNoShows({
+      organizationId: req.user.organizationId,
+      days: days ? Math.min(Math.max(1, Number(days) || 7), 60) : 7,
+      spaceId: spaceId || undefined,
+    });
+  }
+
+  @Patch('no-shows/:id')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Excuse or reopen a no-show' })
+  async resolveNoShow(
+    @Param('id') id: string,
+    @Body() body: { action: 'excuse' | 'reopen' },
+    @Request() req: any,
+  ) {
+    return this.attendanceService.resolveNoShow({
+      id,
+      organizationId: req.user.organizationId,
+      action: body?.action === 'reopen' ? 'reopen' : 'excuse',
     });
   }
 

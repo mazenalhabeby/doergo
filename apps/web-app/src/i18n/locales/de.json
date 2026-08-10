@@ -2980,7 +2980,17 @@
       "daysOff": "Freie Tage",
       "tracking": "Tracking",
       "approvals": "Genehmigungen",
-      "breaks": "Pausen"
+      "breaks": "Pausen",
+      "noShows": "Nicht erschienen"
+    },
+    "noShows": {
+      "title": "Nicht erschienen",
+      "subtitle": "Geplante Schichten ohne Einstempeln — der Mitarbeiter wurde erinnert und dann eskaliert. Entschuldigen (z. B. genehmigte Abwesenheit) oder erneut öffnen.",
+      "emptyTitle": "Keine Fehltage",
+      "empty": "Alle eingeplanten Personen haben eingestempelt.",
+      "expected": "Erwartet",
+      "excuse": "Entschuldigen",
+      "reopen": "Erneut öffnen"
     },
     "toast": {
       "autoClockOutTriggered": "Automatisches Ausstempeln ausgelöst",

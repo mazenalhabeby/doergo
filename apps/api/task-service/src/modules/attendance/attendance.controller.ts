@@ -89,6 +89,16 @@ export class AttendanceController {
     return this.attendanceService.getActiveEntries(data);
   }
 
+  @MessagePattern({ cmd: 'list_no_shows' })
+  async listNoShows(@Payload() data: { organizationId: string; days?: number; spaceId?: string }) {
+    return this.attendanceService.listNoShows(data);
+  }
+
+  @MessagePattern({ cmd: 'resolve_no_show' })
+  async resolveNoShow(@Payload() data: { id: string; organizationId: string; action: 'excuse' | 'reopen' }) {
+    return this.attendanceService.resolveNoShow(data);
+  }
+
   // =========================================================================
   // REPORTS
   // =========================================================================

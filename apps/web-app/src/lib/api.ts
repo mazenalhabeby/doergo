@@ -1946,6 +1946,20 @@ export interface AttendanceListResponse {
 }
 
 // Attendance API methods (ADMIN/DISPATCHER only)
+export interface NoShowRow {
+  id: string;
+  userId: string;
+  userName: string;
+  avatarUrl?: string | null;
+  spaceId: string;
+  spaceName: string;
+  expectedClockInAt: string;
+  expectedClockOutAt: string;
+  state: "REMINDED" | "ESCALATED" | "EXCUSED";
+  reminderCount: number;
+  localDate: string;
+}
+
 export const attendanceApi = {
   // Employee self-service: my current clock status
   getMyStatus: async () => {
@@ -2099,6 +2113,20 @@ export const attendanceApi = {
     if (response.error) {
       throw new Error(response.error);
     }
+    return response.data;
+  },
+
+  // No-shows: scheduled shifts with no clock-in (reminded/escalated/excused).
+  listNoShows: async (params?: { days?: number; spaceId?: string }) => {
+    const endpoint = buildUrlWithQuery('/attendance/no-shows', { days: params?.days, spaceId: params?.spaceId });
+    const response = await api.get<{ success: boolean; data: NoShowRow[] }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? [];
+  },
+
+  resolveNoShow: async (id: string, action: "excuse" | "reopen") => {
+    const response = await api.patch(`/attendance/no-shows/${id}`, { action });
+    if (response.error) throw new Error(response.error);
     return response.data;
   },
 

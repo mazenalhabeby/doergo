@@ -1500,6 +1500,64 @@ export class AttendanceService {
     return success({ remindedCount: toRemind.length, escalatedCount: toEscalate.length, excusedCount: toExcuse.length });
   }
 
+  /** Admin list: recent no-shows (reminded / escalated / excused) for review. */
+  async listNoShows(data: { organizationId: string; days?: number; spaceId?: string }) {
+    const now = new Date();
+    const since = new Date(now.getTime() - (data.days ?? 7) * 86_400_000);
+    const rows = await this.prisma.shiftInstance.findMany({
+      where: {
+        organizationId: data.organizationId,
+        ...(data.spaceId ? { spaceId: data.spaceId } : {}),
+        state: { in: ['REMINDED', 'ESCALATED', 'EXCUSED'] },
+        expectedClockInAt: { gte: since, lte: now },
+      },
+      orderBy: { expectedClockInAt: 'desc' },
+      take: 200,
+    });
+    if (rows.length === 0) return success([]);
+
+    const userIds = [...new Set(rows.map((r) => r.userId))];
+    const spaceIds = [...new Set(rows.map((r) => r.spaceId))];
+    const [users, spaces] = await Promise.all([
+      this.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, firstName: true, lastName: true, avatarUrl: true } }),
+      this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
+    ]);
+    const uMap = new Map(users.map((u) => [u.id, u]));
+    const sMap = new Map(spaces.map((s) => [s.id, s.name]));
+    return success(
+      rows.map((r) => {
+        const u = uMap.get(r.userId);
+        return {
+          id: r.id,
+          userId: r.userId,
+          userName: u ? `${u.firstName} ${u.lastName}` : 'Unknown',
+          avatarUrl: u?.avatarUrl ?? null,
+          spaceId: r.spaceId,
+          spaceName: sMap.get(r.spaceId) ?? 'Space',
+          expectedClockInAt: r.expectedClockInAt,
+          expectedClockOutAt: r.expectedClockOutAt,
+          state: r.state,
+          reminderCount: r.reminderCount,
+          localDate: r.localDate,
+        };
+      }),
+    );
+  }
+
+  /** Excuse a no-show (mark EXCUSED, stop chasing) or reopen it (back to PENDING). */
+  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen' }) {
+    const inst = await this.prisma.shiftInstance.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!inst) throw new NotFoundException('No-show not found');
+    const updated = await this.prisma.shiftInstance.update({
+      where: { id: inst.id },
+      data: data.action === 'reopen' ? { state: 'PENDING', nextRemindAt: new Date() } : { state: 'EXCUSED', nextRemindAt: null },
+    });
+    return success(updated);
+  }
+
   /**
    * Resolve who to notify for a space attendance action: members of the space
    * whose dynamic sub-role grants the given permission. Falls back to org admins

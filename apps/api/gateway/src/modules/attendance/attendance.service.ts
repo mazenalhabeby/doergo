@@ -84,6 +84,14 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_active_entries' }, data);
   }
 
+  async listNoShows(data: { organizationId: string; days?: number; spaceId?: string }) {
+    return this.send({ cmd: 'list_no_shows' }, data);
+  }
+
+  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen' }) {
+    return this.send({ cmd: 'resolve_no_show' }, data);
+  }
+
   // =========================================================================
   // REPORTS
   // =========================================================================

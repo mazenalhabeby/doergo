@@ -2980,7 +2980,17 @@
       "daysOff": "Days off",
       "tracking": "Tracking",
       "approvals": "Approvals",
-      "breaks": "Breaks"
+      "breaks": "Breaks",
+      "noShows": "No-shows"
+    },
+    "noShows": {
+      "title": "No-shows",
+      "subtitle": "Scheduled shifts with no clock-in — the worker was reminded, then escalated. Excuse (e.g. approved absence) or reopen.",
+      "emptyTitle": "No no-shows",
+      "empty": "Everyone scheduled has clocked in.",
+      "expected": "Expected",
+      "excuse": "Excuse",
+      "reopen": "Reopen"
     },
     "toast": {
       "autoClockOutTriggered": "Auto clock-out triggered",

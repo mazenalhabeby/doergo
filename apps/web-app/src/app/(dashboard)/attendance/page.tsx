@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
-import { Clock, XCircle, ClipboardCheck, Coffee } from "lucide-react"
+import { Clock, XCircle, ClipboardCheck, Coffee, UserX } from "lucide-react"
 import { format } from "date-fns"
 import { notify } from "@/lib/toast"
 
@@ -11,6 +11,7 @@ import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEnt
 import { ApprovalsTab } from "./_components/approvals-tab"
 import { BreaksTab } from "./_components/breaks-tab"
 import { TrackingTab } from "./_components/tracking-tab"
+import { NoShowsTab } from "./_components/no-shows-tab"
 import { AddAttendanceDialog } from "../members/[id]/_components/add-attendance-dialog"
 import { AddDayOffDialog } from "./_components/add-dayoff-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -22,13 +23,13 @@ export default function AttendancePage() {
   const queryClient = useQueryClient()
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"tracking" | "approvals" | "breaks">("tracking")
+  const [activeTab, setActiveTab] = useState<"tracking" | "approvals" | "breaks" | "noshows">("tracking")
 
   // Honor a ?tab= deep-link (e.g. the dashboard's "Pending Actions" reject link
   // → /attendance?tab=approvals). Read after mount to avoid a hydration mismatch.
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab")
-    if (tab === "approvals" || tab === "breaks" || tab === "tracking") {
+    if (tab === "approvals" || tab === "breaks" || tab === "tracking" || tab === "noshows") {
       setActiveTab(tab)
     }
   }, [])
@@ -192,6 +193,15 @@ export default function AttendancePage() {
     enabled: canAccess,
     staleTime: 30_000,
   })
+
+  // No-shows (shares the tab's query key → deduped) — drives the tab count badge.
+  const { data: noShowRows = [] } = useQuery({
+    queryKey: ["attendance-no-shows"],
+    queryFn: () => attendanceApi.listNoShows({ days: 14 }),
+    enabled: canAccess,
+    staleTime: 30_000,
+  })
+  const openNoShows = noShowRows.filter((r) => r.state !== "EXCUSED").length
 
   // Breaks state
   const [breakDate, setBreakDate] = useState<string>(format(new Date(), "yyyy-MM-dd"))
@@ -382,6 +392,19 @@ export default function AttendancePage() {
                 </span>
               ) : null}
             </TabsTrigger>
+            <TabsTrigger
+              value="noshows"
+              onClick={() => setActiveTab("noshows")}
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
+            >
+              <UserX className="size-3.5 mr-1.5" />
+              {t('attendance.tabs.noShows', 'No-shows')}
+              {openNoShows > 0 ? (
+                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-red-500 text-white rounded-full px-1">
+                  {openNoShows}
+                </span>
+              ) : null}
+            </TabsTrigger>
           </TabsList>
 
           {/* Daily Tracking Tab */}
@@ -433,6 +456,11 @@ export default function AttendancePage() {
               setBreakTypeFilter={setBreakTypeFilter}
               endBreakManually={endBreakManually}
             />
+          </TabsContent>
+
+          {/* No-shows Tab */}
+          <TabsContent value="noshows" className="mt-6">
+            <NoShowsTab />
           </TabsContent>
         </Tabs>
       </div>
