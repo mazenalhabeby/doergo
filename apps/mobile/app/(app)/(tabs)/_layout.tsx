@@ -159,7 +159,12 @@ function TabItem({
           color={isFocused ? COLORS.primary : themeColors.textMuted}
         />
       </Animated.View>
-      <Text style={[styles.tabLabel, { color: themeColors.textMuted }, isFocused && styles.tabLabelActive]}>
+      <Text
+        style={[styles.tabLabel, { color: themeColors.textMuted }, isFocused && styles.tabLabelActive]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+      >
         {label}
       </Text>
       <Animated.View
@@ -426,15 +431,17 @@ const styles = StyleSheet.create({
   tabBarInner: {
     flexDirection: 'row',
     paddingTop: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 6,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 4,
+    minWidth: 0,
   },
   tabItemInner: {
     alignItems: 'center',
+    width: '100%',
   },
   tabIconWrapper: {
     width: 36,
@@ -447,6 +454,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     marginTop: 4,
+    width: '100%',
+    textAlign: 'center',
+    paddingHorizontal: 2,
   },
   tabLabelActive: {
     color: COLORS.primary,

@@ -127,12 +127,26 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
         <View style={[styles.actions, { borderTopColor: colors.border }]}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => onAssign?.(box.locationId)} activeOpacity={0.7}>
             <Ionicons name="person-add-outline" size={15} color={COLORS.primary} />
-            <Text style={[styles.actionText, { color: COLORS.primary }]}>{t('components.workspaceCard.assign')}</Text>
+            <Text
+              style={[styles.actionText, { color: COLORS.primary }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              {t('components.workspaceCard.assign')}
+            </Text>
           </TouchableOpacity>
           <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.actionBtn} onPress={() => onViewTasks?.(box.locationId)} activeOpacity={0.7}>
             <Ionicons name="list-outline" size={15} color={colors.textSecondary} />
-            <Text style={[styles.actionText, { color: colors.textSecondary }]}>{t('components.workspaceCard.tasks')}</Text>
+            <Text
+              style={[styles.actionText, { color: colors.textSecondary }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              {t('components.workspaceCard.tasks')}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -173,12 +187,14 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', borderTopWidth: 1 },
   actionBtn: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
     paddingVertical: 11,
+    paddingHorizontal: 4,
   },
-  actionText: { fontSize: 12, fontWeight: '600' },
+  actionText: { fontSize: 12, fontWeight: '600', flexShrink: 1 },
   actionDivider: { width: 1 },
 });

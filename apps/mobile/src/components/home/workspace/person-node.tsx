@@ -48,7 +48,12 @@ export const PersonNode = React.memo(function PersonNode({ person, onPress }: Pr
       <View style={styles.tagSlot}>
         {tag && person.tag ? (
           <View style={[styles.tag, { backgroundColor: tag.bg }]}>
-            <Text style={[styles.tagText, { color: tag.fg }]} numberOfLines={1}>
+            <Text
+              style={[styles.tagText, { color: tag.fg }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
               {person.tag.text}
             </Text>
           </View>
@@ -59,9 +64,9 @@ export const PersonNode = React.memo(function PersonNode({ person, onPress }: Pr
 });
 
 const styles = StyleSheet.create({
-  wrap: { width: 62, alignItems: 'center', gap: 6 },
+  wrap: { width: 68, alignItems: 'center', gap: 6 },
   name: { fontSize: 10, fontWeight: '500', textAlign: 'center', width: '100%' },
-  tagSlot: { minHeight: 16, justifyContent: 'center' },
-  tag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
-  tagText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.3, textTransform: 'uppercase' },
+  tagSlot: { minHeight: 16, justifyContent: 'center', maxWidth: '100%' },
+  tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, maxWidth: '100%' },
+  tagText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.3, textTransform: 'uppercase', textAlign: 'center' },
 });
