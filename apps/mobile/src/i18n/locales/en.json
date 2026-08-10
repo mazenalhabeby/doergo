@@ -255,6 +255,7 @@
         "away": "Away",
         "inField": "In Field",
         "remote": "Remote",
+        "atSpace": "At {{space}}",
         "onShift": "On Shift",
         "available": "Available",
         "onTask": "On Task",

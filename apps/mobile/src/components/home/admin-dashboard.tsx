@@ -232,6 +232,23 @@ export function AdminDashboard() {
       tag,
     });
 
+    // A clocked-in member is in ONE place: resolve their single active space (the
+    // space they clocked in at if visible, else — remote/field clock-in — their
+    // first assigned space). They're active there only; off-shift elsewhere.
+    const visibleSpaceIds = new Set(locations.map((l) => l.id));
+    const activeSpaceByUser = new Map<string, string>();
+    for (const userId of clockedInUserIds) {
+      const loc = attendanceLocationMap.get(userId);
+      if (loc && visibleSpaceIds.has(loc)) {
+        activeSpaceByUser.set(userId, loc);
+      } else {
+        for (const l of locations) {
+          if ((assignments[l.id] || []).includes(userId)) { activeSpaceByUser.set(userId, l.id); break; }
+        }
+      }
+    }
+    const spaceNameById = new Map(locations.map((l) => [l.id, l.name]));
+
     for (const loc of locations) {
       if (!loc.isActive) continue;
       const assigned = assignments[loc.id] || [];
@@ -248,7 +265,6 @@ export function AdminDashboard() {
         accounted.add(userId);
 
         const clocked = clockedInUserIds.has(userId);
-        const clockedLoc = attendanceLocationMap.get(userId);
         const online = memberOnline(m);
         const { status, tag } = getEmployeeStatus({
           isClockedIn: clocked,
@@ -260,12 +276,23 @@ export function AdminDashboard() {
         });
         const node = toNode(m, status, tag);
 
+        const activeSpace = activeSpaceByUser.get(userId);
         if (!clocked) {
           // Off the clock → Off-shift (online/reachable) vs Off Duty (offline).
           (online ? offShift : offDuty).push(node);
+        } else if (activeSpace !== loc.id) {
+          // Clocked in, but active ELSEWHERE → off-shift here with a hint, not a
+          // misleading active "off-site" node (and not double-counted).
+          const whereName = activeSpace ? spaceNameById.get(activeSpace) : null;
+          const hint = (attendanceRemoteMap.get(userId) ?? false)
+            ? i18n.t('home.admin.presence.remote')
+            : whereName
+              ? i18n.t('home.admin.presence.atSpace', { space: whereName, defaultValue: 'At {{space}}' })
+              : undefined;
+          offShift.push(toNode(m, 'off', hint ? { text: hint, variant: 'hrs' } : undefined));
         } else if (isFieldWorker(m)) {
           onRoad.push(node);
-        } else if (clockedLoc && clockedLoc !== loc.id) {
+        } else if (attendanceRemoteMap.get(userId)) {
           remote.push(node);
         } else {
           present.push(node);
