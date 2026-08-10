@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Save, Bell } from "lucide-react"
+import { Save, Bell, ShieldCheck } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
 import type { OrgMember } from "@/lib/api"
 import { readAccessDraft, serializeAccessDraft } from "@hbcfield/shared/client"
@@ -149,13 +149,34 @@ export function AccessBuilder({
       </div>
 
       <div className="p-5 space-y-6">
-        <AccessFields
-          value={draft}
-          onChange={patch}
-          excludeContactId={isBulk ? undefined : member.id}
-          showRole={!isBulk}
-          lockRole={isSelf}
-        />
+        {/* Admins have full access by definition — there are no access choices to
+            make (every permission + module is granted, remote clock-in included).
+            Show a clear "full access" note instead of the granular editor. The
+            watchers section below still applies (who is alerted about this admin). */}
+        {!isBulk && member.role === "ADMIN" ? (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
+            <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {t("accessBuilder.adminFullAccess", "Full access")}
+              </p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {t(
+                  "accessBuilder.adminFullAccessDesc",
+                  "Admins have every permission and module across the whole organization — including remote clock-in. There's nothing to configure here.",
+                )}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <AccessFields
+            value={draft}
+            onChange={patch}
+            excludeContactId={isBulk ? undefined : member.id}
+            showRole={!isBulk}
+            lockRole={isSelf}
+          />
+        )}
 
         {/* Notifications about — who is alerted ABOUT this member (approvals,
             geofence, …). Selection is held locally and persisted on Save/Apply,

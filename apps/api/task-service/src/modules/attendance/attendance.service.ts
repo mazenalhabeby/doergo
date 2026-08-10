@@ -126,6 +126,7 @@ export class AttendanceService {
         id: true,
         organizationId: true,
         allowRemote: true,
+        role: true,
       },
     });
 
@@ -133,9 +134,14 @@ export class AttendanceService {
       throw new NotFoundException('Employee not found');
     }
 
+    // Admins have full org access — they may always clock in remotely, without
+    // needing the per-user allowRemote flag toggled on (nothing to configure for
+    // an admin). Everyone else still requires an explicit remote-clock-in grant.
+    const mayClockInRemotely = user.allowRemote || user.role === 'ADMIN';
+
     // ---- Remote clock-in (WFH/anywhere): geofence-exempt, coarse place captured ----
     if (data.isRemote) {
-      if (!user.allowRemote) {
+      if (!mayClockInRemotely) {
         throw new BadRequestException(
           'You are not permitted to clock in remotely. Ask your administrator to enable remote clock-in for your account.',
         );

@@ -3345,6 +3345,8 @@
   },
   "accessBuilder": {
     "title": "Zugriff",
+    "adminFullAccess": "Vollzugriff",
+    "adminFullAccessDesc": "Administratoren haben alle Berechtigungen und Module in der gesamten Organisation – einschließlich der Remote-Zeiterfassung. Hier gibt es nichts einzustellen.",
     "subtitle": "Was {{name}} im Web & in der App tun & sehen kann.",
     "accessUpdated": "Zugriff aktualisiert",
     "accessUpdatedDesc": "Die Apps von {{name}} werden bei der nächsten Anmeldung aktualisiert.",

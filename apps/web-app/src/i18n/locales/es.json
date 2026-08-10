@@ -3345,6 +3345,8 @@
   },
   "accessBuilder": {
     "title": "Acceso",
+    "adminFullAccess": "Acceso total",
+    "adminFullAccessDesc": "Los administradores tienen todos los permisos y módulos en toda la organización, incluido el fichaje remoto. Aquí no hay nada que configurar.",
     "subtitle": "Lo que {{name}} puede hacer y ver en web y móvil.",
     "accessUpdated": "Acceso actualizado",
     "accessUpdatedDesc": "Las apps de {{name}} se actualizarán al iniciar sesión de nuevo.",

@@ -3345,6 +3345,8 @@
   },
   "accessBuilder": {
     "title": "Access",
+    "adminFullAccess": "Full access",
+    "adminFullAccessDesc": "Admins have every permission and module across the whole organization — including remote clock-in. There's nothing to configure here.",
     "subtitle": "What {{name}} can do & see on web & mobile.",
     "accessUpdated": "Access updated",
     "accessUpdatedDesc": "{{name}}'s apps will update on next sign-in.",

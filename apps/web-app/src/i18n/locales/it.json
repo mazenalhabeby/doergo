@@ -3345,6 +3345,8 @@
   },
   "accessBuilder": {
     "title": "Accesso",
+    "adminFullAccess": "Accesso completo",
+    "adminFullAccessDesc": "Gli amministratori dispongono di tutti i permessi e moduli nell'intera organizzazione, inclusa la timbratura da remoto. Qui non c'è nulla da configurare.",
     "subtitle": "Cosa può fare e vedere {{name}} su web e mobile.",
     "accessUpdated": "Accesso aggiornato",
     "accessUpdatedDesc": "Le app di {{name}} si aggiorneranno al prossimo accesso.",

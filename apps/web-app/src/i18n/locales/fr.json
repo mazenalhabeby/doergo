@@ -3345,6 +3345,8 @@
   },
   "accessBuilder": {
     "title": "Accès",
+    "adminFullAccess": "Accès complet",
+    "adminFullAccessDesc": "Les administrateurs disposent de toutes les autorisations et de tous les modules dans l'ensemble de l'organisation, y compris le pointage à distance. Il n'y a rien à configurer ici.",
     "subtitle": "Ce que {{name}} peut faire et voir sur le web et le mobile.",
     "accessUpdated": "Accès mis à jour",
     "accessUpdatedDesc": "Les applications de {{name}} se mettront à jour à la prochaine connexion.",
