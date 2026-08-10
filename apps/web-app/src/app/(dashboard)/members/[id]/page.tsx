@@ -409,7 +409,11 @@ export default function MemberProfilePage({
 
         {/* ── Tabbed content ───────────────────────────────────────────── */}
         {(() => {
-          const showAccessTab = isAdmin && member.role !== "ADMIN"
+          // Admins get an Access tab for EVERY member, including other admins and
+          // themselves — so an admin can manage attendance capabilities like remote
+          // clock-in (allowRemote) that apply to admins too. Role changes for self /
+          // the last admin remain blocked in the builder + backend.
+          const showAccessTab = isAdmin
           // Schedule box is dynamic: only shows for a FIXED member that actually
           // has hours set. Flexible / none / empty → the box disappears entirely.
           const showSchedule = member.scheduleType === "FIXED" && (scheduleLoading || schedule.length > 0)
