@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Plus, Users, ListChecks, LayoutGrid } from "lucide-react"
+import { Plus, Users, ListChecks, LayoutGrid, ChevronRight, Loader2 } from "lucide-react"
 
 import { portalAdminApi, type PortalSummary } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
@@ -15,9 +15,9 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 const TEMPLATES = [
-  { key: "rental", label: "Rental / Property", entity: "Apartment", blurb: "Tenants report maintenance issues (AC, plumbing…).", accent: "emerald" },
-  { key: "logistics", label: "Logistics / Delivery", entity: "Order", blurb: "Recipients report delivery problems (not arrived, damaged…).", accent: "orange" },
-  { key: "workplace", label: "Workplace / Facilities", entity: "Workspace", blurb: "Employees report facility issues (HVAC, lighting, IT…).", accent: "cyan" },
+  { key: "rental", label: "Rental / Property", badge: "Rental", entity: "Apartment", blurb: "Tenants report maintenance issues (AC, plumbing…).", accent: "emerald" },
+  { key: "logistics", label: "Logistics / Delivery", badge: "Logistics", entity: "Order", blurb: "Recipients report delivery problems (not arrived, damaged…).", accent: "orange" },
+  { key: "workplace", label: "Workplace / Facilities", badge: "Workplace", entity: "Workspace", blurb: "Employees report facility issues (HVAC, lighting, IT…).", accent: "cyan" },
 ]
 const BY_KEY = Object.fromEntries(TEMPLATES.map((t) => [t.key, t]))
 
@@ -54,13 +54,27 @@ export default function CustomerPortalsPage() {
         </div>
 
         {portalsQ.isLoading ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">{t("common.loading", "Loading…")}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="rounded-2xl border border-border bg-card p-5 animate-pulse">
+                <div className="flex items-start justify-between">
+                  <div className="h-11 w-11 rounded-xl bg-muted" />
+                  <div className="h-5 w-16 rounded-full bg-muted" />
+                </div>
+                <div className="mt-4 h-4 w-2/3 rounded bg-muted" />
+                <div className="mt-2 h-3 w-1/3 rounded bg-muted" />
+                <div className="mt-5 h-3 w-1/2 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
         ) : portals.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-14 text-center">
-            <LayoutGrid className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-foreground font-medium">{t("portal.emptyTitle", "No portals yet")}</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-5 max-w-sm mx-auto">{t("portal.emptyHint", "Create your first portal — pick a type, and invite your clients.")}</p>
-            <Button onClick={() => setCreateOpen(true)} className="gap-1.5"><Plus className="h-4 w-4" />{t("portal.createPortal", "Create portal")}</Button>
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/20 px-6 py-16 text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+              <LayoutGrid className="h-6 w-6" />
+            </span>
+            <p className="mt-4 text-sm font-semibold text-foreground">{t("portal.emptyTitle", "No portals yet")}</p>
+            <p className="mt-1 text-xs text-muted-foreground max-w-sm">{t("portal.emptyHint", "Create your first portal — pick a type, and invite your clients.")}</p>
+            <Button onClick={() => setCreateOpen(true)} className="mt-4 gap-1.5"><Plus className="h-4 w-4" />{t("portal.createPortal", "Create portal")}</Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -68,16 +82,19 @@ export default function CustomerPortalsPage() {
               const meta = BY_KEY[p.templateKey] ?? BY_KEY.rental
               return (
                 <button key={p.id} onClick={() => router.push(`/customer-portal/${p.id}`)}
-                  className="rounded-2xl border border-border bg-card p-5 text-left hover:bg-accent/30 hover:border-primary/40 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className={`h-11 w-11 rounded-lg flex items-center justify-center shrink-0 text-sm font-semibold ${portalTile(meta.accent)}`}>{initials(p.name)}</div>
-                    <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">{p.templateKey}</span>
+                  className="group rounded-2xl border border-border bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 text-sm font-semibold ${portalTile(meta.accent)}`}>{initials(p.name)}</div>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(meta.accent)}`}>{t(`portal.type.${meta.key}`, meta.badge)}</span>
                   </div>
                   <p className="mt-4 font-semibold text-foreground truncate">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{t("portal.entityIs", "Entity: {{e}}", { e: p.entityLabel })}</p>
-                  <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /><span className="font-medium text-foreground tabular-nums">{p.residentCount}</span> {t("portal.residents", "clients")}</span>
-                    <span className="inline-flex items-center gap-1"><ListChecks className="h-3.5 w-3.5" /><span className="font-medium text-foreground tabular-nums">{p.categoryCount}</span> {t("portal.categories", "categories")}</span>
+                  <p className="text-xs text-muted-foreground truncate">{t("portal.entityIs", "Entity: {{e}}", { e: p.entityLabel })}</p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /><span className="font-medium text-foreground tabular-nums">{p.residentCount}</span> {t("portal.residents", "clients")}</span>
+                      <span className="inline-flex items-center gap-1"><ListChecks className="h-3.5 w-3.5" /><span className="font-medium text-foreground tabular-nums">{p.categoryCount}</span> {t("portal.categories", "categories")}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                   </div>
                 </button>
               )
@@ -110,7 +127,10 @@ export default function CustomerPortalsPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCreateOpen(false)}>{t("common.cancel", "Cancel")}</Button>
-            <Button disabled={createM.isPending} onClick={() => createM.mutate()}>{t("portal.createPortal", "Create portal")}</Button>
+            <Button disabled={createM.isPending} onClick={() => createM.mutate()}>
+              {createM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("portal.createPortal", "Create portal")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

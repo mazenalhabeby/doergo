@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2 } from "lucide-react"
 
 import { portalAdminApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
@@ -12,18 +12,20 @@ import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
 const TEMPLATES = [
-  { key: "rental", label: "Rental / Property" },
-  { key: "logistics", label: "Logistics / Delivery" },
-  { key: "workplace", label: "Workplace / Facilities" },
+  { key: "rental", label: "Rental / Property", badge: "Rental", accent: "emerald" },
+  { key: "logistics", label: "Logistics / Delivery", badge: "Logistics", accent: "orange" },
+  { key: "workplace", label: "Workplace / Facilities", badge: "Workplace", accent: "cyan" },
 ]
+const TPL_BY_KEY = Object.fromEntries(TEMPLATES.map((x) => [x.key, x]))
 const COLORS = ["emerald", "blue", "amber", "purple", "cyan", "indigo", "red", "orange", "slate"]
 const EMPTY_CAT: PortalCategoryInput = { label: "", icon: "plus", color: "slate", urgent: false, team: "", issues: [] }
 
@@ -48,6 +50,7 @@ export default function PortalDetailPage() {
   const requestsQ = useQuery({ queryKey: ["portalAllRequests", id], queryFn: () => portalAdminApi.portalRequests(String(id)) })
   const portal = portalQ.data
   const categories = portal?.categories ?? []
+  const meta = TPL_BY_KEY[portal?.templateKey ?? ""] ?? TPL_BY_KEY.rental
   const inv = (k: string) => qc.invalidateQueries({ queryKey: [k, id] })
 
   // Switch type / delete portal
@@ -59,10 +62,12 @@ export default function PortalDetailPage() {
   })
   const delPortalM = useMutation({
     mutationFn: () => portalAdminApi.deletePortal(String(id)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["portals"] }); router.push("/customer-portal") },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["portals"] }); notify.success(t("portal.deleted", "Portal deleted")); router.push("/customer-portal") },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const [delPortalOpen, setDelPortalOpen] = useState(false)
+  const [delConfirmText, setDelConfirmText] = useState("")
+  const canDeletePortal = !!portal && delConfirmText.trim() === portal.name
 
   // Categories
   const [catEdit, setCatEdit] = useState<PortalIntakeCategory | "new" | null>(null)
@@ -108,16 +113,22 @@ export default function PortalDetailPage() {
 
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight truncate">{portal?.name || "…"}</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground capitalize">{portal?.templateKey} · {t("portal.entityIs", "Entity: {{e}}", { e: portal?.entityLabel })}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground tabular-nums">{openCount}</span> {t("portal.statOpen", "open")}
-              <span className="mx-1.5 text-border">·</span>
-              <span className="font-medium text-foreground tabular-nums">{requestCount}</span> {t("portal.statTotal", "total")}
-              <span className="mx-1.5 text-border">·</span>
-              <span className="font-medium text-foreground tabular-nums">{clientCount}</span> {t("portal.tabClients", "Clients").toLowerCase()}
-            </p>
+          <div className="flex items-start gap-3 min-w-0">
+            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-sm font-semibold ${portalTile(meta.accent)}`}>{initials(portal?.name)}</div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-3xl font-bold text-foreground tracking-tight truncate">{portal?.name || "…"}</h1>
+                {portal && <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(meta.accent)}`}>{t(`portal.type.${meta.key}`, meta.badge)}</span>}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground capitalize">{t("portal.entityIs", "Entity: {{e}}", { e: portal?.entityLabel })}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground tabular-nums">{openCount}</span> {t("portal.statOpen", "open")}
+                <span className="mx-1.5 text-border">·</span>
+                <span className="font-medium text-foreground tabular-nums">{requestCount}</span> {t("portal.statTotal", "total")}
+                <span className="mx-1.5 text-border">·</span>
+                <span className="font-medium text-foreground tabular-nums">{clientCount}</span> {t("portal.tabClients", "Clients").toLowerCase()}
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <select onChange={(e) => e.target.value && setSwitchOpen(e.target.value)} value="" className="h-11 rounded-xl border border-border bg-background px-3 text-sm text-muted-foreground hover:bg-accent/40 transition-colors">
@@ -139,7 +150,7 @@ export default function PortalDetailPage() {
           <TabsContent value="requests" className="mt-4">
             <Panel>
               {requestsQ.isLoading ? <Loading /> : requestCount === 0 ? (
-                <EmptyState icon={<Inbox className="h-10 w-10" />} title={t("portal.noRequestsTitle", "No requests yet")} hint={t("portal.noRequests", "They appear here as clients submit from the app.")} />
+                <EmptyState icon={<Inbox className="h-6 w-6" />} title={t("portal.noRequestsTitle", "No requests yet")} hint={t("portal.noRequests", "They appear here as clients submit from the app.")} />
               ) : (
                 <div className="divide-y divide-border/60">
                   {requestsQ.data!.map((r: PortalRequestView) => (
@@ -166,7 +177,7 @@ export default function PortalDetailPage() {
             </div>
             <Panel>
               {residentsQ.isLoading ? <Loading /> : clientCount === 0 ? (
-                <EmptyState icon={<Users className="h-10 w-10" />} title={t("portal.noResidentsTitle", "No clients yet")} hint={t("portal.noResidents", "Invite one — they get a code to sign in on the app.")}
+                <EmptyState icon={<Users className="h-6 w-6" />} title={t("portal.noResidentsTitle", "No clients yet")} hint={t("portal.noResidents", "Invite one — they get a code to sign in on the app.")}
                   cta={<Button size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>} />
               ) : (
                 <div className="divide-y divide-border/60">
@@ -188,7 +199,8 @@ export default function PortalDetailPage() {
               <Button variant="outline" size="sm" className="gap-1.5" onClick={openNewCat}><Plus className="h-3.5 w-3.5" />{t("portal.addCategory", "Add category")}</Button>
             </div>
             <Panel>
-              {categories.length === 0 ? <EmptyState icon={<ListChecks className="h-10 w-10" />} title={t("portal.noCategoriesTitle", "No categories yet")} hint={t("portal.noCategories", "No categories yet.")} /> : (
+              {categories.length === 0 ? <EmptyState icon={<ListChecks className="h-6 w-6" />} title={t("portal.noCategoriesTitle", "No categories yet")} hint={t("portal.noCategories", "Add a category so clients can classify what they report.")}
+                cta={<Button size="sm" className="gap-1.5" onClick={openNewCat}><Plus className="h-4 w-4" />{t("portal.addCategory", "Add category")}</Button>} /> : (
                 <div className="divide-y divide-border/60">
                   {categories.map((c) => (
                     <div key={c.id} className="group flex items-center gap-4 px-5 py-3.5">
@@ -208,9 +220,36 @@ export default function PortalDetailPage() {
                 </div>
               )}
             </Panel>
-            <button onClick={() => setDelPortalOpen(true)} className="mt-6 inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 hover:underline"><Trash2 className="h-3.5 w-3.5" />{t("portal.deletePortal", "Delete this portal")}</button>
           </TabsContent>
         </Tabs>
+
+        {/* Danger zone */}
+        {portal && (
+          <Card className="mt-10 border-destructive/40">
+            <CardHeader className="pb-3">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                  <AlertTriangle className="h-[18px] w-[18px]" />
+                </span>
+                <div>
+                  <CardTitle className="text-base text-destructive">{t("portal.dangerTitle", "Danger zone")}</CardTitle>
+                  <CardDescription>{t("portal.dangerHint", "Irreversible actions for this portal.")}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="pr-4">
+                  <p className="text-sm font-medium text-foreground">{t("portal.deletePortalTitle", "Delete this portal")}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{t("portal.deletePortalWarn", "Deleting removes the portal and its categories. Clients keep their accounts but lose portal access.")}</p>
+                </div>
+                <Button variant="destructive" className="shrink-0" onClick={() => { setDelConfirmText(""); setDelPortalOpen(true) }}>
+                  <Trash2 className="mr-2 h-4 w-4" />{t("portal.deletePortalButton", "Delete portal")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Switch type */}
@@ -223,15 +262,32 @@ export default function PortalDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete portal */}
-      <AlertDialog open={delPortalOpen} onOpenChange={setDelPortalOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>{t("portal.deletePortalTitle", "Delete portal?")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("portal.deletePortalWarn", "The portal and its categories are removed. Clients keep their accounts but lose portal access.")}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => delPortalM.mutate()} disabled={delPortalM.isPending}>{t("common.delete", "Delete")}</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete portal — type-the-name to confirm */}
+      <Dialog open={delPortalOpen} onOpenChange={(o) => !delPortalM.isPending && setDelPortalOpen(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("portal.deleteDialogTitle", "Delete “{{name}}”?", { name: portal?.name })}</DialogTitle>
+            <DialogDescription>{t("portal.deletePortalWarn", "Deleting removes the portal and its categories. Clients keep their accounts but lose portal access.")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <p className="text-sm text-muted-foreground">
+              {clientCount > 0 || requestCount > 0
+                ? t("portal.deletePortalStats", "This portal has {{clients}} client(s) and {{requests}} request(s). Their history is kept but they lose access here.", { clients: clientCount, requests: requestCount })
+                : t("portal.deletePortalEmpty", "This portal has no clients or requests yet.")}
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="portal-del-confirm">{t("portal.deleteConfirmLabel", "Type {{name}} to confirm", { name: portal?.name })}</Label>
+              <Input id="portal-del-confirm" value={delConfirmText} onChange={(e) => setDelConfirmText(e.target.value)} placeholder={portal?.name} autoComplete="off" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDelPortalOpen(false)} disabled={delPortalM.isPending}>{t("common.cancel", "Cancel")}</Button>
+            <Button variant="destructive" onClick={() => delPortalM.mutate()} disabled={!canDeletePortal || delPortalM.isPending}>
+              {delPortalM.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("common.deleting", "Deleting…")}</> : t("portal.deletePortalButton", "Delete portal")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Category add/edit */}
       <Dialog open={!!catEdit} onOpenChange={(o) => !o && setCatEdit(null)}>
@@ -261,7 +317,10 @@ export default function PortalDetailPage() {
       {/* Category delete */}
       <AlertDialog open={!!catRemove} onOpenChange={(o) => !o && setCatRemove(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>{t("portal.deleteCategory", "Delete category?")}</AlertDialogTitle><AlertDialogDescription>{catRemove?.label}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("portal.deleteCategoryTitle", "Delete “{{label}}”?", { label: catRemove?.label })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("portal.deleteCategoryWarn", "Clients can no longer pick this category for new requests. Existing requests keep their category.")}</AlertDialogDescription>
+          </AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => catRemove && delCatM.mutate(catRemove.id)} disabled={delCatM.isPending}>{t("common.delete", "Delete")}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
@@ -319,7 +378,7 @@ function Panel({ children }: { children: React.ReactNode }) {
 function EmptyState({ icon, title, hint, cta }: { icon: React.ReactNode; title: string; hint: string; cta?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <div className="text-muted-foreground/40 mb-3">{icon}</div>
+      <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-4">{icon}</span>
       <p className="font-medium text-foreground">{title}</p>
       <p className="text-sm text-muted-foreground mt-1 max-w-sm">{hint}</p>
       {cta && <div className="mt-4">{cta}</div>}

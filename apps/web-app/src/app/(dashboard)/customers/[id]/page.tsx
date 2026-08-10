@@ -4,16 +4,21 @@ import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Mail, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Mail, Loader2, AlertTriangle } from "lucide-react"
 
 import { customersApi, portalAdminApi, invitationsApi, type PortalCustomerUnit } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const STATUS_STYLES: Record<string, string> = {
   NEW: "bg-blue-500/10 text-blue-600 dark:text-blue-400", ASSIGNED: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
@@ -58,9 +63,23 @@ export default function CustomerDetailPage() {
     },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
+  const [unitToDelete, setUnitToDelete] = useState<PortalCustomerUnit | null>(null)
   const delUnitM = useMutation({
     mutationFn: (uid: string) => portalAdminApi.deleteUnit(uid),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["portalUnits", id] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["portalUnits", id] }); setUnitToDelete(null) },
+    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
+  })
+
+  // Remove client — deactivates the client and revokes their portal login.
+  const [removeClientOpen, setRemoveClientOpen] = useState(false)
+  const removeClientM = useMutation({
+    mutationFn: () => customersApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["portalResidents"] })
+      qc.invalidateQueries({ queryKey: ["customer", id] })
+      notify.success(t("portal.clientRemoved", "Client removed"))
+      router.back()
+    },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -138,7 +157,7 @@ export default function CustomerDetailPage() {
                     <p className="text-sm font-medium text-foreground truncate">{u.name}</p>
                     {u.address && <p className="text-xs text-muted-foreground truncate">{u.address}</p>}
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700" onClick={() => delUnitM.mutate(u.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700" onClick={() => setUnitToDelete(u)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               ))}
             </div>
@@ -168,7 +187,65 @@ export default function CustomerDetailPage() {
             </div>
           )}
         </Section>
+
+        {/* Danger zone */}
+        {customer && (
+          <Card className="mt-8 border-destructive/40">
+            <CardHeader className="pb-3">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                  <AlertTriangle className="h-[18px] w-[18px]" />
+                </span>
+                <div>
+                  <CardTitle className="text-base text-destructive">{t("portal.dangerTitle", "Danger zone")}</CardTitle>
+                  <CardDescription>{t("portal.clientDangerHint", "Revoke this client's access to the portal.")}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="pr-4">
+                  <p className="text-sm font-medium text-foreground">{t("portal.removeClient", "Remove client")}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{t("portal.removeClientWarn", "Their portal login is deactivated; request history is kept.")}</p>
+                </div>
+                <Button variant="destructive" className="shrink-0" onClick={() => setRemoveClientOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />{t("portal.removeClient", "Remove client")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
+
+      {/* Delete unit confirm */}
+      <AlertDialog open={!!unitToDelete} onOpenChange={(o) => !o && setUnitToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("portal.deleteUnitTitle", "Remove this {{entity}}?", { entity: entityLower })}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("portal.deleteUnitWarn", "Requests already linked keep their history.")}{unitToDelete?.name ? ` (${unitToDelete.name})` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => unitToDelete && delUnitM.mutate(unitToDelete.id)} disabled={delUnitM.isPending}>{t("common.remove", "Remove")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Remove client confirm */}
+      <AlertDialog open={removeClientOpen} onOpenChange={setRemoveClientOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("portal.removeClientTitle", "Remove this client?")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("portal.removeClientWarn", "Their portal login is deactivated; request history is kept.")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => removeClientM.mutate()} disabled={removeClientM.isPending}>{t("common.remove", "Remove")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add unit dialog */}
       <Dialog open={unitOpen} onOpenChange={(o) => !o && setUnitOpen(false)}>
