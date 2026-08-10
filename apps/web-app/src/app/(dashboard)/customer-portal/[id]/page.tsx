@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat } from "lucide-react"
 
-import { portalAdminApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
+import { portalAdminApi, locationsApi, workflowsApi, organizationsApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
@@ -48,6 +48,13 @@ export default function PortalDetailPage() {
   const portalQ = useQuery({ queryKey: ["portal", id], queryFn: () => portalAdminApi.getPortal(String(id)) })
   const residentsQ = useQuery({ queryKey: ["portalResidents", id], queryFn: () => portalAdminApi.residents(String(id)) })
   const requestsQ = useQuery({ queryKey: ["portalAllRequests", id], queryFn: () => portalAdminApi.portalRequests(String(id)) })
+  // Triage lookups (spaces to route to, flows/task-types, workers). Small + cached.
+  const spacesQ = useQuery({ queryKey: ["triageSpaces"], queryFn: () => locationsApi.list({ limit: 100 }), staleTime: 60000 })
+  const flowsQ = useQuery({ queryKey: ["triageFlows"], queryFn: () => workflowsApi.list(), staleTime: 60000 })
+  const workersQ = useQuery({ queryKey: ["triageWorkers"], queryFn: () => organizationsApi.getMembers({ limit: 200 }), staleTime: 60000 })
+  const spaces = spacesQ.data?.data ?? []
+  const flows = flowsQ.data ?? []
+  const workers = workersQ.data?.data ?? []
   const portal = portalQ.data
   const categories = portal?.categories ?? []
   const meta = TPL_BY_KEY[portal?.templateKey ?? ""] ?? TPL_BY_KEY.rental
@@ -86,6 +93,26 @@ export default function PortalDetailPage() {
   const delCatM = useMutation({
     mutationFn: (cid: string) => portalAdminApi.deleteCategory(cid),
     onSuccess: () => { inv("portal"); setCatRemove(null) },
+    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
+  })
+
+  // Triage a pending request → live task (space + flow + priority + worker)
+  const [triageReq, setTriageReq] = useState<PortalRequestView | null>(null)
+  const [triageForm, setTriageForm] = useState<{ spaceId: string; workflowId: string; priority: string; assignedToId: string }>({ spaceId: "", workflowId: "", priority: "", assignedToId: "" })
+  const openTriage = (r: PortalRequestView) => {
+    setTriageForm({ spaceId: r.spaceId ?? "", workflowId: "", priority: r.priority || "MEDIUM", assignedToId: r.assignedToId ?? "" })
+    setTriageReq(r)
+  }
+  const triageM = useMutation({
+    mutationFn: () => portalAdminApi.triageRequest(triageReq!.id, {
+      spaceId: triageForm.spaceId,
+      // "" workflow = use the chosen space's default flow (send undefined so the
+      // backend inherits it); a real id overrides it (dynamic flow).
+      workflowId: triageForm.workflowId || undefined,
+      priority: triageForm.priority || undefined,
+      assignedToId: triageForm.assignedToId || undefined,
+    }),
+    onSuccess: () => { inv("portalAllRequests"); setTriageReq(null); notify.success(t("portal.requestRouted", "Request routed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -153,18 +180,27 @@ export default function PortalDetailPage() {
                 <EmptyState icon={<Inbox className="h-6 w-6" />} title={t("portal.noRequestsTitle", "No requests yet")} hint={t("portal.noRequests", "They appear here as clients submit from the app.")} />
               ) : (
                 <div className="divide-y divide-border/60">
-                  {requestsQ.data!.map((r: PortalRequestView) => (
-                    <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => router.push(`/tasks/${r.id}`)}>
+                  {requestsQ.data!.map((r: PortalRequestView) => {
+                    const pending = r.triaged === false
+                    return (
+                    <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => pending ? openTriage(r) : router.push(`/tasks/${r.id}`)}>
                       <span className={`h-2 w-2 rounded-full shrink-0 ${PRIORITY_DOT[r.priority] ?? "bg-slate-400"}`} title={r.priority} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          <span className="font-mono">{r.reference}</span>{r.customerName ? ` · ${r.customerName}` : ""}{r.unitName ? ` · ${r.unitName}` : ""}
+                          <span className="font-mono">{r.reference}</span>{r.customerName ? ` · ${r.customerName}` : ""}{r.unitName ? ` · ${r.unitName}` : ""}{!pending && r.spaceName ? ` · ${r.spaceName}` : ""}
                         </p>
                       </div>
-                      <span className={`text-[11px] font-semibold capitalize rounded-full px-2.5 py-1 shrink-0 ${STATUS_STYLES[r.status] ?? "bg-slate-500/10 text-slate-600 dark:text-slate-400"}`}>{r.status.replace(/_/g, " ").toLowerCase()}</span>
+                      {pending ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1 shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                          <Inbox className="h-3 w-3" />{t("portal.pendingTriage", "Route it")}
+                        </span>
+                      ) : (
+                        <span className={`text-[11px] font-semibold capitalize rounded-full px-2.5 py-1 shrink-0 ${STATUS_STYLES[r.status] ?? "bg-slate-500/10 text-slate-600 dark:text-slate-400"}`}>{r.status.replace(/_/g, " ").toLowerCase()}</span>
+                      )}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </Panel>
@@ -341,6 +377,48 @@ export default function PortalDetailPage() {
           </div>
           <DialogFooter><Button variant="ghost" onClick={() => setCatEdit(null)}>{t("common.cancel", "Cancel")}</Button>
             <Button disabled={!catForm.label.trim() || saveCatM.isPending} onClick={() => saveCatM.mutate()}>{t("common.save", "Save")}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Triage a pending request → live task */}
+      <Dialog open={!!triageReq} onOpenChange={(o) => !o && setTriageReq(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("portal.triageTitle", "Route request")}</DialogTitle>
+            <DialogDescription>{t("portal.triageHint", "Send this request into a space and choose how it should flow, then assign a worker.")}</DialogDescription>
+          </DialogHeader>
+          {triageReq && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                <p className="text-sm font-medium text-foreground truncate">{triageReq.title}</p>
+                <p className="text-xs text-muted-foreground truncate mt-0.5"><span className="font-mono">{triageReq.reference}</span>{triageReq.customerName ? ` · ${triageReq.customerName}` : ""}{triageReq.unitName ? ` · ${triageReq.unitName}` : ""}</p>
+                {triageReq.description && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-wrap line-clamp-4">{triageReq.description}</p>}
+              </div>
+              <div><Label>{t("portal.triageSpace", "Space")} <span className="text-red-500">*</span></Label>
+                <select value={triageForm.spaceId} onChange={(e) => setTriageForm({ ...triageForm, spaceId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                  <option value="">{t("portal.triagePickSpace", "Pick a space…")}</option>
+                  {spaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{t("portal.triageFlow", "Flow")}</Label>
+                  <select value={triageForm.workflowId} onChange={(e) => setTriageForm({ ...triageForm, workflowId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                    <option value="">{t("portal.triageFlowDefault", "Space default")}</option>
+                    {flows.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select></div>
+                <div><Label>{t("portal.triagePriority", "Priority")}</Label>
+                  <select value={triageForm.priority} onChange={(e) => setTriageForm({ ...triageForm, priority: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                    {["LOW", "MEDIUM", "HIGH", "URGENT"].map((p) => <option key={p} value={p}>{p.charAt(0) + p.slice(1).toLowerCase()}</option>)}
+                  </select></div>
+              </div>
+              <div><Label>{t("portal.triageWorker", "Assign worker")}</Label>
+                <select value={triageForm.assignedToId} onChange={(e) => setTriageForm({ ...triageForm, assignedToId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                  <option value="">{t("portal.triageUnassigned", "Leave unassigned")}</option>
+                  {workers.filter((w) => w.isActive).map((w) => <option key={w.id} value={w.id}>{w.firstName} {w.lastName}</option>)}
+                </select></div>
+            </div>
+          )}
+          <DialogFooter><Button variant="ghost" onClick={() => setTriageReq(null)}>{t("common.cancel", "Cancel")}</Button>
+            <Button disabled={!triageForm.spaceId || triageM.isPending} onClick={() => triageM.mutate()}>{triageM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("portal.triageAccept", "Accept & route")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

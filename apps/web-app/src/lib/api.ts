@@ -4671,6 +4671,16 @@ export const portalAdminApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data ?? [];
   },
+
+  /** Route a pending request → live task (space + flow + priority + worker). */
+  triageRequest: async (
+    requestId: string,
+    body: { spaceId: string; workflowId?: string | null; priority?: string; assignedToId?: string | null },
+  ) => {
+    const res = await api.post(`/portal/admin/requests/${requestId}/triage`, body);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
 };
 
 export interface PortalRequestView extends CustomerRequestView {

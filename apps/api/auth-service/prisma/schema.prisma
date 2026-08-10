@@ -854,6 +854,12 @@ model Task {
   // customer self-submitted it via the portal). Free-form String, mirrors status.
   source String @default("INTERNAL")
 
+  // Triage gate. Internal tasks are born routed (true). A CUSTOMER_PORTAL request
+  // is born UN-triaged (false): it has no flow/assignee yet and shows in the
+  // portal's "Pending triage" inbox until an admin routes it (picks space + flow
+  // + priority + worker → flips to true and it becomes a live task).
+  triaged Boolean @default(true)
+
   // Optional link to the customer's unit/site the request is about
   unitId String?
   unit   CustomerUnit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
@@ -910,6 +916,7 @@ model Task {
   @@index([unitId]) // customer portal: requests for a unit
   @@index([organizationId, source]) // portal vs internal split
   @@index([organizationId, source, createdAt]) // portal-wide request list (filter org+source, sort by newest)
+  @@index([organizationId, source, triaged]) // portal "pending triage" inbox count/list
   @@index([customerId, createdAt]) // portal request list (filter customer + sort by newest)
   @@index([organizationId, spaceId, status]) // space + status filtering
   @@map("tasks")

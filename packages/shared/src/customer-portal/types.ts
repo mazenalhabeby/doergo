@@ -110,6 +110,12 @@ export interface CustomerRequestView {
   createdAt: string;
   tracked: boolean;
   timeline: { label: string; state: TimelineState; at?: string | null }[];
+  // Triage (admin inbox): false = pending triage (no space/flow/worker yet).
+  triaged?: boolean;
+  spaceId?: string | null;
+  spaceName?: string | null;
+  assignedToId?: string | null;
+  description?: string | null;
 }
 
 /** Create a customer portal invitation (office → resident). */

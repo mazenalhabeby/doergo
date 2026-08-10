@@ -358,12 +358,22 @@ export class PortalService {
     defaultPriority?: string | null;
     issues?: string[];
     isActive?: boolean;
+    spaceId?: string | null;
   }) {
     const existing = await this.prisma.intakeCategory.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
       select: { id: true, portalId: true },
     });
     if (!existing) throw new NotFoundException('Category not found');
+    // Validate the target space belongs to this org (defence in depth — the
+    // onDelete:SetNull relation already guards deletions).
+    if (data.spaceId) {
+      const space = await this.prisma.companyLocation.findFirst({
+        where: { id: data.spaceId, organizationId: data.organizationId },
+        select: { id: true },
+      });
+      if (!space) throw new NotFoundException('Space not found');
+    }
     const cat = await this.prisma.intakeCategory.update({
       where: { id: data.id },
       data: {
@@ -375,6 +385,7 @@ export class PortalService {
         ...(data.defaultPriority !== undefined ? { defaultPriority: data.defaultPriority } : {}),
         ...(data.issues !== undefined ? { issues: data.issues } : {}),
         ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+        ...(data.spaceId !== undefined ? { spaceId: data.spaceId } : {}),
       },
     });
     if (existing.portalId) configCache.delete(existing.portalId);

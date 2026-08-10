@@ -79,9 +79,14 @@ export class TasksService {
       throw new ForbiddenException('Task creation scope is SPACE — you must select a space');
     }
 
-    // Space-centric: every task belongs to a space. If none was chosen, fall
-    // back to the org's default ("General") space so no task is ever space-less.
-    if (!data.spaceId) {
+    // Un-triaged portal requests are intentionally space-less + flow-less: they
+    // live only in the "pending triage" inbox until an admin routes them (picks
+    // space + flow + worker). Skip the default-space fallback for them.
+    const isUntriaged = data.triaged === false;
+
+    // Space-centric: every (triaged) task belongs to a space. If none was chosen,
+    // fall back to the org's default ("General") space so no task is space-less.
+    if (!data.spaceId && !isUntriaged) {
       const defaultSpace = await this.prisma.companyLocation.findFirst({
         where: { organizationId: data.organizationId, isDefault: true },
         select: { id: true },
@@ -135,7 +140,10 @@ export class TasksService {
     // Task type = workflow: explicit, else inherited from the space. A new task
     // starts at that workflow's first status (e.g. Office → TODO, Sales →
     // SCHEDULED); with no workflow it uses the canonical NEW/ASSIGNED.
-    const effWorkflowId: string | null = (data.workflowId as string | undefined) ?? spaceWorkflowId ?? null;
+    // Un-triaged requests carry no flow yet (chosen at triage) → canonical NEW.
+    const effWorkflowId: string | null = isUntriaged
+      ? null
+      : ((data.workflowId as string | undefined) ?? spaceWorkflowId ?? null);
     let initialStatus: string = hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW;
     if (effWorkflowId) {
       const firstStatus = await this.prisma.workflowStatus.findFirst({
@@ -193,6 +201,8 @@ export class TasksService {
           customerId: data.customerId || null,
           unitId: effUnitId,
           source: data.source === 'CUSTOMER_PORTAL' ? 'CUSTOMER_PORTAL' : 'INTERNAL',
+          // Portal requests are born un-triaged; everything else is born routed.
+          triaged: !isUntriaged,
         },
         include: {
           createdBy: {
@@ -403,6 +413,11 @@ export class TasksService {
       priority: task.priority,
       unitName: task.unit?.name ?? null,
       unitId: task.unitId ?? null,
+      // Triage state (admin inbox): false = pending triage (no space/flow yet).
+      triaged: task.triaged ?? true,
+      spaceId: task.spaceId ?? null,
+      spaceName: task.space?.name ?? null,
+      assignedToId: task.assignedToId ?? null,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
       // The client renders live tracking only when the current status enables it.
@@ -449,16 +464,18 @@ export class TasksService {
         source: 'CUSTOMER_PORTAL',
         customer: { portalId: data.portalId },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ triaged: 'asc' }, { createdAt: 'desc' }], // pending-triage first
       include: {
         unit: { select: { id: true, name: true } },
         customer: { select: { id: true, name: true } },
+        space: { select: { id: true, name: true } },
         workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
       },
     });
     return success(
       tasks.map((t) => ({
         ...this.portalRequestShape(t),
+        description: t.description ?? null,
         customerId: t.customerId ?? null,
         customerName: (t as any).customer?.name ?? null,
       })),
@@ -484,6 +501,132 @@ export class TasksService {
       throw new NotFoundException('Request not found');
     }
     return success({ ...this.portalRequestShape(task), description: task.description, attachments: task.attachments });
+  }
+
+  /**
+   * Triage a pending portal request → a live task. The admin picks the SPACE
+   * (required, so the task is always related to a space), the FLOW (task type /
+   * workflow — defaults to the space's flow but can be anything, so the task is
+   * dynamic), the priority and optionally the worker. Flips triaged → true and
+   * the request drops out of the inbox onto the chosen space's board.
+   */
+  async triageRequest(data: {
+    id: string;
+    organizationId: string;
+    spaceId: string;
+    workflowId?: string | null;
+    priority?: string;
+    assignedToId?: string | null;
+    userId: string;
+  }) {
+    const task = await this.prisma.task.findFirst({
+      where: { id: data.id, organizationId: data.organizationId, source: 'CUSTOMER_PORTAL' },
+    });
+    if (!task) throw new NotFoundException('Request not found');
+    if (task.triaged) throw new BadRequestException('This request has already been routed');
+
+    // Space is REQUIRED — a triaged task always belongs to a space.
+    if (!data.spaceId) throw new BadRequestException('Pick a space to route this request to');
+    const space = await this.prisma.companyLocation.findFirst({
+      where: { id: data.spaceId, organizationId: data.organizationId },
+      select: { id: true, lat: true, lng: true, address: true, workflowId: true },
+    });
+    if (!space) throw new NotFoundException('Space not found');
+
+    // Flow: explicit choice wins; otherwise inherit the space's default flow.
+    // null is a valid explicit choice (canonical NEW/ASSIGNED, no workflow).
+    const effWorkflowId: string | null =
+      data.workflowId !== undefined ? data.workflowId : (space.workflowId ?? null);
+    if (effWorkflowId) {
+      const wf = await this.prisma.statusWorkflow.findFirst({
+        where: { id: effWorkflowId, organizationId: data.organizationId },
+        select: { id: true },
+      });
+      if (!wf) throw new NotFoundException('Flow not found');
+    }
+
+    // Assignee (optional): a member of the org, or someone assigned to the space.
+    let assignedToId: string | null = null;
+    let workerName = '';
+    if (data.assignedToId) {
+      let worker = await this.prisma.user.findFirst({
+        where: { id: data.assignedToId, organizationId: data.organizationId, isActive: true },
+        select: { id: true, firstName: true, lastName: true },
+      });
+      if (!worker) {
+        const member = await this.prisma.spaceAssignment.findFirst({
+          where: {
+            spaceId: data.spaceId,
+            userId: data.assignedToId,
+            OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+          },
+          select: { id: true },
+        });
+        if (member) {
+          worker = await this.prisma.user.findFirst({
+            where: { id: data.assignedToId, isActive: true },
+            select: { id: true, firstName: true, lastName: true },
+          });
+        }
+      }
+      if (!worker) throw new NotFoundException('Worker not found or not in your organization');
+      assignedToId = worker.id;
+      workerName = `${worker.firstName} ${worker.lastName}`;
+    }
+
+    // Initial status: the flow's first status, else ASSIGNED (if assigned) or NEW.
+    let initialStatus: string = assignedToId ? TaskStatus.ASSIGNED : TaskStatus.NEW;
+    if (effWorkflowId) {
+      const firstStatus = await this.prisma.workflowStatus.findFirst({
+        where: { workflowId: effWorkflowId, isCanceled: false },
+        orderBy: { position: 'asc' },
+        select: { key: true },
+      });
+      if (firstStatus) initialStatus = firstStatus.key;
+    }
+
+    const adoptLocation =
+      task.locationLat == null && task.locationLng == null && !task.locationAddress;
+
+    const updated = await this.prisma.task.update({
+      where: { id: data.id },
+      data: {
+        spaceId: data.spaceId,
+        workflowId: effWorkflowId,
+        status: initialStatus,
+        priority: (data.priority as any) || task.priority,
+        assignedToId,
+        triaged: true,
+        ...(adoptLocation
+          ? { locationLat: space.lat, locationLng: space.lng, locationAddress: space.address }
+          : {}),
+      },
+      include: {
+        assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+      },
+    });
+
+    await this.createTaskEvent(data.id, data.userId, TaskEventType.UPDATED, {
+      triaged: true,
+      spaceId: data.spaceId,
+      workflowId: effWorkflowId,
+    });
+    if (assignedToId) {
+      await this.createTaskEvent(data.id, data.userId, TaskEventType.ASSIGNED, {
+        workerId: assignedToId,
+        workerName,
+      });
+      this.notificationClient.emit('task_assigned', {
+        task: updated,
+        workerId: assignedToId,
+        watcherIds: await this.taskWatcherIds(assignedToId, updated.organizationId),
+      });
+    }
+    this.notificationClient.emit('task_updated', { task: updated });
+    this.invalidateStatusCountsCache(updated.organizationId);
+
+    return success(updated);
   }
 
   /**

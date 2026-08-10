@@ -68,6 +68,31 @@ export class PortalAdminController {
     );
   }
 
+  /** Route a pending request → a live task: pick space + flow + priority + worker. */
+  @Post('requests/:id/triage')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Triage a portal request into a live task' })
+  triageRequest(
+    @Param('id') id: string,
+    @Body() body: { spaceId: string; workflowId?: string | null; priority?: string; assignedToId?: string | null },
+    @Request() req: any,
+  ) {
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'portal_triage_request' },
+        {
+          id,
+          organizationId: req.user.organizationId,
+          userId: req.user.id,
+          spaceId: body.spaceId,
+          workflowId: body.workflowId,
+          priority: body.priority,
+          assignedToId: body.assignedToId,
+        },
+      ),
+    );
+  }
+
   @Patch('portals/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a portal (name / switch type)' })

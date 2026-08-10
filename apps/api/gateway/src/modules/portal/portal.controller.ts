@@ -127,7 +127,10 @@ export class PortalController {
       title: requestTitle(category.label, dto.issue),
       description,
       priority: priorityForCategory(category),
-      spaceId: category.spaceId || undefined, // else task-service uses the default space
+      // Pure triage: the request lands UN-triaged (no space, no flow, unassigned)
+      // and waits in the portal's "pending triage" inbox. An admin routes it —
+      // picks the space + flow + priority + worker — which makes it a live task.
+      triaged: false,
       source: TASK_SOURCE.CUSTOMER_PORTAL,
       customerId: req.user.customerId, // from the verified token, never the body
       unitId, // validated to belong to this customer above

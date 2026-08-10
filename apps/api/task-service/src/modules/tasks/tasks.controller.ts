@@ -145,6 +145,22 @@ export class TasksController {
     return this.tasksService.getPortalRequest(data);
   }
 
+  @MessagePattern({ cmd: 'portal_triage_request' })
+  async triageRequest(
+    @Payload()
+    data: {
+      id: string;
+      organizationId: string;
+      userId: string;
+      spaceId: string;
+      workflowId?: string | null;
+      priority?: string;
+      assignedToId?: string | null;
+    },
+  ) {
+    return this.tasksService.triageRequest(data);
+  }
+
   // ============ Subtask READ Operations ============
 
   @MessagePattern({ cmd: 'get_subtasks' })
