@@ -270,6 +270,12 @@ services:
           memory: 512M
     networks:
       - hbcfield-network
+    # Uploaded avatars/media are written to /app/uploads by the gateway. Without
+    # a persistent volume they live only in the container layer and are WIPED on
+    # every recreate/redeploy. A named volume seeds from the existing dir on
+    # first mount and survives redeploys.
+    volumes:
+      - hbcfield_uploads:/app/uploads
 
   # ==================== WEB APP ====================
   web-app:
@@ -310,6 +316,8 @@ volumes:
     name: hbcfield-postgres-data
   hbcfield_redis_data:
     name: hbcfield-redis-data
+  hbcfield_uploads:
+    name: hbcfield-uploads
 
 networks:
   hbcfield-network:
