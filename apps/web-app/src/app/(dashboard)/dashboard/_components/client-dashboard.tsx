@@ -396,6 +396,33 @@ export function ClientDashboard() {
     return allLocations.filter((loc: { id: string }) => userSpaceIds.has(loc.id))
   }, [isAdminOrDispatcher, spaceScope, allLocations, tasks, user?.id, assignmentsPerLocation])
 
+  // A clocked-in member is physically in ONE place. Resolve their single "active
+  // space": the space they clocked in at (if visible), else — for a remote/field
+  // clock-in whose location isn't a visible space — their first assigned space, so
+  // they surface as active exactly once instead of showing "remotely" in every
+  // space they belong to. Pure in-memory over already-loaded maps (no queries).
+  const spaceNameById = useMemo(
+    () => new Map(allLocations.map((l: { id: string; name: string }) => [l.id, l.name])),
+    [allLocations],
+  )
+  const activeSpaceByUser = useMemo(() => {
+    const map = new Map<string, string>()
+    const visible = new Set(locations.map((l: { id: string }) => l.id))
+    for (const userId of clockedInUserIds) {
+      const loc = attendanceLocationMap.get(userId)
+      if (loc && visible.has(loc)) {
+        map.set(userId, loc) // clocked in at a visible space → active there
+      } else {
+        // Remote/off-grid clock-in → attribute to their first assigned space so
+        // they appear once. locations is stable-ordered, so this is deterministic.
+        for (const l of locations) {
+          if (assignmentsPerLocation.get(l.id)?.has(userId)) { map.set(userId, l.id); break }
+        }
+      }
+    }
+    return map
+  }, [clockedInUserIds, attendanceLocationMap, locations, assignmentsPerLocation])
+
   // ── Build Workspace Boxes ─────────────────────────────────────────────────
 
   const workspaceBoxes: WorkspaceBoxProps[] = useMemo(() => {
@@ -438,7 +465,6 @@ export function ClientDashboard() {
         const rosterTask = rosterActiveTaskMap.get(userId)
         const activeTaskTitle = ownTask?.title ?? rosterTask?.title
         const isCurrentlyClockedIn = clockedInUserIds.has(userId)
-        const clockedInLocationId = attendanceLocationMap.get(userId)
         // Field worker = mobile-only access (single source of truth, shared with
         // billing). Replaces the removed workMode ON_ROAD signal.
         const onRoad = isFieldWorker(member)
@@ -456,8 +482,11 @@ export function ClientDashboard() {
 
         const node = memberToPersonNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
 
-        // "Present" means clocked in AT THIS location. Availability and tasks do
-        // NOT put someone in Present — only being on the clock here does.
+        // A member is ACTIVE in exactly one space (activeSpaceByUser). Here they
+        // are Present/In-Field/Remote only if this IS that space; in every other
+        // space they belong to they read as off-shift ("At {space}" / "Remote") —
+        // never a misleading "off-site" active entry, and never double-counted.
+        const activeSpace = activeSpaceByUser.get(userId)
         if (!isCurrentlyClockedIn) {
           // Everyone sees WHO is off (online + not-clocked-in → "Off-shift";
           // offline → "Off Duty"). The absence REASON is gated separately (admins
@@ -467,15 +496,25 @@ export function ClientDashboard() {
           } else {
             offDutyPeople.push(memberToPersonNode(member, status, tag))
           }
+        } else if (activeSpace !== locId) {
+          // Clocked in, but their active space is ELSEWHERE → off-shift here, with
+          // a hint of where they actually are (not an active "off-site" node).
+          const remoteHere = attendanceRemoteMap.get(userId) ?? false
+          const whereName = activeSpace ? spaceNameById.get(activeSpace) : null
+          const hint = remoteHere
+            ? i18n.t("dashboard.presence.remote", "Remote")
+            : whereName
+              ? i18n.t("dashboard.presence.atSpace", "At {{space}}", { space: whereName })
+              : undefined
+          offShiftPeople.push(memberToPersonNode(member, "off", hint ? { text: hint, variant: "hrs" } : undefined))
         } else if (onRoad) {
-          // Clocked in, working on the road → "In Field" group (node.tag already
-          // reads "In Field" from getEmployeeStatus).
+          // Clocked in here, working on the road → "In Field" group.
           onRoadPeople.push(node)
-        } else if (clockedInLocationId !== locId) {
-          // Clocked in somewhere other than this space → "Off-site" group.
+        } else if (attendanceRemoteMap.get(userId)) {
+          // Clocked in remotely (WFH), attributed to this (home) space → "Off-site".
           remotePeople.push(node)
         } else {
-          // Clocked in here → Present
+          // Clocked in here on-site → Present.
           people.push(node)
         }
       }
@@ -632,6 +671,7 @@ export function ClientDashboard() {
   }, [
     locations, tasks, members, assignmentsPerLocation,
     memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, attendanceRemoteMap, activeTaskMap, rosterActiveTaskMap,
+    activeSpaceByUser, spaceNameById,
     handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
     isAdminOrDispatcher, user?.id, i18n.language,
   ])

@@ -949,6 +949,7 @@
       "away": "Abwesend",
       "inField": "Im Einsatz",
       "remote": "Remote",
+      "atSpace": "Bei {{space}}",
       "onShift": "Im Dienst",
       "available": "Verfügbar",
       "onTheClock": "Eingestempelt",
