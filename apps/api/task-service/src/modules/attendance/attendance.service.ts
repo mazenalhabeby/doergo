@@ -113,12 +113,14 @@ export class AttendanceService {
   }) {
     this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}, remote=${!!data.isRemote}`);
 
-    // Verify user is a technician with on-site work mode
+    // Any STAFF member may clock in (EMPLOYEE and ADMIN — admins clock in too);
+    // only external portal CUSTOMER accounts are excluded. Previously this was
+    // hardcoded role:'EMPLOYEE', so admins hit "Employee not found".
     const user = await this.prisma.user.findFirst({
       where: {
         id: data.userId,
         organizationId: data.organizationId,
-        role: 'EMPLOYEE',
+        role: { not: 'CUSTOMER' },
       },
       select: {
         id: true,
