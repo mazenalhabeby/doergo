@@ -143,9 +143,9 @@ export class TaskNotificationHandler {
   }
 
   @EventPattern('task_deleted')
-  async handleTaskDeleted(@Payload() data: { taskId: string; organizationId: string }) {
+  async handleTaskDeleted(@Payload() data: { taskId: string; organizationId: string; spaceId?: string | null }) {
     this.logger.log(`Task deleted: ${data.taskId}`);
-    this.websocketGateway.emitTaskDeleted(data.taskId, data.organizationId);
+    this.websocketGateway.emitTaskDeleted(data.taskId, data.organizationId, data.spaceId ?? undefined);
   }
 
   @EventPattern('comment_added')

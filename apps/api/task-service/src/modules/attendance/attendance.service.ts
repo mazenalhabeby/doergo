@@ -979,22 +979,23 @@ export class AttendanceService {
     requesterCanViewAll?: boolean;
     sortBy?: string;
     sortOrder?: string;
+    sharedSpaceIds?: string[]; // shared spaces (with showAttendance) the caller may view
   }) {
-    // Verify location belongs to organization
+    // A guest may read the attendance of a space shared with them (showAttendance
+    // gated at the gateway → only such spaces reach here). Otherwise strict org.
+    const isShared = Array.isArray(data.sharedSpaceIds) && data.sharedSpaceIds.includes(data.locationId);
     const location = await this.prisma.companyLocation.findFirst({
-      where: {
-        id: data.locationId,
-        organizationId: data.organizationId,
-      },
+      where: isShared ? { id: data.locationId } : { id: data.locationId, organizationId: data.organizationId },
     });
 
     if (!location) {
       throw new NotFoundException('Location not found');
     }
 
-    // Authorization: full-access roles see any location; otherwise the requester
-    // must be a roster member of this location (employees viewing their own space).
-    if (!data.requesterCanViewAll) {
+    // Authorization: full-access roles see any location; a cross-org shared grant
+    // confers view-all for that space; otherwise the requester must be a roster
+    // member of this location (employees viewing their own space).
+    if (!data.requesterCanViewAll && !isShared) {
       const member = await this.prisma.spaceAssignment.findFirst({
         where: { spaceId: data.locationId, userId: data.requesterId },
         select: { id: true },

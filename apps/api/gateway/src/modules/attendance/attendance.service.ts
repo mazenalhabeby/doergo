@@ -47,6 +47,7 @@ export class AttendanceService extends BaseGatewayService {
     requesterCanViewAll?: boolean;
     sortBy?: string;
     sortOrder?: string;
+    sharedSpaceIds?: string[];
   }) {
     return this.send({ cmd: 'get_location_entries' }, data);
   }

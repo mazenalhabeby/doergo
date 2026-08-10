@@ -22,6 +22,7 @@ import {
   tasksApi,
   spaceSharingApi,
   locationsApi,
+  attendanceApi,
   type Task,
   type SpaceShareRequestType,
   type SpaceShareRequestStatus,
@@ -108,6 +109,14 @@ export default function SharedSpaceViewPage() {
     queryFn: () => locationsApi.getAssignedMembers(spaceId),
     enabled: !!share && !!share.showWorkers,
   })
+
+  // Attendance — only when the owner enabled "show attendance".
+  const { data: attendance } = useQuery({
+    queryKey: ["shared-space-attendance", spaceId],
+    queryFn: () => attendanceApi.getLocationEntries(spaceId, { limit: 50 }),
+    enabled: !!share && !!share.showAttendance,
+  })
+  const attendanceEntries: any[] = (attendance as any)?.data || []
 
   const queryClient = useQueryClient()
   const assignMutation = useMutation({
@@ -301,6 +310,34 @@ export default function SharedSpaceViewPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Attendance (owner enabled "show attendance") */}
+        {share.showAttendance && attendanceEntries.length > 0 && (
+          <div className="mt-8 space-y-3">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.attendanceHeading", "Attendance")}</h2>
+            </div>
+            <div className="rounded-xl border bg-card overflow-hidden">
+              {attendanceEntries.slice(0, 25).map((e: any) => {
+                const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—")
+                return (
+                  <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/20 last:border-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <UserAvatar firstName={e.user?.firstName} lastName={e.user?.lastName} seed={e.user?.id} size="sm" />
+                      <span className="text-sm font-medium text-foreground truncate">{e.user?.firstName} {e.user?.lastName}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                      <span>{fmt(e.clockInAt)}</span>
+                      <span>→</span>
+                      <span>{e.clockOutAt ? fmt(e.clockOutAt) : <span className="text-emerald-600 dark:text-emerald-400">{t("attendance.status.active", "Active")}</span>}</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

@@ -153,6 +153,10 @@ export class AttendanceController {
       sortOrder,
       requesterId: req.user.id,
       requesterCanViewAll: !!req.user.canViewAllTasks,
+      // Cross-org shared spaces whose owner enabled "show attendance".
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? [])
+        .filter((s: any) => s.showAttendance)
+        .map((s: any) => s.spaceId),
     });
   }
 

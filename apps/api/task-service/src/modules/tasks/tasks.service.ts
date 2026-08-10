@@ -1227,10 +1227,12 @@ export class TasksService {
 
     await this.prisma.task.delete({ where: { id: data.id } });
 
-    // Notify via Socket.IO for real-time updates
+    // Notify via Socket.IO for real-time updates (spaceId lets cross-org shared
+    // guests receive the delete on the space room too).
     this.notificationClient.emit('task_deleted', {
       taskId: data.id,
       organizationId: task.organizationId,
+      spaceId: task.spaceId ?? null,
     });
 
     this.invalidateStatusCountsCache(task.organizationId);

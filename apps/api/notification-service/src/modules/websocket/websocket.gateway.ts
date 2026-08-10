@@ -565,12 +565,13 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // TASK DELETED EVENT
   // =========================================================================
 
-  emitTaskDeleted(taskId: string, organizationId: string) {
+  emitTaskDeleted(taskId: string, organizationId: string, spaceId?: string) {
     this.logger.log(`[EMIT] task.deleted (taskId: ${taskId}) to taskviewers:${organizationId}`);
     this.messagesSent++;
-    this.server.to(`taskviewers:${organizationId}`).emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
-    // Also notify anyone watching this specific task
-    this.server.to(`task:${taskId}`).emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
+    let target = this.server.to(`taskviewers:${organizationId}`).to(`task:${taskId}`);
+    // Cross-org shared-space guests live in space:{spaceId}, not taskviewers.
+    if (spaceId) target = target.to(`space:${spaceId}`);
+    target.emit(SocketEvents.TASK_DELETED, { taskId, organizationId });
   }
 
   // Get connection statistics
