@@ -90,7 +90,7 @@ export default function SharedSpaceViewPage() {
   const [createOpen, setCreateOpen] = useState(false)
 
   const { data: taskData, isLoading } = useQuery({
-    queryKey: ["shared-space-tasks", spaceId],
+    queryKey: ["tasks", "shared", spaceId],
     queryFn: () => tasksApi.list({ spaceId, limit: 100 }),
     enabled: !!share,
   })
@@ -113,7 +113,7 @@ export default function SharedSpaceViewPage() {
   const assignMutation = useMutation({
     mutationFn: ({ taskId, workerId }: { taskId: string; workerId: string }) => tasksApi.assign(taskId, workerId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shared-space-tasks", spaceId] })
+      queryClient.invalidateQueries({ queryKey: ["tasks", "shared", spaceId] })
       notify.success(t("spaceSharing.guest.assigned", "Task assigned"))
     },
     onError: (e: Error) => notify.error(e.message),
@@ -365,7 +365,7 @@ function CreateTaskDialog({
     mutationFn: () =>
       tasksApi.create({ spaceId, title: title.trim(), description: description.trim() || undefined, priority } as any),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shared-space-tasks", spaceId] })
+      queryClient.invalidateQueries({ queryKey: ["tasks", "shared", spaceId] })
       notify.success(t("spaceSharing.guest.taskCreated", "Task created"))
       setTitle(""); setDescription(""); setPriority("MEDIUM")
       onOpenChange(false)

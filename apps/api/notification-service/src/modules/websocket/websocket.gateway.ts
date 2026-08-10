@@ -268,7 +268,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   }
 
   @SubscribeMessage('authenticate')
-  handleAuthenticate(client: Socket, payload: { userId: string; role: string; organizationId: string }) {
+  async handleAuthenticate(client: Socket, payload: { userId: string; role: string; organizationId: string }) {
     // Extract token from socket handshake auth
     const token = client.handshake?.auth?.token;
 
@@ -347,6 +347,26 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     if (role === 'ADMIN' || decoded.canViewAllTasks === true) {
       client.join(`taskviewers:${organizationId}`);
       clientInfo.rooms.push(`taskviewers:${organizationId}`);
+    }
+
+    // Cross-org shared spaces: join a per-space room so this org's members receive
+    // LIVE task events for spaces shared WITH them. Server-authoritative — the org
+    // comes from the verified token and the shares from the DB, never from the
+    // client. Owner-side members already get these via taskviewers:{ownerOrg}, so
+    // they don't join here (no double-delivery). Once per connection; the query is
+    // indexed on [guestOrgId,status] and returns nothing for the vast majority.
+    try {
+      const shares = await this.prisma.spaceShare.findMany({
+        where: { guestOrgId: organizationId, status: 'ACTIVE' },
+        select: { spaceId: true },
+      });
+      for (const s of shares) {
+        client.join(`space:${s.spaceId}`);
+        clientInfo.rooms.push(`space:${s.spaceId}`);
+      }
+      if (shares.length) this.logger.log(`[AUTH] ${userId} joined ${shares.length} shared-space room(s)`);
+    } catch (e) {
+      this.logger.warn(`[AUTH] shared-space room join failed for ${userId}: ${e}`);
     }
 
     // Authenticated — cancel the idle-disconnect timer.
@@ -583,23 +603,32 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   }
 
   // Emit methods called by notification controller
+  // Cross-org shared-space guests live in `space:{spaceId}` (not taskviewers of the
+  // owner org), so task events must also fan out there. Owner members get it via
+  // taskviewers; guests via the space room — Socket.IO dedups any client in both.
+  private taskTargets(task: any) {
+    let t = this.server.to(`taskviewers:${task.organizationId}`);
+    if (task.spaceId) t = t.to(`space:${task.spaceId}`);
+    return t;
+  }
+
   emitTaskCreated(task: any) {
     this.logger.log(`[EMIT] task.created to org:${task.organizationId}`);
     this.messagesSent++;
-    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_CREATED, task);
+    this.taskTargets(task).emit(SocketEvents.TASK_CREATED, task);
   }
 
   emitTaskAssigned(task: any, workerId: string) {
     this.logger.log(`[EMIT] task.assigned to org:${task.organizationId} and user:${workerId}`);
     this.messagesSent += 2;
-    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_ASSIGNED, task);
+    this.taskTargets(task).emit(SocketEvents.TASK_ASSIGNED, task);
     this.server.to(`user:${workerId}`).emit(SocketEvents.TASK_ASSIGNED, task);
   }
 
   emitTaskUpdated(task: any) {
     this.logger.log(`[EMIT] task.updated to org:${task.organizationId}`);
     this.messagesSent++;
-    this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_UPDATED, task);
+    this.taskTargets(task).emit(SocketEvents.TASK_UPDATED, task);
     if (task.assignedToId) {
       this.messagesSent++;
       this.server.to(`user:${task.assignedToId}`).emit(SocketEvents.TASK_UPDATED, task);
@@ -619,10 +648,12 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.logger.log(`[EMIT] task.statusChanged (${oldStatus} -> ${newStatus}) to task:${task.id}`);
     this.messagesSent++;
     const payload = { task, oldStatus, newStatus };
-    // Single emit across the task room + org taskviewers + the creator's own room.
-    // The creator room lets a portal CUSTOMER (confined to user:{id}) watch their
-    // request update live; Socket.IO dedups a staff creator who is also a taskviewer.
+    // Single emit across the task room + org taskviewers + shared-space room + the
+    // creator's own room. The creator room lets a portal CUSTOMER (confined to
+    // user:{id}) watch their request update live; Socket.IO dedups a staff creator
+    // who is also a taskviewer.
     let target = this.server.to(`task:${task.id}`).to(`taskviewers:${task.organizationId}`);
+    if (task.spaceId) target = target.to(`space:${task.spaceId}`);
     if (task.createdById) target = target.to(`user:${task.createdById}`);
     target.emit(SocketEvents.TASK_STATUS_CHANGED, payload);
   }
