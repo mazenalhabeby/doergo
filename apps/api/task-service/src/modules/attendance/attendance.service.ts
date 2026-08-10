@@ -428,10 +428,16 @@ export class AttendanceService {
       flagReasons.push('OUTSIDE_GEOFENCE_OUT');
     }
 
-    // Overtime / early-departure flagging. Prefer the shift's stamped
-    // `expectedClockOutAt` (an absolute UTC instant — timezone-correct and
-    // cross-midnight-safe) when present; only fall back to the legacy weekly
-    // technicianSchedule (server-local, same-day only) for non-shift spaces.
+    // Overtime / early-departure flagging is ONLY meaningful against a concrete
+    // expected end. `expectedClockOutAt` is stamped at clock-in by the shift
+    // resolver (rota OR the legacy weekly schedule) as an absolute UTC instant —
+    // timezone-correct and cross-midnight-safe. When it's null the session is
+    // genuinely UNSCHEDULED (no shift/rota/schedule matched), so it can't be
+    // "early" or "overtime" against anything — leave those flags off. (The old
+    // else-branch re-derived the weekday from the CLOCK-OUT time in server-local
+    // time, which for a cross-midnight or cross-timezone session matched the
+    // wrong day's schedule and produced a false "Early Departure" alongside the
+    // "Unscheduled" tag.)
     if (entry.expectedClockOutAt) {
       const diffMinutes = (clockOutTime.getTime() - entry.expectedClockOutAt.getTime()) / 60000;
       if (diffMinutes > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) {
@@ -439,23 +445,6 @@ export class AttendanceService {
       }
       if (diffMinutes < -ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) {
         flagReasons.push('EARLY_DEPARTURE');
-      }
-    } else {
-      const dayOfWeek = clockOutTime.getDay();
-      const schedule = await this.prisma.technicianSchedule.findFirst({
-        where: { technicianId: data.userId, dayOfWeek, isActive: true },
-      });
-      if (schedule) {
-        const [endH, endM] = schedule.endTime.split(':').map(Number);
-        const scheduledEnd = new Date(clockOutTime);
-        scheduledEnd.setHours(endH!, endM!, 0, 0);
-        const diffMinutes = (clockOutTime.getTime() - scheduledEnd.getTime()) / 60000;
-        if (diffMinutes > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) {
-          flagReasons.push('OVERTIME');
-        }
-        if (diffMinutes < -ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) {
-          flagReasons.push('EARLY_DEPARTURE');
-        }
       }
     }
 
