@@ -257,11 +257,16 @@ export function SpaceForm({
             onLocationChange={handleLocationChange}
             onAddressChange={setAddress}
           />
-          <div className="space-y-2">
-            <Label htmlFor="space-timezone">{t("locations.timezone")}</Label>
-            <TimezoneCombobox value={timezone} onChange={setTimezone} />
-            <p className="text-xs text-muted-foreground">{t("locations.timezoneAutoHint")}</p>
-          </div>
+          {/* Timezone only matters for a PHYSICAL space (has a pin). A logical
+              space anchors shifts to each worker's own clock-in timezone, so
+              there's nothing to set here. */}
+          {lat != null && lng != null && (
+            <div className="space-y-2">
+              <Label htmlFor="space-timezone">{t("locations.timezone")}</Label>
+              <TimezoneCombobox value={timezone} onChange={setTimezone} />
+              <p className="text-xs text-muted-foreground">{t("locations.timezoneAutoHint")}</p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="space-radius">{t("locations.form.geofenceRadius")}</Label>
             <div className="flex items-center gap-3">

@@ -128,12 +128,18 @@ export class AttendanceService {
         organizationId: true,
         allowRemote: true,
         role: true,
+        organization: { select: { timezone: true } },
       },
     });
 
     if (!user) {
       throw new NotFoundException('Employee not found');
     }
+
+    // No-GPS fallback timezone: for a logical space (or remote bucket) with no
+    // resolvable worker location, fall back to the ORG's timezone (not a space's
+    // stored value, which may be stale/wrong). UTC only if the org has none.
+    const orgTz = user.organization?.timezone || 'UTC';
 
     // Admins have full org access — they may always clock in remotely, without
     // needing the per-user allowRemote flag toggled on (nothing to configure for
@@ -165,7 +171,7 @@ export class AttendanceService {
         data.userId,
         bucket,
         remoteClockInAt,
-        this.resolveEntryTimezone(data.lat, data.lng, bucket.timezone) ?? undefined,
+        this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? undefined,
       );
       const entry = await this.prisma.timeEntry.create({
         data: {
@@ -179,7 +185,7 @@ export class AttendanceService {
           clockInWithinGeofence: true,
           isRemote: true,
           clockInPlace: place,
-          timezone: this.resolveEntryTimezone(data.lat, data.lng, bucket.timezone),
+          timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz),
           flagReasons: [],
           approvalStatus: 'AUTO',
           organizationId: data.organizationId,
@@ -310,6 +316,13 @@ export class AttendanceService {
 
     const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
 
+    // No-GPS fallback: a PHYSICAL space falls back to its own (site) timezone; a
+    // LOGICAL space has none, so fall back to the org timezone. When GPS is
+    // present the worker's actual location wins regardless.
+    const spaceIsPhysical = location.lat != null && location.lng != null;
+    const fallbackTz = spaceIsPhysical ? location.timezone : orgTz;
+    const workerTz = this.resolveEntryTimezone(data.lat, data.lng, fallbackTz);
+
     // Resolve the shift expectation once, now, as an absolute instant. Pass the
     // worker's clock-in timezone so a LOGICAL (pin-less) space anchors the shift
     // to where the worker actually is.
@@ -317,7 +330,7 @@ export class AttendanceService {
       data.userId,
       location,
       clockInTime,
-      this.resolveEntryTimezone(data.lat, data.lng, location.timezone) ?? undefined,
+      workerTz ?? undefined,
     );
 
     // Create time entry
@@ -331,7 +344,7 @@ export class AttendanceService {
         clockInLng: data.lng,
         clockInAccuracy: data.accuracy,
         clockInWithinGeofence: withinGeofence,
-        timezone: this.resolveEntryTimezone(data.lat, data.lng, location.timezone),
+        timezone: workerTz,
         flagReasons,
         approvalStatus,
         organizationId: data.organizationId,

@@ -343,8 +343,8 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
             </>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {isPhysical && (
+          {isPhysical ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cfg-radius">{t("locations.geofenceRadius")}</Label>
                 <div className="relative w-40">
@@ -362,15 +362,20 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                   </span>
                 </div>
               </div>
-            )}
-            <div className="space-y-1.5">
-              <Label htmlFor="cfg-timezone">{t("locations.timezone")}</Label>
-              <TimezoneCombobox value={timezone} onChange={setTimezone} />
-              <p className="text-[11px] text-muted-foreground/70">
-                {isPhysical ? t("locations.timezoneAutoHint") : t("locations.timezoneManualHint")}
-              </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="cfg-timezone">{t("locations.timezone")}</Label>
+                <TimezoneCombobox value={timezone} onChange={setTimezone} />
+                <p className="text-[11px] text-muted-foreground/70">{t("locations.timezoneAutoHint")}</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            // Logical space: no timezone to set — shifts use each worker's own
+            // clock-in timezone. Pin it on the map (make it physical) to fix a
+            // site timezone + geofence.
+            <p className="text-sm text-muted-foreground">
+              {t("locations.logicalNoTimezone", "No fixed location — attendance uses each worker's own timezone. Add a location to set a fixed site timezone and geofence.")}
+            </p>
+          )}
         </CardContent>
       </Card>
 
