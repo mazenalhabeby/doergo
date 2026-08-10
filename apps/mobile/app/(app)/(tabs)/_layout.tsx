@@ -11,6 +11,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
 import { TourTarget, useTourTarget } from '../../../src/components/tour';
 import { Role, hasAccessModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
+import { resolveMediaUrl } from '../../../src/lib/api';
 
 // Maps a tab route name → guided-tour target key (only the tabs the tours spotlight).
 const TAB_TOUR_KEY: Record<string, string> = {
@@ -44,7 +45,10 @@ function ProfileButton() {
   const router = useRouter();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const initial = user?.firstName?.[0]?.toUpperCase() || '?';
-  const avatarUrl = user?.avatarUrl;
+  // Uploaded avatars are stored as a relative path (/uploads/avatars/…).
+  // React Native's <Image> can't load a relative URI, so resolve it to the
+  // absolute host URL — otherwise the header avatar renders blank.
+  const avatarUrl = resolveMediaUrl(user?.avatarUrl);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, { toValue: 0.88, friction: 5, useNativeDriver: true }).start();
