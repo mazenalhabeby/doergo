@@ -64,7 +64,7 @@ export const PersonNode = React.memo(function PersonNode({ person, onPress }: Pr
 });
 
 const styles = StyleSheet.create({
-  wrap: { width: 68, alignItems: 'center', gap: 6 },
+  wrap: { width: 60, alignItems: 'center', gap: 6 },
   name: { fontSize: 10, fontWeight: '500', textAlign: 'center', width: '100%' },
   tagSlot: { minHeight: 16, justifyContent: 'center', maxWidth: '100%' },
   tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, maxWidth: '100%' },

@@ -36,17 +36,19 @@ function SubGroup({
   people,
   onPersonPress,
   color,
+  peopleGap,
 }: {
   label: string;
   people: PersonNodeData[];
   onPersonPress?: (userId: string) => void;
   color: string;
+  peopleGap?: { gap: number; rowGap: number };
 }) {
   if (people.length === 0) return null;
   return (
     <View style={styles.subGroup}>
       <Text style={[styles.subLabel, { color }]}>{label}</Text>
-      <View style={styles.people}>
+      <View style={[styles.people, peopleGap]}>
         {people.map((p) => (
           <PersonNode key={p.userId} person={p} onPress={onPersonPress} />
         ))}
@@ -67,7 +69,10 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
   const { t } = useTranslation();
   const isFixed = box.type === 'fixed';
   const present = box.people;
-  const peopleGap = compact ? { gap: 10, rowGap: 12 } : { gap: 14, rowGap: 12 };
+  // In the half-width (compact) card, keep the gap tight so two 60px person
+  // tiles still fit two-per-row on a 360px-wide phone. Applied to the present
+  // group AND every sub-group so they stay consistent.
+  const peopleGap = compact ? { gap: 8, rowGap: 12 } : { gap: 14, rowGap: 12 };
   const hasAnyone =
     present.length +
       (box.onRoadPeople?.length || 0) +
@@ -111,10 +116,10 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
               ))}
             </View>
           )}
-          <SubGroup label={t('components.workspaceCard.inField')} people={box.onRoadPeople || []} onPersonPress={onPersonPress} color="#60a5fa" />
-          <SubGroup label={t('components.workspaceCard.offSite')} people={box.remotePeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
-          <SubGroup label={t('components.workspaceCard.offShift', 'Off-shift')} people={box.offShiftPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
-          <SubGroup label={t('components.workspaceCard.offDuty')} people={box.offDutyPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} />
+          <SubGroup label={t('components.workspaceCard.inField')} people={box.onRoadPeople || []} onPersonPress={onPersonPress} color="#60a5fa" peopleGap={peopleGap} />
+          <SubGroup label={t('components.workspaceCard.offSite')} people={box.remotePeople || []} onPersonPress={onPersonPress} color={colors.textMuted} peopleGap={peopleGap} />
+          <SubGroup label={t('components.workspaceCard.offShift', 'Off-shift')} people={box.offShiftPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} peopleGap={peopleGap} />
+          <SubGroup label={t('components.workspaceCard.offDuty')} people={box.offDutyPeople || []} onPersonPress={onPersonPress} color={colors.textMuted} peopleGap={peopleGap} />
         </View>
       ) : (
         <View style={styles.emptyBody}>
