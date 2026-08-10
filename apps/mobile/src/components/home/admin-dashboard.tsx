@@ -7,6 +7,9 @@ import {
   ScrollView,
   RefreshControl,
   Dimensions,
+  Animated,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -523,12 +526,33 @@ export function AdminDashboard() {
   const canClock = hasAccessModule(user || {}, 'clock');
   const myClockedIn = !!user && clockedInUserIds.has(user.id);
 
+  // Activity FAB: slide it out of the way while the list is scrolling (so it
+  // never sits on top of a card's action row), and bring it back when the user
+  // stops or scrolls up. 1 = shown, 0 = hidden.
+  const fabAnim = useRef(new Animated.Value(1)).current;
+  const lastScrollY = useRef(0);
+  const setFab = useCallback((toValue: number) => {
+    Animated.timing(fabAnim, { toValue, duration: 180, useNativeDriver: true }).start();
+  }, [fabAnim]);
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const dy = y - lastScrollY.current;
+    if (dy > 6 && y > 40) setFab(0);        // scrolling down → hide
+    else if (dy < -6) setFab(1);            // scrolling up → reveal
+    lastScrollY.current = y;
+  }, [setFab]);
+  const fabTranslate = fabAnim.interpolate({ inputRange: [0, 1], outputRange: [96, 0] });
+
   return (
     <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        scrollEventThrottle={16}
+        onScroll={onScroll}
+        onScrollEndDrag={() => setFab(1)}
+        onMomentumScrollEnd={() => setFab(1)}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -607,23 +631,31 @@ export function AdminDashboard() {
       </ScrollView>
       </ScreenContainer>
 
-      {/* Activity FAB — premium gradient pill */}
-      <TouchableOpacity style={styles.fabWrap} onPress={() => setActivityOpen(true)} activeOpacity={0.9}>
-        <LinearGradient
-          colors={['#6366f1', '#8b5cf6', '#a855f7']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.fab}
+      {/* Activity FAB — compact circular button; slides away while scrolling */}
+      <Animated.View
+        style={[styles.fabWrap, { opacity: fabAnim, transform: [{ translateX: fabTranslate }] }]}
+        pointerEvents="box-none"
+      >
+        <TouchableOpacity
+          onPress={() => setActivityOpen(true)}
+          activeOpacity={0.9}
+          accessibilityLabel={t('home.admin.activityLabel')}
         >
-          <Ionicons name="flash" size={16} color="#fff" />
-          <Text style={styles.fabText}>{t('home.admin.activityLabel')}</Text>
+          <LinearGradient
+            colors={['#6366f1', '#8b5cf6', '#a855f7']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fab}
+          >
+            <Ionicons name="flash" size={22} color="#fff" />
+          </LinearGradient>
           {pending.length > 0 && (
             <View style={styles.fabBadge}>
               <Text style={styles.fabBadgeText}>{pending.length}</Text>
             </View>
           )}
-        </LinearGradient>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
 
       <ActivitySheet
         visible={activityOpen}
@@ -692,7 +724,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 18,
     bottom: 24,
-    borderRadius: 18,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
@@ -700,22 +731,25 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   fab: {
-    flexDirection: 'row',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 17,
-    paddingVertical: 13,
-    borderRadius: 18,
+    justifyContent: 'center',
   },
-  fabText: { color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
   fabBadge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#f59e0b',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   fabBadgeText: { color: '#1a1a24', fontSize: 10, fontWeight: '800' },
 });
