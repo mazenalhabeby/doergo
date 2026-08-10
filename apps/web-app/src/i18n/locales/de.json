@@ -5654,5 +5654,118 @@
       "memberContact": "{{name}} kann kontaktieren",
       "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space."
     }
+  },
+  "spaceSharing": {
+    "tabTitle": "Freigabe",
+    "invite": {
+      "heading": "Anderes Unternehmen einladen",
+      "intro": "Geben Sie das Board \"{{space}}\" für ein anderes Unternehmen frei, damit es die Arbeit verfolgen kann.",
+      "submit": "Einladung senden"
+    },
+    "fields": {
+      "guestCode": "Code des Gastunternehmens",
+      "guestCodePlaceholder": "z. B. ACME2026",
+      "guestCodeHint": "Fragen Sie das andere Unternehmen nach seinem Beitritts- / Freigabecode.",
+      "level": "Zugriffsstufe",
+      "scope": "Was sichtbar ist",
+      "allowRequests": "Anfragen zulassen",
+      "allowRequestsHint": "Erlauben Sie dem Gast, zusätzliche Aufgaben oder Mitarbeiter anzufragen."
+    },
+    "codeRequired": "Geben Sie den Code des Gastunternehmens ein.",
+    "levels": {
+      "VIEW": {
+        "label": "Ansehen",
+        "description": "Nur das Board lesen."
+      },
+      "CONTRIBUTE": {
+        "label": "Mitwirken",
+        "description": "Board lesen und Anfragen stellen."
+      },
+      "CONTROL": {
+        "label": "Steuern",
+        "description": "Lesen, anfragen und (bald) direkt bearbeiten."
+      }
+    },
+    "scope": {
+      "workers": "Mitarbeiter",
+      "attendance": "Anwesenheit",
+      "tracking": "Standort",
+      "reports": "Berichte",
+      "requestsAllowed": "Anfragen erlaubt",
+      "boardOnly": "Nur Board"
+    },
+    "statuses": {
+      "PENDING": "Ausstehend",
+      "ACTIVE": "Aktiv",
+      "REVOKED": "Widerrufen",
+      "DECLINED": "Abgelehnt"
+    },
+    "shares": {
+      "heading": "Freigegeben für",
+      "intro": "Unternehmen, die Sie zu diesem Space eingeladen haben.",
+      "empty": {
+        "title": "Noch nicht freigegeben",
+        "description": "Laden Sie oben ein anderes Unternehmen ein, um diesen Space freizugeben."
+      },
+      "revoke": "Widerrufen",
+      "revokeTitle": "Zugriff widerrufen?",
+      "revokeConfirm": "{{org}} verliert den Zugriff auf diesen Space."
+    },
+    "requests": {
+      "heading": "Eingehende Anfragen",
+      "intro": "Anfragen von Gastunternehmen zu diesem Space.",
+      "empty": "Keine offenen Anfragen",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen"
+    },
+    "requestTypes": {
+      "TASK": "Aufgabe",
+      "WORKER": "Mitarbeiter"
+    },
+    "requestStatuses": {
+      "PENDING": "Ausstehend",
+      "APPROVED": "Genehmigt",
+      "REJECTED": "Abgelehnt"
+    },
+    "toast": {
+      "invited": "{{org}} eingeladen",
+      "inviteFailed": "Einladung konnte nicht gesendet werden",
+      "updated": "Zugriff aktualisiert",
+      "updateFailed": "Zugriff konnte nicht aktualisiert werden",
+      "revoked": "Zugriff widerrufen",
+      "revokeFailed": "Zugriff konnte nicht widerrufen werden",
+      "requestApproved": "Anfrage genehmigt",
+      "requestRejected": "Anfrage abgelehnt",
+      "requestFailed": "Anfrage konnte nicht bearbeitet werden",
+      "inviteAccepted": "Einladung angenommen",
+      "inviteDeclined": "Einladung abgelehnt",
+      "respondFailed": "Auf die Einladung konnte nicht reagiert werden",
+      "requestSent": "Anfrage gesendet",
+      "requestSendFailed": "Anfrage konnte nicht gesendet werden"
+    },
+    "guest": {
+      "sharedFrom": "Freigegeben von {{org}}",
+      "requestMore": "Mehr anfragen",
+      "tasksHeading": "Aufgaben",
+      "noTasks": "Noch keine Aufgaben auf diesem Board",
+      "myRequests": "Ihre Anfragen",
+      "notFound": {
+        "title": "Space nicht verfügbar",
+        "description": "Dieser freigegebene Space ist für Ihr Unternehmen nicht mehr aktiv."
+      },
+      "inviteTitle": "{{org}} hat den Space \"{{space}}\" für Sie freigegeben",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "sharedWithUs": "Für uns freigegeben",
+      "requestDialogTitle": "Mehr anfragen",
+      "requestDialogDescription": "Bitten Sie den Eigentümer um eine zusätzliche Aufgabe oder einen Mitarbeiter in diesem Space.",
+      "requestType": "Typ",
+      "requestTitle": "Titel",
+      "requestTitlePlaceholder": "Was benötigen Sie?",
+      "requestNote": "Notiz",
+      "requestNotePlaceholder": "Details hinzufügen (optional)",
+      "sendRequest": "Anfrage senden",
+      "titleRequired": "Geben Sie einen Titel für Ihre Anfrage ein."
+    }
   }
 }

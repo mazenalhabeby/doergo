@@ -719,6 +719,8 @@ export interface TasksQueryParams {
   priority?: string;
   page?: number;
   limit?: number;
+  /** Scope tasks to a single space. Used by the guest shared-space view. */
+  spaceId?: string;
 }
 
 // Suggested employee response types
@@ -901,6 +903,8 @@ export const tasksApi = {
       priority: params?.priority !== 'all' ? params?.priority : undefined,
       page: params?.page,
       limit: params?.limit,
+      // The server scopes to this space (incl. cross-org shared spaces).
+      spaceId: params?.spaceId,
     });
 
     const response = await api.get<TasksListResponse>(endpoint);
@@ -4191,6 +4195,134 @@ export const invoicesApi = {
     const response = await api.delete<any>(`/invoices/${id}/items/${itemId}`);
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Space Sharing — cross-org sharing of a space (board) with a guest org.
+// ─────────────────────────────────────────────────────────────────────────────
+export type SpaceShareLevel = 'VIEW' | 'CONTRIBUTE' | 'CONTROL';
+export type SpaceShareStatus = 'PENDING' | 'ACTIVE' | 'REVOKED' | 'DECLINED';
+export type SpaceShareRequestType = 'TASK' | 'WORKER';
+export type SpaceShareRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/** A share as seen by the OWNER of the space. */
+export interface SpaceShare {
+  id: string;
+  spaceId: string;
+  guestOrgName: string;
+  level: SpaceShareLevel;
+  status: SpaceShareStatus;
+  showWorkers: boolean;
+  showAttendance: boolean;
+  showTracking: boolean;
+  showReports: boolean;
+  allowRequests: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** A share as seen by the GUEST org (adds space + owner naming). */
+export interface SharedSpace extends SpaceShare {
+  spaceName: string;
+  ownerOrgName: string;
+}
+
+export interface SpaceShareRequest {
+  id: string;
+  spaceId: string;
+  type: SpaceShareRequestType;
+  title: string;
+  note?: string | null;
+  status: SpaceShareRequestStatus;
+  createdAt: string;
+}
+
+export interface CreateSpaceShareInput {
+  guestOrgCode: string;
+  level: SpaceShareLevel;
+  showWorkers: boolean;
+  showAttendance: boolean;
+  showTracking: boolean;
+  showReports: boolean;
+  allowRequests: boolean;
+}
+
+export interface UpdateSpaceShareInput {
+  level?: SpaceShareLevel;
+  showWorkers?: boolean;
+  showAttendance?: boolean;
+  showTracking?: boolean;
+  showReports?: boolean;
+  allowRequests?: boolean;
+}
+
+export const spaceSharingApi = {
+  // ── Owner side ────────────────────────────────────────────────────────────
+  /** List every share the owner has created on a space. */
+  listShares: async (spaceId: string): Promise<SpaceShare[]> => {
+    const res = await api.get<{ data: SpaceShare[] }>(`/locations/${spaceId}/shares`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  /** Invite a guest org (resolved by its secret join/share code) → PENDING share. */
+  createShare: async (spaceId: string, input: CreateSpaceShareInput): Promise<SpaceShare> => {
+    const res = await api.post<{ data: SpaceShare }>(`/locations/${spaceId}/shares`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  updateShare: async (spaceId: string, shareId: string, input: UpdateSpaceShareInput): Promise<SpaceShare> => {
+    const res = await api.patch<{ data: SpaceShare }>(`/locations/${spaceId}/shares/${shareId}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  /** Revoke a share. */
+  revokeShare: async (spaceId: string, shareId: string): Promise<void> => {
+    const res = await api.delete(`/locations/${spaceId}/shares/${shareId}`);
+    if (res.error) throw new Error(res.error);
+  },
+  /** Incoming "request more" requests raised by guests on a space the owner owns. */
+  listShareRequests: async (spaceId: string, status = 'PENDING'): Promise<SpaceShareRequest[]> => {
+    const res = await api.get<{ data: SpaceShareRequest[] }>(
+      buildUrlWithQuery(`/locations/${spaceId}/share-requests`, { status }),
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  /** Approve / reject an incoming request. */
+  resolveRequest: async (requestId: string, approve: boolean): Promise<void> => {
+    const res = await api.patch(`/share-requests/${requestId}/resolve`, { approve });
+    if (res.error) throw new Error(res.error);
+  },
+
+  // ── Guest side ────────────────────────────────────────────────────────────
+  /** Spaces shared WITH the current org (PENDING invites + ACTIVE shares). */
+  listSharedSpaces: async (): Promise<SharedSpace[]> => {
+    const res = await api.get<{ data: SharedSpace[] }>('/shared-spaces');
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  /** Accept or decline a PENDING invite. */
+  respondToShare: async (shareId: string, accept: boolean): Promise<void> => {
+    const res = await api.post(`/shared-spaces/${shareId}/respond`, { accept });
+    if (res.error) throw new Error(res.error);
+  },
+  /** Raise a "request more" (extra task / worker) against a shared space. */
+  createGuestRequest: async (
+    shareId: string,
+    input: { type: SpaceShareRequestType; title: string; note?: string },
+  ): Promise<SpaceShareRequest> => {
+    const res = await api.post<{ data: SpaceShareRequest }>(`/shared-spaces/${shareId}/requests`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  /** The guest org's own requests on a shared space. */
+  listGuestRequests: async (spaceId: string, status?: string): Promise<SpaceShareRequest[]> => {
+    const res = await api.get<{ data: SpaceShareRequest[] }>(
+      buildUrlWithQuery(`/shared-spaces/${spaceId}/requests`, { status }),
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
   },
 };
 

@@ -5654,5 +5654,118 @@
       "memberContact": "{{name}} può contattare",
       "noPeople": "Nessun altro membro con un ruolo in questo spazio."
     }
+  },
+  "spaceSharing": {
+    "tabTitle": "Condivisione",
+    "invite": {
+      "heading": "Invita un'altra azienda",
+      "intro": "Condividi la bacheca \"{{space}}\" con un'altra organizzazione affinché possa seguire il lavoro.",
+      "submit": "Invia invito"
+    },
+    "fields": {
+      "guestCode": "Codice dell'azienda ospite",
+      "guestCodePlaceholder": "es. ACME2026",
+      "guestCodeHint": "Chiedi all'altra azienda il suo codice di adesione / condivisione.",
+      "level": "Livello di accesso",
+      "scope": "Cosa possono vedere",
+      "allowRequests": "Consenti richieste",
+      "allowRequestsHint": "Consenti all'ospite di richiedere attività o lavoratori aggiuntivi."
+    },
+    "codeRequired": "Inserisci il codice dell'azienda ospite.",
+    "levels": {
+      "VIEW": {
+        "label": "Visualizza",
+        "description": "Leggere solo la bacheca."
+      },
+      "CONTRIBUTE": {
+        "label": "Contribuisci",
+        "description": "Leggere la bacheca e creare richieste."
+      },
+      "CONTROL": {
+        "label": "Controlla",
+        "description": "Leggere, richiedere e (presto) modificare direttamente."
+      }
+    },
+    "scope": {
+      "workers": "Lavoratori",
+      "attendance": "Presenze",
+      "tracking": "Posizione",
+      "reports": "Report",
+      "requestsAllowed": "Richieste consentite",
+      "boardOnly": "Solo bacheca"
+    },
+    "statuses": {
+      "PENDING": "In attesa",
+      "ACTIVE": "Attivo",
+      "REVOKED": "Revocato",
+      "DECLINED": "Rifiutato"
+    },
+    "shares": {
+      "heading": "Condiviso con",
+      "intro": "Aziende che hai invitato in questo spazio.",
+      "empty": {
+        "title": "Non ancora condiviso",
+        "description": "Invita un'altra azienda qui sopra per condividere questo spazio."
+      },
+      "revoke": "Revoca",
+      "revokeTitle": "Revocare l'accesso?",
+      "revokeConfirm": "{{org}} perderà l'accesso a questo spazio."
+    },
+    "requests": {
+      "heading": "Richieste in arrivo",
+      "intro": "Richieste create dalle aziende ospiti su questo spazio.",
+      "empty": "Nessuna richiesta in sospeso",
+      "approve": "Approva",
+      "reject": "Rifiuta"
+    },
+    "requestTypes": {
+      "TASK": "Attività",
+      "WORKER": "Lavoratore"
+    },
+    "requestStatuses": {
+      "PENDING": "In attesa",
+      "APPROVED": "Approvata",
+      "REJECTED": "Rifiutata"
+    },
+    "toast": {
+      "invited": "{{org}} invitata",
+      "inviteFailed": "Impossibile inviare l'invito",
+      "updated": "Accesso aggiornato",
+      "updateFailed": "Impossibile aggiornare l'accesso",
+      "revoked": "Accesso revocato",
+      "revokeFailed": "Impossibile revocare l'accesso",
+      "requestApproved": "Richiesta approvata",
+      "requestRejected": "Richiesta rifiutata",
+      "requestFailed": "Impossibile gestire la richiesta",
+      "inviteAccepted": "Invito accettato",
+      "inviteDeclined": "Invito rifiutato",
+      "respondFailed": "Impossibile rispondere all'invito",
+      "requestSent": "Richiesta inviata",
+      "requestSendFailed": "Impossibile inviare la richiesta"
+    },
+    "guest": {
+      "sharedFrom": "Condiviso da {{org}}",
+      "requestMore": "Richiedi altro",
+      "tasksHeading": "Attività",
+      "noTasks": "Ancora nessuna attività su questa bacheca",
+      "myRequests": "Le tue richieste",
+      "notFound": {
+        "title": "Spazio non disponibile",
+        "description": "Questo spazio condiviso non è più attivo per la tua organizzazione."
+      },
+      "inviteTitle": "{{org}} ha condiviso lo spazio \"{{space}}\" con te",
+      "accept": "Accetta",
+      "decline": "Rifiuta",
+      "sharedWithUs": "Condiviso con noi",
+      "requestDialogTitle": "Richiedi altro",
+      "requestDialogDescription": "Chiedi al proprietario un'attività o un lavoratore aggiuntivo su questo spazio.",
+      "requestType": "Tipo",
+      "requestTitle": "Titolo",
+      "requestTitlePlaceholder": "Di cosa hai bisogno?",
+      "requestNote": "Nota",
+      "requestNotePlaceholder": "Aggiungi dettagli (facoltativo)",
+      "sendRequest": "Invia richiesta",
+      "titleRequired": "Inserisci un titolo per la tua richiesta."
+    }
   }
 }

@@ -5654,5 +5654,118 @@
       "memberContact": "{{name}} puede contactar",
       "noPeople": "No hay otros miembros con un rol en este espacio."
     }
+  },
+  "spaceSharing": {
+    "tabTitle": "Compartir",
+    "invite": {
+      "heading": "Invitar a otra empresa",
+      "intro": "Comparta el tablero \"{{space}}\" con otra organización para que pueda seguir el trabajo.",
+      "submit": "Enviar invitación"
+    },
+    "fields": {
+      "guestCode": "Código de la empresa invitada",
+      "guestCodePlaceholder": "p. ej. ACME2026",
+      "guestCodeHint": "Pida a la otra empresa su código de unión / compartición.",
+      "level": "Nivel de acceso",
+      "scope": "Qué pueden ver",
+      "allowRequests": "Permitir solicitudes",
+      "allowRequestsHint": "Permita que el invitado solicite tareas o trabajadores adicionales."
+    },
+    "codeRequired": "Introduzca el código de la empresa invitada.",
+    "levels": {
+      "VIEW": {
+        "label": "Ver",
+        "description": "Solo leer el tablero."
+      },
+      "CONTRIBUTE": {
+        "label": "Contribuir",
+        "description": "Leer el tablero y crear solicitudes."
+      },
+      "CONTROL": {
+        "label": "Controlar",
+        "description": "Leer, solicitar y (pronto) editar directamente."
+      }
+    },
+    "scope": {
+      "workers": "Trabajadores",
+      "attendance": "Asistencia",
+      "tracking": "Ubicación",
+      "reports": "Informes",
+      "requestsAllowed": "Solicitudes permitidas",
+      "boardOnly": "Solo tablero"
+    },
+    "statuses": {
+      "PENDING": "Pendiente",
+      "ACTIVE": "Activo",
+      "REVOKED": "Revocado",
+      "DECLINED": "Rechazado"
+    },
+    "shares": {
+      "heading": "Compartido con",
+      "intro": "Empresas que ha invitado a este espacio.",
+      "empty": {
+        "title": "Aún no compartido",
+        "description": "Invite a otra empresa arriba para compartir este espacio."
+      },
+      "revoke": "Revocar",
+      "revokeTitle": "¿Revocar acceso?",
+      "revokeConfirm": "{{org}} perderá el acceso a este espacio."
+    },
+    "requests": {
+      "heading": "Solicitudes entrantes",
+      "intro": "Solicitudes creadas por empresas invitadas en este espacio.",
+      "empty": "Sin solicitudes pendientes",
+      "approve": "Aprobar",
+      "reject": "Rechazar"
+    },
+    "requestTypes": {
+      "TASK": "Tarea",
+      "WORKER": "Trabajador"
+    },
+    "requestStatuses": {
+      "PENDING": "Pendiente",
+      "APPROVED": "Aprobada",
+      "REJECTED": "Rechazada"
+    },
+    "toast": {
+      "invited": "{{org}} invitado",
+      "inviteFailed": "No se pudo enviar la invitación",
+      "updated": "Acceso actualizado",
+      "updateFailed": "No se pudo actualizar el acceso",
+      "revoked": "Acceso revocado",
+      "revokeFailed": "No se pudo revocar el acceso",
+      "requestApproved": "Solicitud aprobada",
+      "requestRejected": "Solicitud rechazada",
+      "requestFailed": "No se pudo resolver la solicitud",
+      "inviteAccepted": "Invitación aceptada",
+      "inviteDeclined": "Invitación rechazada",
+      "respondFailed": "No se pudo responder a la invitación",
+      "requestSent": "Solicitud enviada",
+      "requestSendFailed": "No se pudo enviar la solicitud"
+    },
+    "guest": {
+      "sharedFrom": "Compartido por {{org}}",
+      "requestMore": "Solicitar más",
+      "tasksHeading": "Tareas",
+      "noTasks": "Aún no hay tareas en este tablero",
+      "myRequests": "Sus solicitudes",
+      "notFound": {
+        "title": "Espacio no disponible",
+        "description": "Este espacio compartido ya no está activo para su organización."
+      },
+      "inviteTitle": "{{org}} compartió el espacio \"{{space}}\" con usted",
+      "accept": "Aceptar",
+      "decline": "Rechazar",
+      "sharedWithUs": "Compartido con nosotros",
+      "requestDialogTitle": "Solicitar más",
+      "requestDialogDescription": "Pida al propietario una tarea o un trabajador adicional en este espacio.",
+      "requestType": "Tipo",
+      "requestTitle": "Título",
+      "requestTitlePlaceholder": "¿Qué necesita?",
+      "requestNote": "Nota",
+      "requestNotePlaceholder": "Añada detalles (opcional)",
+      "sendRequest": "Enviar solicitud",
+      "titleRequired": "Introduzca un título para su solicitud."
+    }
   }
 }

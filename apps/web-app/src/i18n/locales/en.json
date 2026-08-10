@@ -5654,5 +5654,118 @@
       "memberContact": "{{name}} can contact",
       "noPeople": "No other members with a role in this space."
     }
+  },
+  "spaceSharing": {
+    "tabTitle": "Sharing",
+    "invite": {
+      "heading": "Invite another company",
+      "intro": "Share the \"{{space}}\" board with another organization so they can follow the work.",
+      "submit": "Send invite"
+    },
+    "fields": {
+      "guestCode": "Guest company code",
+      "guestCodePlaceholder": "e.g. ACME2026",
+      "guestCodeHint": "Ask the other company for their join / share code.",
+      "level": "Access level",
+      "scope": "What they can see",
+      "allowRequests": "Allow requests",
+      "allowRequestsHint": "Let the guest ask for extra tasks or workers."
+    },
+    "codeRequired": "Enter the guest company code.",
+    "levels": {
+      "VIEW": {
+        "label": "View",
+        "description": "Read the board only."
+      },
+      "CONTRIBUTE": {
+        "label": "Contribute",
+        "description": "Read the board and raise requests."
+      },
+      "CONTROL": {
+        "label": "Control",
+        "description": "Read, request, and (soon) edit directly."
+      }
+    },
+    "scope": {
+      "workers": "Workers",
+      "attendance": "Attendance",
+      "tracking": "Tracking",
+      "reports": "Reports",
+      "requestsAllowed": "Requests allowed",
+      "boardOnly": "Board only"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "ACTIVE": "Active",
+      "REVOKED": "Revoked",
+      "DECLINED": "Declined"
+    },
+    "shares": {
+      "heading": "Shared with",
+      "intro": "Companies you've invited to this space.",
+      "empty": {
+        "title": "Not shared yet",
+        "description": "Invite another company above to share this space."
+      },
+      "revoke": "Revoke",
+      "revokeTitle": "Revoke access?",
+      "revokeConfirm": "{{org}} will lose access to this space."
+    },
+    "requests": {
+      "heading": "Incoming requests",
+      "intro": "Requests raised by guest companies on this space.",
+      "empty": "No pending requests",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "requestTypes": {
+      "TASK": "Task",
+      "WORKER": "Worker"
+    },
+    "requestStatuses": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
+    "toast": {
+      "invited": "Invited {{org}}",
+      "inviteFailed": "Could not send the invite",
+      "updated": "Access updated",
+      "updateFailed": "Could not update access",
+      "revoked": "Access revoked",
+      "revokeFailed": "Could not revoke access",
+      "requestApproved": "Request approved",
+      "requestRejected": "Request rejected",
+      "requestFailed": "Could not resolve the request",
+      "inviteAccepted": "Invitation accepted",
+      "inviteDeclined": "Invitation declined",
+      "respondFailed": "Could not respond to the invitation",
+      "requestSent": "Request sent",
+      "requestSendFailed": "Could not send the request"
+    },
+    "guest": {
+      "sharedFrom": "Shared from {{org}}",
+      "requestMore": "Request more",
+      "tasksHeading": "Tasks",
+      "noTasks": "No tasks on this board yet",
+      "myRequests": "Your requests",
+      "notFound": {
+        "title": "Space not available",
+        "description": "This shared space is no longer active for your organization."
+      },
+      "inviteTitle": "{{org}} shared the \"{{space}}\" space with you",
+      "accept": "Accept",
+      "decline": "Decline",
+      "sharedWithUs": "Shared with us",
+      "requestDialogTitle": "Request more",
+      "requestDialogDescription": "Ask the owner for an extra task or worker on this space.",
+      "requestType": "Type",
+      "requestTitle": "Title",
+      "requestTitlePlaceholder": "What do you need?",
+      "requestNote": "Note",
+      "requestNotePlaceholder": "Add any details (optional)",
+      "sendRequest": "Send request",
+      "titleRequired": "Enter a title for your request."
+    }
   }
 }

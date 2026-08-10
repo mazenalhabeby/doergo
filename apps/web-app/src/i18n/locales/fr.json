@@ -5654,5 +5654,118 @@
       "memberContact": "{{name}} peut contacter",
       "noPeople": "Aucun autre membre avec un rôle dans cet espace."
     }
+  },
+  "spaceSharing": {
+    "tabTitle": "Partage",
+    "invite": {
+      "heading": "Inviter une autre entreprise",
+      "intro": "Partagez le tableau \"{{space}}\" avec une autre organisation pour qu'elle puisse suivre le travail.",
+      "submit": "Envoyer l'invitation"
+    },
+    "fields": {
+      "guestCode": "Code de l'entreprise invitée",
+      "guestCodePlaceholder": "p. ex. ACME2026",
+      "guestCodeHint": "Demandez à l'autre entreprise son code d'adhésion / de partage.",
+      "level": "Niveau d'accès",
+      "scope": "Ce qu'elle peut voir",
+      "allowRequests": "Autoriser les demandes",
+      "allowRequestsHint": "Permettez à l'invité de demander des tâches ou des employés supplémentaires."
+    },
+    "codeRequired": "Saisissez le code de l'entreprise invitée.",
+    "levels": {
+      "VIEW": {
+        "label": "Consulter",
+        "description": "Lire le tableau uniquement."
+      },
+      "CONTRIBUTE": {
+        "label": "Contribuer",
+        "description": "Lire le tableau et créer des demandes."
+      },
+      "CONTROL": {
+        "label": "Contrôler",
+        "description": "Lire, demander et (bientôt) modifier directement."
+      }
+    },
+    "scope": {
+      "workers": "Employés",
+      "attendance": "Présence",
+      "tracking": "Localisation",
+      "reports": "Rapports",
+      "requestsAllowed": "Demandes autorisées",
+      "boardOnly": "Tableau uniquement"
+    },
+    "statuses": {
+      "PENDING": "En attente",
+      "ACTIVE": "Actif",
+      "REVOKED": "Révoqué",
+      "DECLINED": "Refusé"
+    },
+    "shares": {
+      "heading": "Partagé avec",
+      "intro": "Entreprises que vous avez invitées dans cet espace.",
+      "empty": {
+        "title": "Pas encore partagé",
+        "description": "Invitez une autre entreprise ci-dessus pour partager cet espace."
+      },
+      "revoke": "Révoquer",
+      "revokeTitle": "Révoquer l'accès ?",
+      "revokeConfirm": "{{org}} perdra l'accès à cet espace."
+    },
+    "requests": {
+      "heading": "Demandes entrantes",
+      "intro": "Demandes créées par les entreprises invitées sur cet espace.",
+      "empty": "Aucune demande en attente",
+      "approve": "Approuver",
+      "reject": "Refuser"
+    },
+    "requestTypes": {
+      "TASK": "Tâche",
+      "WORKER": "Employé"
+    },
+    "requestStatuses": {
+      "PENDING": "En attente",
+      "APPROVED": "Approuvée",
+      "REJECTED": "Refusée"
+    },
+    "toast": {
+      "invited": "{{org}} invité",
+      "inviteFailed": "Impossible d'envoyer l'invitation",
+      "updated": "Accès mis à jour",
+      "updateFailed": "Impossible de mettre à jour l'accès",
+      "revoked": "Accès révoqué",
+      "revokeFailed": "Impossible de révoquer l'accès",
+      "requestApproved": "Demande approuvée",
+      "requestRejected": "Demande refusée",
+      "requestFailed": "Impossible de traiter la demande",
+      "inviteAccepted": "Invitation acceptée",
+      "inviteDeclined": "Invitation refusée",
+      "respondFailed": "Impossible de répondre à l'invitation",
+      "requestSent": "Demande envoyée",
+      "requestSendFailed": "Impossible d'envoyer la demande"
+    },
+    "guest": {
+      "sharedFrom": "Partagé par {{org}}",
+      "requestMore": "Demander plus",
+      "tasksHeading": "Tâches",
+      "noTasks": "Aucune tâche sur ce tableau pour le moment",
+      "myRequests": "Vos demandes",
+      "notFound": {
+        "title": "Espace indisponible",
+        "description": "Cet espace partagé n'est plus actif pour votre organisation."
+      },
+      "inviteTitle": "{{org}} a partagé l'espace \"{{space}}\" avec vous",
+      "accept": "Accepter",
+      "decline": "Refuser",
+      "sharedWithUs": "Partagé avec nous",
+      "requestDialogTitle": "Demander plus",
+      "requestDialogDescription": "Demandez au propriétaire une tâche ou un employé supplémentaire sur cet espace.",
+      "requestType": "Type",
+      "requestTitle": "Titre",
+      "requestTitlePlaceholder": "De quoi avez-vous besoin ?",
+      "requestNote": "Note",
+      "requestNotePlaceholder": "Ajoutez des détails (facultatif)",
+      "sendRequest": "Envoyer la demande",
+      "titleRequired": "Saisissez un titre pour votre demande."
+    }
   }
 }

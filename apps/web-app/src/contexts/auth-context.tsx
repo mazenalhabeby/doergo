@@ -54,7 +54,27 @@ export interface User {
   // Avatar
   avatarUrl?: string | null;
   // Unified resolved access (Phase 2): org-wide ∪ per-space permission grants.
-  access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> };
+  access?: {
+    org?: Record<string, boolean>;
+    perSpace?: Record<string, Record<string, boolean>>;
+    // ACTIVE cross-org shared spaces this user can open (guest side). Populated
+    // by the backend on /auth/me so the guest UI needs no extra fetch.
+    sharedSpaces?: SharedSpaceAccess[];
+  };
+}
+
+/** An ACTIVE space shared with the current org, as surfaced in the auth context. */
+export interface SharedSpaceAccess {
+  spaceId: string;
+  ownerOrgId: string;
+  ownerOrgName: string;
+  spaceName: string;
+  level: 'VIEW' | 'CONTRIBUTE' | 'CONTROL';
+  showWorkers: boolean;
+  showAttendance: boolean;
+  showTracking: boolean;
+  showReports: boolean;
+  allowRequests: boolean;
 }
 
 // Token info type

@@ -11,6 +11,7 @@ import {
   CalendarClock,
   FileText,
   Loader2,
+  Share2,
   ShieldAlert,
   UserCog,
   Workflow,
@@ -28,6 +29,7 @@ import { ModulesTab } from "./_components/modules-tab"
 import { WorkflowTab } from "./_components/workflow-tab"
 import { MembersTab } from "./_components/members-tab"
 import { InvoicesTab } from "./_components/invoices-tab"
+import { SharingTab } from "./_components/sharing-tab"
 
 export default function SpaceSettingsPage() {
   const { t } = useTranslation()
@@ -130,6 +132,11 @@ export default function SpaceSettingsPage() {
                 <UserCog className="h-4 w-4" />
                 {t("scheduling.tabs.members")}
               </TabsTrigger>
+              {/* Cross-org space sharing — available to anyone who can manage the space. */}
+              <TabsTrigger value="sharing" className="gap-1.5">
+                <Share2 className="h-4 w-4" />
+                {t("spaceSharing.tabTitle")}
+              </TabsTrigger>
               {/* Invoices tab only for CUSTOMER-kind spaces (customer companies). */}
               {space?.kind === "CUSTOMER" && (
                 <TabsTrigger value="invoices" className="gap-1.5">
@@ -159,6 +166,9 @@ export default function SpaceSettingsPage() {
             </TabsContent>
             <TabsContent value="members" className="mt-6">
               <MembersTab spaceId={spaceId} />
+            </TabsContent>
+            <TabsContent value="sharing" className="mt-6">
+              <SharingTab spaceId={spaceId} spaceName={space.name} />
             </TabsContent>
             {space?.kind === "CUSTOMER" && (
               <TabsContent value="invoices" className="mt-6">
