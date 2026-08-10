@@ -507,6 +507,24 @@ export function AdminDashboard() {
     return tasks.filter((tk) => tk.assignedToId === selectedMemberId && ACTIVE.includes(tk.status));
   }, [selectedMemberId, tasks]);
 
+  // Activity FAB: slide it out of the way while the list is scrolling (so it
+  // never sits on top of a card's action row), and bring it back when the user
+  // stops or scrolls up. 1 = shown, 0 = hidden. NOTE: these hooks MUST stay
+  // above the early returns below (Rules of Hooks — same hook order every render).
+  const fabAnim = useRef(new Animated.Value(1)).current;
+  const lastScrollY = useRef(0);
+  const setFab = useCallback((toValue: number) => {
+    Animated.timing(fabAnim, { toValue, duration: 180, useNativeDriver: true }).start();
+  }, [fabAnim]);
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const dy = y - lastScrollY.current;
+    if (dy > 6 && y > 40) setFab(0);        // scrolling down → hide
+    else if (dy < -6) setFab(1);            // scrolling up → reveal
+    lastScrollY.current = y;
+  }, [setFab]);
+  const fabTranslate = fabAnim.interpolate({ inputRange: [0, 1], outputRange: [96, 0] });
+
   // ── Render ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -525,23 +543,6 @@ export function AdminDashboard() {
   // screen (GPS/geofence flow lives there — no duplication).
   const canClock = hasAccessModule(user || {}, 'clock');
   const myClockedIn = !!user && clockedInUserIds.has(user.id);
-
-  // Activity FAB: slide it out of the way while the list is scrolling (so it
-  // never sits on top of a card's action row), and bring it back when the user
-  // stops or scrolls up. 1 = shown, 0 = hidden.
-  const fabAnim = useRef(new Animated.Value(1)).current;
-  const lastScrollY = useRef(0);
-  const setFab = useCallback((toValue: number) => {
-    Animated.timing(fabAnim, { toValue, duration: 180, useNativeDriver: true }).start();
-  }, [fabAnim]);
-  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y;
-    const dy = y - lastScrollY.current;
-    if (dy > 6 && y > 40) setFab(0);        // scrolling down → hide
-    else if (dy < -6) setFab(1);            // scrolling up → reveal
-    lastScrollY.current = y;
-  }, [setFab]);
-  const fabTranslate = fabAnim.interpolate({ inputRange: [0, 1], outputRange: [96, 0] });
 
   return (
     <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
