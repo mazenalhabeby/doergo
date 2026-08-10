@@ -250,6 +250,10 @@ export function HybridHome() {
 
   const getDistanceToLocation = (location: CompanyLocation): number | null => {
     if (!currentLocation) return null;
+    // A logical space (or one whose map location was never set) has no
+    // coordinates — there's no geofence and no meaningful distance. Guard against
+    // null/undefined so we never render a garbage "away 8901km" reading.
+    if (location.lat == null || location.lng == null) return null;
     return haversineDistance(currentLocation.lat, currentLocation.lng, location.lat, location.lng);
   };
 
