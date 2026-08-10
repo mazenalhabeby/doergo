@@ -72,9 +72,10 @@ export class AttendanceService {
     userId: string,
     space: ResolverSpace,
     clockInAt: Date,
+    clockInTz?: string,
   ): Promise<{ shiftId?: string; expectedClockOutAt?: Date; nextRemindAt?: Date }> {
     try {
-      const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt });
+      const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt, clockInTz });
       if (!resolved) return this.unscheduledStamp(clockInAt);
       return {
         ...(resolved.shiftId ? { shiftId: resolved.shiftId } : {}),
@@ -158,7 +159,14 @@ export class AttendanceService {
       const bucket = await this.getOrCreateRemoteBucket(data.organizationId);
       const place = await this.reverseGeocode(data.lat, data.lng);
       const remoteClockInAt = new Date();
-      const remoteStamp = await this.buildShiftStamp(data.userId, bucket, remoteClockInAt);
+      // Remote clock-in: the bucket is a logical (pin-less) space, so anchor the
+      // shift to the worker's own timezone.
+      const remoteStamp = await this.buildShiftStamp(
+        data.userId,
+        bucket,
+        remoteClockInAt,
+        this.resolveEntryTimezone(data.lat, data.lng, bucket.timezone) ?? undefined,
+      );
       const entry = await this.prisma.timeEntry.create({
         data: {
           userId: data.userId,
@@ -302,8 +310,15 @@ export class AttendanceService {
 
     const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
 
-    // Resolve the shift expectation once, now, as an absolute instant.
-    const shiftStamp = await this.buildShiftStamp(data.userId, location, clockInTime);
+    // Resolve the shift expectation once, now, as an absolute instant. Pass the
+    // worker's clock-in timezone so a LOGICAL (pin-less) space anchors the shift
+    // to where the worker actually is.
+    const shiftStamp = await this.buildShiftStamp(
+      data.userId,
+      location,
+      clockInTime,
+      this.resolveEntryTimezone(data.lat, data.lng, location.timezone) ?? undefined,
+    );
 
     // Create time entry
     const entry = await this.prisma.timeEntry.create({

@@ -9,6 +9,12 @@ export interface ResolverSpace {
   id: string;
   timezone: string;
   workModel: WorkModel | string;
+  // Coordinates decide physical vs logical. A PHYSICAL space (has a pin) anchors
+  // its shifts to the SITE's timezone (one clock for everyone on site). A LOGICAL
+  // space (no pin) has no inherent timezone, so its shifts are anchored to each
+  // worker's own clock-in timezone (18:00–06:00 = their local evening→morning).
+  lat?: number | null;
+  lng?: number | null;
 }
 
 /**
@@ -48,6 +54,9 @@ export class ShiftResolverService {
     userId: string;
     space: ResolverSpace;
     clockInAt: Date;
+    /** The worker's own timezone (from their clock-in GPS). Used ONLY for logical
+     *  (pin-less) spaces, where shifts are anchored to the worker, not a site. */
+    clockInTz?: string;
   }): Promise<ResolvedShift | null> {
     const { userId, space, clockInAt } = params;
     const workModel = (space.workModel ?? WorkModel.NONE) as WorkModel;
@@ -62,7 +71,14 @@ export class ShiftResolverService {
       return null;
     }
 
-    const tz = space.timezone || 'UTC';
+    // Physical space (has coordinates) → the SITE's timezone anchors the shift for
+    // everyone. Logical space (no pin) → anchor to the WORKER's clock-in timezone
+    // so "18:00–06:00" means their local evening→morning wherever they are. Falls
+    // back to the space tz then UTC when the worker tz is unavailable.
+    const spaceIsPhysical = space.lat != null && space.lng != null;
+    const tz = spaceIsPhysical
+      ? space.timezone || 'UTC'
+      : params.clockInTz || space.timezone || 'UTC';
     const local = this.getLocal(clockInAt, tz);
 
     // ── 1. Rota assignment ──────────────────────────────────────────────
