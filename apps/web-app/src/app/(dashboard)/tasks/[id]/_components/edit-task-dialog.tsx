@@ -35,6 +35,7 @@ import {
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { PrioritySelector } from "@/components/tasks"
+import { useSpaceModules } from "@/hooks/use-space-modules"
 
 interface EditTaskDialogProps {
   task: Task
@@ -65,6 +66,12 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
   const [sprintId, setSprintId] = useState<string>(task.sprintId || "none")
   // Flow (task type / workflow) — "none" = simple canonical flow.
   const [workflowId, setWorkflowId] = useState<string>(task.workflowId || "none")
+
+  // Phase & Sprint are agile modules — only relevant when the task's SPACE has
+  // them enabled (a property/field space won't; a project/software space will).
+  const { hasModule } = useSpaceModules(task.spaceId ?? null)
+  const showPhases = hasModule("phases")
+  const showSprints = hasModule("sprints")
 
   // Fetch phases, sprints, and the org's flows (task types)
   const { data: flows } = useQuery({
@@ -301,8 +308,10 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
             <p className="text-xs text-muted-foreground">{t("tasks.edit.flowHint", "Changing the flow updates the task's stages. Its status moves to the new flow's first stage if the current one doesn't exist there.")}</p>
           </div>
 
-          {/* Phase & Sprint */}
+          {/* Phase & Sprint — only for spaces with the agile modules enabled */}
+          {(showPhases || showSprints) && (
           <div className="grid gap-4 sm:grid-cols-2">
+            {showPhases && (
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">{t("tasks.sidebar.phase")}</Label>
               <Select value={phaseId} onValueChange={setPhaseId} disabled={updateMutation.isPending}>
@@ -322,7 +331,9 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                 </SelectContent>
               </Select>
             </div>
+            )}
 
+            {showSprints && (
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">{t("tasks.sidebar.sprint")}</Label>
               <Select value={sprintId} onValueChange={setSprintId} disabled={updateMutation.isPending}>
@@ -339,7 +350,9 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                 </SelectContent>
               </Select>
             </div>
+            )}
           </div>
+          )}
 
           <DialogFooter className="pt-2">
             <Button
