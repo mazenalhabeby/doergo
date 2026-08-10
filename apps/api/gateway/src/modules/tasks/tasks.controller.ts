@@ -16,7 +16,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role, canCreateTaskFor, minTierForFeature } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { isFeatureEntitled } from '../../common/entitlements';
 import {
@@ -86,29 +86,38 @@ export class TasksController {
   }
 
   @Post()
-  @RequirePermission('canCreateTasks')
+  @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Create a new task' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
     this.assertTaskFieldEntitlements(req.user, createTaskDto);
-    const scope = req.user.taskCreationScope || 'NONE';
 
-    // NONE scope cannot create tasks (should be caught by canCreateTasks guard, but double-check)
-    if (scope === 'NONE') {
-      throw new ForbiddenException('You do not have permission to create tasks.');
+    // Creating into a cross-org space shared with the caller: the caller's OWN-org
+    // taskCreationScope (NONE/SELF/SPACE) doesn't apply — the per-space grant
+    // governs, and the task-service authorizes against the real space + the
+    // forwarded access. Detect it (server-authoritative) and skip own-org scoping.
+    const targetSpaceId = (createTaskDto as any).spaceId;
+    const isForeignShared =
+      !!targetSpaceId && (req.user.access?.sharedSpaces ?? []).some((s: any) => s.spaceId === targetSpaceId);
+
+    if (!isForeignShared) {
+      const scope = req.user.taskCreationScope || 'NONE';
+      // NONE scope cannot create tasks (guard should catch, but double-check)
+      if (scope === 'NONE') {
+        throw new ForbiddenException('You do not have permission to create tasks.');
+      }
+      // SELF scope: force assignedToId to the current user
+      if (scope === 'SELF') {
+        createTaskDto.assignedToId = req.user.id;
+      }
+      // SPACE scope: assignee validation handled by task-service (space membership)
+      // ORG scope: no restrictions on assignee
     }
-
-    // SELF scope: force assignedToId to the current user
-    if (scope === 'SELF') {
-      createTaskDto.assignedToId = req.user.id;
-    }
-
-    // SPACE scope: assignee validation is handled by the task-service (space membership check)
-    // ORG scope: no restrictions on assignee
 
     return this.tasksQueueService.createTask({
       ...createTaskDto,
       userId: req.user.id,
       organizationId: req.user.organizationId,
+      access: req.user.access, // server-authoritative; task-service enforces the real space
     });
   }
 
@@ -219,7 +228,7 @@ export class TasksController {
   }
 
   @Put(':id')
-  @RequirePermission('canCreateTasks')
+  @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Update a task' })
   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
     this.assertTaskFieldEntitlements(req.user, updateTaskDto);
@@ -231,11 +240,12 @@ export class TasksController {
       canViewAllTasks: req.user.canViewAllTasks,
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
+      access: req.user.access, // task-service enforces the real space for foreign tasks
     });
   }
 
   @Patch(':id/assign')
-  @RequirePermission('canAssignTasks')
+  @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Assign a task to an employee' })
   async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: any) {
     return this.tasksQueueService.assignTask({
@@ -246,6 +256,7 @@ export class TasksController {
       canViewAllTasks: req.user.canViewAllTasks,
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
+      access: req.user.access, // task-service enforces the real space for foreign tasks
     });
   }
 

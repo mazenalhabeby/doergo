@@ -80,8 +80,14 @@ export default function SharedSpaceViewPage() {
   // extra fetch. workers/attendance/tracking are gated by show* flags for a later
   // phase; v1 renders the read-only board + (optionally) request-more.
   const share = user?.access?.sharedSpaces?.find((s) => s.spaceId === spaceId)
+  // Capabilities for THIS space (from the server-resolved grant): CONTRIBUTE/CONTROL
+  // can create; CONTROL can assign. Drives the direct-control UI (backend enforces).
+  const perSpace = (user?.access as any)?.perSpace?.[spaceId] || {}
+  const canCreate = !!perSpace.canCreateTasks
+  const canAssign = !!perSpace.canAssignTasks
 
   const [requestOpen, setRequestOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const { data: taskData, isLoading } = useQuery({
     queryKey: ["shared-space-tasks", spaceId],
@@ -101,6 +107,16 @@ export default function SharedSpaceViewPage() {
     queryKey: ["shared-space-workers", spaceId],
     queryFn: () => locationsApi.getAssignedMembers(spaceId),
     enabled: !!share && !!share.showWorkers,
+  })
+
+  const queryClient = useQueryClient()
+  const assignMutation = useMutation({
+    mutationFn: ({ taskId, workerId }: { taskId: string; workerId: string }) => tasksApi.assign(taskId, workerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shared-space-tasks", spaceId] })
+      notify.success(t("spaceSharing.guest.assigned", "Task assigned"))
+    },
+    onError: (e: Error) => notify.error(e.message),
   })
 
   // The auth context surfaces the share by spaceId but not its share id, which the
@@ -168,12 +184,20 @@ export default function SharedSpaceViewPage() {
                 </div>
               </div>
             </div>
-            {share.allowRequests && (
-              <Button onClick={() => setRequestOpen(true)} className="gap-1.5 shrink-0">
-                <Plus className="h-4 w-4" />
-                {t("spaceSharing.guest.requestMore")}
-              </Button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {canCreate && (
+                <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
+                  <Plus className="h-4 w-4" />
+                  {t("spaceSharing.guest.newTask", "New task")}
+                </Button>
+              )}
+              {share.allowRequests && (
+                <Button variant={canCreate ? "outline" : "default"} onClick={() => setRequestOpen(true)} className="gap-1.5">
+                  {!canCreate && <Plus className="h-4 w-4" />}
+                  {t("spaceSharing.guest.requestMore")}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -227,6 +251,27 @@ export default function SharedSpaceViewPage() {
                       </span>
                     )}
                   </div>
+                  {/* CONTROL guests can assign the owner's workers directly. */}
+                  {canAssign && workers && workers.length > 0 && (
+                    <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-2.5">
+                      <span className="text-[11px] text-muted-foreground">{t("spaceSharing.guest.assignTo", "Assign to")}</span>
+                      <Select
+                        value={task.assignedTo?.id || ""}
+                        onValueChange={(v) => assignMutation.mutate({ taskId: task.id, workerId: v })}
+                      >
+                        <SelectTrigger className="h-7 w-[190px] text-xs">
+                          <SelectValue placeholder={t("spaceSharing.guest.unassigned", "Unassigned")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {workers.map((w: any) => (
+                            <SelectItem key={w.user?.id} value={w.user?.id}>
+                              {w.user?.firstName} {w.user?.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -293,8 +338,80 @@ export default function SharedSpaceViewPage() {
         {share.allowRequests && (
           <RequestMoreDialog spaceId={spaceId} shareId={shareId} open={requestOpen} onOpenChange={setRequestOpen} />
         )}
+        {canCreate && (
+          <CreateTaskDialog spaceId={spaceId} open={createOpen} onOpenChange={setCreateOpen} />
+        )}
       </div>
     </div>
+  )
+}
+
+function CreateTaskDialog({
+  spaceId,
+  open,
+  onOpenChange,
+}: {
+  spaceId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [priority, setPriority] = useState("MEDIUM")
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      tasksApi.create({ spaceId, title: title.trim(), description: description.trim() || undefined, priority } as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shared-space-tasks", spaceId] })
+      notify.success(t("spaceSharing.guest.taskCreated", "Task created"))
+      setTitle(""); setDescription(""); setPriority("MEDIUM")
+      onOpenChange(false)
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{t("spaceSharing.guest.newTask", "New task")}</DialogTitle>
+          <DialogDescription>{t("spaceSharing.guest.newTaskDescription", "Create a task in this shared space.")}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="ct-title" className="text-xs">{t("spaceSharing.guest.requestTitle", "Title")}</Label>
+            <Input id="ct-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ct-desc" className="text-xs">{t("spaceSharing.guest.requestNote", "Details")}</Label>
+            <Textarea id="ct-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">{t("tasks.priority.label", "Priority")}</Label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["LOW", "MEDIUM", "HIGH", "URGENT"].map((p) => (
+                  <SelectItem key={p} value={p}>{t(`tasks.priority.${p}`, p)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
+            {t("common.cancel")}
+          </Button>
+          <Button onClick={() => title.trim() && mutation.mutate()} disabled={mutation.isPending || !title.trim()}>
+            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t("spaceSharing.guest.newTask", "New task")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

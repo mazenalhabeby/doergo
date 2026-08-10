@@ -22,6 +22,7 @@ import {
   buildDateRangeFilter,
   haversineDistance,
   getStatusCapabilities,
+  accessAllowsInSpace,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -93,6 +94,9 @@ export class TasksService {
     let locationLng = data.locationLng;
     let locationAddress = data.locationAddress;
     let spaceWorkflowId: string | null = null;
+    // The org the task will BELONG to. For a cross-org shared space the task lives
+    // in the OWNER org (so the owner sees/counts it), even though a guest created it.
+    let effectiveOrgId: string = data.organizationId;
     if (data.spaceId) {
       const space = await this.prisma.companyLocation.findUnique({
         where: { id: data.spaceId },
@@ -103,11 +107,15 @@ export class TasksService {
       }
       spaceWorkflowId = space.workflowId ?? null;
       if (space.organizationId !== data.organizationId) {
-        throw new ForbiddenException('Cannot create task in a space outside your organization');
-      }
-
-      // SPACE scope validation — user must be assigned to the space
-      if (data.taskCreationScope === 'SPACE') {
+        // Foreign space → allowed ONLY if the caller holds a cross-org CONTRIBUTE/
+        // CONTROL grant for THIS exact space (server-authoritative access, checked
+        // against the resource's real spaceId). The task then belongs to the owner.
+        if (!accessAllowsInSpace(data.access, 'canCreateTasks', data.spaceId)) {
+          throw new ForbiddenException('Cannot create task in a space outside your organization');
+        }
+        effectiveOrgId = space.organizationId;
+      } else if (data.taskCreationScope === 'SPACE') {
+        // Native space, SPACE scope → user must be assigned to the space.
         const assignment = await this.prisma.spaceAssignment.findFirst({
           where: { userId: data.userId, spaceId: data.spaceId },
         });
@@ -169,7 +177,7 @@ export class TasksService {
           locationLat,
           locationLng,
           locationAddress,
-          organizationId: data.organizationId,
+          organizationId: effectiveOrgId,
           createdById: data.userId,
           assignedToId: data.assignedToId || null,
           assetId: data.assetId || null,
@@ -754,7 +762,9 @@ export class TasksService {
    * Update a task (CLIENT or DISPATCHER - any task in their org)
    */
   async update(data: any) {
-    const { id, userId, userRole, organizationId, ...updateData } = data;
+    // `access` is the caller's resolved grant (for foreign-space authz) — pull it
+    // out so it never leaks into the Prisma update payload.
+    const { id, userId, userRole, organizationId, access, ...updateData } = data;
 
     // Find existing task
     const existingTask = await this.prisma.task.findUnique({
@@ -765,9 +775,17 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    // Authorization: CLIENT and DISPATCHER can update any task in their organization
+    // Authorization: own-org tasks always; a foreign task ONLY with a cross-org
+    // CONTRIBUTE/CONTROL grant (canCreateTasks) for that task's real space.
     if (existingTask.organizationId !== organizationId) {
-      throw new ForbiddenException('You can only update tasks in your organization');
+      if (!existingTask.spaceId || !accessAllowsInSpace(access, 'canCreateTasks', existingTask.spaceId)) {
+        throw new ForbiddenException('You can only update tasks in your organization');
+      }
+      // Don't let a guest move an owner's task into another space (incl. one they
+      // can't reach). Foreign tasks stay in their space.
+      if (updateData.spaceId !== undefined && updateData.spaceId !== existingTask.spaceId) {
+        throw new ForbiddenException('Cannot move a shared task to another space');
+      }
     }
 
     // Don't allow updating completed/closed tasks
@@ -822,10 +840,13 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    // Authorization: CLIENT/DISPATCHER can only assign tasks in their org
+    // Authorization: own-org tasks always; a foreign task ONLY with a cross-org
+    // CONTROL grant (canAssignTasks) for that task's real space.
     if (task.organizationId !== data.organizationId) {
-      this.logger.warn(`Authorization denied: assign task across orgs`, { userId: data.userId, taskId: data.id });
-      throw new ForbiddenException('You can only assign tasks in your organization');
+      if (!task.spaceId || !accessAllowsInSpace((data as any).access, 'canAssignTasks', task.spaceId)) {
+        this.logger.warn(`Authorization denied: assign task across orgs`, { userId: data.userId, taskId: data.id });
+        throw new ForbiddenException('You can only assign tasks in your organization');
+      }
     }
 
     // Admin/Dispatcher can reassign at any stage except completed/canceled/closed
@@ -834,11 +855,13 @@ export class TasksService {
       throw new BadRequestException(`Cannot assign a task with status ${task.status}`);
     }
 
-    // Verify the worker exists and belongs to the same org
+    // Verify the worker exists and belongs to the TASK's org (= caller's org for a
+    // native task; the owner org for a cross-org shared task — a guest assigns the
+    // owner's workers, never injects a foreign user).
     const worker = await this.prisma.user.findFirst({
       where: {
         id: data.workerId,
-        organizationId: data.organizationId,
+        organizationId: task.organizationId,
         isActive: true,
       },
     });

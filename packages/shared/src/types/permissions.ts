@@ -358,6 +358,24 @@ export function accessAllows(
 }
 
 /**
+ * SPACE-ONLY grant check — does the resolved access grant `key` within THIS exact
+ * space, with NO org-wide fallback? Use this to authorize actions on a FOREIGN
+ * (cross-org shared) resource: `perSpace[spaceId]` is populated only by a native
+ * space assignment (own org) or an ACTIVE cross-org share, so for a foreign space
+ * this is true iff a share grants it at the right level. The org short-circuit in
+ * `accessAllows` must NEVER authorize a foreign space (that would let a guest's
+ * own-org permissions leak across the tenant boundary).
+ */
+export function accessAllowsInSpace(
+  access: ResolvedAccess | null | undefined,
+  key: AccessPermissionKey,
+  spaceId?: string,
+): boolean {
+  if (!access || !spaceId) return false;
+  return access.perSpace?.[spaceId]?.[key] === true;
+}
+
+/**
  * Whether the user holds `key` org-wide OR in ANY space — for endpoints whose
  * resource space isn't yet known (the concrete resource is then re-checked with
  * its real spaceId in the service layer). Widens visibility only, never mutation.
