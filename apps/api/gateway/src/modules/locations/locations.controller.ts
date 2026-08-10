@@ -174,6 +174,11 @@ export class LocationsController {
     return this.locationsService.getLocationAssignments({
       locationId: id,
       organizationId: req.user.organizationId,
+      // Cross-org shared spaces whose owner enabled "show workers" — the only
+      // foreign rosters this caller may read (server-authoritative).
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? [])
+        .filter((s: any) => s.showWorkers)
+        .map((s: any) => s.spaceId),
     });
   }
 

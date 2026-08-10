@@ -21,10 +21,12 @@ import { notify } from "@/lib/toast"
 import {
   tasksApi,
   spaceSharingApi,
+  locationsApi,
   type Task,
   type SpaceShareRequestType,
   type SpaceShareRequestStatus,
 } from "@/lib/api"
+import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -92,6 +94,13 @@ export default function SharedSpaceViewPage() {
     queryKey: ["shared-space-requests", spaceId],
     queryFn: () => spaceSharingApi.listGuestRequests(spaceId),
     enabled: !!share,
+  })
+
+  // Workers on this space — only when the owner enabled "show workers".
+  const { data: workers } = useQuery({
+    queryKey: ["shared-space-workers", spaceId],
+    queryFn: () => locationsApi.getAssignedMembers(spaceId),
+    enabled: !!share && !!share.showWorkers,
   })
 
   // The auth context surfaces the share by spaceId but not its share id, which the
@@ -223,6 +232,33 @@ export default function SharedSpaceViewPage() {
             </div>
           )}
         </div>
+
+        {/* Workers on this space (owner enabled "show workers") */}
+        {share.showWorkers && workers && workers.length > 0 && (
+          <div className="mt-8 space-y-3">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.workersHeading", "Workers on this space")}</h2>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {workers.map((w: any) => (
+                <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
+                  <UserAvatar firstName={w.user?.firstName} lastName={w.user?.lastName} seed={w.user?.id} size="sm" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {w.user?.firstName} {w.user?.lastName}
+                    </p>
+                    {w.currentTask ? (
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">{w.currentTask}</p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground truncate">{w.user?.email}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Guest's own requests */}
         {share.allowRequests && myRequests && myRequests.length > 0 && (

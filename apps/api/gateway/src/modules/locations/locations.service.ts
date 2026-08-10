@@ -43,6 +43,7 @@ export class LocationsService extends BaseGatewayService {
   async getLocationAssignments(data: {
     locationId: string;
     organizationId: string;
+    sharedSpaceIds?: string[];
   }) {
     return this.send({ cmd: 'get_location_assignments' }, data);
   }

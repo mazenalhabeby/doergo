@@ -575,13 +575,14 @@ export class LocationsService {
   async getLocationAssignments(data: {
     locationId: string;
     organizationId: string;
+    sharedSpaceIds?: string[]; // shared spaces (with showWorkers) the caller may view
   }) {
-    // Verify location exists and belongs to organization
+    // A guest may view the roster of a space shared with them (showWorkers gated
+    // at the gateway → only such spaces reach here in sharedSpaceIds). Otherwise
+    // strict org scoping.
+    const isShared = Array.isArray(data.sharedSpaceIds) && data.sharedSpaceIds.includes(data.locationId);
     const location = await this.prisma.companyLocation.findFirst({
-      where: {
-        id: data.locationId,
-        organizationId: data.organizationId,
-      },
+      where: isShared ? { id: data.locationId } : { id: data.locationId, organizationId: data.organizationId },
     });
 
     if (!location) {
@@ -591,8 +592,9 @@ export class LocationsService {
     const assignments = await this.prisma.spaceAssignment.findMany({
       where: {
         spaceId: data.locationId,
-        // Only active members still in this org (drop removed-user ghosts)
-        user: { is: { organizationId: data.organizationId, isActive: true } },
+        // Members belong to the space's OWNING org (= caller's org for a native
+        // space; the owner org for a shared space). Drop removed-user ghosts.
+        user: { is: { organizationId: location.organizationId, isActive: true } },
         // Only show active assignments (not expired)
         OR: [
           { effectiveTo: null },

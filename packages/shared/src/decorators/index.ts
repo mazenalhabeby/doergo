@@ -171,6 +171,18 @@ export type PermissionField = 'canCreateTasks' | 'canViewAllTasks' | 'canAssignT
 export const RequirePermission = (...permissions: PermissionField[]) =>
   SetMetadata(PERMISSIONS_KEY, permissions);
 
+/**
+ * Space-aware permission gate. Like @RequirePermission, but the guard ALSO passes
+ * when the user holds the permission in ANY space they can act in — including a
+ * cross-org shared space (merged into access.perSpace). This ONLY widens the
+ * guard; the service MUST then re-check the permission against the resource's
+ * REAL spaceId (accessAllows(access, key, spaceId)). Use this exclusively on
+ * routes whose service enforces the concrete space, never on org-wide actions.
+ */
+export const PERMISSIONS_IN_SPACE_KEY = 'required_permissions_in_space';
+export const RequirePermissionInSpace = (...permissions: PermissionField[]) =>
+  SetMetadata(PERMISSIONS_IN_SPACE_KEY, permissions);
+
 // =============================================================================
 // SKIP ONBOARDING CHECK
 // =============================================================================
