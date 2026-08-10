@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Mail, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight } from "lucide-react"
 
 import { portalAdminApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
@@ -95,14 +95,6 @@ export default function PortalDetailPage() {
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
-  // Client detail + resend invite
-  const [clientDetail, setClientDetail] = useState<Customer | null>(null)
-  const resendM = useMutation({
-    mutationFn: (customerId: string) => portalAdminApi.resendInvite(customerId),
-    onSuccess: (r: any) => notify.success(t("portal.inviteResent", "Invitation email sent to {{email}}", { email: r?.data?.sentTo ?? "the client" })),
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
-  })
-
   const requestCount = requestsQ.data?.length ?? 0
   const clientCount = residentsQ.data?.length ?? 0
   const openCount = requestsQ.data?.filter((r) => !["COMPLETED", "CLOSED", "CANCELED"].includes(r.status)).length ?? 0
@@ -179,7 +171,7 @@ export default function PortalDetailPage() {
               ) : (
                 <div className="divide-y divide-border/60">
                   {residentsQ.data!.map((r: Customer) => (
-                    <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => setClientDetail(r)}>
+                    <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => router.push(`/customers/${r.id}`)}>
                       <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">{initials(r.name)}</div>
                       <div className="min-w-0 flex-1"><p className="text-sm font-medium text-foreground truncate">{r.name}</p>{r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}</div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -276,39 +268,6 @@ export default function PortalDetailPage() {
       </AlertDialog>
 
       {/* Invite client */}
-      {/* Client detail (replaces the retired /customers/:id page) */}
-      <Dialog open={!!clientDetail} onOpenChange={(o) => { if (!o) setClientDetail(null) }}>
-        <DialogContent className="sm:max-w-[440px]">
-          <DialogHeader><DialogTitle>{clientDetail?.name}</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-1">
-            <div className="flex items-center gap-2.5">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">{initials(clientDetail?.name || "")}</div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{clientDetail?.name}</p>
-                {clientDetail?.email
-                  ? <p className="text-xs text-muted-foreground truncate">{clientDetail.email}</p>
-                  : <p className="text-xs text-amber-600 dark:text-amber-400">{t("portal.noEmail", "No email on file")}</p>}
-              </div>
-            </div>
-            {clientDetail?.phone && <p className="text-xs text-muted-foreground">{clientDetail.phone}</p>}
-            {clientDetail?.address && <p className="text-xs text-muted-foreground whitespace-pre-line">{clientDetail.address}</p>}
-          </div>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setClientDetail(null)}>{t("common.close", "Close")}</Button>
-            {clientDetail?.email && (
-              <Button
-                className="gap-1.5"
-                disabled={resendM.isPending}
-                onClick={() => clientDetail && resendM.mutate(clientDetail.id)}
-              >
-                {resendM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                {t("portal.resendInvite", "Resend invitation")}
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={inviteOpen} onOpenChange={(o) => { if (!o) resetInvite() }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{t("portal.inviteResident", "Invite client")}</DialogTitle></DialogHeader>
