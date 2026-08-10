@@ -15,7 +15,7 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { getSpaceScope } from '@hbcfield/shared';
 import { capModulesToTier } from '../../common/entitlements';
 import { LocationsService } from './locations.service';
@@ -182,8 +182,11 @@ export class LocationsController {
     });
   }
 
+  // Space-aware: org member-managers add anyone in their org; a CONTROL guest may
+  // add their OWN people to a space shared with them (service enforces the real
+  // space + tags the row with the guest org). Guard widens; service authorizes.
   @Post(':id/members')
-  @RequirePermission('canManageUsers')
+  @RequirePermissionInSpace('canManageUsers')
   @ApiOperation({ summary: 'Assign a member to a location' })
   async assignMember(
     @Param('id') locationId: string,
@@ -195,6 +198,7 @@ export class LocationsController {
       locationId,
       requestingUserId: req.user.id,
       organizationId: req.user.organizationId,
+      access: req.user.access, // server-authoritative; service enforces the real space
     });
   }
 

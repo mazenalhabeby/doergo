@@ -248,7 +248,7 @@ export class LocationService {
     return success(location);
   }
 
-  async getActiveWorkers(organizationId?: string) {
+  async getActiveWorkers(organizationId?: string, userIds?: string[]) {
     const where: any = {
       user: {
         // Field workers across legacy + current role names (the live map must
@@ -260,6 +260,12 @@ export class LocationService {
 
     if (organizationId) {
       where.user.organizationId = organizationId;
+    }
+    // Restrict to a specific roster (cross-org shared space: the owner-org
+    // workers assigned to that space, resolved server-side and passed in).
+    if (Array.isArray(userIds)) {
+      if (userIds.length === 0) return success([]);
+      where.userId = { in: userIds };
     }
 
     // Get workers with recent location updates (within last 10 minutes)

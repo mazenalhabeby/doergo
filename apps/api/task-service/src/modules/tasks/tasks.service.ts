@@ -855,16 +855,27 @@ export class TasksService {
       throw new BadRequestException(`Cannot assign a task with status ${task.status}`);
     }
 
-    // Verify the worker exists and belongs to the TASK's org (= caller's org for a
-    // native task; the owner org for a cross-org shared task — a guest assigns the
-    // owner's workers, never injects a foreign user).
-    const worker = await this.prisma.user.findFirst({
-      where: {
-        id: data.workerId,
-        organizationId: task.organizationId,
-        isActive: true,
-      },
+    // Verify the worker: normally a member of the TASK's org; also allow anyone
+    // assigned to the task's SPACE (owner-org members, or guest members a CONTROL
+    // guest added cross-org — those rows are only ever created for the caller's own
+    // users, so no arbitrary user can be injected here).
+    let worker = await this.prisma.user.findFirst({
+      where: { id: data.workerId, organizationId: task.organizationId, isActive: true },
     });
+    if (!worker && task.spaceId) {
+      const member = await this.prisma.spaceAssignment.findFirst({
+        where: {
+          spaceId: task.spaceId,
+          userId: data.workerId,
+          // Only an ACTIVE assignment (mirrors the roster/routing window).
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+        },
+        select: { id: true },
+      });
+      if (member) {
+        worker = await this.prisma.user.findFirst({ where: { id: data.workerId, isActive: true } });
+      }
+    }
 
     if (!worker) {
       throw new NotFoundException('Worker not found or not in your organization');

@@ -14,6 +14,7 @@ import {
   ListChecks,
   UserPlus,
   ShieldAlert,
+  MapPin,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -23,6 +24,8 @@ import {
   spaceSharingApi,
   locationsApi,
   attendanceApi,
+  trackingApi,
+  employeesApi,
   type Task,
   type SpaceShareRequestType,
   type SpaceShareRequestStatus,
@@ -86,9 +89,11 @@ export default function SharedSpaceViewPage() {
   const perSpace = (user?.access as any)?.perSpace?.[spaceId] || {}
   const canCreate = !!perSpace.canCreateTasks
   const canAssign = !!perSpace.canAssignTasks
+  const canManageMembers = !!perSpace.canManageUsers // CONTROL → add own workers to the space
 
   const [requestOpen, setRequestOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [addWorkerOpen, setAddWorkerOpen] = useState(false)
 
   const { data: taskData, isLoading } = useQuery({
     queryKey: ["tasks", "shared", spaceId],
@@ -117,6 +122,14 @@ export default function SharedSpaceViewPage() {
     enabled: !!share && !!share.showAttendance,
   })
   const attendanceEntries: any[] = (attendance as any)?.data || []
+
+  // Live worker locations — only when the owner enabled "show tracking".
+  const { data: tracked } = useQuery({
+    queryKey: ["shared-space-tracking", spaceId],
+    queryFn: () => trackingApi.getSpaceWorkers(spaceId),
+    enabled: !!share && !!share.showTracking,
+    refetchInterval: share?.showTracking ? 30_000 : false,
+  })
 
   const queryClient = useQueryClient()
   const assignMutation = useMutation({
@@ -194,6 +207,12 @@ export default function SharedSpaceViewPage() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {canManageMembers && (
+                <Button variant="outline" onClick={() => setAddWorkerOpen(true)} className="gap-1.5">
+                  <UserPlus className="h-4 w-4" />
+                  {t("spaceSharing.guest.addWorker", "Add worker")}
+                </Button>
+              )}
               {canCreate && (
                 <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
                   <Plus className="h-4 w-4" />
@@ -314,6 +333,38 @@ export default function SharedSpaceViewPage() {
           </div>
         )}
 
+        {/* Live locations (owner enabled "show tracking") */}
+        {share.showTracking && tracked && (tracked as any[]).length > 0 && (
+          <div className="mt-8 space-y-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.trackingHeading", "Live locations")}</h2>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(tracked as any[]).map((w: any) => {
+                const mins = Math.round((Date.now() - new Date(w.updatedAt).getTime()) / 60000)
+                const ago = mins <= 1 ? t("spaceSharing.guest.justNow", "just now") : t("spaceSharing.guest.minsAgo", "{{m}} min ago", { m: mins })
+                return (
+                  <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
+                    <UserAvatar firstName={w.firstName} lastName={w.lastName} seed={w.id} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground truncate">{w.firstName} {w.lastName}</p>
+                      {w.currentTask ? (
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">{w.currentTask.title}</p>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground">{ago}</p>
+                      )}
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
+                      <span className="size-1.5 rounded-full bg-emerald-500" /> {ago}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Attendance (owner enabled "show attendance") */}
         {share.showAttendance && attendanceEntries.length > 0 && (
           <div className="mt-8 space-y-3">
@@ -378,8 +429,71 @@ export default function SharedSpaceViewPage() {
         {canCreate && (
           <CreateTaskDialog spaceId={spaceId} open={createOpen} onOpenChange={setCreateOpen} />
         )}
+        {canManageMembers && (
+          <AddWorkerDialog spaceId={spaceId} open={addWorkerOpen} onOpenChange={setAddWorkerOpen} />
+        )}
       </div>
     </div>
+  )
+}
+
+function AddWorkerDialog({
+  spaceId,
+  open,
+  onOpenChange,
+}: {
+  spaceId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const { data: employees } = useQuery({
+    queryKey: ["employees", "for-share"],
+    queryFn: () => employeesApi.list({ limit: 100 }),
+    enabled: open,
+  })
+  const list: any[] = (employees as any)?.data || (Array.isArray(employees) ? (employees as any) : [])
+
+  const mutation = useMutation({
+    mutationFn: (userId: string) => locationsApi.assignMember(spaceId, { userId } as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shared-space-workers", spaceId] })
+      notify.success(t("spaceSharing.guest.workerAdded", "Worker added to the space"))
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{t("spaceSharing.guest.addWorker", "Add worker")}</DialogTitle>
+          <DialogDescription>{t("spaceSharing.guest.addWorkerDescription", "Add one of your team to this shared space.")}</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-80 overflow-y-auto -mx-1 px-1 py-1 space-y-1">
+          {list.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">{t("spaceSharing.guest.noTeam", "No team members found.")}</p>
+          ) : list.map((e: any) => (
+            <div key={e.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <UserAvatar firstName={e.firstName} lastName={e.lastName} seed={e.id} size="sm" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{e.firstName} {e.lastName}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" disabled={mutation.isPending} onClick={() => mutation.mutate(e.id)}>
+                {t("spaceSharing.guest.add", "Add")}
+              </Button>
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.close", "Close")}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

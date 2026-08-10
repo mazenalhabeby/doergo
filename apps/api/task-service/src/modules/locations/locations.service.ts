@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, DEFAULT_ORG_MODULES } from '@hbcfield/shared';
+import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -413,10 +413,12 @@ export class LocationsService {
     effectiveTo?: Date | string;
     requestingUserId: string;
     organizationId: string;
+    access?: any; // caller's resolved access (for cross-org shared spaces)
   }) {
     this.logger.log(`Assigning member ${data.userId} to location ${data.locationId}`);
 
-    // Verify user exists in organization with appropriate work mode
+    // Verify the worker belongs to the CALLER's org — a guest may only add THEIR
+    // OWN people to a shared space, never inject someone else's user.
     const technician = await this.prisma.user.findFirst({
       where: {
         id: data.userId,
@@ -433,14 +435,18 @@ export class LocationsService {
       throw new NotFoundException('Employee not found in organization');
     }
 
-    // Verify location exists and belongs to organization
-    const location = await this.prisma.companyLocation.findFirst({
-      where: {
-        id: data.locationId,
-        organizationId: data.organizationId,
-        isActive: true,
-      },
+    // Verify location: own-org space, OR a space cross-org-shared with the caller
+    // at CONTROL level (space-scoped canManageUsers). For the shared case the
+    // assignment row is tagged with the CALLER's (guest's) org below, so the
+    // guest worker never leaks into the owner's routing/attendance/member queries.
+    let location = await this.prisma.companyLocation.findFirst({
+      where: { id: data.locationId, organizationId: data.organizationId, isActive: true },
     });
+    if (!location && accessAllowsInSpace(data.access, 'canManageUsers', data.locationId)) {
+      location = await this.prisma.companyLocation.findFirst({
+        where: { id: data.locationId, isActive: true },
+      });
+    }
 
     if (!location) {
       throw new NotFoundException('Company location not found');
@@ -592,9 +598,11 @@ export class LocationsService {
     const assignments = await this.prisma.spaceAssignment.findMany({
       where: {
         spaceId: data.locationId,
-        // Members belong to the space's OWNING org (= caller's org for a native
-        // space; the owner org for a shared space). Drop removed-user ghosts.
-        user: { is: { organizationId: location.organizationId, isActive: true } },
+        // Space-scoped roster: everyone assigned to THIS space (native owner-org
+        // members AND cross-org guest members a CONTROL guest added). No user-org
+        // filter — spaceId is the boundary, and for a native space every member is
+        // already owner-org so behavior is unchanged. Drop removed-user ghosts.
+        user: { is: { isActive: true } },
         // Only show active assignments (not expired)
         OR: [
           { effectiveTo: null },

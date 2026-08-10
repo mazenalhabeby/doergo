@@ -265,7 +265,10 @@ export type SpaceShareLevel = 'VIEW' | 'CONTRIBUTE' | 'CONTROL';
 export function spaceShareLevelToPermissions(level: SpaceShareLevel): PermissionSet {
   switch (level) {
     case 'CONTROL':
-      return { canViewAllTasks: true, canCreateTasks: true, canAssignTasks: true };
+      // canManageUsers is SPACE-scoped here — it only ever authorizes actions on
+      // THIS shared space (via accessAllowsInSpace), letting a CONTROL guest add
+      // their own workers to it. It is NOT an org-wide member-management grant.
+      return { canViewAllTasks: true, canCreateTasks: true, canAssignTasks: true, canManageUsers: true };
     case 'CONTRIBUTE':
       return { canViewAllTasks: true, canCreateTasks: true };
     case 'VIEW':

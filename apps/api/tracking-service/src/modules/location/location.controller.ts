@@ -30,6 +30,14 @@ export class LocationController {
     return this.locationService.getActiveWorkers(data.organizationId);
   }
 
+  // Cross-org shared space: live locations of the owner-org workers assigned to
+  // that space. organizationId = the space's OWNER org, userIds = the roster
+  // (both resolved server-side by the gateway; never client input).
+  @MessagePattern({ cmd: 'get_space_workers' })
+  async getSpaceWorkers(@Payload() data: { organizationId: string; userIds: string[] }) {
+    return this.locationService.getActiveWorkers(data.organizationId, data.userIds);
+  }
+
   @MessagePattern({ cmd: 'get_worker_location' })
   async getWorkerLocation(@Payload() data: { workerId: string; organizationId?: string }) {
     return this.locationService.getWorkerLocation(data.workerId, data.organizationId);

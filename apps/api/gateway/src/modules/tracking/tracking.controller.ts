@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Param, Inject, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Inject, Request, Query, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { UpdateTrackingLocationDto, BatchTrackingLocationDto } from './dto';
 
 @ApiTags('tracking')
@@ -13,7 +13,36 @@ import { UpdateTrackingLocationDto, BatchTrackingLocationDto } from './dto';
 export class TrackingController {
   constructor(
     @Inject('TRACKING_SERVICE') private readonly trackingClient: ClientProxy,
+    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
   ) {}
+
+  // Cross-org shared space: live locations of the owner's workers on that space.
+  // Guest-gated — authorized against the server-authoritative share (showTracking)
+  // and the roster is resolved owner-side; nothing comes from the client body.
+  @Get('spaces/:spaceId/workers')
+  @RequirePermissionInSpace('canViewAllTasks')
+  @ApiOperation({ summary: "Live worker locations for a cross-org shared space" })
+  async getSpaceWorkers(@Param('spaceId') spaceId: string, @Request() req: any) {
+    const grant = (req.user.access?.sharedSpaces ?? []).find(
+      (s: any) => s.spaceId === spaceId && s.showTracking,
+    );
+    if (!grant) throw new ForbiddenException('Tracking is not shared for this space');
+    // Roster (owner-org workers assigned to the space) — resolved server-side.
+    const roster: any = await firstValueFrom(
+      this.taskClient.send({ cmd: 'get_location_assignments' }, {
+        locationId: spaceId,
+        organizationId: req.user.organizationId,
+        sharedSpaceIds: [spaceId],
+      }),
+    );
+    const userIds = ((roster?.data ?? []) as any[]).map((a) => a.userId || a.user?.id).filter(Boolean);
+    return firstValueFrom(
+      this.trackingClient.send({ cmd: 'get_space_workers' }, {
+        organizationId: grant.ownerOrgId,
+        userIds,
+      }),
+    );
+  }
 
   @Post('location')
   @Roles(Role.ADMIN, Role.EMPLOYEE)

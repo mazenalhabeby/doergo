@@ -118,10 +118,18 @@ export class SpaceSharingService {
   async revokeShare(data: { ownerOrgId: string; shareId: string }) {
     const share = await this.prisma.spaceShare.findFirst({
       where: { id: data.shareId, ownerOrgId: data.ownerOrgId },
-      select: { id: true, guestOrgId: true },
+      select: { id: true, guestOrgId: true, spaceId: true },
     });
     if (!share) return this.err('Share not found', HttpStatus.NOT_FOUND);
-    await this.prisma.spaceShare.update({ where: { id: share.id }, data: { status: 'REVOKED' } });
+    // Revocation severs the relationship fully: mark REVOKED and REMOVE any
+    // cross-org members the guest added to this space (rows tagged with the guest
+    // org), so they don't linger in the owner's roster / task-assign after revoke.
+    await this.prisma.$transaction([
+      this.prisma.spaceShare.update({ where: { id: share.id }, data: { status: 'REVOKED' } }),
+      this.prisma.spaceAssignment.deleteMany({
+        where: { spaceId: share.spaceId, organizationId: share.guestOrgId },
+      }),
+    ]);
     return { success: true as const, guestOrgId: share.guestOrgId };
   }
 

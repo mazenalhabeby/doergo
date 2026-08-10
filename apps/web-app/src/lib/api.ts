@@ -1254,6 +1254,13 @@ export const trackingApi = {
     return response.data?.data || [];
   },
 
+  // Live worker locations for a cross-org shared space (guest view; showTracking).
+  getSpaceWorkers: async (spaceId: string) => {
+    const response = await api.get<{ success: boolean; data: WorkerLocation[] }>(`/tracking/spaces/${spaceId}/workers`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
   // Get specific worker location
   getWorkerLocation: async (workerId: string) => {
     const response = await api.get<{ success: boolean; data: WorkerLocation }>(`/tracking/workers/${workerId}`);
