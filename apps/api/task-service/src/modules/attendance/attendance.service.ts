@@ -73,19 +73,21 @@ export class AttendanceService {
     space: ResolverSpace,
     clockInAt: Date,
     clockInTz?: string,
-  ): Promise<{ shiftId?: string; expectedClockOutAt?: Date; nextRemindAt?: Date }> {
+  ): Promise<{ shiftId?: string; expectedClockInAt?: Date; expectedClockOutAt?: Date; nextRemindAt?: Date; scheduled: boolean }> {
     try {
       const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt, clockInTz });
-      if (!resolved) return this.unscheduledStamp(clockInAt);
+      if (!resolved) return { ...this.unscheduledStamp(clockInAt), scheduled: false };
       return {
         ...(resolved.shiftId ? { shiftId: resolved.shiftId } : {}),
+        expectedClockInAt: resolved.expectedClockInAt,
         expectedClockOutAt: resolved.expectedClockOutAt,
         nextRemindAt: resolved.nextRemindAt,
+        scheduled: true,
       };
     } catch (err) {
       this.logger.error(`Shift resolution failed for user=${userId} space=${space.id}: ${err}`);
       // Even on resolver failure, arm the safety-net so the session can't run silently forever.
-      return this.unscheduledStamp(clockInAt);
+      return { ...this.unscheduledStamp(clockInAt), scheduled: false };
     }
   }
 
@@ -167,7 +169,9 @@ export class AttendanceService {
       const remoteClockInAt = new Date();
       // Remote clock-in: the bucket is a logical (pin-less) space, so anchor the
       // shift to the worker's own timezone.
-      const remoteStamp = await this.buildShiftStamp(
+      // Strip the derived fields (scheduled/expectedClockInAt) — only the DB
+      // columns go into the entry.
+      const { scheduled: _s, expectedClockInAt: _ci, ...remoteStamp } = await this.buildShiftStamp(
         data.userId,
         bucket,
         remoteClockInAt,
@@ -286,7 +290,6 @@ export class AttendanceService {
       );
     }
 
-    // Smart auto-approval: evaluate clock-in against schedule
     const clockInTime = new Date();
     const flagReasons: string[] = [];
 
@@ -295,27 +298,6 @@ export class AttendanceService {
       flagReasons.push('OUTSIDE_GEOFENCE_IN');
     }
 
-    // Look up today's schedule
-    const dayOfWeek = clockInTime.getDay();
-    const schedule = await this.prisma.technicianSchedule.findFirst({
-      where: { technicianId: data.userId, dayOfWeek, isActive: true },
-    });
-
-    if (!schedule) {
-      flagReasons.push('UNSCHEDULED_DAY');
-    } else {
-      // Check for late arrival
-      const [schedH, schedM] = schedule.startTime.split(':').map(Number);
-      const scheduledStart = new Date(clockInTime);
-      scheduledStart.setHours(schedH!, schedM!, 0, 0);
-      const lateMinutes = (clockInTime.getTime() - scheduledStart.getTime()) / 60000;
-      if (lateMinutes > ATTENDANCE_CONSTANTS.LATE_ARRIVAL_THRESHOLD_MINUTES) {
-        flagReasons.push('LATE_ARRIVAL');
-      }
-    }
-
-    const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
-
     // No-GPS fallback: a PHYSICAL space falls back to its own (site) timezone; a
     // LOGICAL space has none, so fall back to the org timezone. When GPS is
     // present the worker's actual location wins regardless.
@@ -323,15 +305,27 @@ export class AttendanceService {
     const fallbackTz = spaceIsPhysical ? location.timezone : orgTz;
     const workerTz = this.resolveEntryTimezone(data.lat, data.lng, fallbackTz);
 
-    // Resolve the shift expectation once, now, as an absolute instant. Pass the
-    // worker's clock-in timezone so a LOGICAL (pin-less) space anchors the shift
-    // to where the worker actually is.
-    const shiftStamp = await this.buildShiftStamp(
+    // Resolve the shift ONCE (rota-aware + timezone-correct) and reuse it for both
+    // the flags and the stamp — no separate legacy technicianSchedule query.
+    const { scheduled, expectedClockInAt, ...stampCols } = await this.buildShiftStamp(
       data.userId,
       location,
       clockInTime,
       workerTz ?? undefined,
     );
+
+    // Smart flags: matched shift/rota → LATE_ARRIVAL if well past the start; no
+    // matched shift → UNSCHEDULED_DAY. Both measured against the tz-correct start.
+    if (!scheduled) {
+      flagReasons.push('UNSCHEDULED_DAY');
+    } else if (expectedClockInAt) {
+      const lateMinutes = (clockInTime.getTime() - expectedClockInAt.getTime()) / 60000;
+      if (lateMinutes > ATTENDANCE_CONSTANTS.LATE_ARRIVAL_THRESHOLD_MINUTES) {
+        flagReasons.push('LATE_ARRIVAL');
+      }
+    }
+
+    const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
 
     // Create time entry
     const entry = await this.prisma.timeEntry.create({
@@ -348,7 +342,7 @@ export class AttendanceService {
         flagReasons,
         approvalStatus,
         organizationId: data.organizationId,
-        ...shiftStamp,
+        ...stampCols,
       },
       include: {
         location: true,

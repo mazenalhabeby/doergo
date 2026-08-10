@@ -25,6 +25,7 @@ export interface ResolverSpace {
  */
 export interface ResolvedShift {
   shiftId: string | null; // null when resolved from a legacy weekly schedule
+  expectedClockInAt: Date; // when the shift is expected to START (for late/no-show)
   expectedClockOutAt: Date; // when the shift is expected to end
   nextRemindAt: Date; // expectedClockOutAt + grace → first reminder is due here
   graceMin: number;
@@ -118,12 +119,15 @@ export class ShiftResolverService {
       if (!this.recurrenceMatches(a, local)) continue;
 
       const shift = a.shift;
+      const [startH, startM] = this.parseHm(shift.startLocal);
       const [endH, endM] = this.parseHm(shift.endLocal);
+      const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, tz, shift.crossesMidnight, local.minutesOfDay);
       const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, shift.crossesMidnight, clockInAt, local.minutesOfDay);
       const graceMin = shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
       return {
         shiftId: shift.id,
+        expectedClockInAt,
         expectedClockOutAt,
         nextRemindAt: new Date(expectedClockOutAt.getTime() + graceMin * 60_000),
         graceMin,
@@ -146,13 +150,16 @@ export class ShiftResolverService {
     });
     if (!schedule?.endTime) return null;
 
+    const [startH, startM] = this.parseHm(schedule.startTime);
     const [endH, endM] = this.parseHm(schedule.endTime);
-    // Legacy schedules never cross midnight → end is on the clock-in's local day.
+    // Legacy schedules never cross midnight → start & end are on the clock-in's local day.
+    const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, tz, false, local.minutesOfDay);
     const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, false, clockInAt, local.minutesOfDay);
     const graceMin = SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
     return {
       shiftId: null,
+      expectedClockInAt,
       expectedClockOutAt,
       nextRemindAt: new Date(expectedClockOutAt.getTime() + graceMin * 60_000),
       graceMin,
@@ -227,6 +234,28 @@ export class ShiftResolverService {
       guard++;
     }
     return end;
+  }
+
+  /**
+   * Compute the absolute UTC instant a shift STARTS. For a cross-midnight shift,
+   * if the worker clocked in during the early-morning tail (local minutes < the
+   * start time), the shift actually started YESTERDAY. Otherwise it's today's
+   * startLocal.
+   */
+  private computeStart(
+    startDateStr: string,
+    startH: number,
+    startM: number,
+    tz: string,
+    crossesMidnight: boolean,
+    clockInLocalMinutes: number,
+  ): Date {
+    const startMinutes = startH * 60 + startM;
+    let dateStr = startDateStr;
+    if (crossesMidnight && clockInLocalMinutes < startMinutes) {
+      dateStr = this.addDays(startDateStr, -1);
+    }
+    return this.zonedWallTimeToUtc(dateStr, startH, startM, tz);
   }
 
   /** Convert a wall-clock time in a timezone (on a given calendar date) to a UTC instant. */
