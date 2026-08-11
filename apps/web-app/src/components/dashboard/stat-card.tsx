@@ -53,9 +53,9 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "group relative rounded-2xl border border-border/60 bg-card p-6",
+        "group relative rounded-2xl border border-border bg-card p-6 shadow-sm",
         "transition-all duration-300 ease-out",
-        "hover:border-border/80 hover:shadow-lg hover:shadow-slate-200/40",
+        "hover:border-foreground/20 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/40",
         className
       )}
     >

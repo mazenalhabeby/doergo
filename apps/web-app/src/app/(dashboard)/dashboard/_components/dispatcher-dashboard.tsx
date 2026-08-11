@@ -144,7 +144,7 @@ export function DispatcherDashboard() {
   const greeting = getGreeting()
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-6 sm:px-6">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div className="flex flex-col gap-1">
@@ -218,7 +218,7 @@ export function DispatcherDashboard() {
                 {t("dashboard.dispatcher.manageTeam")}
               </Link>
             </div>
-            <div className="rounded-2xl border border-border/60 bg-card p-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
               {teamMembers.length > 0 ? (
                 <TeamStatus members={teamMembers} />
               ) : (
@@ -242,7 +242,7 @@ export function DispatcherDashboard() {
                 {t("dashboard.dispatcher.viewAll")}
               </Link>
             </div>
-            <div className="rounded-2xl border border-border/60 bg-card p-2">
+            <div className="rounded-2xl border border-border bg-card p-2">
               <RecentTasks tasks={recentTasks} showViewAll={false} />
             </div>
           </section>
@@ -259,7 +259,7 @@ export function DispatcherDashboard() {
           {/* Task Distribution Chart */}
           <section>
             <h2 className="text-sm font-semibold text-foreground mb-4">{t("dashboard.dispatcher.distribution")}</h2>
-            <div className="rounded-2xl border border-border/60 bg-card p-6">
+            <div className="rounded-2xl border border-border bg-card p-6">
               {chartData.length > 0 ? (
                 <TaskChart data={chartData} />
               ) : (
@@ -333,7 +333,7 @@ export function DispatcherDashboard() {
           {/* Activity Feed */}
           <section>
             <h2 className="text-sm font-semibold text-foreground mb-4">{t("dashboard.dispatcher.recentActivity")}</h2>
-            <div className="rounded-2xl border border-border/60 bg-card px-5">
+            <div className="rounded-2xl border border-border bg-card px-5">
               <ActivityFeed activities={activities} maxItems={5} />
             </div>
           </section>
