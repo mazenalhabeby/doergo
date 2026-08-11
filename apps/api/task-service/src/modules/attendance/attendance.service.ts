@@ -1355,62 +1355,85 @@ export class AttendanceService {
   async materializeShiftInstances(windowHours = 36) {
     const now = new Date();
     const horizon = new Date(now.getTime() + windowHours * 3_600_000);
-    const assignments = await this.prisma.shiftAssignment.findMany({
-      where: {
-        isActive: true,
-        effectiveFrom: { lte: horizon },
-        OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
-      },
-      include: {
-        shift: true,
-        space: { select: { id: true, organizationId: true, timezone: true, lat: true, lng: true } },
-        user: { select: { id: true, timezone: true, organization: { select: { timezone: true } } } },
-      },
-      take: 5000,
-    });
 
-    let upserted = 0;
-    for (const a of assignments) {
-      if (!a.shift?.isActive) continue;
-      const physical = a.space.lat != null && a.space.lng != null;
-      const tz = physical
-        ? a.space.timezone || 'UTC'
-        : a.user.timezone || a.user.organization?.timezone || 'UTC';
-      for (const dateStr of this.localDaysInWindow(now, horizon, tz)) {
-        const win = this.shiftResolver.matchAndWindowForDate(a as any, tz, dateStr);
-        if (!win) continue;
-        if (win.expectedClockOutAt.getTime() < now.getTime()) continue; // already over
-        const graceMin = a.shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
-        const nextRemindAt = new Date(win.expectedClockInAt.getTime() + graceMin * 60_000);
-        try {
-          await this.prisma.shiftInstance.upsert({
-            where: {
-              userId_spaceId_shiftId_localDate: {
-                userId: a.userId,
-                spaceId: a.spaceId,
-                shiftId: a.shiftId,
-                localDate: dateStr,
-              },
-            },
-            create: {
-              organizationId: a.space.organizationId,
-              spaceId: a.spaceId,
-              userId: a.userId,
-              shiftId: a.shiftId,
-              localDate: dateStr,
-              expectedClockInAt: win.expectedClockInAt,
-              expectedClockOutAt: win.expectedClockOutAt,
-              nextRemindAt,
-            },
-            update: {}, // never clobber lifecycle/reminders on re-materialize
+    // Collect every expected ShiftInstance, then bulk-insert. `skipDuplicates`
+    // reproduces the old per-row upsert's `update: {}` semantics (insert new,
+    // never clobber an existing instance's lifecycle/reminders) — but as chunked
+    // createMany instead of up to ~15k serial upserts occupying the queue slot. (P5)
+    const pending: Array<{
+      organizationId: string;
+      spaceId: string;
+      userId: string;
+      shiftId: string;
+      localDate: string;
+      expectedClockInAt: Date;
+      expectedClockOutAt: Date;
+      nextRemindAt: Date;
+    }> = [];
+
+    // Keyset-paginate ALL active assignments (cursor by id) instead of a silent
+    // `take: 5000` cap that stopped materializing — and therefore stopped
+    // detecting no-shows — for the tail beyond 5000 active rotas. (P4)
+    const BATCH = 1000;
+    let cursor: string | undefined;
+    let processed = 0;
+    for (;;) {
+      const assignments = await this.prisma.shiftAssignment.findMany({
+        where: {
+          isActive: true,
+          effectiveFrom: { lte: horizon },
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
+        },
+        include: {
+          shift: true,
+          space: { select: { id: true, organizationId: true, timezone: true, lat: true, lng: true } },
+          user: { select: { id: true, timezone: true, organization: { select: { timezone: true } } } },
+        },
+        orderBy: { id: 'asc' },
+        take: BATCH,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+      if (assignments.length === 0) break;
+      cursor = assignments[assignments.length - 1].id;
+      processed += assignments.length;
+
+      for (const a of assignments) {
+        if (!a.shift?.isActive) continue;
+        const physical = a.space.lat != null && a.space.lng != null;
+        const tz = physical
+          ? a.space.timezone || 'UTC'
+          : a.user.timezone || a.user.organization?.timezone || 'UTC';
+        for (const dateStr of this.localDaysInWindow(now, horizon, tz)) {
+          const win = this.shiftResolver.matchAndWindowForDate(a as any, tz, dateStr);
+          if (!win) continue;
+          if (win.expectedClockOutAt.getTime() < now.getTime()) continue; // already over
+          const graceMin = a.shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
+          pending.push({
+            organizationId: a.space.organizationId,
+            spaceId: a.spaceId,
+            userId: a.userId,
+            shiftId: a.shiftId,
+            localDate: dateStr,
+            expectedClockInAt: win.expectedClockInAt,
+            expectedClockOutAt: win.expectedClockOutAt,
+            nextRemindAt: new Date(win.expectedClockInAt.getTime() + graceMin * 60_000),
           });
-          upserted++;
-        } catch {
-          /* unique race on concurrent materialize — safe to ignore */
         }
       }
+
+      if (assignments.length < BATCH) break;
     }
-    return success({ processed: assignments.length, upserted });
+
+    let created = 0;
+    const CHUNK = 1000;
+    for (let i = 0; i < pending.length; i += CHUNK) {
+      const res = await this.prisma.shiftInstance.createMany({
+        data: pending.slice(i, i + CHUNK),
+        skipDuplicates: true,
+      });
+      created += res.count;
+    }
+    return success({ processed, created });
   }
 
   /** Clock-in fulfillment: mark the member's matching expected shift PRESENT. */

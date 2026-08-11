@@ -1781,6 +1781,7 @@ model ShiftAssignment {
   @@index([userId, spaceId, isActive])
   @@index([spaceId])
   @@index([organizationId])
+  @@index([isActive, effectiveFrom]) // materialize sweep: active rotas in-window (P4)
   @@map("shift_assignments")
 }
 

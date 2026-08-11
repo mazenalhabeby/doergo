@@ -166,6 +166,10 @@ services:
       # AI reports (Phase 4) — natural-language → report via Claude. Optional:
       # feature returns a graceful 402/400 until this is set in .env.production.
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Retention (opt-in). Nightly prune when set to a positive day count;
+      # unset = never delete (preserves task-timeline + audit history). (P10)
+      - TASK_EVENT_RETENTION_DAYS=${TASK_EVENT_RETENTION_DAYS:-}
+      - ACTIVITY_LOG_RETENTION_DAYS=${ACTIVITY_LOG_RETENTION_DAYS:-}
     depends_on:
       postgres:
         condition: service_healthy

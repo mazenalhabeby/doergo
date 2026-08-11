@@ -47,4 +47,40 @@ export class RetentionService {
     }
     return totalDeleted;
   }
+
+  /**
+   * Prune old ActivityLog rows nightly (P10). activity_logs is the
+   * highest-frequency audit table (one row per mutation via the gateway
+   * interceptor) and previously had no retention → unbounded growth. Same
+   * OPT-IN, capped-batch design as task events: disabled unless
+   * ACTIVITY_LOG_RETENTION_DAYS is set to a positive number, so audit history is
+   * never silently deleted.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneOldActivityLogs(): Promise<number> {
+    const days = Number(process.env.ACTIVITY_LOG_RETENTION_DAYS);
+    if (!Number.isFinite(days) || days <= 0) {
+      return 0;
+    }
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const BATCH = 5000;
+
+    let totalDeleted = 0;
+    for (let i = 0; i < 200; i++) {
+      const deleted = await this.prisma.$executeRaw`
+        DELETE FROM activity_logs
+        WHERE ctid IN (
+          SELECT ctid FROM activity_logs
+          WHERE "createdAt" < ${cutoff}
+          LIMIT ${BATCH}
+        )`;
+      totalDeleted += deleted;
+      if (deleted < BATCH) break;
+    }
+
+    if (totalDeleted > 0) {
+      this.logger.log(`Pruned ${totalDeleted} activity logs older than ${days}d`);
+    }
+    return totalDeleted;
+  }
 }
