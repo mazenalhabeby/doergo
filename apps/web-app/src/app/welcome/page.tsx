@@ -17,14 +17,16 @@ export default function WelcomePage() {
 
   // Setup created the org's spaces — refetch the spaces cache (incl. the gate's
   // inactive query) so the dashboard sees them immediately, then send the org
-  // owner to the final onboarding step (pick a plan or keep the trial).
+  // owner straight to their dashboard on the 14-day trial. We intentionally skip
+  // the "Choose your plan" step during signup — owners can subscribe any time
+  // from Settings → Billing (the billing banner also surfaces it).
   //
-  // Use a hard navigation for the handoff: `/welcome` and `/onboarding/*` live in
+  // Use a hard navigation for the handoff: `/welcome` and `/(dashboard)` live in
   // different route groups, and a client-side transition can fail to fetch the
-  // onboarding layout chunk. A full load is robust and this is a one-time step.
+  // dashboard layout chunk. A full load is robust and this is a one-time step.
   const handleFinish = async () => {
     await queryClient.refetchQueries({ queryKey: ['locations'], type: 'all' });
-    window.location.assign('/onboarding/choose-plan');
+    window.location.assign('/dashboard');
   };
 
   return <SetupWizard onFinish={handleFinish} />;
