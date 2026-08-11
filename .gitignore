@@ -62,3 +62,14 @@ worker-status-preview.png
 
 # Local Android build artifacts (uploaded to Play via eas submit)
 android-build/
+
+# SEO working notes (not tracked)
+SEO-REMAINING-LEVERS.md
+
+# Timezone working notes (not tracked)
+TIMEZONE-TODO.md
+
+# Production secrets — NEVER track (Sec audit H15). Real values live only on the
+# server in /opt/doergo/infra/docker/.env.production (untracked).
+.env.production
+infra/docker/.env.production
