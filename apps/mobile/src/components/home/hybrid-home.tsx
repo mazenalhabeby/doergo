@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
@@ -22,15 +21,14 @@ import {
   TaskStatus,
   type AttendanceStatus,
   type BreakStatus,
-  type CompanyLocation,
   type Task,
 } from '../../lib/api';
 import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet, ScreenContainer } from '../../components';
+import { useClockIn } from '../../hooks/useClockIn';
 import { WeekCalendar } from '../week-calendar';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
 import {
-  haversineDistance,
   formatDurationMinutes as formatDuration,
   isSameDay,
 } from '../../lib/utils';
@@ -46,7 +44,6 @@ export function HybridHome() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isClockLoading, setIsClockLoading] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
@@ -56,10 +53,6 @@ export function HybridHome() {
   const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
-  // Location state
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<CompanyLocation | null>(null);
 
   // Task state
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -135,6 +128,14 @@ export function HybridHome() {
     return () => clearInterval(interval);
   }, [attendanceStatus?.isClockedIn, attendanceStatus?.currentEntry]);
 
+  // Shared clock-in flow (GPS + location/remote picker) — one implementation
+  // across the attendance tab and both home screens, so allowRemote members get
+  // the "Work remotely" choice everywhere. (DRY)
+  const clockIn = useClockIn({
+    assignedLocations: attendanceStatus?.assignedLocations || [],
+    onClockedIn: () => fetchData(),
+  });
+
   // ── Task Helpers ───────────────────────────────────────────────────
   const toLocalDateStr = useCallback((d: Date) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -184,46 +185,8 @@ export function HybridHome() {
   }, [tasks, selectedDate]);
 
   // ── Attendance Actions ─────────────────────────────────────────────
-  const getCurrentLocation = async () => {
-    setIsGettingLocation(true);
-    try {
-      const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
-      if (permStatus !== 'granted') {
-        toast.warning(t('home.fullTime.permissionDenied'), t('home.fullTime.locationPermissionRequired'));
-        return null;
-      }
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const loc = { lat: location.coords.latitude, lng: location.coords.longitude, accuracy: location.coords.accuracy || 0 };
-      setCurrentLocation(loc);
-      return loc;
-    } catch {
-      toast.error(t('home.fullTime.locationError'), t('home.fullTime.failedToGetLocation'));
-      return null;
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
-
-  const handleClockIn = async () => {
-    if (!selectedLocation || !currentLocation) return;
-    setIsClockLoading(true);
-    try {
-      await attendanceApi.clockIn({
-        locationId: selectedLocation.id,
-        lat: currentLocation.lat,
-        lng: currentLocation.lng,
-        accuracy: currentLocation.accuracy,
-      });
-      setLocationModalVisible(false);
-      setSelectedLocation(null);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockIn'));
-    } finally {
-      setIsClockLoading(false);
-    }
-  };
-
+  // Clock-IN (GPS, location/remote picker) is handled by the shared useClockIn
+  // hook above. Clock-OUT stays local; it reuses the hook's GPS acquisition.
   const handleClockOut = () => {
     setShowClockOutConfirm(true);
   };
@@ -232,7 +195,7 @@ export function HybridHome() {
     setShowClockOutConfirm(false);
     setIsClockLoading(true);
     try {
-      const location = await getCurrentLocation();
+      const location = await clockIn.getCurrentLocation();
       if (!location) { setIsClockLoading(false); return; }
       await attendanceApi.clockOut({ lat: location.lat, lng: location.lng, accuracy: location.accuracy, notes: notes || undefined });
       await fetchData();
@@ -241,20 +204,6 @@ export function HybridHome() {
     } finally {
       setIsClockLoading(false);
     }
-  };
-
-  const openClockInModal = async () => {
-    const location = await getCurrentLocation();
-    if (location) setLocationModalVisible(true);
-  };
-
-  const getDistanceToLocation = (location: CompanyLocation): number | null => {
-    if (!currentLocation) return null;
-    // A logical space (or one whose map location was never set) has no
-    // coordinates — there's no geofence and no meaningful distance. Guard against
-    // null/undefined so we never render a garbage "away 8901km" reading.
-    if (location.lat == null || location.lng == null) return null;
-    return haversineDistance(currentLocation.lat, currentLocation.lng, location.lat, location.lng);
   };
 
   // ── Navigation ─────────────────────────────────────────────────────
@@ -297,9 +246,9 @@ export function HybridHome() {
             <TouchableOpacity
               style={[hStyles.clockBtn, hStyles.clockOutBtn]}
               onPress={handleClockOut}
-              disabled={isClockLoading || isGettingLocation}
+              disabled={isClockLoading || clockIn.isBusy}
             >
-              {isClockLoading || isGettingLocation ? (
+              {isClockLoading || clockIn.isBusy ? (
                 <ActivityIndicator size="small" color={COLORS.white} />
               ) : (
                 <>
@@ -313,12 +262,12 @@ export function HybridHome() {
       ) : (
         <TouchableOpacity
           style={[hStyles.clockInCard, { backgroundColor: colors.card }]}
-          onPress={openClockInModal}
-          disabled={isClockLoading || isGettingLocation}
+          onPress={clockIn.openClockInModal}
+          disabled={isClockLoading || clockIn.isBusy}
           activeOpacity={0.8}
         >
           <View style={hStyles.clockInIconBox}>
-            {isClockLoading || isGettingLocation ? (
+            {isClockLoading || clockIn.isBusy ? (
               <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
               <Ionicons name="finger-print" size={28} color={COLORS.primary} />
@@ -398,7 +347,7 @@ export function HybridHome() {
       </TourTarget>
     </>
   ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName,
-      colors, t, isClockedIn, attendanceStatus, breakStatus, elapsedMinutes, isClockLoading, isGettingLocation]);
+      colors, t, isClockedIn, attendanceStatus, breakStatus, elapsedMinutes, isClockLoading, clockIn]);
 
   const renderTask = useCallback(({ item }: { item: Task }) => (
     <View style={hStyles.taskItemWrapper}>
@@ -443,15 +392,8 @@ export function HybridHome() {
       </ScreenContainer>
 
       <LocationPickerSheet
-        visible={locationModalVisible}
-        locations={attendanceStatus?.assignedLocations || []}
-        selectedLocation={selectedLocation}
-        onSelect={setSelectedLocation}
-        onConfirm={handleClockIn}
-        onClose={() => setLocationModalVisible(false)}
-        getDistance={getDistanceToLocation}
-        confirmLabel={t('home.fullTime.clockIn')}
-        confirmDisabled={isClockLoading}
+        {...clockIn.pickerProps}
+        confirmDisabled={clockIn.isClockingIn}
       />
 
       <ClockOutSheet

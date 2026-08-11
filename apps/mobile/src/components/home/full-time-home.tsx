@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
@@ -23,8 +22,8 @@ import {
   type BreakStatus,
 } from '../../lib/api';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../components';
+import { useClockIn } from '../../hooks/useClockIn';
 import {
-  haversineDistance,
   formatDurationMinutes as formatDuration,
 } from '../../lib/utils';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
@@ -48,18 +47,6 @@ export function FullTimeHome() {
   const [status, setStatus] = useState<AttendanceStatus | null>(null);
   const [history, setHistory] = useState<TimeEntry[]>([]);
   const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
-
-  // Location state
-  const [currentLocation, setCurrentLocation] = useState<{
-    lat: number;
-    lng: number;
-    accuracy: number;
-  } | null>(null);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-
-  // Modal state
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<CompanyLocation | null>(null);
 
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
@@ -139,56 +126,14 @@ export function FullTimeHome() {
     setIsRefreshing(false);
   };
 
-  // Get current location
-  const getCurrentLocation = async () => {
-    setIsGettingLocation(true);
-    try {
-      const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
-      if (permStatus !== 'granted') {
-        toast.warning(t('home.fullTime.permissionDenied'), t('home.fullTime.locationPermissionRequired'));
-        return null;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      const loc = {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-        accuracy: location.coords.accuracy || 0,
-      };
-      setCurrentLocation(loc);
-      return loc;
-    } catch (err) {
-      toast.error(t('home.fullTime.locationError'), t('home.fullTime.failedToGetLocation'));
-      return null;
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
-
-  // Handle clock in
-  const handleClockIn = async () => {
-    if (!selectedLocation || !currentLocation) return;
-
-    setIsActionLoading(true);
-    try {
-      await attendanceApi.clockIn({
-        locationId: selectedLocation.id,
-        lat: currentLocation.lat,
-        lng: currentLocation.lng,
-        accuracy: currentLocation.accuracy,
-      });
-      setLocationModalVisible(false);
-      setSelectedLocation(null);
-      await fetchAttendanceData();
-    } catch (err: any) {
-      toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockIn'));
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
+  // Shared clock-in flow (GPS + location/remote picker) — same implementation as
+  // the attendance tab, so allowRemote members get the "Work remotely" choice
+  // here too. (DRY)
+  const clockIn = useClockIn({
+    assignedLocations: status?.assignedLocations || [],
+    onClockedIn: () => fetchAttendanceData(),
+  });
+  const getDistanceToLocation = clockIn.getDistanceToLocation;
 
   // Handle clock out
   const handleClockOut = () => {
@@ -199,7 +144,7 @@ export function FullTimeHome() {
     setShowClockOutConfirm(false);
     setIsActionLoading(true);
     try {
-      const location = await getCurrentLocation();
+      const location = await clockIn.getCurrentLocation();
       if (!location) {
         setIsActionLoading(false);
         return;
@@ -217,29 +162,6 @@ export function FullTimeHome() {
     } finally {
       setIsActionLoading(false);
     }
-  };
-
-  // Open location selection modal
-  const openClockInModal = async () => {
-    const location = await getCurrentLocation();
-    if (location) {
-      setLocationModalVisible(true);
-    }
-  };
-
-  // Calculate distance to location
-  const getDistanceToLocation = (location: CompanyLocation): number | null => {
-    if (!currentLocation) return null;
-    // A logical space (or one whose map location was never set) has no
-    // coordinates — no geofence, no meaningful distance. Guard against
-    // null/undefined so we never render a garbage "away 8901km" reading.
-    if (location.lat == null || location.lng == null) return null;
-    return haversineDistance(
-      currentLocation.lat,
-      currentLocation.lng,
-      location.lat,
-      location.lng
-    );
   };
 
   // Check if within geofence
@@ -321,12 +243,12 @@ export function FullTimeHome() {
             style={[
               ftStyles.clockButton,
               isClockedIn ? ftStyles.clockOutButton : ftStyles.clockInButton,
-              (isActionLoading || isGettingLocation) && sharedStyles.buttonDisabled,
+              (isActionLoading || clockIn.isBusy) && sharedStyles.buttonDisabled,
             ]}
-            onPress={isClockedIn ? handleClockOut : openClockInModal}
-            disabled={isActionLoading || isGettingLocation}
+            onPress={isClockedIn ? handleClockOut : clockIn.openClockInModal}
+            disabled={isActionLoading || clockIn.isBusy}
           >
-            {isActionLoading || isGettingLocation ? (
+            {isActionLoading || clockIn.isBusy ? (
               <ActivityIndicator size="small" color={COLORS.white} />
             ) : (
               <>
@@ -453,15 +375,8 @@ export function FullTimeHome() {
 
       {/* Location Selection Bottom Sheet */}
       <LocationPickerSheet
-        visible={locationModalVisible}
-        locations={status?.assignedLocations || []}
-        selectedLocation={selectedLocation}
-        onSelect={setSelectedLocation}
-        onConfirm={handleClockIn}
-        onClose={() => setLocationModalVisible(false)}
-        getDistance={getDistanceToLocation}
-        confirmLabel={t('home.fullTime.clockIn')}
-        confirmDisabled={isActionLoading}
+        {...clockIn.pickerProps}
+        confirmDisabled={clockIn.isClockingIn}
       />
 
       <ClockOutSheet
