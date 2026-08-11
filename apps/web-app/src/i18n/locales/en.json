@@ -1940,7 +1940,12 @@
     }
   },
   "members": {
-    "stats": { "score": "Score", "done": "Done", "active": "Active", "thisWeek": "This Week" },
+    "stats": {
+      "score": "Score",
+      "done": "Done",
+      "active": "Active",
+      "thisWeek": "This Week"
+    },
     "title": "Organization Members",
     "subtitle": "Manage your team members, roles, and permissions",
     "searchPlaceholder": "Search by name or email...",
@@ -3020,7 +3025,16 @@
       "error": "Could not update the entry.",
       "delete": "Remove",
       "confirmDelete": "Confirm remove",
-      "deleteSuccess": "Entry removed"
+      "deleteSuccess": "Entry removed",
+      "reasonPresets": {
+        "forgotOut": "Forgot to clock out",
+        "forgotIn": "Forgot to clock in",
+        "wrongTime": "Wrong time entered",
+        "wrongTz": "Wrong time zone",
+        "lateTraffic": "Late — traffic",
+        "managerApproved": "Approved by manager",
+        "deviceIssue": "Device / GPS issue"
+      }
     },
     "addDayOff": {
       "button": "Add day off",

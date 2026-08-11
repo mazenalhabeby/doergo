@@ -3008,7 +3008,16 @@
       "error": "No se pudo actualizar el registro.",
       "delete": "Eliminar",
       "confirmDelete": "Confirmar eliminación",
-      "deleteSuccess": "Entrada eliminada"
+      "deleteSuccess": "Entrada eliminada",
+      "reasonPresets": {
+        "forgotOut": "Olvidó fichar la salida",
+        "forgotIn": "Olvidó fichar la entrada",
+        "wrongTime": "Hora incorrecta",
+        "wrongTz": "Zona horaria incorrecta",
+        "lateTraffic": "Tarde — tráfico",
+        "managerApproved": "Aprobado por el responsable",
+        "deviceIssue": "Problema de dispositivo/GPS"
+      }
     },
     "addDayOff": {
       "button": "Añadir día libre",

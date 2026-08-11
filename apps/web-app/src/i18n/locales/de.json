@@ -1940,7 +1940,12 @@
     }
   },
   "members": {
-    "stats": { "score": "Bewertung", "done": "Erledigt", "active": "Aktiv", "thisWeek": "Diese Woche" },
+    "stats": {
+      "score": "Bewertung",
+      "done": "Erledigt",
+      "active": "Aktiv",
+      "thisWeek": "Diese Woche"
+    },
     "title": "Organisationsmitglieder",
     "subtitle": "Verwalten Sie Ihre Teammitglieder, Rollen und Berechtigungen",
     "searchPlaceholder": "Nach Name oder E-Mail suchen...",
@@ -3020,7 +3025,16 @@
       "error": "Eintrag konnte nicht aktualisiert werden.",
       "delete": "Entfernen",
       "confirmDelete": "Entfernen bestätigen",
-      "deleteSuccess": "Eintrag entfernt"
+      "deleteSuccess": "Eintrag entfernt",
+      "reasonPresets": {
+        "forgotOut": "Ausstempeln vergessen",
+        "forgotIn": "Einstempeln vergessen",
+        "wrongTime": "Falsche Zeit eingegeben",
+        "wrongTz": "Falsche Zeitzone",
+        "lateTraffic": "Verspätet — Verkehr",
+        "managerApproved": "Vom Manager genehmigt",
+        "deviceIssue": "Geräte-/GPS-Problem"
+      }
     },
     "addDayOff": {
       "button": "Freien Tag hinzufügen",

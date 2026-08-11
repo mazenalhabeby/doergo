@@ -3008,7 +3008,16 @@
       "error": "Impossibile aggiornare la registrazione.",
       "delete": "Rimuovi",
       "confirmDelete": "Conferma rimozione",
-      "deleteSuccess": "Voce rimossa"
+      "deleteSuccess": "Voce rimossa",
+      "reasonPresets": {
+        "forgotOut": "Dimenticata l'uscita",
+        "forgotIn": "Dimenticata l'entrata",
+        "wrongTime": "Orario errato",
+        "wrongTz": "Fuso orario errato",
+        "lateTraffic": "In ritardo — traffico",
+        "managerApproved": "Approvato dal responsabile",
+        "deviceIssue": "Problema dispositivo/GPS"
+      }
     },
     "addDayOff": {
       "button": "Aggiungi giorno di riposo",

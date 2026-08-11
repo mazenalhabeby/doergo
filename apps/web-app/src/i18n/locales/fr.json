@@ -3008,7 +3008,16 @@
       "error": "Impossible de mettre à jour le pointage.",
       "delete": "Supprimer",
       "confirmDelete": "Confirmer la suppression",
-      "deleteSuccess": "Entrée supprimée"
+      "deleteSuccess": "Entrée supprimée",
+      "reasonPresets": {
+        "forgotOut": "Oubli de pointer la sortie",
+        "forgotIn": "Oubli de pointer l'entrée",
+        "wrongTime": "Heure incorrecte",
+        "wrongTz": "Fuseau horaire incorrect",
+        "lateTraffic": "En retard — circulation",
+        "managerApproved": "Approuvé par le responsable",
+        "deviceIssue": "Problème d'appareil/GPS"
+      }
     },
     "addDayOff": {
       "button": "Ajouter un jour de repos",

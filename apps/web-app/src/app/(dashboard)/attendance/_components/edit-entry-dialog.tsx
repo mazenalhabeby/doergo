@@ -7,7 +7,20 @@ import { Pencil, Loader2, Trash2 } from "lucide-react"
 
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { utcToZonedInput, zonedInputToUtc } from "@/lib/utils"
+import { cn, utcToZonedInput, zonedInputToUtc } from "@/lib/utils"
+
+// Smart quick-pick reasons for editing an entry — click to fill the field
+// (click again to clear); the admin can still type a custom reason. i18n keys
+// fall back to English until translated.
+const REASON_PRESETS: { key: string; fallback: string }[] = [
+  { key: "attendance.editEntry.reasonPresets.forgotOut", fallback: "Forgot to clock out" },
+  { key: "attendance.editEntry.reasonPresets.forgotIn", fallback: "Forgot to clock in" },
+  { key: "attendance.editEntry.reasonPresets.wrongTime", fallback: "Wrong time entered" },
+  { key: "attendance.editEntry.reasonPresets.wrongTz", fallback: "Wrong time zone" },
+  { key: "attendance.editEntry.reasonPresets.lateTraffic", fallback: "Late — traffic" },
+  { key: "attendance.editEntry.reasonPresets.managerApproved", fallback: "Approved by manager" },
+  { key: "attendance.editEntry.reasonPresets.deviceIssue", fallback: "Device / GPS issue" },
+]
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -176,6 +189,28 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
             <Label>
               {t("attendance.editEntry.reason")} <span className="text-destructive">*</span>
             </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {REASON_PRESETS.map((p) => {
+                const text = t(p.key, p.fallback)
+                const active = reason.trim() === text
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setReason(active ? "" : text)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                      active
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {text}
+                  </button>
+                )
+              })}
+            </div>
             <Input
               value={reason}
               onChange={(e) => setReason(e.target.value)}
