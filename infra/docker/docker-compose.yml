@@ -2,12 +2,21 @@
 # Usage: docker compose --env-file .env.production up -d
 # Note: Nginx runs on the host (not in Docker) to share with other apps
 
+# Log rotation (audit) — cap every container's json-file logs so verbose request
+# logging can't fill the disk on this shared box. 10MB × 3 files = 30MB/service.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ==================== INFRASTRUCTURE ====================
   postgres:
     image: postgis/postgis:16-3.4-alpine
     container_name: hbcfield-postgres
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-hbcfield}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hbcfield_secret}
@@ -32,6 +41,7 @@ services:
     image: redis:7-alpine
     container_name: hbcfield-redis
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "127.0.0.1:6379:6379"
     environment:
@@ -65,6 +75,7 @@ services:
     image: edoburu/pgbouncer:latest
     container_name: hbcfield-pgbouncer
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -97,6 +108,7 @@ services:
       dockerfile: apps/api/auth-service/Dockerfile
     container_name: hbcfield-auth-service
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
@@ -139,6 +151,7 @@ services:
       dockerfile: apps/api/task-service/Dockerfile
     container_name: hbcfield-task-service
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
@@ -177,6 +190,7 @@ services:
       dockerfile: apps/api/notification-service/Dockerfile
     container_name: hbcfield-notification-service
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "127.0.0.1:4001:4001"
     environment:
@@ -220,6 +234,7 @@ services:
       dockerfile: apps/api/tracking-service/Dockerfile
     container_name: hbcfield-tracking-service
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
@@ -250,6 +265,7 @@ services:
       dockerfile: apps/api/gateway/Dockerfile
     container_name: hbcfield-api-gateway
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "127.0.0.1:4000:4000"
     environment:
@@ -304,6 +320,7 @@ services:
         - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
     container_name: hbcfield-web-app
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "127.0.0.1:3001:3000"
     environment:

@@ -1634,6 +1634,7 @@ model TimeEntry {
   @@index([organizationId, status]) // "who's clocked in right now" (dashboard, date-independent)
   @@index([status, nextRemindAt]) // reminder engine safety-net sweep
   @@index([organizationId, reminderState]) // pending extra-time lookups per org
+  @@index([organizationId, approvalStatus, clockInAt]) // approval queue (P3): pending, newest-first
   @@map("time_entries")
 }
 
@@ -1932,6 +1933,7 @@ model TimeOff {
   @@index([status])
   @@index([startDate, endDate])
   @@index([approvedById])
+  @@index([technicianId, status, startDate]) // no-show sweep: approved leave per worker (P8)
   @@map("time_off_requests")
 }
 

@@ -4,7 +4,11 @@ import { Job } from 'bullmq';
 import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES, buildJobError } from '@hbcfield/shared';
 import { AttendanceService } from './attendance.service';
 
-@Processor(QUEUE_NAMES.ATTENDANCE)
+// concurrency:20 (audit P1) — the default of 1 serialised every clock-in/out,
+// heartbeat, the 1-min reminder sweep and the 30-min materialize through a single
+// slot, so a boundary burst queued clock-ins behind a sweep → addJobAndWait
+// timeouts → mass 5xx. 20 slots decouples the interactive ops from the sweeps.
+@Processor(QUEUE_NAMES.ATTENDANCE, { concurrency: 20 })
 export class AttendanceProcessor extends WorkerHost {
   private readonly logger = new Logger(AttendanceProcessor.name);
 
