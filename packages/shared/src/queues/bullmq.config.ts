@@ -29,17 +29,25 @@ import { QUEUE_NAMES, QueueName, DEFAULT_JOB_OPTIONS } from './constants';
 export function getBullMQRedisConfig(configService?: ConfigService): {
   host: string;
   port: number;
+  password?: string;
 } {
+  // Password (H14): omitted unless REDIS_PASSWORD is set (empty string = unset).
+  const password = configService
+    ? configService.get<string>('REDIS_PASSWORD') || undefined
+    : process.env.REDIS_PASSWORD || undefined;
+
   if (configService) {
     return {
       host: configService.get('REDIS_HOST', DEFAULT_REDIS_CONFIG.host),
       port: configService.get('REDIS_PORT', DEFAULT_REDIS_CONFIG.port),
+      ...(password ? { password } : {}),
     };
   }
 
   return {
     host: process.env.REDIS_HOST || DEFAULT_REDIS_CONFIG.host,
     port: parseInt(process.env.REDIS_PORT || String(DEFAULT_REDIS_CONFIG.port), 10),
+    ...(password ? { password } : {}),
   };
 }
 
@@ -62,6 +70,7 @@ export function createBullMQConfig(): {
         connection: {
           host: redis.host,
           port: redis.port,
+          ...(redis.password ? { password: redis.password } : {}),
           // Production optimizations
           ...(isProduction && {
             enableReadyCheck: true,

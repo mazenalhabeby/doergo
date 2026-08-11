@@ -24,7 +24,9 @@ export class RedisIoAdapter extends IoAdapter {
   connectToRedis(): void {
     const host = process.env.REDIS_HOST || 'localhost';
     const port = Number(process.env.REDIS_PORT) || 6379;
-    const pubClient = new Redis({ host, port });
+    // Password (H14): omitted unless set, so open dev Redis still connects.
+    const password = process.env.REDIS_PASSWORD || undefined;
+    const pubClient = new Redis({ host, port, password });
     const subClient = pubClient.duplicate();
     pubClient.on('error', (e) => this.logger.warn(`pub client error: ${e.message}`));
     subClient.on('error', (e) => this.logger.warn(`sub client error: ${e.message}`));

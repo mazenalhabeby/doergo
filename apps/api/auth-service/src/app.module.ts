@@ -41,6 +41,32 @@ import { PortalModule } from './modules/portal/portal.module';
             'Use a cryptographically secure random string.',
           );
         }
+        // SECURITY (H8): Fail fast if the REFRESH secret is missing or weak.
+        // Refresh tokens are signed with JWT_REFRESH_SECRET at the call site, but
+        // JwtService silently falls back to the module default (this access secret)
+        // when the per-call secret resolves to undefined — so an unset refresh
+        // secret would quietly sign refresh tokens with the ACCESS secret,
+        // collapsing the two-key separation. Validate it here so boot aborts
+        // instead of running in that degraded state. (Verification stays a
+        // SHA-256 DB-hash lookup — no jwtService.verify on refresh — to avoid
+        // mass-logout of tokens issued before this guard existed.)
+        const refreshSecret = configService.get<string>('JWT_REFRESH_SECRET');
+        if (!refreshSecret) {
+          throw new Error(
+            'CRITICAL: JWT_REFRESH_SECRET environment variable is not set. ' +
+            'Set a strong secret (minimum 32 characters), distinct from JWT_ACCESS_SECRET.',
+          );
+        }
+        if (refreshSecret.length < 32) {
+          throw new Error(
+            'CRITICAL: JWT_REFRESH_SECRET must be at least 32 characters long.',
+          );
+        }
+        if (refreshSecret === secret) {
+          throw new Error(
+            'CRITICAL: JWT_REFRESH_SECRET must differ from JWT_ACCESS_SECRET.',
+          );
+        }
         return {
           secret,
           // Pin HS256 on both sign and verify so tokens can't be minted/accepted

@@ -48,11 +48,14 @@ export abstract class BaseQueueService {
     // Initialize QueueEvents for listening to job completion
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
+    // Password (H14): omitted unless set, so open dev Redis still connects.
+    const redisPassword = configService.get<string>('REDIS_PASSWORD') || undefined;
 
     this.queueEvents = new QueueEvents(queueName, {
       connection: {
         host: redisHost,
         port: redisPort,
+        ...(redisPassword ? { password: redisPassword } : {}),
       },
     });
 

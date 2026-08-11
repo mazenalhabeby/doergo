@@ -26,6 +26,8 @@ export class AuthTokenCache {
     this.redis = new Redis({
       host: config.get<string>('REDIS_HOST') || 'localhost',
       port: Number(config.get('REDIS_PORT')) || 6379,
+      // Password (H14): omitted unless set, so open dev Redis still connects.
+      password: config.get<string>('REDIS_PASSWORD') || undefined,
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       lazyConnect: false,

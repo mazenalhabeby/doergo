@@ -32,17 +32,27 @@ import { DEFAULT_REDIS_CONFIG, ServiceName } from './constants';
 export function getRedisConfig(configService?: ConfigService): {
   host: string;
   port: number;
+  password?: string;
 } {
+  // Password (H14): only present when REDIS_PASSWORD is set, so dev/test — where
+  // Redis runs open — keep connecting with no auth. An empty string is treated
+  // as unset (omit the key rather than send AUTH "").
+  const password = configService
+    ? configService.get<string>('REDIS_PASSWORD') || undefined
+    : process.env.REDIS_PASSWORD || undefined;
+
   if (configService) {
     return {
       host: configService.get('REDIS_HOST', DEFAULT_REDIS_CONFIG.host),
       port: configService.get('REDIS_PORT', DEFAULT_REDIS_CONFIG.port),
+      ...(password ? { password } : {}),
     };
   }
 
   return {
     host: process.env.REDIS_HOST || DEFAULT_REDIS_CONFIG.host,
     port: parseInt(process.env.REDIS_PORT || String(DEFAULT_REDIS_CONFIG.port), 10),
+    ...(password ? { password } : {}),
   };
 }
 
@@ -58,6 +68,7 @@ export function createMicroserviceOptions(configService?: ConfigService): Micros
     options: {
       host: redis.host,
       port: redis.port,
+      ...(redis.password ? { password: redis.password } : {}),
     },
   };
 }
