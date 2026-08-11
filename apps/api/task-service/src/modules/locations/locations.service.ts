@@ -122,15 +122,18 @@ export class LocationsService {
       isRemote: false,
     };
 
-    // Ownership-kind scope. DEFAULT excludes CUSTOMER so customer-company spaces
-    // don't pollute the work pickers (task-assign / attendance / member / schedule).
-    // `kind: 'all'` includes everything (the Spaces directory); a specific kind
-    // narrows to it (e.g. a future customer directory). Served by
-    // @@index([organizationId, kind, name]).
+    // Ownership-kind scope. Ownership (project / my company / customer company)
+    // is a LABEL describing whose place a space is — it never changes how the
+    // space behaves. In field service the customer's site IS where the crew
+    // works, so a CUSTOMER space with a roster must appear everywhere a normal
+    // space does (dashboard, task-assign, attendance, schedule). An earlier
+    // default hid CUSTOMER from these lists on the assumption that such spaces
+    // hold no members; that isn't true here, and hiding them made real crews
+    // vanish from the dashboard. A specific `kind` still narrows the query
+    // (e.g. a customer directory); 'all' is accepted and means the same as
+    // omitting it. Served by @@index([organizationId, kind, name]).
     if (data.kind && data.kind !== 'all') {
       where.kind = data.kind;
-    } else if (!data.kind) {
-      where.kind = { not: 'CUSTOMER' };
     }
 
     // By default, only show active locations
@@ -549,9 +552,10 @@ export class LocationsService {
     let locationIds: string[];
     if (data.spaceScope === 'all') {
       const locs = await this.prisma.companyLocation.findMany({
-        // Exclude customer-company spaces — they hold no members, so they add
-        // nothing to a colleague scan (and shouldn't be treated as work areas).
-        where: { organizationId: data.organizationId, isActive: true, kind: { not: 'CUSTOMER' } },
+        // Every active space counts, whatever its ownership label: a crew posted
+        // to a customer's site are colleagues like any other. (Customer spaces
+        // used to be excluded here on the assumption they hold no members.)
+        where: { organizationId: data.organizationId, isActive: true },
         select: { id: true },
       });
       locationIds = locs.map((l) => l.id);
