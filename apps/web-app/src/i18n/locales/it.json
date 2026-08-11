@@ -1944,8 +1944,8 @@
     "searchPlaceholder": "Cerca per nome o email...",
     "watchers": {
       "title": "Notifiche su {{name}}",
-      "hint": "Scegli chi viene avvisato riguardo a questo membro (approvazioni, geofence, …). Se non viene selezionato nessuno, per impostazione predefinita vengono avvisati gli amministratori dell'organizzazione e i responsabili degli spazi di questo membro.",
-      "usingDefault": "Instradamento predefinito in uso",
+      "hint": "Scegli chi viene avvisato riguardo a questo membro (approvazioni, geofence, …). Se non selezioni nessuno qui, vengono avvisati solo i destinatari configurati sugli spazi del membro; non c'è alcun ripiego automatico sugli amministratori dell'organizzazione.",
+      "usingDefault": "Nessuno selezionato — solo instradamento per spazio",
       "noManagers": "Nessun amministratore o responsabile da assegnare al momento.",
       "saved": "Destinatari delle notifiche aggiornati"
     },

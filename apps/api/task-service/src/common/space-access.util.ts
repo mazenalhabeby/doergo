@@ -28,6 +28,10 @@ export async function spaceRoleHolders(
   organizationId: string,
   spaceIds: string[],
   kind: 'notify' | 'contact',
+  // When false, a space with NO explicit notify/contact role config contributes
+  // NO one (skip the "all space leaders" automatic default). Used by the notify
+  // path so an unconfigured space never auto-blasts its leaders.
+  allowLeaderDefault = true,
 ): Promise<Set<string>> {
   const out = new Set<string>();
   if (spaceIds.length === 0) return out;
@@ -45,12 +49,13 @@ export async function spaceRoleHolders(
     select: { userId: true, spaceId: true, roleId: true, role: { select: { permissions: true } } },
   });
 
-  // Unified assignments: explicit role-id config wins, else leader default.
+  // Unified assignments: explicit role-id config wins; else the leader default
+  // (only when allowed — the notify path opts out so nothing auto-fires).
   for (const a of assignments) {
     const cfg = cfgBySpace.get(a.spaceId) ?? [];
     const eligible = cfg.length
       ? a.roleId != null && cfg.includes(a.roleId)
-      : isSpaceLeaderPermissions(a.role?.permissions);
+      : allowLeaderDefault && isSpaceLeaderPermissions(a.role?.permissions);
     if (eligible) out.add(a.userId);
   }
   return out;
@@ -73,6 +78,9 @@ export async function resolveMemberRouting(
   organizationId: string,
   personId: string,
   kind: 'notify' | 'contact',
+  // Threaded to spaceRoleHolders: when false, spaces without explicit routing
+  // config contribute no one (no automatic all-leaders default).
+  allowLeaderDefault = true,
 ): Promise<Set<string>> {
   const out = new Set<string>();
   const allSpaceIds = await spaceIdsForUser(prisma, personId);
@@ -111,7 +119,7 @@ export async function resolveMemberRouting(
   // Spaces without an override → the space default.
   const defaultSpaces = allSpaceIds.filter((s) => !overrideSpaces.has(s));
   if (defaultSpaces.length) {
-    const def = await spaceRoleHolders(prisma, organizationId, defaultSpaces, kind);
+    const def = await spaceRoleHolders(prisma, organizationId, defaultSpaces, kind, allowLeaderDefault);
     for (const id of def) out.add(id);
   }
   return out;

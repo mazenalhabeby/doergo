@@ -12,8 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 /**
  * Per-employee notification routing: choose which admins/managers get alerts
- * (approvals, geofence, …) ABOUT this member. Empty selection = the default
- * routing (org admins + the member's space managers).
+ * (approvals, geofence, …) ABOUT this member. Explicit-only — an empty selection
+ * here adds no one; alerts then go only to whoever is explicitly configured on
+ * the member's spaces (if anyone). No automatic org-admin fallback.
  */
 export function MemberWatchers({ memberId, memberName }: { memberId: string; memberName: string }) {
   const { t } = useTranslation()
@@ -80,12 +81,12 @@ export function MemberWatchers({ memberId, memberName }: { memberId: string; mem
         <p className="text-xs text-muted-foreground">
           {t(
             "members.watchers.hint",
-            "Choose who is alerted about this member (approvals, geofence, …). If no one is selected, it defaults to org admins and this member's space managers.",
+            "Choose who is alerted about this member (approvals, geofence, …). If no one is selected here, only the recipients configured on the member's spaces are notified — there is no automatic fallback to org admins.",
           )}
         </p>
         {usingDefault && (
           <span className="mt-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-            {t("members.watchers.usingDefault", "Using default routing")}
+            {t("members.watchers.usingDefault", "No one selected — space routing only")}
           </span>
         )}
       </div>

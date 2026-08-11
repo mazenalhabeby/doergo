@@ -1946,8 +1946,8 @@
     "searchPlaceholder": "Nach Name oder E-Mail suchen...",
     "watchers": {
       "title": "Benachrichtigungen über {{name}}",
-      "hint": "Wählen Sie, wer über dieses Mitglied benachrichtigt wird (Freigaben, Geofence, …). Ohne Auswahl gilt die Standardregel: Admins und die Bereichs-Manager dieses Mitglieds.",
-      "usingDefault": "Standard-Routing aktiv",
+      "hint": "Wählen Sie, wer über dieses Mitglied benachrichtigt wird (Freigaben, Geofence, …). Ohne Auswahl werden nur die auf den Bereichen des Mitglieds konfigurierten Empfänger benachrichtigt – es gibt keinen automatischen Rückfall auf Organisations-Admins.",
+      "usingDefault": "Niemand ausgewählt – nur Bereichs-Routing",
       "noManagers": "Noch keine Admins oder Manager zum Zuweisen.",
       "saved": "Benachrichtigungsempfänger aktualisiert"
     },

@@ -1946,8 +1946,8 @@
     "searchPlaceholder": "Search by name or email...",
     "watchers": {
       "title": "Notifications about {{name}}",
-      "hint": "Choose who is alerted about this member (approvals, geofence, …). If no one is selected, it defaults to org admins and this member's space managers.",
-      "usingDefault": "Using default routing",
+      "hint": "Choose who is alerted about this member (approvals, geofence, …). If no one is selected here, only the recipients configured on the member's spaces are notified — there is no automatic fallback to org admins.",
+      "usingDefault": "No one selected — space routing only",
       "noManagers": "No admins or managers to assign yet.",
       "saved": "Notification recipients updated"
     },

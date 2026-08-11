@@ -13,14 +13,15 @@ function prefEnabled(prefs: unknown, category: string): boolean {
 /**
  * Central, DRY resolver for "who should be notified ABOUT this employee".
  *
- * Space-driven (Phase 3): recipients are the UNION of
+ * Explicit-only (by design): recipients are the UNION of
  *   1. Explicit per-employee **watchers** (NotificationWatch) — default: none.
- *   2. The **leader roles in the employee's space(s)** — whoever holds a notify
- *      role there (the space's `notifyRoleIds`, or by default any space leader).
+ *   2. Explicitly-configured space routing — the per-member `notifyUserIds`/
+ *      `notifyRoleIds` override, or the space's own configured `notifyRoleIds`.
  * then filtered by each recipient's **notificationPrefs** opt-out; the subject is
- * always excluded. If BOTH layers are empty, a last-resort safety floor routes to
- * the org **owners (ADMINs only)** — never a broad manager blast, and never a
- * silent nowhere. `explicitOnly` keeps ONLY layer 1 (no space default, no floor).
+ * always excluded. There is NO automatic fallback: a space with no configured
+ * notify roles does not auto-blast its leaders, and an all-empty result notifies
+ * no one (rather than the whole org's admins). If nobody should be alerted about
+ * a member, select no one. `explicitOnly` keeps ONLY layer 1 (no space routing).
  */
 @Injectable()
 export class NotificationRoutingService {
@@ -51,12 +52,18 @@ export class NotificationRoutingService {
       }
     }
 
-    // 2. Space-driven default: leaders in the subject's space(s). Added to (not
-    // replacing) the explicit watchers, so both get notified. Skipped for
-    // explicitOnly (e.g. routine task assignments).
+    // 2. Explicitly-configured space routing: the per-member override, or the
+    // space's own configured notify roles. Added to (not replacing) the explicit
+    // watchers. allowLeaderDefault=false → an unconfigured space contributes no
+    // one (no automatic all-leaders blast). Skipped entirely for explicitOnly.
     if (!explicitOnly) {
-      // Per-member override (their space assignment) → else the space default.
-      const recipientIds = await resolveMemberRouting(this.prisma, organizationId, subjectUserId, 'notify');
+      const recipientIds = await resolveMemberRouting(
+        this.prisma,
+        organizationId,
+        subjectUserId,
+        'notify',
+        false,
+      );
       const missing = [...recipientIds].filter((id) => id !== subjectUserId && !byId.has(id));
       if (missing.length) {
         const users = await this.prisma.user.findMany({
@@ -65,16 +72,7 @@ export class NotificationRoutingService {
         });
         for (const u of users) byId.set(u.id, u);
       }
-
-      // Safety floor: never blackhole a member's alerts. With no watcher and no
-      // space leader, route to the org OWNERS (ADMINs only — not a manager blast).
-      if (byId.size === 0) {
-        const admins = await this.prisma.user.findMany({
-          where: { organizationId, isActive: true, role: 'ADMIN' },
-          select: { id: true, email: true, notificationPrefs: true },
-        });
-        for (const a of admins) byId.set(a.id, a);
-      }
+      // No safety floor: if nothing is explicitly configured, notify no one.
     }
 
     // 3. Drop the subject + anyone who opted out of this category.

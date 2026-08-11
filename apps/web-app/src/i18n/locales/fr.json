@@ -1944,8 +1944,8 @@
     "searchPlaceholder": "Rechercher par nom ou e-mail...",
     "watchers": {
       "title": "Notifications concernant {{name}}",
-      "hint": "Choisissez qui est alerté au sujet de ce membre (approbations, géorepérage, …). Si personne n'est sélectionné, les alertes vont par défaut aux administrateurs de l'organisation et aux responsables d'espace de ce membre.",
-      "usingDefault": "Routage par défaut utilisé",
+      "hint": "Choisissez qui est alerté au sujet de ce membre (approbations, géorepérage, …). Si personne n'est sélectionné ici, seuls les destinataires configurés sur les espaces du membre sont alertés — il n'y a pas de repli automatique vers les administrateurs de l'organisation.",
+      "usingDefault": "Aucune sélection — routage par espace uniquement",
       "noManagers": "Aucun administrateur ou responsable à attribuer pour l'instant.",
       "saved": "Destinataires des notifications mis à jour"
     },

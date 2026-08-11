@@ -1944,8 +1944,8 @@
     "searchPlaceholder": "Buscar por nombre o correo…",
     "watchers": {
       "title": "Notificaciones sobre {{name}}",
-      "hint": "Elige a quién se avisa sobre este miembro (aprobaciones, geocercas, …). Si no seleccionas a nadie, se avisa por defecto a los administradores de la organización y a los gerentes de sus espacios.",
-      "usingDefault": "Usando el enrutamiento por defecto",
+      "hint": "Elige a quién se avisa sobre este miembro (aprobaciones, geocercas, …). Si no seleccionas a nadie aquí, solo se avisa a los destinatarios configurados en los espacios del miembro; no hay recurso automático a los administradores de la organización.",
+      "usingDefault": "Nadie seleccionado: solo enrutamiento por espacio",
       "noManagers": "Aún no hay administradores ni gerentes para asignar.",
       "saved": "Destinatarios de notificaciones actualizados"
     },
