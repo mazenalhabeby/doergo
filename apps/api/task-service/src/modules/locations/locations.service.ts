@@ -56,6 +56,18 @@ export class LocationsService {
       where: { organizationId: data.organizationId, isDefault: true },
     });
 
+    // Space timezone: explicit value wins, else derive from the pin, else inherit
+    // the ORG's timezone — only then the schema default. Keeps a pin-less space in
+    // the org's zone (e.g. Vienna) instead of the hardcoded Berlin column default.
+    let timezone: string | undefined = data.timezone || tzFromCoords(data.lat, data.lng) || undefined;
+    if (!timezone) {
+      const org = await this.prisma.organization.findUnique({
+        where: { id: data.organizationId },
+        select: { timezone: true },
+      });
+      timezone = org?.timezone || undefined;
+    }
+
     const location = await this.prisma.companyLocation.create({
       data: {
         name: data.name,
@@ -63,9 +75,8 @@ export class LocationsService {
         lat: data.lat ?? null,
         lng: data.lng ?? null,
         geofenceRadius: data.geofenceRadius ?? 15,
-        // Space timezone: explicit value wins, else auto-derive from coords, else
-        // the schema default. This is the fallback zone for clock-ins here.
-        timezone: data.timezone || tzFromCoords(data.lat, data.lng) || undefined,
+        // Resolved above: explicit → pin-derived → org tz → schema default.
+        timezone,
         // Each space owns its module set; new spaces start with the standard
         // default (the org-level Modules tab was removed — modules live on spaces).
         enabledModules: data.enabledModules ?? DEFAULT_ORG_MODULES,
