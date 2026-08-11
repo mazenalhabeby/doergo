@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ConflictException,
   BadRequestException,
@@ -59,6 +60,8 @@ const ORG_MEMBER_SELECT = {
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findOne(id: string, organizationId?: string) {
@@ -966,8 +969,62 @@ export class UsersService {
       }
     }
 
-    // Remove from org and clean up org-scoped associations so the user no
-    // longer appears in space rosters, schedules, or dashboards.
+    // Hard-delete when the member has NO work history, so their email is freed
+    // for re-invitation; otherwise soft-delete (detach + deactivate) so their
+    // tasks/attendance/reports keep a valid author. (Product decision 2026-08-11.)
+    // The probe spans real-work tables AND the Restrict-blocking author FKs, so a
+    // "no history" result can be deleted without tripping a foreign key. Cascade/
+    // SetNull relations (tokens, push, schedules, assignments, time entries, etc.)
+    // clear automatically; the only ephemeral Restrict blocker is invitations this
+    // user created, cleared explicitly below.
+    const [
+      tasksCreated, tasksAssigned, comments, attachments, taskEvents,
+      serviceReports, reportDefs, reportSchedules, recurringTemplates,
+      invoices, supportTickets, messages, timeEntries, overtime,
+    ] = await this.prisma.$transaction([
+      this.prisma.task.count({ where: { createdById: memberId } }),
+      this.prisma.task.count({ where: { assignedToId: memberId } }),
+      this.prisma.comment.count({ where: { userId: memberId } }),
+      this.prisma.attachment.count({ where: { uploadedById: memberId } }),
+      this.prisma.taskEvent.count({ where: { userId: memberId } }),
+      this.prisma.serviceReport.count({ where: { completedById: memberId } }),
+      this.prisma.reportDefinition.count({ where: { createdById: memberId } }),
+      this.prisma.reportSchedule.count({ where: { createdById: memberId } }),
+      this.prisma.recurringTaskTemplate.count({ where: { createdById: memberId } }),
+      this.prisma.invoice.count({ where: { createdById: memberId } }),
+      this.prisma.supportTicket.count({ where: { createdById: memberId } }),
+      this.prisma.message.count({ where: { senderId: memberId } }),
+      this.prisma.timeEntry.count({ where: { userId: memberId } }),
+      this.prisma.overtimeRequest.count({ where: { technicianId: memberId } }),
+    ]);
+    const hasHistory = [
+      tasksCreated, tasksAssigned, comments, attachments, taskEvents,
+      serviceReports, reportDefs, reportSchedules, recurringTemplates,
+      invoices, supportTickets, messages, timeEntries, overtime,
+    ].some((n) => n > 0);
+
+    if (!hasHistory) {
+      try {
+        await this.prisma.$transaction([
+          // Invitations this user created (Restrict FK) — the one ephemeral blocker.
+          this.prisma.invitation.deleteMany({ where: { createdById: memberId } }),
+          this.prisma.user.delete({ where: { id: memberId } }),
+        ]);
+        return { success: true, message: 'Member removed successfully' };
+      } catch (err) {
+        // A residual reference we didn't probe still blocks the delete — never
+        // fail the removal; fall through to the soft-delete path instead.
+        this.logger.warn(
+          `Hard delete of member ${memberId} blocked; falling back to soft-delete. ${
+            err instanceof Error ? err.message : ''
+          }`,
+        );
+      }
+    }
+
+    // Soft delete: detach from org + deactivate, keeping the row so historical
+    // FKs stay valid. Clean up org-scoped associations so the user no longer
+    // appears in space rosters, schedules, or dashboards.
     await this.prisma.$transaction([
       this.prisma.spaceAssignment.deleteMany({ where: { userId: memberId } }),
       this.prisma.technicianSchedule.deleteMany({ where: { technicianId: memberId } }),
