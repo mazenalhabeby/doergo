@@ -15,6 +15,7 @@ import {
   INVITATION_CODE_CHARSET,
   DEFAULT_ORG_MODULES,
   getDefaultModules,
+  normalizeAccessProfile,
   hashCode,
   generateSecureCode,
   industryUsesExternalWorkers,
@@ -389,6 +390,13 @@ export class OnboardingService {
     const defaultPerms = DEFAULT_PERMISSIONS[role];
     const isTechnician = role === Role.EMPLOYEE;
 
+    // Pre-configured Access Profile (EMPLOYEE only) — when the admin set access on
+    // the invite it OVERRIDES the role defaults, exactly like the web/register
+    // accept path (invitation.service.acceptInvitation). Without this, a member who
+    // onboards through the MOBILE flow lands on role defaults and every pre-set
+    // permission / enabledModules / memberRoleId is silently dropped.
+    const accessProfile = isTechnician ? normalizeAccessProfile(invitation.accessProfile) : null;
+
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedUser = await tx.user.update({
         where: { id: userId },
@@ -410,11 +418,32 @@ export class OnboardingService {
                 // Schedule pre-set on the invite (mirror of the register-path accept).
                 scheduleType: invitation.scheduleType || 'NONE',
                 monthlyHourBudget: invitation.monthlyHourBudget ?? null,
-                // Least-privilege default: own assigned spaces only (see accept).
-                enabledModules: {
-                  modules: getDefaultModules(invitation.position),
-                  spaceScope: 'own',
-                },
+                // Pre-assigned org role (validated at invite time) → the member's
+                // named role from their first login. Null when none was chosen.
+                memberRoleId: invitation.memberRoleId ?? null,
+                ...(accessProfile
+                  ? {
+                      // Admin pre-configured the access → apply it verbatim so the
+                      // first screen already matches (overrides the role defaults above).
+                      enabledModules: accessProfile.enabledModules,
+                      canCreateTasks: accessProfile.canCreateTasks,
+                      taskCreationScope: accessProfile.taskCreationScope as any,
+                      canAssignTasks: accessProfile.canAssignTasks,
+                      canViewAllTasks: accessProfile.canViewAllTasks,
+                      canManageUsers: accessProfile.canManageUsers,
+                      contactable: accessProfile.contactable,
+                      contactScope: accessProfile.contactScope,
+                      contactAllowedIds: accessProfile.contactAllowedIds,
+                      canViewReports: accessProfile.canViewReports,
+                      allowRemote: accessProfile.allowRemote,
+                    }
+                  : {
+                      // No pre-config → LEAST-PRIVILEGE: own assigned spaces only.
+                      enabledModules: {
+                        modules: getDefaultModules(invitation.position),
+                        spaceScope: 'own',
+                      },
+                    }),
               }
             : {}),
           // Customer-portal invite: bind the login to its Customer + optional unit
