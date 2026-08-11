@@ -57,6 +57,13 @@ export class EnabledModulesDto {
 }
 
 export class AccessProfileDto {
+  // serializeAccessDraft() always emits memberRoleId (a value or null) as the
+  // first field of the persisted access blob. Declare it here so the global
+  // forbidNonWhitelisted pipe doesn't reject the nested property. The real role
+  // is still taken from the validated top-level CreateInvitationDto.memberRoleId;
+  // normalizeAccessProfile() forces this nested copy to null server-side.
+  @IsOptional() @IsString() memberRoleId?: string | null;
+
   @IsOptional()
   @ValidateNested()
   @Type(() => EnabledModulesDto)
