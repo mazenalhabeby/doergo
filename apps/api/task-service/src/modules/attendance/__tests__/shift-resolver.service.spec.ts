@@ -121,6 +121,41 @@ describe('ShiftResolverService', () => {
     expect(res!.expectedClockOutAt.toISOString()).toBe('2026-08-04T04:00:00.000Z');
   });
 
+  it('clocking in shortly BEFORE a cross-midnight evening start is EARLY, not a day late', async () => {
+    prisma.shiftAssignment.findMany.mockResolvedValue([
+      makeAssignment({ id: 'sh-night', startLocal: '18:00', endLocal: '06:00', crossesMidnight: true }),
+    ]);
+    // Clock in Mon 2026-08-03 at 17:35 Vienna (= 15:35Z summer) — 25 min BEFORE the
+    // 18:00 start. Expected start must be TODAY's 18:00 (16:00Z), NOT yesterday's.
+    // Regression: computeStart must roll back a day only for the early-morning tail
+    // (local < END), not merely local < START — else an early arrival reads ~a day late.
+    const res = await service.resolveForClockIn({
+      userId: 'u-1',
+      space: viennaSpace,
+      clockInAt: new Date('2026-08-03T15:35:00Z'),
+    });
+    expect(res).not.toBeNull();
+    expect(res!.expectedClockInAt.toISOString()).toBe('2026-08-03T16:00:00.000Z');
+    // Clock-in precedes the expected start → early, so no LATE_ARRIVAL is possible.
+    expect(res!.expectedClockInAt.getTime()).toBeGreaterThan(new Date('2026-08-03T15:35:00Z').getTime());
+  });
+
+  it('early-morning tail still anchors a cross-midnight start to YESTERDAY evening (genuinely late)', async () => {
+    prisma.shiftAssignment.findMany.mockResolvedValue([
+      makeAssignment({ id: 'sh-night', startLocal: '18:00', endLocal: '06:00', crossesMidnight: true }),
+    ]);
+    // Clock in Tue 2026-08-04 at 01:39 Vienna (= 2026-08-03T23:39Z), deep in the
+    // overnight tail. Expected start = 18:00 the 3rd (16:00Z) → ~7.6h late (correct).
+    const res = await service.resolveForClockIn({
+      userId: 'u-1',
+      space: viennaSpace,
+      clockInAt: new Date('2026-08-03T23:39:00Z'),
+    });
+    expect(res).not.toBeNull();
+    expect(res!.expectedClockInAt.toISOString()).toBe('2026-08-03T16:00:00.000Z');
+    expect(res!.expectedClockInAt.getTime()).toBeLessThan(new Date('2026-08-03T23:39:00Z').getTime());
+  });
+
   it('matches a ONE_OFF date by local calendar day (no tz off-by-one, west of UTC)', async () => {
     prisma.shiftAssignment.findMany.mockResolvedValue([
       makeAssignment(

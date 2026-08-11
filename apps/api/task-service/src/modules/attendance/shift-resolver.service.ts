@@ -121,7 +121,7 @@ export class ShiftResolverService {
       const shift = a.shift;
       const [startH, startM] = this.parseHm(shift.startLocal);
       const [endH, endM] = this.parseHm(shift.endLocal);
-      const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, tz, shift.crossesMidnight, local.minutesOfDay);
+      const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, endH, endM, tz, shift.crossesMidnight, local.minutesOfDay);
       const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, shift.crossesMidnight, clockInAt, local.minutesOfDay);
       const graceMin = shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
@@ -153,7 +153,7 @@ export class ShiftResolverService {
     const [startH, startM] = this.parseHm(schedule.startTime);
     const [endH, endM] = this.parseHm(schedule.endTime);
     // Legacy schedules never cross midnight → start & end are on the clock-in's local day.
-    const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, tz, false, local.minutesOfDay);
+    const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, endH, endM, tz, false, local.minutesOfDay);
     const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, false, clockInAt, local.minutesOfDay);
     const graceMin = SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
@@ -267,22 +267,28 @@ export class ShiftResolverService {
   }
 
   /**
-   * Compute the absolute UTC instant a shift STARTS. For a cross-midnight shift,
-   * if the worker clocked in during the early-morning tail (local minutes < the
-   * start time), the shift actually started YESTERDAY. Otherwise it's today's
-   * startLocal.
+   * Compute the absolute UTC instant a shift STARTS. For a cross-midnight shift
+   * (e.g. 18:00→06:00), only the early-morning TAIL — local time before the shift
+   * END (e.g. before 06:00) — belongs to YESTERDAY's shift, so the start rolls
+   * back a day. Any other time is today's startLocal: in particular, clocking in
+   * a little BEFORE the evening start (e.g. 17:35 before an 18:00 start) is simply
+   * EARLY for today's shift and must NOT roll back a day — doing so mislabels an
+   * early arrival as roughly a full day late. Mirrors computeEnd's endMinutes
+   * boundary so start/end resolve to the same shift instance.
    */
   private computeStart(
     startDateStr: string,
     startH: number,
     startM: number,
+    endH: number,
+    endM: number,
     tz: string,
     crossesMidnight: boolean,
     clockInLocalMinutes: number,
   ): Date {
-    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
     let dateStr = startDateStr;
-    if (crossesMidnight && clockInLocalMinutes < startMinutes) {
+    if (crossesMidnight && clockInLocalMinutes < endMinutes) {
       dateStr = this.addDays(startDateStr, -1);
     }
     return this.zonedWallTimeToUtc(dateStr, startH, startM, tz);
